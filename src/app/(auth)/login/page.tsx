@@ -1,6 +1,7 @@
 "use client";
 
 import AuthUiWrapper from "@/components/shared/AuthUiWrapper";
+import ErrorMessage from "@/components/shared/ErrorMessage";
 import Logo from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,12 +29,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 const LoginPage = () => {
   const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -44,6 +46,7 @@ const LoginPage = () => {
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
+      setFormError(null);
       const credential = await signInWithEmailAndPassword(
         auth,
         data.email,
@@ -62,12 +65,7 @@ const LoginPage = () => {
       console.log(e);
       const errorMsg = processAuthError(e);
 
-      toast.error(errorMsg, {
-        position: "top-center",
-        closeButton: true,
-        id: "error",
-        duration: Infinity,
-      });
+      setFormError(errorMsg);
     }
   };
 
@@ -117,6 +115,8 @@ const LoginPage = () => {
                     </FormItem>
                   )}
                 />
+
+                {formError && <ErrorMessage message={formError} />}
 
                 <Button
                   className="w-full"

@@ -1,6 +1,7 @@
 "use client";
 
 import AuthUiWrapper from "@/components/shared/AuthUiWrapper";
+import ErrorMessage from "@/components/shared/ErrorMessage";
 import Logo from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,12 +29,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const SignUpPage = () => {
   const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
+
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -66,12 +70,7 @@ const SignUpPage = () => {
     } catch (e) {
       const errorMsg = processAuthError(e);
 
-      toast.error(errorMsg, {
-        position: "top-center",
-        closeButton: true,
-        id: "error",
-        duration: Infinity,
-      });
+      setFormError(errorMsg);
     }
   };
 
@@ -136,6 +135,8 @@ const SignUpPage = () => {
                     </FormItem>
                   )}
                 />
+
+                {formError && <ErrorMessage message={formError} />}
 
                 <Button
                   className="w-full"
