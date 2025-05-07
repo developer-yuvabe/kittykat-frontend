@@ -3,7 +3,6 @@ import { tokenConfig } from "@/config/firebase.config";
 import { createUser, fetchUser } from "@/services/api/user.service";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import React from "react";
 import MainLayout from "./_components/MainLayout";
 
@@ -25,11 +24,6 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Splash showRetry />;
-  }
-
-  // If user onboarding is not completed, redirect to onboarding page
-  if (!user.onboarding_completed) {
-    redirect("/onboarding");
   }
 
   return <MainLayout user={user}>{children}</MainLayout>;
