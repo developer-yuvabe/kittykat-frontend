@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { ERROR_MESSAGES } from "./constants";
 import { FirebaseError } from "firebase/app";
+import { AxiosResponse } from "axios";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,3 +45,30 @@ export const processAuthError = (e: unknown) => {
 
   return errorMsg;
 };
+
+export async function handleApiRequest<T>(
+  request: Promise<AxiosResponse>
+): Promise<T> {
+  try {
+    const response = await request;
+
+    // Check for successful status code (200-299)
+    if (response.status >= 200 && response.status < 300) {
+      return response.data.data as T;
+    }
+
+    // Handle unexpected non-2xx status codes
+    const message =
+      response.data?.message || `Unexpected status code: ${response.status}`;
+    console.error("API Error:", message);
+    throw new Error(message);
+  } catch (error: any) {
+    console.error("API Request Error:", error);
+
+    // Prefer the message from the API response if present
+    const message =
+      error.response?.data?.message || error.message || "API request failed";
+
+    throw new Error(message);
+  }
+}

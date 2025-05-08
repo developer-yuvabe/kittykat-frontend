@@ -1,6 +1,7 @@
 "use client";
 
 import Splash from "@/components/shared/Splash";
+import { TopNavigation } from "@/components/shared/TopNavigation";
 import { useUserStore } from "@/store/user.store";
 import { User } from "@/types/types";
 import React, { useEffect } from "react";
@@ -23,7 +24,12 @@ const MainLayout = ({
     return <Splash />;
   }
 
-  return <main>{children}</main>;
+  return (
+    <main>
+      <TopNavigation />
+      {children}
+    </main>
+  );
 };
 
 export default MainLayout;
