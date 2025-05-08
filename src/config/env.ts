@@ -10,7 +10,6 @@ export const env = createEnv({
     AUTH_COOKIE_SIGNATURE_KEY_CURRENT: z.string().min(1),
     AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS: z.string().min(1),
     USE_SECURE_COOKIES: z.string(),
-    ENVIRONMENT: z.enum(["prod", "stg", "dev"]).default("dev"),
   },
   client: {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().min(1),
@@ -19,6 +18,7 @@ export const env = createEnv({
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().min(1),
     NEXT_PUBLIC_API_BASE_URL_PROD: z.string().url(),
     NEXT_PUBLIC_API_BASE_URL_STG: z.string().url(),
+    NEXT_PUBLIC_ENVIRONMENT: z.enum(["prod", "stg", "dev"]).default("dev"),
     NEXT_PUBLIC_API_BASE_URL_DEV: z.string().url(),
   },
 
@@ -38,7 +38,7 @@ export const env = createEnv({
     AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS:
       process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS,
     USE_SECURE_COOKIES: process.env.USE_SECURE_COOKIES,
-    ENVIRONMENT: process.env.ENVIRONMENT,
+    NEXT_PUBLIC_ENVIRONMENT: process.env.ENVIRONMENT,
     NEXT_PUBLIC_FIREBASE_PROJECT_ID:
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

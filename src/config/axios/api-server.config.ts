@@ -30,7 +30,7 @@ const baseURLs = {
 
 const axiosInstance = axios.create({
   baseURL: `${
-    baseURLs[env.ENVIRONMENT] || env.NEXT_PUBLIC_API_BASE_URL_DEV
+    baseURLs[env.NEXT_PUBLIC_ENVIRONMENT] || env.NEXT_PUBLIC_API_BASE_URL_DEV
   }/api/v1/kittykat-agent`,
 });
 

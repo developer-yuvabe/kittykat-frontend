@@ -1,20 +1,26 @@
 import axios from "axios";
 import { env } from "../env";
 import { auth } from "../firebase.config";
+import { onAuthStateChanged } from "firebase/auth";
 
-const getClientSideToken = async () => {
-  const currentUser = auth.currentUser;
-  if (currentUser) {
-    try {
-      // Refresh the token and cache it
-      const token = await currentUser.getIdToken(true); // true forces a refresh
-      return token;
-    } catch (error) {
-      console.error("Error fetching token:", error);
-    }
-  }
+const getClientSideToken = () => {
+  return new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe();
 
-  return null;
+      if (user) {
+        try {
+          const token = await user.getIdToken(true);
+          resolve(token);
+        } catch (error) {
+          console.error("Error fetching token:", error);
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  });
 };
 
 const baseURLs = {
@@ -25,7 +31,7 @@ const baseURLs = {
 
 const axiosInstance = axios.create({
   baseURL: `${
-    baseURLs[env.ENVIRONMENT] || env.NEXT_PUBLIC_API_BASE_URL_DEV
+    baseURLs[env.NEXT_PUBLIC_ENVIRONMENT] || env.NEXT_PUBLIC_API_BASE_URL_DEV
   }/api/v1/kittykat-agent`,
 });
 
@@ -33,6 +39,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   async (config) => {
     const token = await getClientSideToken();
+    console.log(token);
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }

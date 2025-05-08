@@ -26,7 +26,7 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
     return <Splash showRetry />;
   }
 
-  return <MainLayout user={user}>{children}</MainLayout>;
+  return <MainLayout userInfo={user}>{children}</MainLayout>;
 };
 
 export default layout;
