@@ -23,8 +23,16 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { ensureToolCallsHaveResponses } from "@/lib/langgraph.utils";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
 import { StickToBottom } from "use-stick-to-bottom";
+import { useUserStore } from "@/store/user.store";
+import { Skeleton } from "../ui/skeleton";
+import { useThreads } from "@/providers/Thread";
+import { ChatSkeleton } from "./messages/message-skeleton";
 
-export function Thread() {
+type ThreadProps = {
+  brandId: string | null;
+};
+
+export function Thread({ brandId }: ThreadProps) {
   const [threadId, setThreadId] = useQueryState("threadId");
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
@@ -37,8 +45,11 @@ export function Thread() {
   const [hideAgentComms, setHideAgentComms] = useState(false);
   const [input, setInput] = useState("");
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
+  const [isFetchingThreadMessages, setIsFetchingThreadMessages] =
+    useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
+  const { threadsLoading } = useThreads();
   const stream = useStreamContext();
   const messages = stream.messages;
   const isLoading = stream.isLoading;
@@ -70,6 +81,7 @@ export function Thread() {
       });
     } catch {
       // no-op
+    } finally {
     }
   }, [stream.error]);
 
@@ -142,9 +154,38 @@ export function Thread() {
   const toolMessages = filteredMessages.filter((m) => m.type === "tool");
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
 
+  // If threadId is not available, set it to brandId
+  if (!threadId && brandId) {
+    setThreadId(brandId);
+  }
   useEffect(() => {
     console.log(messages);
   }, [messages]);
+
+  const setLastInteractedBrandId = useUserStore(
+    (state) => state.setLastInteractedBrandId
+  );
+
+  useEffect(() => {
+    if (threadId) {
+      setLastInteractedBrandId(threadId);
+    }
+  }, [threadId]);
+
+  // Message loading skeleton component
+  const MessageSkeleton = () => (
+    <div className="flex flex-col gap-2 animate-pulse w-full max-w-xl">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <Skeleton className="h-16 w-full" />
+      <div className="flex gap-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex w-full  h-[88vh] overflow-hidden rounded-2xl">
@@ -219,15 +260,19 @@ export function Thread() {
                 )}
                 contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-4 w-full"
                 content={
-                  <ChatMessageList
-                    messages={nonToolMessages}
-                    isLoading={isLoading}
-                    firstTokenReceived={firstTokenReceived}
-                    hasNoAIOrToolMessages={hasNoAIOrToolMessages}
-                    hideAgentComms={hideAgentComms}
-                    stream={stream}
-                    handleRegenerate={handleRegenerate}
-                  />
+                  threadsLoading ? (
+                    <ChatSkeleton />
+                  ) : (
+                    <ChatMessageList
+                      messages={nonToolMessages}
+                      isLoading={isLoading}
+                      firstTokenReceived={firstTokenReceived}
+                      hasNoAIOrToolMessages={hasNoAIOrToolMessages}
+                      hideAgentComms={hideAgentComms}
+                      stream={stream}
+                      handleRegenerate={handleRegenerate}
+                    />
+                  )
                 }
                 footer={
                   <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-transparent rounded-2xl">

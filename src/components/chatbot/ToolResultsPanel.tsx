@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ToolResult } from "../thread/messages/tool-calls";
 import { ToolMessage } from "@langchain/langgraph-sdk";
 import BrandSelector, { renderBrandData } from "./BrandSection";
+import { useThreads } from "@/providers/Thread";
+import { CardSkeleton } from "../thread/messages/message-skeleton";
 
 interface ToolResultsPanelProps {
   isLargeScreen: boolean;
@@ -24,6 +26,8 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({});
+
+  const { threadsLoading } = useThreads();
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -45,24 +49,11 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
         !isLargeScreen ? "hidden md:flex" : ""
       }`}
     >
-      {/* <div className="absolute left-5 top-3 z-10">
-        {(!chatHistoryOpen || !isLargeScreen) && (
-          <Button
-            className="hover:bg-gray-100"
-            variant="ghost"
-            onClick={() => setChatHistoryOpen(!chatHistoryOpen)}
-          >
-            {chatHistoryOpen ? (
-              <PanelRightOpen className="size-5" />
-            ) : (
-              <PanelRightClose className="size-5" />
-            )}
-          </Button>
-        )}
-      </div> */}
-
       <div className="flex-1 overflow-y-auto p-4 ml-4">
-        {hasBrandData ? (
+        {threadsLoading ? (
+          // Show skeleton when threads are loading
+          <CardSkeleton />
+        ) : hasBrandData ? (
           <div className="flex flex-col gap-4">
             {brandMessages.map((message, index) => (
               <div key={`brand-${message.id || index}`}>
