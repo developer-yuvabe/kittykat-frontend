@@ -23,6 +23,8 @@ export const renderBrandData = (
         ? JSON.parse(message.content)
         : message.content;
 
+    console.log("brand data", parsedContent);
+
     // Access the brand data (without focusing on static/dynamic as top-level keys)
     const { static: staticData, dynamic: dynamicData } = parsedContent;
 
@@ -217,17 +219,30 @@ export const TypographySection: React.FC<TypographyProps> = ({
   primaryFont,
   secondaryFont,
 }) => {
-  const renderFontDetails = (label: string, font?: FontDetails) => {
-    if (!font) return null;
+  // Helper to check if a font is valid
+  const isValidFont = (font?: FontDetails) => {
+    return font?.name?.trim() && (font.weights?.some((w) => w.trim()) ?? true);
+  };
 
-    return (
-      <div className="space-y-2">
-        <div className="text-sm font-semibold">{label}</div>
-        <div className="ml-2 space-y-1">
-          <div className="text-sm text-gray-700">{font.name}</div>
-          {font.weights && font.weights.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {font.weights.map((weight, index) => (
+  // Filter out invalid fonts
+  const validPrimaryFont = isValidFont(primaryFont) ? primaryFont : undefined;
+  const validSecondaryFont = isValidFont(secondaryFont)
+    ? secondaryFont
+    : undefined;
+
+  // Skip rendering if no valid fonts are present
+  if (!validPrimaryFont && !validSecondaryFont) return null;
+
+  const renderFontDetails = (label: string, font: FontDetails) => (
+    <div className="space-y-2">
+      <div className="text-sm font-semibold">{label}</div>
+      <div className="ml-2 space-y-1">
+        <div className="text-sm text-gray-700">{font.name}</div>
+        {font.weights && font.weights.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {font.weights
+              .filter((weight) => weight.trim())
+              .map((weight, index) => (
                 <Badge
                   key={index}
                   variant="outline"
@@ -236,23 +251,21 @@ export const TypographySection: React.FC<TypographyProps> = ({
                   {weight}
                 </Badge>
               ))}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    );
-  };
-
-  // Don't render if no font data is available
-  if (!primaryFont && !secondaryFont) return null;
+    </div>
+  );
 
   return (
     <ContentSection
       title="Brand Typography"
       content={
         <div className="space-y-4">
-          {renderFontDetails("Primary Font", primaryFont)}
-          {renderFontDetails("Secondary Font", secondaryFont)}
+          {validPrimaryFont &&
+            renderFontDetails("Primary Font", validPrimaryFont)}
+          {validSecondaryFont &&
+            renderFontDetails("Secondary Font", validSecondaryFont)}
         </div>
       }
     />
@@ -272,20 +285,26 @@ interface BrandColorsProps {
 export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
+  // Filter valid colors
+  const validColors = colors.filter((color) =>
+    /^#[0-9A-Fa-f]{6}$/.test(color.hex)
+  );
+
+  // Skip rendering if no valid colors
+  if (validColors.length === 0) return null;
+
   const copyToClipboard = (colorHex: string) => {
     navigator.clipboard.writeText(colorHex);
     setCopiedColor(colorHex);
     setTimeout(() => setCopiedColor(null), 1500);
   };
 
-  if (!colors || colors.length === 0) return null;
-
   return (
     <ContentSection
       title="Brand Colors"
       content={
         <div className="flex flex-wrap gap-4">
-          {colors.map((color, idx) => (
+          {validColors.map((color, idx) => (
             <div key={idx} className="relative group">
               <div
                 className="h-24 w-24 rounded shadow-md transition-transform duration-200 group-hover:scale-95"
@@ -300,21 +319,20 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
                 </button>
 
                 {/* Color Info on Hover */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 text-white transition-opacity rounded">
-                  <div className="font-medium">{color.name}</div>
-                  <div className="text-sm">{color.hex}</div>
+                <div
+                  className={`absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 transition-opacity rounded ${
+                    isNearWhite(color.hex)
+                      ? "text-black"
+                      : "text-primary-foreground"
+                  }`}
+                >
+                  <div className="font-light text-[12px]">{color.name}</div>
+                  <div className="text-base text-[10px]">{color.hex}</div>
                   {color.label && (
-                    <div className="text-xs mt-1">{color.label}</div>
+                    <div className="text-[8px] mt-1">{color.label}</div>
                   )}
                 </div>
               </div>
-
-              {/* Copied Indicator */}
-              {copiedColor === color.hex && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                  Copied!
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -322,7 +340,6 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
     />
   );
 };
-
 interface ProductsSectionProps {
   products: string[];
 }
@@ -500,6 +517,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { useThreads } from "@/providers/Thread";
 import { getContentString } from "../thread/utils";
+import { isNearWhite } from "@/lib/utils";
 
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
@@ -635,7 +653,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-60 justify-start font-light text-[#BCC1CA] border-[#BCC1CA]"
+            className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
             onClick={(e) => e.stopPropagation()}
           >
             <Search size={10} className="text-black" />
@@ -647,7 +665,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
             <div className="flex items-center border-b px-3">
               <CommandInput
                 placeholder="Search brands..."
-                className="h-9 border-0 outline-none focus-visible:ring-0"
+                className="h-9 border-0 outline-none  focus-visible:ring-0"
                 value={searchQuery}
                 onValueChange={handleInputChange}
               />
@@ -670,7 +688,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                           {thread.initial}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate">{thread.displayName}</span>
+                      <span className="truncate ">{thread.displayName}</span>
                     </div>
                     {selectedThreadId === thread.id && (
                       <Check className="h-4 w-4" />

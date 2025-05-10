@@ -88,7 +88,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
         ) : (
           <div className="p-4">
             <Card className="bg-gray-50">
-              <CardHeader className="">
+              <CardHeader>
                 <CardTitle className="text-xl font-semibold text-primary">
                   <div className="flex justify-between">
                     <div>No brand found</div>
@@ -96,9 +96,14 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="">
+              <CardContent>
                 <p className="text-sm text-gray-500">
-                  No brand information is currently available.
+                  No brand information is currently available. Start chatting
+                  with the{" "}
+                  <span className="font-semibold text-primary">
+                    Kittykat agent
+                  </span>{" "}
+                  to onboard your brand.
                 </p>
               </CardContent>
             </Card>

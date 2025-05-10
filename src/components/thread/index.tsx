@@ -6,14 +6,9 @@ import { useStreamContext } from "@/providers/Stream";
 import { useState, FormEvent } from "react";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { useQueryState, parseAsBoolean } from "nuqs";
-
 import { toast } from "sonner";
-
 import Image from "next/image";
 import Logo from "@/assets/kittykat-logo.svg";
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
-
 import { ScrollToBottom } from "../chatbot/ScrollToBottom";
 import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
 import { ChatInput } from "../chatbot/ChatInput";

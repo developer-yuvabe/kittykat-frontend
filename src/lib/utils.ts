@@ -46,6 +46,16 @@ export const processAuthError = (e: unknown) => {
   return errorMsg;
 };
 
+// Checks if a color is near white
+export const isNearWhite = (hex: string) => {
+  const rgb = parseInt(hex.replace("#", ""), 16);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const brightness = (r + g + b) / 3;
+  return brightness > 230; // Threshold for "near white"
+};
+
 export async function handleApiRequest<T>(
   request: Promise<AxiosResponse>
 ): Promise<T> {
