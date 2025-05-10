@@ -24,7 +24,7 @@ on:
       - main
 
 jobs:
-  Development:
+  Deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -46,7 +46,7 @@ jobs:
 
       - name: Build and tag the docker image
         run: |-
-          docker build -f "./Dockerfile.prod" . --tag '${{ env.DOCKER_IMAGE_URL }}/${{env.SERVICE_NAME}}:latest' \
+          docker build -f "./Dockerfile" . --tag '${{ env.DOCKER_IMAGE_URL }}/${{env.SERVICE_NAME}}:latest' \
             --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
             --build-arg NEXT_PUBLIC_FIREBASE_API_KEY='${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
             --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
