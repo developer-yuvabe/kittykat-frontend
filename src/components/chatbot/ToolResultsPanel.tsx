@@ -4,7 +4,7 @@ import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolResult } from "../thread/messages/tool-calls";
 import { ToolMessage } from "@langchain/langgraph-sdk";
-import { renderBrandData } from "./BrandSection";
+import BrandSelector, { renderBrandData } from "./BrandSection";
 
 interface ToolResultsPanelProps {
   isLargeScreen: boolean;
@@ -45,7 +45,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
         !isLargeScreen ? "hidden md:flex" : ""
       }`}
     >
-      <div className="absolute left-5 top-3 z-10">
+      {/* <div className="absolute left-5 top-3 z-10">
         {(!chatHistoryOpen || !isLargeScreen) && (
           <Button
             className="hover:bg-gray-100"
@@ -59,7 +59,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
             )}
           </Button>
         )}
-      </div>
+      </div> */}
 
       <div className="flex-1 overflow-y-auto p-4 ml-4">
         {hasBrandData ? (
@@ -88,12 +88,15 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
         ) : (
           <div className="p-4">
             <Card className="bg-gray-50">
-              <CardHeader>
+              <CardHeader className="">
                 <CardTitle className="text-xl font-semibold text-primary">
-                  No brand found
+                  <div className="flex justify-between">
+                    <div>No brand found</div>
+                    <BrandSelector setThreadId={setThreadId} />
+                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="">
                 <p className="text-sm text-gray-500">
                   No brand information is currently available.
                 </p>

@@ -209,7 +209,9 @@ export function Thread() {
             <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
               {chatStarted && (
                 <>
-                  <div className={`flex justify-end mt-3 z-20 mr-3 space-x-3`}>
+                  <div
+                    className={`flex justify-start mt-3 z-20 ml-3 space-x-3`}
+                  >
                     <SettingsPopover />
                   </div>
                 </>

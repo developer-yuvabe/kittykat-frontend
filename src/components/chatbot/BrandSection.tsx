@@ -1,14 +1,12 @@
 // components/BrandOverview.tsx
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ContentSection } from "../shared/ContentSection";
 import { CirclePlus, Copy } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { ToolMessage } from "@langchain/langgraph-sdk";
-
-import ErrorCard from "../shared/ErrorCard";
+import { Thread, ToolMessage } from "@langchain/langgraph-sdk";
 import { capitalizeKey } from "@/lib/langgraph.utils";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
@@ -88,15 +86,20 @@ export const renderBrandData = (
                     Brand: {staticData?.brand?.name}
                   </div>
                   <div className="absolute right-3 top-6 ">
-                    <TooltipIconButton
-                      size="lg"
-                      className="p-4"
-                      tooltip="New Brand"
-                      variant="ghost"
-                      onClick={() => setThreadId(null)}
-                    >
-                      <CirclePlus className="size-5" />
-                    </TooltipIconButton>
+                    <div className="flex justify-between gap-x-2">
+                      <div>
+                        <BrandSelector setThreadId={setThreadId} />
+                      </div>
+                      <TooltipIconButton
+                        size="lg"
+                        className="p-4"
+                        tooltip="New Brand"
+                        variant="ghost"
+                        onClick={() => setThreadId(null)}
+                      >
+                        <CirclePlus className="size-5" />
+                      </TooltipIconButton>
+                    </div>
                   </div>
                 </div>
               )}
@@ -138,10 +141,21 @@ export const renderBrandData = (
   } catch (error) {
     console.error("Error parsing brand data:", error);
     return (
-      <ErrorCard
-        title="Error parsing brand data"
-        message="There was an error displaying the brand information."
-      />
+      <Card className="bg-gray-50">
+        <CardHeader className="">
+          <CardTitle className="text-xl font-semibold text-primary">
+            <div className="flex justify-between">
+              <div>No brand found</div>
+              <BrandSelector setThreadId={setThreadId} />
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="">
+          <p className="text-sm text-gray-500">
+            No brand information is currently available.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 };
@@ -465,3 +479,209 @@ export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
     </>
   );
 };
+
+import { useEffect } from "react";
+import { Check, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Avatar } from "@/components/ui/avatar";
+import { AvatarFallback } from "@/components/ui/avatar";
+import { useThreads } from "@/providers/Thread";
+import { getContentString } from "../thread/utils";
+
+interface BrandSelectorProps {
+  setThreadId: (id: string | null) => void;
+}
+
+interface TransformedThread {
+  id: string;
+  displayName: string;
+  initial: string;
+  searchKey: string; // Unique search key combining name and ID
+  raw: Thread;
+}
+
+export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [transformedThreads, setTransformedThreads] = useState<
+    TransformedThread[]
+  >([]);
+  const [filteredThreads, setFilteredThreads] = useState<TransformedThread[]>(
+    []
+  );
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =
+    useThreads();
+
+  // Fetch and transform threads on initial open
+  useEffect(() => {
+    if (open && threads.length === 0 && !threadsLoading) {
+      const fetchThreads = async () => {
+        try {
+          setThreadsLoading(true);
+          const fetchedThreads = await getThreads();
+          setThreads(fetchedThreads);
+
+          // Transform threads once on fetch
+          const transformed = fetchedThreads.map((thread) => {
+            const displayName = getThreadDisplayName(thread);
+            return {
+              id: thread.thread_id,
+              displayName,
+              initial: displayName.charAt(0).toUpperCase(),
+              searchKey: `${displayName}::${thread.thread_id}`, // Create unique key for each item
+              raw: thread,
+            };
+          });
+
+          setTransformedThreads(transformed);
+          setFilteredThreads(transformed);
+        } catch (error) {
+          console.error("Failed to fetch threads:", error);
+        } finally {
+          setThreadsLoading(false);
+        }
+      };
+      fetchThreads();
+    } else if (open && threads.length > 0 && transformedThreads.length === 0) {
+      const transformed = threads.map((thread) => {
+        const displayName = getThreadDisplayName(thread);
+        return {
+          id: thread.thread_id,
+          displayName,
+          initial: displayName.charAt(0).toUpperCase(),
+          searchKey: `${displayName}::${thread.thread_id}`, // Create unique key for each item
+          raw: thread,
+        };
+      });
+
+      setTransformedThreads(transformed);
+      setFilteredThreads(transformed);
+    }
+  }, [
+    open,
+    threads,
+    transformedThreads.length,
+    threadsLoading,
+    getThreads,
+    setThreads,
+    setThreadsLoading,
+  ]);
+
+  // Update filtered threads when search query changes
+  useEffect(() => {
+    if (transformedThreads.length === 0) return;
+
+    if (searchQuery.trim() === "") {
+      setFilteredThreads(transformedThreads);
+    } else {
+      const filtered = transformedThreads.filter((thread) =>
+        thread.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredThreads(filtered);
+    }
+  }, [searchQuery, transformedThreads]);
+
+  const getThreadDisplayName = (thread: Thread) => {
+    if (
+      typeof thread.metadata === "object" &&
+      thread.metadata &&
+      "name" in thread.metadata &&
+      thread.metadata.name
+    ) {
+      return String(thread.metadata.name);
+    } else if (
+      typeof thread.values === "object" &&
+      thread.values &&
+      "messages" in thread.values &&
+      Array.isArray(thread.values.messages) &&
+      thread.values.messages.length > 0
+    ) {
+      const firstMessage = thread.values.messages[0];
+      return getContentString(firstMessage.content).slice(0, 50);
+    }
+    return thread.thread_id;
+  };
+
+  const handleThreadSelect = (threadId: string) => {
+    setSelectedThreadId(threadId);
+    setThreadId(threadId);
+    setOpen(false);
+  };
+
+  // Custom filtering implementation
+  const handleInputChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
+  return (
+    <div className="">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-60 justify-start font-light text-[#BCC1CA] border-[#BCC1CA]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Search size={10} className="text-black" />
+            Load existing Brand
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-0">
+          <Command shouldFilter={false}>
+            <div className="flex items-center border-b px-3">
+              <CommandInput
+                placeholder="Search brands..."
+                className="h-9 border-0 outline-none focus-visible:ring-0"
+                value={searchQuery}
+                onValueChange={handleInputChange}
+              />
+            </div>
+            <CommandList>
+              <CommandEmpty>
+                {threadsLoading ? "Loading..." : "No brands found."}
+              </CommandEmpty>
+              <CommandGroup>
+                {filteredThreads.map((thread) => (
+                  <CommandItem
+                    key={thread.id}
+                    value={thread.searchKey} // Use unique searchKey
+                    onSelect={() => handleThreadSelect(thread.id)}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <Avatar className="h-6 w-6 mr-2">
+                        <AvatarFallback className="bg-blue-500 text-white">
+                          {thread.initial}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{thread.displayName}</span>
+                    </div>
+                    {selectedThreadId === thread.id && (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
