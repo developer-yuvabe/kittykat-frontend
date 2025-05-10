@@ -29,15 +29,23 @@ function ThreadList({
       {threads.map((t) => {
         let itemText = t.thread_id;
         if (
+          typeof t.metadata === "object" &&
+          t.metadata &&
+          "name" in t.metadata &&
+          t.metadata.name
+        ) {
+          itemText = String(t.metadata.name);
+        } else if (
           typeof t.values === "object" &&
           t.values &&
           "messages" in t.values &&
           Array.isArray(t.values.messages) &&
-          t.values.messages?.length > 0
+          t.values.messages.length > 0
         ) {
           const firstMessage = t.values.messages[0];
           itemText = getContentString(firstMessage.content);
         }
+
         return (
           <div key={t.thread_id} className="w-full px-1">
             <Button
@@ -73,7 +81,7 @@ export default function ThreadHistory() {
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
-    parseAsBoolean.withDefault(false),
+    parseAsBoolean.withDefault(false)
   );
 
   const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =

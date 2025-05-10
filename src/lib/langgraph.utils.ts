@@ -43,6 +43,7 @@ export function ensureToolCallsHaveResponses(messages: Message[]): Message[] {
         type: "tool" as const,
         tool_call_id: tc.id ?? "",
         id: `${DO_NOT_RENDER_ID_PREFIX}${uuidv4()}`,
+        // id: uuidv4(),
         name: tc.name,
         content: "Successfully handled tool call.",
       })) ?? [])
@@ -51,3 +52,60 @@ export function ensureToolCallsHaveResponses(messages: Message[]): Message[] {
 
   return newMessages;
 }
+
+// Configuration file for tool loading messages
+export type LoadingMessageConfig = {
+  message: string;
+  animation?: "pulse" | "bounce" | "spin" | "fade";
+  icon?: string; // Optional icon name if you want to add icons later
+  duration?: number; // Animation duration in seconds
+};
+
+// Map of tool names to their loading message configurations
+export const TOOL_LOADING_MESSAGES: Record<
+  string,
+  LoadingMessageConfig | LoadingMessageConfig[]
+> = {
+  // Brand tools
+  "scrape-brand": {
+    message: "Gathering brand data...",
+    animation: "pulse",
+  },
+  "generate-themes": {
+    message: "Generating Themes...",
+    animation: "pulse",
+  },
+  "generate-moodboards": {
+    message: "Creating moodboards...",
+    animation: "pulse",
+  },
+};
+
+// Helper function to get a loading message for a tool
+export function getLoadingMessageForTool(
+  toolName: string
+): LoadingMessageConfig | null {
+  const config = TOOL_LOADING_MESSAGES[toolName];
+
+  if (!config) {
+    return {
+      message: "Kittykat is thinking...",
+      animation: "pulse",
+    };
+  }
+
+  // If it's an array of messages, randomly select one
+  if (Array.isArray(config)) {
+    return config[Math.floor(Math.random() * config.length)];
+  }
+
+  return config;
+}
+
+export const capitalizeKey = (key: string) => {
+  return key
+    .replace(/_/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};

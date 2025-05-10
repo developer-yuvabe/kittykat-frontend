@@ -47,11 +47,6 @@ export function Thread() {
   const stream = useStreamContext();
   const messages = stream.messages;
   const isLoading = stream.isLoading;
-  console.log("messages", messages);
-
-  useEffect(() => {
-    console.log("messages", messages);
-  }, [messages.length]);
 
   const lastError = useRef<string | undefined>(undefined);
 
@@ -152,6 +147,10 @@ export function Thread() {
   const toolMessages = filteredMessages.filter((m) => m.type === "tool");
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
 
+  useEffect(() => {
+    console.log(messages);
+  }, [messages]);
+
   return (
     <div className="flex w-full  h-[88vh] overflow-hidden rounded-2xl">
       <div className="relative hidden lg:flex">
@@ -188,6 +187,7 @@ export function Thread() {
             chatHistoryOpen={chatHistoryOpen}
             setChatHistoryOpen={setChatHistoryOpen}
             toolMessages={toolMessages}
+            setThreadId={setThreadId}
           />
 
           {/* Chat Area - Right Side */}
@@ -209,12 +209,6 @@ export function Thread() {
             <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
               {chatStarted && (
                 <>
-                  <ChatHeader
-                    chatHistoryOpen={chatHistoryOpen}
-                    isLargeScreen={isLargeScreen}
-                    setChatHistoryOpen={setChatHistoryOpen}
-                    setThreadId={setThreadId}
-                  />
                   <div className={`flex justify-end mt-3 z-20 mr-3 space-x-3`}>
                     <SettingsPopover />
                   </div>

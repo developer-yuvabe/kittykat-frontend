@@ -9,14 +9,17 @@ import { cn } from "@/lib/utils";
 import { ToolCalls, ToolResult } from "./tool-calls";
 import { MessageContentComplex } from "@langchain/core/messages";
 import { Fragment } from "react/jsx-runtime";
-
 import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import CampaignThemes from "@/components/agent-ui/CampaignThemes";
 import MoodBoards from "@/components/agent-ui/MoodBoards";
 import { ConfirmThemeSelection } from "@/components/agent-ui/ConfirmThemes";
-import { isAgentInboxInterruptSchema } from "@/lib/langgraph.utils";
+import {
+  getLoadingMessageForTool,
+  isAgentInboxInterruptSchema,
+} from "@/lib/langgraph.utils";
+import { TextShimmer } from "@/components/ui/text-shimmer";
 
 const clientComponents = {
   "campaign-themes": (props: any) => <CampaignThemes {...props} />,
@@ -127,6 +130,19 @@ export function AssistantMessage({
     return null;
   }
 
+  if (
+    message?.type === "ai" &&
+    message.content.length === 0 &&
+    isLastMessage &&
+    hasToolCalls
+  ) {
+    {
+      message?.tool_calls && (
+        <AssistantMessageLoading tool={message.tool_calls[0]} />
+      );
+    }
+  }
+
   return (
     <div className="flex items-start gap-2 mr-auto group">
       {isToolResult ? (
@@ -192,14 +208,39 @@ export function AssistantMessage({
     </div>
   );
 }
+export function AssistantMessageLoading({
+  tool = null,
+}: {
+  tool?: { name?: string } | null;
+}) {
+  console.log("tool", tool);
+  // Get loading message configuration based on tool name
+  const loadingConfig = tool?.name ? getLoadingMessageForTool(tool.name) : null;
+  const loadingMessage = loadingConfig?.message;
 
-export function AssistantMessageLoading() {
+  // Default animation duration (can be overridden in config)
+  const animationDuration = loadingConfig?.duration || 1.5;
+
   return (
     <div className="flex items-start gap-2 mr-auto">
-      <div className="flex items-center h-8 gap-1 px-4 py-2  bg-white p-4 rounded-2xl">
-        <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_infinite]"></div>
-        <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_0.5s_infinite]"></div>
-        <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_1s_infinite]"></div>
+      <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl">
+        {!loadingMessage && (
+          <div className="flex items-center h-8 gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_infinite]"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_0.5s_infinite]"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_1s_infinite]"></div>
+          </div>
+        )}
+        {loadingMessage && (
+          <span className="text-sm text-foreground/80 ml-2">
+            <TextShimmer
+              className="font-mono text-sm [--base-gradient-color:var(--color-purple-800)]"
+              duration={1}
+            >
+              {loadingMessage}
+            </TextShimmer>
+          </span>
+        )}
       </div>
     </div>
   );

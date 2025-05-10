@@ -27,7 +27,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   stream,
 }) => {
   return (
-    <div className="relative z-10 w-full max-w-lg  mb-1 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
+    <div className="relative z-10 w-full max-w-2xl  mb-1 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
       <form
         onSubmit={handleSubmit}
         className="grid grid-rows-[1fr_auto] gap-2 max-w-3xl ml-auto mr-0"

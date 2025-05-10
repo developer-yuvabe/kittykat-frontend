@@ -66,7 +66,6 @@ export function ToolCalls({
 }
 
 export function ToolResult({ message }: { message: ToolMessage }) {
-  console.log("here", message);
   const [isExpanded, setIsExpanded] = useState(false);
 
   let parsedContent: any;

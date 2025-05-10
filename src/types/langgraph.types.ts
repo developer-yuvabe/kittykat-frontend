@@ -42,3 +42,13 @@ export type CampaignInfo = {
   timeline: string;
   successMetrics: string[];
 };
+
+export interface FontDetails {
+  name: string;
+  weights: string[];
+}
+
+export interface Color {
+  name: string;
+  hex: string;
+}
