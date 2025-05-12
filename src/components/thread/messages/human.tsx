@@ -1,10 +1,121 @@
 import { useStreamContext } from "@/providers/Stream";
 import { Message } from "@langchain/langgraph-sdk";
-import { useState } from "react";
+import { useState, useEffect, JSX } from "react";
 import { getContentString } from "../utils";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { BranchSwitcher, CommandBar } from "./shared";
+import {
+  FileIcon,
+  FileTextIcon,
+  ImageIcon,
+  FileArchiveIcon,
+  FileAudioIcon,
+  FileVideoIcon,
+  FileCode,
+} from "lucide-react";
+import { FileContentTypeResult } from "@/types/langgraph.types";
+import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
+
+interface FileAttachmentProps {
+  fileUrl: string;
+  fileName?: string;
+}
+
+function useFileContentType(url: string | null): FileContentTypeResult {
+  const [contentType, setContentType] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!url) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchContentType = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(url, { method: "HEAD" });
+        if (response.ok) {
+          const type = response.headers.get("content-type");
+          setContentType(type);
+        } else {
+          setError(`Error fetching content type: ${response.status}`);
+        }
+      } catch (err) {
+        setError(`Error: ${(err as Error).message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchContentType();
+  }, [url]);
+
+  return { contentType, isLoading, error };
+}
+
+// File attachment component
+function FileAttachment({
+  fileUrl,
+  fileName,
+}: FileAttachmentProps): JSX.Element {
+  const { contentType, isLoading, error } = useFileContentType(fileUrl);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+
+  // Get file name from URL if not provided
+  const displayName = fileName || fileUrl.split("/").pop() || "File";
+
+  // Choose appropriate icon based on content type
+  const getFileIcon = () => {
+    if (isLoading) return <FileIcon className="w-10 h-10 text-gray-400" />;
+
+    if (contentType) {
+      if (contentType.startsWith("image/"))
+        return <ImageIcon className="w-10 h-10 text-blue-500" />;
+      if (contentType.startsWith("text/"))
+        return <FileTextIcon className="w-10 h-10 text-green-500" />;
+      if (contentType.startsWith("audio/"))
+        return <FileAudioIcon className="w-10 h-10 text-purple-500" />;
+      if (contentType.startsWith("video/"))
+        return <FileVideoIcon className="w-10 h-10 text-red-500" />;
+      if (contentType.includes("zip") || contentType.includes("compressed"))
+        return <FileArchiveIcon className="w-10 h-10 text-yellow-500" />;
+      if (
+        contentType.includes("application/json") ||
+        contentType.includes("javascript") ||
+        contentType.includes("xml")
+      ) {
+        return <FileCode className="w-10 h-10 text-orange-500" />;
+      }
+    }
+
+    return <FileIcon className="w-10 h-10 text-gray-500" />;
+  };
+
+  const handleClick = () => {
+    // Open file in new tab
+    window.open(fileUrl, "_blank");
+  };
+
+  return (
+    <div
+      className="flex items-center p-3 bg-gray-100 rounded-lg max-w-xs hover:bg-gray-200 cursor-pointer transition-colors"
+      onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="flex-shrink-0 mr-3">{getFileIcon()}</div>
+      <div className="overflow-hidden">
+        <p className="font-medium text-sm truncate">{displayName}</p>
+        <p className="text-xs text-gray-500 truncate">
+          {isLoading ? "Loading..." : contentType || "Unknown type"}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function EditableContent({
   value,
@@ -47,6 +158,11 @@ export function HumanMessage({
   const [value, setValue] = useState("");
   const contentString = getContentString(message.content);
 
+  // Check if this is a file message
+  const isFileMessage =
+    message.id && message.id.startsWith(RENDER_FILE_ID_PREFIX);
+  const fileUrl = isFileMessage ? contentString : null;
+
   const handleSubmitEdit = () => {
     setIsEditing(false);
 
@@ -73,7 +189,7 @@ export function HumanMessage({
     <div
       className={cn(
         "flex items-center ml-auto gap-2 group",
-        isEditing && "w-full max-w-xl"
+        isEditing && "w-full max-w-lg"
       )}
     >
       <div className={cn("flex flex-col gap-2", isEditing && "w-full")}>
@@ -83,8 +199,19 @@ export function HumanMessage({
             setValue={setValue}
             onSubmit={handleSubmitEdit}
           />
+        ) : isFileMessage ? (
+          <div className="ml-auto">
+            {fileUrl && (
+              <FileAttachment
+                fileUrl={fileUrl}
+                fileName={
+                  new URL(fileUrl).pathname.split("/").pop() || "Uploaded File"
+                }
+              />
+            )}
+          </div>
         ) : (
-          <p className="px-4 py-2   bg-blue-100 p-4 rounded-2xl  w-fit ml-auto whitespace-pre-wrap">
+          <p className="px-4 py-2 bg-blue-100 rounded-2xl w-fit ml-auto whitespace-pre-wrap break-words max-w-96">
             {contentString}
           </p>
         )}

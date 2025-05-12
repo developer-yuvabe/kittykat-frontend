@@ -1,6 +1,6 @@
 // components/BrandOverview.tsx
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ContentSection } from "../shared/ContentSection";
 import { CirclePlus, Copy } from "lucide-react";
@@ -11,33 +11,20 @@ import { capitalizeKey } from "@/lib/langgraph.utils";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 export const renderBrandData = (
-  message: ToolMessage,
   expandedSections: { [key: string]: boolean },
   toggleSection: (section: string) => void,
-  setThreadId: (id: string | null) => void
+  setThreadId: (id: string | null) => void,
+  staticData: any,
+  dynamicData: any
 ) => {
+  console.log("static data", staticData);
   try {
-    // Parse JSON if the content is a string
-    const parsedContent =
-      typeof message.content === "string"
-        ? JSON.parse(message.content)
-        : message.content;
-
-    console.log("brand data", parsedContent);
-
-    // Access the brand data (without focusing on static/dynamic as top-level keys)
-    const { static: staticData, dynamic: dynamicData } = parsedContent;
-
-    if (!staticData) {
-      throw new Error("Static brand data not found");
-    }
-
     const brandName = staticData.brand?.name || "No Brand Name";
     const brandInitial = brandName.charAt(0).toUpperCase();
     const allColors = [
-      { ...staticData.colors.primary, label: "Primary" },
-      { ...staticData.colors.secondary, label: "Secondary" },
-      ...staticData.colors.others.map((color: Color) => ({
+      { ...staticData?.colors?.primary, label: "Primary" },
+      { ...staticData?.colors?.secondary, label: "Secondary" },
+      ...staticData?.colors?.others.map((color: Color) => ({
         ...color,
         label: color.name,
       })),
@@ -238,7 +225,7 @@ export const TypographySection: React.FC<TypographyProps> = ({
       <div className="text-sm font-semibold">{label}</div>
       <div className="ml-2 space-y-1">
         <div className="text-sm text-gray-700">{font.name}</div>
-        {font.weights && font.weights.length > 0 && (
+        {font?.weights && font?.weights.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {font.weights
               .filter((weight) => weight.trim())

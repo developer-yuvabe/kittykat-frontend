@@ -21,7 +21,7 @@ import { useThreads } from "./Thread";
 import { DEFAULT_API_URL, DEFAULT_ASSISTANT_ID } from "@/lib/constants";
 import Splash from "@/components/shared/Splash";
 
-export type StateType = { messages: Message[]; ui?: UIMessage[] };
+export type StateType = { messages: Message[]; ui?: UIMessage[]; sources: any };
 
 const useTypedStream = useStream<
   StateType,

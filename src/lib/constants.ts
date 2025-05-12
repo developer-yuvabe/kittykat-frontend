@@ -16,6 +16,8 @@ export const ERROR_MESSAGES = {
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
+export const RENDER_FILE_ID_PREFIX = "render-file-";
+
 export const DEFAULT_ASSISTANT_ID = "agent";
 
 export const DEFAULT_API_URL =

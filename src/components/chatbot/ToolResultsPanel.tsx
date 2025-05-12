@@ -1,18 +1,17 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PanelRightOpen, PanelRightClose } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ToolResult } from "../thread/messages/tool-calls";
 import { ToolMessage } from "@langchain/langgraph-sdk";
 import BrandSelector, { renderBrandData } from "./BrandSection";
 import { useThreads } from "@/providers/Thread";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
+import { useStreamContext } from "@/providers/Stream";
 
 interface ToolResultsPanelProps {
   isLargeScreen: boolean;
   chatHistoryOpen: boolean;
   setChatHistoryOpen: (open: boolean) => void;
   toolMessages: ToolMessage[];
+  threadId: string | null;
   setThreadId: (id: string | null) => void;
 }
 
@@ -22,6 +21,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
   setChatHistoryOpen,
   toolMessages,
   setThreadId,
+  threadId,
 }) => {
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
@@ -36,12 +36,12 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
     }));
   };
 
-  // Check if we have brand data
-  const brandMessages = toolMessages.filter(
-    (message) => message.name === "scrape-brand"
-  );
-
-  const hasBrandData = brandMessages.length > 0;
+  const stream = useStreamContext();
+  const brandingInformation =
+    stream?.values?.sources?.brandingInformation ?? null;
+  console.log("Brand messages", brandingInformation);
+  const hasBrandData =
+    brandingInformation && Object.keys(brandingInformation).length > 0;
 
   return (
     <div
@@ -55,26 +55,15 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
           <CardSkeleton />
         ) : hasBrandData ? (
           <div className="flex flex-col gap-4">
-            {brandMessages.map((message, index) => (
-              <div key={`brand-${message.id || index}`}>
-                {renderBrandData(
-                  message,
-                  expandedSections,
-                  toggleSection,
-                  setThreadId
-                )}
-              </div>
-            ))}
-
-            {/* Other tool results that aren't brand-related */}
-            {toolMessages
-              .filter((message) => message.name !== "scrape-brand")
-              .map((message, index) => (
-                <ToolResult
-                  key={`tool-${message.id || index}`}
-                  message={message}
-                />
-              ))}
+            <div key={`brand-message-${brandingInformation.static.name}`}>
+              {renderBrandData(
+                expandedSections,
+                toggleSection,
+                setThreadId,
+                brandingInformation.static,
+                brandingInformation.dynamic
+              )}
+            </div>
           </div>
         ) : (
           <div className="p-4">

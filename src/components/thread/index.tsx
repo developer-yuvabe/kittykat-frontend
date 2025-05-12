@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import { useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, ChangeEvent } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/Stream";
 import { useState, FormEvent } from "react";
-import { Checkpoint, Message } from "@langchain/langgraph-sdk";
+import { Checkpoint, HumanMessage, Message } from "@langchain/langgraph-sdk";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -12,25 +12,35 @@ import Logo from "@/assets/kittykat-logo.svg";
 import { ScrollToBottom } from "../chatbot/ScrollToBottom";
 import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
 import { ChatInput } from "../chatbot/ChatInput";
-import { ChatHeader } from "../chatbot/ChatHeader";
 import { ChatMessageList } from "../chatbot/ChatMessageList";
 import { ChatHistoryPanel } from "../chatbot/ChatHistoryPanel";
-import { ChatSuggestions } from "../chatbot/ChatSuggestions";
-import { ToolResult } from "./messages/tool-calls";
 import ToolResultsPanel from "../chatbot/ToolResultsPanel";
 import { SettingsPopover } from "../chatbot/SettingsPopover";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { ensureToolCallsHaveResponses } from "@/lib/langgraph.utils";
-import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
+import {
+  addFileWrappers,
+  ensureToolCallsHaveResponses,
+  removeFileWrappers,
+} from "@/lib/langgraph.utils";
+import {
+  DO_NOT_RENDER_ID_PREFIX,
+  RENDER_FILE_ID_PREFIX,
+} from "@/lib/constants";
 import { StickToBottom } from "use-stick-to-bottom";
 import { useUserStore } from "@/store/user.store";
 import { Skeleton } from "../ui/skeleton";
 import { useThreads } from "@/providers/Thread";
 import { ChatSkeleton } from "./messages/message-skeleton";
+import { MessageContentText } from "@langchain/core/messages";
 
 type ThreadProps = {
   brandId: string | null;
 };
+
+export interface MessageContentFileWrapper {
+  id: string;
+  file: MessageContentText;
+}
 
 export function Thread({ brandId }: ThreadProps) {
   const [threadId, setThreadId] = useQueryState("threadId");
@@ -44,13 +54,15 @@ export function Thread({ brandId }: ThreadProps) {
   );
   const [hideAgentComms, setHideAgentComms] = useState(false);
   const [input, setInput] = useState("");
+  const [fileList, setFileList] = useState<MessageContentFileWrapper[]>([]);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
-  const [isFetchingThreadMessages, setIsFetchingThreadMessages] =
-    useState(false);
+
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
   const { threadsLoading } = useThreads();
   const stream = useStreamContext();
+
+  console.log("stream", stream?.values?.sources?.brandingInformation);
   const messages = stream.messages;
   const isLoading = stream.isLoading;
 
@@ -107,12 +119,28 @@ export function Thread({ brandId }: ThreadProps) {
     const newHumanMessage: Message = {
       id: uuidv4(),
       type: "human",
-      content: input,
+      content: [
+        {
+          type: "text",
+          text: input,
+        },
+      ],
     };
 
+    const newFileList: Message[] = fileList.map((item) => ({
+      id: item.id,
+      type: "human",
+      content: [
+        {
+          type: "text",
+          text: item.file.text,
+        },
+      ],
+    }));
+    resetFiles();
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
     stream.submit(
-      { messages: [...toolMessages, newHumanMessage] },
+      { messages: [...toolMessages, ...newFileList, newHumanMessage] },
       {
         streamMode: ["values"],
         optimisticValues: (prev) => ({
@@ -120,6 +148,7 @@ export function Thread({ brandId }: ThreadProps) {
           messages: [
             ...(prev.messages ?? []),
             ...toolMessages,
+            ...newFileList,
             newHumanMessage,
           ],
         }),
@@ -166,21 +195,24 @@ export function Thread({ brandId }: ThreadProps) {
     (state) => state.setLastInteractedBrandId
   );
 
-  // Message loading skeleton component
-  const MessageSkeleton = () => (
-    <div className="flex flex-col gap-2 animate-pulse w-full max-w-xl">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-8 w-8 rounded-full" />
-        <Skeleton className="h-4 w-32" />
-      </div>
-      <Skeleton className="h-16 w-full" />
-      <div className="flex gap-2">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-4 w-16" />
-      </div>
-    </div>
-  );
+  const handleAddFile = (url: string) => {
+    addFileWrappers(url, setFileList);
+  };
 
+  const handleRemoveFile = (id: string) => {
+    const trimmedId = id
+      .replace(RENDER_FILE_ID_PREFIX, "")
+      .replace(DO_NOT_RENDER_ID_PREFIX, "");
+    removeFileWrappers(trimmedId, setFileList);
+  };
+
+  const resetFiles = () => {
+    setFileList([]);
+  };
+
+  useEffect(() => {
+    console.log(messages);
+  }, [messages.length]);
   return (
     <div className="flex w-full  h-[88vh] overflow-hidden rounded-2xl">
       <div className="relative hidden lg:flex">
@@ -218,6 +250,7 @@ export function Thread({ brandId }: ThreadProps) {
             setChatHistoryOpen={setChatHistoryOpen}
             toolMessages={toolMessages}
             setThreadId={setThreadId}
+            threadId={threadId}
           />
 
           {/* Chat Area - Right Side */}
@@ -284,10 +317,6 @@ export function Thread({ brandId }: ThreadProps) {
                             CMO Agent
                           </h1>
                         </div>
-                        {/* <ChatSuggestions
-                          setInput={setInput}
-                          handleSubmit={handleSubmit}
-                        /> */}
                       </>
                     )}
                     <ScrollToBottom className="absolute mb-0 -translate-x-1/3  bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
@@ -300,6 +329,10 @@ export function Thread({ brandId }: ThreadProps) {
                       setHideToolCalls={setHideToolCalls}
                       isLoading={isLoading}
                       stream={stream}
+                      handleAddFile={handleAddFile}
+                      fileList={fileList}
+                      handleRemoveFile={handleRemoveFile}
+                      threadId={threadId}
                     />
                   </div>
                 }

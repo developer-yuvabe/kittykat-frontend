@@ -52,3 +52,16 @@ export interface Color {
   name: string;
   hex: string;
 }
+
+export interface FileContentTypeResult {
+  contentType: string | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Type for file attachment
+export type MessageContentFileWrapper = {
+  id: string;
+  url: string;
+  name: string;
+};

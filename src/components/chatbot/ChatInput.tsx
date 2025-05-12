@@ -1,8 +1,35 @@
-import React from "react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, Send } from "lucide-react";
+import {
+  FileText as FileTextIcon,
+  Image,
+  Video,
+  Music,
+  File,
+  LoaderCircle,
+  Send,
+  X,
+} from "lucide-react";
+import UrlUploadDialog from "./UrlUploadDialog";
+import { MessageContentFileWrapper } from "../thread";
+import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
+import { fetchFileType } from "@/lib/langgraph.utils";
+
+const fileTypeIcons: Record<string, React.ElementType> = {
+  image: Image,
+  video: Video,
+  audio: Music,
+  text: FileTextIcon,
+  application: FileTextIcon,
+};
+
+async function getFileIcon(url: string): Promise<React.ElementType> {
+  const contentType = await fetchFileType(url);
+  if (!contentType) return FileTextIcon;
+
+  const [type] = contentType.split("/");
+  return fileTypeIcons[type] || File;
+}
 
 type ChatInputProps = {
   input: string;
@@ -15,6 +42,57 @@ type ChatInputProps = {
     isLoading: boolean;
     stop: () => void;
   };
+  handleAddFile: (url: string) => void;
+  fileList: MessageContentFileWrapper[];
+  handleRemoveFile: (id: string) => void;
+  threadId: string | null;
+};
+
+const FileThumbnail = ({
+  url,
+  onRemove,
+  name,
+}: {
+  url: string;
+  onRemove: () => void;
+  name: string;
+}) => {
+  const [FileIcon, setFileIcon] = useState<React.ElementType>(
+    () => FileTextIcon
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchIcon = async () => {
+      setLoading(true);
+      const icon = await getFileIcon(url);
+      setFileIcon(() => icon);
+      setLoading(false);
+    };
+    fetchIcon();
+  }, [url]);
+
+  return (
+    <div className="relative group w-16 h-16">
+      {loading ? (
+        <LoaderCircle className="w-8 h-8 animate-spin text-gray-400" />
+      ) : (
+        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+          <FileIcon className="w-8 h-8 text-gray-500" />
+          <div className="absolute bottom-0 left-0 right-0 text-xs text-center text-gray-500 truncate">
+            {name}
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
 };
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -25,9 +103,34 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   setHideToolCalls,
   isLoading,
   stream,
+  handleAddFile,
+  fileList,
+  handleRemoveFile,
+  threadId,
 }) => {
   return (
-    <div className="relative z-10 w-full max-w-2xl  mb-1 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
+    <div className="relative z-10 w-full max-w-2xl mb-1 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
+      {/* File Preview Section */}
+      {fileList.length > 0 && (
+        <div className="p-3 border-b flex space-x-2 overflow-x-auto">
+          {fileList
+            .filter((fileWrapper) =>
+              fileWrapper.id.startsWith(RENDER_FILE_ID_PREFIX)
+            )
+            .map((fileWrapper) => (
+              <FileThumbnail
+                key={fileWrapper.id}
+                url={fileWrapper.file.text}
+                onRemove={() => handleRemoveFile(fileWrapper.id)}
+                name={
+                  new URL(fileWrapper.file.text).pathname.split("/").pop() ||
+                  "Uploaded File"
+                }
+              />
+            ))}
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="grid grid-rows-[1fr_auto] gap-2 max-w-3xl ml-auto mr-0"
@@ -52,40 +155,29 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className="p-6  border-none bg-transparent  field-sizing-content placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none"
         />
 
-        <div className="flex right-4 top-8 absolute">
+        <div className="flex right-4 bottom-6 absolute">
           {stream.isLoading ? (
             <Button key="stop" onClick={() => stream.stop()}>
               <LoaderCircle className="w-4 h-4 animate-spin" />
               Cancel
             </Button>
           ) : (
-            <button
-              type="submit"
-              className="text-[#636AE8]"
-              disabled={isLoading || !input.trim()}
-            >
-              <Send size={20} />
-            </button>
+            <div className="flex items-center space-x-2">
+              <UrlUploadDialog
+                onUploadComplete={handleAddFile}
+                prefix={threadId}
+              />
+
+              <button
+                type="submit"
+                className="text-[#636AE8]"
+                disabled={isLoading || !input.trim()}
+              >
+                <Send size={20} />
+              </button>
+            </div>
           )}
         </div>
-        {/* <div className="flex items-center justify-between p-2 pt-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="render-tool-calls"
-                checked={hideToolCalls ?? false}
-                onCheckedChange={setHideToolCalls}
-              />
-              <Label
-                htmlFor="render-tool-calls"
-                className="text-sm text-gray-600"
-              >
-                Hide Tool Calls
-              </Label>
-            </div>
-          </div>
-
-        </div> */}
       </form>
     </div>
   );

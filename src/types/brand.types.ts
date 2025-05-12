@@ -138,3 +138,8 @@ export interface BrandURLRequest {
 // Type for the form values
 export type BrandFormValues = z.infer<typeof createBrandSchema>;
 export type UrlExtractionFormValues = z.infer<typeof urlExtractionSchema>;
+
+export interface PresignedURLRequest {
+  file_name: string;
+  content_type: string;
+}

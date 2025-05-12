@@ -1,6 +1,9 @@
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@langchain/langgraph-sdk";
+import { RENDER_FILE_ID_PREFIX } from "./constants";
+import { MessageContentFileWrapper } from "@/components/thread";
+import { Dispatch, SetStateAction } from "react";
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
@@ -108,4 +111,55 @@ export const capitalizeKey = (key: string) => {
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+};
+
+export function addFileWrappers(
+  url: string,
+  setFileList: Dispatch<SetStateAction<MessageContentFileWrapper[]>>
+) {
+  const id = uuidv4();
+  const newWrappers: MessageContentFileWrapper[] = [
+    {
+      id: `${RENDER_FILE_ID_PREFIX}${id}`,
+      file: {
+        type: "text",
+        text: url,
+      },
+    },
+    {
+      id: `${DO_NOT_RENDER_ID_PREFIX}${id}`,
+      file: {
+        type: "text",
+        text: `I've just uploaded a file related to my previous message. Please refer to the preceding message for context, as this file might be part of an ongoing discussion. Let me know if you need more information about this file or if you have any questions.`,
+      },
+    },
+  ];
+
+  setFileList((prev) => [...prev, ...newWrappers]);
+}
+
+export function removeFileWrappers(
+  id: string,
+  setFileList: Dispatch<SetStateAction<MessageContentFileWrapper[]>>
+) {
+  const renderId = `${RENDER_FILE_ID_PREFIX}${id}`;
+  const doNotRenderId = `${DO_NOT_RENDER_ID_PREFIX}${id}`;
+
+  setFileList((prev) =>
+    prev.filter(
+      (wrapper) => wrapper.id !== renderId && wrapper.id !== doNotRenderId
+    )
+  );
+}
+
+export const fetchFileType = async (fileUrl: string) => {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok)
+      throw new Error(`Failed to fetch: ${response.statusText}`);
+    return response.headers.get("Content-Type") || "application/octet-stream";
+  } catch (error) {
+    console.error("Error fetching file type:", error);
+    return "application/octet-stream";
+  }
 };
