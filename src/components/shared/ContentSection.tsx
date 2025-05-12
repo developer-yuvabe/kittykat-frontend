@@ -1,22 +1,31 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import React from "react";
-import { BsPinAngle } from "react-icons/bs";
+import { BsPinAngle, BsPinAngleFill } from "react-icons/bs";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 interface ContentSectionProps {
   title: string;
   content: React.ReactNode;
+  context: any;
 }
 
-export function ContentSection({ title, content }: ContentSectionProps) {
+export function ContentSection({
+  title,
+  content,
+  context,
+}: ContentSectionProps) {
   const [copied, setCopied] = useState(false);
+  const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
+    usePinnedContextStore();
+  const isPinnedItem = isPinned(context);
 
   const handleCopy = async () => {
     try {
-      // Extract the text content for copying
-      const plainText =
-        typeof content === "string" ? content : extractText(content);
-      await navigator.clipboard.writeText(plainText);
+      // Copy only the context
+      const contextText =
+        typeof context === "string" ? context : JSON.stringify(context);
+      await navigator.clipboard.writeText(contextText);
       setCopied(true);
 
       // Reset the copy state after a short delay
@@ -26,15 +35,15 @@ export function ContentSection({ title, content }: ContentSectionProps) {
     }
   };
 
-  const extractText = (node: React.ReactNode): string => {
-    if (typeof node === "string") return node;
-    if (Array.isArray(node)) return node.map(extractText).join("");
-    if (typeof node === "object" && node && React.isValidElement(node)) {
-      return React.isValidElement(node)
-        ? extractText((node as React.ReactElement<any>).props.children)
-        : "";
+  const handlePin = () => {
+    if (isPinnedItem) {
+      const itemId = getPinnedItemId(context);
+      if (itemId) {
+        removePinnedItem(itemId);
+      }
+    } else {
+      addPinnedItem(title, context);
     }
-    return "";
   };
 
   return (
@@ -46,12 +55,24 @@ export function ContentSection({ title, content }: ContentSectionProps) {
             <button
               onClick={handleCopy}
               className="text-[#6e7787] hover:text-[#171a1f] transition"
-              aria-label="Copy content"
+              aria-label="Copy context"
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
             </button>
-            <button className="text-[#6e7787] hover:text-[#171a1f] transition">
-              <BsPinAngle size={18} />
+            <button
+              onClick={handlePin}
+              className={`transition ${
+                isPinnedItem
+                  ? "text-blue-500"
+                  : "text-[#6e7787] hover:text-[#171a1f]"
+              }`}
+              aria-label={isPinnedItem ? "Unpin context" : "Pin context"}
+            >
+              {isPinnedItem ? (
+                <BsPinAngleFill size={18} />
+              ) : (
+                <BsPinAngle size={18} />
+              )}
             </button>
           </div>
         </div>

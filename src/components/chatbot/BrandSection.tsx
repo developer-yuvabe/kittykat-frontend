@@ -188,6 +188,7 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
           )}
         </div>
       }
+      context={{ tagline, values }}
     />
   );
 };
@@ -255,6 +256,7 @@ export const TypographySection: React.FC<TypographyProps> = ({
             renderFontDetails("Secondary Font", validSecondaryFont)}
         </div>
       }
+      context={{ primaryFont, secondaryFont }}
     />
   );
 };
@@ -324,6 +326,7 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
           ))}
         </div>
       }
+      context={{ colors }}
     />
   );
 };
@@ -352,6 +355,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           ))}
         </div>
       }
+      context={{ products }}
     />
   );
 };
@@ -379,6 +383,7 @@ export const LogosSection: React.FC<LogosSectionProps> = ({ logos }) => {
           ))}
         </div>
       }
+      context={{ logos }}
     />
   );
 };
@@ -478,6 +483,7 @@ export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
               <RenderValue value={value} />
             </div>
           }
+          context={{ [key]: value }}
         />
       ))}
     </>

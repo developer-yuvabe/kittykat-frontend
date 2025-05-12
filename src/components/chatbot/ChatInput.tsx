@@ -9,11 +9,13 @@ import {
   LoaderCircle,
   Send,
   X,
+  Pin,
 } from "lucide-react";
 import UrlUploadDialog from "./UrlUploadDialog";
 import { MessageContentFileWrapper } from "../thread";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import { fetchFileType } from "@/lib/langgraph.utils";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 const fileTypeIcons: Record<string, React.ElementType> = {
   image: Image,
@@ -108,9 +110,47 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleRemoveFile,
   threadId,
 }) => {
+  const pinnedItems = usePinnedContextStore((state) => state.pinnedItems);
+  const removePinnedItem = usePinnedContextStore(
+    (state) => state.removePinnedItem
+  );
+
+  const clearPins = usePinnedContextStore((state) => state.clearPinnedItems);
+  // const clearPinnedItems = usePinnedContextStore((state) => state.clearPinnedItems);
   return (
     <div className="relative z-10 w-full max-w-2xl mb-1 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
-      {/* File Preview Section */}
+      {pinnedItems.length > 0 && (
+        <div className="p-3 bg-gray-100 rounded-2xl mb-2">
+          <div className="flex gap-2 flex-wrap">
+            <Pin className="text-gray-700" />
+            <div className="flex flex-col gap-1 flex-1">
+              <span className="text-xs text-gray-500">Focused only on</span>
+              {pinnedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative group flex items-center gap-2"
+                >
+                  <span className="text-sm font-semibold text-gray-900">
+                    {item.title}
+                  </span>
+                  <button
+                    onClick={() => removePinnedItem(item.id)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => clearPins()}
+                className="top-2 absolute right-2 text-gray-400 hover:text-red-500 transition-opacity"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {fileList.length > 0 && (
         <div className="p-3 border-b flex space-x-2 overflow-x-auto">
           {fileList

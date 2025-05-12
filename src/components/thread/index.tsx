@@ -32,6 +32,7 @@ import { Skeleton } from "../ui/skeleton";
 import { useThreads } from "@/providers/Thread";
 import { ChatSkeleton } from "./messages/message-skeleton";
 import { MessageContentText } from "@langchain/core/messages";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 type ThreadProps = {
   brandId: string | null;
@@ -116,6 +117,32 @@ export function Thread({ brandId }: ThreadProps) {
     if (!input.trim() || isLoading) return;
     setFirstTokenReceived(false);
 
+    const pinnedItems = usePinnedContextStore.getState().pinnedItems;
+    const pinnedContextMessage: Message | null =
+      pinnedItems.length > 0
+        ? {
+            id: `${DO_NOT_RENDER_ID_PREFIX}${uuidv4()}`,
+            type: "system",
+            content: [
+              {
+                type: "text",
+                text: `Focus on the following contexts with the associated data:\n${pinnedItems
+                  .map(
+                    (item) =>
+                      `Title: ${item.title}\nContext: ${JSON.stringify(
+                        item.context
+                      )}`
+                  )
+                  .join("\n\n")}`,
+              },
+            ],
+          }
+        : null;
+
+    console.log("pinnedContextMessage", pinnedContextMessage);
+
+    resetFiles();
+
     const newHumanMessage: Message = {
       id: uuidv4(),
       type: "human",
@@ -140,7 +167,14 @@ export function Thread({ brandId }: ThreadProps) {
     resetFiles();
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
     stream.submit(
-      { messages: [...toolMessages, ...newFileList, newHumanMessage] },
+      {
+        messages: [
+          ...toolMessages,
+          ...newFileList,
+          ...(pinnedContextMessage ? [pinnedContextMessage] : []),
+          newHumanMessage,
+        ],
+      },
       {
         streamMode: ["values"],
         optimisticValues: (prev) => ({
@@ -149,6 +183,7 @@ export function Thread({ brandId }: ThreadProps) {
             ...(prev.messages ?? []),
             ...toolMessages,
             ...newFileList,
+
             newHumanMessage,
           ],
         }),
