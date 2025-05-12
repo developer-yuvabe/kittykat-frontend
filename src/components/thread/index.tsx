@@ -166,12 +166,6 @@ export function Thread({ brandId }: ThreadProps) {
     (state) => state.setLastInteractedBrandId
   );
 
-  useEffect(() => {
-    if (threadId) {
-      setLastInteractedBrandId(threadId);
-    }
-  }, [threadId]);
-
   // Message loading skeleton component
   const MessageSkeleton = () => (
     <div className="flex flex-col gap-2 animate-pulse w-full max-w-xl">
