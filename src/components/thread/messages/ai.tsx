@@ -12,21 +12,12 @@ import { Fragment } from "react/jsx-runtime";
 import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
-import CampaignThemes from "@/components/agent-ui/CampaignThemes";
-import MoodBoards from "@/components/agent-ui/MoodBoards";
-import { ConfirmThemeSelection } from "@/components/agent-ui/ConfirmThemes";
 import {
+  clientComponents,
   getLoadingMessageForTool,
   isAgentInboxInterruptSchema,
 } from "@/lib/langgraph.utils";
 import { TextShimmer } from "@/components/ui/text-shimmer";
-
-const clientComponents = {
-  "campaign-themes": (props: any) => <CampaignThemes {...props} />,
-  moodboards: (props: any) => <MoodBoards {...props} />,
-  "confirm-themes": (props: any) => <ConfirmThemeSelection {...props} />,
-  "regenerate-themes": (props: any) => <CampaignThemes {...props} />,
-};
 
 function CustomComponent({
   message,

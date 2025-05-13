@@ -2,36 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   FileText as FileTextIcon,
-  Image,
-  Video,
-  Music,
-  File,
   LoaderCircle,
   Send,
   X,
   Pin,
 } from "lucide-react";
 import UrlUploadDialog from "./UrlUploadDialog";
-import { MessageContentFileWrapper } from "../thread";
+
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
-import { fetchFileType } from "@/lib/langgraph.utils";
+import { getFileIcon } from "@/lib/langgraph.utils";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
-
-const fileTypeIcons: Record<string, React.ElementType> = {
-  image: Image,
-  video: Video,
-  audio: Music,
-  text: FileTextIcon,
-  application: FileTextIcon,
-};
-
-async function getFileIcon(url: string): Promise<React.ElementType> {
-  const contentType = await fetchFileType(url);
-  if (!contentType) return FileTextIcon;
-
-  const [type] = contentType.split("/");
-  return fileTypeIcons[type] || File;
-}
+import { MessageContentFiles } from "@/types/langgraph.types";
 
 type ChatInputProps = {
   input: string;
@@ -45,7 +26,7 @@ type ChatInputProps = {
     stop: () => void;
   };
   handleAddFile: (url: string) => void;
-  fileList: MessageContentFileWrapper[];
+  fileList: MessageContentFiles[];
   handleRemoveFile: (id: string) => void;
   threadId: string | null;
 };

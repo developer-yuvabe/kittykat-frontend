@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { Upload, X, FileIcon, Loader2 } from "lucide-react";
+import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

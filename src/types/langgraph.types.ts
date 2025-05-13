@@ -1,4 +1,6 @@
+import { MessageContentText } from "@langchain/core/messages";
 import { MessagesAnnotation, Annotation } from "@langchain/langgraph";
+import { Thread } from "@langchain/langgraph-sdk";
 import {
   RemoveUIMessage,
   UIMessage,
@@ -65,3 +67,16 @@ export type MessageContentFileWrapper = {
   url: string;
   name: string;
 };
+
+export interface MessageContentFiles {
+  id: string;
+  file: MessageContentText;
+}
+
+export interface TransformedThread {
+  id: string;
+  displayName: string;
+  initial: string;
+  searchKey: string; // Unique search key combining name and ID
+  raw: Thread;
+}

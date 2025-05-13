@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import { ReactNode, useEffect, useRef, ChangeEvent } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/Stream";
 import { useState, FormEvent } from "react";
-import { Checkpoint, HumanMessage, Message } from "@langchain/langgraph-sdk";
+import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -28,20 +28,14 @@ import {
 } from "@/lib/constants";
 import { StickToBottom } from "use-stick-to-bottom";
 import { useUserStore } from "@/store/user.store";
-import { Skeleton } from "../ui/skeleton";
 import { useThreads } from "@/providers/Thread";
 import { ChatSkeleton } from "./messages/message-skeleton";
-import { MessageContentText } from "@langchain/core/messages";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import { MessageContentFiles } from "@/types/langgraph.types";
 
 type ThreadProps = {
   brandId: string | null;
 };
-
-export interface MessageContentFileWrapper {
-  id: string;
-  file: MessageContentText;
-}
 
 export function Thread({ brandId }: ThreadProps) {
   const [threadId, setThreadId] = useQueryState("threadId");
@@ -55,7 +49,7 @@ export function Thread({ brandId }: ThreadProps) {
   );
   const [hideAgentComms, setHideAgentComms] = useState(false);
   const [input, setInput] = useState("");
-  const [fileList, setFileList] = useState<MessageContentFileWrapper[]>([]);
+  const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
 
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
@@ -320,7 +314,7 @@ export function Thread({ brandId }: ThreadProps) {
                   !chatStarted && "flex flex-col items-stretch mt-[25vh]",
                   chatStarted && "grid grid-rows-[1fr_auto]"
                 )}
-                contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-4 w-full"
+                contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full"
                 content={
                   threadsLoading ? (
                     <ChatSkeleton />

@@ -215,34 +215,35 @@ export function HumanMessage({
             {contentString}
           </p>
         )}
-
-        <div
-          className={cn(
-            "flex gap-2 items-center ml-auto transition-opacity",
-            "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-            isEditing && "opacity-100"
-          )}
-        >
-          <BranchSwitcher
-            branch={meta?.branch}
-            branchOptions={meta?.branchOptions}
-            onSelect={(branch) => thread.setBranch(branch)}
-            isLoading={isLoading}
-          />
-          <CommandBar
-            isLoading={isLoading}
-            content={contentString}
-            isEditing={isEditing}
-            setIsEditing={(c) => {
-              if (c) {
-                setValue(contentString);
-              }
-              setIsEditing(c);
-            }}
-            handleSubmitEdit={handleSubmitEdit}
-            isHumanMessage={true}
-          />
-        </div>
+        {!isFileMessage && (
+          <div
+            className={cn(
+              "flex gap-2 items-center ml-auto transition-opacity",
+              "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+              isEditing && "opacity-100"
+            )}
+          >
+            <BranchSwitcher
+              branch={meta?.branch}
+              branchOptions={meta?.branchOptions}
+              onSelect={(branch) => thread.setBranch(branch)}
+              isLoading={isLoading}
+            />
+            <CommandBar
+              isLoading={isLoading}
+              content={contentString}
+              isEditing={isEditing}
+              setIsEditing={(c) => {
+                if (c) {
+                  setValue(contentString);
+                }
+                setIsEditing(c);
+              }}
+              handleSubmitEdit={handleSubmitEdit}
+              isHumanMessage={true}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

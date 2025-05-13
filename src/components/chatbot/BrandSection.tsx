@@ -6,8 +6,7 @@ import { ContentSection } from "../shared/ContentSection";
 import { CirclePlus, Copy } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Thread, ToolMessage } from "@langchain/langgraph-sdk";
-import { capitalizeKey } from "@/lib/langgraph.utils";
+import { capitalizeKey, getThreadDisplayName } from "@/lib/langgraph.utils";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 export const renderBrandData = (
@@ -511,17 +510,10 @@ import { AvatarFallback } from "@/components/ui/avatar";
 import { useThreads } from "@/providers/Thread";
 import { getContentString } from "../thread/utils";
 import { isNearWhite } from "@/lib/utils";
+import { TransformedThread } from "@/types/langgraph.types";
 
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
-}
-
-interface TransformedThread {
-  id: string;
-  displayName: string;
-  initial: string;
-  searchKey: string; // Unique search key combining name and ID
-  raw: Thread;
 }
 
 export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
@@ -605,27 +597,6 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
       setFilteredThreads(filtered);
     }
   }, [searchQuery, transformedThreads]);
-
-  const getThreadDisplayName = (thread: Thread) => {
-    if (
-      typeof thread.metadata === "object" &&
-      thread.metadata &&
-      "name" in thread.metadata &&
-      thread.metadata.name
-    ) {
-      return String(thread.metadata.name);
-    } else if (
-      typeof thread.values === "object" &&
-      thread.values &&
-      "messages" in thread.values &&
-      Array.isArray(thread.values.messages) &&
-      thread.values.messages.length > 0
-    ) {
-      const firstMessage = thread.values.messages[0];
-      return getContentString(firstMessage.content).slice(0, 50);
-    }
-    return thread.thread_id;
-  };
 
   const handleThreadSelect = (threadId: string) => {
     setSelectedThreadId(threadId);

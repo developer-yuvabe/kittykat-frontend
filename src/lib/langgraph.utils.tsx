@@ -1,9 +1,14 @@
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
 import { v4 as uuidv4 } from "uuid";
-import { Message, ToolMessage } from "@langchain/langgraph-sdk";
+import { Message, Thread, ToolMessage } from "@langchain/langgraph-sdk";
 import { RENDER_FILE_ID_PREFIX } from "./constants";
-import { MessageContentFileWrapper } from "@/components/thread";
 import { Dispatch, SetStateAction } from "react";
+import { FileTextIcon, Music, Video, Image } from "lucide-react";
+import { MessageContentFiles } from "@/types/langgraph.types";
+import CampaignThemes from "@/components/agent-ui/CampaignThemes";
+import MoodBoards from "@/components/agent-ui/MoodBoards";
+import { ConfirmThemeSelection } from "@/components/agent-ui/ConfirmThemes";
+import { getContentString } from "@/components/thread/utils";
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
@@ -115,10 +120,10 @@ export const capitalizeKey = (key: string) => {
 
 export function addFileWrappers(
   url: string,
-  setFileList: Dispatch<SetStateAction<MessageContentFileWrapper[]>>
+  setFileList: Dispatch<SetStateAction<MessageContentFiles[]>>
 ) {
   const id = uuidv4();
-  const newWrappers: MessageContentFileWrapper[] = [
+  const newWrappers: MessageContentFiles[] = [
     {
       id: `${RENDER_FILE_ID_PREFIX}${id}`,
       file: {
@@ -140,7 +145,7 @@ export function addFileWrappers(
 
 export function removeFileWrappers(
   id: string,
-  setFileList: Dispatch<SetStateAction<MessageContentFileWrapper[]>>
+  setFileList: Dispatch<SetStateAction<MessageContentFiles[]>>
 ) {
   const renderId = `${RENDER_FILE_ID_PREFIX}${id}`;
   const doNotRenderId = `${DO_NOT_RENDER_ID_PREFIX}${id}`;
@@ -162,4 +167,48 @@ export const fetchFileType = async (fileUrl: string) => {
     console.error("Error fetching file type:", error);
     return "application/octet-stream";
   }
+};
+
+export const fileTypeIcons: Record<string, React.ElementType> = {
+  image: Image,
+  video: Video,
+  audio: Music,
+  text: FileTextIcon,
+  application: FileTextIcon,
+};
+
+export async function getFileIcon(url: string): Promise<React.ElementType> {
+  const contentType = await fetchFileType(url);
+  if (!contentType) return FileTextIcon;
+
+  const [type] = contentType.split("/");
+  return fileTypeIcons[type] || File;
+}
+
+export const clientComponents = {
+  "campaign-themes": (props: any) => <CampaignThemes {...props} />,
+  moodboards: (props: any) => <MoodBoards {...props} />,
+  "confirm-themes": (props: any) => <ConfirmThemeSelection {...props} />,
+  "regenerate-themes": (props: any) => <CampaignThemes {...props} />,
+};
+
+export const getThreadDisplayName = (thread: Thread) => {
+  if (
+    typeof thread.metadata === "object" &&
+    thread.metadata &&
+    "name" in thread.metadata &&
+    thread.metadata.name
+  ) {
+    return String(thread.metadata.name);
+  } else if (
+    typeof thread.values === "object" &&
+    thread.values &&
+    "messages" in thread.values &&
+    Array.isArray(thread.values.messages) &&
+    thread.values.messages.length > 0
+  ) {
+    const firstMessage = thread.values.messages[0];
+    return getContentString(firstMessage.content).slice(0, 50);
+  }
+  return thread.thread_id;
 };
