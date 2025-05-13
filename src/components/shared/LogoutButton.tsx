@@ -16,7 +16,7 @@ export function LogoutButton() {
   return (
     <Button
       variant="ghost"
-      className="w-full justify-start gap-2 text-sm h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
+      className="w-full justify-start gap-2 text-sm h-9 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-none"
       onClick={handleLogout}
     >
       <LogOut size={16} />

@@ -99,7 +99,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const clearPins = usePinnedContextStore((state) => state.clearPinnedItems);
   // const clearPinnedItems = usePinnedContextStore((state) => state.clearPinnedItems);
   return (
-    <div className="relative z-10 w-full max-w-2xl mb-1 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
+    <div className="relative z-10 w-full max-w-2xl mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
       {pinnedItems.length > 0 && (
         <div className="p-3 bg-gray-100 rounded-2xl mb-2">
           <div className="flex gap-2 flex-wrap">
@@ -172,8 +172,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               form?.requestSubmit();
             }
           }}
-          placeholder="Message"
-          className="p-6  border-none bg-transparent  field-sizing-content placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none"
+          placeholder="Type your message here..."
+          className="p-6  border-none bg-transparent  field-sizing-content placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
         />
 
         <div className="flex right-4 bottom-6 absolute">
@@ -189,13 +189,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 prefix={threadId}
               />
 
-              <button
+              <Button
                 type="submit"
-                className="text-[#636AE8]"
+                className="text-primary"
+                variant="ghost"
+                size="icon"
                 disabled={isLoading || !input.trim()}
               >
                 <Send size={20} />
-              </button>
+              </Button>
             </div>
           )}
         </div>

@@ -13,7 +13,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 }) => {
   return (
     <motion.div
-      className="absolute z-20 h-full m overflow-hidden bg-white border-r"
+      className="absolute z-20 h-full overflow-hidden bg-white"
       style={{ width: 300 }}
       animate={
         isLargeScreen

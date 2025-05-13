@@ -50,7 +50,7 @@ export function UserProfileMenu() {
             </Avatar>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 p-0" align="end">
+        <PopoverContent className="w-72 p-0 overflow-hidden" align="end">
           {/* User Info Section */}
           <div className="p-4 flex items-center gap-4">
             <Avatar className="h-12 w-12">
@@ -61,7 +61,7 @@ export function UserProfileMenu() {
             </Avatar>
             <div className="space-y-1">
               <p className="text-sm font-medium leading-none">
-                {user?.name || "Guest User"}
+                {user?.name || "User"}
               </p>
               <p className="text-xs leading-none text-muted-foreground">
                 {user?.email || "No email provided"}
@@ -70,46 +70,6 @@ export function UserProfileMenu() {
           </div>
 
           <Separator />
-
-          {/* Menu Items */}
-          <div className="p-2">
-            <Link href="#">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2 text-sm h-9"
-              >
-                <UserCircle size={16} className="text-gray-500" />
-                <span>Profile</span>
-              </Button>
-            </Link>
-            <Link href="#">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2 text-sm h-9"
-              >
-                <Settings size={16} className="text-gray-500" />
-                <span>Settings</span>
-              </Button>
-            </Link>
-            <Link href="#">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2 text-sm h-9"
-              >
-                <CreditCard size={16} className="text-gray-500" />
-                <span>Billing</span>
-              </Button>
-            </Link>
-            <Link href="#">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2 text-sm h-9"
-              >
-                <LifeBuoy size={16} className="text-gray-500" />
-                <span>Support</span>
-              </Button>
-            </Link>
-          </div>
 
           <Separator />
 

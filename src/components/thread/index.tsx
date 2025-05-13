@@ -242,14 +242,15 @@ export function Thread({ brandId }: ThreadProps) {
   useEffect(() => {
     console.log(messages);
   }, [messages.length]);
+
   return (
-    <div className="flex w-full  h-[88vh] overflow-hidden rounded-2xl">
+    <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden rounded-2xl">
       <div className="relative hidden lg:flex">
         <ChatHistoryPanel
           chatHistoryOpen={chatHistoryOpen}
           isLargeScreen={isLargeScreen}
         />
-      </div>{" "}
+      </div>
       <motion.div
         className={cn(
           "flex-1 flex flex-col min-w-0 mx-2 overflow-hidden relative -ml-80",
@@ -298,7 +299,7 @@ export function Thread({ brandId }: ThreadProps) {
               </div>
             )}
 
-            <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
+            <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6] ">
               {chatStarted && (
                 <>
                   <div
@@ -310,7 +311,7 @@ export function Thread({ brandId }: ThreadProps) {
               )}
               <StickyToBottomContent
                 className={cn(
-                  "absolute inset-0 px-4 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent",
+                  "absolute inset-0 px-4 overflow-y-scroll scrollbar",
                   !chatStarted && "flex flex-col items-stretch mt-[25vh]",
                   chatStarted && "grid grid-rows-[1fr_auto]"
                 )}
@@ -343,7 +344,7 @@ export function Thread({ brandId }: ThreadProps) {
                             className="flex-shrink-0"
                           />
                           <h1 className="text-2xl font-semibold tracking-tight">
-                            CMO Agent
+                            Agent
                           </h1>
                         </div>
                       </>

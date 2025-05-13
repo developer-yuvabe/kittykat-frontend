@@ -45,11 +45,11 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
 
   return (
     <div
-      className={`w-2/3 rounded-2xl mx-4  bg-[#f3f4f6] p-8 flex flex-col overflow-hidden ${
+      className={`w-2/3 rounded-2xl mx-4  bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
         !isLargeScreen ? "hidden md:flex" : ""
       }`}
     >
-      <div className="flex-1 overflow-y-auto p-4 ml-4">
+      <div className="flex-1">
         {threadsLoading ? (
           // Show skeleton when threads are loading
           <CardSkeleton />

@@ -87,7 +87,7 @@ export default function FileUploader({
       onOpenChange={(open) => !uploading && setIsOpen(open)}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" className="text-blue-500 p-2">
+        <Button variant="ghost" className="text-primary" size="icon">
           <Upload size={20} />
         </Button>
       </DialogTrigger>
@@ -108,7 +108,7 @@ export default function FileUploader({
           >
             <input {...getInputProps()} />
             <div className="flex flex-col items-center justify-center space-y-3">
-              <Upload className="h-10 w-10 text-gray-400" />
+              <Upload className="h-10 w-10 text-primary" />
               <p className="text-sm text-gray-600">
                 Drag and drop your file here, or click to select
               </p>

@@ -119,6 +119,10 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .scrollbar {
+    @apply [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent;
+  }
 }
 
 @keyframes pulse {

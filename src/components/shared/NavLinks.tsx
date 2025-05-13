@@ -3,7 +3,7 @@ import { Bell, MessageSquareText, Images, Bot, Menu } from "lucide-react";
 
 export function NavLinks() {
   return (
-    <nav className="ml-44 flex items-center justify-center flex-1">
+    <nav className="flex items-center justify-center flex-1">
       <div className="flex items-center space-x-18">
         <button className="flex flex-col gap-y-0.5 items-center text-xs text-[#6e7787]">
           <TfiHome strokeWidth={0.8} size={20} />
