@@ -57,7 +57,6 @@ export function Thread({ brandId }: ThreadProps) {
   const { threadsLoading } = useThreads();
   const stream = useStreamContext();
 
-  console.log("stream", stream?.values?.sources?.brandingInformation);
   const messages = stream.messages;
   const isLoading = stream.isLoading;
 
@@ -218,7 +217,7 @@ export function Thread({ brandId }: ThreadProps) {
   }
   useEffect(() => {
     console.log(messages);
-  }, [messages]);
+  }, [messages.length]);
 
   const setLastInteractedBrandId = useUserStore(
     (state) => state.setLastInteractedBrandId
@@ -238,10 +237,6 @@ export function Thread({ brandId }: ThreadProps) {
   const resetFiles = () => {
     setFileList([]);
   };
-
-  useEffect(() => {
-    console.log(messages);
-  }, [messages.length]);
 
   return (
     <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden rounded-2xl">

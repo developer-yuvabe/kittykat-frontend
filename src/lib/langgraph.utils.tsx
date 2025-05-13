@@ -212,3 +212,34 @@ export const getThreadDisplayName = (thread: Thread) => {
   }
   return thread.thread_id;
 };
+
+function getLuminance(r: number, g: number, b: number) {
+  const a = [r, g, b].map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+}
+
+function hexToRgbWithOpacity(hex: string) {
+  const red = parseInt(hex.substring(0, 2), 16);
+  const green = parseInt(hex.substring(2, 4), 16);
+  const blue = parseInt(hex.substring(4, 6), 16);
+  const alpha = parseInt(hex.substring(6, 8) || "FF", 16) / 255;
+
+  return { red, green, blue, alpha };
+}
+
+export function getFontColorForBackground(backgroundColor: string) {
+  const hex = backgroundColor.replace("#", "");
+  const { red, green, blue, alpha } = hexToRgbWithOpacity(hex);
+
+  // Blend with white background based on alpha
+  const blendedRed = Math.round(red * alpha + 255 * (1 - alpha));
+  const blendedGreen = Math.round(green * alpha + 255 * (1 - alpha));
+  const blendedBlue = Math.round(blue * alpha + 255 * (1 - alpha));
+
+  const luminance = getLuminance(blendedRed, blendedGreen, blendedBlue);
+
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+}

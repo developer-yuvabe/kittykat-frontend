@@ -6,7 +6,11 @@ import { ContentSection } from "../shared/ContentSection";
 import { CirclePlus, Copy } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { capitalizeKey, getThreadDisplayName } from "@/lib/langgraph.utils";
+import {
+  capitalizeKey,
+  getFontColorForBackground,
+  getThreadDisplayName,
+} from "@/lib/langgraph.utils";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 export const renderBrandData = (
@@ -16,7 +20,6 @@ export const renderBrandData = (
   staticData: any,
   dynamicData: any
 ) => {
-  console.log("static data", staticData);
   try {
     const brandName = staticData.brand?.name || "No Brand Name";
     const brandInitial = brandName.charAt(0).toUpperCase();
@@ -308,11 +311,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
 
                 {/* Color Info on Hover */}
                 <div
-                  className={`absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 transition-opacity rounded ${
-                    isNearWhite(color.hex)
-                      ? "text-black"
-                      : "text-primary-foreground"
-                  }`}
+                  className={`absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 transition-opacity rounded`}
+                  style={{ color: getFontColorForBackground(color.hex) }}
                 >
                   <div className="font-light text-[12px]">{color.name}</div>
                   <div className="text-base text-[10px]">{color.hex}</div>

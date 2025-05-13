@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ToolMessage } from "@langchain/langgraph-sdk";
 import BrandSelector, { renderBrandData } from "./BrandSection";
@@ -39,9 +39,20 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
   const stream = useStreamContext();
   const brandingInformation =
     stream?.values?.sources?.brandingInformation ?? null;
-  console.log("Brand messages", brandingInformation);
   const hasBrandData =
     brandingInformation && Object.keys(brandingInformation).length > 0;
+
+  const { updateThreadName } = useThreads();
+
+  useEffect(() => {
+    if (brandingInformation?.static?.brand?.name) {
+      if (threadId) {
+        updateThreadName(threadId, brandingInformation?.static?.brand?.name);
+      } else {
+        console.error("Thread ID is null. Cannot update thread name.");
+      }
+    }
+  }, [brandingInformation]);
 
   return (
     <div
