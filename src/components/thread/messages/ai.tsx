@@ -18,6 +18,7 @@ import {
   isAgentInboxInterruptSchema,
 } from "@/lib/langgraph.utils";
 import { TextShimmer } from "@/components/ui/text-shimmer";
+import { useEffect, useState } from "react";
 
 function CustomComponent({
   message,
@@ -117,7 +118,10 @@ export function AssistantMessage({
 
   // Check if this is an agent communication that should be hidden
 
-  if (isToolResult && hideToolCalls) {
+  const isToolCallTrigger =
+    message?.type === "ai" && (message?.tool_calls?.length ?? 0) > 0;
+
+  if (isToolResult && hideToolCalls && isToolCallTrigger) {
     return null;
   }
 
@@ -199,36 +203,83 @@ export function AssistantMessage({
     </div>
   );
 }
+// Generic loading messages to show after initial generic message
+const extendedLoadingMessages = [
+  "Processing your request...",
+  "Analyzing information...",
+  "Converting thoughts into words...",
+  "Brainstorming ideas...",
+  "Working on your request...",
+  "Crafting a response...",
+  "Connecting the dots...",
+  "Organizing thoughts...",
+  "Formulating a detailed answer...",
+  "Generating insights...",
+  "Exploring possibilities...",
+];
+
+// Initial generic message
+const initialGenericMessage = "Thinking...";
+
 export function AssistantMessageLoading({
   tool = null,
 }: {
   tool?: { name?: string } | null;
 }) {
-  console.log("tool", tool);
+  const [currentMessage, setCurrentMessage] = useState<string | null>(null);
+  const [messageIndex, setMessageIndex] = useState(0);
+
   // Get loading message configuration based on tool name
   const loadingConfig = tool?.name ? getLoadingMessageForTool(tool.name) : null;
-  const loadingMessage = loadingConfig?.message;
+  const toolSpecificMessage = loadingConfig?.message;
 
   // Default animation duration (can be overridden in config)
-  const animationDuration = loadingConfig?.duration || 1.5;
+  const animationDuration = loadingConfig?.duration || 1;
+
+  useEffect(() => {
+    // If tool has a specific message, use it immediately
+    if (toolSpecificMessage) {
+      setCurrentMessage(toolSpecificMessage);
+      return;
+    }
+
+    // Start with initial generic message instead of just dots
+    setCurrentMessage(initialGenericMessage);
+
+    // After 3 seconds, start showing extended loading messages
+    const initialTimeout = setTimeout(() => {
+      setMessageIndex(0);
+      setCurrentMessage(extendedLoadingMessages[0]);
+
+      // Rotate through extended messages every 4 seconds
+      const messageInterval = setInterval(() => {
+        setMessageIndex((prevIndex: number) => {
+          const nextIndex = (prevIndex + 1) % extendedLoadingMessages.length;
+          setCurrentMessage(extendedLoadingMessages[nextIndex]);
+          return nextIndex;
+        });
+      }, 4000);
+
+      return () => {
+        clearInterval(messageInterval);
+      };
+    }, 4000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+    };
+  }, [toolSpecificMessage]);
 
   return (
     <div className="flex items-start gap-2 mr-auto">
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl">
-        {!loadingMessage && (
-          <div className="flex items-center h-8 gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_infinite]"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_0.5s_infinite]"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-[pulse_1.5s_ease-in-out_1s_infinite]"></div>
-          </div>
-        )}
-        {loadingMessage && (
+        {currentMessage && (
           <span className="text-sm text-foreground/80 ml-2">
             <TextShimmer
               className="font-mono text-sm [--base-gradient-color:var(--color-purple-800)]"
-              duration={1}
+              duration={animationDuration}
             >
-              {loadingMessage}
+              {currentMessage}
             </TextShimmer>
           </span>
         )}

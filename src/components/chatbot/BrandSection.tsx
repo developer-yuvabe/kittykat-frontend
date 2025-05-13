@@ -18,18 +18,25 @@ export const renderBrandData = (
   toggleSection: (section: string) => void,
   setThreadId: (id: string | null) => void,
   staticData: any,
-  dynamicData: any
+  dynamicData: any,
+  clearPinnedItems: () => void
 ) => {
   try {
     const brandName = staticData.brand?.name || "No Brand Name";
     const brandInitial = brandName.charAt(0).toUpperCase();
     const allColors = [
-      { ...staticData?.colors?.primary, label: "Primary" },
-      { ...staticData?.colors?.secondary, label: "Secondary" },
-      ...staticData?.colors?.others.map((color: Color) => ({
-        ...color,
-        label: color.name,
-      })),
+      ...(staticData?.colors?.primary
+        ? [{ ...staticData.colors.primary, label: "Primary" }]
+        : []),
+      ...(staticData?.colors?.secondary
+        ? [{ ...staticData.colors.secondary, label: "Secondary" }]
+        : []),
+      ...(Array.isArray(staticData?.colors?.others)
+        ? staticData.colors.others.map((color: Color) => ({
+            ...color,
+            label: color.name,
+          }))
+        : []),
     ];
 
     const validLogos = (staticData.logos || []).filter((logo: string) => {
@@ -69,6 +76,26 @@ export const renderBrandData = (
                     <div className="text-xs text-[#6e7787]">
                       Set up, switch, and modify your Brand
                     </div>
+                    <div className="absolute right-3 top-6 ">
+                      <div className="flex justify-between gap-x-2">
+                        <div>
+                          <BrandSelector setThreadId={setThreadId} />
+                        </div>
+                        <TooltipIconButton
+                          size="lg"
+                          className="p-4"
+                          tooltip="New Brand"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setThreadId(null);
+                            clearPinnedItems();
+                          }}
+                        >
+                          <CirclePlus className="size-5" />
+                        </TooltipIconButton>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -86,7 +113,10 @@ export const renderBrandData = (
                         className="p-4"
                         tooltip="New Brand"
                         variant="ghost"
-                        onClick={() => setThreadId(null)}
+                        onClick={() => {
+                          setThreadId(null);
+                          clearPinnedItems();
+                        }}
                       >
                         <CirclePlus className="size-5" />
                       </TooltipIconButton>
@@ -508,10 +538,7 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { useThreads } from "@/providers/Thread";
-import { getContentString } from "../thread/utils";
-import { isNearWhite } from "@/lib/utils";
 import { TransformedThread } from "@/types/langgraph.types";
-
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
 }
@@ -643,8 +670,13 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                   <CommandItem
                     key={thread.id}
                     value={thread.searchKey} // Use unique searchKey
-                    onSelect={() => handleThreadSelect(thread.id)}
+                    onSelect={() => {
+                      handleThreadSelect(thread.id);
+                    }}
                     className="flex items-center justify-between"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
                   >
                     <div className="flex items-center">
                       <Avatar className="h-6 w-6 mr-2">

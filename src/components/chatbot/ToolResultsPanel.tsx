@@ -5,6 +5,7 @@ import BrandSelector, { renderBrandData } from "./BrandSection";
 import { useThreads } from "@/providers/Thread";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
 import { useStreamContext } from "@/providers/Stream";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 interface ToolResultsPanelProps {
   isLargeScreen: boolean;
@@ -43,6 +44,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
     brandingInformation && Object.keys(brandingInformation).length > 0;
 
   const { updateThreadName } = useThreads();
+  const { clearPinnedItems } = usePinnedContextStore();
 
   useEffect(() => {
     if (brandingInformation?.static?.brand?.name) {
@@ -72,7 +74,8 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
                 toggleSection,
                 setThreadId,
                 brandingInformation.static,
-                brandingInformation.dynamic
+                brandingInformation.dynamic,
+                clearPinnedItems
               )}
             </div>
           </div>

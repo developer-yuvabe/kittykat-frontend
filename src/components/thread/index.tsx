@@ -240,10 +240,13 @@ export function Thread() {
   const resetFiles = () => {
     setFileList([]);
   };
+  const clearPins = usePinnedContextStore((state) => state.clearPinnedItems);
 
   useEffect(() => {
     if (threadId) {
       setLastInteractedBrandId(threadId);
+
+      clearPins();
     }
   }, [threadId]);
 

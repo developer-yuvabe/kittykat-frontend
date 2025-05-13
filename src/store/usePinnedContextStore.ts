@@ -19,9 +19,6 @@ interface PinnedContextState {
   getPinnedItemId: (context: any) => string | null;
 }
 
-// Generate a unique ID for each pinned item
-const generateId = () => Math.random().toString(36).substring(2, 9);
-
 // Create the Zustand store with persistence
 export const usePinnedContextStore = create<PinnedContextState>()(
   persist(
@@ -40,7 +37,7 @@ export const usePinnedContextStore = create<PinnedContextState>()(
           pinnedItems: [
             ...state.pinnedItems,
             {
-              id: generateId(),
+              id: title,
               title,
               context,
               timestamp: Date.now(),
