@@ -9,7 +9,7 @@ export default function Page() {
     <div className="bg-white mt-2">
       <ThreadProvider>
         <StreamProvider>
-          <Thread brandId={null} />
+          <Thread />
         </StreamProvider>
       </ThreadProvider>
     </div>

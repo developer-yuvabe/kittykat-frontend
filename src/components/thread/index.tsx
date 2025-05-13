@@ -33,12 +33,19 @@ import { ChatSkeleton } from "./messages/message-skeleton";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
 
-type ThreadProps = {
-  brandId: string | null;
-};
+export function Thread() {
+  const lastInteractedBrandId = useUserStore((state) =>
+    state.getLastInteractedBrandId()
+  );
 
-export function Thread({ brandId }: ThreadProps) {
   const [threadId, setThreadId] = useQueryState("threadId");
+
+  useEffect(() => {
+    if (lastInteractedBrandId && !threadId) {
+      setThreadId(lastInteractedBrandId);
+    }
+  }, []);
+
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
     parseAsBoolean.withDefault(false)
@@ -211,10 +218,6 @@ export function Thread({ brandId }: ThreadProps) {
   const toolMessages = filteredMessages.filter((m) => m.type === "tool");
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
 
-  // If threadId is not available, set it to brandId
-  if (!threadId && brandId) {
-    setThreadId(brandId);
-  }
   useEffect(() => {
     console.log(messages);
   }, [messages.length]);
@@ -237,6 +240,12 @@ export function Thread({ brandId }: ThreadProps) {
   const resetFiles = () => {
     setFileList([]);
   };
+
+  useEffect(() => {
+    if (threadId) {
+      setLastInteractedBrandId(threadId);
+    }
+  }, [threadId]);
 
   return (
     <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden rounded-2xl">
