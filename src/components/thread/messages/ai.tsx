@@ -151,7 +151,7 @@ export function AssistantMessage({
             contentString.length === 0 &&
             !toolCallsHaveContents && <AssistantMessageLoading />}
 
-          {contentString.length > 0 && (
+          {contentString && (
             <div className="py-1 sm:w-96 max-w-xl bg-white p-4 break-words rounded-2xl">
               <MarkdownText>{contentString}</MarkdownText>
             </div>
