@@ -317,6 +317,9 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   const copyToClipboard = (colorHex: string) => {
     navigator.clipboard.writeText(colorHex);
     setCopiedColor(colorHex);
+    toast.success(`Color ${colorHex} copied to clipboard!`, {
+      position: "top-right",
+    });
     setTimeout(() => setCopiedColor(null), 1500);
   };
 
@@ -332,12 +335,13 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
                 style={{ backgroundColor: color.hex }}
               >
                 {/* Copy Button */}
-                <button
+                <TooltipIconButton
+                  tooltip="Copy color"
                   onClick={() => copyToClipboard(color.hex)}
                   className="absolute -top-3 -right-3 bg-white p-1 rounded-full shadow hover:bg-gray-100 z-10"
                 >
                   <Copy size={16} />
-                </button>
+                </TooltipIconButton>
 
                 {/* Color Info on Hover */}
                 <div
@@ -359,6 +363,7 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
     />
   );
 };
+
 interface ProductsSectionProps {
   products: string[];
 }
@@ -539,6 +544,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
+import { toast } from "sonner";
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
 }

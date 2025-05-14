@@ -116,15 +116,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   </span>
                   <button
                     onClick={() => removePinnedItem(item.id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                    className="opacity-0 mt-1 group-hover:opacity-100 rounded-full bg-destructive text-white  font-bold transition-opacity"
                   >
-                    <X size={16} />
+                    <X size={12} />
                   </button>
                 </div>
               ))}
               <button
                 onClick={() => clearPins()}
-                className="top-2 absolute right-2 text-gray-400 hover:text-red-500 transition-opacity"
+                className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
               >
                 <X size={16} />
               </button>

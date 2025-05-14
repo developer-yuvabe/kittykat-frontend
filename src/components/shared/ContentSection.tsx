@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import React from "react";
 import { BsPinAngle, BsPinAngleFill } from "react-icons/bs";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { toast } from "sonner";
+import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 interface ContentSectionProps {
   title: string;
@@ -54,28 +55,28 @@ export function ContentSection({
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-[#171a1f]">{title}</h3>
           <div className="flex items-center space-x-2">
-            <button
+            <TooltipIconButton
+              tooltip="Copy context"
               onClick={handleCopy}
               className="text-[#6e7787] hover:text-[#171a1f] transition"
-              aria-label="Copy context"
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-            <button
+            </TooltipIconButton>
+            <TooltipIconButton
+              tooltip={isPinnedItem ? "Unpin context" : "Pin context"}
               onClick={handlePin}
               className={`transition ${
                 isPinnedItem
                   ? "text-blue-500"
                   : "text-[#6e7787] hover:text-[#171a1f]"
               }`}
-              aria-label={isPinnedItem ? "Unpin context" : "Pin context"}
             >
               {isPinnedItem ? (
                 <BsPinAngleFill size={18} />
               ) : (
                 <BsPinAngle size={18} />
               )}
-            </button>
+            </TooltipIconButton>
           </div>
         </div>
         <div>{content}</div>
