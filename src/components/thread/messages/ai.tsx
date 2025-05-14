@@ -1,5 +1,5 @@
 import { parsePartialJson } from "@langchain/core/output_parsers";
-import { useStreamContext } from "@/providers/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { getContentString } from "../utils";
 import { BranchSwitcher, CommandBar } from "./shared";
@@ -152,7 +152,7 @@ export function AssistantMessage({
             !toolCallsHaveContents && <AssistantMessageLoading />}
 
           {contentString.length > 0 && (
-            <div className="py-1 sm:w-96 max-w-xl bg-white p-4 rounded-2xl">
+            <div className="py-1 sm:w-96 max-w-xl bg-white p-4 break-words rounded-2xl">
               <MarkdownText>{contentString}</MarkdownText>
             </div>
           )}

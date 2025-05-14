@@ -537,7 +537,7 @@ import {
 } from "@/components/ui/popover";
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
-import { useThreads } from "@/providers/Thread";
+import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;

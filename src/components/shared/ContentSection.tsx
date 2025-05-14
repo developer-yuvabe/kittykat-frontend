@@ -3,6 +3,7 @@ import { Copy, Check } from "lucide-react";
 import React from "react";
 import { BsPinAngle, BsPinAngleFill } from "react-icons/bs";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import { toast } from "sonner";
 
 interface ContentSectionProps {
   title: string;
@@ -22,16 +23,15 @@ export function ContentSection({
 
   const handleCopy = async () => {
     try {
-      // Copy only the context
       const contextText =
         typeof context === "string" ? context : JSON.stringify(context);
       await navigator.clipboard.writeText(contextText);
       setCopied(true);
-
-      // Reset the copy state after a short delay
+      toast.success(`${title} has been copied`, { position: "top-right" });
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
+      toast.error("Failed to copy context", { position: "top-right" });
     }
   };
 
@@ -40,9 +40,11 @@ export function ContentSection({
       const itemId = getPinnedItemId(context);
       if (itemId) {
         removePinnedItem(itemId);
+        toast(`${title} has been unpinned`, { position: "top-right" });
       }
     } else {
       addPinnedItem(title, context);
+      toast(`${title} has been pinned`, { position: "top-right" });
     }
   };
 

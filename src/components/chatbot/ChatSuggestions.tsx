@@ -1,4 +1,4 @@
-import { useStreamContext } from "@/providers/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { Button } from "../ui/button";
 import { MessageSquare } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";

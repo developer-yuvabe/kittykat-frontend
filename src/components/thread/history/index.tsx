@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useThreads } from "@/providers/Thread";
+import { useThreads } from "@/providers/langgraph/Thread";
 import { Thread } from "@langchain/langgraph-sdk";
 import { useEffect } from "react";
 

@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useStreamContext } from "@/providers/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useState, FormEvent } from "react";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { useQueryState, parseAsBoolean } from "nuqs";
@@ -28,7 +28,7 @@ import {
 } from "@/lib/constants";
 import { StickToBottom } from "use-stick-to-bottom";
 import { useUserStore } from "@/store/user.store";
-import { useThreads } from "@/providers/Thread";
+import { useThreads } from "@/providers/langgraph/Thread";
 import { ChatSkeleton } from "./messages/message-skeleton";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";

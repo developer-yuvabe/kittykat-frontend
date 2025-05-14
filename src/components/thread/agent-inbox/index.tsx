@@ -2,7 +2,7 @@ import { StateView } from "./components/state-view";
 import { ThreadActionsView } from "./components/thread-actions-view";
 import { useState } from "react";
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
-import { useStreamContext } from "@/providers/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 
 interface ThreadViewProps {
   interrupt: HumanInterrupt | HumanInterrupt[];
@@ -17,7 +17,7 @@ export function ThreadView({ interrupt }: ThreadViewProps) {
 
   const handleShowSidePanel = (
     showState: boolean,
-    showDescription: boolean,
+    showDescription: boolean
   ) => {
     if (showState && showDescription) {
       console.error("Cannot show both state and description");

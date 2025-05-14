@@ -1,7 +1,6 @@
 "use client";
-import { validate } from "uuid";
+
 import { Thread } from "@langchain/langgraph-sdk";
-import { useQueryState } from "nuqs";
 import {
   createContext,
   useContext,
@@ -12,9 +11,9 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
-import { createClient } from "./client";
-import { DEFAULT_API_URL, DEFAULT_ASSISTANT_ID } from "@/lib/constants";
-import { getApiKey } from "../lib/api-key";
+import { client } from "./langgraph.client";
+import { DEFAULT_ASSISTANT_ID } from "@/lib/constants";
+import { getThreadSearchMetadata } from "@/lib/langgraph.utils";
 
 interface ThreadContextType {
   getThreads: () => Promise<Thread[]>;
@@ -30,33 +29,15 @@ interface ThreadContextType {
 
 const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
 
-function getThreadSearchMetadata(
-  assistantId: string
-): { graph_id: string } | { assistant_id: string } {
-  if (validate(assistantId)) {
-    return { assistant_id: assistantId };
-  } else {
-    return { graph_id: assistantId };
-  }
-}
-
 export function ThreadProvider({ children }: { children: ReactNode }) {
-  const [apiUrl] = useQueryState("apiUrl");
-  const [assistantId] = useQueryState("assistantId");
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(true);
 
   const getThreads = useCallback(async (): Promise<Thread[]> => {
     try {
-      // Use fallback values if API URL or assistant ID are not in query params
-      const effectiveApiUrl = apiUrl || DEFAULT_API_URL;
-      const effectiveAssistantId = assistantId || DEFAULT_ASSISTANT_ID;
-      if (!effectiveApiUrl || !effectiveAssistantId) return [];
-
-      const client = createClient(effectiveApiUrl, getApiKey() ?? undefined);
       const threads = await client.threads.search({
         metadata: {
-          ...getThreadSearchMetadata(effectiveAssistantId),
+          ...getThreadSearchMetadata(DEFAULT_ASSISTANT_ID),
         },
         limit: 100,
       });
@@ -65,7 +46,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
       console.error("Failed to fetch threads:", error);
       return [];
     }
-  }, [apiUrl, assistantId]);
+  }, []);
 
   // Function to update threads without necessarily setting loading state
   const updateThreads = useCallback(
@@ -89,11 +70,6 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
   const updateThreadName = useCallback(
     async (threadId: string, name: string): Promise<boolean> => {
       try {
-        const effectiveApiUrl = apiUrl || DEFAULT_API_URL;
-        if (!effectiveApiUrl) return false;
-
-        const client = createClient(effectiveApiUrl, getApiKey() ?? undefined);
-
         // Update the thread name in the remote API
         await client.threads.update(threadId, {
           metadata: { name },
@@ -123,10 +99,10 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [apiUrl, setThreads]
+    [setThreads]
   );
 
-  // Fetch threads when component mounts or when apiUrl/assistantId change
+  // Fetch threads when component mounts
   useEffect(() => {
     async function loadThreads() {
       setThreadsLoading(true);
@@ -146,7 +122,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [apiUrl, assistantId, getThreads]);
+  }, [getThreads]);
 
   const value = {
     getThreads,

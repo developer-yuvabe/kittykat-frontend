@@ -2,9 +2,9 @@ import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ToolMessage } from "@langchain/langgraph-sdk";
 import BrandSelector, { renderBrandData } from "./BrandSection";
-import { useThreads } from "@/providers/Thread";
+import { useThreads } from "@/providers/langgraph/Thread";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
-import { useStreamContext } from "@/providers/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 interface ToolResultsPanelProps {

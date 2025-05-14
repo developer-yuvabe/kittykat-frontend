@@ -1,8 +1,8 @@
 "use client";
 
 import { Thread } from "@/components/thread";
-import { StreamProvider } from "@/providers/Stream";
-import { ThreadProvider } from "@/providers/Thread";
+import { StreamProvider } from "@/providers/langgraph/Stream";
+import { ThreadProvider } from "@/providers/langgraph/Thread";
 
 export default function Page() {
   return (

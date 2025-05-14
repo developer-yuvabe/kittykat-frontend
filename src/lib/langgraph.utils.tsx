@@ -9,6 +9,7 @@ import CampaignThemes from "@/components/agent-ui/CampaignThemes";
 import MoodBoards from "@/components/agent-ui/MoodBoards";
 import { ConfirmThemeSelection } from "@/components/agent-ui/ConfirmThemes";
 import { getContentString } from "@/components/thread/utils";
+import { validate } from "uuid";
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
@@ -242,4 +243,14 @@ export function getFontColorForBackground(backgroundColor: string) {
   const luminance = getLuminance(blendedRed, blendedGreen, blendedBlue);
 
   return luminance > 0.5 ? "#000000" : "#FFFFFF";
+}
+
+export function getThreadSearchMetadata(
+  assistantId: string
+): { graph_id: string } | { assistant_id: string } {
+  if (validate(assistantId)) {
+    return { assistant_id: assistantId };
+  } else {
+    return { graph_id: assistantId };
+  }
 }

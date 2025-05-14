@@ -1,4 +1,4 @@
-import { useStreamContext } from "@/providers/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { Message } from "@langchain/langgraph-sdk";
 import { useState, useEffect, JSX } from "react";
 import { getContentString } from "../utils";
