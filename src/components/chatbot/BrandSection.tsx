@@ -31,8 +31,8 @@ export const renderBrandData = (
       ...(staticData?.colors?.secondary
         ? [{ ...staticData.colors.secondary, label: "Secondary" }]
         : []),
-      ...(Array.isArray(staticData?.colors?.others)
-        ? staticData.colors.others.map((color: Color) => ({
+      ...(Array.isArray(staticData?.colors?.other)
+        ? staticData.colors.other.map((color: Color) => ({
             ...color,
             label: color.name,
           }))
