@@ -26,7 +26,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
 }) => {
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
-  }>({});
+  }>({ brandOverview: true });
 
   const { threadsLoading } = useThreads();
 

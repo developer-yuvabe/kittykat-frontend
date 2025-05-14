@@ -337,6 +337,7 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
                 {/* Copy Button */}
                 <TooltipIconButton
                   tooltip="Copy color"
+                  side="top"
                   onClick={() => copyToClipboard(color.hex)}
                   className="absolute -top-3 -right-3 bg-white p-1 rounded-full shadow hover:bg-gray-100 z-10"
                 >

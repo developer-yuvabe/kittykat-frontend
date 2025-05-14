@@ -8,7 +8,6 @@ import { BranchSwitcher, CommandBar } from "./shared";
 import {
   FileIcon,
   FileTextIcon,
-  ImageIcon,
   FileArchiveIcon,
   FileAudioIcon,
   FileVideoIcon,
@@ -68,12 +67,22 @@ function FileAttachment({
   const displayName = fileName || fileUrl.split("/").pop() || "File";
 
   // Choose appropriate icon based on content type
+  // Choose appropriate icon or render image based on content type
   const getFileIcon = () => {
     if (isLoading) return <FileIcon className="w-10 h-10 text-gray-400" />;
 
     if (contentType) {
-      if (contentType.startsWith("image/"))
-        return <ImageIcon className="w-10 h-10 text-blue-500" />;
+      if (contentType.startsWith("image/")) {
+        // Render the actual image
+        return (
+          <img
+            src={fileUrl}
+            alt={displayName}
+            className="w-10 h-10 object-cover rounded-md"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        );
+      }
       if (contentType.startsWith("text/"))
         return <FileTextIcon className="w-10 h-10 text-green-500" />;
       if (contentType.startsWith("audio/"))
