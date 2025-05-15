@@ -31,8 +31,8 @@ export const renderBrandData = (
       ...(staticData?.colors?.secondary
         ? [{ ...staticData.colors.secondary, label: "Secondary" }]
         : []),
-      ...(Array.isArray(staticData?.colors?.other)
-        ? staticData.colors.other.map((color: Color) => ({
+      ...(Array.isArray(staticData?.colors?.others)
+        ? staticData.colors.others.map((color: Color) => ({
             ...color,
             label: color.name,
           }))
@@ -224,10 +224,9 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
     />
   );
 };
-
 interface FontDetails {
   name: string;
-  weights?: string[];
+  weights?: any[];
 }
 
 interface TypographyProps {
@@ -239,9 +238,9 @@ export const TypographySection: React.FC<TypographyProps> = ({
   primaryFont,
   secondaryFont,
 }) => {
-  // Helper to check if a font is valid
+  // Helper to check if a font is valid (name is required, weights are optional)
   const isValidFont = (font?: FontDetails) => {
-    return font?.name?.trim() && (font.weights?.some((w) => w.trim()) ?? true);
+    return font?.name?.trim();
   };
 
   // Filter out invalid fonts
@@ -258,17 +257,22 @@ export const TypographySection: React.FC<TypographyProps> = ({
       <div className="text-sm font-semibold">{label}</div>
       <div className="ml-2 space-y-1">
         <div className="text-sm text-gray-700">{font.name}</div>
-        {font?.weights && font?.weights.length > 0 && (
+        {font.weights && font.weights.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {font.weights
-              .filter((weight) => weight.trim())
+              .filter(
+                (weight) =>
+                  weight !== undefined &&
+                  weight !== null &&
+                  String(weight).trim()
+              )
               .map((weight, index) => (
                 <Badge
                   key={index}
                   variant="outline"
                   className="text-xs bg-gray-50 text-gray-700 border-gray-200"
                 >
-                  {weight}
+                  {String(weight)}
                 </Badge>
               ))}
           </div>

@@ -14,6 +14,7 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { cn } from "@/lib/utils";
 
 import "katex/dist/katex.min.css";
+import Link from "next/link";
 
 interface CodeHeaderProps {
   language?: string;
@@ -56,13 +57,24 @@ const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
     </div>
   );
 };
+// Helper function to determine if a URL is internal or external
+const isInternalLink = (href: string): boolean => {
+  // Handle relative paths, paths that start with /, or paths with no protocol
+  return (
+    !href.startsWith("http://") &&
+    !href.startsWith("https://") &&
+    !href.startsWith("mailto:") &&
+    !href.startsWith("tel:") &&
+    !href.startsWith("#")
+  );
+};
 
 const defaultComponents: any = {
   h1: ({ className, ...props }: { className?: string }) => (
     <h1
       className={cn(
         "mb-8 scroll-m-20 text-4xl font-extrabold tracking-tight last:mb-0",
-        className,
+        className
       )}
       {...props}
     />
@@ -71,7 +83,7 @@ const defaultComponents: any = {
     <h2
       className={cn(
         "mb-4 mt-8 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0 last:mb-0",
-        className,
+        className
       )}
       {...props}
     />
@@ -80,7 +92,7 @@ const defaultComponents: any = {
     <h3
       className={cn(
         "mb-4 mt-6 scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0 last:mb-0",
-        className,
+        className
       )}
       {...props}
     />
@@ -89,7 +101,7 @@ const defaultComponents: any = {
     <h4
       className={cn(
         "mb-4 mt-6 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0",
-        className,
+        className
       )}
       {...props}
     />
@@ -98,7 +110,7 @@ const defaultComponents: any = {
     <h5
       className={cn(
         "my-4 text-lg font-semibold first:mt-0 last:mb-0",
-        className,
+        className
       )}
       {...props}
     />
@@ -115,15 +127,43 @@ const defaultComponents: any = {
       {...props}
     />
   ),
-  a: ({ className, ...props }: { className?: string }) => (
-    <a
-      className={cn(
-        "text-primary font-medium underline underline-offset-4",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  a: ({
+    className,
+    href,
+    children,
+    ...props
+  }: {
+    className?: string;
+    href?: string;
+    children: React.ReactNode;
+  }) => {
+    const linkClassName = cn(
+      "text-primary font-medium underline underline-offset-4",
+      className
+    );
+
+    // If href is undefined or it's an external link, use a regular anchor tag
+    if (!href || !isInternalLink(href)) {
+      return (
+        <a
+          className={linkClassName}
+          href={href}
+          target={href?.startsWith("http") ? "_blank" : undefined}
+          rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    }
+
+    // For internal links, use Next.js Link component
+    return (
+      <Link href={href} className={linkClassName} {...props}>
+        {children}
+      </Link>
+    );
+  },
   blockquote: ({ className, ...props }: { className?: string }) => (
     <blockquote
       className={cn("border-l-2 pl-6 italic", className)}
@@ -149,7 +189,7 @@ const defaultComponents: any = {
     <table
       className={cn(
         "my-5 w-full border-separate border-spacing-0 overflow-y-auto",
-        className,
+        className
       )}
       {...props}
     />
@@ -158,7 +198,7 @@ const defaultComponents: any = {
     <th
       className={cn(
         "bg-muted px-4 py-2 text-left font-bold first:rounded-tl-lg last:rounded-tr-lg [&[align=center]]:text-center [&[align=right]]:text-right",
-        className,
+        className
       )}
       {...props}
     />
@@ -167,7 +207,7 @@ const defaultComponents: any = {
     <td
       className={cn(
         "border-b border-l px-4 py-2 text-left last:border-r [&[align=center]]:text-center [&[align=right]]:text-right",
-        className,
+        className
       )}
       {...props}
     />
@@ -176,7 +216,7 @@ const defaultComponents: any = {
     <tr
       className={cn(
         "m-0 border-b p-0 first:border-t [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg",
-        className,
+        className
       )}
       {...props}
     />
@@ -191,7 +231,7 @@ const defaultComponents: any = {
     <pre
       className={cn(
         "overflow-x-auto rounded-lg bg-black text-white max-w-4xl",
-        className,
+        className
       )}
       {...props}
     />
