@@ -27,45 +27,45 @@ interface TransformedCampaign {
 }
 
 interface CampaignSelectorProps {
-  campaigns: Campaign[];
+  campaigns: any[];
   setSelectedCampaignIndex: (index: number) => void;
   selectedCampaignIndex: number;
 }
 
 interface CampaignOverviewProps {
-  concept?: string;
-  tagline?: string;
-  values?: string[];
+  title?: string;
+  description?: string;
+  tone?: string[];
 }
 
 export const CampaignOverview: React.FC<CampaignOverviewProps> = ({
-  concept,
-  tagline,
-  values = [],
+  title,
+  description,
+  tone = [],
 }) => {
   return (
     <ContentSection
-      title={`Campaign Concept: “${concept}”`}
+      title={`Campaign Concept: “${title}”`}
       content={
         <div className="space-y-3">
           {/* Tagline */}
-          {tagline && (
+          {description && (
             <div className="flex flex-col">
-              <span className="text-sm text-gray-700">{tagline}</span>
+              <span className="text-sm text-gray-700">{description}</span>
             </div>
           )}
 
           {/* Values */}
-          {values.length > 0 && (
+          {tone.length > 0 && (
             <div className="flex flex-col">
               <div className="flex flex-wrap gap-1 mt-1">
-                {values.map((value, index) => (
+                {tone.map((tone, index) => (
                   <Badge
                     key={index}
                     variant={"outline"}
                     className="text-xs bg-purple-50 text-purple-700 border-purple-100"
                   >
-                    {value}
+                    {tone}
                   </Badge>
                 ))}
               </div>
@@ -73,7 +73,7 @@ export const CampaignOverview: React.FC<CampaignOverviewProps> = ({
           )}
         </div>
       }
-      context={{ concept, tagline, values }}
+      context={{ title, description, tone }}
     />
   );
 };
@@ -150,7 +150,7 @@ import {
 interface MoodboardItem {
   prompt: string;
   status: string;
-  url: string;
+  imageUrl: string;
 }
 
 interface CampaignMoodboardProps {
@@ -209,7 +209,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                       <TooltipIconButton
                         tooltip="Expand"
                         side="top"
-                        onClick={() => handleExpand(moodboard.url)}
+                        onClick={() => handleExpand(moodboard.imageUrl)}
                         className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
                       >
                         <Expand size={16} />
@@ -245,12 +245,14 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
 
                       <TooltipIconButton
                         tooltip={
-                          pinnedImages.includes(moodboard.url) ? "Unpin" : "Pin"
+                          pinnedImages.includes(moodboard.imageUrl)
+                            ? "Unpin"
+                            : "Pin"
                         }
                         side="top"
-                        onClick={() => handlePin(moodboard.url)}
+                        onClick={() => handlePin(moodboard.imageUrl)}
                         className={`p-1 rounded-full shadow ${
-                          pinnedImages.includes(moodboard.url)
+                          pinnedImages.includes(moodboard.imageUrl)
                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                             : "bg-white hover:bg-gray-100"
                         }`}
@@ -262,10 +264,10 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                     {/* Image Container */}
                     <div className="relative mt-10  aspect-square flex items-center justify-center">
                       <img
-                        src={moodboard.url || "/api/placeholder/600/600"}
+                        src={moodboard.imageUrl || "/api/placeholder/600/600"}
                         alt={`Moodboard ${index + 1}`}
                         className="w-full h-full object-contain"
-                        onClick={() => handleExpand(moodboard.url)}
+                        onClick={() => handleExpand(moodboard.imageUrl)}
                       />
                     </div>
 
@@ -352,7 +354,7 @@ export default function CampaignSelector({
   useEffect(() => {
     if (campaigns.length > 0) {
       const transformed = campaigns.map((campaign) => {
-        const displayName = campaign.name || "Unnamed Campaign";
+        const displayName = campaign.campaign.title || "Unnamed Campaign";
         return {
           id: campaign.id,
           displayName,
@@ -386,7 +388,7 @@ export default function CampaignSelector({
     if (index !== -1) {
       setSelectedCampaignIndex(index);
       setOpen(false);
-      toast.success(`Campaign '${campaigns[index].name}' selected`, {
+      toast.success(`Campaign '${campaigns[index].campaign.title}' selected`, {
         position: "top-right",
       });
     }
@@ -490,7 +492,7 @@ interface Campaign {
 }
 
 export const CampaignSection: React.FC<{
-  campaignInfo: Campaign[];
+  campaignInfo: any[];
   setThreadId: (id: string | null) => void;
 }> = ({ campaignInfo, setThreadId }) => {
   const [expanded, setExpanded] = useState(true);
@@ -531,7 +533,8 @@ export const CampaignSection: React.FC<{
             ) : (
               <div className="">
                 <div className="font-bold">
-                  Campaign: {currentCampaign.name || "Unnamed Campaign"}
+                  Campaign:{" "}
+                  {currentCampaign?.campaign?.title || "Unnamed Campaign"}
                 </div>
               </div>
             )}
@@ -564,25 +567,17 @@ export const CampaignSection: React.FC<{
         <CardContent className="pt-0 pb-6">
           <div className="mt-1 space-y-6">
             <CampaignOverview
-              concept={currentCampaign.concept}
-              tagline={currentCampaign.tagline}
-              values={currentCampaign.attributes}
+              title={currentCampaign?.campaign?.title}
+              description={currentCampaign?.campaign?.description}
+              tone={currentCampaign?.campaign?.tone}
             />
-            <CampaignColors colors={currentCampaign.campaignColors} />
+            <CampaignColors colors={currentCampaign.colors} />
 
             <DynamicContentSection
               dynamicData={Object.fromEntries(
                 Object.entries(currentCampaign || {}).filter(
                   ([key]) =>
-                    ![
-                      "id",
-                      "name",
-                      "concept",
-                      "tagline",
-                      "attributes",
-                      "campaignColors",
-                      "moodboards",
-                    ].includes(key)
+                    !["id", "campaign", "colors", "moodboards"].includes(key)
                 )
               )}
             />

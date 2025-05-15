@@ -1,13 +1,18 @@
-import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ContentSection } from "../shared/ContentSection";
-import { CirclePlus, Copy, Loader2, Trash2 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getFontColorForBackground,
   getThreadDisplayName,
 } from "@/lib/langgraph.utils";
+import {
+  ChevronDown,
+  ChevronRight,
+  CirclePlus,
+  Copy,
+  Trash2,
+} from "lucide-react";
+import React, { useState } from "react";
+import { ContentSection } from "../shared/ContentSection";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 export const renderBrandData = (
@@ -52,7 +57,8 @@ export const renderBrandData = (
 
               {!expandedSections.brandOverview ? (
                 <div className="flex items-center ">
-                  {staticData?.logos.length > 0 ? (
+                  {staticData?.logos?.length > 0 &&
+                  isValidUrl(staticData?.logos[0]) ? (
                     // Render the first valid logo
                     <img
                       src={staticData?.logos[0]}
@@ -407,22 +413,25 @@ interface LogosSectionProps {
 }
 
 export const LogosSection: React.FC<LogosSectionProps> = ({ logos }) => {
-  if (logos.length === 0) return null;
+  if (logos?.length === 0) return null;
 
   return (
     <ContentSection
       title="Logos"
       content={
         <div className="flex flex-wrap gap-4 mt-2">
-          {logos.map((logo, index) => (
-            <img
-              key={index}
-              src={logo}
-              alt={`Logo ${index + 1}`}
-              className="h-20 w-auto rounded-lg shadow-md"
-              loading="lazy"
-            />
-          ))}
+          {logos?.map((logo, index) => {
+            console.log(logo);
+            return isValidUrl(logo) ? (
+              <img
+                key={index}
+                src={logo}
+                alt={`Logo ${index + 1}`}
+                className="h-20 w-auto rounded-lg shadow-md"
+                loading="lazy"
+              />
+            ) : null;
+          })}
         </div>
       }
       context={{ logos }}
@@ -430,8 +439,7 @@ export const LogosSection: React.FC<LogosSectionProps> = ({ logos }) => {
   );
 };
 
-import { useEffect } from "react";
-import { Check, Search } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -446,13 +454,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Avatar } from "@/components/ui/avatar";
-import { AvatarFallback } from "@/components/ui/avatar";
+import { isValidUrl } from "@/lib/utils";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
+import { Check, Search } from "lucide-react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import ReusableAlertDialog from "../shared/ReusableAlertDialog";
-import { DynamicContentSection } from "./DynamicSection";
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
 }

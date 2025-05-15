@@ -82,3 +82,12 @@ export async function handleApiRequest<T>(
     throw new Error(message);
   }
 }
+
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
