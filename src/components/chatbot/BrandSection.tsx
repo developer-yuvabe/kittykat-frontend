@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ContentSection } from "../shared/ContentSection";
-import { CirclePlus, Copy } from "lucide-react";
+import { CirclePlus, Copy, Loader2, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import {
@@ -64,9 +64,21 @@ export const renderBrandData = (
 
               {!expandedSections.brandOverview ? (
                 <div className="flex items-center ">
-                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3 overflow-hidden">
-                    <span className="text-white font-bold">{brandInitial}</span>
-                  </div>
+                  {validLogos.length > 0 ? (
+                    // Render the first valid logo
+                    <img
+                      src={validLogos[0]}
+                      alt="Brand Logo"
+                      className="w-10 h-10 rounded-full object-cover mr-3"
+                    />
+                  ) : (
+                    // Render the brand initial circle
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3 overflow-hidden">
+                      <span className="text-white font-bold">
+                        {brandInitial}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex flex-col">
                     <div className="text-sm font-medium">
                       {staticData?.brand?.name
@@ -550,10 +562,20 @@ import { AvatarFallback } from "@/components/ui/avatar";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
+import ReusableAlertDialog from "../shared/ReusableAlertDialog";
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
 }
-
 export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -564,8 +586,19 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
     []
   );
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
-  const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =
-    useThreads();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [threadToDelete, setThreadToDelete] = useState<string | null>(null);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const {
+    getThreads,
+    threads,
+    setThreads,
+    threadsLoading,
+    setThreadsLoading,
+    deleteThread,
+  } = useThreads();
 
   // Fetch and transform threads on initial open
   useEffect(() => {
@@ -647,6 +680,64 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
     setSearchQuery(value);
   };
 
+  // Delete thread functionality
+  const handleDeleteConfirm = async () => {
+    if (!threadToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      toast.promise(deleteThread(threadToDelete), {
+        loading: "Deleting Brand...",
+        success: "Brand deleted successfully!",
+        error: "Failed to delete the Brand.",
+        position: "top-right",
+      });
+
+      // Update the local state
+      const updatedTransformed = transformedThreads.filter(
+        (thread) => thread.id !== threadToDelete
+      );
+      setTransformedThreads(updatedTransformed);
+      setFilteredThreads(updatedTransformed);
+
+      // If the deleted thread was selected, clear the selection
+      if (selectedThreadId === threadToDelete) {
+        setSelectedThreadId(null);
+        setThreadId(null);
+      }
+    } catch (error) {
+      console.error("Error deleting thread:", error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setThreadToDelete(null);
+    }
+  };
+  // Delete all threads functionality
+  const handleDeleteAllConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      const promises = filteredThreads.map((thread) => deleteThread(thread.id));
+      toast.promise(Promise.allSettled(promises), {
+        loading: "Deleting all brands...",
+        success: "All brands deleted successfully!",
+        error: "An error occurred while deleting all threads.",
+        position: "top-right",
+      });
+
+      // Clear the local state
+      setTransformedThreads([]);
+      setFilteredThreads([]);
+      setSelectedThreadId(null);
+      setThreadId(null);
+    } catch (error) {
+      console.error("Error deleting all threads:", error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteAllDialogOpen(false);
+    }
+  };
+
   return (
     <div className="">
       <Popover open={open} onOpenChange={setOpen}>
@@ -667,7 +758,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
             <div className="flex items-center border-b px-3">
               <CommandInput
                 placeholder="Search brands..."
-                className="h-9 border-0 outline-none  focus-visible:ring-0"
+                className="h-9 border-0 outline-none focus-visible:ring-0"
                 value={searchQuery}
                 onValueChange={handleInputChange}
               />
@@ -684,7 +775,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                     onSelect={() => {
                       handleThreadSelect(thread.id);
                     }}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between group"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
@@ -695,18 +786,75 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                           {thread.initial}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate ">{thread.displayName}</span>
+                      <span className="truncate">{thread.displayName}</span>
                     </div>
-                    {selectedThreadId === thread.id && (
-                      <Check className="h-4 w-4" />
-                    )}
+                    <div className="flex items-center space-x-1">
+                      {selectedThreadId === thread.id && (
+                        <Check className="h-4 w-4" />
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setThreadToDelete(thread.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 size={14} className="text-red-500" />
+                      </Button>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
+              {filteredThreads.length > 0 && (
+                <div className="p-2 border-t sticky bottom-0 bg-white">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setDeleteAllDialogOpen(true)}
+                  >
+                    <Trash2 size={14} className="mr-2" />
+                    Delete All Brands
+                  </Button>
+                </div>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
+
+      {/* Delete Single Brand Dialog */}
+      <ReusableAlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Brand"
+        description="Are you sure you want to delete this brand? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+        danger={true}
+      />
+
+      {/* Delete All Brands Dialog */}
+      <ReusableAlertDialog
+        open={deleteAllDialogOpen}
+        onOpenChange={setDeleteAllDialogOpen}
+        title="Delete All Brands"
+        description={`Are you sure you want to delete all brands? This will remove ${
+          filteredThreads.length
+        } brand${
+          filteredThreads.length !== 1 ? "s" : ""
+        } and cannot be undone.`}
+        confirmLabel="Delete All"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteAllConfirm}
+        isLoading={isDeleting}
+        danger={true}
+      />
     </div>
   );
 }

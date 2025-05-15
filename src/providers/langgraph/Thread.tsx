@@ -25,6 +25,7 @@ interface ThreadContextType {
     updateFn?: (currentThreads: Thread[]) => Thread[]
   ) => Promise<Thread[]>;
   updateThreadName: (threadId: string, name: string) => Promise<boolean>;
+  deleteThread: (threadId: string) => Promise<boolean>;
 }
 
 const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
@@ -102,6 +103,27 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     [setThreads]
   );
 
+  // Delete a thread by ID
+  const deleteThread = useCallback(
+    async (threadId: string): Promise<boolean> => {
+      try {
+        // Delete the thread through the API
+        await client.threads.delete(threadId);
+
+        // Remove the thread from local state
+        setThreads((prevThreads) =>
+          prevThreads.filter((thread) => thread.thread_id !== threadId)
+        );
+
+        return true;
+      } catch (error) {
+        console.error(`Failed to delete thread ${threadId}:`, error);
+        return false;
+      }
+    },
+    [setThreads]
+  );
+
   // Fetch threads when component mounts
   useEffect(() => {
     async function loadThreads() {
@@ -132,6 +154,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     setThreadsLoading,
     updateThreads,
     updateThreadName,
+    deleteThread,
   };
 
   return (
