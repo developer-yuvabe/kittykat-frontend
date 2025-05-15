@@ -113,7 +113,8 @@ export function getLoadingMessageForTool(
 
 export const capitalizeKey = (key: string) => {
   return key
-    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2") // Add space before capital letters
+    .replace(/_/g, " ") // Replace underscores with spaces
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");

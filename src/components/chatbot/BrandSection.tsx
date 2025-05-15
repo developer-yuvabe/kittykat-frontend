@@ -1,5 +1,3 @@
-// components/BrandOverview.tsx
-
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ContentSection } from "../shared/ContentSection";
@@ -7,7 +5,6 @@ import { CirclePlus, Copy, Loader2, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import {
-  capitalizeKey,
   getFontColorForBackground,
   getThreadDisplayName,
 } from "@/lib/langgraph.utils";
@@ -22,7 +19,7 @@ export const renderBrandData = (
   clearPinnedItems: () => void
 ) => {
   try {
-    const brandName = staticData.brand?.name || "No Brand Name";
+    const brandName = staticData?.brand?.name || "No Brand Name";
     const brandInitial = brandName.charAt(0).toUpperCase();
     const allColors = [
       ...(staticData?.colors?.primary
@@ -38,15 +35,6 @@ export const renderBrandData = (
           }))
         : []),
     ];
-
-    const validLogos = (staticData.logos || []).filter((logo: string) => {
-      try {
-        const url = new URL(logo);
-        return /\.(jpg|jpeg|png|svg|webp|gif)$/i.test(url.pathname);
-      } catch {
-        return false;
-      }
-    });
 
     return (
       <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -64,10 +52,10 @@ export const renderBrandData = (
 
               {!expandedSections.brandOverview ? (
                 <div className="flex items-center ">
-                  {validLogos.length > 0 ? (
+                  {staticData?.logos.length > 0 ? (
                     // Render the first valid logo
                     <img
-                      src={validLogos[0]}
+                      src={staticData?.logos[0]}
                       alt="Brand Logo"
                       className="w-10 h-10 rounded-full object-cover mr-3"
                     />
@@ -145,27 +133,27 @@ export const renderBrandData = (
             <div className="mt-1 space-y-6">
               {/* Brand Section */}
               <BrandOverview
-                tagline={staticData.brand.tagline}
-                values={staticData.brand.values}
+                tagline={staticData?.brand?.tagline}
+                values={staticData?.brand?.values}
               />
 
               {/* Typography Section */}
               <TypographySection
-                primaryFont={staticData.typography.primaryFont}
-                secondaryFont={staticData.typography.secondaryFont}
+                primaryFont={staticData?.typography?.primaryFont}
+                secondaryFont={staticData?.typography?.secondaryFont}
               />
 
               {/* Colors Section */}
               <BrandColors colors={allColors} />
 
               {/* Products Section */}
-              <ProductsSection products={staticData.products} />
+              <ProductsSection products={staticData?.products} />
 
               {/* Logos Section */}
-              <LogosSection logos={validLogos} />
+              <LogosSection logos={staticData?.logos} />
 
               {/* Dynamic Data Section */}
-              <DynamicContentSection dynamicData={dynamicData} />
+              {/* <DynamicContentSection dynamicData={dynamicData} /> */}
             </div>
           </CardContent>
         )}
@@ -322,10 +310,13 @@ interface BrandColorsProps {
 export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
-  // Filter valid colors
-  const validColors = colors.filter((color) =>
-    /^#[0-9A-Fa-f]{6}$/.test(color.hex)
-  );
+  // Filter and normalize colors
+  const validColors = colors
+    .map((color) => ({
+      ...color,
+      hex: color.hex.startsWith("#") ? color.hex : `#${color.hex}`,
+    }))
+    .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color.hex));
 
   // Skip rendering if no valid colors
   if (validColors.length === 0) return null;
@@ -439,108 +430,6 @@ export const LogosSection: React.FC<LogosSectionProps> = ({ logos }) => {
   );
 };
 
-interface DynamicContentSectionProps {
-  dynamicData: Record<string, any>;
-}
-const RenderValue: React.FC<{ value: any; depth?: number }> = ({
-  value,
-  depth = 0,
-}) => {
-  // Handle different data types
-  if (value === null || value === undefined) {
-    return <span className="text-gray-500 italic">None</span>;
-  }
-
-  if (typeof value === "string") {
-    return <span className="text-gray-700 text-sm">{value}</span>;
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return <span className="text-gray-700">{String(value)}</span>;
-  }
-
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return <span className="text-gray-500 italic">Empty list</span>;
-    }
-
-    // Check if array contains primitive values or objects
-    if (value.every((item) => typeof item !== "object" || item === null)) {
-      return (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {value.map((item, idx) => (
-            <Badge
-              key={idx}
-              variant="outline"
-              className="text-xs bg-gray-50 text-gray-700 border-gray-200"
-            >
-              {String(item)}
-            </Badge>
-          ))}
-        </div>
-      );
-    } else {
-      // Array of objects
-      return (
-        <div className="space-y-3 mt-1">
-          {value.map((item, idx) => (
-            <div key={idx} className="pl-4  border-gray-200">
-              <div className="mt-1">
-                <RenderValue value={item} depth={depth + 1} />
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-  }
-
-  if (typeof value === "object") {
-    return (
-      <div className="space-y-2 mt-1">
-        {Object.entries(value).map(([key, val]) => (
-          <div key={key} className={`${depth > 0 ? "pl-4" : ""}`}>
-            <div className="flex items-baseline">
-              <span className="text-sm font-medium text-gray-600">
-                {capitalizeKey(key)}:
-              </span>
-              <div className="ml-2 flex-1">
-                <RenderValue value={val} depth={depth + 1} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // Fallback for any other types
-  return <span className="text-gray-700">{String(value)}</span>;
-};
-
-export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
-  dynamicData,
-}) => {
-  if (!dynamicData || Object.keys(dynamicData).length === 0) return null;
-
-  return (
-    <>
-      {Object.entries(dynamicData).map(([key, value]) => (
-        <ContentSection
-          key={key}
-          title={capitalizeKey(key)}
-          content={
-            <div className="ml-2 space-y-2">
-              <RenderValue value={value} />
-            </div>
-          }
-          context={{ [key]: value }}
-        />
-      ))}
-    </>
-  );
-};
-
 import { useEffect } from "react";
 import { Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -562,17 +451,8 @@ import { AvatarFallback } from "@/components/ui/avatar";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../ui/alert-dialog";
 import ReusableAlertDialog from "../shared/ReusableAlertDialog";
+import { DynamicContentSection } from "./DynamicSection";
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
 }
