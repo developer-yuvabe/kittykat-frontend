@@ -409,32 +409,31 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 };
 
 interface LogosSectionProps {
-  logos: string[];
+  logos?: string[];
 }
 
-export const LogosSection: React.FC<LogosSectionProps> = ({ logos }) => {
-  if (logos?.length === 0) return null;
+export const LogosSection: React.FC<LogosSectionProps> = ({ logos = [] }) => {
+  const validLogos = logos.filter(isValidUrl);
+
+  if (validLogos.length === 0) return null;
 
   return (
     <ContentSection
       title="Logos"
       content={
         <div className="flex flex-wrap gap-4 mt-2">
-          {logos?.map((logo, index) => {
-            console.log(logo);
-            return isValidUrl(logo) ? (
-              <img
-                key={index}
-                src={logo}
-                alt={`Logo ${index + 1}`}
-                className="h-20 w-auto rounded-lg shadow-md"
-                loading="lazy"
-              />
-            ) : null;
-          })}
+          {validLogos.map((logo, index) => (
+            <img
+              key={index}
+              src={logo}
+              alt={`Logo ${index + 1}`}
+              className="h-20 w-auto rounded-lg shadow-md"
+              loading="lazy"
+            />
+          ))}
         </div>
       }
-      context={{ logos }}
+      context={{ logos: validLogos }}
     />
   );
 };
