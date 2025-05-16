@@ -12,7 +12,6 @@ type ChatMessageListProps = {
   isLoading: boolean;
   firstTokenReceived: boolean;
   hasNoAIOrToolMessages: boolean;
-  hideAgentComms?: boolean;
   stream: any;
   handleRegenerate: (parentCheckpoint?: Checkpoint | null) => void;
 };
@@ -22,7 +21,6 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
   isLoading,
   firstTokenReceived,
   hasNoAIOrToolMessages,
-  hideAgentComms,
   stream,
   handleRegenerate,
 }) => {
@@ -45,7 +43,6 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
               message={message}
               isLoading={isLoading}
               handleRegenerate={handleRegenerate}
-              hideAgentComms={hideAgentComms}
             />
           );
         })}

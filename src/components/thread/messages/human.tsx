@@ -1,3 +1,4 @@
+import React from "react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { Message } from "@langchain/langgraph-sdk";
 import { useState, useEffect, JSX } from "react";
@@ -60,7 +61,7 @@ function FileAttachment({
   fileUrl,
   fileName,
 }: FileAttachmentProps): JSX.Element {
-  const { contentType, isLoading, error } = useFileContentType(fileUrl);
+  const { contentType, isLoading } = useFileContentType(fileUrl);
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
   // Get file name from URL if not provided

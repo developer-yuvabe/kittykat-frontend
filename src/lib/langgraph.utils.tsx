@@ -1,3 +1,4 @@
+import React from "react";
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
 import { v4 as uuidv4 } from "uuid";
 import { Message, Thread, ToolMessage } from "@langchain/langgraph-sdk";
@@ -5,9 +6,6 @@ import { RENDER_FILE_ID_PREFIX } from "./constants";
 import { Dispatch, SetStateAction } from "react";
 import { FileTextIcon, Music, Video, Image } from "lucide-react";
 import { MessageContentFiles } from "@/types/langgraph.types";
-import CampaignThemes from "@/components/agent-ui/CampaignThemes";
-import MoodBoards from "@/components/agent-ui/MoodBoards";
-import { ConfirmThemeSelection } from "@/components/agent-ui/ConfirmThemes";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
 
@@ -186,13 +184,6 @@ export async function getFileIcon(url: string): Promise<React.ElementType> {
   const [type] = contentType.split("/");
   return fileTypeIcons[type] || File;
 }
-
-export const clientComponents = {
-  "campaign-themes": (props: any) => <CampaignThemes {...props} />,
-  moodboards: (props: any) => <MoodBoards {...props} />,
-  "confirm-themes": (props: any) => <ConfirmThemeSelection {...props} />,
-  "regenerate-themes": (props: any) => <CampaignThemes {...props} />,
-};
 
 export const getThreadDisplayName = (thread: Thread) => {
   if (

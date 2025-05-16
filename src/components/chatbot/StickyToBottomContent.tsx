@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 
 export function StickyToBottomContent(props: {

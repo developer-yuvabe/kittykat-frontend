@@ -1,3 +1,4 @@
+import React from "react";
 import { LogoSection } from "./LogoSection";
 import { NavLinks } from "./NavLinks";
 import { UserProfileMenu } from "./UserProfileMenu";

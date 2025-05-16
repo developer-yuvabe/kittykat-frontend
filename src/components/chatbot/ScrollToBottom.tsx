@@ -1,3 +1,4 @@
+import React from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 import { Button } from "../ui/button";
 import { ArrowDown } from "lucide-react";

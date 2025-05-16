@@ -1,20 +1,12 @@
+import React from "react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { Button } from "../ui/button";
 import { MessageSquare } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-
 import { Message } from "@langchain/langgraph-sdk";
 import { ensureToolCallsHaveResponses } from "@/lib/langgraph.utils";
 
-interface ChatSuggestionsProps {
-  setInput: (input: string) => void;
-  handleSubmit: any;
-}
-
-export function ChatSuggestions({
-  setInput,
-  handleSubmit,
-}: ChatSuggestionsProps) {
+export function ChatSuggestions() {
   const suggestions = [
     "Help me create a marketing campaign for my new product",
     "Let’s start building a campaign—ask me what you need to know first.",

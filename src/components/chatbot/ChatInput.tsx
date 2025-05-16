@@ -82,8 +82,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   input,
   setInput,
   handleSubmit,
-  hideToolCalls,
-  setHideToolCalls,
   isLoading,
   stream,
   handleAddFile,

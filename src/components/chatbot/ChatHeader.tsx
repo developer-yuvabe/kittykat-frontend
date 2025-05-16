@@ -1,20 +1,12 @@
 import React from "react";
-import { Bot, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 type ChatHeaderProps = {
-  chatHistoryOpen: boolean;
-  isLargeScreen: boolean;
-  setChatHistoryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setThreadId: (id: string | null) => void;
 };
 
-export const ChatHeader: React.FC<ChatHeaderProps> = ({
-  chatHistoryOpen,
-  isLargeScreen,
-  setChatHistoryOpen,
-  setThreadId,
-}) => {
+export const ChatHeader: React.FC<ChatHeaderProps> = ({ setThreadId }) => {
   return (
     <div className="relative z-10 flex items-center justify-between gap-3 p-2">
       <div className="relative flex flex-row gap-2"></div>

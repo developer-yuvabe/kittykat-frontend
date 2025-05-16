@@ -5,15 +5,8 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  UserCircle,
-  Settings,
-  CreditCard,
-  LifeBuoy,
-  LogOut,
-} from "lucide-react";
+import React from "react";
 import { useUserStore } from "@/store/user.store";
-import Link from "next/link";
 import { Separator } from "../ui/separator";
 import { LogoutButton } from "./LogoutButton";
 

@@ -1,3 +1,4 @@
+import React from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
@@ -54,7 +55,6 @@ export function Thread() {
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
   );
-  const [hideAgentComms, setHideAgentComms] = useState(false);
   const [input, setInput] = useState("");
   const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
@@ -126,7 +126,7 @@ export function Thread() {
             content: [
               {
                 type: "text",
-                text: `Focus on the following contexts with the associated data:\n${pinnedItems
+                text: `Focus only on the following contexts with the associated data:\n${pinnedItems
                   .map(
                     (item) =>
                       `Title: ${item.title}\nContext: ${JSON.stringify(
@@ -283,9 +283,6 @@ export function Thread() {
           {/* Tool Results Panel - Left Side */}
           <ToolResultsPanel
             isLargeScreen={isLargeScreen}
-            chatHistoryOpen={chatHistoryOpen}
-            setChatHistoryOpen={setChatHistoryOpen}
-            toolMessages={toolMessages}
             setThreadId={setThreadId}
             threadId={threadId}
           />
@@ -332,7 +329,6 @@ export function Thread() {
                       isLoading={isLoading}
                       firstTokenReceived={firstTokenReceived}
                       hasNoAIOrToolMessages={hasNoAIOrToolMessages}
-                      hideAgentComms={hideAgentComms}
                       stream={stream}
                       handleRegenerate={handleRegenerate}
                     />

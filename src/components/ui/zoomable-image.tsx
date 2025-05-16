@@ -8,7 +8,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "./dialog";
-import { DetailedHTMLProps, ImgHTMLAttributes } from "react";
+import React, { DetailedHTMLProps, ImgHTMLAttributes } from "react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export default function ZoomableImage({

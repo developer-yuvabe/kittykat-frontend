@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import React from "react";
 import { Check, Copy, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,8 +84,6 @@ interface CampaignColorsProps {
 }
 
 export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
-  const [copiedColor, setCopiedColor] = useState<string | null>(null);
-
   // Filter valid colors
   const validColors = colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color));
 
@@ -93,11 +92,10 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
 
   const copyToClipboard = (colorHex: string) => {
     navigator.clipboard.writeText(colorHex);
-    setCopiedColor(colorHex);
+
     toast.success(`Color ${colorHex} copied to clipboard!`, {
       position: "top-right",
     });
-    setTimeout(() => setCopiedColor(null), 1500);
   };
 
   return (
@@ -138,7 +136,7 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
   );
 };
 
-import { Expand, Pin, RotateCw } from "lucide-react";
+import { Expand, RotateCw } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -493,8 +491,7 @@ interface Campaign {
 
 export const CampaignSection: React.FC<{
   campaignInfo: any[];
-  setThreadId: (id: string | null) => void;
-}> = ({ campaignInfo, setThreadId }) => {
+}> = ({ campaignInfo }) => {
   const [expanded, setExpanded] = useState(true);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(0);
 

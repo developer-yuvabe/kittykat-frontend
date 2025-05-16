@@ -1,3 +1,4 @@
+import React from "react";
 import { parsePartialJson } from "@langchain/core/output_parsers";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
@@ -13,7 +14,6 @@ import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import {
-  clientComponents,
   getLoadingMessageForTool,
   isAgentInboxInterruptSchema,
 } from "@/lib/langgraph.utils";
@@ -41,7 +41,6 @@ function CustomComponent({
           stream={thread}
           message={customComponent}
           meta={{ ui: customComponent }}
-          components={clientComponents}
         />
       ))}
     </Fragment>
@@ -75,12 +74,10 @@ export function AssistantMessage({
   message,
   isLoading,
   handleRegenerate,
-  hideAgentComms,
 }: {
   message: Message | undefined;
   isLoading: boolean;
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
-  hideAgentComms?: boolean;
 }) {
   const content = message?.content ?? [];
   const contentString = getContentString(content);

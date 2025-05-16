@@ -314,8 +314,6 @@ interface BrandColorsProps {
 }
 
 export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
-  const [copiedColor, setCopiedColor] = useState<string | null>(null);
-
   // Filter and normalize colors
   const validColors = colors
     .map((color) => ({
@@ -329,11 +327,9 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
 
   const copyToClipboard = (colorHex: string) => {
     navigator.clipboard.writeText(colorHex);
-    setCopiedColor(colorHex);
     toast.success(`Color ${colorHex} copied to clipboard!`, {
       position: "top-right",
     });
-    setTimeout(() => setCopiedColor(null), 1500);
   };
 
   return (

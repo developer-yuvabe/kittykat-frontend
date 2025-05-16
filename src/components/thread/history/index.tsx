@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { Thread } from "@langchain/langgraph-sdk";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 import { getContentString } from "../utils";
 import { useQueryState, parseAsBoolean } from "nuqs";
@@ -84,14 +84,8 @@ export default function ThreadHistory() {
     parseAsBoolean.withDefault(false)
   );
 
-  const {
-    getThreads,
-    threads,
-    setThreads,
-    threadsLoading,
-    setThreadsLoading,
-    updateThreadName,
-  } = useThreads();
+  const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =
+    useThreads();
 
   useEffect(() => {
     if (typeof window === "undefined") return;

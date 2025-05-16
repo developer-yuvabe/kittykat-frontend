@@ -27,9 +27,6 @@ export const usePinnedContextStore = create<PinnedContextState>()(
 
       // Add a new pinned item
       addPinnedItem: (title: string, context: any) => {
-        const contextStr =
-          typeof context === "string" ? context : JSON.stringify(context);
-
         // Check if this context is already pinned
         if (get().isPinned(context)) return;
 

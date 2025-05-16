@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ToolMessage } from "@langchain/langgraph-sdk";
 import BrandSelector, { renderBrandData } from "./BrandSection";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
@@ -10,9 +9,6 @@ import { CampaignSection } from "./CampaignSection";
 import _ from "lodash";
 interface ToolResultsPanelProps {
   isLargeScreen: boolean;
-  chatHistoryOpen: boolean;
-  setChatHistoryOpen: (open: boolean) => void;
-  toolMessages: ToolMessage[];
   threadId: string | null;
   setThreadId: (id: string | null) => void;
 }
@@ -77,9 +73,6 @@ const BrandSection: React.FC<{
 
 const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
   isLargeScreen,
-  chatHistoryOpen,
-  setChatHistoryOpen,
-  toolMessages,
   setThreadId,
   threadId,
 }) => {
@@ -124,10 +117,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
               />
             }
             {brandingInformation && (
-              <CampaignSection
-                campaignInfo={campaignInfo}
-                setThreadId={setThreadId}
-              />
+              <CampaignSection campaignInfo={campaignInfo} />
             )}
           </>
         )}

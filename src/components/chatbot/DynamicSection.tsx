@@ -1,11 +1,12 @@
+import React from "react";
 import { capitalizeKey } from "@/lib/langgraph.utils";
 import { ContentSection } from "../shared/ContentSection";
 import { Badge } from "../ui/badge";
 
 interface DynamicContentSectionProps {
-  dynamicData: Record<string, any>;
+  dynamicData: Record<string, unknown>;
 }
-const RenderValue: React.FC<{ value: any; depth?: number }> = ({
+const RenderValue: React.FC<{ value: unknown; depth?: number }> = ({
   value,
   depth = 0,
 }) => {

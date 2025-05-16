@@ -1,3 +1,4 @@
+import React from "react";
 import { TfiHome } from "react-icons/tfi";
 import { Bell, MessageSquareText, Images, Bot, Menu } from "lucide-react";
 
