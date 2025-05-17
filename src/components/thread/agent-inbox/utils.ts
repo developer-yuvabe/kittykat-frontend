@@ -9,7 +9,7 @@ export function prettifyText(action: string) {
 }
 
 export function isArrayOfMessages(
-  value: Record<string, any>[],
+  value: Record<string, any>[]
 ): value is BaseMessage[] {
   if (
     value.every(isBaseMessage) ||
@@ -20,7 +20,7 @@ export function isArrayOfMessages(
           "id" in v &&
           "type" in v &&
           "content" in v &&
-          "additional_kwargs" in v,
+          "additional_kwargs" in v
       ))
   ) {
     return true;
@@ -39,9 +39,13 @@ export function baseMessageObject(item: unknown): string {
       toolCallText = JSON.stringify(item.tool_calls, null);
     }
     if ("type" in item) {
-      return `${item.type}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
+      return `${item.type}:${contentText ? ` ${contentText}` : ""}${
+        toolCallText ? ` - Tool calls: ${toolCallText}` : ""
+      }`;
     } else if ("_getType" in item) {
-      return `${item._getType()}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
+      return `${item._getType()}:${contentText ? ` ${contentText}` : ""}${
+        toolCallText ? ` - Tool calls: ${toolCallText}` : ""
+      }`;
     }
   } else if (
     typeof item === "object" &&
@@ -57,7 +61,9 @@ export function baseMessageObject(item: unknown): string {
     if ("tool_calls" in item) {
       toolCallText = JSON.stringify(item.tool_calls, null);
     }
-    return `${item.type}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
+    return `${item.type}:${contentText ? ` ${contentText}` : ""}${
+      toolCallText ? ` - Tool calls: ${toolCallText}` : ""
+    }`;
   }
 
   if (typeof item === "object") {
@@ -77,15 +83,14 @@ export function unknownToPrettyDate(input: unknown): string | undefined {
     }
   } catch (_) {
     // failed to parse date. no-op
+    console.error("Failed to parse date", { _ });
   }
   return undefined;
 }
 
 export function createDefaultHumanResponse(
   interrupt: HumanInterrupt,
-  initialHumanInterruptEditValue: React.MutableRefObject<
-    Record<string, string>
-  >,
+  initialHumanInterruptEditValue: React.MutableRefObject<Record<string, string>>
 ): {
   responses: HumanResponseWithEdits[];
   defaultSubmitType: SubmitType | undefined;
@@ -120,7 +125,7 @@ export function createDefaultHumanResponse(
               key: k,
               value: stringValue,
               expectedValue: initialHumanInterruptEditValue.current[k],
-            },
+            }
           );
         }
       });
@@ -189,7 +194,7 @@ export function createDefaultHumanResponse(
 
 export function constructOpenInStudioURL(
   deploymentUrl: string,
-  threadId?: string,
+  threadId?: string
 ) {
   const smithStudioURL = new URL("https://smith.langchain.com/studio/thread");
   // trim the trailing slash from deploymentUrl
@@ -206,7 +211,7 @@ export function constructOpenInStudioURL(
 
 export function haveArgsChanged(
   args: unknown,
-  initialValues: Record<string, string>,
+  initialValues: Record<string, string>
 ): boolean {
   if (typeof args !== "object" || !args) {
     return false;

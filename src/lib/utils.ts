@@ -85,9 +85,11 @@ export async function handleApiRequest<T>(
 
 export function isValidUrl(url: string): boolean {
   try {
+    console.log("Validating URL:", url);
     new URL(url);
     return true;
   } catch (_error) {
+    console.log("Invalid URL:", _error);
     return false;
   }
 }

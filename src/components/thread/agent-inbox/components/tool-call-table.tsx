@@ -1,5 +1,6 @@
 import { ToolCall } from "@langchain/core/messages/tool";
 import { unknownToPrettyDate } from "../utils";
+import React from "react";
 
 export function ToolCallTable({ toolCall }: { toolCall: ToolCall }) {
   return (

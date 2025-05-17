@@ -214,8 +214,6 @@ export function Thread() {
     (m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX)
   );
 
-  // Separate tool messages from others
-  const toolMessages = filteredMessages.filter((m) => m.type === "tool");
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
 
   useEffect(() => {

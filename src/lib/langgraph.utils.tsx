@@ -5,7 +5,7 @@ import { Message, Thread, ToolMessage } from "@langchain/langgraph-sdk";
 import { RENDER_FILE_ID_PREFIX } from "./constants";
 import { Dispatch, SetStateAction } from "react";
 import { FileTextIcon, Music, Video, Image } from "lucide-react";
-import { MessageContentFiles } from "@/types/langgraph.types";
+import { Color, MessageContentFiles } from "@/types/langgraph.types";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
 
@@ -236,6 +236,30 @@ export function getFontColorForBackground(backgroundColor: string) {
 
   return luminance > 0.5 ? "#000000" : "#FFFFFF";
 }
+
+export const extractAllColors = (staticData?: any): Color[] => {
+  if (!staticData?.colors) return [];
+
+  const { primary, secondary, others } = staticData.colors;
+
+  const labeledColors = [
+    ...(primary ? [{ ...primary, label: "Primary" }] : []),
+    ...(secondary ? [{ ...secondary, label: "Secondary" }] : []),
+    ...(Array.isArray(others)
+      ? others.map((color) => ({ ...color, label: color.name }))
+      : []),
+  ];
+
+  return labeledColors;
+};
+
+export const filterAndNormalizeColors = (colors: Color[]): Color[] =>
+  colors
+    .map((color) => ({
+      ...color,
+      hex: color.hex.startsWith("#") ? color.hex : `#${color.hex}`,
+    }))
+    .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color.hex));
 
 export function getThreadSearchMetadata(
   assistantId: string

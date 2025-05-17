@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  extractAllColors,
+  filterAndNormalizeColors,
   getFontColorForBackground,
   getThreadDisplayName,
 } from "@/lib/langgraph.utils";
@@ -26,20 +28,7 @@ export const renderBrandData = (
   try {
     const brandName = staticData?.brand?.name || "No Brand Name";
     const brandInitial = brandName.charAt(0).toUpperCase();
-    const allColors = [
-      ...(staticData?.colors?.primary
-        ? [{ ...staticData.colors.primary, label: "Primary" }]
-        : []),
-      ...(staticData?.colors?.secondary
-        ? [{ ...staticData.colors.secondary, label: "Secondary" }]
-        : []),
-      ...(Array.isArray(staticData?.colors?.others)
-        ? staticData.colors.others.map((color: Color) => ({
-            ...color,
-            label: color.name,
-          }))
-        : []),
-    ];
+    const allColors = extractAllColors(staticData);
 
     return (
       <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -160,6 +149,11 @@ export const renderBrandData = (
 
               {/* Dynamic Data Section */}
               {/* <DynamicContentSection dynamicData={dynamicData} /> */}
+
+              <BrandMedia
+                contactInfo={brandMediaMockData.contactInfo}
+                media={brandMediaMockData.media}
+              />
             </div>
           </CardContent>
         )}
@@ -303,24 +297,12 @@ export const TypographySection: React.FC<TypographyProps> = ({
   );
 };
 
-interface Color {
-  name: string;
-  hex: string;
-  label?: string;
-}
-
 interface BrandColorsProps {
   colors: Color[];
 }
 
 export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
-  // Filter and normalize colors
-  const validColors = colors
-    .map((color) => ({
-      ...color,
-      hex: color.hex.startsWith("#") ? color.hex : `#${color.hex}`,
-    }))
-    .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color.hex));
+  const validColors = filterAndNormalizeColors(colors);
 
   // Skip rendering if no valid colors
   if (validColors.length === 0) return null;
@@ -451,11 +433,19 @@ import {
 } from "@/components/ui/popover";
 import { isValidUrl } from "@/lib/utils";
 import { useThreads } from "@/providers/langgraph/Thread";
-import { TransformedThread } from "@/types/langgraph.types";
+import { Color, TransformedThread } from "@/types/langgraph.types";
 import { Check, Search } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import ReusableAlertDialog from "../shared/ReusableAlertDialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "../ui/carousel";
+import { socialLinks } from "@/lib/icons";
 interface BrandSelectorProps {
   setThreadId: (id: string | null) => void;
 }
@@ -741,3 +731,165 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
     </div>
   );
 }
+
+interface BrandMediaProps {
+  media: string[];
+  contactInfo: {
+    website: string;
+    facebook: string;
+    instagram: string;
+    tiktok: string;
+  };
+}
+
+export const brandMediaMockData = {
+  media: [
+    "https://storage.googleapis.com/kittykat-dev/generated_images/01b2062e-9ccd-4478-9720-1470013ae8ef.png",
+    "https://storage.googleapis.com/kittykat-dev/generated_images/01b2062e-9ccd-4478-9720-1470013ae8ef.png",
+    "https://storage.googleapis.com/platform-img-generation-assets/fashn_outputs/9a6b12cf_0.webp",
+    "https://storage.googleapis.com/kittykat-dev/generated_images/01b2062e-9ccd-4478-9720-1470013ae8ef.png",
+    "https://storage.googleapis.com/kittykat-dev/generated_images/01b2062e-9ccd-4478-9720-1470013ae8ef.png",
+  ],
+  contactInfo: {
+    website: "https://www.nike.com",
+    facebook: "https://www.facebook.com/nikefootball",
+    instagram: "https://www.instagram.com/nikefootball",
+    tiktok: "https://www.tiktok.com/nikefootball",
+  },
+};
+
+interface BrandMediaProps {
+  media: string[];
+  contactInfo: {
+    website: string;
+    facebook: string;
+    instagram: string;
+    tiktok: string;
+  };
+}
+
+const BrandMedia: React.FC<BrandMediaProps> = ({ media, contactInfo }) => {
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [api, setApi] = useState<any>(null);
+  const centerIndex = Math.floor(media.length / 2);
+  const [current, setCurrent] = useState(centerIndex);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => {
+      const selectedIndex = api.selectedScrollSnap();
+      setCurrent(selectedIndex);
+    };
+
+    api.scrollTo(centerIndex);
+
+    api.on("select", onSelect);
+    api.on("reInit", onSelect);
+    onSelect();
+
+    return () => {
+      api.off("select", onSelect);
+      api.off("reInit", onSelect);
+    };
+  }, [api, centerIndex]);
+
+  return (
+    <ContentSection
+      title="Brand Media"
+      content={
+        <div className="relative">
+          {/* Media Carousel */}
+          <Carousel
+            setApi={setApi}
+            className="w-full mx-auto max-w-xl 2xl:max-w-3xl px-4 md:px-8"
+            opts={{ align: "center", containScroll: false, dragFree: true }}
+          >
+            <CarouselContent className="-ml-4 md:-ml-8">
+              {media.filter(isValidUrl).map((url, index) => (
+                <CarouselItem
+                  key={index}
+                  className="basis-1/4 min-w-0 transition-all duration-300 px-2"
+                >
+                  <div
+                    className="relative overflow-hidden rounded-md h-[120px]"
+                    onClick={() => setExpandedImage(url)}
+                  >
+                    <img
+                      src={url || "/placeholder.svg"}
+                      alt={`Media ${index + 1}`}
+                      className="h-full w-full object-cover cursor-pointer rounded-md"
+                      style={{
+                        transform: `scale(${
+                          index === current
+                            ? 1
+                            : index === current - 1 || index === current + 1
+                            ? 0.9
+                            : index === current - 2 || index === current + 2
+                            ? 0.8
+                            : 0.7
+                        })`,
+                        opacity:
+                          index === current
+                            ? 1
+                            : index === current - 1 || index === current + 1
+                            ? 0.9
+                            : 0.7,
+                        transition: "all 0.4s ease-in-out",
+                      }}
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="absolute -left-16 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-[55px] h-10 bg-[#636AE8] hover:bg-purple-500 hover:text-white rounded-full text-white shadow-md border-none" />
+            <CarouselNext className="absolute -right-16 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-[55px] h-10 bg-[#636AE8] hover:bg-purple-500 hover:text-white rounded-full text-white shadow-md border-none" />
+          </Carousel>
+
+          {/* Contact Links */}
+          <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">
+            {socialLinks.map(({ platform, color, icon }) => {
+              const url = contactInfo[platform as keyof typeof contactInfo];
+              if (!isValidUrl(url)) return null;
+              return (
+                <a
+                  key={platform}
+                  href={url}
+                  className={`flex px-3 py-2 rounded-full items-center gap-1`}
+                  style={{ backgroundColor: color }}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {icon}
+                  <span>
+                    {platform === "instagram"
+                      ? "@" +
+                        new URL(url).pathname.split("/").filter(Boolean).pop()
+                      : platform === "website"
+                      ? new URL(url).hostname.replace(/^www\./, "")
+                      : new URL(url).pathname.split("/").filter(Boolean).pop()}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+
+          {/* Expanded Image Modal */}
+          {expandedImage && (
+            <div
+              className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+              onClick={() => setExpandedImage(null)}
+            >
+              <img
+                src={expandedImage}
+                alt="Expanded media"
+                className="max-w-full max-h-[90vh] rounded-lg"
+              />
+            </div>
+          )}
+        </div>
+      }
+      context={{ media, contactInfo }}
+    />
+  );
+};

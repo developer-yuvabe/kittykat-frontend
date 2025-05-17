@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQueryState } from "nuqs";
 import { constructOpenInStudioURL } from "../utils";
+import React from "react";
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
 
 interface ThreadActionsViewProps {
@@ -32,7 +33,7 @@ function ButtonGroup({
         variant="outline"
         className={cn(
           "rounded-l-md rounded-r-none border-r-[0px]",
-          showingState ? "text-black" : "bg-white",
+          showingState ? "text-black" : "bg-white"
         )}
         size="sm"
         onClick={handleShowState}
@@ -43,7 +44,7 @@ function ButtonGroup({
         variant="outline"
         className={cn(
           "rounded-l-none rounded-r-md border-l-[0px]",
-          showingDescription ? "text-black" : "bg-white",
+          showingDescription ? "text-black" : "bg-white"
         )}
         size="sm"
         onClick={handleShowDescription}

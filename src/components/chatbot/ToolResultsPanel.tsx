@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import BrandSelector, { renderBrandData } from "./BrandSection";
 import { useThreads } from "@/providers/langgraph/Thread";
@@ -89,12 +89,15 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
     ? null
     : stream?.values?.sources?.brandingInformation;
   const campaignInfo = stream?.values?.sources?.campaigns ?? [];
-
+  const previousBrandName = useRef(null);
   useEffect(() => {
-    if (brandingInformation?.static?.brand?.name && threadId) {
-      updateThreadName(threadId, brandingInformation?.static?.brand.name);
+    const brandName = brandingInformation?.static?.brand?.name;
+
+    if (brandName && threadId && previousBrandName.current !== brandName) {
+      updateThreadName(threadId, brandName);
+      previousBrandName.current = brandName;
     }
-  }, [brandingInformation, threadId]);
+  }, [brandingInformation?.static?.brand?.name, threadId]);
 
   return (
     <div

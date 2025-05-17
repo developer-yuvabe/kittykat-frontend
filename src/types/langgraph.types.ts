@@ -53,6 +53,7 @@ export interface FontDetails {
 export interface Color {
   name: string;
   hex: string;
+  label?: string;
 }
 
 export interface FileContentTypeResult {
