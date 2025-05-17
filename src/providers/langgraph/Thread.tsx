@@ -12,8 +12,8 @@ import React, {
   SetStateAction,
 } from "react";
 import { client } from "./langgraph.client";
-import { DEFAULT_ASSISTANT_ID } from "@/lib/constants";
 import { getThreadSearchMetadata } from "@/lib/langgraph.utils";
+import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 
 interface ThreadContextType {
   getThreads: () => Promise<Thread[]>;
@@ -38,7 +38,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     try {
       const threads = await client.threads.search({
         metadata: {
-          ...getThreadSearchMetadata(DEFAULT_ASSISTANT_ID),
+          ...getThreadSearchMetadata(KITTYKAT_AGENT_ID),
         },
         limit: 100,
       });
