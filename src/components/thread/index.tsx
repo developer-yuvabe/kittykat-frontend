@@ -40,12 +40,37 @@ export function Thread() {
   );
 
   const [threadId, setThreadId] = useQueryState("threadId");
+  const { threads, threadsLoading } = useThreads();
+  const [initializingThread, setInitializingThread] = useState(true);
 
   useEffect(() => {
+    if (threadsLoading) return; // Wait for threads to load
+
+    // Check if the last interacted brand ID is valid
     if (lastInteractedBrandId && !threadId) {
-      setThreadId(lastInteractedBrandId);
+      const isValidThread = threads.some(
+        (thread) => thread.thread_id === lastInteractedBrandId
+      );
+
+      if (isValidThread) {
+        setThreadId(lastInteractedBrandId);
+      }
     }
-  }, []);
+
+    // If there's a threadId but it's not in the threads list, reset it
+    if (threadId) {
+      const isValidThread = threads.some(
+        (thread) => thread.thread_id === threadId
+      );
+
+      if (!isValidThread) {
+        setThreadId(null);
+      }
+    }
+
+    // Mark initialization as complete
+    setInitializingThread(false);
+  }, [threadsLoading]);
 
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
@@ -61,7 +86,6 @@ export function Thread() {
 
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
-  const { threadsLoading } = useThreads();
   const stream = useStreamContext();
 
   const messages = stream.messages;
@@ -277,7 +301,7 @@ export function Thread() {
         }
       >
         {/* Main content flex container - Side by side layout */}
-        <div className="flex flex-1 h-full ">
+        <div className="flex flex-1 h-full">
           {/* Tool Results Panel - Left Side */}
           <ToolResultsPanel
             isLargeScreen={isLargeScreen}
@@ -295,33 +319,35 @@ export function Thread() {
             {!chatStarted && (
               <div className="absolute top-0 left-0 z-10 flex items-center justify-between w-full gap-3 p-2 pl-4">
                 <div></div>
-                <div className={`flex justify-end mt-2 mr-3 space-x-3`}>
+                <div className="flex justify-end mt-2 mr-3 space-x-3">
                   <SettingsPopover />
                 </div>
               </div>
             )}
 
-            <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6] ">
+            <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
               {chatStarted && (
-                <>
-                  <div
-                    className={`flex justify-start mt-3 z-20 ml-3 space-x-3`}
-                  >
-                    <SettingsPopover />
-                  </div>
-                </>
+                <div className="flex justify-start mt-3 z-20 ml-3 space-x-3">
+                  <SettingsPopover />
+                </div>
               )}
-              <StickyToBottomContent
-                className={cn(
-                  "absolute inset-0 px-4 overflow-y-scroll scrollbar",
-                  !chatStarted && "flex flex-col items-stretch mt-[25vh]",
-                  chatStarted && "grid grid-rows-[1fr_auto]"
-                )}
-                contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full"
-                content={
-                  threadsLoading ? (
+
+              {/* Only show skeleton during loading, nothing else */}
+              {threadsLoading || initializingThread ? (
+                <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
+                  <div className="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full">
                     <ChatSkeleton />
-                  ) : (
+                  </div>
+                </div>
+              ) : (
+                <StickyToBottomContent
+                  className={cn(
+                    "absolute inset-0 px-4 overflow-y-scroll scrollbar",
+                    !chatStarted && "flex flex-col items-stretch mt-[25vh]",
+                    chatStarted && "grid grid-rows-[1fr_auto]"
+                  )}
+                  contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full"
+                  content={
                     <ChatMessageList
                       messages={nonToolMessages}
                       isLoading={isLoading}
@@ -330,44 +356,48 @@ export function Thread() {
                       stream={stream}
                       handleRegenerate={handleRegenerate}
                     />
-                  )
-                }
-                footer={
-                  <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-transparent rounded-2xl">
-                    {!chatStarted && (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <Image
-                            src={Logo}
-                            alt="LangGraph Logo"
-                            width={100}
-                            height={40}
-                            className="flex-shrink-0"
-                          />
-                          <h1 className="text-2xl font-semibold tracking-tight">
-                            Agent
-                          </h1>
-                        </div>
-                      </>
-                    )}
-                    <ScrollToBottom className="absolute mb-0 -translate-x-1/3  bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
+                  }
+                  footer={
+                    <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-transparent rounded-2xl">
+                      {!chatStarted && (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <Image
+                              src={Logo}
+                              alt="LangGraph Logo"
+                              width={100}
+                              height={40}
+                              className="flex-shrink-0"
+                            />
+                            <h1 className="text-2xl font-semibold tracking-tight">
+                              Agent
+                            </h1>
+                          </div>
 
-                    <ChatInput
-                      input={input}
-                      setInput={setInput}
-                      handleSubmit={handleSubmit}
-                      hideToolCalls={hideToolCalls}
-                      setHideToolCalls={setHideToolCalls}
-                      isLoading={isLoading}
-                      stream={stream}
-                      handleAddFile={handleAddFile}
-                      fileList={fileList}
-                      handleRemoveFile={handleRemoveFile}
-                      threadId={threadId}
-                    />
-                  </div>
-                }
-              />
+                          <ScrollToBottom className="absolute mb-0 -translate-x-1/3 bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
+                        </>
+                      )}
+
+                      {/* Always show the chat input unless we're in loading states */}
+                      {!(threadsLoading || initializingThread) && (
+                        <ChatInput
+                          input={input}
+                          setInput={setInput}
+                          handleSubmit={handleSubmit}
+                          hideToolCalls={hideToolCalls}
+                          setHideToolCalls={setHideToolCalls}
+                          isLoading={isLoading}
+                          stream={stream}
+                          handleAddFile={handleAddFile}
+                          fileList={fileList}
+                          handleRemoveFile={handleRemoveFile}
+                          threadId={threadId}
+                        />
+                      )}
+                    </div>
+                  }
+                />
+              )}
             </StickToBottom>
           </div>
         </div>

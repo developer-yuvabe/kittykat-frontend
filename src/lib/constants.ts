@@ -18,7 +18,9 @@ export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
 export const RENDER_FILE_ID_PREFIX = "render-file-";
 
-export const DEFAULT_ASSISTANT_ID = "agent";
+export const KITTYKAT_AGENT_ID = "agent";
 
-export const DEFAULT_API_URL =
+export const KITTYKAT_AGENT_SERVER =
   "https://campaign-assistant-api-proxy-547175224231.us-central1.run.app";
+
+// export const KITTYKAT_AGENT_SERVER = "http://localhost:2024";

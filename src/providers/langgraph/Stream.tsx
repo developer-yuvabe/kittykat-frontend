@@ -16,8 +16,9 @@ import {
 } from "@langchain/langgraph-sdk/react-ui";
 import { useQueryState } from "nuqs";
 import { useThreads } from "./Thread";
-import { DEFAULT_API_URL, DEFAULT_ASSISTANT_ID } from "@/lib/constants";
+
 import Splash from "@/components/shared/Splash";
+import { KITTYKAT_AGENT_ID, KITTYKAT_AGENT_SERVER } from "@/lib/constants";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[]; sources: any };
 
@@ -123,8 +124,8 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <StreamSession
       apiKey={envApiKey || null}
-      apiUrl={DEFAULT_API_URL}
-      assistantId={DEFAULT_ASSISTANT_ID}
+      apiUrl={KITTYKAT_AGENT_SERVER}
+      assistantId={KITTYKAT_AGENT_ID}
     >
       {children}
     </StreamSession>

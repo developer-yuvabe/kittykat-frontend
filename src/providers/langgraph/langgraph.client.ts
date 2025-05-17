@@ -1,5 +1,5 @@
 import { getApiKey } from "@/lib/api-key";
-import { DEFAULT_API_URL } from "@/lib/constants";
+import { KITTYKAT_AGENT_SERVER } from "@/lib/constants";
 import { Client } from "@langchain/langgraph-sdk";
 
 export function createClient(apiUrl: string, apiKey: string | undefined) {
@@ -9,4 +9,7 @@ export function createClient(apiUrl: string, apiKey: string | undefined) {
   });
 }
 
-export const client = createClient(DEFAULT_API_URL, getApiKey() ?? undefined);
+export const client = createClient(
+  KITTYKAT_AGENT_SERVER,
+  getApiKey() ?? undefined
+);
