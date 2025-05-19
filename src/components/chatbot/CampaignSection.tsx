@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import React from "react";
-import { Check, Copy, Search } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Expand,
+  RotateCw,
+  Search,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -135,17 +143,8 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
     />
   );
 };
-
-import { Expand, RotateCw } from "lucide-react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
 interface MoodboardItem {
+  id: string;
   prompt: string;
   status: string;
   imageUrl: string;
@@ -156,10 +155,23 @@ interface CampaignMoodboardProps {
 }
 
 export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
-  moodboards,
+  moodboards = [],
 }) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [pinnedImages, setPinnedImages] = useState<string[]>([]);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<string | null>(
+    null
+  );
+  const [userInteractions, setUserInteractions] = useState<
+    Record<string, boolean | null>
+  >({});
+
+  // Load existing interactions when component mounts
+  useEffect(() => {
+    const loadInteractions = async () => {};
+
+    loadInteractions();
+  }, [moodboards]);
 
   // Skip rendering if no moodboards
   if (!moodboards || moodboards.length === 0) return null;
@@ -168,16 +180,21 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
     setExpandedImage(expandedImage === url ? null : url);
   };
 
-  const handlePin = (url: string) => {
-    setPinnedImages((prev) =>
-      prev.includes(url) ? prev.filter((img) => img !== url) : [...prev, url]
-    );
-    toast.success(
-      pinnedImages.includes(url)
-        ? "Image unpinned"
-        : "Image pinned to collection",
-      { position: "top-right" }
-    );
+  const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
+    usePinnedContextStore();
+  const handlePin = (url: string, title: string = "Pinned Image") => {
+    if (isPinned(url)) {
+      // Get the ID of the pinned item to remove it
+      const itemId = getPinnedItemId(url);
+      if (itemId) {
+        removePinnedItem(itemId);
+        toast.success("Image unpinned", { position: "top-right" });
+      }
+    } else {
+      // Add the item to pinned items
+      addPinnedItem(title, url);
+      toast.success("Image pinned to collection", { position: "top-right" });
+    }
   };
 
   const handleCopyPrompt = (prompt: string) => {
@@ -192,6 +209,13 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
     // Actual regeneration logic would go here
   };
 
+  // Mock function to handle like/dislike - now just visual, no state changes
+  const handleLikeDislike = (isLiked: boolean) => {
+    toast.success(isLiked ? "Image liked!" : "Image disliked!", {
+      position: "top-right",
+    });
+  };
+
   return (
     <ContentSection
       title="Campaign Moodboards"
@@ -199,104 +223,146 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
         <div className="relative">
           <Carousel className="w-full">
             <CarouselContent>
-              {moodboards.map((moodboard, index) => (
-                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                  <div className="relative rounded-lg overflow-hidden border border-gray-200">
-                    {/* Action Buttons Container */}
-                    <div className="absolute top-2 right-2 z-10 flex space-x-1">
-                      <TooltipIconButton
-                        tooltip="Expand"
-                        side="top"
-                        onClick={() => handleExpand(moodboard.imageUrl)}
-                        className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
-                      >
-                        <Expand size={16} />
-                      </TooltipIconButton>
+              {moodboards.map((moodboard, index) => {
+                const moodboardId = moodboard.id || `moodboard-${index}`;
+                const isShowingFeedback = feedbackSubmitted === moodboardId;
 
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <TooltipIconButton
-                            tooltip="Copy prompt"
-                            side="top"
-                            className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
-                          >
-                            <Copy size={16} />
-                          </TooltipIconButton>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-4">
-                          <div className="space-y-2">
-                            <h4 className="font-medium">Image Prompt</h4>
-                            <p className="text-sm text-gray-700">
-                              {moodboard.prompt}
-                            </p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full mt-2"
-                              onClick={() => handleCopyPrompt(moodboard.prompt)}
+                return (
+                  <CarouselItem
+                    key={moodboardId}
+                    className="md:basis-1/2 lg:basis-1/3"
+                  >
+                    <div className="relative rounded-lg overflow-hidden border border-gray-200 h-full flex flex-col group">
+                      {/* Action Buttons Container */}
+                      <div className="absolute top-2 right-2 z-10 flex space-x-1">
+                        <TooltipIconButton
+                          tooltip="Expand"
+                          side="top"
+                          onClick={() => handleExpand(moodboard.imageUrl)}
+                          className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
+                        >
+                          <Expand size={16} />
+                        </TooltipIconButton>
+
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <TooltipIconButton
+                              tooltip="Copy prompt"
+                              side="top"
+                              className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
                             >
-                              <Copy className="mr-2 h-4 w-4" /> Copy Prompt
-                            </Button>
+                              <Copy size={16} />
+                            </TooltipIconButton>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80 p-4">
+                            <div className="space-y-2">
+                              <h4 className="font-medium">Image Prompt</h4>
+                              <p className="text-sm text-gray-700">
+                                {moodboard.prompt}
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full mt-2"
+                                onClick={() =>
+                                  handleCopyPrompt(moodboard.prompt)
+                                }
+                              >
+                                <Copy className="mr-2 h-4 w-4" /> Copy Prompt
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        <TooltipIconButton
+                          tooltip={
+                            pinnedImages.includes(moodboard.imageUrl)
+                              ? "Unpin"
+                              : "Pin"
+                          }
+                          side="top"
+                          onClick={() => handlePin(moodboard.imageUrl)}
+                          className={`p-1 rounded-full shadow ${
+                            pinnedImages.includes(moodboard.imageUrl)
+                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                              : "bg-white hover:bg-gray-100"
+                          }`}
+                        >
+                          <BsPinAngle size={16} />
+                        </TooltipIconButton>
+                      </div>
+
+                      {/* Image Container */}
+                      <div className="relative aspect-square flex items-center justify-center mt-10">
+                        <img
+                          src={moodboard.imageUrl || "/api/placeholder/600/600"}
+                          alt={`Moodboard ${index + 1}`}
+                          className="w-full h-full object-contain"
+                          onClick={() => handleExpand(moodboard.imageUrl)}
+                        />
+
+                        {/* Feedback notification */}
+                        {isShowingFeedback && (
+                          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-lg">
+                            Feedback submitted!
                           </div>
-                        </PopoverContent>
-                      </Popover>
+                        )}
 
-                      <TooltipIconButton
-                        tooltip={
-                          pinnedImages.includes(moodboard.imageUrl)
-                            ? "Unpin"
-                            : "Pin"
-                        }
-                        side="top"
-                        onClick={() => handlePin(moodboard.imageUrl)}
-                        className={`p-1 rounded-full shadow ${
-                          pinnedImages.includes(moodboard.imageUrl)
-                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                            : "bg-white hover:bg-gray-100"
-                        }`}
-                      >
-                        <BsPinAngle size={16} />
-                      </TooltipIconButton>
+                        {/* Status Badge */}
+                        {moodboard.status && (
+                          <span
+                            className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${
+                              moodboard.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : moodboard.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {moodboard.status.charAt(0).toUpperCase() +
+                              moodboard.status.slice(1)}
+                          </span>
+                        )}
+
+                        {/* Rating Section - now visible on hover and positioned at bottom of image */}
+                        <div className="absolute bottom-0 left-0 right-0  bg-opacity-60 text-white py-3 px-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="text-sm font-medium">
+                            Rate this image
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleLikeDislike(true)}
+                              className="p-1.5 rounded-full  bg-opacity-50 hover:bg-opacity-70 text-white transition-colors"
+                              aria-label="Like"
+                            >
+                              <ThumbsUp size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleLikeDislike(false)}
+                              className="p-1.5 rounded-full  bg-opacity-50 hover:bg-opacity-70 text-white transition-colors"
+                              aria-label="Dislike"
+                            >
+                              <ThumbsDown size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Regenerate Button */}
+                      <div className="p-4 flex justify-end bg-gray-50 mt-auto">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleRegenerate(index)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Regenerate <RotateCw className="ml-2" size={14} />
+                        </Button>
+                      </div>
                     </div>
-
-                    {/* Image Container */}
-                    <div className="relative mt-10  aspect-square flex items-center justify-center">
-                      <img
-                        src={moodboard.imageUrl || "/api/placeholder/600/600"}
-                        alt={`Moodboard ${index + 1}`}
-                        className="w-full h-full object-contain"
-                        onClick={() => handleExpand(moodboard.imageUrl)}
-                      />
-                    </div>
-
-                    {/* Status Badge */}
-                    {moodboard.status && (
-                      <span
-                        className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${
-                          moodboard.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : moodboard.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {moodboard.status.charAt(0).toUpperCase() +
-                          moodboard.status.slice(1)}
-                      </span>
-                    )}
-
-                    {/* Regenerate Button */}
-                    <div className="p-4 flex justify-end">
-                      <Button
-                        variant="default"
-                        onClick={() => handleRegenerate(index)}
-                      >
-                        Regenerate <RotateCw size={6} />
-                      </Button>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
+                  </CarouselItem>
+                );
+              })}
             </CarouselContent>
             <div className="flex justify-center mt-4">
               <CarouselPrevious className="relative transform-none mx-2" />
@@ -328,7 +394,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
           )}
         </div>
       }
-      context={{ moodboards }}
+      context={{ moodboards, expandedImage, pinnedImages, feedbackSubmitted }}
     />
   );
 };
@@ -472,6 +538,14 @@ import { Badge } from "../ui/badge";
 import { getFontColorForBackground } from "@/lib/langgraph.utils";
 import { BsPinAngle } from "react-icons/bs";
 import { DynamicContentSection } from "./DynamicSection";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "../ui/carousel";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 interface Campaign {
   id: string;
