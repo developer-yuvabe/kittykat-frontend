@@ -3,8 +3,8 @@ import React from "react";
 import {
   Check,
   Copy,
+  Ellipsis,
   Expand,
-  RotateCw,
   Search,
   ThumbsDown,
   ThumbsUp,
@@ -148,40 +148,42 @@ interface MoodboardItem {
   prompt: string;
   status: string;
   imageUrl: string;
+  format?: string;
+  size?: string;
+  source?: string;
 }
 
 interface CampaignMoodboardProps {
-  moodboards: MoodboardItem[];
+  campaign: Record<string, any>;
 }
 
 export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
-  moodboards = [],
+  campaign = {},
 }) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [pinnedImages, setPinnedImages] = useState<string[]>([]);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<string | null>(
     null
   );
-  const [userInteractions, setUserInteractions] = useState<
-    Record<string, boolean | null>
-  >({});
-
-  // Load existing interactions when component mounts
-  useEffect(() => {
-    const loadInteractions = async () => {};
-
-    loadInteractions();
-  }, [moodboards]);
+  const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
+    usePinnedContextStore();
 
   // Skip rendering if no moodboards
-  if (!moodboards || moodboards.length === 0) return null;
+  if (!campaign.moodboards || campaign.moodboards.length === 0) return null;
+
+  const moodboards: MoodboardItem[] = campaign.moodboards.map(
+    (moodboard: MoodboardItem) => ({
+      id: moodboard.id,
+      prompt: moodboard.prompt,
+      status: moodboard.status,
+      imageUrl: moodboard.imageUrl,
+    })
+  );
 
   const handleExpand = (url: string) => {
     setExpandedImage(expandedImage === url ? null : url);
   };
 
-  const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
-    usePinnedContextStore();
   const handlePin = (url: string, title: string = "Pinned Image") => {
     if (isPinned(url)) {
       // Get the ID of the pinned item to remove it
@@ -216,6 +218,8 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
     });
   };
 
+  console.log("campaigb", campaign);
+  console.log("id", campaign.id);
   return (
     <ContentSection
       title="Campaign Moodboards"
@@ -254,7 +258,10 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                               <Copy size={16} />
                             </TooltipIconButton>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80 p-4">
+                          <PopoverContent
+                            className="w-xl p-4 max-h-[700px] overflow-y-scroll"
+                            side="right"
+                          >
                             <div className="space-y-2">
                               <h4 className="font-medium">Image Prompt</h4>
                               <p className="text-sm text-gray-700">
@@ -294,6 +301,23 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
 
                       {/* Image Container */}
                       <div className="relative aspect-square flex items-center justify-center mt-10">
+                        <div className="absolute top-0 right-1 z-10 flex space-x-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Ellipsis className="text-white" size={36} />
+                            </PopoverTrigger>
+                            <PopoverContent className="w-68 p-2" side="right">
+                              <MoodboardDetail
+                                source="Moodboard"
+                                campaignId={campaign.id}
+                                imageUrl={moodboard.imageUrl}
+                                prompt={moodboard.prompt}
+                                format={moodboard?.format || "JPEG"}
+                                size={moodboard?.size || "1024x1024"}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                         <img
                           src={moodboard.imageUrl || "/api/placeholder/600/600"}
                           alt={`Moodboard ${index + 1}`}
@@ -349,14 +373,20 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                       </div>
 
                       {/* Regenerate Button */}
-                      <div className="p-4 flex justify-end bg-gray-50 mt-auto">
+                      <div className="p-4 flex gap-x-2 justify-end bg-gray-50 mt-auto">
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => handleRegenerate(index)}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          className="bg-[#636AE8FF] hover:bg-[#636AE8FF]"
                         >
-                          Regenerate <RotateCw className="ml-2" size={14} />
+                          Create Image
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-[#EA916EFF] hover:bg-[#EA916EFF]"
+                        >
+                          Remix
                         </Button>
                       </div>
                     </div>
@@ -546,6 +576,7 @@ import {
   CarouselPrevious,
 } from "../ui/carousel";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import MoodboardDetail from "./MoodboardDetail";
 
 interface Campaign {
   id: string;
@@ -652,7 +683,7 @@ export const CampaignSection: React.FC<{
                 )
               )}
             />
-            <CampaignMoodboard moodboards={currentCampaign.moodboards || []} />
+            <CampaignMoodboard campaign={currentCampaign || {}} />
           </div>
         </CardContent>
       )}

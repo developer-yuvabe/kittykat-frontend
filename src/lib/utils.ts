@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import { ERROR_MESSAGES } from "./constants";
 import { FirebaseError } from "firebase/app";
 import { AxiosResponse } from "axios";
+import { toast } from "sonner";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -85,7 +86,6 @@ export async function handleApiRequest<T>(
 
 export function isValidUrl(url: string): boolean {
   try {
-    console.log("Validating URL:", url);
     new URL(url);
     return true;
   } catch (_error) {
@@ -93,3 +93,49 @@ export function isValidUrl(url: string): boolean {
     return false;
   }
 }
+
+export const handleDownloadImage = async (
+  url: string,
+  options?: {
+    filename?: string;
+    toastMessages?: {
+      loading?: string;
+      success?: string;
+      error?: string;
+    };
+  }
+) => {
+  const {
+    filename = `image_${new Date().getTime()}.jpg`,
+    toastMessages = {
+      loading: "Downloading image...",
+      success: "Image downloaded successfully!",
+      error: "Failed to download image. Please try again.",
+    },
+  } = options || {};
+
+  toast.promise(
+    (async () => {
+      const imageResponse = await fetch(url, { mode: "cors" });
+      if (!imageResponse.ok)
+        throw new Error(`HTTP error! status: ${imageResponse.status}`);
+
+      const blob = await imageResponse.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    })(),
+    {
+      loading: toastMessages.loading,
+      success: toastMessages.success,
+      error: toastMessages.error,
+    }
+  );
+};

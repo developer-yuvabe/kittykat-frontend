@@ -133,10 +133,10 @@ export const renderBrandData = (
               />
 
               {/* Typography Section */}
-              <TypographySection
+              {/* <TypographySection
                 primaryFont={staticData?.typography?.primaryFont}
                 secondaryFont={staticData?.typography?.secondaryFont}
-              />
+              /> */}
 
               {/* Colors Section */}
               <BrandColors colors={allColors} />
