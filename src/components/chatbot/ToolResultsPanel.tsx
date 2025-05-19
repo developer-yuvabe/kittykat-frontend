@@ -20,13 +20,13 @@ const BrandSection: React.FC<{
   setExpandedSections: React.Dispatch<
     React.SetStateAction<{ [key: string]: boolean }>
   >;
-  clearPinnedItems: () => void;
+  clearPinnedItem: () => void;
 }> = ({
   brandingInformation,
   setThreadId,
   expandedSections,
   setExpandedSections,
-  clearPinnedItems,
+  clearPinnedItem,
 }) => {
   if (!brandingInformation)
     return (
@@ -64,7 +64,7 @@ const BrandSection: React.FC<{
           setThreadId,
           brandingInformation.static,
           brandingInformation.dynamic,
-          clearPinnedItems
+          clearPinnedItem
         )}
       </div>
     </div>
@@ -80,7 +80,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
     [key: string]: boolean;
   }>({ brandOverview: true });
   const { threadsLoading, updateThreadName } = useThreads();
-  const { clearPinnedItems } = usePinnedContextStore();
+  const { clearPinnedItem } = usePinnedContextStore();
   const stream = useStreamContext();
 
   const brandingInformation = _.isEmpty(
@@ -116,7 +116,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
                 setThreadId={setThreadId}
                 expandedSections={expandedSections}
                 setExpandedSections={setExpandedSections}
-                clearPinnedItems={clearPinnedItems}
+                clearPinnedItem={clearPinnedItem}
               />
             }
             {brandingInformation && (

@@ -187,7 +187,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
       // Get the ID of the pinned item to remove it
       const itemId = getPinnedItemId(url);
       if (itemId) {
-        removePinnedItem(itemId);
+        removePinnedItem();
         toast.success("Image unpinned", { position: "top-right" });
       }
     } else {

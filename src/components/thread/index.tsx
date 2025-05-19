@@ -140,28 +140,21 @@ export function Thread() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     setFirstTokenReceived(false);
-
-    const pinnedItems = usePinnedContextStore.getState().pinnedItems;
-    const pinnedContextMessage: Message | null =
-      pinnedItems.length > 0
-        ? {
-            id: `${DO_NOT_RENDER_ID_PREFIX}${uuidv4()}`,
-            type: "system",
-            content: [
-              {
-                type: "text",
-                text: `Focus only on the following contexts with the associated data:\n${pinnedItems
-                  .map(
-                    (item) =>
-                      `Title: ${item.title}\nContext: ${JSON.stringify(
-                        item.context
-                      )}`
-                  )
-                  .join("\n\n")}`,
-              },
-            ],
-          }
-        : null;
+    const pinnedItem = usePinnedContextStore.getState().pinnedItem;
+    const pinnedContextMessage: Message | null = pinnedItem
+      ? {
+          id: `${DO_NOT_RENDER_ID_PREFIX}${uuidv4()}`,
+          type: "system",
+          content: [
+            {
+              type: "text",
+              text: `Focus only on the following context with the associated data:\nTitle: ${
+                pinnedItem.title
+              }\nContext: ${JSON.stringify(pinnedItem.context)}`,
+            },
+          ],
+        }
+      : null;
 
     console.log("pinnedContextMessage", pinnedContextMessage);
 
@@ -262,7 +255,7 @@ export function Thread() {
   const resetFiles = () => {
     setFileList([]);
   };
-  const clearPins = usePinnedContextStore((state) => state.clearPinnedItems);
+  const clearPins = usePinnedContextStore((state) => state.clearPinnedItem);
 
   useEffect(() => {
     if (threadId) {

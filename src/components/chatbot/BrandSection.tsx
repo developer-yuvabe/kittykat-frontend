@@ -23,7 +23,7 @@ export const renderBrandData = (
   setThreadId: (id: string | null) => void,
   staticData: any,
   dynamicData: any,
-  clearPinnedItems: () => void
+  clearPinnedItem: () => void
 ) => {
   try {
     const brandName = staticData?.brand?.name || "No Brand Name";
@@ -84,7 +84,7 @@ export const renderBrandData = (
                           onClick={(e) => {
                             e.stopPropagation();
                             setThreadId(null);
-                            clearPinnedItems();
+                            clearPinnedItem();
                           }}
                         >
                           <CirclePlus className="size-5" />
@@ -110,7 +110,7 @@ export const renderBrandData = (
                         variant="ghost"
                         onClick={() => {
                           setThreadId(null);
-                          clearPinnedItems();
+                          clearPinnedItem();
                         }}
                       >
                         <CirclePlus className="size-5" />
