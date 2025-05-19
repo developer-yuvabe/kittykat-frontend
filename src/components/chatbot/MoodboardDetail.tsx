@@ -38,7 +38,7 @@ export default function MoodboardDetail({
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [title, setTitle] = useState("Moodboard_13_May_4...");
+  const [title, setTitle] = useState("Moodboard...");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -46,16 +46,23 @@ export default function MoodboardDetail({
   const commentContainerRef = useRef<HTMLDivElement>(null);
   const titleContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load existing data when component mounts
   useEffect(() => {
-    if (threadId) {
-      const campaignData = getThreadCampaignById(threadId, campaignId);
-      if (campaignData) {
-        if (campaignData.title) setTitle(campaignData.title);
-        if (campaignData.comment) setComment(campaignData.comment);
+    if (!threadId || !campaignId || !imageUrl) return;
+    const campaignData = getThreadCampaignById(threadId, campaignId);
+    if (campaignData) {
+      const moodboardItem = campaignData.moodboards.find(
+        (item: any) => item.imageUrl === imageUrl
+      );
+      if (moodboardItem) {
+        const index = campaignData.moodboards.findIndex(
+          (item: any) => item.imageUrl === imageUrl
+        );
+        const fallbackTitle = `${campaignData.id} - moodboard_${index}`;
+        setTitle(moodboardItem.title || fallbackTitle);
+        setComment(moodboardItem.comment || "");
       }
     }
-  }, [threadId, campaignId, getThreadCampaignById]);
+  }, [threadId, campaignId, imageUrl]);
 
   // Focus input elements when editing starts
   useEffect(() => {
@@ -81,15 +88,29 @@ export default function MoodboardDetail({
     if (threadId) {
       if (comment.trim() !== "") {
         setIsEditingComment(false);
+
+        const prevCampaignData = getThreadCampaignById(threadId, campaignId);
+        if (!prevCampaignData) {
+          toast.error("Campaign data not found.");
+          return;
+        }
+        const updatedMoodboard = prevCampaignData.moodboards.map((item: any) =>
+          item.imageUrl === imageUrl
+            ? {
+                ...item,
+                title,
+                comment,
+                size,
+                format,
+                source,
+                prompt,
+              }
+            : item
+        );
+
         const campaignData = {
-          ...getThreadCampaignById(threadId, campaignId),
-          title,
-          comment,
-          size,
-          format,
-          source,
-          imageUrl,
-          prompt,
+          ...prevCampaignData,
+          moodboards: updatedMoodboard,
         };
 
         toast.promise(
@@ -109,18 +130,38 @@ export default function MoodboardDetail({
 
   const handleSaveTitle = async () => {
     if (title.trim() !== "" && threadId) {
+      console.log(threadId, campaignId);
+      console.log("aaa", getThreadCampaignById(threadId, campaignId));
+
+      const prevCampaignData = getThreadCampaignById(threadId, campaignId);
+      console.log("AAPP", prevCampaignData);
       setIsEditingTitle(false);
+
+      if (!prevCampaignData) {
+        toast.error("Campaign data not found.");
+        return;
+      }
+
+      const updatedMoodboard = prevCampaignData.moodboards.map((item: any) =>
+        item.imageUrl === imageUrl
+          ? {
+              ...item,
+              title,
+              comment,
+              size,
+              format,
+              source,
+              prompt,
+            }
+          : item
+      );
+
       const campaignData = {
-        ...getThreadCampaignById(threadId, campaignId),
-        title,
-        comment,
-        size,
-        format,
-        source,
-        imageUrl,
-        prompt,
+        ...prevCampaignData,
+        moodboards: updatedMoodboard,
       };
 
+      console.log("xp", campaignData);
       toast.promise(
         async () => {
           await updateThreadCampaign(threadId, campaignId, campaignData);
@@ -145,25 +186,33 @@ export default function MoodboardDetail({
   };
 
   const handleDelete = async () => {
+    if (!threadId || !campaignId || !imageUrl) return;
     setIsDeleting(true);
 
     try {
-      if (threadId) {
-        await toast.promise(
-          async () => {
-            // Simulate API call with a delay
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            await updateThreadCampaign(threadId, campaignId, null);
-            return true;
-          },
-          {
-            loading: "Deleting moodboard...",
-            success: "Moodboard deleted successfully",
-            error: "Failed to delete moodboard",
-          }
-        );
+      const prevCampaign = getThreadCampaignById(threadId, campaignId);
+      if (!prevCampaign) {
+        toast.error("Campaign data not found.");
+        setIsDeleting(false);
+        setShowDeleteDialog(false);
+        return;
       }
-      // Additional UI updates after successful deletion could go here
+      const filteredMoodboards = prevCampaign.moodboards.filter(
+        (item: { imageUrl: string }) => item.imageUrl !== imageUrl
+      );
+      const updatedCampaign = {
+        ...prevCampaign,
+        moodboards: filteredMoodboards,
+      };
+
+      toast.promise(
+        () => updateThreadCampaign(threadId, campaignId, updatedCampaign),
+        {
+          loading: "Deleting moodboard...",
+          success: "Moodboard deleted successfully",
+          error: "Failed to delete moodboard",
+        }
+      );
     } catch (error) {
       console.error("Delete error:", error);
     } finally {
@@ -228,17 +277,6 @@ export default function MoodboardDetail({
         )}
       </div>
 
-      {/* Image display if available */}
-      {imageUrl && (
-        <div className="my-4">
-          <img
-            src={imageUrl || "/placeholder.svg"}
-            alt={title}
-            className="w-full h-auto rounded-md shadow-sm"
-          />
-        </div>
-      )}
-
       {/* Image details with gray background */}
       <div className="bg-gray-50 font-bold text-sm p-4 rounded-md my-2">
         <div className="space-y-1">
@@ -295,14 +333,6 @@ export default function MoodboardDetail({
                 <Save size={18} className="" />
               </Button>
             )}
-          </div>
-        )}
-        {!comment && !isEditingComment && (
-          <div
-            className="text-gray-400 cursor-pointer"
-            onClick={handleEditComment}
-          >
-            Add a comment...
           </div>
         )}
       </div>

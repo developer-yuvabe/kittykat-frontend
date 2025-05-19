@@ -448,7 +448,7 @@ export default function CampaignSelector({
   useEffect(() => {
     if (campaigns.length > 0) {
       const transformed = campaigns.map((campaign) => {
-        const displayName = campaign.campaign.title || "Unnamed Campaign";
+        const displayName = campaign?.campaign?.title || "Unnamed Campaign";
         return {
           id: campaign.id,
           displayName,
@@ -587,15 +587,11 @@ interface Campaign {
   targetAudience: string;
   visualStyleReferences: string[];
   campaignColors: string[];
-  moodboards: {
-    prompt: string;
-    status: string;
-    url: string;
-  }[];
+  moodboards: Record<string, any>[];
 }
 
 export const CampaignSection: React.FC<{
-  campaignInfo: any[];
+  campaignInfo: Record<string, any>[];
 }> = ({ campaignInfo }) => {
   const [expanded, setExpanded] = useState(true);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(0);
@@ -636,7 +632,9 @@ export const CampaignSection: React.FC<{
               <div className="">
                 <div className="font-bold">
                   Campaign:{" "}
-                  {currentCampaign?.campaign?.title || "Unnamed Campaign"}
+                  {(currentCampaign?.campaign?.title.length > 0 &&
+                    currentCampaign?.campaign?.title) ||
+                    "Unnamed Campaign"}
                 </div>
               </div>
             )}
@@ -673,7 +671,7 @@ export const CampaignSection: React.FC<{
               description={currentCampaign?.campaign?.description}
               tone={currentCampaign?.campaign?.tone}
             />
-            <CampaignColors colors={currentCampaign.colors} />
+            <CampaignColors colors={currentCampaign?.colors || []} />
 
             <DynamicContentSection
               dynamicData={Object.fromEntries(

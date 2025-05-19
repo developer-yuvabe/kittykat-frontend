@@ -79,7 +79,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true });
-  const { threadsLoading, updateThreadName } = useThreads();
+  const { threadsLoading, updateThreadName, getThreadCampaigns } = useThreads();
   const { clearPinnedItem } = usePinnedContextStore();
   const stream = useStreamContext();
 
@@ -88,7 +88,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
   )
     ? null
     : stream?.values?.sources?.brandingInformation;
-  const campaignInfo = stream?.values?.sources?.campaigns ?? [];
+  const campaignInfo = threadId ? getThreadCampaigns(threadId) : null;
   const previousBrandName = useRef(null);
   useEffect(() => {
     const brandName = brandingInformation?.static?.brand?.name;
@@ -120,7 +120,7 @@ const ToolResultsPanel: React.FC<ToolResultsPanelProps> = ({
               />
             }
             {brandingInformation && (
-              <CampaignSection campaignInfo={campaignInfo} />
+              <CampaignSection campaignInfo={campaignInfo ?? []} />
             )}
           </>
         )}
