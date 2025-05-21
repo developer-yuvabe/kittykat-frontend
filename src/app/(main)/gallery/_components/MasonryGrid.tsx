@@ -5,17 +5,17 @@ import type React from "react";
 import { useState } from "react";
 import Image from "next/image";
 import Masonry from "react-masonry-css";
-import { Heart } from "lucide-react";
+import { Heart, Download, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
-import type { GalleryCollection } from "@/types/gallery.types";
+import type { GalleryItemResponse } from "@/types/gallery.types";
 
 interface MasonryGridProps {
-  items: GalleryCollection[];
+  items: GalleryItemResponse[];
   selectedItems: string[];
   onSelect: (id: string, selected: boolean) => void;
   onToggleFavorite: (id: string) => void;
-  onToggleReaction: (id: string, reaction: "like" | "dislike" | null) => void;
+  onDelete: (id: string) => void;
+  onDownload: (item: GalleryItemResponse) => void;
 }
 
 export function MasonryGrid({
@@ -23,6 +23,8 @@ export function MasonryGrid({
   selectedItems,
   onSelect,
   onToggleFavorite,
+  onDelete,
+  onDownload,
 }: MasonryGridProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
@@ -58,14 +60,21 @@ export function MasonryGrid({
   const handleFavoriteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleFavorite(id);
+  };
 
-    const item = items.find((item) => item.id === id);
-    if (item) {
-      toast.success(
-        item.is_favourite ? "Removed from favorites" : "Added to favorites",
-        { duration: 2000 }
-      );
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this item?")) {
+      onDelete(id);
     }
+  };
+
+  const handleDownloadClick = (
+    item: GalleryItemResponse,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    onDownload(item);
   };
 
   return (
@@ -135,6 +144,26 @@ export function MasonryGrid({
                   }`}
                 />
               </div>
+
+              {/* Action buttons - only visible on hover */}
+              {hoveredItem === item.id && (
+                <div className="absolute bottom-2 right-2 z-10 flex space-x-1">
+                  <button
+                    className="p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors duration-200 text-white"
+                    onClick={(e) => handleDownloadClick(item, e)}
+                    aria-label="Download"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-1.5 rounded-full bg-black/30 hover:bg-red-500/70 transition-colors duration-200 text-white"
+                    onClick={(e) => handleDeleteClick(item.id, e)}
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
 
               {/* Title tooltip on hover */}
               {hoveredItem === item.id && (

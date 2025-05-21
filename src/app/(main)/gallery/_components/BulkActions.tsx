@@ -8,22 +8,26 @@ import { PiShareFat } from "react-icons/pi";
 interface BulkActionsProps {
   selectedCount: number;
   onUnselectAll: () => void;
+  onDelete: () => void;
+  onDownload: () => void;
 }
 
 export function BulkActions({
   selectedCount,
   onUnselectAll,
+  onDelete,
+  onDownload,
 }: BulkActionsProps) {
   return (
     <div className="fixed bottom-0 left-0  right-0 bg-white border-t shadow-lg py-3 px-4 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-end gap-x-2">
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="icon">
           <PiShareFat className="h-4  w-4" />
         </Button>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" onClick={onDownload}>
           <Download className="h-4 w-4" />
         </Button>
         <Button

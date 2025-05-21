@@ -11,6 +11,8 @@ import { useThreads } from "@/providers/langgraph/Thread";
 import { useQueryState } from "nuqs";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { handleDownloadImage } from "@/lib/utils";
+import { galleryService } from "@/services/api/gallery.service";
+import { GalleryItem } from "@/types/gallery.types";
 
 interface MoodboardDetailProps {
   campaignId: string;
@@ -221,19 +223,36 @@ export default function MoodboardDetail({
     }
   };
 
-  const handleAddToLibrary = () => {
-    toast.promise(
-      async () => {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        return true;
-      },
-      {
-        loading: "Adding to library...",
-        success: "Added to library successfully",
-        error: "Failed to add to library",
-      }
-    );
+  const handleAddToLibrary = async () => {
+    if (imageUrl && prompt) {
+      toast.promise(
+        async () => {
+          const galleryItem: GalleryItem = {
+            brand_name: "Brand X", // Replace with actual brand name
+            campaign_name: "Campaign Y", // Replace with actual campaign name
+            asset_type: "image", // Or 'video', etc.
+            asset_source: source || "moodboard",
+            asset_title: "Generated Asset",
+            asset_url: imageUrl,
+            prompt: prompt,
+            size: size || "",
+            format: format || "",
+            brand_data: {}, // Add any brand metadata if available
+            campaign_data: {}, // Add any campaign metadata if available
+            is_favourite: false,
+            user_action: null,
+          };
+
+          const res = await galleryService.createGalleryItem(galleryItem);
+          return res;
+        },
+        {
+          loading: "Adding to library...",
+          success: "Added to library successfully",
+          error: "Failed to add to library",
+        }
+      );
+    }
   };
 
   return (

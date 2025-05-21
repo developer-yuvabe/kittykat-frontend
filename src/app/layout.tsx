@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AppConfig } from "@/config/app.config";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import ReactQueryProvider from "@/providers/langgraph/react-query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NuqsAdapter>{children}</NuqsAdapter>
+        <NuqsAdapter>
+          <ReactQueryProvider>{children}</ReactQueryProvider>
+        </NuqsAdapter>
         <Toaster richColors />
       </body>
     </html>

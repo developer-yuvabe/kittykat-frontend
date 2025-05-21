@@ -1,74 +1,75 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, ChevronUp, ChevronDown, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Filter, Search, ChevronUp, ChevronDown, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+
+// Define the types for our data
+interface BrandCampaignResponse {
+  brand_name: string;
+  campaigns: string[];
+}
 
 interface FilterSidebarProps {
   selectedFilters: {
     brands: string[];
-    categories: string[];
     campaigns: string[];
   };
   onApply: (filters: any) => void;
+  brandsWithCampaigns: BrandCampaignResponse[];
 }
 
-export function FilterSidebar({
+export default function FilterSidebar({
   selectedFilters,
   onApply,
+  brandsWithCampaigns,
 }: FilterSidebarProps) {
-  const [filters, setFilters] = useState(selectedFilters);
+  const [filters, setFilters] = useState(
+    selectedFilters || { brands: [], campaigns: [] }
+  );
   const [expandedSections, setExpandedSections] = useState({
     brand: true,
-    category: true,
     campaign: true,
   });
 
   const [brandSearch, setBrandSearch] = useState("");
-  const [categorySearch, setCategorySearch] = useState("");
   const [campaignSearch, setCampaignSearch] = useState("");
 
-  const brands = ["Tods", "Birkenstock", "Nike", "Adidas", "Puma"].filter(
-    (brand) => brand.toLowerCase().includes(brandSearch.toLowerCase())
-  );
+  // Update local state when props change
+  useEffect(() => {
+    if (selectedFilters) {
+      setFilters(selectedFilters);
+    }
+  }, [selectedFilters]);
 
-  const categories = [
-    {
-      name: "Shoes",
-      count: null,
-      subcategories: [
-        { name: "Sandals", count: 2784 },
-        { name: "Sneaker", count: 18367 },
-      ],
-    },
-    {
-      name: "Bottoms",
-      count: null,
-      subcategories: [
-        { name: "Jeans", count: 837 },
-        { name: "Skirts", count: 239 },
-      ],
-    },
-    {
-      name: "Tops",
-      count: null,
-      subcategories: [{ name: "T-Shirts", count: 54 }],
-    },
-  ];
+  // Filter brands based on search
+  const filteredBrands = brandsWithCampaigns
+    .map((brand) => brand.brand_name)
+    .filter((brand) => brand.toLowerCase().includes(brandSearch.toLowerCase()));
 
-  const campaigns = [
-    "Valentines Day",
-    "Summer Jam",
-    "Mothers Day",
-    "Winter Parade",
-    "Sales Campaign 2025",
-  ].filter((campaign) =>
-    campaign.toLowerCase().includes(campaignSearch.toLowerCase())
-  );
+  // Get all campaigns from all brands
+  const allCampaigns = brandsWithCampaigns.flatMap((brand) => brand.campaigns);
 
-  const toggleSection = (section: "brand" | "category" | "campaign") => {
+  // Filter campaigns based on search and selected brands
+  const filteredCampaigns = allCampaigns
+    .filter((campaign) =>
+      campaign.toLowerCase().includes(campaignSearch.toLowerCase())
+    )
+    // If brands are selected, only show campaigns from those brands
+    .filter((campaign) => {
+      if (filters.brands.length === 0) return true;
+      return brandsWithCampaigns
+        .filter((brand) => filters.brands.includes(brand.brand_name))
+        .some((brand) => brand.campaigns.includes(campaign));
+    })
+    // Remove duplicates
+    .filter((campaign, index, self) => self.indexOf(campaign) === index);
+
+  const toggleSection = (section: "brand" | "campaign") => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -86,22 +87,6 @@ export function FilterSidebar({
         return {
           ...prev,
           brands: [...prev.brands, brand],
-        };
-      }
-    });
-  };
-
-  const toggleCategory = (category: string) => {
-    setFilters((prev) => {
-      if (prev.categories.includes(category)) {
-        return {
-          ...prev,
-          categories: prev.categories.filter((c) => c !== category),
-        };
-      } else {
-        return {
-          ...prev,
-          categories: [...prev.categories, category],
         };
       }
     });
@@ -130,14 +115,16 @@ export function FilterSidebar({
   const handleClearAll = () => {
     setFilters({
       brands: [],
-      categories: [],
       campaigns: [],
     });
+    setBrandSearch("");
+    setCampaignSearch("");
   };
 
   return (
-    <div className="bg-white rounded-lg border p-4">
-      <div className="text-lg font-semibold mb-4 flex items-center">
+    <div className="bg-white rounded-lg border shadow-sm p-4 w-full max-w-xs">
+      <div className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Filter className="h-5 w-5" />
         <span>FILTERS</span>
       </div>
 
@@ -157,8 +144,8 @@ export function FilterSidebar({
 
         {expandedSections.brand && (
           <>
-            <div className="relative mb-3">
-              <div className="flex gap-1 mb-2">
+            <div className="mb-3">
+              <div className="flex gap-1 mb-2 flex-wrap">
                 {filters.brands.map((brand) => (
                   <div
                     key={brand}
@@ -173,105 +160,49 @@ export function FilterSidebar({
                   </div>
                 ))}
               </div>
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search brands"
-                className="pl-8 text-sm"
-                value={brandSearch}
-                onChange={(e) => setBrandSearch(e.target.value)}
-              />
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search brands"
+                  className="pl-8 text-sm"
+                  value={brandSearch}
+                  onChange={(e) => setBrandSearch(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {brands.map((brand) => (
-                <div key={brand} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`brand-${brand}`}
-                    checked={filters.brands.includes(brand)}
-                    onCheckedChange={() => toggleBrand(brand)}
-                    className="text-purple-600"
-                  />
-                  <label
-                    htmlFor={`brand-${brand}`}
-                    className={`text-sm cursor-pointer ${
-                      filters.brands.includes(brand) ? "text-purple-600" : ""
-                    }`}
+            <ScrollArea className="h-40">
+              <div className="space-y-2 pr-4">
+                {filteredBrands.map((brand) => (
+                  <div
+                    key={brand}
+                    className="flex items-center justify-between group"
                   >
-                    {brand}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Product Category Section */}
-      <div className="border-b pb-4 mb-4">
-        <div
-          className="flex justify-between items-center mb-3 cursor-pointer"
-          onClick={() => toggleSection("category")}
-        >
-          <h3 className="font-medium">Product Category</h3>
-          {expandedSections.category ? (
-            <ChevronUp size={18} />
-          ) : (
-            <ChevronDown size={18} />
-          )}
-        </div>
-
-        {expandedSections.category && (
-          <>
-            <div className="relative mb-3">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search categories"
-                className="pl-8 text-sm"
-                value={categorySearch}
-                onChange={(e) => setCategorySearch(e.target.value)}
-              />
-            </div>
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {categories.map((category) => (
-                <div key={category.name}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{category.name}</span>
-                    <span className="text-xs text-purple-600 cursor-pointer">
-                      more
-                    </span>
-                  </div>
-                  <div className="ml-2 mt-1 space-y-1">
-                    {category.subcategories.map((subcat) => (
-                      <div
-                        key={subcat.name}
-                        className="flex items-center justify-between"
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`brand-${brand}`}
+                        checked={filters.brands.includes(brand)}
+                        onCheckedChange={() => toggleBrand(brand)}
+                        className="text-purple-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                      />
+                      <label
+                        htmlFor={`brand-${brand}`}
+                        className={cn(
+                          "text-sm cursor-pointer",
+                          filters.brands.includes(brand)
+                            ? "text-purple-600 font-medium"
+                            : ""
+                        )}
                       >
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${subcat.name}`}
-                            checked={filters.categories.includes(subcat.name)}
-                            onCheckedChange={() => toggleCategory(subcat.name)}
-                            className="text-purple-600"
-                          />
-                          <label
-                            htmlFor={`category-${subcat.name}`}
-                            className={`text-sm cursor-pointer ${
-                              filters.categories.includes(subcat.name)
-                                ? "text-purple-600"
-                                : ""
-                            }`}
-                          >
-                            {subcat.name}
-                          </label>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {subcat.count.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
+                        {brand}
+                      </label>
+                    </div>
+                    {filters.brands.includes(brand) && (
+                      <Check size={16} className="text-purple-600" />
+                    )}
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </>
         )}
       </div>
@@ -292,7 +223,7 @@ export function FilterSidebar({
 
         {expandedSections.campaign && (
           <>
-            <div className="relative mb-3">
+            <div className="mb-3">
               <div className="flex gap-1 mb-2 flex-wrap">
                 {filters.campaigns.map((campaign) => (
                   <div
@@ -308,48 +239,65 @@ export function FilterSidebar({
                   </div>
                 ))}
               </div>
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search campaigns"
-                className="pl-8 text-sm"
-                value={campaignSearch}
-                onChange={(e) => setCampaignSearch(e.target.value)}
-              />
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search campaigns"
+                  className="pl-8 text-sm"
+                  value={campaignSearch}
+                  onChange={(e) => setCampaignSearch(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {campaigns.map((campaign) => (
-                <div key={campaign} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`campaign-${campaign}`}
-                    checked={filters.campaigns.includes(campaign)}
-                    onCheckedChange={() => toggleCampaign(campaign)}
-                    className="text-purple-600"
-                  />
-                  <label
-                    htmlFor={`campaign-${campaign}`}
-                    className={`text-sm cursor-pointer ${
-                      filters.campaigns.includes(campaign)
-                        ? "text-purple-600"
-                        : ""
-                    }`}
+            <ScrollArea className="h-40">
+              <div className="space-y-2 pr-4">
+                {filteredCampaigns.map((campaign) => (
+                  <div
+                    key={campaign}
+                    className="flex items-center justify-between group"
                   >
-                    {campaign}
-                  </label>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`campaign-${campaign}`}
+                        checked={filters.campaigns.includes(campaign)}
+                        onCheckedChange={() => toggleCampaign(campaign)}
+                        className="text-purple-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                      />
+                      <label
+                        htmlFor={`campaign-${campaign}`}
+                        className={cn(
+                          "text-sm cursor-pointer",
+                          filters.campaigns.includes(campaign)
+                            ? "text-purple-600 font-medium"
+                            : ""
+                        )}
+                      >
+                        {campaign}
+                      </label>
+                    </div>
+                    {filters.campaigns.includes(campaign) && (
+                      <Check size={16} className="text-purple-600" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </>
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 mt-auto">
         <Button
-          className="w-full bg-purple-600 hover:bg-purple-700"
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
           onClick={handleApply}
         >
           Apply
         </Button>
-        <Button variant="outline" className="w-full" onClick={handleClearAll}>
+        <Button
+          variant="outline"
+          className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
+          onClick={handleClearAll}
+        >
           Clear All
         </Button>
       </div>

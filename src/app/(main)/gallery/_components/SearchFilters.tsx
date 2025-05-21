@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import React from "react";
-
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 interface SearchFiltersProps {
   onSearchChange: (query: string) => void;
   onSourceChange: (source: string) => void;
@@ -55,7 +55,7 @@ export function SearchFilters({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search"
-            className="pl-9 w-[400px]"
+            className={`pl-9 w-[${showFilters ? "400px" : "300px"}]`}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
@@ -78,7 +78,7 @@ export function SearchFilters({
           </label>
         </div>
 
-        <div className="flex flex-col mb-5">
+        {/* <div className="flex flex-col mb-5">
           <p className="text-sm font-semibold mb-1">Source</p>
           <Select value={source} onValueChange={onSourceChange}>
             <SelectTrigger className="w-[140px]">
@@ -104,21 +104,18 @@ export function SearchFilters({
               <SelectItem value="Others">Others</SelectItem>
             </SelectContent>
           </Select>
+        </div> */}
+        <div className="mt-1">
+          {showFilters ? (
+            <TooltipIconButton tooltip="Hide Filters" onClick={onToggleFilters}>
+              <X size={24} />
+            </TooltipIconButton>
+          ) : (
+            <TooltipIconButton tooltip="Show Filters" onClick={onToggleFilters}>
+              <Filter size={24} />
+            </TooltipIconButton>
+          )}
         </div>
-
-        {showFilters ? (
-          <X
-            className=" cursor-pointer rounded p-1 "
-            onClick={onToggleFilters}
-            size={24}
-          />
-        ) : (
-          <Filter
-            className="cursor-pointer rounded p-1"
-            onClick={onToggleFilters}
-            size={24}
-          />
-        )}
       </div>
 
       {/* {hasActiveFilters && !showFilters && (

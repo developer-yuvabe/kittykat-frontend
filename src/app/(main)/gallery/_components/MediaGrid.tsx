@@ -12,10 +12,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GalleryCollection } from "@/types/gallery.types";
+import { GalleryItemResponse } from "@/types/gallery.types";
 
 interface MediaGridProps {
-  items: GalleryCollection[];
+  items: GalleryItemResponse[];
   selectedItems: string[];
   onSelect: (id: string, selected: boolean) => void;
   onToggleFavorite: (id: string) => void;
