@@ -9,20 +9,11 @@ import { BulkActions } from "./BulkActions";
 import FilterSidebar from "./FilterSidebar";
 import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { useInView } from "react-intersection-observer";
-import {
-  useQuery,
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { galleryService } from "@/services/api/gallery.service";
-import type { GalleryItemResponse } from "@/types/gallery.types";
-
-const ITEMS_PER_PAGE = 20;
+import { useGalleryQuery } from "@/hooks/useGallery";
 
 export function MediaLibrary() {
+  // UI State
   const [activeTab, setActiveTab] = useState("all-media");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<boolean>(false);
@@ -36,70 +27,26 @@ export function MediaLibrary() {
     campaigns: [] as string[],
   });
 
-  const queryClient = useQueryClient();
-
-  // Fetch brands and campaigns for filters
-  const { data: brandsData } = useQuery({
-    queryKey: ["brands-campaigns"],
-    queryFn: () => galleryService.getBrandsWithCampaigns(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+  // Use our custom hook for data fetching and mutations
+  const {
+    brandsData,
+    galleryItems,
+    galleryStatus,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    toggleFavorite,
+    deleteItem,
+    bulkDelete,
+    downloadItem,
+  } = useGalleryQuery({
+    assetType: activeTab,
+    favorites,
+    source,
+    creator,
+    searchQuery,
+    selectedFilters,
   });
-
-  // Map active tab to asset types for filtering
-  const getAssetTypesFromTab = () => {
-    if (activeTab === "all-media") return undefined;
-    return activeTab;
-  };
-
-  // Infinite query for gallery items with filters
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
-    useInfiniteQuery({
-      queryKey: [
-        "gallery-items",
-        activeTab,
-        favorites,
-        source,
-        creator,
-        searchQuery,
-        selectedFilters,
-      ],
-      queryFn: async ({ pageParam = 0 }) => {
-        // If search query is provided, use search endpoint
-        if (searchQuery) {
-          return galleryService.searchGalleryItems(
-            searchQuery,
-            pageParam,
-            ITEMS_PER_PAGE
-          );
-        }
-
-        // Otherwise use filter endpoint
-        return galleryService.getAllGalleryItems({
-          asset_sources: [getAssetTypesFromTab()].filter(
-            (v): v is string => v !== undefined
-          ),
-          is_favourite: favorites || undefined,
-          brand_names:
-            selectedFilters.brands.length > 0
-              ? selectedFilters.brands
-              : undefined,
-          campaign_names:
-            selectedFilters.campaigns.length > 0
-              ? selectedFilters.campaigns
-              : undefined,
-          skip: pageParam,
-          limit: ITEMS_PER_PAGE,
-        });
-      },
-      getNextPageParam: (lastPage) => {
-        if (!lastPage.pagination.has_more) return undefined;
-        return lastPage.pagination.skip + lastPage.pagination.limit;
-      },
-      initialPageParam: 0,
-    });
-
-  // Flatten all pages of gallery items
-  const galleryItems = data?.pages.flatMap((page) => page.gallery_items) || [];
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -109,223 +56,6 @@ export function MediaLibrary() {
       fetchNextPage();
     }
   }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  // Toggle favorite mutation with optimistic updates
-  const toggleFavoriteMutation = useMutation({
-    mutationFn: (itemId: string) => galleryService.toggleFavorite(itemId),
-    onMutate: async (itemId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["gallery-items"] });
-
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData([
-        "gallery-items",
-        activeTab,
-        favorites,
-        source,
-        creator,
-        searchQuery,
-        selectedFilters,
-      ]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          activeTab,
-          favorites,
-          source,
-          creator,
-          searchQuery,
-          selectedFilters,
-        ],
-        (old: any) => {
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              gallery_items: page.gallery_items.map(
-                (item: GalleryItemResponse) =>
-                  item.id === itemId
-                    ? { ...item, is_favourite: !item.is_favourite }
-                    : item
-              ),
-            })),
-          };
-        }
-      );
-
-      // Return a context object with the snapshot
-      return { previousData };
-    },
-    onError: (err, itemId, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          activeTab,
-          favorites,
-          source,
-          creator,
-          searchQuery,
-          selectedFilters,
-        ],
-        context?.previousData
-      );
-      toast.error("Failed to update favorite status");
-    },
-    onSuccess: (data) => {
-      toast.success(
-        data.is_favourite ? "Added to favorites" : "Removed from favorites"
-      );
-    },
-  });
-
-  // Delete item mutation
-  const deleteItemMutation = useMutation({
-    mutationFn: (itemId: string) => galleryService.deleteGalleryItem(itemId),
-    onMutate: async (itemId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["gallery-items"] });
-
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData([
-        "gallery-items",
-        activeTab,
-        favorites,
-        source,
-        creator,
-        searchQuery,
-        selectedFilters,
-      ]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          activeTab,
-          favorites,
-          source,
-          creator,
-          searchQuery,
-          selectedFilters,
-        ],
-        (old: any) => {
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              gallery_items: page.gallery_items.filter(
-                (item: GalleryItemResponse) => item.id !== itemId
-              ),
-            })),
-          };
-        }
-      );
-
-      // Remove from selected items if present
-      if (selectedItems.includes(itemId)) {
-        setSelectedItems((prev) => prev.filter((id) => id !== itemId));
-      }
-
-      // Return a context object with the snapshot
-      return { previousData };
-    },
-    onError: (err, itemId, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          activeTab,
-          favorites,
-          source,
-          creator,
-          searchQuery,
-          selectedFilters,
-        ],
-        context?.previousData
-      );
-      toast.error("Failed to delete item");
-    },
-    onSuccess: () => {
-      toast.success("Item deleted successfully");
-    },
-  });
-
-  // Bulk delete mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (itemIds: string[]) => {
-      // Delete items one by one
-      const promises = itemIds.map((id) =>
-        galleryService.deleteGalleryItem(id)
-      );
-      return Promise.all(promises);
-    },
-    onMutate: async (itemIds) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["gallery-items"] });
-
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData([
-        "gallery-items",
-        activeTab,
-        favorites,
-        source,
-        creator,
-        searchQuery,
-        selectedFilters,
-      ]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          activeTab,
-          favorites,
-          source,
-          creator,
-          searchQuery,
-          selectedFilters,
-        ],
-        (old: any) => {
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              gallery_items: page.gallery_items.filter(
-                (item: GalleryItemResponse) => !itemIds.includes(item.id)
-              ),
-            })),
-          };
-        }
-      );
-
-      // Clear selected items
-      setSelectedItems([]);
-
-      // Return a context object with the snapshot
-      return { previousData };
-    },
-    onError: (err, itemIds, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          activeTab,
-          favorites,
-          source,
-          creator,
-          searchQuery,
-          selectedFilters,
-        ],
-        context?.previousData
-      );
-      toast.error("Failed to delete items");
-    },
-    onSuccess: (data) => {
-      toast.success(`${data.length} items deleted successfully`);
-    },
-  });
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -345,11 +75,15 @@ export function MediaLibrary() {
   };
 
   const handleToggleFavorite = (id: string) => {
-    toggleFavoriteMutation.mutate(id);
+    toggleFavorite(id);
   };
 
   const handleDeleteItem = (id: string) => {
-    deleteItemMutation.mutate(id);
+    deleteItem(id);
+    // Remove from selected if needed
+    if (selectedItems.includes(id)) {
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+    }
   };
 
   const handleBulkDelete = () => {
@@ -359,7 +93,8 @@ export function MediaLibrary() {
     if (
       confirm(`Are you sure you want to delete ${selectedItems.length} items?`)
     ) {
-      bulkDeleteMutation.mutate(selectedItems);
+      bulkDelete(selectedItems);
+      setSelectedItems([]);
     }
   };
 
@@ -388,26 +123,6 @@ export function MediaLibrary() {
     setShowFilters(false);
   };
 
-  // Download a single item
-  const handleDownload = async (item: GalleryItemResponse) => {
-    try {
-      const response = await fetch(item.asset_url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${item.asset_title}.${item.format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success(`Downloaded ${item.asset_title}`);
-    } catch (error) {
-      toast.error("Failed to download file");
-      console.error("Download error:", error);
-    }
-  };
-
   // Bulk download selected items
   const handleBulkDownload = async () => {
     if (selectedItems.length === 0) return;
@@ -419,11 +134,9 @@ export function MediaLibrary() {
     try {
       // For each selected item, trigger a download
       for (const item of selectedItemsData) {
-        await handleDownload(item);
+        await downloadItem(item);
       }
-      toast.success(`Downloaded ${selectedItems.length} items`);
     } catch (error) {
-      toast.error("Failed to download some files");
       console.error("Bulk download error:", error);
     }
   };
@@ -519,11 +232,11 @@ export function MediaLibrary() {
                 selectedFilters={selectedFilters}
               />
 
-              {status === "pending" ? (
+              {galleryStatus === "pending" ? (
                 <div className="flex justify-center items-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                 </div>
-              ) : status === "error" ? (
+              ) : galleryStatus === "error" ? (
                 <div className="flex justify-center items-center py-20">
                   <p className="text-red-500">Error loading gallery items</p>
                 </div>
@@ -539,7 +252,7 @@ export function MediaLibrary() {
                     onSelect={handleSelect}
                     onToggleFavorite={handleToggleFavorite}
                     onDelete={handleDeleteItem}
-                    onDownload={handleDownload}
+                    onDownload={downloadItem}
                   />
 
                   {/* Infinite scroll loading indicator */}
