@@ -69,6 +69,19 @@ export interface ThreadBrand {
   };
 }
 
+export interface ThreadCampaign {
+  id: string;
+  campaign?: {
+    title?: string;
+    description?: string;
+    tone?: string[];
+  };
+  colors?: string[];
+  target_audience?: string;
+  visual_style?: string;
+}
+
 export interface ThreadDetails {
   brand_information?: ThreadBrand;
+  campaign_information?: ThreadCampaign[];
 }
