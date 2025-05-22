@@ -20,7 +20,6 @@ export const env = createEnv({
     NEXT_PUBLIC_API_BASE_URL_STG: z.string().url(),
     NEXT_PUBLIC_ENVIRONMENT: z.enum(["prod", "stg", "dev"]).default("dev"),
     NEXT_PUBLIC_API_BASE_URL_DEV: z.string().url(),
-    NEXT_PUBLIC_KITTYKAT_AGENT_SERVER: z.string().url(),
   },
 
   /*
@@ -50,7 +49,5 @@ export const env = createEnv({
     NEXT_PUBLIC_API_BASE_URL_PROD: process.env.NEXT_PUBLIC_API_BASE_URL_PROD,
     NEXT_PUBLIC_API_BASE_URL_STG: process.env.NEXT_PUBLIC_API_BASE_URL_STG,
     NEXT_PUBLIC_API_BASE_URL_DEV: process.env.NEXT_PUBLIC_API_BASE_URL_DEV,
-    NEXT_PUBLIC_KITTYKAT_AGENT_SERVER:
-      process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER,
   },
 });
