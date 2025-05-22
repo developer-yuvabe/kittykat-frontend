@@ -21,11 +21,11 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     [key: string]: boolean;
   }>({ brandOverview: true });
   const { threadsLoading, updateThreadName } = useThreads();
-  const { clearPinnedItems } = usePinnedContextStore();
+  const { clearPinnedItem } = usePinnedContextStore();
   const { isFectchingThreadInfo, data } = useBrandUpdates(threadId);
 
   const brandingInformation = data?.brand_information;
-  const campaignInfo: unknown[] = [];
+  const campaignInfo: Record<string, any>[][] = [];
   const previousBrandName = useRef<string>(null);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
                 setThreadId={setThreadId}
                 expandedSections={expandedSections}
                 setExpandedSections={setExpandedSections}
-                clearPinnedItems={clearPinnedItems}
+                clearPinnedItems={clearPinnedItem}
               />
             }
             {brandingInformation && (
