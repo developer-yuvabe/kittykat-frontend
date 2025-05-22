@@ -1,7 +1,5 @@
 const nextConfig = {
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
   output: "standalone",
@@ -11,12 +9,17 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "storage.googleapis.com",
-        pathname: "/**", // Allow all paths under storage.googleapis.com
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "replicate.delivery",
-        pathname: "/**", // Allow all paths under storage.googleapis.com
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**", // Allow all images from Unsplash
       },
     ],
   },
