@@ -15,7 +15,7 @@ import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
 import { ChatInput } from "../chatbot/ChatInput";
 import { ChatMessageList } from "../chatbot/ChatMessageList";
 import { ChatHistoryPanel } from "../chatbot/ChatHistoryPanel";
-import ToolResultsPanel from "../chatbot/ToolResultsPanel";
+import ThreadDetailsPanel from "../chatbot/ThreadDetailsPanel";
 import { SettingsPopover } from "../chatbot/SettingsPopover";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
@@ -303,7 +303,7 @@ export function Thread() {
         {/* Main content flex container - Side by side layout */}
         <div className="flex flex-1 h-full">
           {/* Tool Results Panel - Left Side */}
-          <ToolResultsPanel
+          <ThreadDetailsPanel
             isLargeScreen={isLargeScreen}
             setThreadId={setThreadId}
             threadId={threadId}
@@ -364,7 +364,7 @@ export function Thread() {
                           <div className="flex items-center gap-3">
                             <Image
                               src={Logo}
-                              alt="LangGraph Logo"
+                              alt="KittyKat Logo"
                               width={100}
                               height={40}
                               className="flex-shrink-0"

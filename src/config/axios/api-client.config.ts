@@ -2,6 +2,7 @@ import axios from "axios";
 import { env } from "../env";
 import { auth } from "../firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
+import { AppConfig } from "../app.config";
 
 const getClientSideToken = () => {
   return new Promise((resolve) => {
@@ -23,15 +24,10 @@ const getClientSideToken = () => {
   });
 };
 
-const baseURLs = {
-  prod: env.NEXT_PUBLIC_API_BASE_URL_PROD,
-  stg: env.NEXT_PUBLIC_API_BASE_URL_STG,
-  dev: env.NEXT_PUBLIC_API_BASE_URL_DEV,
-};
-
 const axiosInstance = axios.create({
   baseURL: `${
-    baseURLs[env.NEXT_PUBLIC_ENVIRONMENT] || env.NEXT_PUBLIC_API_BASE_URL_DEV
+    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT] ||
+    env.NEXT_PUBLIC_API_BASE_URL_DEV
   }/api/v1/kittykat-agent`,
 });
 

@@ -5,6 +5,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { clientConfig, serverConfig } from "../firebase.config";
 import { env } from "../env";
+import { AppConfig } from "../app.config";
 
 const getServerSideToken = async () => {
   try {
@@ -22,15 +23,10 @@ const getServerSideToken = async () => {
   }
 };
 
-const baseURLs = {
-  prod: env.NEXT_PUBLIC_API_BASE_URL_PROD,
-  stg: env.NEXT_PUBLIC_API_BASE_URL_STG,
-  dev: env.NEXT_PUBLIC_API_BASE_URL_DEV,
-};
-
 const axiosInstance = axios.create({
   baseURL: `${
-    baseURLs[env.NEXT_PUBLIC_ENVIRONMENT] || env.NEXT_PUBLIC_API_BASE_URL_DEV
+    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT] ||
+    env.NEXT_PUBLIC_API_BASE_URL_DEV
   }/api/v1/kittykat-agent`,
 });
 

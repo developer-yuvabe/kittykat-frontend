@@ -3,6 +3,8 @@ import { twMerge } from "tailwind-merge";
 import { ERROR_MESSAGES } from "./constants";
 import { FirebaseError } from "firebase/app";
 import { AxiosResponse } from "axios";
+import { AppConfig } from "@/config/app.config";
+import { env } from "@/config/env";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -92,4 +94,10 @@ export function isValidUrl(url: string): boolean {
     console.log("Invalid URL:", _error);
     return false;
   }
+}
+
+export function getSSEBaseUrl(): string {
+  return `${
+    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT]
+  }/api/v1/kittykat-agent/sse`;
 }

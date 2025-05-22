@@ -257,9 +257,9 @@ export const filterAndNormalizeColors = (colors: Color[]): Color[] =>
   colors
     .map((color) => ({
       ...color,
-      hex: color.hex.startsWith("#") ? color.hex : `#${color.hex}`,
+      hex: color?.hex?.startsWith("#") ? color?.hex : `#${color?.hex}`,
     }))
-    .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color.hex));
+    .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color?.hex));
 
 export function getThreadSearchMetadata(
   assistantId: string
