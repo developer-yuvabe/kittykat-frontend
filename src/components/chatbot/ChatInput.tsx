@@ -152,7 +152,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       <form
         onSubmit={handleSubmit}
-        className="grid grid-rows-[1fr_auto] gap-2 max-w-3xl ml-auto mr-0"
+        className="grid grid-rows-[1fr_auto] gap-2 ml-auto mr-0"
       >
         <textarea
           value={input}
@@ -171,7 +171,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             }
           }}
           placeholder="Type your message here..."
-          className="p-6  border-none bg-transparent  field-sizing-content placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
+          className="p-6 border-none bg-transparent field-sizing-content placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
         />
 
         <div className="flex right-4 bottom-6 absolute">

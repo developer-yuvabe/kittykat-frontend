@@ -39,7 +39,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   return (
     <div
-      className={`w-full min-h-full rounded-2xl mx-4 bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
+      className={`w-full min-h-full rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
         !isLargeScreen ? "hidden md:flex" : ""
       }`}
     >

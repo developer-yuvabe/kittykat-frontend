@@ -1,13 +1,11 @@
-import { AppConfig } from "@/config/app.config";
-import { env } from "@/config/env";
 import { getSSEBaseUrl } from "@/lib/utils";
 import { ThreadDetails } from "@/types/types";
-import { set } from "lodash";
 import { useEffect, useState } from "react";
 
 export function useBrandUpdates(brandId: string | null) {
   const [isFectchingThreadInfo, setIsFectchingThreadInfo] = useState(false);
   const [data, setData] = useState<ThreadDetails | null>(null);
+  console.log(data);
 
   useEffect(() => {
     if (!brandId) {
@@ -15,9 +13,12 @@ export function useBrandUpdates(brandId: string | null) {
       return;
     }
 
+    console.log(getSSEBaseUrl());
+
     const eventSource = new EventSource(`${getSSEBaseUrl()}/brands/${brandId}`);
 
     eventSource.addEventListener("brand_info", (event) => {
+      console.log(event);
       const parsed = JSON.parse(event.data);
       setIsFectchingThreadInfo(false);
       setData(parsed);

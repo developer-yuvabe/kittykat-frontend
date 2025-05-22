@@ -1,43 +1,39 @@
-import React from "react";
-import { v4 as uuidv4 } from "uuid";
-import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { useStreamContext } from "@/providers/langgraph/Stream";
-import { useState, FormEvent } from "react";
-import { Checkpoint, Message } from "@langchain/langgraph-sdk";
-import { useQueryState, parseAsBoolean } from "nuqs";
-import { toast } from "sonner";
-import Image from "next/image";
 import Logo from "@/assets/kittykat-logo.svg";
-import { ScrollToBottom } from "../chatbot/ScrollToBottom";
-import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
-import { ChatInput } from "../chatbot/ChatInput";
-import { ChatMessageList } from "../chatbot/ChatMessageList";
-import { ChatHistoryPanel } from "../chatbot/ChatHistoryPanel";
-import ThreadDetailsPanel from "../chatbot/ThreadDetailsPanel";
-import { SettingsPopover } from "../chatbot/SettingsPopover";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import {
+  DO_NOT_RENDER_ID_PREFIX,
+  RENDER_FILE_ID_PREFIX,
+} from "@/lib/constants";
 import {
   addFileWrappers,
   ensureToolCallsHaveResponses,
   removeFileWrappers,
 } from "@/lib/langgraph.utils";
-import {
-  DO_NOT_RENDER_ID_PREFIX,
-  RENDER_FILE_ID_PREFIX,
-} from "@/lib/constants";
-import { StickToBottom } from "use-stick-to-bottom";
-import { useUserStore } from "@/store/user.store";
+import { cn } from "@/lib/utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useThreads } from "@/providers/langgraph/Thread";
-import { ChatSkeleton } from "./messages/message-skeleton";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import { useUserStore } from "@/store/user.store";
 import { MessageContentFiles } from "@/types/langgraph.types";
+import { Checkpoint, Message } from "@langchain/langgraph-sdk";
+import Image from "next/image";
+import { parseAsBoolean, useQueryState } from "nuqs";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { StickToBottom } from "use-stick-to-bottom";
+import { v4 as uuidv4 } from "uuid";
+import { ChatInput } from "../chatbot/ChatInput";
+import { ChatMessageList } from "../chatbot/ChatMessageList";
+import { ScrollToBottom } from "../chatbot/ScrollToBottom";
+import { SettingsPopover } from "../chatbot/SettingsPopover";
+import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
+import ThreadDetailsPanel from "../chatbot/ThreadDetailsPanel";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "../ui/resizable";
+import { ChatSkeleton } from "./messages/message-skeleton";
 
 export function Thread() {
   const lastInteractedBrandId = useUserStore((state) =>
@@ -77,10 +73,6 @@ export function Thread() {
     setInitializingThread(false);
   }, [threadsLoading]);
 
-  const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
-    "chatHistoryOpen",
-    parseAsBoolean.withDefault(false)
-  );
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
@@ -92,7 +84,6 @@ export function Thread() {
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
   const stream = useStreamContext();
-  console.log("stream", stream);
 
   const messages = stream.messages;
   const isLoading = stream.isLoading;
@@ -239,10 +230,6 @@ export function Thread() {
 
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
 
-  useEffect(() => {
-    console.log(messages);
-  }, [messages.length]);
-
   const setLastInteractedBrandId = useUserStore(
     (state) => state.setLastInteractedBrandId
   );
@@ -272,40 +259,14 @@ export function Thread() {
   }, [threadId]);
 
   return (
-    <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden rounded-2xl">
-      <div className="relative hidden lg:flex">
-        <ChatHistoryPanel
-          chatHistoryOpen={chatHistoryOpen}
-          isLargeScreen={isLargeScreen}
-        />
-      </div>
-      <motion.div
-        className={cn(
-          "flex-1 flex flex-col min-w-0 mx-2 overflow-hidden relative -ml-80",
-          !chatStarted && "grid-rows-[1fr]"
-        )}
-        layout={isLargeScreen}
-        animate={{
-          marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
-          width: chatHistoryOpen
-            ? isLargeScreen
-              ? "calc(100% - 300px)"
-              : "100%"
-            : "100%",
-        }}
-        transition={
-          isLargeScreen
-            ? { type: "spring", stiffness: 300, damping: 30 }
-            : { duration: 0 }
-        }
-      >
-        {/* Main content flex container - Side by side layout */}
+    <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden">
+      <div className="w-full px-4">
         <ResizablePanelGroup
           direction="horizontal"
           className="flex flex-1 h-full"
         >
           {/* Tool Results Panel - Left Side */}
-          <ResizablePanel className="rounded-2xl">
+          <ResizablePanel defaultSize={70} minSize={30}>
             <ThreadDetailsPanel
               isLargeScreen={isLargeScreen}
               setThreadId={setThreadId}
@@ -313,7 +274,7 @@ export function Thread() {
             />
           </ResizablePanel>
           <ResizableHandle className="mx-3 bg-transparent" withHandle />
-          <ResizablePanel>
+          <ResizablePanel defaultSize={30} minSize={30}>
             {/* Chat Area - Right Side */}
             <div
               className={cn(
@@ -339,7 +300,7 @@ export function Thread() {
                 {/* Only show skeleton during loading, nothing else */}
                 {threadsLoading || initializingThread ? (
                   <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
-                    <div className="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full">
+                    <div className="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full">
                       <ChatSkeleton />
                     </div>
                   </div>
@@ -350,7 +311,7 @@ export function Thread() {
                       !chatStarted && "flex flex-col items-stretch mt-[25vh]",
                       chatStarted && "grid grid-rows-[1fr_auto]"
                     )}
-                    contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full"
+                    contentClassName="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full"
                     content={
                       <ChatMessageList
                         messages={nonToolMessages}
@@ -403,7 +364,7 @@ export function Thread() {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-      </motion.div>
+      </div>
     </div>
   );
 }
