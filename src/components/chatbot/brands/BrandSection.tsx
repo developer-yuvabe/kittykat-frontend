@@ -1,19 +1,14 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { extractAllColors } from "@/lib/langgraph.utils";
-import { isValidUrl } from "@/lib/utils";
 import { ChevronDown, ChevronRight, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { BrandColors } from "./BrandColors";
-import { BrandLogos } from "./BrandLogos";
 import { BrandMedia } from "./BrandMedia";
 import { BrandOverview } from "./BrandOverview";
-import { BrandProducts } from "./BrandProducts";
 import BrandSelector from "./BrandSelector";
-import { BrandTypography } from "./BrandTypography";
-import { ThreadBrand } from "@/types/types";
 import { BrandTargetAudience } from "./BrandTargetAudience";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -193,7 +188,7 @@ export const renderBrandData = (
               {/* Media Section */}
               <BrandMedia
                 socialMedia={staticData?.social_media}
-                brand_media={brandMedia}
+                brandMedia={brandMedia}
               />
             </div>
           </CardContent>
