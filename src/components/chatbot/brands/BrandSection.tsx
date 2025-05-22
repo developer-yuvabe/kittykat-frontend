@@ -13,6 +13,7 @@ import BrandSelector from "./BrandSelector";
 import { BrandTypography } from "./BrandTypography";
 import { ThreadBrand } from "@/types/types";
 import { BrandTargetAudience } from "./BrandTargetAudience";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -102,22 +103,15 @@ export const renderBrandData = (
 
               {!expandedSections.brandOverview ? (
                 <div className="flex items-center ">
-                  {staticData?.logos?.length > 0 &&
-                  isValidUrl(staticData?.logos[0]) ? (
-                    // Render the first valid logo
-                    <img
-                      src={staticData?.logos[0]}
-                      alt="Brand Logo"
-                      className="w-10 h-10 rounded-full object-cover mr-3"
-                    />
-                  ) : (
-                    // Render the brand initial circle
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3 overflow-hidden">
+                  <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+                    <AvatarImage src={staticData.logos[0]} alt="@shadcn" />
+                    <AvatarFallback className="bg-blue-500">
                       <span className="text-white font-bold">
                         {brandInitial}
                       </span>
-                    </div>
-                  )}
+                    </AvatarFallback>
+                  </Avatar>
+
                   <div className="flex flex-col">
                     <div className="text-sm font-medium">
                       {staticData?.brand?.name

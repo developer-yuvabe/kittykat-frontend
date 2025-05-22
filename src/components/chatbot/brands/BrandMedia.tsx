@@ -27,7 +27,7 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
   brand_media,
   socialMedia,
 }) => {
-  if (!Object.values(socialMedia).some((v) => v)) return null;
+  if (!Object.values(socialMedia || {}).some((v) => v)) return null;
 
   const { posts, status } = useMemo(() => {
     return {
