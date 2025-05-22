@@ -312,7 +312,7 @@ export function Thread() {
               threadId={threadId}
             />
           </ResizablePanel>
-          <ResizableHandle className="bg-border h-[94%] my-auto" withHandle />
+          <ResizableHandle className="mx-3 bg-transparent" withHandle />
           <ResizablePanel>
             {/* Chat Area - Right Side */}
             <div
@@ -373,9 +373,6 @@ export function Thread() {
                                 height={40}
                                 className="flex-shrink-0"
                               />
-                              <h1 className="text-2xl font-semibold tracking-tight">
-                                Agent
-                              </h1>
                             </div>
 
                             <ScrollToBottom className="absolute mb-0 -translate-x-1/3 bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
