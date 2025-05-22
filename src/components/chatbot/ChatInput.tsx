@@ -97,7 +97,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const clearPins = usePinnedContextStore((state) => state.clearPinnedItem);
   // const clearPinnedItems = usePinnedContextStore((state) => state.clearPinnedItems);
   return (
-    <div className="relative z-10 w-full max-w-2xl mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
+    <div className="relative z-10 w-full  mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
       {pinnedItem && (
         <div className="p-3 bg-gray-100 rounded-2xl mb-2">
           <div className="flex gap-2 flex-wrap">
