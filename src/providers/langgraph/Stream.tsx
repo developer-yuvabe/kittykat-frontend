@@ -18,7 +18,7 @@ import { useQueryState } from "nuqs";
 import { useThreads } from "./Thread";
 
 import Splash from "@/components/shared/Splash";
-import { KITTYKAT_AGENT_ID } from "@/lib/constants";
+import { KITTYKAT_AGENT_ID, KITTYKAT_AGENT_SERVER } from "@/lib/constants";
 import { env } from "@/config/env";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[]; sources: any };
@@ -148,7 +148,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <StreamSession
       apiKey={envApiKey || null}
-      apiUrl={env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER}
+      apiUrl={KITTYKAT_AGENT_SERVER}
       assistantId={KITTYKAT_AGENT_ID}
     >
       {children}
