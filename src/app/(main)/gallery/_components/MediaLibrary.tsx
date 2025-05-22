@@ -11,11 +11,14 @@ import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 
 export function MediaLibrary() {
   // UI State
   const [activeTab, setActiveTab] = useState("all-media");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<boolean>(false);
   const [source, setSource] = useState<string>("All");
   const [creator, setCreator] = useState<string>("Anyone");
@@ -86,15 +89,20 @@ export function MediaLibrary() {
     }
   };
 
-  const handleBulkDelete = () => {
-    if (selectedItems.length === 0) return;
-
-    // Confirm before deleting
-    if (
-      confirm(`Are you sure you want to delete ${selectedItems.length} items?`)
-    ) {
-      bulkDelete(selectedItems);
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await bulkDelete(selectedItems);
       setSelectedItems([]);
+    } finally {
+      setIsDeleting(false);
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleBulkDeleteClick = () => {
+    if (selectedItems.length > 0) {
+      setIsDialogOpen(true);
     }
   };
 
@@ -279,10 +287,21 @@ export function MediaLibrary() {
         <BulkActions
           selectedCount={selectedItems.length}
           onUnselectAll={handleUnselectAll}
-          onDelete={handleBulkDelete}
+          onDelete={handleBulkDeleteClick}
           onDownload={handleBulkDownload}
         />
       )}
+      <ReusableAlertDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title="Delete Items"
+        description={`Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        danger
+      />
     </div>
   );
 }
