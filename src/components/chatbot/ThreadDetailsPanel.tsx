@@ -3,7 +3,7 @@ import { useThreads } from "@/providers/langgraph/Thread";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import React, { useEffect, useRef } from "react";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
-import { CampaignSection } from "./CampaignSection";
+import { CampaignSection } from "./campaigns/CampaignSection";
 import { BrandSection } from "./brands/BrandSection";
 
 interface ThreadDetailsPanelProps {
@@ -25,7 +25,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const { isFectchingThreadInfo, data } = useBrandUpdates(threadId);
 
   const brandingInformation = data?.brand_information;
-  const campaignInfo: Record<string, any>[][] = [];
+  const campaignInformation = data?.campaign_information;
   const previousBrandName = useRef<string>(null);
 
   useEffect(() => {
@@ -39,30 +39,28 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   return (
     <div
-      className={`w-full min-h-full rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
+      className={`w-full min-h-full h-full rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
         !isLargeScreen ? "hidden md:flex" : ""
       }`}
     >
-      <div className="flex-1">
-        {threadsLoading || isFectchingThreadInfo ? (
-          <CardSkeleton />
-        ) : (
-          <>
-            {
-              <BrandSection
-                brandingInformation={brandingInformation}
-                setThreadId={setThreadId}
-                expandedSections={expandedSections}
-                setExpandedSections={setExpandedSections}
-                clearPinnedItems={clearPinnedItem}
-              />
-            }
-            {brandingInformation && (
-              <CampaignSection campaignInfo={campaignInfo} />
-            )}
-          </>
-        )}
-      </div>
+      {threadsLoading || isFectchingThreadInfo ? (
+        <CardSkeleton />
+      ) : (
+        <>
+          {
+            <BrandSection
+              brandingInformation={brandingInformation}
+              setThreadId={setThreadId}
+              expandedSections={expandedSections}
+              setExpandedSections={setExpandedSections}
+              clearPinnedItems={clearPinnedItem}
+            />
+          }
+          {campaignInformation && (
+            <CampaignSection campaignInformation={campaignInformation} />
+          )}
+        </>
+      )}
     </div>
   );
 };
