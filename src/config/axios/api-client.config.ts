@@ -12,12 +12,14 @@ const getClientSideToken = () => {
       if (user) {
         try {
           const token = await user.getIdToken(true);
+          console.log("13", token);
           resolve(token);
         } catch (error) {
           console.error("Error fetching token:", error);
           resolve(null);
         }
       } else {
+        console.log("debyg");
         resolve(null);
       }
     });
@@ -35,6 +37,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   async (config) => {
     const token = await getClientSideToken();
+    console.log("token", token);
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }

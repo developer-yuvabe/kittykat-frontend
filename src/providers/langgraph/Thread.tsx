@@ -26,6 +26,16 @@ interface ThreadContextType {
   ) => Promise<Thread[]>;
   updateThreadName: (threadId: string, name: string) => Promise<boolean>;
   deleteThread: (threadId: string) => Promise<boolean>;
+  updateThreadCampaign: (
+    threadId: string,
+    campaignId: string,
+    campaign: Record<string, any> | null
+  ) => Promise<boolean>;
+  getThreadCampaigns: (threadId: string) => Record<string, any>[] | null;
+  getThreadCampaignById: (
+    threadId: string,
+    campaignId: string
+  ) => Record<string, any> | null;
 }
 
 const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
@@ -103,6 +113,109 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     [setThreads]
   );
 
+  const updateThreadCampaign = useCallback(
+    async (
+      threadId: string,
+      campaignId: string,
+      campaign: Record<string, any> | null
+    ): Promise<boolean> => {
+      try {
+        const thread = threads.find((t) => t.thread_id === threadId);
+
+        if (!thread) {
+          console.error(`Thread with ID ${threadId} not found`);
+          return false;
+        }
+
+        // Get existing campaigns
+        const existingCampaigns = getThreadCampaigns(threadId) || [];
+        const updatedCampaigns = existingCampaigns.map((c) =>
+          c.id === campaignId ? { ...c, ...campaign } : c
+        );
+
+        // Add the new campaign if it's not already present
+        if (!existingCampaigns.some((c) => c.id === campaignId)) {
+          updatedCampaigns.push({ id: campaignId, ...campaign });
+        }
+
+        // Preserve other sources fields
+        const sources =
+          thread.values &&
+          typeof thread.values === "object" &&
+          "sources" in thread.values &&
+          typeof (thread.values as any).sources === "object"
+            ? (thread.values as any).sources
+            : {};
+
+        const updatedSources = {
+          ...sources,
+          campaigns: updatedCampaigns,
+        };
+
+        await client.threads.updateState(threadId, {
+          values: {
+            ...thread.values,
+            sources: updatedSources,
+          },
+        });
+
+        // Update the thread in local state
+        setThreads((prevThreads) =>
+          prevThreads.map((t) =>
+            t.thread_id === threadId
+              ? {
+                  ...t,
+                  values: {
+                    ...t.values,
+                    sources: updatedSources,
+                  },
+                }
+              : t
+          )
+        );
+
+        return true;
+      } catch (error) {
+        console.error(
+          `Failed to update thread campaign for thread ${threadId}:`,
+          error
+        );
+        return false;
+      }
+    },
+    [threads, setThreads]
+  );
+
+  // Helper function to get campaigns for a specific thread
+  const getThreadCampaigns = (
+    threadId: string
+  ): Record<string, any>[] | null => {
+    const thread = threads.find((t) => t.thread_id === threadId);
+    const values = thread?.values;
+    if (
+      values &&
+      typeof values === "object" &&
+      "sources" in values &&
+      values.sources &&
+      typeof values.sources === "object" &&
+      "campaigns" in values.sources
+    ) {
+      return Array.isArray(values.sources.campaigns)
+        ? values.sources.campaigns
+        : null;
+    }
+    return null;
+  };
+
+  // Helper function to get a specific campaign by thread and campaign ID
+  const getThreadCampaignById = (
+    threadId: string,
+    campaignId: string
+  ): Record<string, any> | null => {
+    const campaigns = getThreadCampaigns(threadId);
+    return campaigns?.find((campaign) => campaign.id === campaignId) || null;
+  };
+
   // Delete a thread by ID
   const deleteThread = useCallback(
     async (threadId: string): Promise<boolean> => {
@@ -155,6 +268,9 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     updateThreads,
     updateThreadName,
     deleteThread,
+    updateThreadCampaign,
+    getThreadCampaigns,
+    getThreadCampaignById,
   };
 
   return (

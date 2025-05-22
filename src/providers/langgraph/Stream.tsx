@@ -28,12 +28,21 @@ const useTypedStream = useStream<
     UpdateType: {
       messages?: Message[] | Message | string;
       ui?: (UIMessage | RemoveUIMessage)[] | UIMessage | RemoveUIMessage;
+      sources?: {
+        brandingInformation?: Record<string, any>;
+        campaigns?: Record<string, any>;
+        [key: string]: any;
+      };
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }
 >;
 
-type StreamContextType = ReturnType<typeof useTypedStream>;
+type StreamContextType = ReturnType<typeof useTypedStream> & {
+  updateCampaign: (updatedCampaign: { id: string; [key: string]: any }) => void;
+  getCampaignById: (id: string) => Record<string, any> | undefined;
+};
+
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
 
 async function sleep(ms = 4000) {
@@ -66,14 +75,35 @@ const StreamSession = ({
     },
     onThreadId: (id) => {
       setThreadId(id);
-      // Refetch threads list when thread ID changes.
-      // Wait for some seconds before fetching so we're able to get the new thread that was created.
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
 
+  // Adding updateCampaign function
+  const updateCampaign = (updatedCampaign: {
+    id: string;
+    [key: string]: any;
+  }) => {
+    const campaigns = streamValue.values.sources.campaigns || {};
+    const { id, ...rest } = updatedCampaign;
+    streamValue.values.sources.campaigns = {
+      ...campaigns,
+      [id]: { ...campaigns[id], ...rest },
+    };
+  };
+
+  // Adding getCampaignById function
+  const getCampaignById = (id: string) => {
+    const campaigns = streamValue.values.sources.campaigns || {};
+    console.log("stream camp id ", id);
+    console.log("streamCamp", campaigns);
+    return campaigns[id];
+  };
+
   return (
-    <StreamContext.Provider value={streamValue}>
+    <StreamContext.Provider
+      value={{ ...streamValue, updateCampaign, getCampaignById }}
+    >
       {children}
     </StreamContext.Provider>
   );
@@ -82,19 +112,14 @@ const StreamSession = ({
 export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  // Get environment variables
   const envApiKey = process.env.NEXT_PUBLIC_LANGSMITH_API_KEY;
-
-  // Use URL params with env var fallbacks
   const [isInitialized, setIsInitialized] = useState(false);
   const [hideToolCalls, setHideToolCalls] = useQueryState("hideToolCalls");
 
-  // Use useEffect to set default values only once on mount
   useEffect(() => {
     const initializeParams = async () => {
       try {
         const hideToolCallsToSet = hideToolCalls || "true";
-
         const promises = [];
 
         if (!hideToolCalls || hideToolCalls !== hideToolCallsToSet) {
@@ -108,7 +133,6 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
         setIsInitialized(true);
       } catch (error) {
         console.error("Failed to initialize query parameters:", error);
-        // Set initialized anyway to prevent blocking the UI
         setIsInitialized(true);
       }
     };
@@ -116,7 +140,6 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     initializeParams();
   }, []);
 
-  // Show loading state until we've initialized
   if (!isInitialized) {
     return <Splash />;
   }
@@ -132,7 +155,6 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Create a custom hook to use the context
 export const useStreamContext = (): StreamContextType => {
   const context = useContext(StreamContext);
   if (context === undefined) {

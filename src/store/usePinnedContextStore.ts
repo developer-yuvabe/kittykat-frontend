@@ -11,10 +11,10 @@ interface PinnedItem {
 
 // Define the store state type
 interface PinnedContextState {
-  pinnedItems: PinnedItem[];
+  pinnedItem: PinnedItem | null;
   addPinnedItem: (title: string, context: any) => void;
-  removePinnedItem: (id: string) => void;
-  clearPinnedItems: () => void;
+  removePinnedItem: () => void;
+  clearPinnedItem: () => void;
   isPinned: (context: any) => boolean;
   getPinnedItemId: (context: any) => string | null;
 }
@@ -23,71 +23,62 @@ interface PinnedContextState {
 export const usePinnedContextStore = create<PinnedContextState>()(
   persist(
     (set, get) => ({
-      pinnedItems: [],
+      pinnedItem: null,
 
-      // Add a new pinned item
+      // Add a new pinned item (replaces any existing one)
       addPinnedItem: (title: string, context: any) => {
-        // Check if this context is already pinned
-        if (get().isPinned(context)) return;
-
-        set((state) => ({
-          pinnedItems: [
-            ...state.pinnedItems,
-            {
-              id: title,
-              title,
-              context,
-              timestamp: Date.now(),
-            },
-          ],
-        }));
+        set({
+          pinnedItem: {
+            id: title,
+            title,
+            context,
+            timestamp: Date.now(),
+          },
+        });
       },
 
-      // Remove a pinned item by ID
-      removePinnedItem: (id: string) => {
-        set((state) => ({
-          pinnedItems: state.pinnedItems.filter((item) => item.id !== id),
-        }));
+      // Remove the currently pinned item
+      removePinnedItem: () => {
+        set({ pinnedItem: null });
       },
 
-      // Clear all pinned items
-      clearPinnedItems: () => {
-        set(() => ({ pinnedItems: [] }));
+      // Clear the pinned item (same as remove but for consistency)
+      clearPinnedItem: () => {
+        set({ pinnedItem: null });
       },
 
       // Check if a context is already pinned
       isPinned: (context: any) => {
         const contextStr =
           typeof context === "string" ? context : JSON.stringify(context);
-        return get().pinnedItems.some((item) => {
-          const itemContextStr =
-            typeof item.context === "string"
-              ? item.context
-              : JSON.stringify(item.context);
-          return itemContextStr === contextStr;
-        });
+        const pinnedItem = get().pinnedItem;
+        if (!pinnedItem) return false;
+        const itemContextStr =
+          typeof pinnedItem.context === "string"
+            ? pinnedItem.context
+            : JSON.stringify(pinnedItem.context);
+        return itemContextStr === contextStr;
       },
 
       // Get the ID of a pinned item by its context
       getPinnedItemId: (context: any) => {
         const contextStr =
           typeof context === "string" ? context : JSON.stringify(context);
-        const item = get().pinnedItems.find((item) => {
-          const itemContextStr =
-            typeof item.context === "string"
-              ? item.context
-              : JSON.stringify(item.context);
-          return itemContextStr === contextStr;
-        });
-        return item ? item.id : null;
+        const pinnedItem = get().pinnedItem;
+        if (!pinnedItem) return null;
+        const itemContextStr =
+          typeof pinnedItem.context === "string"
+            ? pinnedItem.context
+            : JSON.stringify(pinnedItem.context);
+        return itemContextStr === contextStr ? pinnedItem.id : null;
       },
     }),
     {
-      name: "pinned-contexts-storage", // unique name for localStorage
+      name: "pinned-context-storage", // unique name for localStorage
     }
   )
 );
 
-// Optional: export a hook for accessing pinned items in other components
-export const usePinnedItems = () =>
-  usePinnedContextStore((state) => state.pinnedItems);
+// Optional: export a hook for accessing the pinned item in other components
+export const usePinnedItem = () =>
+  usePinnedContextStore((state) => state.pinnedItem);

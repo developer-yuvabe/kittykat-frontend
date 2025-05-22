@@ -89,37 +89,37 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleRemoveFile,
   threadId,
 }) => {
-  const pinnedItems = usePinnedContextStore((state) => state.pinnedItems);
+  const pinnedItem = usePinnedContextStore((state) => state.pinnedItem);
   const removePinnedItem = usePinnedContextStore(
     (state) => state.removePinnedItem
   );
 
-  const clearPins = usePinnedContextStore((state) => state.clearPinnedItems);
+  const clearPins = usePinnedContextStore((state) => state.clearPinnedItem);
   // const clearPinnedItems = usePinnedContextStore((state) => state.clearPinnedItems);
   return (
     <div className="relative z-10 w-full max-w-2xl mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
-      {pinnedItems.length > 0 && (
+      {pinnedItem && (
         <div className="p-3 bg-gray-100 rounded-2xl mb-2">
           <div className="flex gap-2 flex-wrap">
             <Pin className="text-gray-700" />
             <div className="flex flex-col gap-1 flex-1">
               <span className="text-xs text-gray-500">Focused only on</span>
-              {pinnedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="relative group flex items-center gap-2"
+
+              <div
+                key={pinnedItem.id}
+                className="relative group flex items-center gap-2"
+              >
+                <span className="text-sm font-semibold text-gray-900">
+                  {pinnedItem.title}
+                </span>
+                <button
+                  onClick={() => removePinnedItem()}
+                  className="opacity-0 mt-1 group-hover:opacity-100 rounded-full bg-destructive text-white  font-bold transition-opacity"
                 >
-                  <span className="text-sm font-semibold text-gray-900">
-                    {item.title}
-                  </span>
-                  <button
-                    onClick={() => removePinnedItem(item.id)}
-                    className="opacity-0 mt-1 group-hover:opacity-100 rounded-full bg-destructive text-white  font-bold transition-opacity"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
+                  <X size={12} />
+                </button>
+              </div>
+
               <button
                 onClick={() => clearPins()}
                 className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"

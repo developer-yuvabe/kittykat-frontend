@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import React from "react";
@@ -40,7 +41,7 @@ export function ContentSection({
     if (isPinnedItem) {
       const itemId = getPinnedItemId(context);
       if (itemId) {
-        removePinnedItem(itemId);
+        removePinnedItem();
         toast(`${title} has been unpinned`, { position: "top-right" });
       }
     } else {
