@@ -33,6 +33,11 @@ import { useThreads } from "@/providers/langgraph/Thread";
 import { ChatSkeleton } from "./messages/message-skeleton";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "../ui/resizable";
 
 export function Thread() {
   const lastInteractedBrandId = useUserStore((state) =>
@@ -295,106 +300,112 @@ export function Thread() {
         }
       >
         {/* Main content flex container - Side by side layout */}
-        <div className="flex flex-1 h-full">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="flex flex-1 h-full"
+        >
           {/* Tool Results Panel - Left Side */}
-          <ThreadDetailsPanel
-            isLargeScreen={isLargeScreen}
-            setThreadId={setThreadId}
-            threadId={threadId}
-          />
-
-          {/* Chat Area - Right Side */}
-          <div
-            className={cn(
-              "flex-1 flex flex-col min-w-0 overflow-hidden relative",
-              !chatStarted && "grid-rows-[1fr]"
-            )}
-          >
-            {!chatStarted && (
-              <div className="absolute top-0 left-0 z-10 flex items-center justify-between w-full gap-3 p-2 pl-4">
-                <div></div>
-                <div className="flex justify-end mt-2 mr-3 space-x-3">
-                  <SettingsPopover />
-                </div>
-              </div>
-            )}
-
-            <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
-              {chatStarted && (
-                <div className="flex justify-start mt-3 z-20 ml-3 space-x-3">
-                  <SettingsPopover />
-                </div>
+          <ResizablePanel className="rounded-2xl">
+            <ThreadDetailsPanel
+              isLargeScreen={isLargeScreen}
+              setThreadId={setThreadId}
+              threadId={threadId}
+            />
+          </ResizablePanel>
+          <ResizableHandle className="bg-border h-[94%] my-auto" withHandle />
+          <ResizablePanel>
+            {/* Chat Area - Right Side */}
+            <div
+              className={cn(
+                "flex-1 flex flex-col min-w-0 overflow-hidden relative h-full",
+                !chatStarted && "grid-rows-[1fr]"
               )}
-
-              {/* Only show skeleton during loading, nothing else */}
-              {threadsLoading || initializingThread ? (
-                <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
-                  <div className="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full">
-                    <ChatSkeleton />
+            >
+              {!chatStarted && (
+                <div className="absolute top-0 left-0 z-10 flex items-center justify-between w-full gap-3 p-2 pl-4">
+                  <div className="flex justify-end mt-2 mr-3 space-x-3">
+                    <SettingsPopover />
                   </div>
                 </div>
-              ) : (
-                <StickyToBottomContent
-                  className={cn(
-                    "absolute inset-0 px-4 overflow-y-scroll scrollbar",
-                    !chatStarted && "flex flex-col items-stretch mt-[25vh]",
-                    chatStarted && "grid grid-rows-[1fr_auto]"
-                  )}
-                  contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full"
-                  content={
-                    <ChatMessageList
-                      messages={nonToolMessages}
-                      isLoading={isLoading}
-                      firstTokenReceived={firstTokenReceived}
-                      hasNoAIOrToolMessages={hasNoAIOrToolMessages}
-                      stream={stream}
-                      handleRegenerate={handleRegenerate}
-                    />
-                  }
-                  footer={
-                    <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-transparent rounded-2xl">
-                      {!chatStarted && (
-                        <>
-                          <div className="flex items-center gap-3">
-                            <Image
-                              src={Logo}
-                              alt="KittyKat Logo"
-                              width={100}
-                              height={40}
-                              className="flex-shrink-0"
-                            />
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                              Agent
-                            </h1>
-                          </div>
-
-                          <ScrollToBottom className="absolute mb-0 -translate-x-1/3 bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
-                        </>
-                      )}
-
-                      {/* Always show the chat input unless we're in loading states */}
-                      {!(threadsLoading || initializingThread) && (
-                        <ChatInput
-                          input={input}
-                          setInput={setInput}
-                          handleSubmit={handleSubmit}
-                          hideToolCalls={hideToolCalls}
-                          setHideToolCalls={setHideToolCalls}
-                          isLoading={isLoading}
-                          stream={stream}
-                          handleAddFile={handleAddFile}
-                          fileList={fileList}
-                          handleRemoveFile={handleRemoveFile}
-                          threadId={threadId}
-                        />
-                      )}
-                    </div>
-                  }
-                />
               )}
-            </StickToBottom>
-          </div>
-        </div>
+
+              <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
+                {chatStarted && (
+                  <div className="flex justify-start mt-3 z-20 ml-3 space-x-3">
+                    <SettingsPopover />
+                  </div>
+                )}
+
+                {/* Only show skeleton during loading, nothing else */}
+                {threadsLoading || initializingThread ? (
+                  <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
+                    <div className="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full">
+                      <ChatSkeleton />
+                    </div>
+                  </div>
+                ) : (
+                  <StickyToBottomContent
+                    className={cn(
+                      "absolute inset-0 px-4 overflow-y-scroll scrollbar",
+                      !chatStarted && "flex flex-col items-stretch mt-[25vh]",
+                      chatStarted && "grid grid-rows-[1fr_auto]"
+                    )}
+                    contentClassName="pt-8 pb-2 max-w-3xl ml-auto mr-0 flex flex-col gap-1 w-full"
+                    content={
+                      <ChatMessageList
+                        messages={nonToolMessages}
+                        isLoading={isLoading}
+                        firstTokenReceived={firstTokenReceived}
+                        hasNoAIOrToolMessages={hasNoAIOrToolMessages}
+                        stream={stream}
+                        handleRegenerate={handleRegenerate}
+                      />
+                    }
+                    footer={
+                      <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-transparent rounded-2xl">
+                        {!chatStarted && (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={Logo}
+                                alt="KittyKat Logo"
+                                width={100}
+                                height={40}
+                                className="flex-shrink-0"
+                              />
+                              <h1 className="text-2xl font-semibold tracking-tight">
+                                Agent
+                              </h1>
+                            </div>
+
+                            <ScrollToBottom className="absolute mb-0 -translate-x-1/3 bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
+                          </>
+                        )}
+
+                        {/* Always show the chat input unless we're in loading states */}
+                        {!(threadsLoading || initializingThread) && (
+                          <ChatInput
+                            input={input}
+                            setInput={setInput}
+                            handleSubmit={handleSubmit}
+                            hideToolCalls={hideToolCalls}
+                            setHideToolCalls={setHideToolCalls}
+                            isLoading={isLoading}
+                            stream={stream}
+                            handleAddFile={handleAddFile}
+                            fileList={fileList}
+                            handleRemoveFile={handleRemoveFile}
+                            threadId={threadId}
+                          />
+                        )}
+                      </div>
+                    }
+                  />
+                )}
+              </StickToBottom>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </motion.div>
     </div>
   );
