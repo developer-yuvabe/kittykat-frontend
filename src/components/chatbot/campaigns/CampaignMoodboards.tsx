@@ -1,3 +1,16 @@
+import { ContentSection } from "@/components/shared/ContentSection";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import { Copy, Ellipsis, Expand } from "lucide-react";
+import React, { useState } from "react";
+import { BsPinAngle } from "react-icons/bs";
+import { toast } from "sonner";
 import {
   Carousel,
   CarouselContent,
@@ -5,36 +18,25 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "../../ui/carousel";
-import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import MoodboardDetail from "../MoodboardDetail";
-import { BsPinAngle } from "react-icons/bs";
-import { useState } from "react";
-import { toast } from "sonner";
-import { ContentSection } from "@/components/shared/ContentSection";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { Copy, Ellipsis, Expand, ThumbsDown, ThumbsUp } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import React from "react";
 
+import { DislikeIcon, LikeIcon } from "@/components/ui/custom-icon";
+import { updateCampaignMoodboard } from "@/services/api/brand.service";
 import { MoodboardAsset } from "@/types/types";
 
 interface CampaignMoodboardProps {
   moodboards: MoodboardAsset[];
+  brandId: string;
+  campaignId: string;
 }
 
 export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
   moodboards,
+  brandId,
+  campaignId,
 }) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [pinnedImages, setPinnedImages] = useState<string[]>([]);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<string | null>(
-    null
-  );
   const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
     usePinnedContextStore();
 
@@ -66,10 +68,21 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
   };
 
   // Mock function to handle like/dislike - now just visual, no state changes
-  const handleLikeDislike = (isLiked: boolean) => {
-    toast.success(isLiked ? "Image liked!" : "Image disliked!", {
-      position: "top-right",
-    });
+  const handleLikeDislike = (isLiked: boolean, moodboardId: string) => {
+    updateCampaignMoodboard(brandId, campaignId, moodboardId, {
+      is_liked: isLiked,
+    })
+      .then(() => {
+        toast.success(isLiked ? "Image liked!" : "Image disliked!", {
+          position: "top-right",
+        });
+      })
+      .catch((error) => {
+        console.error("Error updating moodboard:", error);
+        toast.error("Failed to update moodboard", {
+          position: "top-right",
+        });
+      });
   };
 
   return (
@@ -81,7 +94,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
             <CarouselContent>
               {moodboards.map((moodboard, index) => {
                 const moodboardId = moodboard.id || `moodboard-${index}`;
-                const isShowingFeedback = feedbackSubmitted === moodboardId;
 
                 return (
                   <CarouselItem
@@ -156,10 +168,17 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                         <div className="absolute top-0 right-1 z-10 flex space-x-1">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Ellipsis className="text-white" size={36} />
+                              <Ellipsis
+                                className="text-white shadow-2xl"
+                                size={36}
+                              />
                             </PopoverTrigger>
                             <PopoverContent className="w-68 p-2" side="right">
-                              <MoodboardDetail moodboard={moodboard} />
+                              <MoodboardDetail
+                                moodboard={moodboard}
+                                campaignId={campaignId}
+                                brandId={brandId}
+                              />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -172,32 +191,43 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                           onClick={() => handleExpand(moodboard.asset_url)}
                         />
 
-                        {/* Feedback notification */}
-                        {isShowingFeedback && (
-                          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-lg">
-                            Feedback submitted!
-                          </div>
-                        )}
-
                         {/* Rating Section - now visible on hover and positioned at bottom of image */}
-                        <div className="absolute bottom-0 left-0 right-0  bg-opacity-60 text-white py-3 px-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <div className="text-sm font-medium">
+                        <div className="absolute bottom-0 left-0 right-0  bg-opacity-60 text-white py-3 px-4 flex items-center justify-between  transition-opacity duration-200">
+                          <div className="text-sm font-medium shadow-2xl">
                             Rate this image
                           </div>
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleLikeDislike(true)}
-                              className="p-1.5 rounded-full  bg-opacity-50 hover:bg-opacity-70 text-white transition-colors"
-                              aria-label="Like"
-                            >
-                              <ThumbsUp size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleLikeDislike(false)}
+                              onClick={() =>
+                                handleLikeDislike(false, moodboardId)
+                              }
                               className="p-1.5 rounded-full  bg-opacity-50 hover:bg-opacity-70 text-white transition-colors"
                               aria-label="Dislike"
                             >
-                              <ThumbsDown size={16} />
+                              <DislikeIcon
+                                size={16}
+                                fillColor={
+                                  moodboard.is_liked === false
+                                    ? "#636AE8"
+                                    : "white"
+                                }
+                              />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleLikeDislike(true, moodboardId)
+                              }
+                              className="p-1.5 rounded-full  bg-opacity-50 hover:bg-opacity-70 text-white transition-colors"
+                              aria-label="Like"
+                            >
+                              <LikeIcon
+                                size={16}
+                                fillColor={
+                                  moodboard.is_liked === true
+                                    ? "#636AE8"
+                                    : "white"
+                                }
+                              />
                             </button>
                           </div>
                         </div>
@@ -255,7 +285,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
           )}
         </div>
       }
-      context={{ moodboards, expandedImage, pinnedImages, feedbackSubmitted }}
+      context={{ moodboards, expandedImage, pinnedImages }}
     />
   );
 };

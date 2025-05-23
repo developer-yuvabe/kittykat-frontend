@@ -86,4 +86,31 @@ class BrandService {
   }
 }
 
+export async function updateCampaignMoodboard(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string,
+  moodboardData: Record<string, unknown>
+): Promise<BrandResponse> {
+  return handleApiRequest<BrandResponse>(
+    axiosInstance.put(`/brands/moodboard/${moodboardId}`, {
+      brand_id: brandId,
+      campaign_id: campaignId,
+      ...moodboardData,
+    })
+  );
+}
+
+export async function deleteCampaignMoodboard(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string
+): Promise<BrandResponse> {
+  return handleApiRequest<BrandResponse>(
+    axiosInstance.delete(`/brands/moodboard/${moodboardId}`, {
+      data: { brand_id: brandId, campaign_id: campaignId },
+    })
+  );
+}
+
 export const brandService = new BrandService();
