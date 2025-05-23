@@ -57,7 +57,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             />
           }
           {campaignInformation && (
-            <CampaignSection campaignInformation={campaignInformation} />
+            <CampaignSection
+              campaignInformation={campaignInformation}
+              brandId={threadId!}
+            />
           )}
         </>
       )}

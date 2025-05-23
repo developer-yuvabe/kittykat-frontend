@@ -11,14 +11,14 @@ import CampaignSelector from "./CampaignSelector";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
-}> = ({ campaignInformation }) => {
+  brandId: string;
+}> = ({ campaignInformation, brandId }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
 
   const [expanded, setExpanded] = useState(true);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(0);
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
-
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -85,7 +85,11 @@ export const CampaignSection: React.FC<{
                 )
               )}
             />
-            <CampaignMoodboard moodboards={currentCampaign.moodboards || []} />
+            <CampaignMoodboard
+              moodboards={currentCampaign.moodboards || []}
+              brandId={brandId}
+              campaignId={currentCampaign.id}
+            />
           </div>
         </CardContent>
       )}

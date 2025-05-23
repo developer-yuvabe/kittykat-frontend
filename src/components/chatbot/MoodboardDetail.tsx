@@ -5,16 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { handleDownloadImage } from "@/lib/utils";
+import {
+  deleteCampaignMoodboard,
+  updateCampaignMoodboard,
+} from "@/services/api/brand.service";
 import { MoodboardAsset } from "@/types/types";
 import { BookOpen, Download, Pencil, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface MoodboardDetailProps {
   moodboard: MoodboardAsset;
+  campaignId: string;
+  brandId: string;
 }
 
-export default function MoodboardDetail({ moodboard }: MoodboardDetailProps) {
+export default function MoodboardDetail({
+  moodboard,
+  brandId,
+  campaignId,
+}: MoodboardDetailProps) {
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -44,9 +55,21 @@ export default function MoodboardDetail({ moodboard }: MoodboardDetailProps) {
     setIsEditingComment(true);
   };
 
-  const handleSaveComment = async () => {};
+  const handleSaveComment = async () => {
+    updateCampaignMoodboard(brandId, campaignId, moodboard.id, {
+      comment: comment,
+    }).then(() => {
+      setIsEditingComment(false);
+    });
+  };
 
-  const handleSaveTitle = async () => {};
+  const handleSaveTitle = async () => {
+    updateCampaignMoodboard(brandId, campaignId, moodboard.id, {
+      title,
+    }).then(() => {
+      setIsEditingTitle(false);
+    });
+  };
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
@@ -57,16 +80,38 @@ export default function MoodboardDetail({ moodboard }: MoodboardDetailProps) {
     }
   };
 
-  const handleDelete = async () => {};
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteCampaignMoodboard(brandId, campaignId, moodboard.id);
+      setShowDeleteDialog(false);
+      toast.success("Moodboard deleted successfully", {
+        position: "top-right",
+      });
+    } catch (error) {
+      console.error("Error deleting moodboard:", error);
+      toast.error(
+        "Could not delete moodboard at the moment. Please try again.",
+        {
+          position: "top-right",
+        }
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleAddToLibrary = async () => {};
 
   return (
     <div>
       {/* Header with title and edit button */}
-      <div className="p-0 border-b relative" onDoubleClick={handleEditTitle}>
+      <div
+        className="p-0 border-b relative pb-2"
+        onDoubleClick={handleEditTitle}
+      >
         {isEditingTitle ? (
-          <div className="relative pr-8">
+          <div className="relative pr-8 gap-x-2">
             <Input
               ref={inputRef}
               value={title}
@@ -77,19 +122,19 @@ export default function MoodboardDetail({ moodboard }: MoodboardDetailProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 absolute top-1 right-0"
+              className="h-8 w-8 absolute top-1 right-0 hover:bg-transparent"
               onClick={handleSaveTitle}
             >
               <Save size={18} className="" />
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium cursor-pointer">{title}</h2>
+          <div className="flex items-center justify-between px-2">
+            <h2 className="cursor-pointer">{title}</h2>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-transparent"
               onClick={handleEditTitle}
             >
               <Pencil size={18} className="text-gray-500" />
@@ -120,7 +165,7 @@ export default function MoodboardDetail({ moodboard }: MoodboardDetailProps) {
         }}
       >
         {comment && !isEditingComment ? (
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between px-2">
             <p className="text-gray-700 pr-8 cursor-pointer">{comment}</p>
             <Button
               variant="ghost"
