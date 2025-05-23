@@ -12,6 +12,34 @@ export interface BaseApiResponse<T> {
   data: T | null;
 }
 
+export interface MoodboardAsset {
+  id: string;
+  comment: string | null;
+
+  asset_title: string;
+  asset_type: string;
+  media_format: string;
+  asset_url: string;
+
+  size_bytes: {
+    $numberInt: string;
+  };
+
+  dimensions: {
+    width: { $numberInt: string };
+    height: { $numberInt: string };
+  };
+
+  aspect_ratio: string;
+
+  source: string;
+  generation_engine?: string;
+  input_prompt?: string;
+
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ThreadBrand {
   static?: {
     brand?: {
@@ -79,6 +107,7 @@ export interface ThreadCampaign {
   colors?: string[];
   target_audience?: string;
   visual_style?: string;
+  moodboards?: MoodboardAsset[];
 }
 
 export interface ThreadDetails {

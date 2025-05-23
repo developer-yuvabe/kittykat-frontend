@@ -1,71 +1,28 @@
 "use client";
 
-import type React from "react";
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Pencil, Download, Trash2, BookOpen, Save } from "lucide-react";
-import { toast } from "sonner";
-import { useThreads } from "@/providers/langgraph/Thread";
-import { useQueryState } from "nuqs";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { handleDownloadImage } from "@/lib/utils";
-import { GalleryItem } from "@/types/gallery.types";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { MoodboardAsset } from "@/types/types";
+import { BookOpen, Download, Pencil, Save, Trash2 } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface MoodboardDetailProps {
-  campaignId: string;
-  size?: string;
-  format?: string;
-  source?: string;
-  imageUrl?: string;
-  prompt?: string;
+  moodboard: MoodboardAsset;
 }
 
-const defaultSize = "1024 x 768";
-const defaultFormat = "Jpeg";
-const defaultSource = "Moodboard Generator";
-
-export default function MoodboardDetail({
-  campaignId,
-  size = defaultSize,
-  format = defaultFormat,
-  source = defaultSource,
-  imageUrl,
-  prompt,
-}: MoodboardDetailProps) {
-  const { updateThreadCampaign, getThreadCampaignById } = useThreads();
-  const [threadId] = useQueryState("threadId");
-  const [comment, setComment] = useState("");
+export default function MoodboardDetail({ moodboard }: MoodboardDetailProps) {
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [title, setTitle] = useState("Moodboard...");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const commentContainerRef = useRef<HTMLDivElement>(null);
-  const titleContainerRef = useRef<HTMLDivElement>(null);
-  const { addToGallery } = useGalleryQuery({});
-
-  useEffect(() => {
-    if (!threadId || !campaignId || !imageUrl) return;
-    const campaignData = getThreadCampaignById(threadId, campaignId);
-    if (campaignData) {
-      const moodboardItem = campaignData.moodboards.find(
-        (item: any) => item.imageUrl === imageUrl
-      );
-      if (moodboardItem) {
-        const index = campaignData.moodboards.findIndex(
-          (item: any) => item.imageUrl === imageUrl
-        );
-        const fallbackTitle = `${campaignData.id} - moodboard_${index}`;
-        setTitle(moodboardItem.title || fallbackTitle);
-        setComment(moodboardItem.comment || "");
-      }
-    }
-  }, [threadId, campaignId, imageUrl]);
+  const [title, setTitle] = useState(moodboard.asset_title);
+  const [comment, setComment] = useState(moodboard.comment);
 
   // Focus input elements when editing starts
   useEffect(() => {
@@ -87,97 +44,9 @@ export default function MoodboardDetail({
     setIsEditingComment(true);
   };
 
-  const handleSaveComment = async () => {
-    if (threadId) {
-      if (comment.trim() !== "") {
-        setIsEditingComment(false);
+  const handleSaveComment = async () => {};
 
-        const prevCampaignData = getThreadCampaignById(threadId, campaignId);
-        if (!prevCampaignData) {
-          toast.error("Campaign data not found.");
-          return;
-        }
-        const updatedMoodboard = prevCampaignData.moodboards.map((item: any) =>
-          item.imageUrl === imageUrl
-            ? {
-                ...item,
-                title,
-                comment,
-                size,
-                format,
-                source,
-                prompt,
-              }
-            : item
-        );
-
-        const campaignData = {
-          ...prevCampaignData,
-          moodboards: updatedMoodboard,
-        };
-
-        toast.promise(
-          async () => {
-            await updateThreadCampaign(threadId, campaignId, campaignData);
-            return true;
-          },
-          {
-            loading: "Saving comment...",
-            success: "Comment saved successfully",
-            error: "Failed to save comment",
-          }
-        );
-      }
-    }
-  };
-
-  const handleSaveTitle = async () => {
-    if (title.trim() !== "" && threadId) {
-      console.log(threadId, campaignId);
-      console.log("aaa", getThreadCampaignById(threadId, campaignId));
-
-      const prevCampaignData = getThreadCampaignById(threadId, campaignId);
-      console.log("AAPP", prevCampaignData);
-      setIsEditingTitle(false);
-
-      if (!prevCampaignData) {
-        toast.error("Campaign data not found.");
-        return;
-      }
-
-      const updatedMoodboard = prevCampaignData.moodboards.map((item: any) =>
-        item.imageUrl === imageUrl
-          ? {
-              ...item,
-              title,
-              comment,
-              size,
-              format,
-              source,
-              prompt,
-            }
-          : item
-      );
-
-      const campaignData = {
-        ...prevCampaignData,
-        moodboards: updatedMoodboard,
-      };
-
-      console.log("xp", campaignData);
-      toast.promise(
-        async () => {
-          await updateThreadCampaign(threadId, campaignId, campaignData);
-          return true;
-        },
-        {
-          loading: "Saving title...",
-          success: "Title saved successfully",
-          error: "Failed to save title",
-        }
-      );
-    }
-  };
+  const handleSaveTitle = async () => {};
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
@@ -188,77 +57,14 @@ export default function MoodboardDetail({
     }
   };
 
-  const handleDelete = async () => {
-    if (!threadId || !campaignId || !imageUrl) return;
-    setIsDeleting(true);
+  const handleDelete = async () => {};
 
-    try {
-      const prevCampaign = getThreadCampaignById(threadId, campaignId);
-      if (!prevCampaign) {
-        toast.error("Campaign data not found.");
-        setIsDeleting(false);
-        setShowDeleteDialog(false);
-        return;
-      }
-      const filteredMoodboards = prevCampaign.moodboards.filter(
-        (item: { imageUrl: string }) => item.imageUrl !== imageUrl
-      );
-      const updatedCampaign = {
-        ...prevCampaign,
-        moodboards: filteredMoodboards,
-      };
-
-      toast.promise(
-        () => updateThreadCampaign(threadId, campaignId, updatedCampaign),
-        {
-          loading: "Deleting moodboard...",
-          success: "Moodboard deleted successfully",
-          error: "Failed to delete moodboard",
-        }
-      );
-    } catch (error) {
-      console.error("Delete error:", error);
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  };
-
-  const handleAddToLibrary = async () => {
-    if (imageUrl && prompt) {
-      const galleryItem: GalleryItem = {
-        brand_name: "Brand X", // Replace with actual brand name
-        campaign_name: "Campaign Y", // Replace with actual campaign name
-        asset_type: "image", // Or 'video', etc.
-        asset_source: source || "moodboard",
-        asset_title: "Generated Asset",
-        asset_url: imageUrl,
-        prompt: prompt,
-        size: size || "",
-        format: format || "",
-        brand_data: {}, // Add any brand metadata if available
-        campaign_data: {}, // Add any campaign metadata if available
-        is_favourite: false,
-        user_action: null,
-      };
-
-      try {
-        addToGallery(galleryItem);
-        console.log("Added to library successfully");
-      } catch (error) {
-        console.error("Failed to add to library", error);
-      }
-    }
-  };
+  const handleAddToLibrary = async () => {};
 
   return (
     <div>
       {/* Header with title and edit button */}
-      <div
-        className="p-0 border-b relative"
-        ref={titleContainerRef}
-        onDoubleClick={handleEditTitle}
-      >
+      <div className="p-0 border-b relative" onDoubleClick={handleEditTitle}>
         {isEditingTitle ? (
           <div className="relative pr-8">
             <Input
@@ -295,16 +101,18 @@ export default function MoodboardDetail({
       {/* Image details with gray background */}
       <div className="bg-gray-50 font-bold text-sm p-4 rounded-md my-2">
         <div className="space-y-1">
-          <p className="text-gray-800">Size: {size}</p>
-          <p className="text-gray-800">Format: {format}</p>
-          <p className="text-gray-800">Source: {source}</p>
+          <p className="text-gray-800">
+            Size:{" "}
+            {`${moodboard.dimensions.width}x${moodboard.dimensions.height}`}
+          </p>
+          <p className="text-gray-800">Format: {moodboard.media_format}</p>
+          <p className="text-gray-800">Source: {moodboard.source}</p>
         </div>
       </div>
 
       {/* Comment section without border */}
       <div
         className="py-4 relative"
-        ref={commentContainerRef}
         onDoubleClick={() => {
           if (!isEditingComment) {
             handleEditComment();
@@ -328,7 +136,7 @@ export default function MoodboardDetail({
             <Textarea
               ref={textareaRef}
               placeholder="Add comment"
-              value={comment}
+              value={comment || ""}
               onChange={handleCommentChange}
               className="resize-none min-h-[100px] overflow-hidden"
               rows={3}
@@ -338,7 +146,7 @@ export default function MoodboardDetail({
                 }
               }}
             />
-            {comment.trim() !== "" && (
+            {comment?.trim() !== "" && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -358,9 +166,9 @@ export default function MoodboardDetail({
           variant="ghost"
           className="w-full h-10 justify-start pl-2 hover:bg-gray-100 transition-colors"
           onClick={() => {
-            if (imageUrl) handleDownloadImage(imageUrl);
+            if (moodboard.asset_url) handleDownloadImage(moodboard.asset_url);
           }}
-          disabled={!imageUrl}
+          disabled={!moodboard.asset_url}
         >
           <Download className="h-5 w-5" />
           <span className="ml-2">Download</span>

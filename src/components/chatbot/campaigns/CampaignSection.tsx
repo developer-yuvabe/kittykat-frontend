@@ -18,7 +18,7 @@ export const CampaignSection: React.FC<{
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(0);
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
-  // console.log("Current Campaign Moodboard:", currentCampaign.moodboards);
+
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -85,7 +85,7 @@ export const CampaignSection: React.FC<{
                 )
               )}
             />
-            <CampaignMoodboard campaign={currentCampaign || {}} />
+            <CampaignMoodboard moodboards={currentCampaign.moodboards || []} />
           </div>
         </CardContent>
       )}
