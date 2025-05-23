@@ -17,7 +17,6 @@ const MainLayout = ({
 
   useEffect(() => {
     setUser(userInfo);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo]);
 
   if (!user) {

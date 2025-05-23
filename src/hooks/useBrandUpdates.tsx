@@ -12,12 +12,9 @@ export function useBrandUpdates(brandId: string | null) {
       return;
     }
 
-    console.log(getSSEBaseUrl());
-
     const eventSource = new EventSource(`${getSSEBaseUrl()}/brands/${brandId}`);
 
     eventSource.addEventListener("brand_info", (event) => {
-      console.log(event);
       const parsed = JSON.parse(event.data);
       setIsFectchingThreadInfo(false);
       setData(parsed);

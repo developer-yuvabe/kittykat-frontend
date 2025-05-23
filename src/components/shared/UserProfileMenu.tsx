@@ -9,6 +9,7 @@ import React from "react";
 import { useUserStore } from "@/store/user.store";
 import { Separator } from "../ui/separator";
 import { LogoutButton } from "./LogoutButton";
+import QueueProgress from "./QueueProgress";
 
 export function UserProfileMenu() {
   const { user } = useUserStore();
@@ -24,9 +25,7 @@ export function UserProfileMenu() {
 
   return (
     <div className="flex items-center space-x-6">
-      <div className="w-10 h-10 rounded-full bg-gray-100 text-[#565E6C] flex items-center justify-center text-xl font-medium">
-        ?
-      </div>
+      <QueueProgress />
 
       {/* User Profile with Popover using shadcn components */}
       <Popover>
