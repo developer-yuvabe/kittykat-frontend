@@ -114,3 +114,11 @@ export interface ThreadDetails {
   brand_information?: ThreadBrand;
   campaign_information?: ThreadCampaign[];
 }
+
+export interface QueueItem {
+  title: string;
+  description: string;
+  status: "processing" | "completed" | "failed";
+  id: string;
+  type: "image";
+}
