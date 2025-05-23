@@ -19,6 +19,7 @@ export const CampaignSection: React.FC<{
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
 
+
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
       <CardHeader className="py-1">
