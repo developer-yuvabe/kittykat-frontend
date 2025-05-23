@@ -20,24 +20,16 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import React from "react";
-
-interface MoodboardItem {
-  id: string;
-  prompt: string;
-  status: string;
-  imageUrl: string;
-  format?: string;
-  size?: string;
-  source?: string;
-}
+import { MoodboardAsset } from "@/types/types";
 
 interface CampaignMoodboardProps {
-  campaign: Record<string, any>;
+  moodboards: MoodboardAsset[];
 }
 
 export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
-  campaign = {},
+  moodboards,
 }) => {
+  console.log(moodboards);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [pinnedImages, setPinnedImages] = useState<string[]>([]);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<string | null>(
@@ -45,18 +37,9 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
   );
   const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
     usePinnedContextStore();
-
+  console.log(moodboards);
   // Skip rendering if no moodboards
-  if (!campaign.moodboards || campaign.moodboards.length === 0) return null;
-
-  const moodboards: MoodboardItem[] = campaign.moodboards.map(
-    (moodboard: MoodboardItem) => ({
-      id: moodboard.id,
-      prompt: moodboard.prompt,
-      status: moodboard.status,
-      imageUrl: moodboard.imageUrl,
-    })
-  );
+  if (!moodboards || moodboards.length === 0) return null;
 
   const handleExpand = (url: string) => {
     setExpandedImage(expandedImage === url ? null : url);
@@ -89,8 +72,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
     });
   };
 
-  console.log("campaigb", campaign);
-  console.log("id", campaign.id);
   return (
     <ContentSection
       title="Campaign Moodboards"
@@ -113,7 +94,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                         <TooltipIconButton
                           tooltip="Expand"
                           side="top"
-                          onClick={() => handleExpand(moodboard.imageUrl)}
+                          onClick={() => handleExpand(moodboard.asset_url)}
                           className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
                         >
                           <Expand size={16} />
@@ -136,14 +117,14 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                             <div className="space-y-2">
                               <h4 className="font-medium">Image Prompt</h4>
                               <p className="text-sm text-gray-700">
-                                {moodboard.prompt}
+                                {moodboard.input_prompt}
                               </p>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="w-full mt-2"
                                 onClick={() =>
-                                  handleCopyPrompt(moodboard.prompt)
+                                  handleCopyPrompt(moodboard.input_prompt!)
                                 }
                               >
                                 <Copy className="mr-2 h-4 w-4" /> Copy Prompt
@@ -154,14 +135,14 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
 
                         <TooltipIconButton
                           tooltip={
-                            pinnedImages.includes(moodboard.imageUrl)
+                            pinnedImages.includes(moodboard.asset_url)
                               ? "Unpin"
                               : "Pin"
                           }
                           side="top"
-                          onClick={() => handlePin(moodboard.imageUrl)}
+                          onClick={() => handlePin(moodboard.asset_url)}
                           className={`p-1 rounded-full shadow ${
-                            pinnedImages.includes(moodboard.imageUrl)
+                            pinnedImages.includes(moodboard.asset_url)
                               ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                               : "bg-white hover:bg-gray-100"
                           }`}
@@ -178,22 +159,17 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                               <Ellipsis className="text-white" size={36} />
                             </PopoverTrigger>
                             <PopoverContent className="w-68 p-2" side="right">
-                              <MoodboardDetail
-                                source="Moodboard"
-                                campaignId={campaign.id}
-                                imageUrl={moodboard.imageUrl}
-                                prompt={moodboard.prompt}
-                                format={moodboard?.format || "JPEG"}
-                                size={moodboard?.size || "1024x1024"}
-                              />
+                              <MoodboardDetail moodboard={moodboard} />
                             </PopoverContent>
                           </Popover>
                         </div>
                         <img
-                          src={moodboard.imageUrl || "/api/placeholder/600/600"}
+                          src={
+                            moodboard.asset_url || "/api/placeholder/600/600"
+                          }
                           alt={`Moodboard ${index + 1}`}
                           className="w-full h-full object-contain"
-                          onClick={() => handleExpand(moodboard.imageUrl)}
+                          onClick={() => handleExpand(moodboard.asset_url)}
                         />
 
                         {/* Feedback notification */}
@@ -201,22 +177,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-lg">
                             Feedback submitted!
                           </div>
-                        )}
-
-                        {/* Status Badge */}
-                        {moodboard.status && (
-                          <span
-                            className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${
-                              moodboard.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : moodboard.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {moodboard.status.charAt(0).toUpperCase() +
-                              moodboard.status.slice(1)}
-                          </span>
                         )}
 
                         {/* Rating Section - now visible on hover and positioned at bottom of image */}
@@ -244,7 +204,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                       </div>
 
                       {/* Regenerate Button */}
-                      <div className="p-4 flex gap-x-2 justify-end bg-gray-50 mt-auto">
+                      <div className="px-2 py-4 flex gap-x-2 justify-end bg-gray-50 mt-auto">
                         <Button
                           variant="default"
                           size="sm"
