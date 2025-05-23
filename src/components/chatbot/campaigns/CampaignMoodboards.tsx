@@ -30,26 +30,6 @@ interface CampaignMoodboardProps {
 export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
   moodboards,
 }) => {
-  console.log(moodboards);
-
-
-interface MoodboardItem {
-  id: string;
-  prompt: string;
-  status: string;
-  imageUrl: string;
-  format?: string;
-  size?: string;
-  source?: string;
-}
-
-interface CampaignMoodboardProps {
-  campaign: Record<string, any>;
-}
-
-export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
-  campaign = {},
-}) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [pinnedImages, setPinnedImages] = useState<string[]>([]);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<string | null>(
@@ -60,7 +40,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
 
   // Skip rendering if no moodboards
   if (!moodboards || moodboards.length === 0) return null;
-
 
   const handleExpand = (url: string) => {
     setExpandedImage(expandedImage === url ? null : url);
@@ -226,7 +205,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
 
                       {/* Regenerate Button */}
                       <div className="px-2 py-4 flex gap-x-2 justify-end bg-gray-50 mt-auto">
-
                         <Button
                           variant="default"
                           size="sm"
