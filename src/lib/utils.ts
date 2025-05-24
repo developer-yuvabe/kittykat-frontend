@@ -147,3 +147,24 @@ export const handleDownloadImage = async (
     }
   );
 };
+
+export const formatToLocalTime = (dateString: string) => {
+  try {
+    // Parse the UTC date string and convert to local timezone
+    const utcDate = new Date(
+      dateString + (dateString.endsWith("Z") ? "" : "Z")
+    );
+    return utcDate.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch (error) {
+    // Fallback to original string if parsing fails
+    console.log("Error parsing date:", error);
+    return dateString;
+  }
+};

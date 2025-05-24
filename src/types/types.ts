@@ -123,4 +123,5 @@ export interface QueueItem {
   status: "processing" | "completed" | "failed";
   id: string;
   type: "image";
+  created_at: string;
 }

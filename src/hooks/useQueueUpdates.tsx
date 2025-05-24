@@ -17,7 +17,7 @@ export function useQueueUpdates(userId?: string) {
     eventSource.addEventListener("queue_info", (event) => {
       const parsed = JSON.parse(event.data);
       setIsFectchingQueueInfo(false);
-      setData(parsed.queue);
+      setData(parsed as QueueItem[]);
     });
 
     eventSource.onerror = (err) => {
