@@ -26,15 +26,25 @@ class GalleryService {
    */
   async searchGalleryItems(
     query: string,
-    skip = 0,
-    limit = 10,
+    skip: number,
+    limit: number,
     method = "vector"
   ): Promise<GalleryItemsListResponse> {
-    return handleApiRequest<GalleryItemsListResponse>(
+    const response = await handleApiRequest<GalleryItemsListResponse>(
       axiosInstance.get("/gallery/search", {
-        params: { query, skip, limit },
+        params: { query, skip, limit, method },
       })
     );
+    const has_more =
+      (response.gallery_items?.length || 0) + skip < response.pagination.total;
+
+    return {
+      ...response,
+      pagination: {
+        ...response.pagination,
+        has_more,
+      },
+    };
   }
 
   /**

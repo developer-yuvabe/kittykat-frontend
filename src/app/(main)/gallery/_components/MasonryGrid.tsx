@@ -137,10 +137,10 @@ export function MasonryGrid({
                 onClick={(e) => handleFavoriteClick(item.id, e)}
               >
                 <Heart
-                  color="#000000"
+                  color={!item.is_favourite ? "#000000" : ""}
                   className={`h-4 w-4 transition-all duration-300 ${
                     item.is_favourite
-                      ? "fill-red-500  text-red-500"
+                      ? "fill-red-500 text-red-500"
                       : "text-white"
                   }`}
                 />
