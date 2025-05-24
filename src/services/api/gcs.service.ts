@@ -1,0 +1,34 @@
+import axiosInstance from "@/config/axios/api-client.config";
+import axios from "axios";
+
+export async function uploadFileAndReturnUrl(
+  fileName: string,
+  fileType: string,
+  contentSource: string,
+  file: File
+): Promise<string> {
+  try {
+    // Get the presigned URL
+    const response = await axiosInstance.post(`/users/file/upload`, {
+      file_name: fileName,
+      content_type: fileType,
+      content_source: contentSource,
+    });
+
+    console.log(response.data.data);
+    const { upload_url, download_url } = response.data.data;
+
+    // Upload the file to the presigned URL
+    await axios.put(upload_url, file, {
+      headers: {
+        "Content-Type": fileType,
+      },
+    });
+
+    // Return the final file URL without query parameters
+    return download_url;
+  } catch (error) {
+    console.error("Error in uploadFileAndReturnUrl:", error);
+    throw new Error("File upload failed. Please try again.");
+  }
+}

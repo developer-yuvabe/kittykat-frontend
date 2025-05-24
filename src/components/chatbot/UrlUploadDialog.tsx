@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { brandService } from "@/services/api/brand.service";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 
 interface FileUploaderProps {
   prefix: string | null;
@@ -46,10 +46,10 @@ export default function FileUploader({
     const progressInterval = simulateProgress();
 
     try {
-      const url = await brandService.uploadFileAndReturnUrl(
-        prefix as string,
+      const url = await uploadFileAndReturnUrl(
         file.name,
         file.type,
+        "threads",
         file
       );
       clearInterval(progressInterval);

@@ -4,11 +4,14 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+
 import { handleDownloadImage } from "@/lib/utils";
+import { useGalleryQuery } from "@/hooks/useGallery";
 import {
   deleteCampaignMoodboard,
   updateCampaignMoodboard,
 } from "@/services/api/brand.service";
+import { GalleryItem } from "@/types/gallery.types";
 import { MoodboardAsset } from "@/types/types";
 import { BookOpen, Download, Pencil, Save, Trash2 } from "lucide-react";
 import type React from "react";
@@ -34,6 +37,7 @@ export default function MoodboardDetail({
   const inputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(moodboard.asset_title);
   const [comment, setComment] = useState(moodboard.comment);
+  const { addToGallery } = useGalleryQuery({});
 
   // Focus input elements when editing starts
   useEffect(() => {
@@ -101,7 +105,41 @@ export default function MoodboardDetail({
     }
   };
 
-  const handleAddToLibrary = async () => {};
+  const handleAddToLibrary = async () => {
+    if (moodboard.asset_url && brandId) {
+      const galleryItem: GalleryItem = {
+        asset_type: moodboard.media_format || "webp",
+        asset_source: moodboard.source || "moodboard",
+        asset_title: moodboard.asset_title,
+        asset_url: moodboard.asset_url,
+        input_prompt: moodboard.input_prompt,
+        size: moodboard.size_bytes ? String(moodboard.size_bytes) : "",
+        media_format: moodboard.media_format || "",
+        is_favourite: false,
+        workflow_status: "draft",
+        user_feedback: "neutral",
+        is_archived: false,
+        brand_id: brandId,
+        related_asset_ids: [],
+        prompt_modifiers: [],
+        ai_tags: [],
+        visual_style_tags: [],
+        detected_objects: [],
+        detected_emotions: [],
+        detected_colors: [],
+        intent_tags: [],
+        search_keywords: [],
+        custom_tags: [],
+      };
+
+      try {
+        addToGallery(galleryItem);
+        console.log("Added to library successfully");
+      } catch (error) {
+        console.error("Failed to add to library", error);
+      }
+    }
+  };
 
   return (
     <div>

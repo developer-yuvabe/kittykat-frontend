@@ -5,7 +5,7 @@ import type React from "react";
 import { useState } from "react";
 import Image from "next/image";
 import Masonry from "react-masonry-css";
-import { Heart, Download, Trash2 } from "lucide-react";
+import { Heart, Download, Trash2, Ellipsis } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 
@@ -137,9 +137,10 @@ export function MasonryGrid({
                 onClick={(e) => handleFavoriteClick(item.id, e)}
               >
                 <Heart
+                  color="#000000"
                   className={`h-4 w-4 transition-all duration-300 ${
                     item.is_favourite
-                      ? "fill-red-500 text-red-500"
+                      ? "fill-red-500  text-red-500"
                       : "text-white"
                   }`}
                 />
@@ -167,10 +168,8 @@ export function MasonryGrid({
 
               {/* Title tooltip on hover */}
               {hoveredItem === item.id && (
-                <div className="absolute bottom-2 right-2 z-10 max-w-[70%]">
-                  <div className="bg-black/60 text-white text-xs py-1 px-2 rounded-md">
-                    {item.asset_title}
-                  </div>
+                <div className="absolute top-2 right-2 z-10 max-w-[70%]">
+                  <Ellipsis color="#323842FF" size={28} />
                 </div>
               )}
             </div>
