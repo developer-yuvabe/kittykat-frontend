@@ -1,7 +1,7 @@
 import { useQueueUpdates } from "@/hooks/useQueueUpdates";
 import { useUserStore } from "@/store/user.store";
-import { CircleDashed } from "lucide-react";
-import React, { useMemo } from "react";
+import { CircleDashed, ListEnd } from "lucide-react";
+import React, { useEffect, useMemo } from "react";
 import {
   Popover,
   PopoverContent,
@@ -13,9 +13,7 @@ import QueueItemView from "./QueueItemView";
 const QueueProgress = () => {
   const { user } = useUserStore();
   const { data } = useQueueUpdates(user?.id);
-
-  console.log(data);
-
+  const [open, setOpen] = React.useState(false);
   const { runningQueueItems, otherQueueItems } = useMemo(() => {
     const running = [];
     const others = [];
@@ -33,8 +31,12 @@ const QueueProgress = () => {
     return { runningQueueItems: running, otherQueueItems: others };
   }, [data]);
 
+  useEffect(() => {
+    setOpen(runningQueueItems.length > 0);
+  }, [runningQueueItems.length]);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div
           className={cn(
@@ -46,25 +48,33 @@ const QueueProgress = () => {
               "animate-spin": runningQueueItems?.length > 0,
             })}
           />
-          {!!runningQueueItems.length && (
-            <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-medium text-base">
-              {runningQueueItems.length}
-            </p>
-          )}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-medium text-base">
+            {!!runningQueueItems.length ? (
+              <p>{runningQueueItems.length}</p>
+            ) : (
+              <ListEnd className="text-muted-foreground" size={16} />
+            )}
+          </div>
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-100 p-0 h-80 overflow-y-auto" align="end">
+      <PopoverContent
+        className="w-100 p-0 h-max max-h-80 overflow-y-auto"
+        align="end"
+      >
         {runningQueueItems.length + otherQueueItems.length > 0 ? (
-          <>
+          <div>
+            <div className="px-4 py-2 border-b sticky top-0 bg-background z-10">
+              <p className="text-xl font-semibold text-start">Queue</p>
+            </div>
             {runningQueueItems.map((item) => (
               <QueueItemView key={item.id} item={item} />
             ))}
             {otherQueueItems.map((item) => (
               <QueueItemView key={item.id} item={item} />
             ))}
-          </>
+          </div>
         ) : (
-          <div>
+          <div className="py-4">
             <p className="text-sm text-muted-foreground text-center italic">
               No items in queue.
             </p>

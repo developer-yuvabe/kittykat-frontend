@@ -1,30 +1,44 @@
 import { QueueItem } from "@/types/types";
 import React from "react";
 import { Image, LoaderCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatToLocalTime } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 const QueueItemView = ({ item }: { item: QueueItem }) => {
   return (
-    <div className="px-4 py-6 border-b hover:bg-muted flex items-start gap-4 bg-muted/50">
-      <div className="flex w-10 h-10 shrink-0 overflow-hidden rounded-full item-center justify-center">
+    <div
+      className={cn(
+        "px-4 py-4 border-b flex items-center gap-4 bg-muted/10 border-l4",
+        {
+          "border-l-destructive bg-destructive/10": item.status === "failed",
+          "border-l-primary bg-primary/10": item.status === "processing",
+        }
+      )}
+    >
+      <div className="flex shrink-0 overflow-hidden item-center justify-center">
         {item.status === "processing" ? (
-          <LoaderCircle className="text-muted-foreground animate-spin my-auto" />
+          <LoaderCircle className="text-muted-foreground animate-spin" />
         ) : (
-          <Image className="text-muted-foreground my-auto" />
+          <Image className="text-muted-foreground" />
         )}
       </div>
       <div>
         <p className="text-sm font-medium leading-none">{item.title}</p>
         <p
           className={cn(
-            "text-xs leading-none text-muted-foreground capitalize mt-1",
+            "text-sm leading-none text-muted-foreground capitalize mt-1",
             {
               "text-red-500": item.status === "failed",
-              "text-green-500": item.status === "completed",
+              "text-primary": item.status === "processing",
             }
           )}
         >
           {item.status}
+        </p>
+        <p className="text-xs text-muted-foreground w-max whitespace-nowrap">
+          {formatDistanceToNow(formatToLocalTime(item.created_at), {
+            addSuffix: true,
+          })}
         </p>
       </div>
     </div>

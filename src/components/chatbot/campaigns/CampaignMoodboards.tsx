@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
-import { Copy, Ellipsis, Expand } from "lucide-react";
+import { Copy, Expand } from "lucide-react";
 import React, { useState } from "react";
 import { BsPinAngle } from "react-icons/bs";
 import { toast } from "sonner";
@@ -19,8 +19,7 @@ import {
   CarouselPrevious,
 } from "../../ui/carousel";
 import MoodboardDetail from "../MoodboardDetail";
-
-import { DislikeIcon, LikeIcon } from "@/components/ui/custom-icon";
+import { DislikeIcon, LikeIcon, MoreIcon } from "@/components/ui/custom-icon";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
 import { MoodboardAsset } from "@/types/types";
 
@@ -168,12 +167,12 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                         <div className="absolute top-0 right-1 z-10 flex space-x-1">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Ellipsis
-                                className="text-white shadow-2xl"
-                                size={36}
-                              />
+                              <MoreIcon color="white" size={24} />
                             </PopoverTrigger>
-                            <PopoverContent className="w-68 p-2" side="right">
+                            <PopoverContent
+                              className="w-68 h-max max-h-128 overflow-auto p-2"
+                              side="right"
+                            >
                               <MoodboardDetail
                                 moodboard={moodboard}
                                 campaignId={campaignId}
@@ -206,7 +205,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                             >
                               <DislikeIcon
                                 size={16}
-                                fillColor={
+                                color={
                                   moodboard.is_liked === false
                                     ? "#636AE8"
                                     : "white"
@@ -222,7 +221,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                             >
                               <LikeIcon
                                 size={16}
-                                fillColor={
+                                color={
                                   moodboard.is_liked === true
                                     ? "#636AE8"
                                     : "white"

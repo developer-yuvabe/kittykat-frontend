@@ -2,10 +2,8 @@
 
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-import { handleDownloadImage } from "@/lib/utils";
+import { cn, handleDownloadImage } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import {
   deleteCampaignMoodboard,
@@ -13,10 +11,17 @@ import {
 } from "@/services/api/brand.service";
 import { GalleryItem } from "@/types/gallery.types";
 import { MoodboardAsset } from "@/types/types";
-import { BookOpen, Download, Pencil, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  DeleteIcon,
+  DownloadIcon,
+  EditIcon,
+  LibraryIcon,
+  SaveIcon,
+} from "../ui/custom-icon";
+import { Input } from "../ui/input";
 
 interface MoodboardDetailProps {
   moodboard: MoodboardAsset;
@@ -43,7 +48,6 @@ export default function MoodboardDetail({
   useEffect(() => {
     if (isEditingTitle && inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
     }
 
     if (isEditingComment && textareaRef.current) {
@@ -141,48 +145,52 @@ export default function MoodboardDetail({
     }
   };
 
+  const ACTION_BUTTONS = [
+    {
+      label: "Download",
+      icon: DownloadIcon,
+      onClick: () => {
+        if (moodboard.asset_url) handleDownloadImage(moodboard.asset_url);
+      },
+    },
+    {
+      label: "Delete",
+      icon: DeleteIcon,
+      onClick: () => setShowDeleteDialog(true),
+    },
+    {
+      label: "Add to Library",
+      icon: LibraryIcon,
+      onClick: handleAddToLibrary,
+    },
+  ];
+
   return (
-    <div>
-      {/* Header with title and edit button */}
-      <div
-        className="p-0 border-b relative pb-2"
-        onDoubleClick={handleEditTitle}
-      >
-        {isEditingTitle ? (
-          <div className="relative pr-8 gap-x-2">
-            <Input
-              ref={inputRef}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="pr-8"
-              onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 absolute top-1 right-0 hover:bg-transparent"
-              onClick={handleSaveTitle}
-            >
-              <Save size={18} className="" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between px-2">
-            <h2 className="cursor-pointer">{title}</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-transparent"
-              onClick={handleEditTitle}
-            >
-              <Pencil size={18} className="text-gray-500" />
-            </Button>
-          </div>
-        )}
+    <div className="space-y-2">
+      <div onDoubleClick={handleEditTitle} className="relative">
+        <Input
+          ref={inputRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="disabled:opacity-100"
+          onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+          disabled={!isEditingTitle}
+        />
+        <Button
+          variant="ghost"
+          className="h-8 w-8 absolute top-1/2 -translate-y-1/2 right-0 hover:bg-transparent resize-none min-h-max"
+          onClick={isEditingTitle ? handleSaveTitle : handleEditTitle}
+        >
+          {isEditingTitle ? (
+            <SaveIcon size={18} className="" />
+          ) : (
+            <EditIcon size={18} className="" />
+          )}
+        </Button>
       </div>
 
       {/* Image details with gray background */}
-      <div className="bg-gray-50 font-bold text-sm p-4 rounded-md my-2">
+      <div className="bg-[#F3F4F6] font-bold text-sm p-4 rounded-md">
         <div className="space-y-1">
           <p className="text-gray-800">
             Size:{" "}
@@ -195,83 +203,61 @@ export default function MoodboardDetail({
 
       {/* Comment section without border */}
       <div
-        className="py-4 relative"
+        className="relative"
         onDoubleClick={() => {
           if (!isEditingComment) {
             handleEditComment();
           }
         }}
       >
-        {comment && !isEditingComment ? (
-          <div className="flex items-center justify-between px-2">
-            <p className="text-gray-700 pr-8 cursor-pointer">{comment}</p>
+        <div className="relative">
+          <Textarea
+            disabled={!isEditingComment}
+            ref={textareaRef}
+            placeholder="Add comment"
+            value={comment || ""}
+            onChange={handleCommentChange}
+            className="resize-none min-h-[100px] overflow-hidden disabled:opacity-100"
+            rows={3}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.ctrlKey) {
+                handleSaveComment();
+              }
+            }}
+          />
+          {comment?.trim() !== "" && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 absolute top-2 right-2"
-              onClick={handleEditComment}
+              className="h-8 w-8 absolute top-1 right-1 hover:!bg-transparent"
+              onClick={isEditingComment ? handleSaveComment : handleEditComment}
             >
-              <Pencil size={18} className="text-gray-500" />
+              {isEditingComment ? (
+                <SaveIcon size={18} className="" />
+              ) : (
+                <EditIcon size={18} className="" />
+              )}
             </Button>
-          </div>
-        ) : (
-          <div className="relative">
-            <Textarea
-              ref={textareaRef}
-              placeholder="Add comment"
-              value={comment || ""}
-              onChange={handleCommentChange}
-              className="resize-none min-h-[100px] overflow-hidden"
-              rows={3}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && e.ctrlKey) {
-                  handleSaveComment();
-                }
-              }}
-            />
-            {comment?.trim() !== "" && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 absolute top-2 right-2"
-                onClick={handleSaveComment}
-              >
-                <Save size={18} className="" />
-              </Button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+        {/* )} */}
       </div>
 
       {/* Action buttons without border */}
-      <div className="space-y-1 mt-2">
-        <Button
-          variant="ghost"
-          className="w-full h-10 justify-start pl-2 hover:bg-gray-100 transition-colors"
-          onClick={() => {
-            if (moodboard.asset_url) handleDownloadImage(moodboard.asset_url);
-          }}
-          disabled={!moodboard.asset_url}
-        >
-          <Download className="h-5 w-5" />
-          <span className="ml-2">Download</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full h-10 justify-start pl-2 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
-          onClick={() => setShowDeleteDialog(true)}
-        >
-          <Trash2 className="h-5 w-5" />
-          <span className="ml-2">Delete</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full h-10 justify-start pl-2 hover:bg-gray-100 transition-colors"
-          onClick={handleAddToLibrary}
-        >
-          <BookOpen className="h-5 w-5" />
-          <span className="ml-2">Add to Library</span>
-        </Button>
+      <div>
+        {ACTION_BUTTONS.map((button) => (
+          <Button
+            key={button.label}
+            variant="ghost"
+            className={cn(
+              "w-full justify-start hover:bg-gray-100 transition-colors cursor-pointer hover:!text-foreground"
+            )}
+            onClick={button.onClick}
+          >
+            <button.icon size={24} />
+            <span className="ml-1">{button.label}</span>
+          </Button>
+        ))}
       </div>
 
       {/* Delete confirmation dialog */}
