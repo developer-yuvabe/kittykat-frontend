@@ -19,7 +19,7 @@ const LINKS = [
   { name: "Chats", icon: ChatBubbleIcon, path: "/chats", disabled: true },
   { name: "Notifications", icon: NotificationIcon, path: "/", disabled: true },
   { name: "Ask Kitty Kat", icon: KittyKatIcon, path: "/" },
-  { name: "Gallery", icon: GalleryIcon, path: "/gallery", disabled: true },
+  { name: "Gallery", icon: GalleryIcon, path: "/gallery" },
   { name: "Kitty Q", icon: PlayIcon, path: "/", disabled: true },
   { name: "Menu", icon: MenuIcon, path: "/", disabled: true },
 ];
