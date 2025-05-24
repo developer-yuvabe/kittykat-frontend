@@ -19,7 +19,6 @@ import {
   CarouselPrevious,
 } from "../../ui/carousel";
 import MoodboardDetail from "../MoodboardDetail";
-
 import { DislikeIcon, LikeIcon, MoreIcon } from "@/components/ui/custom-icon";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
 import { MoodboardAsset } from "@/types/types";

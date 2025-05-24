@@ -15,6 +15,7 @@ class GalleryService {
   async createGalleryItem(
     galleryItem: GalleryItem
   ): Promise<GalleryItemResponse> {
+    console.log("new item", galleryItem);
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.post("/gallery", galleryItem)
     );
@@ -25,14 +26,25 @@ class GalleryService {
    */
   async searchGalleryItems(
     query: string,
-    skip = 0,
-    limit = 10
+    skip: number,
+    limit: number,
+    method = "vector"
   ): Promise<GalleryItemsListResponse> {
-    return handleApiRequest<GalleryItemsListResponse>(
+    const response = await handleApiRequest<GalleryItemsListResponse>(
       axiosInstance.get("/gallery/search", {
-        params: { query, skip, limit },
+        params: { query, skip, limit, method },
       })
     );
+    const has_more =
+      (response.gallery_items?.length || 0) + skip < response.pagination.total;
+
+    return {
+      ...response,
+      pagination: {
+        ...response.pagination,
+        has_more,
+      },
+    };
   }
 
   /**
@@ -51,16 +63,16 @@ class GalleryService {
     asset_types?: string[];
     asset_sources?: string[];
     is_favourite?: boolean;
-    campaign_names?: string[];
-    brand_names?: string[];
+    campaign_ids?: string[];
+    brand_ids?: string[];
     skip?: number;
     limit?: number;
   }): Promise<GalleryItemsListResponse> {
     const {
       asset_types,
       is_favourite,
-      campaign_names,
-      brand_names,
+      campaign_ids,
+      brand_ids,
       skip = 0,
       limit = 10,
       asset_sources,
@@ -70,8 +82,8 @@ class GalleryService {
       axiosInstance.post("/gallery/filter", {
         asset_types,
         is_favourite,
-        campaign_names,
-        brand_names,
+        campaign_ids,
+        brand_ids,
         skip,
         limit,
         asset_sources,

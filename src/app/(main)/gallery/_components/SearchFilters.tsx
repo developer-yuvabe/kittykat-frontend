@@ -49,7 +49,7 @@ export function SearchFilters({
     selectedFilters.campaigns.length > 0;
 
   return (
-    <div className="flex flex-col gap-3 mb-6 relative">
+    <div className="flex flex-col gap-3 mb-6 mt-3 relative">
       <div className="flex items-center gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -106,11 +106,7 @@ export function SearchFilters({
           </Select>
         </div> */}
         <div className="mt-1">
-          {showFilters ? (
-            <TooltipIconButton tooltip="Hide Filters" onClick={onToggleFilters}>
-              <X size={24} />
-            </TooltipIconButton>
-          ) : (
+          {!showFilters && (
             <TooltipIconButton tooltip="Show Filters" onClick={onToggleFilters}>
               <Filter size={24} />
             </TooltipIconButton>

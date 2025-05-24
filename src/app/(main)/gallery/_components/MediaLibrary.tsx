@@ -12,6 +12,7 @@ import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
+import { BrandCampaignListResponse } from "@/types/gallery.types";
 
 export function MediaLibrary() {
   // UI State
@@ -20,7 +21,7 @@ export function MediaLibrary() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<boolean>(false);
-  const [source, setSource] = useState<string>("All");
+  const [source, setSource] = useState<string>(activeTab);
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
@@ -30,9 +31,14 @@ export function MediaLibrary() {
     campaigns: [] as string[],
   });
 
+  const [selectedBrand, setSelectedBrand] = useState<
+    BrandCampaignListResponse["brands"][number] | null
+  >(null);
+
   // Use our custom hook for data fetching and mutations
   const {
     brandsData,
+    brandsLoading,
     galleryItems,
     galleryStatus,
     isFetchingNextPage,
@@ -50,6 +56,19 @@ export function MediaLibrary() {
     searchQuery,
     selectedFilters,
   });
+
+  useEffect(() => {
+    if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
+      console.log("Brands list:", brandsData.brands);
+      setSelectedBrand(brandsData.brands[0]);
+    }
+  }, [brandsLoading, brandsData, selectedBrand]);
+
+  useEffect(() => {
+    if (selectedBrand) {
+      console.log("Selected brand updated:", selectedBrand);
+    }
+  }, [selectedBrand]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -128,7 +147,6 @@ export function MediaLibrary() {
 
   const handleApplyFilters = (filters: any) => {
     setSelectedFilters(filters);
-    setShowFilters(false);
   };
 
   // Bulk download selected items
@@ -149,6 +167,10 @@ export function MediaLibrary() {
     }
   };
 
+  useEffect(() => {
+    setSource(activeTab);
+    console.log("so", activeTab, source);
+  }, [activeTab, handleTabChange]);
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
       <h1 className="text-2xl font-bold mb-4">Media library</h1>
@@ -201,7 +223,21 @@ export function MediaLibrary() {
           value={activeTab}
           className="p-3 rounded-3xl bg-white mt-0"
         >
-          <UploadDropzone activeTab={activeTab} />
+          <UploadDropzone
+            activeTab={activeTab}
+            galleryFilters={{
+              assetType: activeTab,
+              favorites,
+              source,
+              creator,
+              searchQuery,
+              selectedFilters,
+            }}
+            source={source}
+            selectedBrand={selectedBrand}
+            setSelectedBrand={setSelectedBrand}
+            brands={brandsData?.brands || []}
+          />
 
           <div className="flex flex-col md:flex-row gap-4">
             <div
@@ -219,6 +255,8 @@ export function MediaLibrary() {
                 selectedFilters={selectedFilters}
                 onApply={handleApplyFilters}
                 brandsWithCampaigns={brandsData?.brands || []}
+                product_categories={brandsData?.product_categories || []}
+                setShowFilter={setShowFilters}
               />
             </div>
 

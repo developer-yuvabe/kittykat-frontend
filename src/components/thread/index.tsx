@@ -41,8 +41,23 @@ export function Thread() {
   );
 
   const [threadId, setThreadId] = useQueryState("threadId");
-  const { threads, threadsLoading } = useThreads();
+  const { threads, threadsLoading, setThreadsLoading } = useThreads();
   const [initializingThread, setInitializingThread] = useState(true);
+
+  const handleThreadChange = (id: string | null): void => {
+    setThreadsLoading(true);
+
+    (async () => {
+      if (id) {
+        setThreadId(id);
+      }
+
+      // Mock wait for 2 sec
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      setThreadsLoading(false);
+    })();
+  };
 
   useEffect(() => {
     if (threadsLoading) return; // Wait for threads to load
@@ -269,7 +284,7 @@ export function Thread() {
           <ResizablePanel defaultSize={70} minSize={30}>
             <ThreadDetailsPanel
               isLargeScreen={isLargeScreen}
-              setThreadId={setThreadId}
+              setThreadId={handleThreadChange}
               threadId={threadId}
             />
           </ResizablePanel>

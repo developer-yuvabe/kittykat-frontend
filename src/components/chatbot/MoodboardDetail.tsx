@@ -4,10 +4,12 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, handleDownloadImage } from "@/lib/utils";
+import { useGalleryQuery } from "@/hooks/useGallery";
 import {
   deleteCampaignMoodboard,
   updateCampaignMoodboard,
 } from "@/services/api/brand.service";
+import { GalleryItem } from "@/types/gallery.types";
 import { MoodboardAsset } from "@/types/types";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -40,6 +42,7 @@ export default function MoodboardDetail({
   const inputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(moodboard.asset_title);
   const [comment, setComment] = useState(moodboard.comment);
+  const { addToGallery } = useGalleryQuery({});
 
   // Focus input elements when editing starts
   useEffect(() => {
@@ -106,7 +109,41 @@ export default function MoodboardDetail({
     }
   };
 
-  const handleAddToLibrary = async () => {};
+  const handleAddToLibrary = async () => {
+    if (moodboard.asset_url && brandId) {
+      const galleryItem: GalleryItem = {
+        asset_type: moodboard.media_format || "webp",
+        asset_source: moodboard.source || "moodboard",
+        asset_title: moodboard.asset_title,
+        asset_url: moodboard.asset_url,
+        input_prompt: moodboard.input_prompt,
+        size: moodboard.size_bytes ? String(moodboard.size_bytes) : "",
+        media_format: moodboard.media_format || "",
+        is_favourite: false,
+        workflow_status: "draft",
+        user_feedback: "neutral",
+        is_archived: false,
+        brand_id: brandId,
+        related_asset_ids: [],
+        prompt_modifiers: [],
+        ai_tags: [],
+        visual_style_tags: [],
+        detected_objects: [],
+        detected_emotions: [],
+        detected_colors: [],
+        intent_tags: [],
+        search_keywords: [],
+        custom_tags: [],
+      };
+
+      try {
+        addToGallery(galleryItem);
+        console.log("Added to library successfully");
+      } catch (error) {
+        console.error("Failed to add to library", error);
+      }
+    }
+  };
 
   const ACTION_BUTTONS = [
     {
@@ -141,7 +178,7 @@ export default function MoodboardDetail({
         />
         <Button
           variant="ghost"
-          className="h-8 w-8 absolute top-1/2 -translate-y-1/2 right-0 hover:bg-transparent resize-none h-max min-h-max"
+          className="h-8 w-8 absolute top-1/2 -translate-y-1/2 right-0 hover:bg-transparent resize-none min-h-max"
           onClick={isEditingTitle ? handleSaveTitle : handleEditTitle}
         >
           {isEditingTitle ? (

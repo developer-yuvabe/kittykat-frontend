@@ -5,23 +5,14 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { galleryService } from "@/services/api/gallery.service";
-import type { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
+import type {
+  GalleryFilters,
+  GalleryItem,
+  GalleryItemResponse,
+} from "@/types/gallery.types";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 20;
-
-export type GalleryFilters = {
-  assetType?: string;
-  favorites?: boolean;
-  source?: string;
-  creator?: string;
-  searchQuery?: string;
-  selectedFilters?: {
-    brands: string[];
-    categories: string[];
-    campaigns: string[];
-  };
-};
 
 export const useGalleryQuery = (filters: GalleryFilters) => {
   const queryClient = useQueryClient();
@@ -67,10 +58,10 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
           (v): v is string => v !== undefined
         ),
         is_favourite: filters.favorites || undefined,
-        brand_names: filters.selectedFilters?.brands.length
+        brand_ids: filters.selectedFilters?.brands.length
           ? filters.selectedFilters.brands
           : undefined,
-        campaign_names: filters.selectedFilters?.campaigns.length
+        campaign_ids: filters.selectedFilters?.campaigns.length
           ? filters.selectedFilters.campaigns
           : undefined,
         skip: pageParam,
@@ -120,15 +111,20 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
         (old: any) => {
           return {
             ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              gallery_items: page.gallery_items.map(
-                (item: GalleryItemResponse) =>
-                  item.id === itemId
-                    ? { ...item, is_favourite: !item.is_favourite }
-                    : item
-              ),
-            })),
+            pages: old.pages.map((page: any) => {
+              return {
+                ...page,
+                gallery_items: filters.favorites
+                  ? page.gallery_items.filter(
+                      (item: GalleryItemResponse) => item.id !== itemId
+                    )
+                  : page.gallery_items.map((item: GalleryItemResponse) =>
+                      item.id === itemId
+                        ? { ...item, is_favourite: !item.is_favourite }
+                        : item
+                    ),
+              };
+            }),
           };
         }
       );
@@ -305,7 +301,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${item.asset_title}.${item.format}`;
+      a.download = `${item.asset_title}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -327,9 +323,9 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
       queryClient.invalidateQueries({
         queryKey: [
           "gallery-items",
-          filters.assetType,
-          filters.favorites,
           filters.source,
+          filters.favorites,
+          filters.assetType,
           filters.creator,
           filters.searchQuery,
           filters.selectedFilters,

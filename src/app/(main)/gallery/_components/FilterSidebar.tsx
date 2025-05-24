@@ -7,30 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-
-// Define the types for our data
-interface BrandCampaignResponse {
-  brand_name: string;
-  campaigns: string[];
-}
+import { BrandCampaignResponse, ProductCategory } from "@/types/gallery.types";
+import { Separator } from "@/components/ui/separator";
 
 interface FilterSidebarProps {
   selectedFilters: {
-    brands: string[];
-    campaigns: string[];
+    brands: string[]; // brand_ids
+    campaigns: string[]; // campaign_ids
   };
-  onApply: (filters: any) => void;
+  onApply: (filters: { brands: string[]; campaigns: string[] }) => void;
   brandsWithCampaigns: BrandCampaignResponse[];
+  product_categories: ProductCategory[];
+  setShowFilter: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function FilterSidebar({
   selectedFilters,
   onApply,
   brandsWithCampaigns,
+  setShowFilter,
 }: FilterSidebarProps) {
-  const [filters, setFilters] = useState(
-    selectedFilters || { brands: [], campaigns: [] }
-  );
+  const [filters, setFilters] = useState(selectedFilters);
   const [expandedSections, setExpandedSections] = useState({
     brand: true,
     campaign: true,
@@ -39,73 +36,46 @@ export default function FilterSidebar({
   const [brandSearch, setBrandSearch] = useState("");
   const [campaignSearch, setCampaignSearch] = useState("");
 
-  // Update local state when props change
   useEffect(() => {
-    if (selectedFilters) {
-      setFilters(selectedFilters);
-    }
+    if (selectedFilters) setFilters(selectedFilters);
   }, [selectedFilters]);
 
-  // Filter brands based on search
-  const filteredBrands = brandsWithCampaigns
-    .map((brand) => brand.brand_name)
-    .filter((brand) => brand.toLowerCase().includes(brandSearch.toLowerCase()));
+  const filteredBrands = brandsWithCampaigns.filter((brand) =>
+    brand.brand_name.toLowerCase().includes(brandSearch.toLowerCase())
+  );
 
-  // Get all campaigns from all brands
-  const allCampaigns = brandsWithCampaigns.flatMap((brand) => brand.campaigns);
+  const allCampaigns = brandsWithCampaigns.flatMap((b) => b.campaigns);
 
-  // Filter campaigns based on search and selected brands
   const filteredCampaigns = allCampaigns
-    .filter((campaign) =>
-      campaign.toLowerCase().includes(campaignSearch.toLowerCase())
-    )
-    // If brands are selected, only show campaigns from those brands
-    .filter((campaign) => {
+    .filter((c) => c.title.toLowerCase().includes(campaignSearch.toLowerCase()))
+    .filter((c) => {
       if (filters.brands.length === 0) return true;
       return brandsWithCampaigns
-        .filter((brand) => filters.brands.includes(brand.brand_name))
-        .some((brand) => brand.campaigns.includes(campaign));
+        .filter((b) => filters.brands.includes(b.brand_id))
+        .some((b) => b.campaigns.find((bc) => bc.id === c.id));
     })
-    // Remove duplicates
-    .filter((campaign, index, self) => self.indexOf(campaign) === index);
+    .filter((c, i, self) => self.findIndex((x) => x.id === c.id) === i);
 
   const toggleSection = (section: "brand" | "campaign") => {
-    setExpandedSections((prev) => ({
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleBrand = (brand_id: string) => {
+    setFilters((prev) => ({
       ...prev,
-      [section]: !prev[section],
+      brands: prev.brands.includes(brand_id)
+        ? prev.brands.filter((b) => b !== brand_id)
+        : [...prev.brands, brand_id],
     }));
   };
 
-  const toggleBrand = (brand: string) => {
-    setFilters((prev) => {
-      if (prev.brands.includes(brand)) {
-        return {
-          ...prev,
-          brands: prev.brands.filter((b) => b !== brand),
-        };
-      } else {
-        return {
-          ...prev,
-          brands: [...prev.brands, brand],
-        };
-      }
-    });
-  };
-
-  const toggleCampaign = (campaign: string) => {
-    setFilters((prev) => {
-      if (prev.campaigns.includes(campaign)) {
-        return {
-          ...prev,
-          campaigns: prev.campaigns.filter((c) => c !== campaign),
-        };
-      } else {
-        return {
-          ...prev,
-          campaigns: [...prev.campaigns, campaign],
-        };
-      }
-    });
+  const toggleCampaign = (campaign_id: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      campaigns: prev.campaigns.includes(campaign_id)
+        ? prev.campaigns.filter((c) => c !== campaign_id)
+        : [...prev.campaigns, campaign_id],
+    }));
   };
 
   const handleApply = () => {
@@ -113,23 +83,27 @@ export default function FilterSidebar({
   };
 
   const handleClearAll = () => {
-    setFilters({
-      brands: [],
-      campaigns: [],
-    });
+    setFilters({ brands: [], campaigns: [] });
     setBrandSearch("");
     setCampaignSearch("");
   };
 
   return (
-    <div className="bg-white rounded-lg border shadow-sm p-4 w-full max-w-xs">
-      <div className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Filter className="h-5 w-5" />
-        <span>FILTERS</span>
+    <div className="bg-white rounded-lg mt-3 border shadow-sm p-4 w-full max-w-xs">
+      <div className="text-lg flex justify-between font-semibold mb-4  items-center gap-2">
+        <div className="flex flex-row gap-x-2">
+          <Filter />
+          <span>FILTERS</span>
+        </div>
+        <div>
+          <X size={16} onClick={() => setShowFilter(false)} />
+        </div>
       </div>
 
+      <Separator className="w-full" />
+
       {/* Brand Section */}
-      <div className="border-b pb-4 mb-4">
+      <div className="border-b py-4 mb-4">
         <div
           className="flex justify-between items-center mb-3 cursor-pointer"
           onClick={() => toggleSection("brand")}
@@ -146,19 +120,26 @@ export default function FilterSidebar({
           <>
             <div className="mb-3">
               <div className="flex gap-1 mb-2 flex-wrap">
-                {filters.brands.map((brand) => (
-                  <div
-                    key={brand}
-                    className="bg-purple-100 text-purple-700 text-xs rounded-full px-2 py-1 flex items-center"
-                  >
-                    {brand}
-                    <X
-                      size={12}
-                      className="ml-1 cursor-pointer"
-                      onClick={() => toggleBrand(brand)}
-                    />
-                  </div>
-                ))}
+                {filters.brands.map((brand_id) => {
+                  const brand = brandsWithCampaigns.find(
+                    (b) => b.brand_id === brand_id
+                  );
+                  return (
+                    brand && (
+                      <div
+                        key={brand.brand_id}
+                        className="bg-purple-100 text-purple-700 text-xs rounded-full px-2 py-1 flex items-center"
+                      >
+                        {brand.brand_name}
+                        <X
+                          size={12}
+                          className="ml-1 cursor-pointer"
+                          onClick={() => toggleBrand(brand.brand_id)}
+                        />
+                      </div>
+                    )
+                  );
+                })}
               </div>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -174,29 +155,29 @@ export default function FilterSidebar({
               <div className="space-y-2 pr-4">
                 {filteredBrands.map((brand) => (
                   <div
-                    key={brand}
+                    key={brand.brand_id}
                     className="flex items-center justify-between group"
                   >
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`brand-${brand}`}
-                        checked={filters.brands.includes(brand)}
-                        onCheckedChange={() => toggleBrand(brand)}
+                        id={`brand-${brand.brand_id}`}
+                        checked={filters.brands.includes(brand.brand_id)}
+                        onCheckedChange={() => toggleBrand(brand.brand_id)}
                         className="text-purple-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                       />
                       <label
-                        htmlFor={`brand-${brand}`}
+                        htmlFor={`brand-${brand.brand_id}`}
                         className={cn(
                           "text-sm cursor-pointer",
-                          filters.brands.includes(brand)
+                          filters.brands.includes(brand.brand_id)
                             ? "text-purple-600 font-medium"
                             : ""
                         )}
                       >
-                        {brand}
+                        {brand.brand_name}
                       </label>
                     </div>
-                    {filters.brands.includes(brand) && (
+                    {filters.brands.includes(brand.brand_id) && (
                       <Check size={16} className="text-purple-600" />
                     )}
                   </div>
@@ -225,19 +206,26 @@ export default function FilterSidebar({
           <>
             <div className="mb-3">
               <div className="flex gap-1 mb-2 flex-wrap">
-                {filters.campaigns.map((campaign) => (
-                  <div
-                    key={campaign}
-                    className="bg-purple-100 text-purple-700 text-xs rounded-full px-2 py-1 flex items-center"
-                  >
-                    {campaign}
-                    <X
-                      size={12}
-                      className="ml-1 cursor-pointer"
-                      onClick={() => toggleCampaign(campaign)}
-                    />
-                  </div>
-                ))}
+                {filters.campaigns.map((campaign_id) => {
+                  const campaign = allCampaigns.find(
+                    (c) => c.id === campaign_id
+                  );
+                  return (
+                    campaign && (
+                      <div
+                        key={campaign.id}
+                        className="bg-purple-100 text-purple-700 text-xs rounded-full px-2 py-1 flex items-center"
+                      >
+                        {campaign.title}
+                        <X
+                          size={12}
+                          className="ml-1 cursor-pointer"
+                          onClick={() => toggleCampaign(campaign.id)}
+                        />
+                      </div>
+                    )
+                  );
+                })}
               </div>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -253,29 +241,29 @@ export default function FilterSidebar({
               <div className="space-y-2 pr-4">
                 {filteredCampaigns.map((campaign) => (
                   <div
-                    key={campaign}
+                    key={campaign.id}
                     className="flex items-center justify-between group"
                   >
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`campaign-${campaign}`}
-                        checked={filters.campaigns.includes(campaign)}
-                        onCheckedChange={() => toggleCampaign(campaign)}
+                        id={`campaign-${campaign.id}`}
+                        checked={filters.campaigns.includes(campaign.id)}
+                        onCheckedChange={() => toggleCampaign(campaign.id)}
                         className="text-purple-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                       />
                       <label
-                        htmlFor={`campaign-${campaign}`}
+                        htmlFor={`campaign-${campaign.id}`}
                         className={cn(
                           "text-sm cursor-pointer",
-                          filters.campaigns.includes(campaign)
+                          filters.campaigns.includes(campaign.id)
                             ? "text-purple-600 font-medium"
                             : ""
                         )}
                       >
-                        {campaign}
+                        {campaign.title}
                       </label>
                     </div>
-                    {filters.campaigns.includes(campaign) && (
+                    {filters.campaigns.includes(campaign.id) && (
                       <Check size={16} className="text-purple-600" />
                     )}
                   </div>

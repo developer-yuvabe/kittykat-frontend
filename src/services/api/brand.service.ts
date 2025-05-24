@@ -7,7 +7,6 @@ import {
   BrandsListResponse,
   BrandURLRequest,
 } from "@/types/brand.types";
-import axios from "axios";
 
 class BrandService {
   async createBrand(request: BrandIdentity): Promise<BrandResponse> {
@@ -52,38 +51,33 @@ class BrandService {
       axiosInstance.post("/brands/extract-brand", request)
     );
   }
+}
 
-  async uploadFileAndReturnUrl(
-    prefix: string,
-    fileName: string,
-    fileType: string,
-    file: File
-  ): Promise<string> {
-    try {
-      // Get the presigned URL
-      const response = await axiosInstance.post(
-        `/users/thread/${prefix}/file/upload`,
-        {
-          file_name: fileName,
-          content_type: fileType,
-        }
-      );
-      const { upload_url, download_url } = response.data.data;
+export async function updateCampaignMoodboard(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string,
+  moodboardData: Record<string, unknown>
+): Promise<BrandResponse> {
+  return handleApiRequest<BrandResponse>(
+    axiosInstance.put(`/brands/moodboard/${moodboardId}`, {
+      brand_id: brandId,
+      campaign_id: campaignId,
+      ...moodboardData,
+    })
+  );
+}
 
-      // Upload the file to the presigned URL
-      await axios.put(upload_url, file, {
-        headers: {
-          "Content-Type": fileType,
-        },
-      });
-
-      // Return the final file URL without query parameters
-      return download_url;
-    } catch (error) {
-      console.error("Error in uploadFileAndReturnUrl:", error);
-      throw new Error("File upload failed. Please try again.");
-    }
-  }
+export async function deleteCampaignMoodboard(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string
+): Promise<BrandResponse> {
+  return handleApiRequest<BrandResponse>(
+    axiosInstance.delete(`/brands/moodboard/${moodboardId}`, {
+      data: { brand_id: brandId, campaign_id: campaignId },
+    })
+  );
 }
 
 export async function updateCampaignMoodboard(
