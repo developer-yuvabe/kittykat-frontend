@@ -113,7 +113,7 @@ export default function CampaignSelector({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[300px] p-0">
-          <Command shouldFilter={false}>
+          <Command shouldFilter={false} className="flex-wrap w-full">
             <div className="flex items-center border-b px-3">
               <CommandInput
                 placeholder="Search campaigns..."
@@ -122,7 +122,7 @@ export default function CampaignSelector({
                 onValueChange={handleInputChange}
               />
             </div>
-            <CommandList>
+            <CommandList className="w-full">
               <CommandEmpty>
                 {loading ? "Loading..." : "No campaigns found."}
               </CommandEmpty>
@@ -139,13 +139,15 @@ export default function CampaignSelector({
                       e.stopPropagation();
                     }}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center min-w-0  w-full">
                       <Avatar className="h-6 w-6 mr-2">
                         <AvatarFallback className="bg-blue-500 text-white">
                           {campaign.initial}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate">{campaign.displayName}</span>
+                      <span className="truncate">
+                        {campaign.displayName} {campaign.displayName}
+                      </span>
                     </div>
                     {selectedCampaignId === campaign.id && (
                       <Check className="h-4 w-4" />

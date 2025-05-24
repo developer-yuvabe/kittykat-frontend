@@ -172,7 +172,7 @@ export default function MoodboardDetail({
           ref={inputRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="disabled:opacity-100"
+          className="disabled:opacity-100 pr-8"
           onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
           disabled={!isEditingTitle}
         />
