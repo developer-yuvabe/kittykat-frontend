@@ -44,9 +44,9 @@ export function SearchFilters({
   selectedFilters,
 }: SearchFiltersProps) {
   const hasActiveFilters =
-    selectedFilters.brands.length > 0 ||
-    selectedFilters.categories.length > 0 ||
-    selectedFilters.campaigns.length > 0;
+    selectedFilters?.brands?.length > 0 ||
+    selectedFilters?.categories?.length > 0 ||
+    selectedFilters?.campaigns?.length > 0;
 
   return (
     <div className="flex flex-col gap-3 mb-6 mt-3 relative">
