@@ -198,11 +198,11 @@ export function HumanMessage({
   return (
     <div
       className={cn(
-        "flex items-center ml-auto gap-2 group",
+        "flex items-center w-[90%] justify-end   ml-auto gap-2 group",
         isEditing && "w-full max-w-lg"
       )}
     >
-      <div className={cn("flex flex-col gap-2", isEditing && "w-full")}>
+      <div className={cn("flex flex-col  gap-2", isEditing && "w-full")}>
         {isEditing ? (
           <EditableContent
             value={value}
@@ -221,7 +221,7 @@ export function HumanMessage({
             )}
           </div>
         ) : (
-          <p className="px-4 py-2 bg-blue-100 rounded-2xl w-fit ml-auto whitespace-pre-wrap break-words max-w-96">
+          <p className="px-4 py-2 bg-blue-100 rounded-2xl  w-fit ml-auto whitespace-pre-wrap break-words ">
             {contentString}
           </p>
         )}

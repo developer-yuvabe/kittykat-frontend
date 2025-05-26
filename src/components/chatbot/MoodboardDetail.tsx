@@ -22,6 +22,7 @@ import {
   SaveIcon,
 } from "../ui/custom-icon";
 import { Input } from "../ui/input";
+import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 interface MoodboardDetailProps {
   moodboard: MoodboardAsset;
@@ -176,7 +177,8 @@ export default function MoodboardDetail({
           onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
           disabled={!isEditingTitle}
         />
-        <Button
+        <TooltipIconButton
+          tooltip={isEditingTitle ? "Save Title" : "Edit Title"}
           variant="ghost"
           className="h-8 w-8 absolute top-1/2 -translate-y-1/2 right-0 hover:bg-transparent resize-none min-h-max"
           onClick={isEditingTitle ? handleSaveTitle : handleEditTitle}
@@ -186,7 +188,7 @@ export default function MoodboardDetail({
           ) : (
             <EditIcon size={18} className="" />
           )}
-        </Button>
+        </TooltipIconButton>
       </div>
 
       {/* Image details with gray background */}
@@ -226,7 +228,8 @@ export default function MoodboardDetail({
             }}
           />
           {comment?.trim() !== "" && (
-            <Button
+            <TooltipIconButton
+              tooltip={isEditingComment ? "Save Comment" : "Edit Comment"}
               variant="ghost"
               size="icon"
               className="h-8 w-8 absolute top-1 right-1 hover:!bg-transparent"
@@ -237,7 +240,7 @@ export default function MoodboardDetail({
               ) : (
                 <EditIcon size={18} className="" />
               )}
-            </Button>
+            </TooltipIconButton>
           )}
         </div>
         {/* )} */}
