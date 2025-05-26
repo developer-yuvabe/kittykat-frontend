@@ -1,5 +1,6 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Badge } from "@/components/ui/badge";
+import { Agents } from "@/types/types";
 import React from "react";
 
 interface CampaignOverviewProps {
@@ -43,7 +44,14 @@ export const CampaignOverview: React.FC<CampaignOverviewProps> = ({
           )}
         </div>
       }
-      context={{ title, description, tone }}
+      context={{
+        agentId: Agents.CAMPAIGN_AGENT,
+        data: {
+          title,
+          description,
+          tone,
+        },
+      }}
     />
   );
 };

@@ -21,7 +21,7 @@ import {
 import MoodboardDetail from "../MoodboardDetail";
 import { DislikeIcon, LikeIcon, MoreIcon } from "@/components/ui/custom-icon";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
-import { MoodboardAsset } from "@/types/types";
+import { Agents, MoodboardAsset } from "@/types/types";
 
 interface CampaignMoodboardProps {
   moodboards: MoodboardAsset[];
@@ -36,8 +36,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
 }) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [pinnedImages, setPinnedImages] = useState<string[]>([]);
-  const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
-    usePinnedContextStore();
+  const { addPinnedItem, removePinnedItem } = usePinnedContextStore();
 
   // Skip rendering if no moodboards
   if (!moodboards || moodboards.length === 0) return null;
@@ -46,20 +45,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
     setExpandedImage(expandedImage === url ? null : url);
   };
 
-  const handlePin = (url: string, title: string = "Pinned Image") => {
-    if (isPinned(url)) {
-      // Get the ID of the pinned item to remove it
-      const itemId = getPinnedItemId(url);
-      if (itemId) {
-        removePinnedItem();
-        toast.success("Image unpinned", { position: "top-right" });
-      }
-    } else {
-      // Add the item to pinned items
-      addPinnedItem(title, url);
-      toast.success("Image pinned to collection", { position: "top-right" });
-    }
-  };
+  const handlePin = (url: string, title: string = "Pinned Image") => {};
 
   const handleCopyPrompt = (prompt: string) => {
     navigator.clipboard.writeText(prompt);
@@ -291,7 +277,14 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
           )}
         </div>
       }
-      context={{ moodboards, expandedImage, pinnedImages }}
+      context={{
+        agentId: Agents.CAMPAIGN_AGENT,
+        data: {
+          moodboards,
+          expandedImage,
+          pinnedImages,
+        },
+      }}
     />
   );
 };
