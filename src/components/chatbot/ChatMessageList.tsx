@@ -7,6 +7,7 @@ import {
 } from "../thread/messages/ai";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
 import { StreamContextType } from "@/providers/langgraph/Stream";
+import { parseAsBoolean, useQueryState } from "nuqs";
 
 type ChatMessageListProps = {
   messages: Message[];
@@ -25,6 +26,11 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
   stream,
   handleRegenerate,
 }) => {
+  const [hideToolCalls] = useQueryState(
+    "hideToolCalls",
+    parseAsBoolean.withDefault(false)
+  );
+
   return (
     <>
       {messages
@@ -44,7 +50,6 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
               message={message}
               isLoading={isLoading}
               handleRegenerate={handleRegenerate}
-              agentId={stream.values?.next}
             />
           );
         })}
@@ -59,6 +64,16 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
       )}
 
       {isLoading && !firstTokenReceived && <AssistantMessageLoading />}
+
+      {/* Add agent name indicator which is triggered */}
+      {!hideToolCalls && (
+        <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg w-max">
+          <h3 className="text-gray-900 text-sm">
+            Agent Triggered:{" "}
+            <span className="font-semibold">{stream.values.next}</span>
+          </h3>
+        </div>
+      )}
     </>
   );
 };
