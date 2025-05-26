@@ -74,10 +74,12 @@ export function AssistantMessage({
   message,
   isLoading,
   handleRegenerate,
+  agentId,
 }: {
   message: Message | undefined;
   isLoading: boolean;
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
+  agentId?: string;
 }) {
   const content = message?.content ?? [];
   const contentString = getContentString(content);
@@ -141,7 +143,14 @@ export function AssistantMessage({
         <ToolResult message={message} />
       ) : (
         <div className="flex flex-col gap-2">
-          {/* Add agent name indicator if this is from an agent other than primary/master */}
+          {/* Add agent name indicator which is triggered */}
+          {!hideToolCalls && (
+            <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-gray-900 text-sm">
+                Agent Triggered: {agentId}
+              </h3>
+            </div>
+          )}
 
           {isLoading &&
             isLastMessage &&

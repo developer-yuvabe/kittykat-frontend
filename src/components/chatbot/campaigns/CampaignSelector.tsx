@@ -4,7 +4,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, Search } from "lucide-react";
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,6 +16,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { AvatarFallback, Avatar } from "@/components/ui/avatar";
+import { SearchIcon } from "@/components/ui/custom-icon";
 
 interface TransformedCampaign {
   id: string;
@@ -108,7 +109,7 @@ export default function CampaignSelector({
             className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
             onClick={(e) => e.stopPropagation()}
           >
-            <Search size={10} className="text-black" />
+            <SearchIcon size={10} className="text-black" />
             Select Campaign
           </Button>
         </PopoverTrigger>

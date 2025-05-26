@@ -10,7 +10,6 @@ import React, {
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { type Message } from "@langchain/langgraph-sdk";
 import {
-  uiMessageReducer,
   type UIMessage,
   type RemoveUIMessage,
 } from "@langchain/langgraph-sdk/react-ui";
@@ -21,28 +20,20 @@ import Splash from "@/components/shared/Splash";
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { env } from "@/config/env";
 
-export type StateType = { messages: Message[]; ui?: UIMessage[]; sources: any };
+export type StateType = { messages: Message[]; next?: string };
 
 const useTypedStream = useStream<
   StateType,
   {
     UpdateType: {
       messages?: Message[] | Message | string;
-      ui?: (UIMessage | RemoveUIMessage)[] | UIMessage | RemoveUIMessage;
-      sources?: {
-        brandingInformation?: Record<string, any>;
-        campaigns?: Record<string, any>;
-        [key: string]: any;
-      };
+      next?: string;
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }
 >;
 
-type StreamContextType = ReturnType<typeof useTypedStream> & {
-  updateCampaign: (updatedCampaign: { id: string; [key: string]: any }) => void;
-  getCampaignById: (id: string) => Record<string, any> | undefined;
-};
+export type StreamContextType = ReturnType<typeof useTypedStream> & {};
 
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
 
@@ -68,43 +59,14 @@ const StreamSession = ({
     apiKey: apiKey ?? undefined,
     assistantId,
     threadId: threadId ?? null,
-    onCustomEvent: (event, options) => {
-      options.mutate((prev) => {
-        const ui = uiMessageReducer(prev.ui ?? [], event);
-        return { ...prev, ui };
-      });
-    },
     onThreadId: (id) => {
       setThreadId(id);
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
 
-  // Adding updateCampaign function
-  const updateCampaign = (updatedCampaign: {
-    id: string;
-    [key: string]: any;
-  }) => {
-    const campaigns = streamValue.values.sources.campaigns || {};
-    const { id, ...rest } = updatedCampaign;
-    streamValue.values.sources.campaigns = {
-      ...campaigns,
-      [id]: { ...campaigns[id], ...rest },
-    };
-  };
-
-  // Adding getCampaignById function
-  const getCampaignById = (id: string) => {
-    const campaigns = streamValue.values.sources.campaigns || {};
-    console.log("stream camp id ", id);
-    console.log("streamCamp", campaigns);
-    return campaigns[id];
-  };
-
   return (
-    <StreamContext.Provider
-      value={{ ...streamValue, updateCampaign, getCampaignById }}
-    >
+    <StreamContext.Provider value={{ ...streamValue }}>
       {children}
     </StreamContext.Provider>
   );

@@ -9,6 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { DeleteIcon, SearchIcon } from "@/components/ui/custom-icon";
 import {
   Popover,
   PopoverContent,
@@ -17,7 +18,7 @@ import {
 import { getThreadDisplayName } from "@/lib/langgraph.utils";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
-import { Check, Search, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -204,7 +205,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
             className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
             onClick={(e) => e.stopPropagation()}
           >
-            <Search size={10} className="text-black" />
+            <SearchIcon size={10} className="text-black" />
             Load existing Brand
           </Button>
         </PopoverTrigger>
@@ -257,7 +258,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                           setDeleteDialogOpen(true);
                         }}
                       >
-                        <Trash2 size={14} className="text-red-500" />
+                        <DeleteIcon size={14} />
                       </Button>
                     </div>
                   </CommandItem>
@@ -271,8 +272,8 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                     className="w-full"
                     onClick={() => setDeleteAllDialogOpen(true)}
                   >
-                    <Trash2 size={14} className="mr-2" />
-                    Delete All Brands
+                    <DeleteIcon size={14} className="mr-2" color="#FFF" />
+                    Delete all brands
                   </Button>
                 </div>
               )}
@@ -298,7 +299,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
       <ReusableAlertDialog
         open={deleteAllDialogOpen}
         onOpenChange={setDeleteAllDialogOpen}
-        title="Delete All Brands"
+        title="Delete all Bbrands"
         description={`Are you sure you want to delete all brands? This will remove ${
           filteredThreads.length
         } brand${

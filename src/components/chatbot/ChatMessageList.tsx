@@ -6,13 +6,14 @@ import {
   AssistantMessageLoading,
 } from "../thread/messages/ai";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
+import { StreamContextType } from "@/providers/langgraph/Stream";
 
 type ChatMessageListProps = {
   messages: Message[];
   isLoading: boolean;
   firstTokenReceived: boolean;
   hasNoAIOrToolMessages: boolean;
-  stream: any;
+  stream: StreamContextType;
   handleRegenerate: (parentCheckpoint?: Checkpoint | null) => void;
 };
 
@@ -43,6 +44,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
               message={message}
               isLoading={isLoading}
               handleRegenerate={handleRegenerate}
+              agentId={stream.values?.next}
             />
           );
         })}
