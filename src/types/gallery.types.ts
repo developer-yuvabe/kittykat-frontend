@@ -170,11 +170,7 @@ export type GalleryFilters = {
   source?: string;
   creator?: string;
   searchQuery?: string;
-  selectedFilters?: {
-    brands: string[];
-    categories: string[];
-    campaigns: string[];
-  };
+  selectedFilters?: EnhancedSelectedFilters;
 };
 
 export interface FileWithStatus {
@@ -182,4 +178,29 @@ export interface FileWithStatus {
   status: "pending" | "uploading" | "success" | "error";
   url?: string;
   error?: string;
+}
+
+export interface EnhancedSelectedFilters {
+  // Existing filters
+  brands: string[];
+  campaigns: string[];
+  product_categories: string[];
+
+  // New content-based filters
+  has_product?: boolean;
+  has_people?: boolean;
+  has_lifestyle_context?: boolean;
+
+  // Asset property filters
+  asset_types: string[];
+  asset_sources: string[];
+  media_format: string[];
+  aspect_ratio: string[];
+
+  // Workflow and status filters
+  workflow_status: string[];
+
+  // User preference filters
+  is_favourite?: boolean;
+  is_archived?: boolean;
 }

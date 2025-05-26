@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { UploadDropzone } from "./UploadDropzone";
 import { SearchFilters } from "./SearchFilters";
@@ -13,6 +13,7 @@ import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { BrandCampaignListResponse } from "@/types/gallery.types";
+import { debounce } from "lodash";
 
 export function MediaLibrary() {
   // UI State
@@ -25,11 +26,23 @@ export function MediaLibrary() {
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState({
-    brands: [] as string[],
-    categories: [] as string[],
-    campaigns: [] as string[],
-  });
+
+  const [selectedFilters, setSelectedFilters] =
+    useState<EnhancedSelectedFilters>({
+      brands: [],
+      campaigns: [],
+      product_categories: [],
+      asset_types: [],
+      asset_sources: [],
+      media_format: [],
+      aspect_ratio: [],
+      workflow_status: [],
+      has_product: undefined,
+      has_people: undefined,
+      has_lifestyle_context: undefined,
+      is_favourite: undefined,
+      is_archived: undefined,
+    });
 
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
@@ -56,6 +69,8 @@ export function MediaLibrary() {
     searchQuery,
     selectedFilters,
   });
+
+  console.log("Gallery items:", galleryItems);
 
   useEffect(() => {
     if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
@@ -125,9 +140,13 @@ export function MediaLibrary() {
     }
   };
 
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-  };
+  const handleSearchChange = useMemo(
+    () =>
+      debounce((query: string) => {
+        setSearchQuery(query);
+      }, 500),
+    [] // add dependencies if needed
+  );
 
   const handleSourceChange = (value: string) => {
     setSource(value);
@@ -145,7 +164,7 @@ export function MediaLibrary() {
     setShowFilters(!showFilters);
   };
 
-  const handleApplyFilters = (filters: any) => {
+  const handleApplyFilters = (filters: EnhancedSelectedFilters) => {
     setSelectedFilters(filters);
   };
 

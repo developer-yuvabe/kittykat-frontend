@@ -92,17 +92,6 @@ export function AssistantMessage({
     return null;
   }
 
-  if (
-    message?.type === "ai" &&
-    message.content.length === 0 &&
-    isLastMessage &&
-    hasToolCalls
-  ) {
-    if (message?.tool_calls) {
-      return <AssistantMessageLoading tool={message.tool_calls[0]} />;
-    }
-  }
-
   return (
     <div className="flex items-start gap-2 mr-auto group">
       {isToolResult ? (

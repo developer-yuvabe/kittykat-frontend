@@ -1,4 +1,5 @@
 import {
+  EnhancedSelectedFilters,
   FileWithStatus,
   GalleryFilters,
   GalleryItem,
@@ -180,4 +181,57 @@ export const getStatusColor = (status: FileWithStatus["status"]) => {
     default:
       return "text-gray-600";
   }
+};
+
+export const ASSET_TYPE_OPTIONS = [
+  { value: "generated", label: "Generated" },
+  { value: "uploaded", label: "Uploaded" },
+  { value: "edited", label: "Edited" },
+];
+
+export const MEDIA_FORMAT_OPTIONS = [
+  { value: "jpg", label: "JPG" },
+  { value: "jpeg", label: "JPEG" },
+  { value: "png", label: "PNG" },
+  { value: "gif", label: "GIF" },
+  { value: "webp", label: "WebP" },
+  { value: "mp4", label: "MP4" },
+  { value: "mov", label: "MOV" },
+  { value: "webm", label: "WebM" },
+];
+
+export const ASPECT_RATIO_OPTIONS = [
+  { value: "1:1", label: "Square (1:1)" },
+  { value: "16:9", label: "Landscape (16:9)" },
+  { value: "9:16", label: "Portrait (9:16)" },
+  { value: "4:3", label: "Standard (4:3)" },
+  { value: "3:4", label: "Portrait (3:4)" },
+  { value: "21:9", label: "Ultra Wide (21:9)" },
+];
+
+export const WORKFLOW_STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
+  { value: "in_review", label: "In Review" },
+  { value: "approved", label: "Approved" },
+  { value: "ready_to_publish", label: "Ready to Publish" },
+];
+
+// Calculate active filters count
+export const getActiveFiltersCount = (filters: EnhancedSelectedFilters) => {
+  let count = 0;
+  if (filters.brands.length > 0) count += filters.brands.length;
+  if (filters.campaigns.length > 0) count += filters.campaigns.length;
+  if (filters.product_categories.length > 0)
+    count += filters.product_categories.length;
+  if (filters.asset_types.length > 0) count += filters.asset_types.length;
+  if (filters.media_format.length > 0) count += filters.media_format.length;
+  if (filters.aspect_ratio.length > 0) count += filters.aspect_ratio.length;
+  if (filters.workflow_status.length > 0)
+    count += filters.workflow_status.length;
+  if (filters.has_product === true) count++;
+  if (filters.has_people === true) count++;
+  if (filters.has_lifestyle_context === true) count++;
+  if (filters.is_favourite === true) count++;
+  if (filters.is_archived === true) count++;
+  return count;
 };
