@@ -131,3 +131,8 @@ export interface QueueItem {
   type: "image";
   created_at: string;
 }
+
+export type Context = {
+  agentId?: Agents;
+  data: Record<string, any> | string;
+};

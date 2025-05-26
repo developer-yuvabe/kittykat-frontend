@@ -84,8 +84,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleRemoveFile,
   threadId,
 }) => {
-  const pinnedItem = usePinnedContextStore((state) => state.pinnedItem);
-  const clearPins = usePinnedContextStore((state) => state.clearPinnedItem);
+  const { removePinnedItem, pinnedItem } = usePinnedContextStore();
 
   return (
     <div className="relative z-10 w-full  mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
@@ -96,17 +95,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <div className="flex flex-col gap-1 flex-1 border-l pl-3 border-gray-900">
               <span className="text-xs text-gray-500">Focused only on</span>
 
-              <div
-                key={pinnedItem.id}
-                className="relative group flex items-center gap-2"
-              >
+              <div className="relative group flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
                   {pinnedItem.title}
                 </span>
               </div>
 
               <button
-                onClick={() => clearPins()}
+                onClick={() => removePinnedItem()}
                 className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
               >
                 <X size={16} />

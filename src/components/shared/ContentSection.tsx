@@ -6,15 +6,12 @@ import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { toast } from "sonner";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 import { PinIcon } from "../ui/custom-icon";
-import { Agents } from "@/types/types";
+import { Context } from "@/types/types";
 
 interface ContentSectionProps {
   title: string;
   content: React.ReactNode;
-  context: {
-    agentId?: Agents;
-    data: Record<string, any> | string;
-  };
+  context: Context;
 }
 
 export function ContentSection({
@@ -23,9 +20,8 @@ export function ContentSection({
   context,
 }: ContentSectionProps) {
   const [copied, setCopied] = useState(false);
-  const { addPinnedItem, removePinnedItem, isPinned, getPinnedItemId } =
+  const { addPinnedItem, removePinnedItem, pinnedItem } =
     usePinnedContextStore();
-  const isPinnedItem = isPinned(context);
 
   const handleCopy = async () => {
     try {
@@ -42,14 +38,14 @@ export function ContentSection({
   };
 
   const handlePin = () => {
-    if (isPinnedItem) {
-      const itemId = getPinnedItemId(context);
-      if (itemId) {
-        removePinnedItem();
-        toast(`${title} has been unpinned`, { position: "top-right" });
-      }
+    if (pinnedItem?.title === title) {
+      removePinnedItem();
+      toast(`${title} has been unpinned`, { position: "top-right" });
     } else {
-      addPinnedItem(title, context);
+      addPinnedItem({
+        title,
+        context,
+      });
       toast(`${title} has been pinned`, { position: "top-right" });
     }
   };
@@ -68,15 +64,17 @@ export function ContentSection({
               {copied ? <Check size={16} /> : <Copy size={16} />}
             </TooltipIconButton>
             <TooltipIconButton
-              tooltip={isPinnedItem ? "Unpin context" : "Pin context"}
+              tooltip={
+                pinnedItem?.title === title ? "Unpin context" : "Pin context"
+              }
               onClick={handlePin}
               className={`transition ${
-                isPinnedItem
+                pinnedItem?.title === title
                   ? "text-blue-500"
                   : "text-[#6e7787] hover:text-[#171a1f]"
               }`}
             >
-              {isPinnedItem ? (
+              {pinnedItem?.title === title ? (
                 <PinIcon size={18} color="#636AE8" />
               ) : (
                 <PinIcon size={18} />

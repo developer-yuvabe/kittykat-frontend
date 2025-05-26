@@ -7,6 +7,7 @@ import {
 import {
   addFileWrappers,
   ensureToolCallsHaveResponses,
+  getPinnedItemContextMessage,
   removeFileWrappers,
 } from "@/lib/langgraph.utils";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,7 @@ export function Thread() {
   const lastInteractedBrandId = useUserStore((state) =>
     state.getLastInteractedBrandId()
   );
-
+  const { pinnedItem } = usePinnedContextStore();
   const [threadId, setThreadId] = useQueryState("threadId");
   const { threads, threadsLoading, setThreadsLoading } = useThreads();
   const [initializingThread, setInitializingThread] = useState(true);
@@ -152,23 +153,18 @@ export function Thread() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     setFirstTokenReceived(false);
-    const pinnedItem = usePinnedContextStore.getState().pinnedItem;
     const pinnedContextMessage: Message | null = pinnedItem
       ? {
           id: `${DO_NOT_RENDER_ID_PREFIX}${uuidv4()}`,
-          type: "system",
+          type: "ai",
           content: [
             {
               type: "text",
-              text: `Focus only on the following context with the associated data:\nTitle: ${
-                pinnedItem.title
-              }\nContext: ${JSON.stringify(pinnedItem.context)}`,
+              text: getPinnedItemContextMessage(pinnedItem),
             },
           ],
         }
       : null;
-
-    console.log("pinnedContextMessage", pinnedContextMessage);
 
     resetFiles();
 
@@ -193,7 +189,7 @@ export function Thread() {
         },
       ],
     }));
-    resetFiles();
+
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
     stream.submit(
       {
@@ -262,13 +258,12 @@ export function Thread() {
   const resetFiles = () => {
     setFileList([]);
   };
-  const clearPins = usePinnedContextStore((state) => state.clearPinnedItem);
+  const { removePinnedItem } = usePinnedContextStore();
 
   useEffect(() => {
     if (threadId) {
       setLastInteractedBrandId(threadId);
-
-      clearPins();
+      removePinnedItem();
     }
   }, [threadId]);
 
