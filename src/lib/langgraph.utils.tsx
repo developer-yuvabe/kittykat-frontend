@@ -8,6 +8,7 @@ import { FileTextIcon, Music, Video, Image } from "lucide-react";
 import { Color, MessageContentFiles } from "@/types/langgraph.types";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
+import { PinnedItem } from "@/store/usePinnedContextStore";
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
@@ -270,3 +271,19 @@ export function getThreadSearchMetadata(
     return { graph_id: assistantId };
   }
 }
+
+export const getPinnedItemContextMessage = (pinnedItem: PinnedItem) => {
+  const { title, context } = pinnedItem;
+  const agentHint = context.agentId
+    ? `You must use this agent: ${context.agentId}`
+    : "";
+
+  const readableContext =
+    typeof context.data === "string"
+      ? context.data
+      : JSON.stringify(context.data, null, 2); // Pretty-printed JSON
+
+  return `${
+    agentHint ? agentHint + "\n\n" : ""
+  }Focus only on "${title}".\n\nHere is the relevant context:\n${readableContext}`;
+};
