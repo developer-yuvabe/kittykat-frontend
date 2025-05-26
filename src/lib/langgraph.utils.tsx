@@ -283,7 +283,9 @@ export const getPinnedItemContextMessage = (pinnedItem: PinnedItem) => {
       ? context.data
       : JSON.stringify(context.data, null, 2); // Pretty-printed JSON
 
-  return `${
+  return `<kittykat-do-not-render>${
     agentHint ? agentHint + "\n\n" : ""
-  }Focus only on "${title}".\n\nHere is the relevant context:\n${readableContext}`;
+  }Focus only on "${title}".\n\nHere is the relevant context:\n${readableContext}\n
+  Please ignore <kittykat-do-not-render> tag.
+  </kittykat-do-not-render>`;
 };

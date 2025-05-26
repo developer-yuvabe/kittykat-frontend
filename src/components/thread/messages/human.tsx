@@ -2,7 +2,7 @@ import React from "react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { Message } from "@langchain/langgraph-sdk";
 import { useState, useEffect, JSX } from "react";
-import { getContentString } from "../utils";
+import { getContentString, removeKittyKatTags } from "../utils";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { BranchSwitcher, CommandBar } from "./shared";
@@ -166,7 +166,7 @@ export function HumanMessage({
 
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState("");
-  const contentString = getContentString(message.content);
+  const contentString = removeKittyKatTags(getContentString(message.content));
 
   // Check if this is a file message
   const isFileMessage =

@@ -157,17 +157,8 @@ export function Thread() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     setFirstTokenReceived(false);
-    const pinnedContextMessage: Message | null = pinnedItem
-      ? {
-          id: `${DO_NOT_RENDER_ID_PREFIX}${uuidv4()}`,
-          type: "ai",
-          content: [
-            {
-              type: "text",
-              text: getPinnedItemContextMessage(pinnedItem),
-            },
-          ],
-        }
+    const pinnedContextMessage: string | null = pinnedItem
+      ? getPinnedItemContextMessage(pinnedItem)
       : null;
 
     resetFiles();
@@ -178,7 +169,9 @@ export function Thread() {
       content: [
         {
           type: "text",
-          text: input,
+          text: pinnedContextMessage
+            ? `${pinnedContextMessage}${input}`
+            : input,
         },
       ],
     };
@@ -197,12 +190,7 @@ export function Thread() {
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
     stream.submit(
       {
-        messages: [
-          ...toolMessages,
-          ...newFileList,
-          ...(pinnedContextMessage ? [pinnedContextMessage] : []),
-          newHumanMessage,
-        ],
+        messages: [...toolMessages, ...newFileList, newHumanMessage],
       },
       {
         streamMode: ["values"],
