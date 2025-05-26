@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { MdOutlineCampaign } from "react-icons/md";
 import { DynamicContentSection } from "../DynamicSection";
-import { ThreadDetails } from "@/types/types";
+import { Agents, ThreadDetails } from "@/types/types";
 import { CampaignColors } from "./CampaignColors";
 import { CampaignMoodboard } from "./CampaignMoodboards";
 import { CampaignOverview } from "./CampaignOverview";
@@ -78,6 +78,7 @@ export const CampaignSection: React.FC<{
             <CampaignColors colors={currentCampaign?.colors || []} />
 
             <DynamicContentSection
+              agentId={Agents.CAMPAIGN_AGENT}
               dynamicData={Object.fromEntries(
                 Object.entries(currentCampaign || {}).filter(
                   ([key]) =>

@@ -14,7 +14,7 @@ export interface BaseApiResponse<T> {
 
 export enum Agents {
   BRANDING_AGENT = "brandingAgent",
-  CONTENT_AGENT = "contentAgent",
+  CAMPAIGN_AGENT = "campaignAgent",
 }
 
 export interface MoodboardAsset {

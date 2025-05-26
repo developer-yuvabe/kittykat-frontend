@@ -2,9 +2,11 @@ import React from "react";
 import { capitalizeKey } from "@/lib/langgraph.utils";
 import { ContentSection } from "../shared/ContentSection";
 import { Badge } from "../ui/badge";
+import { Agents } from "@/types/types";
 
 interface DynamicContentSectionProps {
   dynamicData: Record<string, unknown>;
+  agentId?: Agents;
 }
 const RenderValue: React.FC<{ value: unknown; depth?: number }> = ({
   value,
@@ -84,6 +86,7 @@ const RenderValue: React.FC<{ value: unknown; depth?: number }> = ({
 
 export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
   dynamicData,
+  agentId,
 }) => {
   if (!dynamicData || Object.keys(dynamicData).length === 0) return null;
 
@@ -98,7 +101,12 @@ export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
               <RenderValue value={value} />
             </div>
           }
-          context={{ [key]: value }}
+          context={{
+            agentId,
+            data: {
+              [key]: value,
+            },
+          }}
         />
       ))}
     </>

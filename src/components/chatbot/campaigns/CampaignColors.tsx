@@ -4,6 +4,7 @@ import { getFontColorForBackground } from "@/lib/langgraph.utils";
 import { toast } from "sonner";
 import React from "react";
 import { Copy } from "lucide-react";
+import { Agents } from "@/types/types";
 
 interface CampaignColorsProps {
   colors: string[];
@@ -57,7 +58,10 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
           ))}
         </div>
       }
-      context={{ colors }}
+      context={{
+        agentId: Agents.CAMPAIGN_AGENT,
+        data: { colors },
+      }}
     />
   );
 };
