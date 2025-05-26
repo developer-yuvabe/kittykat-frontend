@@ -49,19 +49,21 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
 
             {shouldShowCarousel &&
               (status === "succeeded" ? (
-                <EmblaCarousel
-                  data={posts}
-                  renderItem={({ item }) => (
-                    <div onClick={() => setExpandedImage(item.url)}>
-                      <img
-                        src={item.url || "/placeholder.svg"}
-                        alt={item.caption}
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  options={{ align: "center", loop: true }}
-                />
+                <div className="flex justify-center">
+                  <EmblaCarousel
+                    data={posts}
+                    renderItem={({ item }) => (
+                      <div onClick={() => setExpandedImage(item.url)}>
+                        <img
+                          src={item.url || "/placeholder.svg"}
+                          alt={item.caption}
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    options={{ align: "center", loop: true }}
+                  />
+                </div>
               ) : (
                 <EmblaCarousel
                   data={Array.from({ length: 10 })}

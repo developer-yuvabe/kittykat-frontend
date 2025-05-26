@@ -153,7 +153,12 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                         <div className="absolute top-0 right-1 z-10 flex space-x-1">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <MoreIcon color="white" size={24} />
+                              <TooltipIconButton
+                                tooltip="More"
+                                className="hover:bg-black/50 "
+                              >
+                                <MoreIcon size={24} color="#ffffff" />
+                              </TooltipIconButton>
                             </PopoverTrigger>
                             <PopoverContent
                               className="w-68 h-max max-h-128 overflow-auto p-2"
@@ -182,7 +187,8 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                             Rate this image
                           </div>
                           <div className="flex space-x-2">
-                            <button
+                            <TooltipIconButton
+                              tooltip="Dislike"
                               onClick={() =>
                                 handleLikeDislike(false, moodboardId)
                               }
@@ -197,8 +203,9 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                                     : "white"
                                 }
                               />
-                            </button>
-                            <button
+                            </TooltipIconButton>
+                            <TooltipIconButton
+                              tooltip="Like"
                               onClick={() =>
                                 handleLikeDislike(true, moodboardId)
                               }
@@ -213,7 +220,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                                     : "white"
                                 }
                               />
-                            </button>
+                            </TooltipIconButton>
                           </div>
                         </div>
                       </div>

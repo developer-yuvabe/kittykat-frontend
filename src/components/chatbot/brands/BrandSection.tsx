@@ -33,7 +33,25 @@ export const BrandSection: React.FC<{
             <CardTitle className="text-xl font-semibold text-primary">
               <div className="flex justify-between">
                 <div>No brand found</div>
-                <BrandSelector setThreadId={setThreadId} />
+
+                <div className="flex justify-between gap-x-2">
+                  <div>
+                    <BrandSelector setThreadId={setThreadId} />
+                  </div>
+                  <TooltipIconButton
+                    size="lg"
+                    className="p-4"
+                    tooltip="New Brand"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setThreadId(null);
+                      clearPinnedItems();
+                    }}
+                  >
+                    <CirclePlus className="size-5" />
+                  </TooltipIconButton>
+                </div>
               </div>
             </CardTitle>
           </CardHeader>

@@ -209,7 +209,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
             Load existing Brand
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
+        <PopoverContent className="w-[300px] relative  p-0">
           <Command shouldFilter={false}>
             <div className="flex items-center border-b px-3">
               <CommandInput
@@ -231,12 +231,12 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                     onSelect={() => {
                       handleThreadSelect(thread.id);
                     }}
-                    className="flex items-center justify-between group"
+                    className="flex items-center  justify-between group"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
                   >
-                    <div className="flex items-center">
+                    <div className="flex w-[230px] items-center">
                       <Avatar className="h-6 w-6 mr-2">
                         <AvatarFallback className="bg-blue-500 text-white">
                           {thread.initial}
@@ -265,7 +265,7 @@ export default function BrandSelector({ setThreadId }: BrandSelectorProps) {
                 ))}
               </CommandGroup>
               {filteredThreads.length > 0 && (
-                <div className="p-2 border-t sticky bottom-0 bg-white">
+                <div className="p-2  border-t sticky bottom-0 bg-white">
                   <Button
                     variant="destructive"
                     size="sm"

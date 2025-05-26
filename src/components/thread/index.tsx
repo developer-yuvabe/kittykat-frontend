@@ -35,6 +35,8 @@ import {
   ResizablePanelGroup,
 } from "../ui/resizable";
 import { ChatSkeleton } from "./messages/message-skeleton";
+import { useBrandUpdates } from "@/hooks/useBrandUpdates";
+import { ChatSuggestions } from "../chatbot/ChatSuggestions";
 
 export function Thread() {
   const lastInteractedBrandId = useUserStore((state) =>
@@ -44,6 +46,7 @@ export function Thread() {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { threads, threadsLoading, setThreadsLoading } = useThreads();
   const [initializingThread, setInitializingThread] = useState(true);
+  const { isFectchingThreadInfo } = useBrandUpdates(threadId);
 
   const handleThreadChange = (id: string | null): void => {
     setThreadsLoading(true);
@@ -51,10 +54,11 @@ export function Thread() {
     (async () => {
       if (id) {
         setThreadId(id);
+        // Mock wait for 2 sec
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      } else {
+        setThreadId(id);
       }
-
-      // Mock wait for 2 sec
-      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       setThreadsLoading(false);
     })();
@@ -307,7 +311,9 @@ export function Thread() {
                 )}
 
                 {/* Only show skeleton during loading, nothing else */}
-                {threadsLoading || initializingThread ? (
+                {threadsLoading ||
+                initializingThread ||
+                isFectchingThreadInfo ? (
                   <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
                     <div className="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full">
                       <ChatSkeleton />
@@ -317,7 +323,7 @@ export function Thread() {
                   <StickyToBottomContent
                     className={cn(
                       "absolute inset-0 px-4 overflow-y-scroll scrollbar",
-                      !chatStarted && "flex flex-col items-stretch mt-[25vh]",
+                      !chatStarted && "flex flex-col items-stretch mt-[15vh]",
                       chatStarted && "grid grid-rows-[1fr_auto]"
                     )}
                     contentClassName="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full"
@@ -344,26 +350,30 @@ export function Thread() {
                                 className="flex-shrink-0"
                               />
                             </div>
-
+                            <ChatSuggestions
+                              setFirstTokenReceived={setFirstTokenReceived}
+                            />
                             <ScrollToBottom className="absolute mb-0 -translate-x-1/3 bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
                           </>
                         )}
 
                         {/* Always show the chat input unless we're in loading states */}
                         {!(threadsLoading || initializingThread) && (
-                          <ChatInput
-                            input={input}
-                            setInput={setInput}
-                            handleSubmit={handleSubmit}
-                            hideToolCalls={hideToolCalls}
-                            setHideToolCalls={setHideToolCalls}
-                            isLoading={isLoading}
-                            stream={stream}
-                            handleAddFile={handleAddFile}
-                            fileList={fileList}
-                            handleRemoveFile={handleRemoveFile}
-                            threadId={threadId}
-                          />
+                          <>
+                            <ChatInput
+                              input={input}
+                              setInput={setInput}
+                              handleSubmit={handleSubmit}
+                              hideToolCalls={hideToolCalls}
+                              setHideToolCalls={setHideToolCalls}
+                              isLoading={isLoading}
+                              stream={stream}
+                              handleAddFile={handleAddFile}
+                              fileList={fileList}
+                              handleRemoveFile={handleRemoveFile}
+                              threadId={threadId}
+                            />
+                          </>
                         )}
                       </div>
                     }
