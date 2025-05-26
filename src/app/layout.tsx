@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { AppConfig } from "@/config/app.config";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import ReactQueryProvider from "@/providers/langgraph/react-query-provider";
+import NextTopLoader from "nextjs-toploader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
         <NuqsAdapter>
           <ReactQueryProvider>{children}</ReactQueryProvider>
         </NuqsAdapter>
+        <NextTopLoader color="#7C3AED" showSpinner={false} />
         <Toaster richColors />
       </body>
     </html>
