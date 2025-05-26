@@ -1,5 +1,7 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Badge } from "@/components/ui/badge";
+import { Agents } from "@/types/types";
+import React from "react";
 
 interface FontDetails {
   name: string;
@@ -69,7 +71,13 @@ export const BrandTypography: React.FC<TypographyProps> = ({
             renderFontDetails("Secondary Font", validSecondaryFont)}
         </div>
       }
-      context={{ primaryFont, secondaryFont }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: {
+          primaryFont,
+          secondaryFont,
+        },
+      }}
     />
   );
 };

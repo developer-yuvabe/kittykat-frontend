@@ -212,7 +212,6 @@ export function Thread() {
             ...(prev.messages ?? []),
             ...toolMessages,
             ...newFileList,
-
             newHumanMessage,
           ],
         }),

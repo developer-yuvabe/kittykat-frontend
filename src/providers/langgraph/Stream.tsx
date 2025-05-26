@@ -63,6 +63,9 @@ const StreamSession = ({
       setThreadId(id);
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
+    defaultHeaders: {
+      user_id: "kittykatssss",
+    },
   });
 
   return (

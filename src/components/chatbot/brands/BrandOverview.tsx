@@ -1,14 +1,18 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Badge } from "@/components/ui/badge";
+import { Agents } from "@/types/types";
+import React from "react";
 
 interface BrandOverviewProps {
   tagline?: string;
   values?: string[];
+  name?: string;
 }
 
 export const BrandOverview: React.FC<BrandOverviewProps> = ({
   tagline,
   values,
+  name,
 }) => {
   return (
     <ContentSection
@@ -40,7 +44,14 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
           )}
         </div>
       }
-      context={{ tagline, values }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: {
+          tagline,
+          values,
+          name,
+        },
+      }}
     />
   );
 };

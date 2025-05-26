@@ -18,7 +18,7 @@ import {
 import { getThreadDisplayName } from "@/lib/langgraph.utils";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { TransformedThread } from "@/types/langgraph.types";
-import { Check, Trash2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

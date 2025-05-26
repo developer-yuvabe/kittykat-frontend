@@ -4,7 +4,7 @@ import { Loader } from "@/components/ui/loader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { socialLinks } from "@/lib/icons";
 import { isValidUrl } from "@/lib/utils";
-import { ThreadBrand } from "@/types/types";
+import { Agents, ThreadBrand } from "@/types/types";
 import React, { useMemo, useState } from "react";
 
 interface BrandMediaProps {
@@ -118,7 +118,12 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
           )}
         </div>
       }
-      context={{ brandMedia, socialMedia }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: {
+          socialMedia,
+        },
+      }}
     />
   );
 };

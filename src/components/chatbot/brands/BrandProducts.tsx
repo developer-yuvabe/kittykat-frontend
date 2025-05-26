@@ -1,5 +1,7 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Badge } from "@/components/ui/badge";
+import { Agents } from "@/types/types";
+import React from "react";
 
 interface ProductsSectionProps {
   products: string[];
@@ -24,7 +26,12 @@ export const BrandProducts: React.FC<ProductsSectionProps> = ({ products }) => {
           ))}
         </div>
       }
-      context={{ products }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: {
+          products,
+        },
+      }}
     />
   );
 };
