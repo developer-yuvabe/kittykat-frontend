@@ -7,3 +7,11 @@ export function getContentString(content: Message["content"]): string {
     .map((c) => c.text);
   return texts.join(" ");
 }
+
+export function removeKittyKatTags(content: string): string {
+  // Remove <kittykat-do-not-render> tags and their content
+  return content.replace(
+    /<kittykat-do-not-render>[\s\S]*?<\/kittykat-do-not-render>/g,
+    ""
+  );
+}

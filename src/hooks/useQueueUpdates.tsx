@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 export function useQueueUpdates(userId?: string) {
   const [isFectchingQueueInfo, setIsFectchingQueueInfo] = useState(false);
-  const [data, setData] = useState<QueueItem[] | null>(null);
+  const [data, setData] = useState<QueueItem[]>([]);
 
   useEffect(() => {
     if (!userId) {
@@ -17,7 +17,7 @@ export function useQueueUpdates(userId?: string) {
     eventSource.addEventListener("queue_info", (event) => {
       const parsed = JSON.parse(event.data);
       setIsFectchingQueueInfo(false);
-      setData(parsed as QueueItem[]);
+      setData(parsed || []);
     });
 
     eventSource.onerror = (err) => {
@@ -27,7 +27,7 @@ export function useQueueUpdates(userId?: string) {
     return () => {
       eventSource.close();
       setIsFectchingQueueInfo(true);
-      setData(null);
+      setData([]);
     };
   }, [userId]);
 
