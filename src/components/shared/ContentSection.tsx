@@ -26,7 +26,7 @@ export function ContentSection({
   const handleCopy = async () => {
     try {
       const contextText =
-        typeof context === "string" ? context : JSON.stringify(context);
+        typeof context === "string" ? context : JSON.stringify(context.data);
       await navigator.clipboard.writeText(contextText);
       setCopied(true);
       toast.success(`${title} has been copied`, { position: "top-right" });

@@ -1,23 +1,21 @@
-import React from "react";
-import { parsePartialJson } from "@langchain/core/output_parsers";
-import { useStreamContext } from "@/providers/langgraph/Stream";
-import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
-import { getContentString } from "../utils";
-import { BranchSwitcher, CommandBar } from "./shared";
-import { MarkdownText } from "../markdown-text";
-import { cn } from "@/lib/utils";
-import { ToolCalls, ToolResult } from "./tool-calls";
-import { MessageContentComplex } from "@langchain/core/messages";
-import { Fragment } from "react/jsx-runtime";
-import { ThreadView } from "../agent-inbox";
-import { useQueryState, parseAsBoolean } from "nuqs";
-import { GenericInterruptView } from "./generic-interrupt";
+import { TextShimmer } from "@/components/ui/text-shimmer";
 import {
   getLoadingMessageForTool,
   isAgentInboxInterruptSchema,
 } from "@/lib/langgraph.utils";
-import { TextShimmer } from "@/components/ui/text-shimmer";
+import { cn } from "@/lib/utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { MessageContentComplex } from "@langchain/core/messages";
+import { parsePartialJson } from "@langchain/core/output_parsers";
+import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
+import { ThreadView } from "../agent-inbox";
+import { MarkdownText } from "../markdown-text";
+import { getContentString } from "../utils";
+import { GenericInterruptView } from "./generic-interrupt";
+import { BranchSwitcher, CommandBar } from "./shared";
+import { ToolCalls, ToolResult } from "./tool-calls";
 
 function parseAnthropicStreamedToolCalls(
   content: MessageContentComplex[]
@@ -46,12 +44,10 @@ export function AssistantMessage({
   message,
   isLoading,
   handleRegenerate,
-  agentId,
 }: {
   message: Message | undefined;
   isLoading: boolean;
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
-  agentId?: string;
 }) {
   const content = message?.content ?? [];
   const contentString = getContentString(content);
@@ -113,15 +109,6 @@ export function AssistantMessage({
         <ToolResult message={message} />
       ) : (
         <div className="flex flex-col gap-2">
-          {/* Add agent name indicator which is triggered */}
-          {!hideToolCalls && (
-            <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-900 text-sm">
-                Agent Triggered: {agentId}
-              </h3>
-            </div>
-          )}
-
           {isLoading &&
             isLastMessage &&
             contentString.length === 0 &&

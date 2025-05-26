@@ -6,10 +6,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { Copy, Expand } from "lucide-react";
 import React, { useState } from "react";
-import { BsPinAngle } from "react-icons/bs";
 import { toast } from "sonner";
 import {
   Carousel,
@@ -19,7 +17,12 @@ import {
   CarouselPrevious,
 } from "../../ui/carousel";
 import MoodboardDetail from "../MoodboardDetail";
-import { DislikeIcon, LikeIcon, MoreIcon } from "@/components/ui/custom-icon";
+import {
+  DislikeIcon,
+  ExpandIcon,
+  LikeIcon,
+  MoreIcon,
+} from "@/components/ui/custom-icon";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
 import { Agents, MoodboardAsset } from "@/types/types";
 
@@ -35,8 +38,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
   campaignId,
 }) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  const [pinnedImages, setPinnedImages] = useState<string[]>([]);
-  const { addPinnedItem, removePinnedItem } = usePinnedContextStore();
 
   // Skip rendering if no moodboards
   if (!moodboards || moodboards.length === 0) return null;
@@ -44,8 +45,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
   const handleExpand = (url: string) => {
     setExpandedImage(expandedImage === url ? null : url);
   };
-
-  const handlePin = (url: string, title: string = "Pinned Image") => {};
 
   const handleCopyPrompt = (prompt: string) => {
     navigator.clipboard.writeText(prompt);
@@ -94,7 +93,7 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                           onClick={() => handleExpand(moodboard.asset_url)}
                           className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
                         >
-                          <Expand size={16} />
+                          <ExpandIcon size={16} />
                         </TooltipIconButton>
 
                         <Popover>
@@ -129,23 +128,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                             </div>
                           </PopoverContent>
                         </Popover>
-
-                        <TooltipIconButton
-                          tooltip={
-                            pinnedImages.includes(moodboard.asset_url)
-                              ? "Unpin"
-                              : "Pin"
-                          }
-                          side="top"
-                          onClick={() => handlePin(moodboard.asset_url)}
-                          className={`p-1 rounded-full shadow ${
-                            pinnedImages.includes(moodboard.asset_url)
-                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                              : "bg-white hover:bg-gray-100"
-                          }`}
-                        >
-                          <BsPinAngle size={16} />
-                        </TooltipIconButton>
                       </div>
 
                       {/* Image Container */}
@@ -282,7 +264,6 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
         data: {
           moodboards,
           expandedImage,
-          pinnedImages,
         },
       }}
     />
