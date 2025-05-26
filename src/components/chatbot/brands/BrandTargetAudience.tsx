@@ -1,12 +1,6 @@
 import { ContentSection } from "@/components/shared/ContentSection";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import {
-  filterAndNormalizeColors,
-  getFontColorForBackground,
-} from "@/lib/langgraph.utils";
-import { Color } from "@/types/langgraph.types";
-import { Copy } from "lucide-react";
-import { toast } from "sonner";
+import { Agents } from "@/types/types";
+import React from "react";
 
 interface BrandTargetAudienceProps {
   targetAudience: string | null | undefined;
@@ -25,7 +19,12 @@ export const BrandTargetAudience: React.FC<BrandTargetAudienceProps> = ({
           <span className="text-sm text-gray-700">{targetAudience}</span>
         </div>
       }
-      context={{ targetAudience }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: {
+          targetAudience,
+        },
+      }}
     />
   );
 };

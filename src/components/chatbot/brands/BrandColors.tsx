@@ -9,6 +9,7 @@ import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import React from "react";
+import { Agents } from "@/types/types";
 
 interface BrandColorsProps {
   colors: Color[];
@@ -30,7 +31,9 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
         position: "top-right",
       });
       setTimeout(() => setCopied(null), 2000);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Failed to copy color:", error);
+    }
   };
 
   return (
@@ -74,7 +77,10 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
           ))}
         </div>
       }
-      context={{ colors }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: { colors },
+      }}
     />
   );
 };

@@ -2,15 +2,19 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import React from "react";
-import { BsPinAngle, BsPinAngleFill } from "react-icons/bs";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { toast } from "sonner";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
+import { PinIcon } from "../ui/custom-icon";
+import { Agents } from "@/types/types";
 
 interface ContentSectionProps {
   title: string;
   content: React.ReactNode;
-  context: any;
+  context: {
+    agentId?: Agents;
+    data: Record<string, any> | string;
+  };
 }
 
 export function ContentSection({
@@ -73,9 +77,9 @@ export function ContentSection({
               }`}
             >
               {isPinnedItem ? (
-                <BsPinAngleFill size={18} />
+                <PinIcon size={18} color="#636AE8" />
               ) : (
-                <BsPinAngle size={18} />
+                <PinIcon size={18} />
               )}
             </TooltipIconButton>
           </div>

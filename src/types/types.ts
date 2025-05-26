@@ -12,6 +12,11 @@ export interface BaseApiResponse<T> {
   data: T | null;
 }
 
+export enum Agents {
+  BRANDING_AGENT = "brandingAgent",
+  CONTENT_AGENT = "contentAgent",
+}
+
 export interface MoodboardAsset {
   id: string;
   comment: string | null;

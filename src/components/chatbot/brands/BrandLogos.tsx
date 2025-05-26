@@ -1,5 +1,7 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { isValidUrl } from "@/lib/utils";
+import { Agents } from "@/types/types";
+import React from "react";
 
 interface BrandLogosProps {
   logos?: string[];
@@ -26,7 +28,12 @@ export const BrandLogos: React.FC<BrandLogosProps> = ({ logos = [] }) => {
           ))}
         </div>
       }
-      context={{ logos: validLogos }}
+      context={{
+        agentId: Agents.BRANDING_AGENT,
+        data: {
+          logos: validLogos,
+        },
+      }}
     />
   );
 };

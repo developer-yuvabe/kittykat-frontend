@@ -1,18 +1,13 @@
-import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  FileText as FileTextIcon,
-  LoaderCircle,
-  Send,
-  X,
-  Pin,
-} from "lucide-react";
+import { FileText as FileTextIcon, LoaderCircle, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import UrlUploadDialog from "./UrlUploadDialog";
 
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import { getFileIcon } from "@/lib/langgraph.utils";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
+import { PinIcon, SendIcon } from "../ui/custom-icon";
 
 type ChatInputProps = {
   input: string;
@@ -90,19 +85,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   threadId,
 }) => {
   const pinnedItem = usePinnedContextStore((state) => state.pinnedItem);
-  const removePinnedItem = usePinnedContextStore(
-    (state) => state.removePinnedItem
-  );
-
   const clearPins = usePinnedContextStore((state) => state.clearPinnedItem);
-  // const clearPinnedItems = usePinnedContextStore((state) => state.clearPinnedItems);
+
   return (
     <div className="relative z-10 w-full  mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
       {pinnedItem && (
-        <div className="p-3 bg-gray-100 rounded-2xl mb-2">
-          <div className="flex gap-2 flex-wrap">
-            <Pin className="text-gray-700" />
-            <div className="flex flex-col gap-1 flex-1">
+        <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
+          <div className="flex gap-2 flex-wrap items-center">
+            <PinIcon className="text-gray-700" />
+            <div className="flex flex-col gap-1 flex-1 border-l pl-3 border-gray-900">
               <span className="text-xs text-gray-500">Focused only on</span>
 
               <div
@@ -112,12 +103,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <span className="text-sm font-semibold text-gray-900">
                   {pinnedItem.title}
                 </span>
-                <button
-                  onClick={() => removePinnedItem()}
-                  className="opacity-0 mt-1 group-hover:opacity-100 rounded-full bg-destructive text-white  font-bold transition-opacity"
-                >
-                  <X size={12} />
-                </button>
               </div>
 
               <button
@@ -152,7 +137,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       <form
         onSubmit={handleSubmit}
-        className="grid grid-rows-[1fr_auto] gap-2 ml-auto mr-0"
+        className="grid grid-rows-[1fr_auto] gap-2 ml-auto mr-0 rounded-t-xl"
       >
         <textarea
           value={input}
@@ -181,7 +166,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               Cancel
             </Button>
           ) : (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <UrlUploadDialog
                 onUploadComplete={handleAddFile}
                 prefix={threadId}
@@ -194,7 +179,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 size="icon"
                 disabled={isLoading || !input.trim()}
               >
-                <Send size={20} />
+                <SendIcon size={24} />
               </Button>
             </div>
           )}

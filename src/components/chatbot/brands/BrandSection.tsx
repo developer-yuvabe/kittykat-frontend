@@ -193,6 +193,7 @@ export const renderBrandData = (
               <BrandOverview
                 tagline={staticData?.brand?.tagline}
                 values={staticData?.brand?.values}
+                name={staticData?.brand?.name}
               />
 
               {/* Target Audience */}
