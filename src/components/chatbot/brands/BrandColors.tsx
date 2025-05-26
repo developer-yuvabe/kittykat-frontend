@@ -8,6 +8,7 @@ import { Color } from "@/types/langgraph.types";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import React from "react";
 
 interface BrandColorsProps {
   colors: Color[];
@@ -55,13 +56,17 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
 
                 {/* Color Info on Hover */}
                 <div
-                  className={`absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 transition-opacity rounded`}
+                  className={`absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 transition-opacity rounded text-center`}
                   style={{ color: getFontColorForBackground(color.hex) }}
                 >
-                  <div className="font-light text-[12px]">{color.name}</div>
-                  <div className="text-base text-[10px]">{color.hex}</div>
+                  <div className="font-light text-[12px] text-center">
+                    {color.name}
+                  </div>
+                  <div className="text-base text-[10px] ">{color.hex}</div>
                   {color.label && (
-                    <div className="text-[8px] mt-1">{color.label}</div>
+                    <div className="text-[8px] mt-1 text-center">
+                      {color.label}
+                    </div>
                   )}
                 </div>
               </div>

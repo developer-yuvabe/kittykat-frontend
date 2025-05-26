@@ -96,6 +96,7 @@ export interface ThreadBrand {
       source: string;
       caption: string;
     }[];
+    message?: string;
   };
 }
 

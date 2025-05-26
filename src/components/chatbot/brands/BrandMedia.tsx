@@ -23,10 +23,11 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
 }) => {
   if (!Object.values(socialMedia || {}).some((v) => v)) return null;
 
-  const { posts, status } = useMemo(() => {
+  const { posts, status, message } = useMemo(() => {
     return {
       posts: brandMedia?.posts || [],
       status: brandMedia?.status || null,
+      message: brandMedia?.message || "Failed to load brand media.",
     };
   }, [brandMedia]);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
@@ -43,13 +44,7 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
         <div className="relative">
           <div className="my-4">
             {status === "failed" && (
-              <p className="text-sm text-destructive">
-                We couldn’t retrieve data from the Instagram profile. This might
-                be due to an incorrect URL, a private or empty profile, or
-                access restrictions from Instagram (e.g., not a business
-                account). Please take a moment to check the profile and try
-                again.
-              </p>
+              <p className="text-sm text-destructive">{message}</p>
             )}
 
             {shouldShowCarousel &&
