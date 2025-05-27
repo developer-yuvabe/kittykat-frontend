@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, CirclePlus } from "lucide-react";
 import { MdOutlineCampaign } from "react-icons/md";
@@ -18,9 +18,19 @@ export const CampaignSection: React.FC<{
   brandId: string;
 }> = ({ campaignInformation, brandId }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
+
+
+  const latestCampaignInformation = campaignInformation.length - 1;
   const stream = useStreamContext();
+
   const [expanded, setExpanded] = useState(true);
-  const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(0);
+  const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(
+    latestCampaignInformation
+  );
+
+  useEffect(() => {
+    setSelectedCampaignIndex(campaignInformation.length - 1);
+  }, [campaignInformation.length]);
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
 
