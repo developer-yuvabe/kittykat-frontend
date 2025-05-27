@@ -1,10 +1,10 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import {
+  CatIcon,
   ChatBubbleIcon,
   GalleryIcon,
   HomeIcon,
-  KittyKatIcon,
   MenuIcon,
   NotificationIcon,
   PlayIcon,
@@ -18,7 +18,7 @@ const LINKS = [
   { name: "Home", icon: HomeIcon, path: "/", disabled: true },
   { name: "Chats", icon: ChatBubbleIcon, path: "/chats", disabled: true },
   { name: "Notifications", icon: NotificationIcon, path: "/", disabled: true },
-  { name: "Ask Kitty Kat", icon: KittyKatIcon, path: "/" },
+  { name: "Ask Kitty Kat", icon: CatIcon, path: "/" },
   { name: "Gallery", icon: GalleryIcon, path: "/gallery" },
   { name: "Kitty Q", icon: PlayIcon, path: "/", disabled: true },
   { name: "Menu", icon: MenuIcon, path: "/", disabled: true },

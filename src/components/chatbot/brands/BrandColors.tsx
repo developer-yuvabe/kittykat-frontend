@@ -59,7 +59,7 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
 
                 {/* Color Info on Hover */}
                 <div
-                  className={`absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-transparent bg-opacity-40 transition-opacity rounded text-center`}
+                  className={`absolute inset-0 flex flex-col items-center justify-center bg-transparent bg-opacity-40 transition-opacity rounded text-center`}
                   style={{ color: getFontColorForBackground(color.hex) }}
                 >
                   <div className="font-light text-[12px] text-center">
