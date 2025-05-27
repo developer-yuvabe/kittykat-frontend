@@ -130,7 +130,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ))}
         </div>
       )}
-
       <form
         onSubmit={handleSubmit}
         className="grid grid-rows-[1fr_auto] gap-2 ml-auto mr-0 rounded-t-xl"
@@ -175,7 +174,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 size="icon"
                 disabled={isLoading || !input.trim()}
               >
-                <SendIcon size={24} />
+                <SendIcon size={72} />
               </Button>
             </div>
           )}
