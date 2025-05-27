@@ -12,7 +12,10 @@ import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
-import { BrandCampaignListResponse } from "@/types/gallery.types";
+import {
+  BrandCampaignListResponse,
+  EnhancedSelectedFilters,
+} from "@/types/gallery.types";
 import { debounce } from "lodash";
 
 export function MediaLibrary() {

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { EnhancedSelectedFilters } from "./MediaLibrary";
+import { EnhancedSelectedFilters } from "@/types/gallery.types";
+
 interface SearchFiltersProps {
   onSearchChange: (query: string) => void;
   onSourceChange: (source: string) => void;
