@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Image } from "lucide-react";
 
 import { ReferenceImage } from "./ReferenceImage";
-import { FashionModel } from "./FashionModel";
-// import { Product } from "./Product";
 import { PromptInput } from "./PromptInput";
 import { ImageDescription } from "./ImageDescription";
 import { CoreCreativeDirection } from "./CoreCreativeDirection";
@@ -13,6 +11,8 @@ import { CoreParameters } from "./CoreParameters";
 import { AdvancedParameters } from "./AdvancedParameters";
 import { A2IImages } from "./A2iImages";
 import { Product } from "./Product";
+import { MediaLibraryDialog } from "./MediaGalleryDialog";
+import { FashionModel } from "./FashionModel";
 
 export default function A2iImagesSection() {
   const [prompt, setPrompt] = useState(
@@ -65,11 +65,6 @@ export default function A2iImagesSection() {
       url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&h=400&fit=crop",
       liked: false,
     },
-    {
-      id: "4",
-      url: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=300&h=400&fit=crop",
-      liked: false,
-    },
   ];
 
   const handleGenerate = () => {
@@ -80,116 +75,124 @@ export default function A2iImagesSection() {
     }, 3000);
   };
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   return (
-    <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
-      <CardHeader className="py-1 pb-0 mb-0">
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => setExpanded(!expanded)}
-        >
-          <div className="flex items-center">
-            {expanded ? (
-              <ChevronDown className="text-[#6e7787] mr-2" size={20} />
-            ) : (
-              <ChevronRight className="text-[#6e7787] mr-2" size={20} />
-            )}
+    <>
+      <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
+        <CardHeader className="py-1 pb-0 mb-0">
+          <div
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setExpanded(!expanded)}
+          >
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center mr-3 overflow-hidden">
-                <Image className="text-white" size={24} />
-              </div>
-              <div className="flex flex-col">
-                <div className="text-sm font-medium">A2i Images</div>
-                {!expanded && (
-                  <div className="text-xs text-[#6e7787]">
-                    Generate fashion images with AI models
-                  </div>
-                )}
+              {expanded ? (
+                <ChevronDown className="text-[#6e7787] mr-2" size={20} />
+              ) : (
+                <ChevronRight className="text-[#6e7787] mr-2" size={20} />
+              )}
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center mr-3 overflow-hidden">
+                  <Image className="text-white" size={24} />
+                </div>
+                <div className="flex flex-col">
+                  <div className="text-sm font-medium">A2i Images</div>
+                  {!expanded && (
+                    <div className="text-xs text-[#6e7787]">
+                      Generate fashion images with AI models
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          {expanded && (
-            <div className="flex gap-2">
-              {/* <Button
+            {expanded && (
+              <div className="flex gap-2">
+                {/* <Button
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 className="bg-purple-500 hover:bg-purple-600"
               >
                 {isGenerating ? "Generating..." : "Generate Images"}
               </Button> */}
-            </div>
-          )}
-        </div>
-      </CardHeader>
+              </div>
+            )}
+          </div>
+        </CardHeader>
 
-      {expanded && (
-        <CardContent className="px-6  space-y-6">
-          {/* 1. Reference Image */}
-          <ReferenceImage referenceImage={referenceImage} />
+        {expanded && (
+          <CardContent className="px-6  space-y-6">
+            {/* 1. Reference Image */}
+            <ReferenceImage
+              referenceImage={referenceImage}
+              onSelect={() => setDialogOpen(true)}
+            />
 
-          <FashionModel fashionModel={fashionModel} />
+            <FashionModel fashionModel={fashionModel} />
 
-          {/* 3. Product */}
-          <Product productImage={productImage} />
+            {/* 3. Product */}
+            <Product productImage={productImage} />
 
-          {/* 4. Prompt */}
-          <PromptInput prompt={prompt} setPrompt={setPrompt} />
+            {/* 4. Prompt */}
+            <PromptInput prompt={prompt} setPrompt={setPrompt} />
 
-          <ImageDescription
-            imageDescription={imageDescription}
-            setImageDescription={setImageDescription}
-          />
-          <CoreCreativeDirection
-            stylePreset={stylePreset}
-            setStylePreset={setStylePreset}
-          />
+            <ImageDescription
+              imageDescription={imageDescription}
+              setImageDescription={setImageDescription}
+            />
+            <CoreCreativeDirection
+              stylePreset={stylePreset}
+              setStylePreset={setStylePreset}
+            />
 
-          {/* 8. Core Parameters */}
-          <CoreParameters
-            aspectRatio={aspectRatio}
-            setAspectRatio={setAspectRatio}
-            previewMode={previewMode}
-            setPreviewMode={setPreviewMode}
-            variations={variations}
-            setVariations={setVariations}
-            outputFormat={outputFormat}
-            setOutputFormat={setOutputFormat}
-          />
+            {/* 8. Core Parameters */}
+            <CoreParameters
+              aspectRatio={aspectRatio}
+              setAspectRatio={setAspectRatio}
+              previewMode={previewMode}
+              setPreviewMode={setPreviewMode}
+              variations={variations}
+              setVariations={setVariations}
+              outputFormat={outputFormat}
+              setOutputFormat={setOutputFormat}
+            />
 
-          <AdvancedParameters
-            generationModel={generationModel}
-            setGenerationModel={setGenerationModel}
-            samplerType={samplerType}
-            setSamplerType={setSamplerType}
-            cfgScale={cfgScale}
-            setCfgScale={setCfgScale}
-            denoisingStrength={denoisingStrength}
-            setDenoisingStrength={setDenoisingStrength}
-            steps={steps}
-            setSteps={setSteps}
-            faceRestoration={faceRestoration}
-            setFaceRestoration={setFaceRestoration}
-          />
+            <AdvancedParameters
+              generationModel={generationModel}
+              setGenerationModel={setGenerationModel}
+              samplerType={samplerType}
+              setSamplerType={setSamplerType}
+              cfgScale={cfgScale}
+              setCfgScale={setCfgScale}
+              denoisingStrength={denoisingStrength}
+              setDenoisingStrength={setDenoisingStrength}
+              steps={steps}
+              setSteps={setSteps}
+              faceRestoration={faceRestoration}
+              setFaceRestoration={setFaceRestoration}
+            />
 
-          <AdvancedCreativeDirections
-            stylingStrength={stylingStrength}
-            setStylingStrength={setStylingStrength}
-            modelPose={modelPose}
-            setModelPose={setModelPose}
-            backgroundStyles={backgroundStyles}
-            setBackgroundStyles={setBackgroundStyles}
-            cameraAngle={cameraAngle}
-            setCameraAngle={setCameraAngle}
-            lightingStyle={lightingStyle}
-            setLightingStyle={setLightingStyle}
-          />
+            <AdvancedCreativeDirections
+              stylingStrength={stylingStrength}
+              setStylingStrength={setStylingStrength}
+              modelPose={modelPose}
+              setModelPose={setModelPose}
+              backgroundStyles={backgroundStyles}
+              setBackgroundStyles={setBackgroundStyles}
+              cameraAngle={cameraAngle}
+              setCameraAngle={setCameraAngle}
+              lightingStyle={lightingStyle}
+              setLightingStyle={setLightingStyle}
+            />
 
-          <A2IImages
-            isGenerating={isGenerating}
-            generatedImages={generatedImages}
-            handleGenerate={handleGenerate}
-          />
-        </CardContent>
-      )}
-    </Card>
+            <A2IImages
+              isGenerating={isGenerating}
+              generatedImages={generatedImages}
+              handleGenerate={handleGenerate}
+            />
+          </CardContent>
+        )}
+      </Card>
+      <MediaLibraryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+    </>
   );
 }

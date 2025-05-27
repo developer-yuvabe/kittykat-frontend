@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/accordion"; // <- import Accordion
 
 import { Context } from "@/types/types";
-import { cn } from "@/lib/utils";
 import { isEqual } from "lodash";
 
 interface ContentSectionProps {
@@ -184,27 +183,7 @@ export function ContentSection({
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-[#171a1f]">{title}</h3>
-          <div className="flex items-center space-x-2">
-            <TooltipIconButton
-              tooltip="Copy context"
-              onClick={handleCopy}
-              className="text-[#6e7787] hover:text-[#171a1f] transition"
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-            </TooltipIconButton>
-            <TooltipIconButton
-              tooltip={isPinned ? "Unpin context" : "Pin context"}
-              onClick={handlePin}
-              className={`transition hover:text-[#171a1f]`}
-            >
-              <PinIcon
-                size={18}
-                className={cn("text-[#6e7787]", {
-                  "text-primary": isPinned,
-                })}
-              />
-            </TooltipIconButton>
-          </div>
+
           {shouldShowActions && (
             <div className={`flex items-center ${currentSize.spacing}`}>
               {customActions}

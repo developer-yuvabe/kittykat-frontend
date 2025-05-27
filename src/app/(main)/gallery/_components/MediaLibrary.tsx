@@ -18,9 +18,17 @@ import {
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 
-export function MediaLibrary() {
-  // UI State
-  const [activeTab, setActiveTab] = useState("all-media");
+type MediaLibraryProps = {
+  activeTab?: string;
+  isDialog?: boolean;
+};
+
+export function MediaLibrary({
+  activeTab: initialTab = "all-media",
+  isDialog = false,
+}: MediaLibraryProps) {
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -195,52 +203,54 @@ export function MediaLibrary() {
   }, [activeTab, handleTabChange]);
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
-      <h1 className="text-2xl font-bold mb-4">Media library</h1>
+      <div></div>
 
       <Tabs
         defaultValue="all-media"
         value={activeTab}
         onValueChange={handleTabChange}
       >
-        <TabsList className="mb-4 border-b w-full justify-start rounded-none h-auto p-0 bg-transparent">
-          <TabsTrigger
-            value="all-media"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-          >
-            All Media
-          </TabsTrigger>
-          <TabsTrigger
-            value="moodboard"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-          >
-            Moodboards
-          </TabsTrigger>
-          <TabsTrigger
-            value="images"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-          >
-            Images
-          </TabsTrigger>
-          <TabsTrigger
-            value="videos"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-          >
-            Videos
-          </TabsTrigger>
-          <TabsTrigger
-            value="models"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-          >
-            Models
-          </TabsTrigger>
-          <TabsTrigger
-            value="products"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-          >
-            Products
-          </TabsTrigger>
-        </TabsList>
-
+        <div className={`${isDialog ? " sticky top-0 z-40 bg-white" : ""}`}>
+          <h1 className="text-2xl font-bold mb-4">Media library</h1>
+          <TabsList className="mb-4 border-b w-full justify-start rounded-none h-auto p-0 bg-transparent">
+            <TabsTrigger
+              value="all-media"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
+            >
+              All Media
+            </TabsTrigger>
+            <TabsTrigger
+              value="moodboard"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
+            >
+              Moodboards
+            </TabsTrigger>
+            <TabsTrigger
+              value="images"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
+            >
+              Images
+            </TabsTrigger>
+            <TabsTrigger
+              value="videos"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
+            >
+              Videos
+            </TabsTrigger>
+            <TabsTrigger
+              value="models"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
+            >
+              Models
+            </TabsTrigger>
+            <TabsTrigger
+              value="products"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
+            >
+              Products
+            </TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent
           value={activeTab}
           className="p-3 rounded-3xl bg-white mt-0"

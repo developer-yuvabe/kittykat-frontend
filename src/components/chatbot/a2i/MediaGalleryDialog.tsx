@@ -1,18 +1,23 @@
+// MediaLibraryDialog.tsx
 import React from "react";
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MediaLibrary } from "@/app/(main)/gallery/_components/MediaLibrary";
 
-export function MediaLibraryDialog() {
+interface MediaLibraryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function MediaLibraryDialog({
+  open,
+  onOpenChange,
+}: MediaLibraryDialogProps) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">Open Media Library</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden">
-        <main className="min-h-[80vh] w-full bg-[#F3F4F6] rounded-3xl p-4 md:p-6">
-          <MediaLibrary />
-        </main>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90%] min-w-6xl overflow-y-scroll p-0">
+        <div className="px-4">
+          <MediaLibrary activeTab="all-media" isDialog={true} />
+        </div>
       </DialogContent>
     </Dialog>
   );
