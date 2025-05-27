@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, CirclePlus } from "lucide-react";
 import { MdOutlineCampaign } from "react-icons/md";
 import { DynamicContentSection } from "../DynamicSection";
 import { Agents, ThreadDetails } from "@/types/types";
@@ -8,13 +8,17 @@ import { CampaignColors } from "./CampaignColors";
 import { CampaignMoodboard } from "./CampaignMoodboards";
 import { CampaignOverview } from "./CampaignOverview";
 import CampaignSelector from "./CampaignSelector";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { v4 as uuidv4 } from "uuid";
+import { Message } from "@langchain/langgraph-sdk";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
   brandId: string;
 }> = ({ campaignInformation, brandId }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
-
+  const stream = useStreamContext();
   const [expanded, setExpanded] = useState(true);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(0);
 
@@ -63,6 +67,40 @@ export const CampaignSection: React.FC<{
                 selectedCampaignIndex={selectedCampaignIndex}
                 setSelectedCampaignIndex={setSelectedCampaignIndex}
               />
+              <TooltipIconButton
+                size="lg"
+                className="p-4"
+                tooltip="New Campaign"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const newHumanMessage: Message = {
+                    id: uuidv4(),
+                    type: "human",
+                    content: [
+                      {
+                        type: "text",
+                        text: `Let's create a new campaign!`,
+                      },
+                    ],
+                  };
+
+                  stream.submit(
+                    {
+                      messages: [newHumanMessage],
+                    },
+                    {
+                      streamMode: ["values"],
+                      optimisticValues: (prev) => ({
+                        ...prev,
+                        messages: [...(prev.messages ?? []), newHumanMessage],
+                      }),
+                    }
+                  );
+                }}
+              >
+                <CirclePlus className="size-5" />
+              </TooltipIconButton>
             </div>
           )}
         </div>
