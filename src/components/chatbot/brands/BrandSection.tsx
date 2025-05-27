@@ -117,7 +117,14 @@ export const renderBrandData = (
               {!expandedSections.brandOverview ? (
                 <div className="flex items-center ">
                   <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-3 overflow-hidden">
-                    <AvatarImage src={staticData.logos[0]} alt="@shadcn" />
+                    <AvatarImage
+                      src={
+                        staticData.logos && staticData.logos.length > 0
+                          ? staticData.logos[0]
+                          : ""
+                      }
+                      alt="@shadcn"
+                    />
                     <AvatarFallback className="bg-blue-500">
                       <span className="text-white font-bold">
                         {brandInitial}

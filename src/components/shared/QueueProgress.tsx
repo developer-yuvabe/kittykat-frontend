@@ -18,7 +18,7 @@ const QueueProgress = () => {
     const running = [];
     const others = [];
 
-    if (data) {
+    if (data && Array.isArray(data)) {
       for (const item of data) {
         if (item.status === "processing") {
           running.push(item);
