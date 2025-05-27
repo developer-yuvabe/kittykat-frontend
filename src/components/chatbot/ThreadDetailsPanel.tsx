@@ -5,6 +5,7 @@ import React, { useEffect, useRef } from "react";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { BrandSection } from "./brands/BrandSection";
+import A2iImagesSection from "./a2i/A2iImagesSection";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -62,6 +63,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               brandId={threadId!}
             />
           )}
+          <A2iImagesSection />
         </>
       )}
     </div>
