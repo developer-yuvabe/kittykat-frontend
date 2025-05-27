@@ -52,20 +52,11 @@ export interface ThreadBrand {
     brand?: {
       name?: string;
       tagline?: string;
+      mission?: string;
+      vision?: string;
       values?: string[];
+      personality?: string[];
     };
-    logos?: string[];
-    typography?: {
-      primaryFont?: {
-        name?: string;
-        weights?: string[];
-      };
-      secondaryFont?: {
-        name?: string;
-        weights?: string[];
-      };
-    };
-    target_audience?: string;
     colors?: {
       primary?: {
         name?: string;
@@ -80,18 +71,54 @@ export interface ThreadBrand {
         hex?: string;
       }[];
     };
+    typography?: {
+      primaryFont?: {
+        name?: string;
+        weights?: string[];
+      };
+      secondaryFont?: {
+        name?: string;
+        weights?: string[];
+      };
+    };
+    photography?: {
+      framing?: string;
+      camera_technique?: string;
+      lens_and_distance?: string;
+      aperture_and_focus?: string;
+      motion?: string;
+    };
+    lighting?: {
+      type?: string;
+      studio_usage?: string;
+      preferred_moods?: string;
+    };
+    styling?: {
+      tone?: string;
+      mobility?: string;
+      textures?: string;
+    };
+    casting: {
+      diversity_policy?: string;
+      persona?: string;
+      variation?: string;
+    };
+    setting?: {
+      emotional_tone?: string;
+      material_quality?: string;
+      avoid?: string;
+    };
+    target_audience?: string;
     products?: string[];
     social_media?: {
-      website?: string;
-      instagram?: string;
-      facebook?: string;
-      tiktok?: string;
+      website: string;
+      instagram: string;
+      facebook: string;
+      tiktok: string;
     };
   };
 
-  dynamic?: {
-    [key: string]: unknown;
-  };
+  dynamic?: Record<string, any>;
 
   brand_media?: {
     status: "succeeded" | "failed" | "running";

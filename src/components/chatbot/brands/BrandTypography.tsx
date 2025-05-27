@@ -4,7 +4,7 @@ import { Agents } from "@/types/types";
 import React from "react";
 
 interface FontDetails {
-  name: string;
+  name?: string;
   weights?: any[];
 }
 
@@ -33,8 +33,8 @@ export const BrandTypography: React.FC<TypographyProps> = ({
 
   const renderFontDetails = (label: string, font: FontDetails) => (
     <div className="space-y-2">
-      <div className="text-sm font-semibold">{label}</div>
-      <div className="ml-2 space-y-1">
+      <div className="text-sm font-medium">{label}</div>
+      <div className="ml-1 space-y-1">
         <div className="text-sm text-gray-700">{font.name}</div>
         {font.weights && font.weights.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">

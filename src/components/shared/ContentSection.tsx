@@ -54,7 +54,7 @@ export function ContentSection({
     <div className="border border-gray-400 rounded-2xl overflow-hidden">
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-[#171a1f]">{title}</h3>
+          <h3 className="text-sm font-semibold text-[#171a1f]">{title}</h3>
           <div className="flex items-center space-x-2">
             <TooltipIconButton
               tooltip="Copy context"
