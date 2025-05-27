@@ -507,14 +507,14 @@ export const PinIcon: React.FC<CustomIconProps> = ({
     {...props}
   >
     <path
-      className="pin-icon-path"
+      className={className}
       stroke={color}
       strokeMiterlimit={10}
       strokeWidth={2.064}
       d="M5.13 11.16 16.17 5M12.84 18.869 19 7.83"
     />
     <path
-      className="pin-icon-path-2"
+      className={className}
       stroke={color}
       strokeLinecap="square"
       strokeMiterlimit={10}
