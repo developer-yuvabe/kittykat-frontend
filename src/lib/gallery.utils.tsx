@@ -103,7 +103,6 @@ export const createGalleryItemFromFile = async (
   brandId: string
 ): Promise<GalleryItem> => {
   const dimensions = await getImageDimensions(file);
-  const assetType = getAssetTypeFromFile(file);
 
   // Calculate aspect ratio if dimensions are available
   const aspectRatio = dimensions
@@ -112,15 +111,14 @@ export const createGalleryItemFromFile = async (
 
   const galleryItem: GalleryItem = {
     // Basic Asset Info
-    asset_type: assetType,
-    asset_source: galleryFilters.source ?? "upload", // or "brands" depending on your system
+    asset_type: "uploaded",
+    asset_source: activeTab,
     asset_title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
     asset_url: url,
     size: formatBytes(file.size),
     aspect_ratio: aspectRatio,
-    media_format: file.type,
+    media_format: getSafeMediaFormat(file),
     brand_id: brandId,
-
     // Versioning
     related_asset_ids: [],
 
@@ -234,4 +232,25 @@ export const getActiveFiltersCount = (filters: EnhancedSelectedFilters) => {
   if (filters.is_favourite === true) count++;
   if (filters.is_archived === true) count++;
   return count;
+};
+
+const allowedFormats = MEDIA_FORMAT_OPTIONS.map((opt) => opt.value);
+
+export const getSafeMediaFormat = (file: File): string => {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext && allowedFormats.includes(ext)) return ext;
+
+  const mimeToExt: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "video/mp4": "mp4",
+    "video/quicktime": "mov",
+    "video/webm": "webm",
+  };
+
+  const fallback = mimeToExt[file.type];
+  return allowedFormats.includes(fallback) ? fallback : "unknown";
 };
