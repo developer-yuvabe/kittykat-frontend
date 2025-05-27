@@ -9,7 +9,7 @@ import React, { useMemo, useState } from "react";
 
 interface BrandMediaProps {
   brandMedia: ThreadBrand["brand_media"];
-  socialMedia: {
+  socialMedia?: {
     website: string;
     facebook: string;
     instagram: string;
@@ -79,30 +79,34 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
 
           {/* Contact Links */}
           <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">
-            {socialLinks.map(({ platform, color, icon }) => {
-              const url = socialMedia[platform as keyof typeof socialMedia];
-              if (!isValidUrl(url)) return null;
-              return (
-                <a
-                  key={platform}
-                  href={url}
-                  className={`flex px-3 py-2 rounded-full items-center gap-1`}
-                  style={{ backgroundColor: color }}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {icon}
-                  <span>
-                    {platform === "instagram"
-                      ? "@" +
-                        new URL(url).pathname.split("/").filter(Boolean).pop()
-                      : platform === "website"
-                      ? new URL(url).hostname.replace(/^www\./, "")
-                      : new URL(url).pathname.split("/").filter(Boolean).pop()}
-                  </span>
-                </a>
-              );
-            })}
+            {socialMedia &&
+              socialLinks.map(({ platform, color, icon }) => {
+                const url = socialMedia[platform as keyof typeof socialMedia];
+                if (!isValidUrl(url)) return null;
+                return (
+                  <a
+                    key={platform}
+                    href={url}
+                    className={`flex px-3 py-2 rounded-full items-center gap-1`}
+                    style={{ backgroundColor: color }}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {icon}
+                    <span>
+                      {platform === "instagram"
+                        ? "@" +
+                          new URL(url).pathname.split("/").filter(Boolean).pop()
+                        : platform === "website"
+                        ? new URL(url).hostname.replace(/^www\./, "")
+                        : new URL(url).pathname
+                            .split("/")
+                            .filter(Boolean)
+                            .pop()}
+                    </span>
+                  </a>
+                );
+              })}
           </div>
 
           {/* Expanded Image Modal */}
