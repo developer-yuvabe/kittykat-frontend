@@ -25,6 +25,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   });
 
   // Map asset type for filtering
+  // Map asset type for filtering
   const getAssetTypesFromFilter = () => {
     if (!filters.assetType || filters.assetType === "all-media")
       return undefined;
@@ -43,31 +44,57 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
       filters.selectedFilters,
     ],
     queryFn: async ({ pageParam = 0 }) => {
-      // If search query is provided, use search endpoint
-      if (filters.searchQuery) {
-        return galleryService.searchGalleryItems(
-          filters.searchQuery,
-          pageParam,
-          ITEMS_PER_PAGE
-        );
-      }
+      try {
+        if (filters.searchQuery) {
+          return await galleryService.searchGalleryItems(
+            filters.searchQuery,
+            pageParam,
+            ITEMS_PER_PAGE
+          );
+        }
 
-      // Otherwise use filter endpoint
-      return galleryService.getAllGalleryItems({
-        asset_sources: [getAssetTypesFromFilter()].filter(
-          (v): v is string => v !== undefined
-        ),
-        is_favourite: filters.favorites || undefined,
-        brand_ids: filters.selectedFilters?.brands.length
-          ? filters.selectedFilters.brands
-          : undefined,
-        campaign_ids: filters.selectedFilters?.campaigns.length
-          ? filters.selectedFilters.campaigns
-          : undefined,
-        skip: pageParam,
-        limit: ITEMS_PER_PAGE,
-      });
+        return await galleryService.getAllGalleryItems({
+          asset_sources: [getAssetTypesFromFilter()].filter(
+            (v): v is string => v !== undefined
+          ),
+          is_favourite:
+            filters.favorites ||
+            filters.selectedFilters?.is_favourite ||
+            undefined,
+          brand_ids: filters.selectedFilters?.brands.length
+            ? filters.selectedFilters.brands
+            : undefined,
+          campaign_ids: filters.selectedFilters?.campaigns.length
+            ? filters.selectedFilters.campaigns
+            : undefined,
+          has_product: filters.selectedFilters?.has_product,
+          has_people: filters.selectedFilters?.has_people,
+          has_lifestyle_context: filters.selectedFilters?.has_lifestyle_context,
+          asset_types: filters.selectedFilters?.asset_types.length
+            ? filters.selectedFilters.asset_types
+            : undefined,
+          media_format: filters.selectedFilters?.media_format.length
+            ? filters.selectedFilters.media_format
+            : undefined,
+          aspect_ratio: filters.selectedFilters?.aspect_ratio.length
+            ? filters.selectedFilters.aspect_ratio
+            : undefined,
+          workflow_status: filters.selectedFilters?.workflow_status.length
+            ? filters.selectedFilters.workflow_status
+            : undefined,
+          is_archived: filters.selectedFilters?.is_archived,
+          product_categories: filters.selectedFilters?.product_categories.length
+            ? filters.selectedFilters.product_categories
+            : undefined,
+          skip: pageParam,
+          limit: ITEMS_PER_PAGE,
+        });
+      } catch (error) {
+        console.error("Gallery query failed:", error);
+        throw error; // so TanStack knows it's an error
+      }
     },
+
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.has_more) return undefined;
       return lastPage.pagination.skip + lastPage.pagination.limit;

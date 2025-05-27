@@ -67,37 +67,41 @@ class GalleryService {
     brand_ids?: string[];
     skip?: number;
     limit?: number;
+    has_product?: boolean;
+    has_people?: boolean;
+    has_lifestyle_context?: boolean;
+    media_format?: string[];
+    product_categories?: string[];
+    product_sub_categories?: string[];
+    aspect_ratio?: string[];
+    workflow_status?: string[];
+    is_archived?: boolean;
   }): Promise<GalleryItemsListResponse> {
     const {
-      asset_types,
-      is_favourite,
-      campaign_ids,
-      brand_ids,
       skip = 0,
       limit = 10,
-      asset_sources,
+      ...restFilters // spread the remaining filters
     } = filters || {};
 
     const response = await handleApiRequest<GalleryItemsListResponse>(
       axiosInstance.post("/gallery/filter", {
-        asset_types,
-        is_favourite,
-        campaign_ids,
-        brand_ids,
+        ...restFilters,
         skip,
         limit,
-        asset_sources,
       })
     );
 
     const has_more =
-      (response.gallery_items?.length || 0) + skip < response.pagination.total;
+      (response.gallery_items?.length || 0) + skip <
+      (response.pagination?.total ?? 0);
 
     return {
       ...response,
       pagination: {
         ...response.pagination,
         has_more,
+        skip,
+        limit,
       },
     };
   }
