@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import React from "react";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 import { PinIcon } from "../ui/custom-icon";
 import { Context } from "@/types/types";
+import { cn } from "@/lib/utils";
+import { isEqual } from "lodash";
 
 interface ContentSectionProps {
   title: string;
@@ -22,6 +24,12 @@ export function ContentSection({
   const [copied, setCopied] = useState(false);
   const { addPinnedItem, removePinnedItem, pinnedItem } =
     usePinnedContextStore();
+  const isPinned = useMemo(() => {
+    return (
+      pinnedItem?.title === title &&
+      isEqual(pinnedItem?.context?.data, context.data)
+    );
+  }, [pinnedItem, content, title]);
 
   const handleCopy = async () => {
     try {
@@ -38,7 +46,7 @@ export function ContentSection({
   };
 
   const handlePin = () => {
-    if (pinnedItem?.title === title) {
+    if (isPinned) {
       removePinnedItem();
       toast(`${title} has been unpinned`, { position: "top-right" });
     } else {
@@ -54,7 +62,7 @@ export function ContentSection({
     <div className="border border-gray-400 rounded-2xl overflow-hidden">
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-[#171a1f]">{title}</h3>
+          <h3 className="text-sm font-semibold text-[#171a1f]">{title}</h3>
           <div className="flex items-center space-x-2">
             <TooltipIconButton
               tooltip="Copy context"
@@ -64,21 +72,16 @@ export function ContentSection({
               {copied ? <Check size={16} /> : <Copy size={16} />}
             </TooltipIconButton>
             <TooltipIconButton
-              tooltip={
-                pinnedItem?.title === title ? "Unpin context" : "Pin context"
-              }
+              tooltip={isPinned ? "Unpin context" : "Pin context"}
               onClick={handlePin}
-              className={`transition ${
-                pinnedItem?.title === title
-                  ? "text-blue-500"
-                  : "text-[#6e7787] hover:text-[#171a1f]"
-              }`}
+              className={`transition hover:text-[#171a1f]`}
             >
-              {pinnedItem?.title === title ? (
-                <PinIcon size={18} color="#636AE8" />
-              ) : (
-                <PinIcon size={18} />
-              )}
+              <PinIcon
+                size={18}
+                className={cn("text-[#6e7787]", {
+                  "text-primary": isPinned,
+                })}
+              />
             </TooltipIconButton>
           </div>
         </div>

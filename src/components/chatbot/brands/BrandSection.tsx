@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { extractAllColors } from "@/lib/langgraph.utils";
-import { ChevronDown, ChevronRight, CirclePlus } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { BrandColors } from "./BrandColors";
@@ -9,6 +9,18 @@ import { BrandMedia } from "./BrandMedia";
 import { BrandOverview } from "./BrandOverview";
 import BrandSelector from "./BrandSelector";
 import { BrandTargetAudience } from "./BrandTargetAudience";
+import { Agents, ThreadBrand } from "@/types/types";
+import { BrandProducts } from "./BrandProducts";
+import { BrandTypography } from "./BrandTypography";
+import BrandPurpose from "./BrandPurpose";
+import { BrandPhotography } from "./BrandPhotography";
+import { BrandLighting } from "./BrandLightning";
+import { BrandStyling } from "./BrandStyling";
+import { BrandCasting } from "./BrandCasting";
+import { BrandSetting } from "./BrandSetting";
+import { Button } from "@/components/ui/button";
+import { DynamicContentSection } from "../DynamicSection";
+import { AnimatePresence, motion } from "framer-motion";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -79,6 +91,7 @@ export const BrandSection: React.FC<{
             })),
           setThreadId,
           brandingInformation.static,
+          brandingInformation.dynamic,
           brandingInformation.brand_media,
           clearPinnedItems
         )}
@@ -91,7 +104,8 @@ export const renderBrandData = (
   expandedSections: { [key: string]: boolean },
   toggleSection: (section: string) => void,
   setThreadId: (id: string | null) => void,
-  staticData: any,
+  staticData: ThreadBrand["static"],
+  dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
   clearPinnedItems: () => void
 ) => {
@@ -99,6 +113,7 @@ export const renderBrandData = (
     const brandName = staticData?.brand?.name || "No Brand Name";
     const brandInitial = brandName.charAt(0).toUpperCase();
     const allColors = extractAllColors(staticData);
+    const [showDynamicData, setShowDynamicData] = React.useState(false);
 
     return (
       <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -117,7 +132,7 @@ export const renderBrandData = (
               {!expandedSections.brandOverview ? (
                 <div className="flex items-center ">
                   <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-3 overflow-hidden">
-                    <AvatarImage src={staticData.logos[0]} alt="@shadcn" />
+                    <AvatarImage src={""} alt="@shadcn" />
                     <AvatarFallback className="bg-blue-500">
                       <span className="text-white font-bold">
                         {brandInitial}
@@ -189,26 +204,74 @@ export const renderBrandData = (
         {expandedSections.brandOverview && (
           <CardContent className="pt-0  pb-6">
             <div className="mt-1 space-y-6">
-              {/* Brand Section */}
               <BrandOverview
                 tagline={staticData?.brand?.tagline}
                 values={staticData?.brand?.values}
                 name={staticData?.brand?.name}
               />
 
-              {/* Target Audience */}
+              <BrandPurpose
+                mission={staticData?.brand?.mission}
+                vision={staticData?.brand?.vision}
+              />
+
+              <BrandColors colors={allColors} />
+
+              <BrandTypography
+                primaryFont={staticData?.typography?.primaryFont}
+                secondaryFont={staticData?.typography?.secondaryFont}
+              />
+
+              <BrandPhotography {...staticData?.photography} />
+              <BrandLighting {...staticData?.lighting} />
+              <BrandStyling {...staticData?.styling} />
+              <BrandCasting {...staticData?.casting} />
+              <BrandSetting {...staticData?.setting} />
+
+              <BrandProducts products={staticData?.products || []} />
+
               <BrandTargetAudience
                 targetAudience={staticData?.target_audience}
               />
 
-              {/* Colors Section */}
-              <BrandColors colors={allColors} />
-
-              {/* Media Section */}
               <BrandMedia
                 socialMedia={staticData?.social_media}
                 brandMedia={brandMedia}
               />
+
+              <AnimatePresence>
+                {showDynamicData && (
+                  <motion.div
+                    key="dynamic-section"
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="space-y-6"
+                    transition={{ duration: 0.1 }}
+                    variants={{
+                      hidden: { opacity: 0, y: 5 },
+                      visible: { opacity: 1, y: 0 },
+                      exit: { opacity: 0, y: 5 },
+                    }}
+                  >
+                    <DynamicContentSection
+                      dynamicData={dynamicData ?? {}}
+                      agentId={Agents.BRANDING_AGENT}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Button
+                onClick={() => {
+                  setShowDynamicData(!showDynamicData);
+                }}
+                className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
+                variant="ghost"
+              >
+                {showDynamicData ? <ChevronUp /> : <ChevronDown />}
+                {showDynamicData ? " Less details" : "More details"}
+              </Button>
             </div>
           </CardContent>
         )}

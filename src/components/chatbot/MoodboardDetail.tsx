@@ -110,13 +110,13 @@ export default function MoodboardDetail({
   const handleAddToLibrary = async () => {
     if (moodboard.asset_url && brandId) {
       const galleryItem: GalleryItem = {
-        asset_type: moodboard.media_format || "webp",
-        asset_source: moodboard.source || "moodboard",
+        asset_type: "generated",
+        asset_source: "moodboard",
         asset_title: moodboard.asset_title,
         asset_url: moodboard.asset_url,
         input_prompt: moodboard.input_prompt,
         size: moodboard.size_bytes ? String(moodboard.size_bytes) : "",
-        media_format: moodboard.media_format || "",
+        media_format: moodboard.media_format || "webp",
         is_favourite: false,
         workflow_status: "draft",
         user_feedback: "neutral",
@@ -132,6 +132,7 @@ export default function MoodboardDetail({
         intent_tags: [],
         search_keywords: [],
         custom_tags: [],
+        campaign_id: campaignId,
       };
 
       try {
