@@ -145,9 +145,28 @@ export interface ThreadCampaign {
   moodboards?: MoodboardAsset[];
 }
 
+type ImageDetail = {
+  url: string;
+  description: string;
+};
+
+type A2IImage = {
+  url: string;
+  metadata: Record<string, any>;
+};
+
+type ThreadA2iImage = {
+  reference_image: ImageDetail | null;
+  fashion_model: ImageDetail | null;
+  product_image: ImageDetail | null;
+  a2iImages: A2IImage[];
+  prompt: string;
+};
+
 export interface ThreadDetails {
   brand_information?: ThreadBrand;
   campaign_information?: ThreadCampaign[];
+  a2i_image_information?: ThreadA2iImage;
 }
 
 export interface QueueItem {
