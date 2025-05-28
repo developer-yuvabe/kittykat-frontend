@@ -21,7 +21,6 @@ export const CampaignSection: React.FC<{
 
   const stream = useStreamContext();
   const latestCampaignInformation = campaignInformation.length - 1;
-  const stream = useStreamContext();
 
   const [expanded, setExpanded] = useState(true);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(
