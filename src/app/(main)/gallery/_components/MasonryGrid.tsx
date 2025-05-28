@@ -33,6 +33,7 @@ interface MasonryGridProps {
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
   onDownload: (item: GalleryItemResponse) => void;
+  isMediaSelectDialog: boolean;
 }
 
 export function MasonryGrid({
@@ -42,6 +43,7 @@ export function MasonryGrid({
   onToggleFavorite,
   onDelete,
   onDownload,
+  isMediaSelectDialog,
 }: MasonryGridProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
@@ -178,21 +180,39 @@ export function MasonryGrid({
               </div>
 
               {/* Selection checkbox - only visible on hover or when selected */}
-              <div
-                className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${
-                  hoveredItem === item.id || selectedItems.includes(item.id)
-                    ? "opacity-100"
-                    : "opacity-0"
-                }`}
-              >
-                <Checkbox
-                  checked={selectedItems.includes(item.id)}
-                  onCheckedChange={(checked) =>
-                    onSelect(item.id, checked as boolean)
-                  }
-                  className="h-5 w-5 border-2 border-white bg-black/30 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-black transition-all duration-200"
-                />
-              </div>
+              {isMediaSelectDialog ? (
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${
+                    hoveredItem === item.id || selectedItems.includes(item.id)
+                      ? "opacity-100"
+                      : "opacity-0"
+                  }`}
+                  onClick={() => {
+                    console.log("Select button clicked for", item.id);
+                    console.log(item);
+                  }}
+                >
+                  Select
+                </Button>
+              ) : (
+                <div
+                  className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${
+                    hoveredItem === item.id || selectedItems.includes(item.id)
+                      ? "opacity-100"
+                      : "opacity-0"
+                  }`}
+                >
+                  <Checkbox
+                    checked={selectedItems.includes(item.id)}
+                    onCheckedChange={(checked) =>
+                      onSelect(item.id, checked as boolean)
+                    }
+                    className="h-5 w-5 border-2 border-white bg-black/30 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-black transition-all duration-200"
+                  />
+                </div>
+              )}
 
               {/* Favorite button - always visible but more prominent on hover */}
               <div
