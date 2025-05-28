@@ -146,13 +146,14 @@ export interface ThreadCampaign {
   moodboards?: MoodboardAsset[];
 }
 
-type ImageDetail = {
+export type ImageDetail = {
+  id: string;
   url: string;
   prompt: string;
   paramters?: Record<string, any>;
 };
 
-type ThreadA2iImage = {
+export type ThreadA2iImage = {
   refernce_campaign_id?: string;
   reference_moodboard_id?: string;
   paramters?: Record<string, any>;

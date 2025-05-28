@@ -2,53 +2,29 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Image } from "lucide-react";
 import { ReferenceImage } from "./ReferenceImage";
-import { CoreParameters } from "./CoreParameters";
-import { AdvancedParameters } from "./AdvancedParameters";
+
 import { A2IImages } from "./A2iImages";
+import EnhancedParameterConfiguration from "./EnhancedParameterConfiguration";
+import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 
-export default function A2iImagesSection() {
-  const [aspectRatio, setAspectRatio] = useState("16:9");
-  const [previewMode, setPreviewMode] = useState("standard");
-  const [variations, setVariations] = useState([4]);
-  const [outputFormat, setOutputFormat] = useState("jpg");
-  const [cfgScale, setCfgScale] = useState([7]);
-  const [denoisingStrength, setDenoisingStrength] = useState([0.8]);
-  const [steps, setSteps] = useState([20]);
-  const [faceRestoration, setFaceRestoration] = useState(false);
-  const [generationModel, setGenerationModel] = useState("stable-diffusion-xl");
-  const [samplerType, setSamplerType] = useState("dpm++");
+interface A2iImagesSectionProps {
+  a2iImageInformation: ThreadA2iImage | undefined;
+  brandId: string | null;
+  campaignInformation: ThreadCampaign[] | undefined;
+}
+
+export default function A2iImagesSection({
+  a2iImageInformation,
+  brandId,
+  campaignInformation,
+}: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Mock generated images
-  const generatedImages = [
-    {
-      id: "1",
-      url: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=300&h=400&fit=crop",
-      liked: false,
-    },
-    {
-      id: "2",
-      url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=300&h=400&fit=crop",
-      liked: true,
-    },
-    {
-      id: "3",
-      url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&h=400&fit=crop",
-      liked: false,
-    },
-  ];
-
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    // Simulate generation time
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 3000);
-  };
 
   const referenceImage =
     "https://storage.googleapis.com/kittykat-agents/brands/WAoAYJ9NprRT0XBM80uvo9EqsAm2/Selection%20(1).png-683586f68e36f668f5d15279";
+
+  console.log("here1", a2iImageInformation);
+  console.log("here1", campaignInformation);
 
   return (
     <>
@@ -78,57 +54,21 @@ export default function A2iImagesSection() {
                 </div>
               </div>
             </div>
-            {expanded && (
-              <div className="flex gap-2">
-                {/* <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="bg-purple-500 hover:bg-purple-600"
-              >
-                {isGenerating ? "Generating..." : "Generate Images"}
-              </Button> */}
-              </div>
-            )}
           </div>
         </CardHeader>
 
         {expanded && (
           <CardContent className="px-6  space-y-6">
             {/* 1. Reference Image */}
-            <ReferenceImage referenceImage={referenceImage} />
+            <ReferenceImage
+              campaignInformation={campaignInformation}
+              a2iImageInformation={a2iImageInformation}
+            />
 
             {/* 8. Core Parameters */}
-            <CoreParameters
-              aspectRatio={aspectRatio}
-              setAspectRatio={setAspectRatio}
-              previewMode={previewMode}
-              setPreviewMode={setPreviewMode}
-              variations={variations}
-              setVariations={setVariations}
-              outputFormat={outputFormat}
-              setOutputFormat={setOutputFormat}
-            />
+            <EnhancedParameterConfiguration />
 
-            <AdvancedParameters
-              generationModel={generationModel}
-              setGenerationModel={setGenerationModel}
-              samplerType={samplerType}
-              setSamplerType={setSamplerType}
-              cfgScale={cfgScale}
-              setCfgScale={setCfgScale}
-              denoisingStrength={denoisingStrength}
-              setDenoisingStrength={setDenoisingStrength}
-              steps={steps}
-              setSteps={setSteps}
-              faceRestoration={faceRestoration}
-              setFaceRestoration={setFaceRestoration}
-            />
-
-            <A2IImages
-              isGenerating={isGenerating}
-              generatedImages={generatedImages}
-              handleGenerate={handleGenerate}
-            />
+            <A2IImages generatedImages={a2iImageInformation?.images || []} />
           </CardContent>
         )}
       </Card>

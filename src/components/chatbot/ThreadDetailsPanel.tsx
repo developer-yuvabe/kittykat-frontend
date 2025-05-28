@@ -27,6 +27,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information;
+  const a2iImageInformation = data?.a2i_image_information;
+
+  console.log("a2i", a2iImageInformation);
+
   const previousBrandName = useRef<string>(null);
 
   useEffect(() => {
@@ -63,7 +67,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               brandId={threadId!}
             />
           )}
-          <A2iImagesSection />
+
+          {campaignInformation && campaignInformation?.length > 0 && (
+            <A2iImagesSection
+              a2iImageInformation={a2iImageInformation}
+              brandId={threadId}
+              campaignInformation={campaignInformation}
+            />
+          )}
         </>
       )}
     </div>
