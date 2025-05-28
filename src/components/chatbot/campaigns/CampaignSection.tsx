@@ -19,6 +19,7 @@ export const CampaignSection: React.FC<{
 }> = ({ campaignInformation, brandId }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
 
+  const stream = useStreamContext();
   const latestCampaignInformation = campaignInformation.length - 1;
   const stream = useStreamContext();
 
