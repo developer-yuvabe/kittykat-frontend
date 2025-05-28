@@ -20,12 +20,12 @@ import { debounce } from "lodash";
 
 type MediaLibraryProps = {
   activeTab?: string;
-  isDialog?: boolean;
+  isMediaSelectDialog?: boolean;
 };
 
 export function MediaLibrary({
   activeTab: initialTab = "all-media",
-  isDialog = false,
+  isMediaSelectDialog = false,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -210,7 +210,11 @@ export function MediaLibrary({
         value={activeTab}
         onValueChange={handleTabChange}
       >
-        <div className={`${isDialog ? " sticky top-0 z-40 bg-white" : ""}`}>
+        <div
+          className={`${
+            isMediaSelectDialog ? " sticky top-0 z-40 bg-white" : ""
+          }`}
+        >
           <h1 className="text-2xl font-bold mb-4">Media library</h1>
           <TabsList className="mb-4 border-b w-full justify-start rounded-none h-auto p-0 bg-transparent">
             <TabsTrigger
@@ -331,6 +335,7 @@ export function MediaLibrary({
                     onToggleFavorite={handleToggleFavorite}
                     onDelete={handleDeleteItem}
                     onDownload={downloadItem}
+                    isMediaSelectDialog={isMediaSelectDialog}
                   />
 
                   {/* Infinite scroll loading indicator */}

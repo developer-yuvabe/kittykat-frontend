@@ -16,7 +16,7 @@ export function MediaLibraryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90%] min-w-6xl overflow-y-scroll p-0">
         <div className="px-4">
-          <MediaLibrary activeTab="all-media" isDialog={true} />
+          <MediaLibrary activeTab="all-media" isMediaSelectDialog={true} />
         </div>
       </DialogContent>
     </Dialog>

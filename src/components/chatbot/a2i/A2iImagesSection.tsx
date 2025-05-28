@@ -1,32 +1,16 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Image } from "lucide-react";
-
 import { ReferenceImage } from "./ReferenceImage";
-import { PromptInput } from "./PromptInput";
-import { ImageDescription } from "./ImageDescription";
-import { CoreCreativeDirection } from "./CoreCreativeDirection";
-import { AdvancedCreativeDirections } from "./AdvancedCreativeDirections";
 import { CoreParameters } from "./CoreParameters";
 import { AdvancedParameters } from "./AdvancedParameters";
 import { A2IImages } from "./A2iImages";
-import { Product } from "./Product";
-import { MediaLibraryDialog } from "./MediaGalleryDialog";
-import { FashionModel } from "./FashionModel";
 
 export default function A2iImagesSection() {
-  const [prompt, setPrompt] = useState(
-    "A fashionable model wearing a stylish yellow dress in an urban setting"
-  );
-  const [imageDescription, setImageDescription] = useState(
-    "A professional fashion photograph featuring a confident model wearing a vibrant yellow summer dress. The scene is set in a modern urban environment with clean architectural lines. The lighting is natural and flattering, emphasizing the texture and flow of the fabric. The composition captures both the elegance of the garment and the contemporary urban aesthetic."
-  );
-  const [stylePreset, setStylePreset] = useState("pdp");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [previewMode, setPreviewMode] = useState("standard");
   const [variations, setVariations] = useState([4]);
   const [outputFormat, setOutputFormat] = useState("jpg");
-  const [stylingStrength, setStylingStrength] = useState([75]);
   const [cfgScale, setCfgScale] = useState([7]);
   const [denoisingStrength, setDenoisingStrength] = useState([0.8]);
   const [steps, setSteps] = useState([20]);
@@ -35,18 +19,6 @@ export default function A2iImagesSection() {
   const [samplerType, setSamplerType] = useState("dpm++");
   const [expanded, setExpanded] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [modelPose, setModelPose] = useState("standing");
-  const [backgroundStyles, setBackgroundStyles] = useState<string[]>(["urban"]);
-  const [cameraAngle, setCameraAngle] = useState("eye-level");
-  const [lightingStyle, setLightingStyle] = useState("natural");
-
-  // Mock reference images data
-  const referenceImage =
-    "https://storage.googleapis.com/kittykat-agents/brands/WAoAYJ9NprRT0XBM80uvo9EqsAm2/Selection%20(1).png-683586f68e36f668f5d15279";
-  const fashionModel =
-    "https://storage.googleapis.com/kittykat-agents/brands/WAoAYJ9NprRT0XBM80uvo9EqsAm2/Selection (2).png-683586e78e36f668f5d15275";
-  const productImage =
-    "https://storage.googleapis.com/kittykat-agents/brands/WAoAYJ9NprRT0XBM80uvo9EqsAm2/Selection%20(3).png-683586ef8e36f668f5d15277";
 
   // Mock generated images
   const generatedImages = [
@@ -75,7 +47,8 @@ export default function A2iImagesSection() {
     }, 3000);
   };
 
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const referenceImage =
+    "https://storage.googleapis.com/kittykat-agents/brands/WAoAYJ9NprRT0XBM80uvo9EqsAm2/Selection%20(1).png-683586f68e36f668f5d15279";
 
   return (
     <>
@@ -122,27 +95,7 @@ export default function A2iImagesSection() {
         {expanded && (
           <CardContent className="px-6  space-y-6">
             {/* 1. Reference Image */}
-            <ReferenceImage
-              referenceImage={referenceImage}
-              onSelect={() => setDialogOpen(true)}
-            />
-
-            <FashionModel fashionModel={fashionModel} />
-
-            {/* 3. Product */}
-            <Product productImage={productImage} />
-
-            {/* 4. Prompt */}
-            <PromptInput prompt={prompt} setPrompt={setPrompt} />
-
-            <ImageDescription
-              imageDescription={imageDescription}
-              setImageDescription={setImageDescription}
-            />
-            <CoreCreativeDirection
-              stylePreset={stylePreset}
-              setStylePreset={setStylePreset}
-            />
+            <ReferenceImage referenceImage={referenceImage} />
 
             {/* 8. Core Parameters */}
             <CoreParameters
@@ -171,19 +124,6 @@ export default function A2iImagesSection() {
               setFaceRestoration={setFaceRestoration}
             />
 
-            <AdvancedCreativeDirections
-              stylingStrength={stylingStrength}
-              setStylingStrength={setStylingStrength}
-              modelPose={modelPose}
-              setModelPose={setModelPose}
-              backgroundStyles={backgroundStyles}
-              setBackgroundStyles={setBackgroundStyles}
-              cameraAngle={cameraAngle}
-              setCameraAngle={setCameraAngle}
-              lightingStyle={lightingStyle}
-              setLightingStyle={setLightingStyle}
-            />
-
             <A2IImages
               isGenerating={isGenerating}
               generatedImages={generatedImages}
@@ -192,7 +132,6 @@ export default function A2iImagesSection() {
           </CardContent>
         )}
       </Card>
-      <MediaLibraryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
 }
