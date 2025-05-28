@@ -19,7 +19,6 @@ export const CampaignSection: React.FC<{
 }> = ({ campaignInformation, brandId }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
 
-
   const latestCampaignInformation = campaignInformation.length - 1;
   const stream = useStreamContext();
 
@@ -28,7 +27,11 @@ export const CampaignSection: React.FC<{
     latestCampaignInformation
   );
 
+  const [fadeKey, setFadeKey] = useState(0);
+
   useEffect(() => {
+    // Trigger fade by incrementing key when campaignInformation length changes
+    setFadeKey((prev) => prev + 1);
     setSelectedCampaignIndex(campaignInformation.length - 1);
   }, [campaignInformation.length]);
 
@@ -75,7 +78,11 @@ export const CampaignSection: React.FC<{
               <CampaignSelector
                 campaigns={campaignInformation}
                 selectedCampaignIndex={selectedCampaignIndex}
-                setSelectedCampaignIndex={setSelectedCampaignIndex}
+                // setSelectedCampaignIndex={setSelectedCampaignIndex}
+                setSelectedCampaignIndex={(index) => {
+                  setFadeKey((prev) => prev + 1); // Trigger fade on campaign change
+                  setSelectedCampaignIndex(index);
+                }}
               />
               <TooltipIconButton
                 size="lg"
@@ -116,7 +123,10 @@ export const CampaignSection: React.FC<{
         </div>
       </CardHeader>
       {expanded && (
-        <CardContent className="pt-0 pb-6">
+        <CardContent
+          key={fadeKey}
+          className="pt-0 pb-6 transition-opacity duration-[2000ms] ease-in-out opacity-0 animate-[fade-in_1s_ease-in-out_forwards]"
+        >
           <div className="mt-1 space-y-6">
             <CampaignOverview
               title={currentCampaign?.campaign?.title}
