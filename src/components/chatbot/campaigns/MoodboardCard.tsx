@@ -40,7 +40,8 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
     toast.success("Prompt copied to clipboard!", { position: "top-right" });
   };
 
-  const handleLikeDislike = (isLiked: boolean) => {
+  const handleLikeDislike = (isLiked: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsLiked(isLiked);
     updateCampaignMoodboard(brandId, campaignId, moodboardId, {
       is_liked: isLiked,
@@ -103,7 +104,13 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
       </div>
 
       {/* Image and Rating */}
-      <div className="relative aspect-square flex items-center justify-center group mt-10">
+      <div
+        className="relative aspect-square flex items-center justify-center group mt-10"
+        onClick={(e) => {
+          e.stopPropagation();
+          onExpand(moodboard.asset_url);
+        }}
+      >
         {/* Curvy gradient overlay at top-right */}
         {/* <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-br from-black/50 to-transparent rounded-bl-[10%]"></div> */}
         {/* Bottom-to-top gradient overlay */}
@@ -113,17 +120,15 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
           src={moodboard.asset_url || "/api/placeholder/600/600"}
           alt="Moodboard"
           className="w-full h-full object-contain transition-opacity duration-300"
-          onClick={() => onExpand(moodboard.asset_url)}
+          // onClick={() => onExpand(moodboard.asset_url)}
         />
 
         {/* Hover overlay for actions */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex justify-end p-2 bg-gradient-to-b from-black/80">
+        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <div className="flex justify-end p-2 bg-gradient-to-b from-black/80 pointer-events-auto">
             <Popover>
-              <PopoverTrigger>
-                {/* <Button variant="ghost" className="hover:bg-transparent"> */}
+              <PopoverTrigger onClick={(e) => e.stopPropagation()}>
                 <MoreIcon size={28} color="#ffffff" />
-                {/* </Button> */}
               </PopoverTrigger>
               <PopoverContent
                 className="w-68 h-max max-h-128 overflow-auto p-2"
@@ -137,15 +142,15 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
               </PopoverContent>
             </Popover>
           </div>
-          <div className="bg-opacity-60 text-white py-3 px-4 flex items-center justify-between bg-gradient-to-t from-black/85">
+          <div className="bg-opacity-60 text-white py-3 px-4 flex items-center justify-between bg-gradient-to-t from-black/85 pointer-events-auto">
             <div className="text-sm font-medium shadow-2xl">
               Rate this image
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 pointer-events-auto">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleLikeDislike(false)}
+                onClick={(e) => handleLikeDislike(false, e)}
                 className="p-1.5 rounded-full bg-opacity-50 hover:bg-opacity-70 text-white"
               >
                 <DislikeIcon
@@ -156,7 +161,7 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleLikeDislike(true)}
+                onClick={(e) => handleLikeDislike(true, e)}
                 className="p-1.5 rounded-full bg-opacity-50 hover:bg-opacity-70 text-white"
               >
                 <LikeIcon
