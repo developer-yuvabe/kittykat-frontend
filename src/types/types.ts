@@ -148,20 +148,15 @@ export interface ThreadCampaign {
 
 type ImageDetail = {
   url: string;
-  description: string;
-};
-
-type A2IImage = {
-  url: string;
-  metadata: Record<string, any>;
+  prompt: string;
+  paramters?: Record<string, any>;
 };
 
 type ThreadA2iImage = {
-  reference_image: ImageDetail | null;
-  fashion_model: ImageDetail | null;
-  product_image: ImageDetail | null;
-  a2iImages: A2IImage[];
-  prompt: string;
+  refernce_campaign_id?: string;
+  reference_moodboard_id?: string;
+  paramters?: Record<string, any>;
+  images?: ImageDetail[];
 };
 
 export interface ThreadDetails {
