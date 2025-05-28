@@ -15,6 +15,7 @@ export interface BaseApiResponse<T> {
 export enum Agents {
   BRANDING_AGENT = "brandingAgent",
   CAMPAIGN_AGENT = "campaignAgent",
+  A2I_IMAGES_AGENT = "A2I_IMAGES_AGENT",
 }
 
 export interface MoodboardAsset {

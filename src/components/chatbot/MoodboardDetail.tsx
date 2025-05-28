@@ -22,7 +22,6 @@ import {
   SaveIcon,
 } from "../ui/custom-icon";
 import { Input } from "../ui/input";
-import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 interface MoodboardDetailProps {
   moodboard: MoodboardAsset;
@@ -65,18 +64,16 @@ export default function MoodboardDetail({
   };
 
   const handleSaveComment = async () => {
-    updateCampaignMoodboard(brandId, campaignId, moodboard.id, {
+    setIsEditingComment(false);
+    await updateCampaignMoodboard(brandId, campaignId, moodboard.id, {
       comment: comment,
-    }).then(() => {
-      setIsEditingComment(false);
     });
   };
 
   const handleSaveTitle = async () => {
-    updateCampaignMoodboard(brandId, campaignId, moodboard.id, {
+    setIsEditingTitle(false);
+    await updateCampaignMoodboard(brandId, campaignId, moodboard.id, {
       title,
-    }).then(() => {
-      setIsEditingTitle(false);
     });
   };
 
@@ -169,7 +166,7 @@ export default function MoodboardDetail({
 
   return (
     <div className="space-y-2">
-      <div onDoubleClick={handleEditTitle} className="relative">
+      <div className="relative" onDoubleClick={handleEditTitle}>
         <Input
           ref={inputRef}
           value={title}
@@ -178,9 +175,9 @@ export default function MoodboardDetail({
           onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
           disabled={!isEditingTitle}
         />
-        <TooltipIconButton
-          tooltip={isEditingTitle ? "Save Title" : "Edit Title"}
+        <Button
           variant="ghost"
+          size="icon"
           className="h-8 w-8 absolute top-1/2 -translate-y-1/2 right-0 hover:bg-transparent resize-none min-h-max"
           onClick={isEditingTitle ? handleSaveTitle : handleEditTitle}
         >
@@ -189,7 +186,7 @@ export default function MoodboardDetail({
           ) : (
             <EditIcon size={18} className="" />
           )}
-        </TooltipIconButton>
+        </Button>
       </div>
 
       {/* Image details with gray background */}
@@ -229,8 +226,7 @@ export default function MoodboardDetail({
             }}
           />
           {comment?.trim() !== "" && (
-            <TooltipIconButton
-              tooltip={isEditingComment ? "Save Comment" : "Edit Comment"}
+            <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 absolute top-1 right-1 hover:!bg-transparent"
@@ -241,10 +237,9 @@ export default function MoodboardDetail({
               ) : (
                 <EditIcon size={18} className="" />
               )}
-            </TooltipIconButton>
+            </Button>
           )}
         </div>
-        {/* )} */}
       </div>
 
       {/* Action buttons without border */}
