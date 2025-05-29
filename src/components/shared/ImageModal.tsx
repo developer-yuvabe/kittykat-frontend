@@ -1,13 +1,13 @@
-import React, { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React from "react";
 
 interface ImageModalProps {
   imageUrl: string;
@@ -24,29 +24,23 @@ export const ImageModal: React.FC<ImageModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogHeader className="sr-only">
+        <DialogTitle>Expanded Image</DialogTitle>
+        <DialogDescription>{alt}</DialogDescription>
+      </DialogHeader>
       <DialogContent
-        className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-transparent shadow-none [&>button]:hidden"
+        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden !max-h-[90vh] !max-w-[90vw] h-[90vh] w-max flex items-center justify-center"
         onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
       >
-        <DialogHeader className="sr-only">
-          <DialogTitle>{alt}</DialogTitle>
-          <DialogDescription>Expanded image view</DialogDescription>
-        </DialogHeader>
+        <div className="relative aspect-square rounded-lg shadow-2xl h-full w-max group">
+          <img src={imageUrl} alt={alt} className="object-contain rounded-lg" />
 
-        <div className="relative flex items-center justify-center p-4">
-          <img
-            src={imageUrl}
-            alt={alt}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-          />
-
-          {/* Custom close button */}
           <DialogClose asChild>
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-2 right-2 bg-white/95 hover:bg-white border-2 rounded-full w-10 h-10 shadow-xl transition-all duration-200 hover:scale-110"
+              className="absolute top-6 right-6 bg-white/95 hover:bg-white border-2 rounded-full w-10 h-10 shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
               aria-label="Close expanded image"
             >
               <span className="text-lg font-semibold">✕</span>

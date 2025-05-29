@@ -115,7 +115,7 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
                     variant="outline"
                     className="w-full mt-2"
                     onClick={() =>
-                      handleCopy(moodboard.input_prompt!, "Base prompt copied!")
+                      handleCopy(moodboard.base_prompt!, "Base prompt copied!")
                     }
                   >
                     <Copy className="mr-2 h-4 w-4" /> Copy Prompt
