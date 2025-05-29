@@ -7,6 +7,13 @@ import { ActionButtonsRow } from "./ActionButtonsRow";
 import { Button } from "@/components/ui/button";
 import { ImageIcon, Plus, Wand2 } from "lucide-react";
 import { ImageDetail } from "@/types/types";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
@@ -50,37 +57,50 @@ export const A2IImages = ({
             <EmptyState />
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {images.map((image) => (
-                  <div key={image.id}>
-                    <ImageDisplay
-                      src={image.url}
-                      alt={`Generated Image ${image.id}`}
-                      className=""
-                      onSelect={undefined}
-                    />
+              <Carousel className="w-full">
+                <CarouselContent className="mb-4">
+                  {images.map((image, index) => (
+                    <CarouselItem
+                      key={image.id || index}
+                      className="md:basis-1/2 lg:basis-1/3"
+                    >
+                      <div className=" h-full flex flex-col justify-between bg-white rounded-xl shadow-md p-6 ">
+                        <div className="flex-1 flex items-center  justify-center">
+                          <ImageDisplay
+                            src={image.url}
+                            alt={`Generated Image ${image.id}`}
+                            className="max-h-[250px] object-contain"
+                            onSelect={undefined}
+                          />
+                        </div>
 
-                    <ActionButtonsRow
-                      className="flex justify-between"
-                      buttons={[
-                        {
-                          label: "Create Video",
+                        <ActionButtonsRow
+                          className="flex justify-between mt-4"
+                          buttons={[
+                            {
+                              label: "Create Video",
+                              onClick: () => handleCreateVideo(image.id),
+                              color: "#636AE8",
+                              hoverColor: "#5b5fd1",
+                            },
+                            {
+                              label: "Remix",
+                              onClick: () => handleRemixImage(image.id),
+                              color: "#EA916E",
+                              hoverColor: "#e7845d",
+                            },
+                          ]}
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
 
-                          onClick: () => handleCreateVideo(image.id),
-                          color: "#636AE8",
-                          hoverColor: "#5b5fd1",
-                        },
-                        {
-                          label: "Remix",
-                          onClick: () => handleRemixImage(image.id),
-                          color: "#EA916E",
-                          hoverColor: "#e7845d",
-                        },
-                      ]}
-                    />
-                  </div>
-                ))}
-              </div>
+                <div className="flex justify-center mt-4">
+                  <CarouselPrevious className="relative transform-none mx-2" />
+                  <CarouselNext className="relative transform-none mx-2" />
+                </div>
+              </Carousel>
 
               {/* Generate More Button */}
 
