@@ -9,7 +9,7 @@ import {
 import { Agents, MoodboardAsset } from "@/types/types";
 import React, { useState } from "react";
 import { MoodboardCard } from "./MoodboardCard";
-import { Button } from "@/components/ui/button";
+import { ImageModal } from "../../shared/ImageModal";
 
 interface CampaignMoodboardProps {
   moodboards: MoodboardAsset[];
@@ -53,27 +53,13 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
             </div>
           </Carousel>
 
-          {/* Expanded image modal */}
           {expandedImage && (
-            <div
-              className="fixed inset-0 bg-black/50 bg-opacity-75 flex items-center justify-center z-50 p-4"
-              onClick={() => setExpandedImage(null)}
-            >
-              <div className="relative max-w-4xl max-h-full">
-                <img
-                  src={expandedImage}
-                  alt="Expanded moodboard"
-                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
-                />
-                <Button
-                  variant="outline"
-                  className="absolute top-4 right-4 bg-white rounded-full w-8 h-8 p-0"
-                  onClick={() => setExpandedImage(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </div>
+            <ImageModal
+              imageUrl={expandedImage}
+              onClose={() => setExpandedImage(null)}
+              alt="Expanded moodboard"
+              isOpen={!!expandedImage}
+            />
           )}
         </div>
       }
