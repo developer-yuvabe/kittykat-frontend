@@ -106,6 +106,7 @@ export const sortParametersByPriority = (
 };
 
 export const groupParameters = (schema: ModelSchema): ParameterGroup[] => {
+  if (!schema || !schema.properties) return [];
   const paramEntries = Object.entries(schema.properties);
   const sortedParams = sortParametersByPriority(paramEntries);
 

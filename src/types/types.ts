@@ -156,9 +156,9 @@ export type ImageDetail = {
 };
 
 export type ThreadA2iImage = {
-  refernce_campaign_id?: string;
+  reference_campaign_id?: string;
   reference_moodboard_id?: string;
-  paramters?: Record<string, any>;
+  parameters?: Record<string, any>;
   images?: ImageDetail[];
 };
 

@@ -11,14 +11,24 @@ import {
 } from "@/components/ui/select";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Settings, Image, Sliders } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { ParameterGroup } from "./ParameterGroup";
 import { useParameterManagement } from "@/hooks/useParameterManagement";
 import { groupParameters } from "@/lib/a2i.utils";
 import { models } from "@/lib/models";
+import { ThreadA2iImage } from "@/types/types";
 
-const EnhancedParameterConfiguration: React.FC = () => {
+const EnhancedParameterConfiguration = ({
+  a2iImageInformation,
+  brandId,
+}: {
+  a2iImageInformation: ThreadA2iImage | undefined;
+  brandId: string;
+}) => {
+  const initialModelId = a2iImageInformation?.parameters?.model;
+  console.log("im", initialModelId);
+
   const {
     selectedModelId,
     setSelectedModelId,
@@ -27,9 +37,17 @@ const EnhancedParameterConfiguration: React.FC = () => {
     updateParam,
     isLoading,
     lastSaved,
-  } = useParameterManagement({ models });
+  } = useParameterManagement({
+    models,
+    initialModelId,
+    brandId,
+    a2iInformation: a2iImageInformation,
+  });
 
-  const parameterGroups = groupParameters(selectedModel.schema);
+  console.log("h3", a2iImageInformation, brandId);
+  const parameterGroups = selectedModel?.schema
+    ? groupParameters(selectedModel.schema)
+    : [];
 
   return (
     <ContentSection
@@ -96,7 +114,7 @@ const EnhancedParameterConfiguration: React.FC = () => {
                   group={group}
                   values={params}
                   onParameterChange={updateParam}
-                  requiredFields={selectedModel.schema.required}
+                  requiredFields={selectedModel?.schema?.required || []}
                   modelId={selectedModelId}
                 />
               </div>

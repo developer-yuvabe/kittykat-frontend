@@ -1,5 +1,6 @@
 // src/services/brand.service.ts
 import axiosInstance from "@/config/axios/api-client.config";
+import { A2iImageUpdateRequest } from "@/hooks/useParameterManagement";
 import { handleApiRequest } from "@/lib/utils";
 import {
   BrandIdentity,
@@ -7,6 +8,8 @@ import {
   BrandsListResponse,
   BrandURLRequest,
 } from "@/types/brand.types";
+import { BaseApiResponse, ThreadA2iImage } from "@/types/types";
+import axios from "@/config/axios/api-client.config";
 
 class BrandService {
   async createBrand(request: BrandIdentity): Promise<BrandResponse> {
@@ -81,3 +84,14 @@ export async function deleteCampaignMoodboard(
 }
 
 export const brandService = new BrandService();
+
+// API functions - moved outside hook to prevent recreation
+export const updateA2iImageParameters = async (
+  payload: A2iImageUpdateRequest
+): Promise<BaseApiResponse<ThreadA2iImage>> => {
+  const response = await axios.put<BaseApiResponse<ThreadA2iImage>>(
+    `/brands/a2i`,
+    payload
+  );
+  return response.data;
+};

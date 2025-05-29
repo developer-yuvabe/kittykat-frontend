@@ -21,38 +21,21 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle, Image, Target } from "lucide-react";
 import { MoodboardAsset, ThreadA2iImage, ThreadCampaign } from "@/types/types";
-
-// Mock API functions
-const mockUpdateReferenceImage = async (
-  campaignId: string,
-  moodboardId: string,
-  imageId: string
-) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Updated reference:", { campaignId, moodboardId, imageId });
-      resolve({ success: true });
-    }, 500);
-  });
-};
-
-const mockUpdateCampaignSelection = async (campaignId: string) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Updated campaign selection:", { campaignId });
-      resolve({ success: true });
-    }, 300);
-  });
-};
+import {
+  updateReferenceCampaignId,
+  updateReferenceMoodboardId,
+} from "@/hooks/useParameterManagement"; // Update this import path to match your API file location
 
 interface ReferenceImageSectionProps {
   campaignInformation: ThreadCampaign[] | undefined;
   a2iImageInformation: ThreadA2iImage | undefined;
+  brandId: string; // Added brandId prop as it's required for API calls
 }
 
 export function ReferenceImage({
   campaignInformation,
   a2iImageInformation,
+  brandId,
 }: ReferenceImageSectionProps) {
   const [selectedMoodboard, setSelectedMoodboard] =
     useState<MoodboardAsset | null>(null);
@@ -76,7 +59,7 @@ export function ReferenceImage({
     if (campaignInformation?.length) {
       // Default to last campaign if no specific campaign is referenced
       const defaultCampaignId =
-        a2iImageInformation?.refernce_campaign_id ||
+        a2iImageInformation?.reference_campaign_id ||
         campaignInformation[campaignInformation.length - 1].id;
       setSelectedCampaignId(defaultCampaignId);
 
@@ -98,17 +81,19 @@ export function ReferenceImage({
   const handleCampaignSelect = async (campaignId: string) => {
     setIsCampaignUpdating(true);
     try {
-      await mockUpdateCampaignSelection(campaignId);
+      // Use real API call
+      await updateReferenceCampaignId(brandId, campaignId);
       setSelectedCampaignId(campaignId);
       // Clear moodboard selection when campaign changes unless it's the same reference
       if (
         selectedMoodboard &&
-        a2iImageInformation?.refernce_campaign_id !== campaignId
+        a2iImageInformation?.reference_campaign_id !== campaignId
       ) {
         setSelectedMoodboard(null);
       }
     } catch (error) {
       console.error("Failed to update campaign selection:", error);
+      // You might want to show a toast notification or error message here
     } finally {
       setIsCampaignUpdating(false);
     }
@@ -120,15 +105,13 @@ export function ReferenceImage({
 
     setIsUpdating(true);
     try {
-      await mockUpdateReferenceImage(
-        currentCampaign.id,
-        moodboard.id,
-        moodboard.id
-      );
+      // Use real API call for moodboard reference
+      await updateReferenceMoodboardId(brandId, moodboard.id);
       setSelectedMoodboard(moodboard);
       setIsMoodboardModalOpen(false);
     } catch (error) {
       console.error("Failed to update reference image:", error);
+      // You might want to show a toast notification or error message here
     } finally {
       setIsUpdating(false);
     }

@@ -2,7 +2,7 @@ import { ModelDefinition } from "@/types/a2i.types";
 
 export const models: ModelDefinition[] = [
   {
-    id: "flux-dev",
+    id: "black-forest-labs/flux-dev",
     name: "FLUX-dev",
     description: "High-quality image generation with advanced controls",
     schema: {
@@ -162,7 +162,7 @@ export const models: ModelDefinition[] = [
     },
   },
   {
-    id: "flux-1.1-pro",
+    id: "black-forest-labs/flux-1.1-pro",
     name: "FLUX-1.1-pro",
     description: "Professional grade image generation with enhanced controls",
     schema: {

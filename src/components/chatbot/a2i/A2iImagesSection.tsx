@@ -20,12 +20,6 @@ export default function A2iImagesSection({
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
 
-  const referenceImage =
-    "https://storage.googleapis.com/kittykat-agents/brands/WAoAYJ9NprRT0XBM80uvo9EqsAm2/Selection%20(1).png-683586f68e36f668f5d15279";
-
-  console.log("here1", a2iImageInformation);
-  console.log("here1", campaignInformation);
-
   return (
     <>
       <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -63,10 +57,14 @@ export default function A2iImagesSection({
             <ReferenceImage
               campaignInformation={campaignInformation}
               a2iImageInformation={a2iImageInformation}
+              brandId={brandId || ""}
             />
 
             {/* 8. Core Parameters */}
-            <EnhancedParameterConfiguration />
+            <EnhancedParameterConfiguration
+              a2iImageInformation={a2iImageInformation}
+              brandId={brandId || ""}
+            />
 
             <A2IImages generatedImages={a2iImageInformation?.images || []} />
           </CardContent>
