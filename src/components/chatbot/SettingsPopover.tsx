@@ -120,7 +120,7 @@ export function SettingsPopover() {
 
         <PopoverContent className="w-64 p-4 space-y-4">
           {/* Image Model */}
-          <div>
+          {/* <div>
             <h4 className="mb-1 text-sm font-semibold">
               Image Generation Model
             </h4>
@@ -150,7 +150,7 @@ export function SettingsPopover() {
                 </SelectContent>
               </Select>
             )}
-          </div>
+          </div> */}
 
           {/* Text Model */}
           <div>
