@@ -842,32 +842,30 @@ export const DislikeIcon: React.FC<CustomIconProps> = ({
 export const LibraryIcon: React.FC<CustomIconProps> = ({
   color = "currentColor",
   size = 24,
-  className = "library-icon",
+  className,
   ...props
 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
     height={size}
-    fill="none"
-    viewBox="0 0 24 24"
+    color={color}
     className={className}
+    fill="none"
     {...props}
   >
     <path
-      className="library-icon-path"
       stroke={color}
       strokeMiterlimit={10}
       strokeWidth={1.368}
-      d="M7 2.445v9.69"
+      d="M8.57 3.491v9.69"
     />
     <path
-      className="library-icon-path-2"
       stroke={color}
       strokeLinecap="round"
       strokeMiterlimit={10}
       strokeWidth={1.368}
-      d="M10.135 1.3C8.425 1.3 7 2.04 7 3.01 7 2.04 5.575 1.3 3.865 1.3 2.155 1.3.73 2.04.73 3.01v9.69c0-.97 1.425-1.71 3.135-1.71 1.71 0 3.135.74 3.135 1.71 0-.97 1.425-1.71 3.135-1.71 1.71 0 3.135.74 3.135 1.71V3.01c0-.97-1.425-1.71-3.135-1.71Z"
+      d="M11.706 2.346c-1.71 0-3.135.741-3.135 1.71 0-.969-1.425-1.71-3.135-1.71-1.71 0-3.135.741-3.135 1.71v9.69c0-.969 1.425-1.71 3.135-1.71 1.71 0 3.135.741 3.135 1.71 0-.969 1.425-1.71 3.135-1.71 1.71 0 3.135.741 3.135 1.71v-9.69c0-.969-1.425-1.71-3.135-1.71Z"
     />
   </svg>
 );

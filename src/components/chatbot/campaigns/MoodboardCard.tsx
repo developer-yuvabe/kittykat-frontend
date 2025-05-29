@@ -16,6 +16,7 @@ import {
 import MoodboardDetail from "../MoodboardDetail";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
 import { MoodboardAsset } from "@/types/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface MoodboardCardProps {
   moodboard: MoodboardAsset;
@@ -35,9 +36,9 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
     moodboard.is_liked
   );
 
-  const handleCopyPrompt = (prompt: string) => {
+  const handleCopy = (prompt: string, acknowledgement: string) => {
     navigator.clipboard.writeText(prompt);
-    toast.success("Prompt copied to clipboard!", { position: "top-right" });
+    toast.success(acknowledgement, { position: "top-right" });
   };
 
   const handleLikeDislike = (isLiked: boolean, e: React.MouseEvent) => {
@@ -87,18 +88,86 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
             className="w-xl p-4 max-h-[700px] overflow-y-scroll"
             side="right"
           >
-            <div className="space-y-2">
-              <h4 className="font-medium">Image Prompt</h4>
-              <p className="text-sm text-gray-700">{moodboard.input_prompt}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full mt-2"
-                onClick={() => handleCopyPrompt(moodboard.input_prompt!)}
-              >
-                <Copy className="mr-2 h-4 w-4" /> Copy Prompt
-              </Button>
-            </div>
+            <Tabs defaultValue="base-prompt" className="w-full">
+              <TabsList className="w-full ">
+                <TabsTrigger value="base-prompt">Base Prompt</TabsTrigger>
+                <TabsTrigger value="prompt">
+                  Moodboard Enhanced Prompt
+                </TabsTrigger>
+                <TabsTrigger value="visual-description">
+                  Visual description
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="base-prompt" className="w-full">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Base Prompt</h4>
+                  {moodboard.base_prompt ? (
+                    <p className="text-sm text-gray-700">
+                      {moodboard.base_prompt}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-700">
+                      No base prompt available.
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() =>
+                      handleCopy(moodboard.input_prompt!, "Base prompt copied!")
+                    }
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy Prompt
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="prompt" className="w-full">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Moodboard Enhanced Prompt</h4>
+                  <p className="text-sm text-gray-700">
+                    {moodboard.input_prompt}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() =>
+                      handleCopy(moodboard.input_prompt!, "Prompt copied!")
+                    }
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy Prompt
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="visual-description">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Visual Description</h4>
+                  {moodboard.visual_description ? (
+                    <p className="text-sm text-gray-700">
+                      {moodboard.visual_description}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-700">
+                      No visual description available.
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() =>
+                      handleCopy(
+                        moodboard.visual_description!,
+                        "Visual description copied!"
+                      )
+                    }
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy Description
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </PopoverContent>
         </Popover>
       </div>

@@ -41,6 +41,8 @@ export interface MoodboardAsset {
   source: string;
   generation_engine?: string;
   input_prompt?: string;
+  base_prompt?: string;
+  visual_description?: string;
 
   created_at: string;
   updated_at: string;
