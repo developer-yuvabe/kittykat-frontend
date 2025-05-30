@@ -52,7 +52,7 @@ const EnhancedParameterConfiguration = ({
   return (
     <ContentSection
       content={
-        <div className="max-w-6xl  space-y-8">
+        <div className="w-full  space-y-8">
           {/* Header with Status */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
