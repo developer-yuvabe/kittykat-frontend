@@ -62,7 +62,7 @@ export const updateReferenceMoodboardId = async (
 
 export const useParameterManagement = ({
   models,
-  initialModelId,
+  initialModelId = "gpt-image-1",
   brandId,
   a2iInformation,
 }: UseParameterManagementProps) => {

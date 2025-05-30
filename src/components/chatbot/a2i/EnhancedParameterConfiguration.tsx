@@ -26,7 +26,8 @@ const EnhancedParameterConfiguration = ({
   a2iImageInformation: ThreadA2iImage | undefined;
   brandId: string;
 }) => {
-  const initialModelId = a2iImageInformation?.parameters?.model;
+  const initialModelId =
+    a2iImageInformation?.parameters?.model || "gpt-image-1";
   console.log("im", initialModelId);
 
   const {
