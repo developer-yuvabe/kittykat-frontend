@@ -39,7 +39,6 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             alt={alt}
             className="object-contain rounded-lg max-h-[90vh] max-w-[90vw] w-auto h-auto"
           />
-
           <DialogClose asChild>
             <Button
               variant="outline"

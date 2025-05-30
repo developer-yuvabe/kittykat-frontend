@@ -90,41 +90,14 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
           >
             <Tabs defaultValue="base-prompt" className="w-full">
               <TabsList className="w-full ">
-                <TabsTrigger value="base-prompt">Base Prompt</TabsTrigger>
-                <TabsTrigger value="prompt">
-                  Moodboard Enhanced Prompt
-                </TabsTrigger>
+                <TabsTrigger value="prompt">Prompt</TabsTrigger>
                 <TabsTrigger value="visual-description">
                   Visual description
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="base-prompt" className="w-full">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Base Prompt</h4>
-                  {moodboard.base_prompt ? (
-                    <p className="text-sm text-gray-700">
-                      {moodboard.base_prompt}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-gray-700">
-                      No base prompt available.
-                    </p>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-2"
-                    onClick={() =>
-                      handleCopy(moodboard.base_prompt!, "Base prompt copied!")
-                    }
-                  >
-                    <Copy className="mr-2 h-4 w-4" /> Copy Prompt
-                  </Button>
-                </div>
-              </TabsContent>
               <TabsContent value="prompt" className="w-full">
                 <div className="space-y-2">
-                  <h4 className="font-medium">Moodboard Enhanced Prompt</h4>
+                  <h4 className="font-medium">Prompt</h4>
                   <p className="text-sm text-gray-700">
                     {moodboard.input_prompt}
                   </p>
