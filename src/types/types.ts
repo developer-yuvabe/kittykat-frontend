@@ -152,7 +152,7 @@ export type ImageDetail = {
   id: string;
   url: string;
   prompt: string;
-  paramters?: Record<string, any>;
+  parameters?: Record<string, any>;
 };
 
 export type ThreadA2iImage = {

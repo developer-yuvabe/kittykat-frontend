@@ -1,6 +1,5 @@
 // components/A2IImages.tsx
 
-import { useState } from "react";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { ImageDisplay } from "./ImageDisplay";
 import { ActionButtonsRow } from "./ActionButtonsRow";
@@ -19,10 +18,8 @@ type A2IImagesProps = {
   generatedImages: ImageDetail[];
 };
 
-export const A2IImages = ({
-  generatedImages: initialImages,
-}: A2IImagesProps) => {
-  const [images, setImages] = useState<ImageDetail[]>(initialImages);
+export const A2IImages = ({ generatedImages }: A2IImagesProps) => {
+  console.log("image data", generatedImages);
 
   const handleCreateVideo = (imageId: string) => {
     console.log("Creating video for image:", imageId);
@@ -53,13 +50,13 @@ export const A2IImages = ({
       content={
         <div className="space-y-6">
           {/* Images Grid */}
-          {images.length === 0 ? (
+          {generatedImages.length === 0 ? (
             <EmptyState />
           ) : (
             <>
               <Carousel className="w-full h-auto">
                 <CarouselContent className="mb-4">
-                  {images.map((image, index) => (
+                  {generatedImages.map((image, index) => (
                     <CarouselItem
                       key={image.id || index}
                       className="md:basis-1/2 lg:basis-1/3"
@@ -71,6 +68,8 @@ export const A2IImages = ({
                             alt={`Generated Image ${image.id}`}
                             className=" "
                             onSelect={undefined}
+                            prompt={image.prompt}
+                            metadata={image.parameters}
                           />
                         </div>
 

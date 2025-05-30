@@ -52,7 +52,7 @@ const EnhancedParameterConfiguration = ({
   return (
     <ContentSection
       content={
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-6xl  space-y-8">
           {/* Header with Status */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ const EnhancedParameterConfiguration = ({
                   value={selectedModelId}
                   onValueChange={setSelectedModelId}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-1/4">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
