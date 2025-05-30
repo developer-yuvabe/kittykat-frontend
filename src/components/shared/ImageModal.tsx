@@ -29,21 +29,25 @@ export const ImageModal: React.FC<ImageModalProps> = ({
         <DialogDescription>{alt}</DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden !max-h-[90vh] !max-w-[90vw] h-[90vh] w-max flex items-center justify-center"
+        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden !max-h-[90vh] !max-w-[90vw] flex items-center justify-center"
         onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
       >
-        <div className="relative aspect-square rounded-lg shadow-2xl h-full w-max group">
-          <img src={imageUrl} alt={alt} className="object-contain rounded-lg" />
+        <div className="relative rounded-lg shadow-2xl max-h-full max-w-full group">
+          <img
+            src={imageUrl}
+            alt={alt}
+            className="object-contain rounded-lg max-h-[90vh] max-w-[90vw] w-auto h-auto"
+          />
 
           <DialogClose asChild>
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-6 right-6 bg-white/95 hover:bg-white border-2 rounded-full w-10 h-10 shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+              className="absolute top-4 right-4 bg-white/95 hover:bg-white border-2 rounded-full w-8 h-8 shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
               aria-label="Close expanded image"
             >
-              <span className="text-lg font-semibold">✕</span>
+              <span className="text-base font-semibold">✕</span>
             </Button>
           </DialogClose>
         </div>
