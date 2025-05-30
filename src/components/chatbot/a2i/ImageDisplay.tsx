@@ -1,7 +1,6 @@
 import { PinIcon } from "@/components/ui/custom-icon";
 import { CircleX, Copy, ExpandIcon } from "lucide-react";
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { LikeIcon, DislikeIcon } from "@/components/ui/custom-icon";
 import {
   Dialog,
@@ -38,7 +37,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
           <ExpandIcon size={20} className="cursor-pointer" />
         </DialogTrigger>
         <DialogContent
-          className="p-0 max-w-[90vw] border rounded-none focus:border-none border-none max-h-[90vh] flex items-center justify-center"
+          className="p-0 max-w-[90vw] border rounded-none focus:border-none border-none max-h-[90v] flex items-center justify-center"
           hideCloseIcon={true}
         >
           <VisuallyHidden>
@@ -55,7 +54,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
       <PinIcon size={20} />
     </div>
 
-    <img src={src} alt={alt} className="w-full h-full" />
+    <img src={src} alt={alt} className="w-auto object-contain h-full " />
 
     {/* Rating Bar: visible only on hover */}
     <div className="absolute bottom-0 w-full py-3 px-4 flex text-white items-center justify-between text-wh bg-gradient-to-t from-black/85 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

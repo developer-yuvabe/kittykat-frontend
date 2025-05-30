@@ -57,7 +57,7 @@ export const A2IImages = ({
             <EmptyState />
           ) : (
             <>
-              <Carousel className="w-full">
+              <Carousel className="w-full h-auto">
                 <CarouselContent className="mb-4">
                   {images.map((image, index) => (
                     <CarouselItem
@@ -69,7 +69,7 @@ export const A2IImages = ({
                           <ImageDisplay
                             src={image.url}
                             alt={`Generated Image ${image.id}`}
-                            className="max-h-[250px] object-contain"
+                            className=" "
                             onSelect={undefined}
                           />
                         </div>

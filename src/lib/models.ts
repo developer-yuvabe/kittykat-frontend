@@ -162,7 +162,7 @@ export const models: ModelDefinition[] = [
     },
   },
   {
-    id: "black-forest-labsflux-1.1-pro",
+    id: "black-forest-labs/flux-1.1-pro",
     name: "FLUX-1.1-pro",
     description: "Professional grade image generation with enhanced controls",
     schema: {
