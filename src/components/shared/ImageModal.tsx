@@ -29,15 +29,15 @@ export const ImageModal: React.FC<ImageModalProps> = ({
         <DialogDescription>{alt}</DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden !max-h-[90vh] !max-w-[90vw] flex items-center justify-center"
+        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden w-[80vw] max-h-[80vh] max-w-screen-xl flex items-center justify-center cursor-zoom-out"
         onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
       >
-        <div className="relative rounded-lg shadow-2xl max-h-full max-w-full group">
+        <div className="relative rounded-lg shadow-2xl inline-block group">
           <img
             src={imageUrl}
             alt={alt}
-            className="object-contain rounded-lg max-h-[90vh] max-w-[90vw] w-auto h-auto"
+            className="object-contain rounded-lg max-h-[90vh] max-w-[90vw] w-auto h-auto "
           />
           <DialogClose asChild>
             <Button
