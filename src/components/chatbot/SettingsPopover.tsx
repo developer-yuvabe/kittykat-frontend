@@ -171,8 +171,6 @@ export function SettingsPopover() {
                   <SelectItem value="gpt-4o-mini">gpt-4o-mini</SelectItem>
                   <SelectItem value="gpt-4o">gpt-4o</SelectItem>
                   <SelectItem value="gpt-4.1">gpt-4.1</SelectItem>
-                  <SelectItem value="o3">o3</SelectItem>
-                  <SelectItem value="o4-mini">o4-mini</SelectItem>
                 </SelectContent>
               </Select>
             )}
