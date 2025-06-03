@@ -24,6 +24,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
+import InitialPlaceHolder from "./InitialPlaceHolder";
+
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -41,46 +43,7 @@ export const BrandSection: React.FC<{
   clearPinnedItems,
 }) => {
   if (!brandingInformation)
-    return (
-      <div className="p-4">
-        <Card className="bg-gray-50">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-primary">
-              <div className="flex justify-between">
-                <div>No brand found</div>
-
-                <div className="flex justify-between gap-x-2">
-                  <div>
-                    <BrandSelector setThreadId={setThreadId} />
-                  </div>
-                  <TooltipIconButton
-                    size="lg"
-                    className="p-4"
-                    tooltip="New Brand"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setThreadId(null);
-                      clearPinnedItems();
-                    }}
-                  >
-                    <CirclePlus className="size-5" />
-                  </TooltipIconButton>
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">
-              No brand information is currently available. Start chatting with
-              the{" "}
-              <span className="font-semibold text-primary">Kittykat agent</span>{" "}
-              to onboard your brand.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <InitialPlaceHolder setThreadId={setThreadId} />;
 
   return (
     <div className="flex flex-col gap-4">

@@ -12,6 +12,7 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { v4 as uuidv4 } from "uuid";
 import { Message } from "@langchain/langgraph-sdk";
+import { motion } from "framer-motion";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -36,6 +37,8 @@ export const CampaignSection: React.FC<{
   }, [campaignInformation.length]);
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
+  console.log("current campaign info", currentCampaign);
+  const dynamicData = currentCampaign?.dynamic;
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -123,34 +126,37 @@ export const CampaignSection: React.FC<{
         </div>
       </CardHeader>
       {expanded && (
-        <CardContent
-          key={fadeKey}
-          className="pt-0 pb-6 transition-opacity duration-[2000ms] ease-in-out opacity-0 animate-[fade-in_1s_ease-in-out_forwards]"
-        >
-          <div className="mt-1 space-y-6">
-            <CampaignOverview
-              title={currentCampaign?.campaign?.title}
-              description={currentCampaign?.campaign?.description}
-              tone={currentCampaign?.campaign?.tone}
-            />
-            <CampaignColors colors={currentCampaign?.colors || []} />
+        <div>
+          <CardContent>
+            <motion.div
+              key={fadeKey}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="pt-0 pb-6"
+            >
+              <div className="mt-1 space-y-6">
+                <CampaignOverview
+                  title={currentCampaign?.campaign?.title}
+                  description={currentCampaign?.campaign?.description}
+                  tone={currentCampaign?.campaign?.tone}
+                />
+                <CampaignColors colors={currentCampaign?.colors || []} />
 
-            <DynamicContentSection
-              agentId={Agents.CAMPAIGN_AGENT}
-              dynamicData={Object.fromEntries(
-                Object.entries(currentCampaign || {}).filter(
-                  ([key]) =>
-                    !["id", "campaign", "colors", "moodboards"].includes(key)
-                )
-              )}
-            />
-            <CampaignMoodboard
-              moodboards={currentCampaign.moodboards || []}
-              brandId={brandId}
-              campaignId={currentCampaign.id}
-            />
-          </div>
-        </CardContent>
+                <DynamicContentSection
+                  dynamicData={dynamicData ?? {}}
+                  agentId={Agents.CAMPAIGN_AGENT}
+                />
+
+                <CampaignMoodboard
+                  moodboards={currentCampaign.moodboards || []}
+                  brandId={brandId}
+                  campaignId={currentCampaign.id}
+                />
+              </div>
+            </motion.div>
+          </CardContent>
+        </div>
       )}
     </Card>
   );
