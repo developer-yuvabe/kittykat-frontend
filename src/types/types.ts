@@ -146,6 +146,7 @@ export interface ThreadCampaign {
   target_audience?: string;
   visual_style?: string;
   moodboards?: MoodboardAsset[];
+  dynamic?: Record<string, any>;
 }
 
 export type ImageDetail = {
