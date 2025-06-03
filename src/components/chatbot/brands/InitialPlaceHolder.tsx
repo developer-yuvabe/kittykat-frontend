@@ -19,7 +19,8 @@ import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { PinIcon } from "@/components/ui/custom-icon";
 
 const InitialPlaceHolder: React.FC = () => {
-  const [open, setOpen] = useState(false);
+  const [openBrand, setOpenBrand] = useState(false);
+  const [openCampaign, setOpenCampaign] = useState(false);
 
   const brandFields = [
     "Brand Overview",
@@ -63,12 +64,12 @@ const InitialPlaceHolder: React.FC = () => {
                   </div>
                   <div className="flex justify-between gap-x-2">
                     <div>
-                      <Popover open={open} onOpenChange={setOpen}>
+                      <Popover open={openBrand} onOpenChange={setOpenBrand}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
-                            aria-expanded={open}
+                            aria-expanded={openBrand}
                             className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -160,12 +161,15 @@ const InitialPlaceHolder: React.FC = () => {
                   </div>
                   <div className="flex justify-between gap-x-2">
                     <div>
-                      <Popover open={open} onOpenChange={setOpen}>
+                      <Popover
+                        open={openCampaign}
+                        onOpenChange={setOpenCampaign}
+                      >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
-                            aria-expanded={open}
+                            aria-expanded={openCampaign}
                             className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
                             onClick={(e) => e.stopPropagation()}
                           >
