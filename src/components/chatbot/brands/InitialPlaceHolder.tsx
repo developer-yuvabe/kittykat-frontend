@@ -60,7 +60,9 @@ const InitialPlaceHolder: React.FC = () => {
                         <span className="text-white font-bold">B</span>
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-lg font-semibold">Birkenstock</span>
+                    <span className="text-lg font-semibold">
+                      Your Brand Name
+                    </span>
                   </div>
                   <div className="flex justify-between gap-x-2">
                     <div>
