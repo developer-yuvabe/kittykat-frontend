@@ -26,6 +26,7 @@ import InitialPlaceHolder from "./InitialPlaceHolder";
 export const BrandSection: React.FC<{
   brandingInformation: any;
   setThreadId: (id: string | null) => void;
+  threadId: string | null;
   expandedSections: { [key: string]: boolean };
   setExpandedSections: React.Dispatch<
     React.SetStateAction<{ [key: string]: boolean }>
@@ -34,11 +35,13 @@ export const BrandSection: React.FC<{
 }> = ({
   brandingInformation,
   setThreadId,
+  threadId,
   expandedSections,
   setExpandedSections,
   clearPinnedItems,
 }) => {
-  if (!brandingInformation) return <InitialPlaceHolder />;
+  if (!brandingInformation)
+    return <InitialPlaceHolder setThreadId={setThreadId} />;
 
   return (
     <div className="flex flex-col gap-4">

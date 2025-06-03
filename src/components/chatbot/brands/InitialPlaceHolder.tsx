@@ -17,11 +17,17 @@ import { Command, CommandEmpty } from "@/components/ui/command";
 import { SearchIcon, Copy, CirclePlus } from "lucide-react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { PinIcon } from "@/components/ui/custom-icon";
+import BrandSelector from "./BrandSelector";
 
-const InitialPlaceHolder: React.FC = () => {
-  const [openBrand, setOpenBrand] = useState(false);
+interface InitialPlaceHolderProps {
+  setThreadId: (id: string | null) => void;
+}
+
+const InitialPlaceHolder: React.FC<InitialPlaceHolderProps> = ({
+  setThreadId,
+}) => {
+  // const [openBrand, setOpenBrand] = useState(false);
   const [openCampaign, setOpenCampaign] = useState(false);
-
   const brandFields = [
     "Brand Overview",
     "Brand Purpose",
@@ -66,25 +72,9 @@ const InitialPlaceHolder: React.FC = () => {
                   </div>
                   <div className="flex justify-between gap-x-2">
                     <div>
-                      <Popover open={openBrand} onOpenChange={setOpenBrand}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openBrand}
-                            className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <SearchIcon size={10} className="text-black" />
-                            Load existing Brand
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[300px] relative p-0">
-                          <Command>
-                            <CommandEmpty>No Existing Brand</CommandEmpty>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <div>
+                        <BrandSelector setThreadId={setThreadId} />
+                      </div>
                     </div>
                     <TooltipIconButton
                       size="lg"
