@@ -12,7 +12,7 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { v4 as uuidv4 } from "uuid";
 import { Message } from "@langchain/langgraph-sdk";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -127,46 +127,34 @@ export const CampaignSection: React.FC<{
       </CardHeader>
       {expanded && (
         <div>
-          <CardContent
-            key={fadeKey}
-            // className="pt-0 pb-6 ease-in-out opacity-0 animate-[fade-in_1s_ease-in-out_forwards]"
-            // className="pt-0 pb-6 transition-opacity duration-[250ms] fade-in-fast"
-            className="pt-0 pb-6 transition-opacity duration-200 ease-in-out opacity-0 animate-[fade-in_1s_ease-in-out_forwards]"
-          >
-            <div className="mt-1 space-y-6">
-              <CampaignOverview
-                title={currentCampaign?.campaign?.title}
-                description={currentCampaign?.campaign?.description}
-                tone={currentCampaign?.campaign?.tone}
-              />
-              <CampaignColors colors={currentCampaign?.colors || []} />
+          <CardContent>
+            <motion.div
+              key={fadeKey}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="pt-0 pb-6"
+            >
+              <div className="mt-1 space-y-6">
+                <CampaignOverview
+                  title={currentCampaign?.campaign?.title}
+                  description={currentCampaign?.campaign?.description}
+                  tone={currentCampaign?.campaign?.tone}
+                />
+                <CampaignColors colors={currentCampaign?.colors || []} />
 
-              <AnimatePresence>
-                <motion.div
-                  key="dynamic-section"
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className="space-y-6"
-                  transition={{ duration: 0.1 }}
-                  variants={{
-                    hidden: { opacity: 0, y: 5 },
-                    visible: { opacity: 1, y: 0 },
-                    exit: { opacity: 0, y: 5 },
-                  }}
-                >
-                  <DynamicContentSection
-                    dynamicData={dynamicData ?? {}}
-                    agentId={Agents.CAMPAIGN_AGENT}
-                  />
-                </motion.div>
-              </AnimatePresence>
-              <CampaignMoodboard
-                moodboards={currentCampaign.moodboards || []}
-                brandId={brandId}
-                campaignId={currentCampaign.id}
-              />
-            </div>
+                <DynamicContentSection
+                  dynamicData={dynamicData ?? {}}
+                  agentId={Agents.CAMPAIGN_AGENT}
+                />
+
+                <CampaignMoodboard
+                  moodboards={currentCampaign.moodboards || []}
+                  brandId={brandId}
+                  campaignId={currentCampaign.id}
+                />
+              </div>
+            </motion.div>
           </CardContent>
         </div>
       )}
