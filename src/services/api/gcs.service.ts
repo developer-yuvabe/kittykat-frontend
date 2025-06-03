@@ -8,9 +8,15 @@ export async function uploadFileAndReturnUrl(
   file: File
 ): Promise<string> {
   try {
+    // Clean the file name: trim spaces and remove extension
+    const cleanedFileName = fileName
+      .trim()
+      .replace(/\s+/g, "_") // replace internal spaces with underscores
+      .replace(/\.[^/.]+$/, ""); // remove file extension
+
     // Get the presigned URL
     const response = await axiosInstance.post(`/users/file/upload`, {
-      file_name: fileName,
+      file_name: cleanedFileName,
       content_type: fileType,
       content_source: contentSource,
     });
@@ -25,7 +31,7 @@ export async function uploadFileAndReturnUrl(
       },
     });
 
-    // Return the final file URL without query parameters
+    // Return the final file URL
     return download_url;
   } catch (error) {
     console.error("Error in uploadFileAndReturnUrl:", error);

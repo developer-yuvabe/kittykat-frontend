@@ -20,7 +20,6 @@ import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import Image from "next/image";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { StickToBottom } from "use-stick-to-bottom";
 import { v4 as uuidv4 } from "uuid";
 import { ChatInput } from "../chatbot/ChatInput";
@@ -37,6 +36,7 @@ import {
 import { ChatSkeleton } from "./messages/message-skeleton";
 import { useBrandUpdates } from "@/hooks/useBrandUpdates";
 import { ChatSuggestions } from "../chatbot/ChatSuggestions";
+import { useFileUpload } from "@/hooks/useFileUploadToAgent";
 
 export function Thread() {
   const lastInteractedBrandId = useUserStore((state) =>
@@ -110,6 +110,18 @@ export function Thread() {
 
   const lastError = useRef<string | undefined>(undefined);
 
+  const {
+    contentBlocks,
+    setContentBlocks,
+    handleFileUpload,
+    dropRef,
+    removeBlock,
+    resetBlocks,
+    dragOver,
+    handlePaste,
+    isUploading,
+  } = useFileUpload();
+
   useEffect(() => {
     if (!stream.error) {
       lastError.current = undefined;
@@ -124,15 +136,7 @@ export function Thread() {
 
       // Message is defined, and it has not been logged yet. Save it, and send the error
       lastError.current = message;
-      toast.error("An error occurred. Please try again.", {
-        description: (
-          <p>
-            <strong>Error:</strong> <code>{message}</code>
-          </p>
-        ),
-        richColors: true,
-        closeButton: true,
-      });
+      console.log(message);
     } catch {
       // no-op
     } finally {
@@ -173,7 +177,8 @@ export function Thread() {
             ? `${pinnedContextMessage}${input}`
             : input,
         },
-      ],
+        ...contentBlocks,
+      ] as Message["content"],
     };
 
     const newFileList: Message[] = fileList.map((item) => ({
@@ -207,6 +212,7 @@ export function Thread() {
     );
 
     setInput("");
+    setContentBlocks([]);
   };
 
   const handleRegenerate = (
@@ -258,6 +264,11 @@ export function Thread() {
       removePinnedItem();
     }
   }, [threadId]);
+
+  useEffect(() => {
+    console.log(input);
+    console.log(contentBlocks);
+  }, [input]);
 
   return (
     <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden">
@@ -326,10 +337,10 @@ export function Thread() {
                       />
                     }
                     footer={
-                      <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-transparent rounded-2xl">
+                      <div className="sticky bottom-0 flex flex-col w-full bg-transparent rounded-2xl">
                         {!chatStarted && (
                           <>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center gap-3">
                               <Image
                                 src={Logo}
                                 alt="KittyKat Logo"
@@ -338,16 +349,18 @@ export function Thread() {
                                 className="flex-shrink-0"
                               />
                             </div>
-                            <ChatSuggestions
-                              setFirstTokenReceived={setFirstTokenReceived}
-                            />
+                            <div className="flex justify-center">
+                              <ChatSuggestions
+                                setFirstTokenReceived={setFirstTokenReceived}
+                              />
+                            </div>
                             <ScrollToBottom className="absolute mb-0 -translate-x-1/3 bottom-full right-1/4 animate-in fade-in-0 zoom-in-95" />
                           </>
                         )}
 
                         {/* Always show the chat input unless we're in loading states */}
                         {!(threadsLoading || initializingThread) && (
-                          <>
+                          <div ref={dropRef} className="w-full">
                             <ChatInput
                               input={input}
                               setInput={setInput}
@@ -356,12 +369,17 @@ export function Thread() {
                               setHideToolCalls={setHideToolCalls}
                               isLoading={isLoading}
                               stream={stream}
-                              handleAddFile={handleAddFile}
-                              fileList={fileList}
-                              handleRemoveFile={handleRemoveFile}
+                              handleAddImageFile={handleFileUpload}
+                              handleRemoveImageFile={removeBlock}
+                              handlePaste={handlePaste}
                               threadId={threadId}
+                              files={contentBlocks}
+                              isFileUploading={isUploading}
+                              fileList={fileList}
+                              handleAddFile={handleAddFile}
+                              handleRemoveFile={handleRemoveFile}
                             />
-                          </>
+                          </div>
                         )}
                       </div>
                     }

@@ -1,13 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { FileText as FileTextIcon, LoaderCircle, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import {
+  Loader2,
+  LoaderCircle,
+  X,
+  FileText as FileTextIcon,
+} from "lucide-react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import UrlUploadDialog from "./UrlUploadDialog";
-
+import { Images } from "lucide-react";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import { getFileIcon } from "@/lib/langgraph.utils";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
-import { PinIcon, SendIcon } from "../ui/custom-icon";
+import { ImageIcon, PinIcon, SendIcon } from "../ui/custom-icon";
+import { ChatFilePreview } from "./ChatFilePreview";
+import { URLContentBlock } from "@langchain/core/messages";
 
 type ChatInputProps = {
   input: string;
@@ -20,10 +27,17 @@ type ChatInputProps = {
     isLoading: boolean;
     stop: () => void;
   };
-  handleAddFile: (url: string) => void;
-  fileList: MessageContentFiles[];
-  handleRemoveFile: (id: string) => void;
+  handleAddImageFile: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleRemoveImageFile: (idx: number) => void;
   threadId: string | null;
+  handlePaste: (
+    e: React.ClipboardEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => Promise<void>;
+  files: URLContentBlock[];
+  isFileUploading: boolean;
+  handleAddFile: (url: string) => void;
+  handleRemoveFile: (id: string) => void;
+  fileList: MessageContentFiles[];
 };
 
 const FileThumbnail = ({
@@ -79,28 +93,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleSubmit,
   isLoading,
   stream,
-  handleAddFile,
-  fileList,
-  handleRemoveFile,
+  handleAddImageFile,
+  handleRemoveImageFile,
   threadId,
+  handlePaste,
+  files,
+  isFileUploading,
+  fileList,
+  handleAddFile,
+  handleRemoveFile,
 }) => {
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
 
   return (
-    <div className="relative z-10 w-full  mb-3 ml-auto mr-0 border shadow-xs bg-muted rounded-2xl">
+    <div className="relative z-10 w-full min-w-full mb-3 border  shadow-xs bg-muted rounded-2xl flex flex-col">
       {pinnedItem && (
         <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
           <div className="flex gap-2 flex-wrap items-center">
             <PinIcon className="text-gray-700" />
             <div className="flex flex-col gap-1 flex-1 border-l pl-3 border-gray-900">
               <span className="text-xs text-gray-500">Focused only on</span>
-
               <div className="relative group flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
                   {pinnedItem.title}
                 </span>
               </div>
-
               <button
                 onClick={() => removePinnedItem()}
                 className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
@@ -132,52 +149,69 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       )}
       <form
         onSubmit={handleSubmit}
-        className="grid grid-rows-[1fr_auto] gap-2 ml-auto mr-0 rounded-t-xl"
+        className="flex flex-col gap-2 w-full rounded-t-xl"
       >
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !e.shiftKey &&
-              !e.metaKey &&
-              !e.nativeEvent.isComposing
-            ) {
-              e.preventDefault();
-              const el = e.target as HTMLElement | undefined;
-              const form = el?.closest("form");
-              form?.requestSubmit();
-            }
-          }}
-          placeholder="Type your message here..."
-          className="p-6 border-none bg-transparent field-sizing-content placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
-        />
+        <ChatFilePreview blocks={files} onRemove={handleRemoveImageFile} />
+        <div className="flex flex-row justify-between">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                !e.metaKey &&
+                !e.nativeEvent.isComposing
+              ) {
+                e.preventDefault();
+                const el = e.target as HTMLElement | undefined;
+                const form = el?.closest("form");
+                form?.requestSubmit();
+              }
+            }}
+            placeholder="Type your message here..."
+            className="p-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
+            onPaste={handlePaste}
+          />
 
-        <div className="flex right-4 bottom-6 absolute">
-          {stream.isLoading ? (
-            <Button key="stop" onClick={() => stream.stop()}>
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-              Cancel
-            </Button>
-          ) : (
-            <div className="flex items-center">
-              <UrlUploadDialog
-                onUploadComplete={handleAddFile}
-                prefix={threadId}
-              />
-
-              <Button
-                type="submit"
-                className="text-primary"
-                variant="ghost"
-                size="icon"
-                disabled={isLoading || !input.trim()}
-              >
-                <SendIcon size={72} />
+          <div className="flex items-center justify-end gap-x-4 px-4">
+            {stream.isLoading ? (
+              <Button key="stop" onClick={() => stream.stop()}>
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+                Cancel
               </Button>
-            </div>
-          )}
+            ) : (
+              <>
+                <label className="flex items-center gap-2 cursor-pointer text-primary">
+                  {isFileUploading ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Images size={20} />
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleAddImageFile}
+                    multiple
+                    disabled={isFileUploading}
+                    accept="image/*"
+                  />
+                </label>
+                <UrlUploadDialog
+                  onUploadComplete={handleAddFile}
+                  prefix={threadId}
+                />
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="sm"
+                  disabled={isLoading || !input.trim()}
+                >
+                  <SendIcon size={10} />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </form>
     </div>

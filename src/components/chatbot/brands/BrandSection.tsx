@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { extractAllColors } from "@/lib/langgraph.utils";
+import { extractAllColors, formatUpdateMessage } from "@/lib/langgraph.utils";
 import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
@@ -21,7 +21,11 @@ import { BrandSetting } from "./BrandSetting";
 import { Button } from "@/components/ui/button";
 import { DynamicContentSection } from "../DynamicSection";
 import { AnimatePresence, motion } from "framer-motion";
+import { InlineEditableField } from "@/components/shared/InlineEditableField";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import InitialPlaceHolder from "./InitialPlaceHolder";
+
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -76,6 +80,7 @@ export const renderBrandData = (
     const brandInitial = brandName.charAt(0).toUpperCase();
     const allColors = extractAllColors(staticData);
     const [showDynamicData, setShowDynamicData] = React.useState(false);
+    const stream = useStreamContext();
 
     return (
       <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -134,10 +139,37 @@ export const renderBrandData = (
                   </div>
                 </div>
               ) : (
-                <div className="">
-                  <div className="font-bold ">
-                    Brand: {staticData?.brand?.name}
-                  </div>
+                <div
+                  className=""
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <InlineEditableField
+                    key={staticData?.brand?.name}
+                    label="Brand"
+                    value={staticData?.brand?.name || ""}
+                    onSave={async (newVal) => {
+                      const oldVal = staticData?.brand?.name || "";
+                      const msg = formatUpdateMessage(
+                        "staticData.brand.name",
+                        oldVal,
+                        newVal,
+                        "brandingAgent",
+                        "Brand Name"
+                      );
+                      if (msg) {
+                        submitOptimisticMessage({
+                          stream,
+                          text: msg,
+                        });
+                      }
+                    }}
+                    textClassName="font-bold"
+                    showLabel={true}
+                    isTextarea={true}
+                  />
+
                   <div className="absolute right-3 top-6 ">
                     <div className="flex justify-between gap-x-2">
                       <div>

@@ -29,8 +29,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const campaignInformation = data?.campaign_information;
   const a2iImageInformation = data?.a2i_image_information;
 
-  console.log("a2i", a2iImageInformation);
-
   const previousBrandName = useRef<string>(null);
 
   useEffect(() => {

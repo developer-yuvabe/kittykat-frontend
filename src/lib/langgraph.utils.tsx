@@ -9,6 +9,11 @@ import { Color, MessageContentFiles } from "@/types/langgraph.types";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
 import { PinnedItem } from "@/store/usePinnedContextStore";
+import type {
+  Base64ContentBlock,
+  URLContentBlock,
+} from "@langchain/core/messages";
+import { toast } from "sonner";
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
@@ -289,3 +294,184 @@ export const getPinnedItemContextMessage = (pinnedItem: PinnedItem) => {
   Please ignore <kittykat-do-not-render> tag.
   </kittykat-do-not-render>`;
 };
+
+// Returns a Promise of a typed multimodal block for images or PDFs
+export async function fileToContentBlock(
+  file: File
+): Promise<Base64ContentBlock> {
+  const supportedImageTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ];
+  const supportedFileTypes = [...supportedImageTypes, "application/pdf"];
+
+  if (!supportedFileTypes.includes(file.type)) {
+    toast.error(
+      `Unsupported file type: ${
+        file.type
+      }. Supported types are: ${supportedFileTypes.join(", ")}`
+    );
+    return Promise.reject(new Error(`Unsupported file type: ${file.type}`));
+  }
+
+  const data = await fileToBase64(file);
+
+  if (supportedImageTypes.includes(file.type)) {
+    return {
+      type: "image",
+      source_type: "base64",
+      mime_type: file.type,
+      data,
+      metadata: { name: file.name },
+    };
+  }
+
+  // PDF
+  return {
+    type: "file",
+    source_type: "base64",
+    mime_type: "application/pdf",
+    data,
+    metadata: { filename: file.name },
+  };
+}
+
+// Helper to convert File to base64 string
+export async function fileToBase64(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      // Remove the data:...;base64, prefix
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Type guard for Base64ContentBlock
+export function isBase64ContentBlock(
+  block: unknown
+): block is Base64ContentBlock {
+  if (typeof block !== "object" || block === null || !("type" in block))
+    return false;
+  // file type (legacy)
+  if (
+    (block as { type: unknown }).type === "file" &&
+    "source_type" in block &&
+    (block as { source_type: unknown }).source_type === "base64" &&
+    "mime_type" in block &&
+    typeof (block as { mime_type?: unknown }).mime_type === "string" &&
+    ((block as { mime_type: string }).mime_type.startsWith("image/") ||
+      (block as { mime_type: string }).mime_type === "application/pdf")
+  ) {
+    return true;
+  }
+  // image type (new)
+  if (
+    (block as { type: unknown }).type === "image" &&
+    "source_type" in block &&
+    (block as { source_type: unknown }).source_type === "base64" &&
+    "mime_type" in block &&
+    typeof (block as { mime_type?: unknown }).mime_type === "string" &&
+    (block as { mime_type: string }).mime_type.startsWith("image/")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+// Type guard for URLContentBlock
+export function isURLContentBlock(block: unknown): block is URLContentBlock {
+  if (typeof block !== "object" || block === null) return false;
+
+  const maybeBlock = block as Partial<URLContentBlock>;
+
+  return (
+    (maybeBlock.type === "image" ||
+      maybeBlock.type === "audio" ||
+      maybeBlock.type === "file") &&
+    maybeBlock.source_type === "url" &&
+    typeof maybeBlock.url === "string"
+  );
+}
+
+export function formatUpdateMessage(
+  fieldPath: string,
+  oldValue: string,
+  newValue: string,
+  agentHint?: string,
+  prettyLabel?: string,
+  customDoNotRenderMessage?: string
+): string | null {
+  const derivedLabel =
+    fieldPath
+      .split(".")
+      .pop()
+      ?.replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase()) ?? "Field";
+
+  const label = prettyLabel || derivedLabel;
+
+  if (oldValue === newValue) {
+    return null;
+  }
+
+  const baseMessage = `Let's update the ${label} from "${oldValue}" to "${newValue}".`;
+
+  const doNotRenderBlock = customDoNotRenderMessage
+    ? `
+    
+    <kittykat-do-not-render>
+    \n
+    ${agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""}
+    ${customDoNotRenderMessage}\n</kittykat-do-not-render>`
+    : `<kittykat-do-not-render>
+        Key: ${fieldPath}
+        ${
+          agentHint
+            ? `Agent Hint - You must use this agent: ${agentHint}\n`
+            : ""
+        }
+        Action: ${baseMessage}
+      </kittykat-do-not-render>`;
+
+  return `${baseMessage}${doNotRenderBlock}`;
+}
+
+export function formatUpdateArrayMessage(
+  fieldPath: string,
+  oldArray: string[],
+  newArray: string[],
+  agentHint?: string,
+  prettyLabel?: string
+): string | null {
+  // Return null if no change
+  if (JSON.stringify(oldArray) === JSON.stringify(newArray)) {
+    return null;
+  }
+
+  const derivedLabel =
+    fieldPath
+      .split(".")
+      .pop()
+      ?.replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase()) ?? "Field";
+
+  const label = prettyLabel || derivedLabel;
+
+  const oldValFormatted = oldArray.length ? oldArray.join(", ") : "(empty)";
+  const newValFormatted = newArray.length ? newArray.join(", ") : "(empty)";
+
+  const baseMessage = `Let's update the ${label} from [${oldValFormatted}] to [${newValFormatted}].`;
+
+  return `${baseMessage}<kittykat-do-not-render>
+Key: ${fieldPath}
+${agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""}
+Action: Update the array field **${fieldPath}** with the new list of values below:
+Updated Array: ${JSON.stringify(newArray)}
+</kittykat-do-not-render>`;
+}

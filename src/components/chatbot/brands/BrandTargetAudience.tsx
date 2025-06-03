@@ -1,4 +1,8 @@
 import { ContentSection } from "@/components/shared/ContentSection";
+import { InlineEditableField } from "@/components/shared/InlineEditableField";
+import { formatUpdateMessage } from "@/lib/langgraph.utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Agents } from "@/types/types";
 import React from "react";
 
@@ -11,12 +15,35 @@ export const BrandTargetAudience: React.FC<BrandTargetAudienceProps> = ({
 }) => {
   if (!targetAudience) return null;
 
+  const stream = useStreamContext();
+
   return (
     <ContentSection
       title="Target Audience"
       content={
         <div className="flex flex-col">
-          <span className="text-sm text-gray-700">{targetAudience}</span>
+          <InlineEditableField
+            label="target_audience"
+            value={targetAudience}
+            onSave={async (newVal) => {
+              const oldVal = targetAudience;
+              const msg = formatUpdateMessage(
+                `static.target_audience`,
+                oldVal,
+                newVal,
+                "brandingAgent",
+                "Target Audience"
+              );
+              if (msg) {
+                submitOptimisticMessage({
+                  stream,
+                  text: msg,
+                });
+              }
+            }}
+            textClassName="text-sm text-gray-700"
+            isTextarea={true}
+          />
         </div>
       }
       context={{
