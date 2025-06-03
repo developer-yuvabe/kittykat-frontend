@@ -1,5 +1,12 @@
 import { ContentSection } from "@/components/shared/ContentSection";
-import { Badge } from "@/components/ui/badge";
+import { InlineEditableField } from "@/components/shared/InlineEditableField";
+import { InlineEditableBadges } from "@/components/shared/InlineEditableBadges";
+import {
+  formatUpdateMessage,
+  formatUpdateArrayMessage,
+} from "@/lib/langgraph.utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Agents } from "@/types/types";
 import React from "react";
 
@@ -14,6 +21,7 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
   values,
   name,
 }) => {
+  const stream = useStreamContext();
   return (
     <ContentSection
       title="Brand Overview"
@@ -22,24 +30,56 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
           {/* Tagline */}
           {tagline && (
             <div className="flex flex-col">
-              <span className="text-sm text-gray-700">{tagline}</span>
+              <InlineEditableField
+                key={tagline}
+                label="Tagline"
+                value={tagline || ""}
+                onSave={async (newVal) => {
+                  const oldVal = tagline || "";
+                  const msg = formatUpdateMessage(
+                    "static.brand.tagline",
+                    oldVal,
+                    newVal,
+                    "brandingAgent",
+                    "Brand Tagline"
+                  );
+                  if (msg) {
+                    submitOptimisticMessage({
+                      stream,
+                      text: msg,
+                    });
+                  }
+                }}
+                textClassName="text-sm text-gray-700"
+                isTextarea={true}
+              />
             </div>
           )}
 
           {/* Values */}
           {values && values.length > 0 && (
             <div className="flex flex-col">
-              <div className="flex flex-wrap gap-1 mt-1">
-                {values.map((value, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="text-xs bg-purple-50 text-purple-700 border-purple-100"
-                  >
-                    {value}
-                  </Badge>
-                ))}
-              </div>
+              <InlineEditableBadges
+                label="Values"
+                values={values}
+                onSave={async (newValues) => {
+                  const msg = formatUpdateArrayMessage(
+                    "static.brand.values",
+                    values,
+                    newValues,
+                    "brandingAgent",
+                    "Brand Values"
+                  );
+
+                  if (msg) {
+                    submitOptimisticMessage({
+                      stream,
+                      text: msg,
+                    });
+                  }
+                }}
+                showLabel={false}
+              />
             </div>
           )}
         </div>

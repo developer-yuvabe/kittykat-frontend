@@ -1,4 +1,6 @@
+import { Message } from "@langchain/langgraph-sdk";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
 export const updateShowboardConfig = async (
   imagesPerTheme: number,
@@ -32,3 +34,34 @@ export const getShowboardConfig = async () => {
     throw error; // optional: rethrow if you want caller to handle it
   }
 };
+
+type SubmitOptions = {
+  stream: any;
+  text: string;
+};
+
+export function submitOptimisticMessage({ stream, text }: SubmitOptions) {
+  const newMessage: Message = {
+    id: uuidv4(),
+    type: "human",
+    content: [
+      {
+        type: "text",
+        text,
+      },
+    ],
+  };
+
+  stream.submit(
+    {
+      messages: [newMessage],
+    },
+    {
+      streamMode: ["values"],
+      optimisticValues: (prev: any) => ({
+        ...prev,
+        messages: [...(prev.messages ?? []), newMessage],
+      }),
+    }
+  );
+}

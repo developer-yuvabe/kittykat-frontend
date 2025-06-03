@@ -13,7 +13,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"; // <- import Accordion
 import { Context } from "@/types/types";
-import { cn } from "@/lib/utils";
 import { isEqual } from "lodash";
 
 interface ContentSectionProps {
