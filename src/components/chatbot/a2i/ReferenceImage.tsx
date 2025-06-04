@@ -13,7 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-import { CheckCircle, Image, Target, Palette, Users, Eye } from "lucide-react";
+import { CheckCircle, Image, Target, Palette, Users } from "lucide-react";
 import { MoodboardAsset, ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import {
   updateReferenceCampaignId,
@@ -270,18 +270,6 @@ export function ReferenceImage({
                         <p className="text-sm font-medium">Target Audience</p>
                         <p className="text-sm text-muted-foreground">
                           {selectedCampaign.target_audience}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedCampaign.visual_style && (
-                    <div className="flex items-start gap-2">
-                      <Eye className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Visual Style</p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedCampaign.visual_style}
                         </p>
                       </div>
                     </div>
