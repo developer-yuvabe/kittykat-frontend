@@ -21,13 +21,13 @@ const CampaignVisualStyleReferences = ({
       title={`Visual Style References`}
       content={
         <div className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="columns-3 gap-0">
             {visualStyleReferences.images.map((image, index) => (
               <img
                 key={index}
                 src={image}
                 alt={`Visual Style Reference ${index + 1}`}
-                className="w-full h-auto object-cover"
+                className="w-full align-top"
               />
             ))}
           </div>
