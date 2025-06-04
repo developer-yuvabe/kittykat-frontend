@@ -120,7 +120,7 @@ export function Thread() {
     dragOver,
     handlePaste,
     isUploading,
-  } = useFileUpload();
+  } = useFileUpload({ brandId: threadId ?? "" });
 
   useEffect(() => {
     if (!stream.error) {
@@ -191,6 +191,8 @@ export function Thread() {
         },
       ],
     }));
+
+    console.log(newHumanMessage, "new human msg");
 
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
     stream.submit(
@@ -369,7 +371,7 @@ export function Thread() {
                               setHideToolCalls={setHideToolCalls}
                               isLoading={isLoading}
                               stream={stream}
-                              handleAddImageFile={handleFileUpload}
+                              handleAddFiles={handleFileUpload}
                               handleRemoveImageFile={removeBlock}
                               handlePaste={handlePaste}
                               threadId={threadId}

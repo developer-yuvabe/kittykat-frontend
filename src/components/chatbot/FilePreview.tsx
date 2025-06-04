@@ -1,11 +1,12 @@
 import React from "react";
 import { File, X as XIcon } from "lucide-react";
-import type { URLContentBlock } from "@langchain/core/messages";
 import { cn } from "@/lib/utils";
 import { fetchFileType } from "@/lib/langgraph.utils";
+import { ContentBlock } from "@/hooks/useFileUploadToAgent";
+import { URLContentBlock } from "@langchain/core/messages";
 
 export interface FilePreviewProps {
-  block: URLContentBlock;
+  block: ContentBlock;
   removable?: boolean;
   onRemove?: () => void;
   className?: string;
@@ -21,27 +22,43 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
 }) => {
   const [mimeType, setMimeType] = React.useState<string>("");
 
-  React.useEffect(() => {
-    let isMounted = true;
-    fetchFileType(block.url).then((type) => {
-      if (isMounted) setMimeType(type);
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [block.url]);
+  const isUrlSource = block.source_type === "url";
 
-  // IMAGE PREVIEW
-  if (
-    block.type === "image" &&
-    block.source_type === "url" &&
-    mimeType.startsWith("image/")
-  ) {
+  React.useEffect(() => {
+    if (isUrlSource && "url" in block) {
+      let isMounted = true;
+      fetchFileType(block.url).then((type) => {
+        if (isMounted) setMimeType(type);
+      });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isUrlSource, block]);
+
+  const getFilename = (): string => {
+    console.log(block.metadata);
+    return (
+      (block.metadata?.filename as string) ||
+      (block.metadata?.name as string) ||
+      (typeof block.metadata?.threadFileResponse === "object" &&
+      block.metadata?.threadFileResponse !== null &&
+      "filename" in block.metadata.threadFileResponse
+        ? (block.metadata.threadFileResponse as { filename?: string }).filename
+        : undefined) ||
+      (isUrlSource
+        ? (block as URLContentBlock).url.split("/").pop()!
+        : "Uploaded File")
+    );
+  };
+
+  // ✅ IMAGE PREVIEW (URL only)
+  if (block.type === "image" && isUrlSource && mimeType.startsWith("image/")) {
     const imgClass = cn(
       "rounded-md object-cover",
-      size === "sm" && "h-10 w-10 text-base",
-      size === "md" && "h-16 w-16 text-lg",
-      size === "lg" && "h-24 w-24 text-xl"
+      size === "sm" && "h-10 w-10",
+      size === "md" && "h-16 w-16",
+      size === "lg" && "h-24 w-24"
     );
 
     const imgSize = size === "sm" ? 40 : size === "md" ? 64 : 96;
@@ -49,7 +66,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     return (
       <div className={cn("relative inline-block", className)}>
         <img
-          src={block.url}
+          src={(block as URLContentBlock).url}
           alt={String(block.metadata?.name || "uploaded image")}
           className={imgClass}
           width={imgSize}
@@ -69,15 +86,8 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     );
   }
 
-  // PDF (and other files) PREVIEW
-  if (
-    block.type === "file" &&
-    block.source_type === "url" &&
-    mimeType === "application/pdf"
-  ) {
-    const filename =
-      block.metadata?.filename || block.metadata?.name || "PDF file";
-
+  // ✅ PDF PREVIEW
+  if (block.type === "file" && isUrlSource && mimeType === "application/pdf") {
     return (
       <div
         className={cn(
@@ -92,7 +102,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           className={cn("min-w-0 flex-1 text-sm break-all text-gray-800")}
           style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}
         >
-          {String(filename)}
+          {getFilename()}
         </span>
         {removable && (
           <button
@@ -108,6 +118,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     );
   }
 
+  // ✅ Default Fallback
   return (
     <div
       className={cn(
@@ -116,6 +127,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
       )}
     >
       <File className="h-5 w-5 flex-shrink-0" />
+      <span className="text-sm break-all">{getFilename()}</span>
       {removable && (
         <button
           type="button"

@@ -26,7 +26,6 @@ import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import InitialPlaceHolder from "./InitialPlaceHolder";
 
-
 export const BrandSection: React.FC<{
   brandingInformation: any;
   setThreadId: (id: string | null) => void;
@@ -167,7 +166,7 @@ export const renderBrandData = (
                     }}
                     textClassName="font-bold"
                     showLabel={true}
-                    isTextarea={true}
+                    isTextarea={false}
                   />
 
                   <div className="absolute right-3 top-6 ">

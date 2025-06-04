@@ -1,11 +1,10 @@
 import React from "react";
-import type { URLContentBlock } from "@langchain/core/messages";
-
 import { cn } from "@/lib/utils";
 import { FilePreview } from "./FilePreview";
+import { ContentBlock } from "@/hooks/useFileUploadToAgent";
 
 interface ChatFilePreviewProps {
-  blocks: URLContentBlock[];
+  blocks: ContentBlock[];
   onRemove: (idx: number) => void;
   size?: "sm" | "md" | "lg";
   className?: string;

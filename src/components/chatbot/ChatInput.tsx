@@ -1,20 +1,15 @@
 import { Button } from "@/components/ui/button";
-import {
-  Loader2,
-  LoaderCircle,
-  X,
-  FileText as FileTextIcon,
-} from "lucide-react";
+import { LoaderCircle, X, FileText as FileTextIcon } from "lucide-react";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import UrlUploadDialog from "./UrlUploadDialog";
-import { Images } from "lucide-react";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import { getFileIcon } from "@/lib/langgraph.utils";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
-import { ImageIcon, PinIcon, SendIcon } from "../ui/custom-icon";
+import { PinIcon, SendIcon } from "../ui/custom-icon";
 import { ChatFilePreview } from "./ChatFilePreview";
-import { URLContentBlock } from "@langchain/core/messages";
+import { ContentBlock } from "@/hooks/useFileUploadToAgent";
+import { FileUploadPopover } from "./FileUploadPopover";
 
 type ChatInputProps = {
   input: string;
@@ -27,13 +22,13 @@ type ChatInputProps = {
     isLoading: boolean;
     stop: () => void;
   };
-  handleAddImageFile: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleAddFiles: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleRemoveImageFile: (idx: number) => void;
   threadId: string | null;
   handlePaste: (
     e: React.ClipboardEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => Promise<void>;
-  files: URLContentBlock[];
+  files: ContentBlock[];
   isFileUploading: boolean;
   handleAddFile: (url: string) => void;
   handleRemoveFile: (id: string) => void;
@@ -93,7 +88,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleSubmit,
   isLoading,
   stream,
-  handleAddImageFile,
+  handleAddFiles,
   handleRemoveImageFile,
   threadId,
   handlePaste,
@@ -182,21 +177,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </Button>
             ) : (
               <>
-                <label className="flex items-center gap-2 cursor-pointer text-primary">
-                  {isFileUploading ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <Images size={20} />
-                  )}
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={handleAddImageFile}
-                    multiple
-                    disabled={isFileUploading}
-                    accept="image/*"
-                  />
-                </label>
+                <FileUploadPopover
+                  isFileUploading={isFileUploading}
+                  handleAddFiles={handleAddFiles}
+                />
+
                 <UrlUploadDialog
                   onUploadComplete={handleAddFile}
                   prefix={threadId}
@@ -205,7 +190,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   type="submit"
                   variant="default"
                   size="sm"
-                  disabled={isLoading || !input.trim()}
+                  disabled={isLoading || !input.trim() || isFileUploading}
                 >
                   <SendIcon size={10} />
                 </Button>

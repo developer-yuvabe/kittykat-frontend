@@ -143,3 +143,13 @@ export interface PresignedURLRequest {
   file_name: string;
   content_type: string;
 }
+
+export interface ThreadFileResponse {
+  file_id: string;
+  filename: string;
+  bytes: number;
+  purpose: string;
+  created_at: string; // or Date if you're parsing
+  uploaded_by: string;
+  openai_created_at: number;
+}
