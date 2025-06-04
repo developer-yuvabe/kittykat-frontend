@@ -13,6 +13,7 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { v4 as uuidv4 } from "uuid";
 import { Message } from "@langchain/langgraph-sdk";
 import { motion } from "framer-motion";
+import CampaignVisualStyleReferences from "./CampaignVisualStyleReferences";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -142,6 +143,12 @@ export const CampaignSection: React.FC<{
                   tone={currentCampaign?.campaign?.tone}
                 />
                 <CampaignColors colors={currentCampaign?.colors || []} />
+
+                <CampaignVisualStyleReferences
+                  visualStyleReferences={
+                    currentCampaign.visual_style_references
+                  }
+                />
 
                 <DynamicContentSection
                   dynamicData={dynamicData ?? {}}
