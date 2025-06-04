@@ -51,14 +51,14 @@ export function FileUploadPopover({
             className="flex items-center gap-2 text-sm w-full px-2 py-1 rounded hover:bg-muted/50 transition"
           >
             <FileImage className="size-4" />
-            <span>Upload Image</span>
+            <span>Upload Images</span>
           </button>
           <button
             onClick={() => triggerInput("file")}
             className="flex items-center gap-2 text-sm w-full px-2 py-1 rounded hover:bg-muted/50 transition"
           >
             <FileText className="size-4" />
-            <span>Upload File</span>
+            <span>Upload Files</span>
           </button>
         </PopoverContent>
       </Popover>
