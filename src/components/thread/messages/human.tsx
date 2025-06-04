@@ -6,7 +6,6 @@ import { getContentString, removeKittyKatTags } from "../utils";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { BranchSwitcher, CommandBar } from "./shared";
-import { isURLContentBlock } from "@/lib/langgraph.utils";
 import { FilePreview } from "@/components/chatbot/FilePreview";
 import {
   FileIcon,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { FileContentTypeResult } from "@/types/langgraph.types";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
+import { ContentBlock } from "@/hooks/useFileUploadToAgent";
 
 interface FileAttachmentProps {
   fileUrl: string;
@@ -197,6 +197,16 @@ export function HumanMessage({
     );
   };
 
+  const isContentBlock = (block: unknown): block is ContentBlock => {
+    return (
+      typeof block === "object" &&
+      block !== null &&
+      "type" in block &&
+      "source_type" in block &&
+      ["file", "image", "audio"].includes((block as any).type)
+    );
+  };
+
   return (
     <div
       className={cn(
@@ -212,38 +222,37 @@ export function HumanMessage({
             onSubmit={handleSubmitEdit}
           />
         ) : (
-          <div className="ml-auto">
+          <div className={cn("ml-auto", isFileMessage && "mt-4")}>
             {/* Render images and files if no text */}
             {Array.isArray(message.content) && message.content.length > 0 && (
-              <div className="flex flex-wrap items-end justify-end gap-2">
-                {message.content.reduce<React.ReactNode[]>(
-                  (acc, block, idx) => {
-                    if (isURLContentBlock(block)) {
-                      acc.push(
-                        <FilePreview key={idx} block={block} size="md" />
-                      );
-                    }
-                    return acc;
-                  },
-                  []
+              <div className="flex flex-wrap  items-end mb-3 justify-end gap-2">
+                {message.content.map((block, idx) =>
+                  isContentBlock(block) ? (
+                    <FilePreview key={idx} block={block} size="md" />
+                  ) : null
                 )}
               </div>
             )}
+
             {/* Render text if present, otherwise fallback to file/image name */}
             {isFileMessage ? (
-              <div className="ml-auto">
+              <div className="ml-auto ">
                 {fileUrl && (
-                  <FileAttachment
-                    fileUrl={fileUrl}
-                    fileName={
-                      new URL(fileUrl).pathname.split("/").pop() ||
-                      "Uploaded File"
-                    }
-                  />
+                  <div className="mb-2">
+                    <FileAttachment
+                      fileUrl={fileUrl}
+                      fileName={
+                        new URL(fileUrl).pathname.split("/").pop() ||
+                        "Uploaded File"
+                      }
+                    />
+                  </div>
                 )}
               </div>
             ) : (
-              <p className="px-4 py-2 bg-blue-100 rounded-2xl  w-fit ml-auto whitespace-pre-wrap break-words ">
+              <p
+                className={`px-4 py-2 bg-blue-100 rounded-2xl  w-fit ml-auto whitespace-pre-wrap break-words`}
+              >
                 {contentString}
               </p>
             )}

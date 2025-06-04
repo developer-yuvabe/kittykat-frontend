@@ -7,6 +7,7 @@ import {
   BrandResponse,
   BrandsListResponse,
   BrandURLRequest,
+  ThreadFileResponse,
 } from "@/types/brand.types";
 import { BaseApiResponse, ThreadA2iImage } from "@/types/types";
 import axios from "@/config/axios/api-client.config";
@@ -94,4 +95,39 @@ export const updateA2iImageParameters = async (
     payload
   );
   return response.data;
+};
+
+export const uploadThreadFile = async (
+  brandId: string,
+  file: File,
+  purpose: string = "user_data"
+): Promise<ThreadFileResponse> => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("purpose", purpose);
+
+    const response = await axios.post<BaseApiResponse<ThreadFileResponse>>(
+      `/brands/${brandId}/thread-files`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    const { status_code, message, data } = response.data;
+
+    if (status_code === 201 && data) {
+      return data;
+    } else {
+      throw new Error(message || "Failed to upload thread file.");
+    }
+  } catch (error: any) {
+    console.error("Error uploading thread file:", error);
+    throw new Error(
+      error.response?.data?.message || "Unexpected error while uploading file."
+    );
+  }
 };

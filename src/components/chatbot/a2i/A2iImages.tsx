@@ -4,7 +4,7 @@ import { ContentSection } from "@/components/shared/ContentSection";
 import { ImageDisplay } from "./ImageDisplay";
 import { ActionButtonsRow } from "./ActionButtonsRow";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Plus, Wand2 } from "lucide-react";
+import { ImageIcon, Wand2 } from "lucide-react";
 import { ImageDetail } from "@/types/types";
 import {
   Carousel,
@@ -100,15 +100,6 @@ export const A2IImages = ({ generatedImages }: A2IImagesProps) => {
                   <CarouselNext className="relative transform-none mx-2" />
                 </div>
               </Carousel>
-
-              {/* Generate More Button */}
-
-              <div className="flex justify-center pt-4">
-                <Button variant="outline" className="min-w-[140px]">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Generate More
-                </Button>
-              </div>
             </>
           )}
         </div>

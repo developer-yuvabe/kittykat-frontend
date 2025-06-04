@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, X, Pencil } from "lucide-react";
+import { Check, X, Pencil, Loader2 } from "lucide-react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
@@ -68,7 +68,7 @@ export function InlineEditableField({
         <span className="font-bold whitespace-nowrap">{label}:</span>
       )}
 
-      {isSaving ? (
+      {isSaving && isTextarea ? (
         <Skeleton className="h-9 w-full rounded-md" />
       ) : isEditing ? (
         <div className="flex flex-col sm:flex-row gap-2 w-full">
@@ -107,14 +107,21 @@ export function InlineEditableField({
         >
           <span className={textClassName}>{value}</span>
           <div className="relative w-4 h-4">
-            <TooltipIconButton
-              tooltip="Edit"
-              size={"xs"}
-              onClick={handleEditClick}
-              className="absolute inset-0 flex items-center justify-center p-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary transition-opacity"
-            >
-              <Pencil />
-            </TooltipIconButton>
+            {isSaving && !isTextarea ? (
+              <Loader2
+                className="animate-spin mt-[2px] text-purple-700"
+                size={16}
+              />
+            ) : (
+              <TooltipIconButton
+                tooltip="Edit"
+                size={"xs"}
+                onClick={handleEditClick}
+                className="absolute inset-0 flex items-center justify-center p-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary transition-opacity"
+              >
+                <Pencil />
+              </TooltipIconButton>
+            )}
           </div>
         </div>
       )}
