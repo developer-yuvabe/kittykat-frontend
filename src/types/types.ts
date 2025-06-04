@@ -144,7 +144,16 @@ export interface ThreadCampaign {
   };
   colors?: string[];
   target_audience?: string;
-  visual_style?: string;
+  visual_style_references?: {
+    images: string[];
+    analysis: Record<
+      string,
+      {
+        tag: string;
+        weight: number | string;
+      }[]
+    >;
+  };
   moodboards?: MoodboardAsset[];
   dynamic?: Record<string, any>;
 }
