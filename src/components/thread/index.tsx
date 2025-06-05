@@ -174,8 +174,8 @@ export function Thread() {
         {
           type: "text",
           text: pinnedContextMessage
-            ? `${pinnedContextMessage}${input}`
-            : input,
+            ? `${pinnedContextMessage}${input.trimEnd()}`
+            : input.trimEnd(),
         },
         ...contentBlocks,
       ] as Message["content"],

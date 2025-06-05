@@ -3,8 +3,7 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { ImageDisplay } from "./ImageDisplay";
 import { ActionButtonsRow } from "./ActionButtonsRow";
-import { Button } from "@/components/ui/button";
-import { ImageIcon, Wand2 } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { ImageDetail } from "@/types/types";
 import {
   Carousel,
@@ -37,10 +36,6 @@ export const A2IImages = ({ generatedImages }: A2IImagesProps) => {
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
         No images generated yet
       </h3>
-      <Button variant="default" className="mt-4 flex items-center">
-        <Wand2 className="w-4 h-4 mr-2" />
-        Generate
-      </Button>
     </div>
   );
 
