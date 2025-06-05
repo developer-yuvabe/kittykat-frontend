@@ -13,7 +13,17 @@ const CampaignVisualStyleReferences = ({
     !visualStyleReferences.images ||
     visualStyleReferences.images.length === 0
   ) {
-    return null;
+    return (
+      <ContentSection
+        title={`Visual Style References`}
+        content={
+          <p className="text-gray-500 text-sm">
+            No visual style references available. Please add some visual style
+            images to the campaign to see them here.
+          </p>
+        }
+      />
+    );
   }
 
   return (
@@ -34,6 +44,8 @@ const CampaignVisualStyleReferences = ({
           {Object.entries(visualStyleReferences.analysis ?? {}).map(
             ([key, value]) => (
               <ContentSection
+                showCopy={false}
+                showPin={false}
                 key={key}
                 title={`${key.charAt(0).toUpperCase() + key.slice(1)}`}
                 content={
