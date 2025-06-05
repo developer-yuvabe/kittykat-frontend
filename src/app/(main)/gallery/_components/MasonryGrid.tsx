@@ -5,8 +5,9 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Masonry from "react-masonry-css";
-import { Heart, Download, Trash2, Ellipsis } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import {
   Popover,
@@ -14,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { DislikeIcon, LikeIcon, MoreIcon } from "@/components/ui/custom-icon";
+import { MoreIcon } from "@/components/ui/custom-icon";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,6 @@ import {
   DeleteIcon,
   DownloadIcon,
   EditIcon,
-  LibraryIcon,
   SaveIcon,
 } from "@/components/ui/custom-icon";
 
@@ -155,18 +155,36 @@ export function MasonryGrid({
         const aspectRatio = dimensions.width / dimensions.height;
         const itemComment = item.comments?.[0]?.text || "";
 
+        // Calculate skeleton height based on item dimensions or use fallback
+        const skeletonHeight = item.dimensions
+          ? (300 * item.dimensions.height) / item.dimensions.width
+          : Math.floor(Math.random() * 200) + 200; // Random height between 200-400px for variety
+
         return (
           <div
             key={item.id}
-            className={`mb-4 relative group  overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
-              isLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            className="mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
             onMouseEnter={() => setHoveredItem(item.id)}
             onMouseLeave={() => setHoveredItem(null)}
           >
+            {!isLoaded && (
+              <div className="w-full">
+                <Skeleton
+                  className="w-full rounded-lg"
+                  style={{ height: `${skeletonHeight}px` }}
+                />
+              </div>
+            )}
+
             <div
-              className="relative w-full"
-              style={{ paddingBottom: `${(1 / aspectRatio) * 100}%` }}
+              className={`relative w-full transition-opacity duration-300 ${
+                isLoaded ? "opacity-100" : "opacity-0 absolute"
+              }`}
+              style={{
+                paddingBottom: isLoaded
+                  ? `${(1 / aspectRatio) * 100}%`
+                  : undefined,
+              }}
             >
               <div className="absolute inset-0 bg-gray-50 flex items-center justify-center">
                 <Image
@@ -176,6 +194,8 @@ export function MasonryGrid({
                   className="object-contain"
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                   onLoad={(e) => handleImageLoad(item.id, e)}
+                  quality={30}
+                  loading="lazy"
                 />
               </div>
 
@@ -230,26 +250,6 @@ export function MasonryGrid({
                   }`}
                 />
               </div>
-
-              {/* Action buttons - only visible on hover */}
-              {/* {hoveredItem === item.id && (
-                <div className="absolute bottom-2 right-2 z-10 flex space-x-1">
-                  <button
-                    className="p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors duration-200 text-white"
-                    onClick={(e) => handleDownloadClick(item, e)}
-                    aria-label="Download"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-1.5 rounded-full bg-black/30 hover:bg-red-500/70 transition-colors duration-200 text-white"
-                    onClick={(e) => handleDeleteClick(item.id, e)}
-                    aria-label="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              )} */}
 
               {/* Title tooltip on hover */}
               {hoveredItem === item.id && (

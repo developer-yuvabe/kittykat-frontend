@@ -55,7 +55,12 @@ const InitialPlaceHolder: React.FC<InitialPlaceHolderProps> = ({
     <div>
       <div className="bg-white rounded-2xl relative shadow-sm mb-4">
         <Card className="p-5">
-          <Accordion type="single" collapsible defaultValue="brand-selector">
+          <Accordion
+            type="single"
+            collapsible
+            defaultValue="brand-selector"
+            asChild
+          >
             <AccordionItem value="brand-selector">
               <AccordionTrigger className="flex-row-reverse items-center hover:no-underline [&>svg]:h-6 [&>svg]:w-6">
                 <div className="flex items-center justify-between w-full pr-4">

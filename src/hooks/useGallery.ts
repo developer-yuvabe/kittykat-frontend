@@ -376,6 +376,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
     isFetchingNextPage: galleryQuery.isFetchingNextPage,
     hasNextPage: galleryQuery.hasNextPage,
     fetchNextPage: galleryQuery.fetchNextPage,
+    isFetching: galleryQuery.isFetching,
 
     // Mutations
     addToGallery: addToGalleryMutation.mutate,

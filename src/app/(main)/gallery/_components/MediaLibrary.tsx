@@ -315,7 +315,7 @@ export function MediaLibrary({
               />
 
               {galleryStatus === "pending" ? (
-                <div className="flex justify-center items-center py-20">
+                <div className="flex   justify-center items-center py-36 2xl:py-60 ">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                 </div>
               ) : galleryStatus === "error" ? (
