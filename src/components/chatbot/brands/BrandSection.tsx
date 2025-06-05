@@ -24,7 +24,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
-import InitialPlaceHolder from "./InitialPlaceHolder";
+import { InitialPlaceHolder } from "./InitialPlaceHolder";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;

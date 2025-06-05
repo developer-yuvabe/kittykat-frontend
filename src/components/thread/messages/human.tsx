@@ -162,6 +162,7 @@ export function HumanMessage({
   message: Message;
   isLoading: boolean;
 }) {
+  console.log("humanmsg", message.id);
   const thread = useStreamContext();
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;

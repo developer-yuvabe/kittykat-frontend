@@ -1,14 +1,9 @@
 import Logo from "@/assets/kittykat-logo.svg";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
 import {
-  DO_NOT_RENDER_ID_PREFIX,
-  RENDER_FILE_ID_PREFIX,
-} from "@/lib/constants";
-import {
-  addFileWrappers,
   ensureToolCallsHaveResponses,
   getPinnedItemContextMessage,
-  removeFileWrappers,
 } from "@/lib/langgraph.utils";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
@@ -19,7 +14,7 @@ import { MessageContentFiles } from "@/types/langgraph.types";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import Image from "next/image";
 import { parseAsBoolean, useQueryState } from "nuqs";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StickToBottom } from "use-stick-to-bottom";
 import { v4 as uuidv4 } from "uuid";
 import { ChatInput } from "../chatbot/ChatInput";
@@ -36,7 +31,6 @@ import {
 import { ChatSkeleton } from "./messages/message-skeleton";
 import { useBrandUpdates } from "@/hooks/useBrandUpdates";
 import { ChatSuggestions } from "../chatbot/ChatSuggestions";
-import { useFileUpload } from "@/hooks/useFileUploadToAgent";
 
 export function Thread() {
   const lastInteractedBrandId = useUserStore((state) =>
@@ -97,8 +91,6 @@ export function Thread() {
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
   );
-  const [input, setInput] = useState("");
-  const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
 
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
@@ -109,18 +101,6 @@ export function Thread() {
   const isLoading = stream.isLoading;
 
   const lastError = useRef<string | undefined>(undefined);
-
-  const {
-    contentBlocks,
-    setContentBlocks,
-    handleFileUpload,
-    dropRef,
-    removeBlock,
-    resetBlocks,
-    dragOver,
-    handlePaste,
-    isUploading,
-  } = useFileUpload({ brandId: threadId });
 
   useEffect(() => {
     if (!stream.error) {
@@ -157,15 +137,16 @@ export function Thread() {
     prevMessageLength.current = messages.length;
   }, [messages]);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (
+    input: string,
+    contentBlocks: any[],
+    fileList: MessageContentFiles[]
+  ) => {
     if (!input.trim() || isLoading) return;
     setFirstTokenReceived(false);
     const pinnedContextMessage: string | null = pinnedItem
       ? getPinnedItemContextMessage(pinnedItem)
       : null;
-
-    resetFiles();
 
     const newHumanMessage: Message = {
       id: uuidv4(),
@@ -212,9 +193,6 @@ export function Thread() {
         }),
       }
     );
-
-    setInput("");
-    setContentBlocks([]);
   };
 
   const handleRegenerate = (
@@ -243,21 +221,6 @@ export function Thread() {
   const setLastInteractedBrandId = useUserStore(
     (state) => state.setLastInteractedBrandId
   );
-
-  const handleAddFile = (url: string) => {
-    addFileWrappers(url, setFileList);
-  };
-
-  const handleRemoveFile = (id: string) => {
-    const trimmedId = id
-      .replace(RENDER_FILE_ID_PREFIX, "")
-      .replace(DO_NOT_RENDER_ID_PREFIX, "");
-    removeFileWrappers(trimmedId, setFileList);
-  };
-
-  const resetFiles = () => {
-    setFileList([]);
-  };
   const { removePinnedItem } = usePinnedContextStore();
 
   useEffect(() => {
@@ -266,11 +229,6 @@ export function Thread() {
       removePinnedItem();
     }
   }, [threadId]);
-
-  useEffect(() => {
-    console.log(input);
-    console.log(contentBlocks);
-  }, [input]);
 
   return (
     <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden">
@@ -362,26 +320,13 @@ export function Thread() {
 
                         {/* Always show the chat input unless we're in loading states */}
                         {!(threadsLoading || initializingThread) && (
-                          <div ref={dropRef} className="w-full">
-                            <ChatInput
-                              input={input}
-                              setInput={setInput}
-                              handleSubmit={handleSubmit}
-                              hideToolCalls={hideToolCalls}
-                              setHideToolCalls={setHideToolCalls}
-                              isLoading={isLoading}
-                              stream={stream}
-                              handleAddFiles={handleFileUpload}
-                              handleRemoveImageFile={removeBlock}
-                              handlePaste={handlePaste}
-                              threadId={threadId}
-                              files={contentBlocks}
-                              isFileUploading={isUploading}
-                              fileList={fileList}
-                              handleAddFile={handleAddFile}
-                              handleRemoveFile={handleRemoveFile}
-                            />
-                          </div>
+                          <ChatInput
+                            handleSubmit={handleSubmit}
+                            hideToolCalls={hideToolCalls}
+                            setHideToolCalls={setHideToolCalls}
+                            threadId={threadId}
+                            brandId={threadId}
+                          />
                         )}
                       </div>
                     }

@@ -6,6 +6,10 @@ import { CardSkeleton } from "../thread/messages/message-skeleton";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { BrandSection } from "./brands/BrandSection";
 import A2iImagesSection from "./a2i/A2iImagesSection";
+import {
+  campaignFields,
+  PlaceholderSection,
+} from "./brands/InitialPlaceHolder";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -59,10 +63,29 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               clearPinnedItems={removePinnedItem}
             />
           }
-          {campaignInformation && (
+          {campaignInformation ? (
             <CampaignSection
               campaignInformation={campaignInformation}
               brandId={threadId!}
+            />
+          ) : (
+            <PlaceholderSection
+              title="Campaign"
+              avatarFallback="C"
+              avatarBgColor="bg-green-500"
+              fields={campaignFields}
+              searchPlaceholder="Load existing Campaign"
+              newButtonTooltip="New Campaign"
+              onNewClick={() => {
+                console.log("New Campaign clicked");
+              }}
+              isExpanded={expandedSections["campaignSection"]}
+              onToggleExpanded={() =>
+                setExpandedSections((prev) => ({
+                  ...prev,
+                  campaignSection: !prev["campaignSection"],
+                }))
+              }
             />
           )}
 

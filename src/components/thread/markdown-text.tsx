@@ -73,7 +73,7 @@ const defaultComponents: any = {
   h1: ({ className, ...props }: { className?: string }) => (
     <h1
       className={cn(
-        "mb-8 scroll-m-20 text-4xl font-extrabold tracking-tight last:mb-0",
+        "mb-4 scroll-m-20 text-2xl font-extrabold tracking-tight last:mb-0",
         className
       )}
       {...props}
@@ -82,7 +82,7 @@ const defaultComponents: any = {
   h2: ({ className, ...props }: { className?: string }) => (
     <h2
       className={cn(
-        "mb-4 mt-8 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0 last:mb-0",
+        "mb-2 mt-8 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0",
         className
       )}
       {...props}
@@ -91,7 +91,7 @@ const defaultComponents: any = {
   h3: ({ className, ...props }: { className?: string }) => (
     <h3
       className={cn(
-        "mb-4 mt-6 scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0 last:mb-0",
+        "mb-2 mt-6 scroll-m-20 text-lg font-semibold tracking-tight first:mt-0 last:mb-0",
         className
       )}
       {...props}
@@ -100,7 +100,7 @@ const defaultComponents: any = {
   h4: ({ className, ...props }: { className?: string }) => (
     <h4
       className={cn(
-        "mb-4 mt-6 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0",
+        "mb-2 mt-6 scroll-m-20 text-lg font-semibold tracking-tight first:mt-0 last:mb-0",
         className
       )}
       {...props}
@@ -109,7 +109,7 @@ const defaultComponents: any = {
   h5: ({ className, ...props }: { className?: string }) => (
     <h5
       className={cn(
-        "my-4 text-lg font-semibold first:mt-0 last:mb-0",
+        "my-2 text-lg font-semibold first:mt-0 last:mb-0",
         className
       )}
       {...props}
@@ -117,13 +117,13 @@ const defaultComponents: any = {
   ),
   h6: ({ className, ...props }: { className?: string }) => (
     <h6
-      className={cn("my-4 font-semibold first:mt-0 last:mb-0", className)}
+      className={cn("my-2 font-semibold first:mt-0 last:mb-0", className)}
       {...props}
     />
   ),
   p: ({ className, ...props }: { className?: string }) => (
     <p
-      className={cn("mb-5 mt-5 leading-7 first:mt-0 last:mb-0", className)}
+      className={cn("my-3 leading-7 first:mt-0 last:mb-0", className)}
       {...props}
     />
   ),
