@@ -23,7 +23,7 @@ export type ContentBlock = URLContentBlock | IDContentBlock;
 
 interface UseFileUploadOptions {
   initialBlocks?: ContentBlock[];
-  brandId: string; // Required for uploading files to get IDs
+  brandId: string | null; // Required for uploading files to get IDs
 }
 
 export function useFileUpload({
@@ -63,6 +63,10 @@ export function useFileUpload({
 
   const fileToContentBlock = async (file: File): Promise<ContentBlock> => {
     try {
+      if (!brandId) {
+        toast.warning("Start a conversation before uploading a file.");
+      }
+
       if (IMAGE_TYPES.includes(file.type)) {
         // Images: Upload to GCS and return URLContentBlock
         const uploadedUrl = await uploadFileAndReturnUrl(
@@ -79,8 +83,8 @@ export function useFileUpload({
           mime_type: file.type,
           metadata: { name: file.name },
         } as URLContentBlock;
-      } else {
-        // PDFs: Upload to thread files and return IDContentBlock
+      } else if (brandId) {
+        // PDFs and other files: Upload to thread files and return IDContentBlock
         const threadFileResponse = await uploadThreadFile(
           brandId,
           file,
@@ -95,6 +99,9 @@ export function useFileUpload({
           metadata: { threadFileResponse },
         } as IDContentBlock;
       }
+      throw new Error(
+        "Unable to process file: missing brandId or unsupported file type."
+      );
     } catch (error) {
       console.error("Error processing file:", error);
       throw error;

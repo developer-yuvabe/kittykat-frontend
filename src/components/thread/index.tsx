@@ -120,7 +120,7 @@ export function Thread() {
     dragOver,
     handlePaste,
     isUploading,
-  } = useFileUpload({ brandId: threadId ?? "" });
+  } = useFileUpload({ brandId: threadId });
 
   useEffect(() => {
     if (!stream.error) {
