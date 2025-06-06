@@ -170,6 +170,7 @@ export type ThreadA2iImage = {
   reference_moodboard_id?: string;
   parameters?: Record<string, any>;
   images?: ImageDetail[];
+  reference_image_id?: string;
 };
 
 export interface ThreadDetails {

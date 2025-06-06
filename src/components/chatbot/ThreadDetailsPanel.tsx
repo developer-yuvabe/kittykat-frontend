@@ -10,6 +10,7 @@ import {
   campaignFields,
   PlaceholderSection,
 } from "./brands/InitialPlaceHolder";
+import A2iVideosSection from "./a2ivideos/A2iVideosSection";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -91,6 +92,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
           {campaignInformation && campaignInformation?.length > 0 && (
             <A2iImagesSection
+              a2iImageInformation={a2iImageInformation}
+              brandId={threadId}
+              campaignInformation={campaignInformation}
+            />
+          )}
+
+          {campaignInformation && campaignInformation?.length > 0 && (
+            <A2iVideosSection
               a2iImageInformation={a2iImageInformation}
               brandId={threadId}
               campaignInformation={campaignInformation}
