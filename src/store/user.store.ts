@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { produce } from "immer";
-import { User } from "@/types/types";
+import { User } from "@/types/user.types";
+
+type UserWithoutBrandAccess = Omit<User, "brand_access">;
 
 type Store = {
-  user: User | null;
+  user: UserWithoutBrandAccess | null;
   lastInteractedBrandId: string | null;
-  setUser: (user: User | null) => void;
+  setUser: (user: UserWithoutBrandAccess | null) => void;
   setLastInteractedBrandId: (brandId: string) => void;
   getLastInteractedBrandId: () => string | null;
 };

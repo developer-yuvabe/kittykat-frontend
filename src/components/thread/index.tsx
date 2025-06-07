@@ -34,65 +34,17 @@ import {
   ResizablePanelGroup,
 } from "../ui/resizable";
 import { ChatSkeleton } from "./messages/message-skeleton";
-import { useBrandUpdates } from "@/hooks/useBrandUpdates";
+import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { ChatSuggestions } from "../chatbot/ChatSuggestions";
 import { useFileUpload } from "@/hooks/useFileUploadToAgent";
+import { useBrandStore } from "@/store/brand.store";
 
 export function Thread() {
-  const lastInteractedBrandId = useUserStore((state) =>
-    state.getLastInteractedBrandId()
-  );
   const { pinnedItem } = usePinnedContextStore();
-  const [threadId, setThreadId] = useQueryState("threadId");
-  const { threads, threadsLoading, setThreadsLoading } = useThreads();
-  const [initializingThread, setInitializingThread] = useState(true);
-  const { isFectchingThreadInfo } = useBrandUpdates(threadId);
-
-  const handleThreadChange = (id: string | null): void => {
-    setThreadsLoading(true);
-
-    (async () => {
-      if (id) {
-        setThreadId(id);
-        // Mock wait for 2 sec
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-      } else {
-        setThreadId(id);
-      }
-
-      setThreadsLoading(false);
-    })();
-  };
-
-  useEffect(() => {
-    if (threadsLoading) return; // Wait for threads to load
-
-    // Check if the last interacted brand ID is valid
-    if (lastInteractedBrandId && !threadId) {
-      const isValidThread = threads.some(
-        (thread) => thread.thread_id === lastInteractedBrandId
-      );
-
-      if (isValidThread) {
-        setThreadId(lastInteractedBrandId);
-      }
-    }
-
-    // If there's a threadId but it's not in the threads list, reset it
-    if (threadId) {
-      const isValidThread = threads.some(
-        (thread) => thread.thread_id === threadId
-      );
-
-      if (!isValidThread) {
-        setThreadId(null);
-      }
-    }
-
-    // Mark initialization as complete
-    setInitializingThread(false);
-  }, [threadsLoading]);
-
+  const { user } = useUserStore();
+  const { selectedBrandId, setSelectedBrandId } = useBrandStore();
+  const { threadsLoading } = useThreads();
+  const { isFectchingThreadInfo } = useBrandUpdates(selectedBrandId);
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
@@ -116,11 +68,9 @@ export function Thread() {
     handleFileUpload,
     dropRef,
     removeBlock,
-    resetBlocks,
-    dragOver,
     handlePaste,
     isUploading,
-  } = useFileUpload({ brandId: threadId ?? "" });
+  } = useFileUpload({ brandId: user!.thread_id! });
 
   useEffect(() => {
     if (!stream.error) {
@@ -156,6 +106,12 @@ export function Thread() {
 
     prevMessageLength.current = messages.length;
   }, [messages]);
+
+  useEffect(() => {
+    if (stream.values.currentBrandContextId) {
+      setSelectedBrandId(stream.values.currentBrandContextId);
+    }
+  }, [stream.values.currentBrandContextId]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -198,6 +154,8 @@ export function Thread() {
     stream.submit(
       {
         messages: [...toolMessages, ...newFileList, newHumanMessage],
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
       },
       {
         streamMode: ["values"],
@@ -229,7 +187,7 @@ export function Thread() {
     });
   };
 
-  const chatStarted = !!threadId || !!messages.length;
+  const chatStarted = !!messages.length;
   const hasNoAIOrToolMessages = !messages.find(
     (m) => m.type === "ai" || m.type === "tool"
   );
@@ -239,10 +197,6 @@ export function Thread() {
   );
 
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
-
-  const setLastInteractedBrandId = useUserStore(
-    (state) => state.setLastInteractedBrandId
-  );
 
   const handleAddFile = (url: string) => {
     addFileWrappers(url, setFileList);
@@ -258,14 +212,6 @@ export function Thread() {
   const resetFiles = () => {
     setFileList([]);
   };
-  const { removePinnedItem } = usePinnedContextStore();
-
-  useEffect(() => {
-    if (threadId) {
-      setLastInteractedBrandId(threadId);
-      removePinnedItem();
-    }
-  }, [threadId]);
 
   useEffect(() => {
     console.log(input);
@@ -281,11 +227,7 @@ export function Thread() {
         >
           {/* Tool Results Panel - Left Side */}
           <ResizablePanel defaultSize={70} minSize={30}>
-            <ThreadDetailsPanel
-              isLargeScreen={isLargeScreen}
-              setThreadId={handleThreadChange}
-              threadId={threadId}
-            />
+            <ThreadDetailsPanel isLargeScreen={isLargeScreen} />
           </ResizablePanel>
           <ResizableHandle className="mx-3 bg-transparent" withHandle />
           <ResizablePanel defaultSize={30} minSize={30}>
@@ -312,9 +254,7 @@ export function Thread() {
                 )}
 
                 {/* Only show skeleton during loading, nothing else */}
-                {threadsLoading ||
-                initializingThread ||
-                isFectchingThreadInfo ? (
+                {threadsLoading || isFectchingThreadInfo ? (
                   <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
                     <div className="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full">
                       <ChatSkeleton />
@@ -361,7 +301,7 @@ export function Thread() {
                         )}
 
                         {/* Always show the chat input unless we're in loading states */}
-                        {!(threadsLoading || initializingThread) && (
+                        {!threadsLoading && (
                           <div ref={dropRef} className="w-full">
                             <ChatInput
                               input={input}
@@ -374,7 +314,7 @@ export function Thread() {
                               handleAddFiles={handleFileUpload}
                               handleRemoveImageFile={removeBlock}
                               handlePaste={handlePaste}
-                              threadId={threadId}
+                              threadId={user!.thread_id!}
                               files={contentBlocks}
                               isFileUploading={isUploading}
                               fileList={fileList}

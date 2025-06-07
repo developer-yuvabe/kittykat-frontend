@@ -2,7 +2,7 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { ThreadDetails } from "@/types/types";
 import { useEffect, useState } from "react";
 
-export function useBrandUpdates(brandId: string | null) {
+export function useBrandUpdates(brandId?: string | null) {
   const [isFectchingThreadInfo, setIsFectchingThreadInfo] = useState(false);
   const [data, setData] = useState<ThreadDetails | null>(null);
 

@@ -1,44 +1,31 @@
-import { useBrandUpdates } from "@/hooks/useBrandUpdates";
+import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useThreads } from "@/providers/langgraph/Thread";
+import { useBrandStore } from "@/store/brand.store";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
-import { CampaignSection } from "./campaigns/CampaignSection";
-import { BrandSection } from "./brands/BrandSection";
 import A2iImagesSection from "./a2i/A2iImagesSection";
+import { BrandSection } from "./brands/BrandSection";
+import { CampaignSection } from "./campaigns/CampaignSection";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
-  threadId: string | null;
-  setThreadId: (id: string | null) => void;
 }
 
 const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   isLargeScreen,
-  setThreadId,
-  threadId,
 }) => {
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true });
-  const { threadsLoading, updateThreadName } = useThreads();
+  const { threadsLoading } = useThreads();
   const { removePinnedItem } = usePinnedContextStore();
-  const { isFectchingThreadInfo, data } = useBrandUpdates(threadId);
+  const { selectedBrandId } = useBrandStore();
+  const { isFectchingThreadInfo, data } = useBrandUpdates(selectedBrandId);
 
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information;
   const a2iImageInformation = data?.a2i_image_information;
-
-  const previousBrandName = useRef<string>(null);
-
-  useEffect(() => {
-    const brandName = brandingInformation?.static?.brand?.name;
-
-    if (brandName && threadId && previousBrandName.current !== brandName) {
-      updateThreadName(threadId, brandName);
-      previousBrandName.current = brandName;
-    }
-  }, [brandingInformation?.static?.brand?.name, threadId]);
 
   return (
     <div
@@ -53,23 +40,18 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
           {
             <BrandSection
               brandingInformation={brandingInformation}
-              setThreadId={setThreadId}
               expandedSections={expandedSections}
               setExpandedSections={setExpandedSections}
               clearPinnedItems={removePinnedItem}
             />
           }
           {campaignInformation && (
-            <CampaignSection
-              campaignInformation={campaignInformation}
-              brandId={threadId!}
-            />
+            <CampaignSection campaignInformation={campaignInformation} />
           )}
 
           {campaignInformation && campaignInformation?.length > 0 && (
             <A2iImagesSection
               a2iImageInformation={a2iImageInformation}
-              brandId={threadId}
               campaignInformation={campaignInformation}
             />
           )}

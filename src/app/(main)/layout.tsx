@@ -1,24 +1,27 @@
 import Splash from "@/components/shared/Splash";
 import { tokenConfig } from "@/config/firebase.config";
-import { createUser, fetchUser } from "@/services/api/user.service";
+import { createUser, fetchUser } from "@/services/api/server/user.service";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import React from "react";
 import MainLayout from "./_components/MainLayout";
 
 const layout = async ({ children }: { children: React.ReactNode }) => {
-  // Fetch user details
+  const _cookies = await cookies();
+  const token = await getTokens(_cookies, tokenConfig);
+
+  if (!token?.decodedToken?.uid) {
+    return <Splash showRetry />;
+  }
+
   let user = await fetchUser();
 
-  // If user not found, create a new user
   if (!user) {
-    const _cookies = await cookies();
-    const token = await getTokens(_cookies, tokenConfig);
-
+    // If user does not exist, create a new user
     user = await createUser({
-      name: token?.decodedToken?.name || "",
-      email: token?.decodedToken?.email || "",
-      id: token?.decodedToken?.uid || "",
+      id: token.decodedToken.uid,
+      name: token.decodedToken.name || "",
+      email: token.decodedToken.email || "",
     });
   }
 
