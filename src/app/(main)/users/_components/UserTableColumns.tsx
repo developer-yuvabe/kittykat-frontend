@@ -10,12 +10,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { deleteUser, resendInvitation } from "@/services/api/user.service";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { EditUser } from "./EditUser";
 
 export const getUserTableColumns = (
   page: number,
@@ -83,7 +85,7 @@ export const getUserTableColumns = (
         className={cn("uppercase border", {
           "border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E]":
             row.original.status === UserStatus.ACTIVE,
-          "border-[#FCD34D] bg-[#FCD34D]/5 text-[#FBBF24]":
+          "border-[#00bde3] bg-[#00bde3]/10 text-[#00bde3]":
             row.original.status === UserStatus.INVITED,
         })}
       >
@@ -95,14 +97,41 @@ export const getUserTableColumns = (
     header: "Brand Access",
     accessorKey: "brand_access",
     cell: ({ row }) => {
+      const INIT_BRANDS_TO_SHOW = 3;
+      const [showAllBrands, setShowAllBrands] = useState(false);
       const role = row.original.role?.id;
       if (role === "KK-ADMIN") {
         return <p className="italic">Admin have access to all brands</p>;
       }
 
-      return row.original.brand_access!.length
-        ? row.original.brand_access!.map((b) => b.name).join(", ")
-        : "—";
+      return row.original.brand_access!.length ? (
+        <div className="flex flex-wrap gap-2">
+          {row.original
+            .brand_access!.slice(
+              0,
+              showAllBrands ? undefined : INIT_BRANDS_TO_SHOW
+            )
+            .map((brand) => (
+              <Badge key={brand.id} className="border">
+                {brand.name}
+              </Badge>
+            ))}
+          {row.original.brand_access!.length > INIT_BRANDS_TO_SHOW && (
+            <Button
+              variant="link"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowAllBrands((p) => !p)}
+            >
+              {showAllBrands
+                ? "Show Less"
+                : `Show all (${row.original.brand_access!.length})`}
+            </Button>
+          )}
+        </div>
+      ) : (
+        "—"
+      );
     },
   },
   {
@@ -129,8 +158,6 @@ export const getUserTableColumns = (
         });
       };
 
-      const handleEdit = () => {};
-
       const handleResendInvite = () => {
         toast.promise(resendInvitation(row.original.id!), {
           loading: "Resending invite...",
@@ -150,18 +177,30 @@ export const getUserTableColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-max">
             {row.original.status === UserStatus.ACTIVE && (
-              <DropdownMenuItem disabled={isActionsDisabled}>
-                Edit
-              </DropdownMenuItem>
+              <>
+                <EditUser user={row.original}>
+                  <DropdownMenuItem
+                    disabled={isActionsDisabled}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                </EditUser>
+                <DropdownMenuSeparator />
+              </>
             )}
             {row.original.invitation_link && (
-              <DropdownMenuItem
-                disabled={isActionsDisabled}
-                onClick={handleResendInvite}
-              >
-                Resend Invite
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem
+                  disabled={isActionsDisabled}
+                  onClick={handleResendInvite}
+                >
+                  Resend Invite
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
             )}
+
             <DropdownMenuItem
               variant="destructive"
               disabled={isActionsDisabled}

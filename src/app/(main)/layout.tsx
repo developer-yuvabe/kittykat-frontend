@@ -1,17 +1,15 @@
-import { tokenConfig } from "@/config/firebase.config";
 import { fetchUser } from "@/services/api/server/user.service";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
 import React from "react";
 import MainLayout from "./_components/MainLayout";
 import { redirect } from "next/navigation";
+import Splash from "@/components/shared/Splash";
 
 const layout = async ({ children }: { children: React.ReactNode }) => {
-  const _cookies = await cookies();
-  const token = await getTokens(_cookies, tokenConfig);
-  console.log(token);
+  const { error, user } = await fetchUser();
 
-  const user = await fetchUser();
+  if (error) {
+    return <Splash showRetry={true} />;
+  }
 
   if (!user) {
     /**

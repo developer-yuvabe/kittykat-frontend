@@ -20,18 +20,19 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { getUserTableColumns } from "./UserTableColumns";
 import { debounce } from "lodash";
 import { InviteUser } from "./InviteUser";
+import { cn } from "@/lib/utils";
 
 export const UsersTable = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const limit = AppConfig.TABLE_VIEW_LIMIT;
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["users", page, limit, searchTerm],
     queryFn: () => fetchAllUsers(page, AppConfig.TABLE_VIEW_LIMIT, searchTerm),
   });
@@ -65,8 +66,18 @@ export const UsersTable = () => {
   return (
     <div className="w-full space-y-4">
       <div className="flex justify-between items-center">
-        <div>
+        <div className="flex items-center gap-2 justify-center">
           <h1 className="text-2xl font-semibold ">User Management</h1>
+          <button
+            onClick={() => refetch()}
+            className={cn("text-muted-foreground", {
+              "animate-spin": isRefetching,
+            })}
+            aria-label="Refresh Users"
+            disabled={isRefetching}
+          >
+            <RefreshCcw size={12} />
+          </button>
         </div>
         <div className="flex items-center gap-2 rounded-md w-max">
           <div className="flex h-9 items-center border-2 rounded-md pl-3">

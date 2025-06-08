@@ -8,9 +8,15 @@ export const fetchUser = async () => {
       axiosInstance.get("/users/me")
     );
 
-    return user;
+    return {
+      error: null,
+      user,
+    };
   } catch {
-    return null;
+    return {
+      error: "Failed to fetch user",
+      user: null,
+    };
   }
 };
 

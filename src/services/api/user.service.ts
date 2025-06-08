@@ -7,18 +7,21 @@ import { z } from "zod";
 
 export const updateUser = async (
   userId: string,
-  data: Partial<User>
+  roleId: User["role"]["id"],
+  brandAccess?: string[]
 ): Promise<User | null> => {
   try {
     const updatedUser = await handleApiRequest<User | null>(
       axiosInstance.put(`/users/${userId}`, {
-        ...data,
+        role_id: roleId,
+        brand_access: brandAccess ?? null,
       })
     );
 
     return updatedUser;
-  } catch {
-    return null;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
   }
 };
 
