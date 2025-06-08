@@ -14,13 +14,18 @@ import {
   type RemoveUIMessage,
 } from "@langchain/langgraph-sdk/react-ui";
 import { useQueryState } from "nuqs";
-import { useThreads } from "./Thread";
-
 import Splash from "@/components/shared/Splash";
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { env } from "@/config/env";
+import { useUserStore } from "@/store/user.store";
+import { updateUser } from "@/services/api/user.service";
 
-export type StateType = { messages: Message[]; next?: string };
+export type StateType = {
+  messages: Message[];
+  next?: string;
+  userId: string;
+  currentBrandContextId: string | null;
+};
 
 const useTypedStream = useStream<
   StateType,
@@ -28,6 +33,9 @@ const useTypedStream = useStream<
     UpdateType: {
       messages?: Message[] | Message | string;
       next?: string;
+
+      userId: string;
+      currentBrandContextId: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }
@@ -36,10 +44,6 @@ const useTypedStream = useStream<
 export type StreamContextType = ReturnType<typeof useTypedStream> & {};
 
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
-
-async function sleep(ms = 4000) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 const StreamSession = ({
   children,
@@ -52,19 +56,24 @@ const StreamSession = ({
   apiUrl: string;
   assistantId: string;
 }) => {
-  const [threadId, setThreadId] = useQueryState("threadId");
-  const { getThreads, setThreads } = useThreads();
+  const { user, setUser } = useUserStore();
+  if (!user) {
+    console.log("User ID: if not found, debug this is IMPORTANT");
+  }
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
-    threadId: threadId ?? null,
+    threadId: user?.thread_id,
     onThreadId: (id) => {
-      setThreadId(id);
-      sleep().then(() => getThreads().then(setThreads).catch(console.error));
-    },
-    defaultHeaders: {
-      user_id: "kittykatssss",
+      updateUser(user!.id, {
+        thread_id: id,
+      });
+
+      setUser({
+        ...user!,
+        thread_id: id,
+      });
     },
   });
 
@@ -85,7 +94,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     const initializeParams = async () => {
       try {
-        const hideToolCallsToSet = hideToolCalls || "true";
+        const hideToolCallsToSet = hideToolCalls || "false";
         const promises = [];
 
         if (!hideToolCalls || hideToolCalls !== hideToolCallsToSet) {

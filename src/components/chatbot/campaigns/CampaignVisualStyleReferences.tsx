@@ -1,4 +1,5 @@
 import { ContentSection } from "@/components/shared/ContentSection";
+import { ImageModal } from "@/components/shared/ImageModal";
 import { Badge } from "@/components/ui/badge";
 import { Agents, ThreadCampaign } from "@/types/types";
 import React from "react";
@@ -8,6 +9,8 @@ const CampaignVisualStyleReferences = ({
 }: {
   visualStyleReferences: ThreadCampaign["visual_style_references"];
 }) => {
+  const [expandedImage, setExpandedImage] = React.useState<string | null>(null);
+
   if (
     !visualStyleReferences ||
     !visualStyleReferences.images ||
@@ -31,14 +34,15 @@ const CampaignVisualStyleReferences = ({
       title={`Visual Style References`}
       content={
         <div className="space-y-3">
-          <div className="columns-3 gap-0">
+          <div className="grid grid-cols-4">
             {visualStyleReferences.images.map((image, index) => (
-              <img
+              <div
                 key={index}
-                src={image}
-                alt={`Visual Style Reference ${index + 1}`}
-                className="w-full align-top"
-              />
+                className="w-full h-64"
+                onClick={() => setExpandedImage(image)}
+              >
+                <img src={image} className="w-full h-full object-cover" />
+              </div>
             ))}
           </div>
           {Object.entries(visualStyleReferences.analysis ?? {}).map(
@@ -66,6 +70,13 @@ const CampaignVisualStyleReferences = ({
                 }}
               />
             )
+          )}
+          {expandedImage && (
+            <ImageModal
+              imageUrl={expandedImage}
+              onClose={() => setExpandedImage(null)}
+              isOpen={!!expandedImage}
+            />
           )}
         </div>
       }

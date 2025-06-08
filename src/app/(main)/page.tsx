@@ -6,7 +6,7 @@ import { ThreadProvider } from "@/providers/langgraph/Thread";
 
 export default function Page() {
   return (
-    <div className="bg-white mt-2">
+    <div className="mt-2">
       <ThreadProvider>
         <StreamProvider>
           <Thread />

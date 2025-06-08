@@ -19,13 +19,7 @@ import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { PinIcon } from "@/components/ui/custom-icon";
 import BrandSelector from "./BrandSelector";
 
-interface InitialPlaceHolderProps {
-  setThreadId: (id: string | null) => void;
-}
-
-const InitialPlaceHolder: React.FC<InitialPlaceHolderProps> = ({
-  setThreadId,
-}) => {
+const InitialPlaceHolder: React.FC = () => {
   // const [openBrand, setOpenBrand] = useState(false);
   const [openCampaign, setOpenCampaign] = useState(false);
   const brandFields = [
@@ -73,7 +67,7 @@ const InitialPlaceHolder: React.FC<InitialPlaceHolderProps> = ({
                   <div className="flex justify-between gap-x-2">
                     <div>
                       <div>
-                        <BrandSelector setThreadId={setThreadId} />
+                        <BrandSelector />
                       </div>
                     </div>
                     <TooltipIconButton

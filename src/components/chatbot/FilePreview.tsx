@@ -37,7 +37,6 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
   }, [isUrlSource, block]);
 
   const getFilename = (): string => {
-    console.log(block.metadata);
     return (
       (block.metadata?.filename as string) ||
       (block.metadata?.name as string) ||

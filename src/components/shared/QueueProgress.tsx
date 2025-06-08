@@ -1,4 +1,4 @@
-import { useQueueUpdates } from "@/hooks/useQueueUpdates";
+import { useQueueUpdates } from "@/hooks/sse/useQueueUpdates";
 import { useUserStore } from "@/store/user.store";
 import { CircleDashed, ListEnd } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
