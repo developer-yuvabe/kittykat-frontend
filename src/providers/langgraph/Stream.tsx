@@ -65,7 +65,6 @@ const StreamSession = ({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
-    reconnectOnMount: true,
     threadId: user?.thread_id,
     onThreadId: (id) => {
       updateUser(user!.id, {

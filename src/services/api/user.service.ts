@@ -7,15 +7,20 @@ import { z } from "zod";
 
 export const updateUser = async (
   userId: string,
-  roleId: User["role"]["id"],
-  brandAccess?: string[]
+  userData: Pick<User, "thread_id"> & {
+    roleId?: string;
+    brand_access?: string[];
+  }
 ): Promise<User | null> => {
   try {
+    const fieldsToUpdate = {
+      role_id: userData.roleId,
+      thread_id: userData.thread_id,
+      brand_access: userData.brand_access,
+    };
+
     const updatedUser = await handleApiRequest<User | null>(
-      axiosInstance.put(`/users/${userId}`, {
-        role_id: roleId,
-        brand_access: brandAccess ?? null,
-      })
+      axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
     );
 
     return updatedUser;

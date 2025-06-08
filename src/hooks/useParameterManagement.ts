@@ -17,7 +17,6 @@ interface UseParameterManagementProps {
 }
 
 export interface A2iImageUpdateRequest {
-  brand_id: string;
   reference_campaign_id?: string;
   reference_moodboard_id?: string;
   parameters?: {
@@ -30,8 +29,7 @@ export const updateReferenceCampaignId = async (
   brandId: string,
   referenceCampaignId: string
 ): Promise<BaseApiResponse<ThreadA2iImage>> => {
-  return updateA2iImageParameters({
-    brand_id: brandId,
+  return updateA2iImageParameters(brandId, {
     reference_campaign_id: referenceCampaignId,
   });
 };
@@ -41,8 +39,7 @@ export const updateOnlyA2iParameters = async (
   model: string,
   inputData: Record<string, any>
 ): Promise<BaseApiResponse<ThreadA2iImage>> => {
-  return updateA2iImageParameters({
-    brand_id: brandId,
+  return updateA2iImageParameters(brandId, {
     parameters: {
       model,
       input_data: inputData,
@@ -54,8 +51,7 @@ export const updateReferenceMoodboardId = async (
   brandId: string,
   referenceMoodboardId: string
 ): Promise<BaseApiResponse<ThreadA2iImage>> => {
-  return updateA2iImageParameters({
-    brand_id: brandId,
+  return updateA2iImageParameters(brandId, {
     reference_moodboard_id: referenceMoodboardId,
   });
 };

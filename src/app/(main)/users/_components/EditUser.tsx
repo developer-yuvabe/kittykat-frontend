@@ -74,11 +74,10 @@ export function EditUser({
     form.reset();
 
     toast.promise(
-      updateUser(
-        user.id,
-        data.role as UserRoleId,
-        data.role === UserRoleId.ADMIN ? undefined : data.brandAccess
-      ),
+      updateUser(user.id, {
+        roleId: data.role,
+        brand_access: data.brandAccess,
+      }),
       {
         loading: "Updating user...",
         success: () => {
@@ -224,7 +223,7 @@ export function EditUser({
                 </Button>
               </DialogClose>
               <Button disabled={!form.formState.isDirty} type="submit">
-                Update User
+                Update user
               </Button>
             </DialogFooter>
           </form>
