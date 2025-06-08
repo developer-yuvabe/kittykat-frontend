@@ -27,7 +27,6 @@ import { processAuthError } from "@/lib/utils";
 import { loginSchema } from "@/schema/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -73,11 +72,11 @@ const LoginPage = () => {
     <AuthUiWrapper>
       <div className="flex flex-col items-center justify-center">
         <Card className="shadow-none border-0 w-sm md:w-[28rem]">
-          <CardHeader className="flex flex-col items-center">
+          <CardHeader className="flex flex-col items-center md:items-start">
             <Logo />
             <CardTitle className="text-xl">Welcome back!</CardTitle>
-            <CardDescription className="text-center">
-              Please enter your credentials to login.
+            <CardDescription className="text-center md:text-left">
+              Please enter your credentials to login to agents platform.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,12 +128,6 @@ const LoginPage = () => {
               </form>
             </Form>
           </CardContent>
-          <p className="text-sm text-muted-foreground text-center">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign Up
-            </Link>
-          </p>
         </Card>
       </div>
     </AuthUiWrapper>

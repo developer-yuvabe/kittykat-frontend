@@ -1,6 +1,9 @@
 import { getSSEBaseUrl } from "@/lib/utils";
+import { fetchUserBrands } from "@/services/api/user.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 import { UserBrand } from "@/types/user.types";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 export const useUserBrands = (userId?: string) => {
@@ -11,6 +14,18 @@ export const useUserBrands = (userId?: string) => {
     setIsBrandsFetched,
     setSelectedBrandId,
   } = useBrandStore();
+  const { user } = useUserStore();
+  const { data } = useQuery({
+    queryKey: ["bands"],
+    queryFn: () => fetchUserBrands(user!.id),
+  });
+
+  useEffect(() => {
+    if (data) {
+      setBrands(data);
+      setIsBrandsFetched(true);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (!userId) return;
@@ -18,12 +33,6 @@ export const useUserBrands = (userId?: string) => {
     const eventSource = new EventSource(
       `${getSSEBaseUrl()}/users/${userId}/brands`
     );
-
-    eventSource.addEventListener("brands", (event) => {
-      const data = JSON.parse(event.data);
-      setBrands(data);
-      setIsBrandsFetched(true);
-    });
 
     eventSource.addEventListener("brand_insert", (event) => {
       const brand = JSON.parse(event.data) as UserBrand;

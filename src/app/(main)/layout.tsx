@@ -1,32 +1,28 @@
-import Splash from "@/components/shared/Splash";
 import { tokenConfig } from "@/config/firebase.config";
-import { createUser, fetchUser } from "@/services/api/server/user.service";
+import { fetchUser } from "@/services/api/server/user.service";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import React from "react";
 import MainLayout from "./_components/MainLayout";
+import { redirect } from "next/navigation";
 
 const layout = async ({ children }: { children: React.ReactNode }) => {
   const _cookies = await cookies();
   const token = await getTokens(_cookies, tokenConfig);
+  console.log(token);
 
-  if (!token?.decodedToken?.uid) {
-    return <Splash showRetry />;
-  }
-
-  let user = await fetchUser();
+  const user = await fetchUser();
 
   if (!user) {
-    // If user does not exist, create a new user
-    user = await createUser({
-      id: token.decodedToken.uid,
-      name: token.decodedToken.name || "",
-      email: token.decodedToken.email || "",
-    });
-  }
-
-  if (!user) {
-    return <Splash showRetry />;
+    /**
+     * IMPORTANT:
+     * The user has a valid Firebase account, but it's associated with a different platform
+     * (we're using the same Firebase project across multiple platforms).
+     * In this case, we need to:
+     * 1. Log the user out.
+     * 2. Redirect them to the unauthorized access page.
+     */
+    redirect("/unauthorized");
   }
 
   return <MainLayout userInfo={user}>{children}</MainLayout>;

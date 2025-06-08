@@ -183,3 +183,13 @@ export type Context = {
   agentId?: Agents;
   data: Record<string, any> | string;
 };
+
+export type PaginationMeta = {
+  total: number;
+  skip: number;
+  limit: number;
+  has_next: boolean;
+  has_previous: boolean;
+  next_skip?: number;
+  previous_skip?: number;
+};

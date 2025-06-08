@@ -14,40 +14,13 @@ export const fetchUser = async () => {
   }
 };
 
-export const createUser = async ({
-  name,
-  email,
-  id,
-}: {
-  name: string;
-  email: string;
-  id: string;
-}) => {
+export const fetchUserInvitation = async (invitationId: string) => {
   try {
-    const user = await handleApiRequest<User | null>(
-      axiosInstance.post("/users", {
-        name,
-        email,
-        firebase_uid: id,
-      })
+    const invitation = await handleApiRequest<User>(
+      axiosInstance.get(`/invitations/${invitationId}`)
     );
 
-    return user;
-  } catch {
-    return null;
-  }
-};
-
-export const updateUser = async (
-  userId: string,
-  data: Partial<User>
-): Promise<User | null> => {
-  try {
-    const updatedUser = await handleApiRequest<User | null>(
-      axiosInstance.put(`/users/${userId}`, data)
-    );
-
-    return updatedUser;
+    return invitation;
   } catch {
     return null;
   }

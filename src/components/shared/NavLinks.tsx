@@ -5,12 +5,12 @@ import {
   ChatBubbleIcon,
   GalleryIcon,
   HomeIcon,
-  MenuIcon,
   NotificationIcon,
-  PlayIcon,
 } from "../ui/custom-icon";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/store/user.store";
+import { Users } from "lucide-react";
 
 const ICON_SIZE = 24;
 
@@ -20,12 +20,11 @@ const LINKS = [
   { name: "Notifications", icon: NotificationIcon, path: "/", disabled: true },
   { name: "Ask Kitty Kat", icon: CatIcon, path: "/" },
   { name: "Gallery", icon: GalleryIcon, path: "/gallery" },
-  { name: "Kitty Q", icon: PlayIcon, path: "/", disabled: true },
-  { name: "Menu", icon: MenuIcon, path: "/", disabled: true },
 ];
 
 export function NavLinks() {
   const pathname = usePathname();
+  const { user } = useUserStore();
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -34,7 +33,19 @@ export function NavLinks() {
   return (
     <nav className="flex items-center justify-center flex-1">
       <div className="flex items-center space-x-8  md:space-x-16">
-        {LINKS.map((link) => {
+        {[
+          ...LINKS,
+          ...(user?.role.id === "KK-ADMIN"
+            ? [
+                {
+                  name: "Users",
+                  icon: Users,
+                  path: "/users",
+                  disabled: false,
+                },
+              ]
+            : []),
+        ].map((link) => {
           const Icon = link.icon;
           return (
             <Link

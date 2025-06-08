@@ -66,7 +66,7 @@ export async function handleApiRequest<T>(
     const response = await request;
 
     // Check for successful status code (200-299)
-    if (response.status >= 200 && response.status < 300) {
+    if (response.data.status_code >= 200 && response.data.status_code < 300) {
       return response.data.data as T;
     }
 

@@ -3,15 +3,44 @@ export type User = {
   name: string;
   email: string;
   thread_id?: string;
-  brand_access: UserBrand[];
+  brand_access?: UserBrand[];
   role: UserRole;
 };
 
-type UserRole = {
+export type UserListItem = {
   id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  role: UserRole;
+  status: UserStatus;
+  invitation_link?: string;
+  brand_access?: {
+    id: string;
+    name: string;
+    created_by: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }[];
+};
+
+export enum UserRoleId {
+  ADMIN = "KK-ADMIN",
+  USER = "KK-USER",
+}
+
+export type UserRole = {
+  id: UserRoleId;
   name: string;
   permissions: string[];
 };
+
+export enum UserStatus {
+  ACTIVE = "active",
+  INVITED = "invited",
+}
 
 export type UserBrand = {
   id: string;
