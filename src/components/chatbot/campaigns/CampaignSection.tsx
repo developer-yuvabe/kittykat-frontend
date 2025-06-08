@@ -16,6 +16,9 @@ import { motion } from "framer-motion";
 import CampaignVisualStyleReferences from "./CampaignVisualStyleReferences";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
+import { InlineEditableField } from "@/components/shared/InlineEditableField";
+import { formatUpdateMessage } from "@/lib/langgraph.utils";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
