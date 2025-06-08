@@ -4,12 +4,8 @@ import React from "react";
 import InvitationForm from "./_components/InvitationForm";
 import InvitationNotFound from "./_components/InvitationNotFound";
 
-type PageProps = {
-  params: { id: string };
-};
-
-const Page = async ({ params }: PageProps) => {
-  const { id } = params;
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   const invitation = await fetchUserInvitation(id);
 
   return (
