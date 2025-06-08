@@ -28,7 +28,6 @@ const EnhancedParameterConfiguration = ({
 }) => {
   const initialModelId =
     a2iImageInformation?.parameters?.model || "gpt-image-1";
-  console.log("im", initialModelId);
 
   const {
     selectedModelId,
@@ -45,7 +44,6 @@ const EnhancedParameterConfiguration = ({
     a2iInformation: a2iImageInformation,
   });
 
-  console.log("h3", a2iImageInformation, brandId);
   const parameterGroups = selectedModel?.schema
     ? groupParameters(selectedModel.schema)
     : [];

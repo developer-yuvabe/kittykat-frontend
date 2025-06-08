@@ -41,7 +41,6 @@ export const CampaignSection: React.FC<{
   }, [campaignInformation.length]);
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
-  console.log("current campaign info", currentCampaign);
   const dynamicData = currentCampaign?.dynamic;
 
   return (

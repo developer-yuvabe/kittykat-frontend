@@ -21,7 +21,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const { threadsLoading } = useThreads();
   const { removePinnedItem } = usePinnedContextStore();
   const { selectedBrandId } = useBrandStore();
-  const { isFectchingThreadInfo, data } = useBrandUpdates(selectedBrandId);
+  const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
 
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information;
@@ -33,7 +33,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         !isLargeScreen ? "hidden md:flex" : ""
       }`}
     >
-      {threadsLoading || isFectchingThreadInfo ? (
+      {threadsLoading || isFetchingBrandInfo ? (
         <CardSkeleton />
       ) : (
         <>

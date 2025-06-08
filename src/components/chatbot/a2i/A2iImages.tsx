@@ -19,8 +19,6 @@ type A2IImagesProps = {
 };
 
 export const A2IImages = ({ generatedImages }: A2IImagesProps) => {
-  console.log("image data", generatedImages);
-
   const handleCreateVideo = (imageId: string) => {
     console.log("Creating video for image:", imageId);
   };

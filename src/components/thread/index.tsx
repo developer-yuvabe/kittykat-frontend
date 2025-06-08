@@ -25,7 +25,6 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatInput } from "../chatbot/ChatInput";
 import { ChatMessageList } from "../chatbot/ChatMessageList";
 import { ScrollToBottom } from "../chatbot/ScrollToBottom";
-import { SettingsPopover } from "../chatbot/SettingsPopover";
 import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
 import ThreadDetailsPanel from "../chatbot/ThreadDetailsPanel";
 import {
@@ -43,8 +42,8 @@ export function Thread() {
   const { pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId, setSelectedBrandId } = useBrandStore();
+  useBrandUpdates(selectedBrandId);
   const { threadsLoading } = useThreads();
-  const { isFectchingThreadInfo } = useBrandUpdates(selectedBrandId);
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
@@ -238,23 +237,9 @@ export function Thread() {
                 !chatStarted && "grid-rows-[1fr]"
               )}
             >
-              {!chatStarted && (
-                <div className="absolute top-0 left-0 z-10 flex items-center justify-between w-full gap-3 p-2 pl-4">
-                  <div className="flex justify-end mt-2 mr-3 space-x-3">
-                    <SettingsPopover />
-                  </div>
-                </div>
-              )}
-
               <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
-                {chatStarted && (
-                  <div className="flex justify-start mt-3 z-20 ml-3 space-x-3">
-                    <SettingsPopover />
-                  </div>
-                )}
-
                 {/* Only show skeleton during loading, nothing else */}
-                {threadsLoading || isFectchingThreadInfo ? (
+                {threadsLoading ? (
                   <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
                     <div className="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full">
                       <ChatSkeleton />
