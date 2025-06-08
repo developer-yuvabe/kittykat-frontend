@@ -72,10 +72,31 @@ export const CampaignSection: React.FC<{
               </div>
             ) : (
               <div className="">
-                <div className="font-bold">
-                  Campaign:{" "}
-                  {currentCampaign?.campaign?.title ?? "Unnamed Campaign"}
-                </div>
+                <InlineEditableField
+                  key={currentCampaign?.campaign?.title}
+                  label="Campaign"
+                  value={currentCampaign?.campaign?.title || "Unnamed Campaign"}
+                  onSave={async (newVal) => {
+                    const oldVal =
+                      currentCampaign?.campaign?.title || "Unnamed Campaign";
+                    const msg = formatUpdateMessage(
+                      "campaign.title",
+                      oldVal,
+                      newVal,
+                      "campaignAgent",
+                      "Campaign Title"
+                    );
+                    if (msg) {
+                      submitOptimisticMessage({
+                        stream,
+                        text: msg,
+                      });
+                    }
+                  }}
+                  textClassName="font-bold"
+                  showLabel={true}
+                  isTextarea={false}
+                />
               </div>
             )}
           </div>
@@ -145,8 +166,13 @@ export const CampaignSection: React.FC<{
                   title={currentCampaign?.campaign?.title}
                   description={currentCampaign?.campaign?.description}
                   tone={currentCampaign?.campaign?.tone}
+                  campaignId={currentCampaign.id}
                 />
-                <CampaignColors colors={currentCampaign?.colors || []} />
+                <CampaignColors
+                  colors={currentCampaign?.colors || []}
+                  campaignId={currentCampaign.id}
+                  campaignTitle={currentCampaign.campaign?.title}
+                />
 
                 <CampaignVisualStyleReferences
                   visualStyleReferences={

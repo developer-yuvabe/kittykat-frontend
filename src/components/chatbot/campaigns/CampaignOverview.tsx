@@ -1,5 +1,12 @@
 import { ContentSection } from "@/components/shared/ContentSection";
-import { Badge } from "@/components/ui/badge";
+import { InlineEditableBadges } from "@/components/shared/InlineEditableBadges";
+import { InlineEditableField } from "@/components/shared/InlineEditableField";
+import {
+  formatUpdateArrayMessage,
+  formatUpdateMessage,
+} from "@/lib/langgraph.utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Agents } from "@/types/types";
 import React from "react";
 
@@ -7,38 +14,74 @@ interface CampaignOverviewProps {
   title?: string;
   description?: string;
   tone?: string[];
+  campaignId?: string;
 }
 
 export const CampaignOverview: React.FC<CampaignOverviewProps> = ({
   title,
   description,
   tone = [],
+  campaignId,
 }) => {
+  const stream = useStreamContext();
+
   return (
     <ContentSection
       title={`Campaign Concept: “${title}”`}
       content={
         <div className="space-y-3">
-          {/* Tagline */}
-          {description && (
-            <div className="flex flex-col">
-              <span className="text-sm text-gray-700">{description}</span>
-            </div>
-          )}
+          <InlineEditableField
+            key={description}
+            label="Tagline"
+            value={description || ""}
+            onSave={async (newVal) => {
+              const oldVal = description || "";
+              const msg = formatUpdateMessage(
+                "campaign.description",
+                oldVal,
+                newVal,
+                "campaignAgent",
+                "Tagline",
+                `You should update the campaign ${title} and the campaignId is ${campaignId}`
+              );
+              if (msg) {
+                submitOptimisticMessage({
+                  stream,
+                  text: msg,
+                });
+              }
+            }}
+            textClassName="text-sm text-gray-700"
+            showLabel={false}
+            isTextarea={true}
+          />
 
           {/* Values */}
           {tone.length > 0 && (
             <div className="flex flex-col">
               <div className="flex flex-wrap gap-1 mt-1">
-                {tone.map((tone, index) => (
-                  <Badge
-                    key={index}
-                    variant={"outline"}
-                    className="text-xs bg-purple-50 text-purple-700 border-purple-100"
-                  >
-                    {tone}
-                  </Badge>
-                ))}
+                <InlineEditableBadges
+                  label="Tone"
+                  values={tone}
+                  onSave={async (newTones) => {
+                    const message = formatUpdateArrayMessage(
+                      "campaign.tone",
+                      tone,
+                      newTones,
+                      "campaignAgent",
+                      "Tone",
+                      `You should update the campaign ${title} and the campaignId is ${campaignId}`
+                    );
+
+                    if (message) {
+                      submitOptimisticMessage({
+                        stream,
+                        text: message,
+                      });
+                    }
+                  }}
+                  showLabel={false}
+                />
               </div>
             </div>
           )}

@@ -6,6 +6,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
+import { useQueryState } from "nuqs";
 
 type FileTriggerType = "image" | "file";
 
@@ -17,6 +18,8 @@ export function FileUploadPopover({
   handleAddFiles: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [threadId] = useQueryState("threadId");
   const [acceptType, setAcceptType] = useState<string>("");
   const [open, setOpen] = useState(false);
 
@@ -27,16 +30,20 @@ export function FileUploadPopover({
     setTimeout(() => fileInputRef.current?.click(), 0);
   };
 
+  const disabled = isFileUploading || !threadId;
+  const tooltipText = !threadId
+    ? "Initiate a conversation to upload a file"
+    : "Add Photos and Files";
+
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <TooltipIconButton
-            tooltip="Add Photos and Files"
+            tooltip={tooltipText}
             variant="ghost"
             size="icon"
             className="p-1 h-auto w-auto rounded-full"
-            disabled={isFileUploading}
           >
             {isFileUploading ? (
               <Loader2 className="animate-spin size-4" />
@@ -45,22 +52,28 @@ export function FileUploadPopover({
             )}
           </TooltipIconButton>
         </PopoverTrigger>
-        <PopoverContent className="w-40 space-y-1 px-2 py-2">
-          <button
-            onClick={() => triggerInput("image")}
-            className="flex items-center gap-2 text-sm w-full px-2 py-1 rounded hover:bg-muted/50 transition"
-          >
-            <FileImage className="size-4" />
-            <span>Upload Images</span>
-          </button>
-          <button
-            onClick={() => triggerInput("file")}
-            className="flex items-center gap-2 text-sm w-full px-2 py-1 rounded hover:bg-muted/50 transition"
-          >
-            <FileText className="size-4" />
-            <span>Upload Files</span>
-          </button>
-        </PopoverContent>
+
+        {/* Show popover only if not disabled */}
+        {!disabled && (
+          <PopoverContent className="w-40 space-y-1 px-2 py-2">
+            <button
+              onClick={() => triggerInput("image")}
+              className="flex items-center gap-2 text-sm w-full px-2 py-1 rounded hover:bg-muted/50 transition"
+              disabled={disabled}
+            >
+              <FileImage className="size-4" />
+              <span>Upload Images</span>
+            </button>
+            <button
+              onClick={() => triggerInput("file")}
+              className="flex items-center gap-2 text-sm w-full px-2 py-1 rounded hover:bg-muted/50 transition"
+              disabled={disabled}
+            >
+              <FileText className="size-4" />
+              <span>Upload Files</span>
+            </button>
+          </PopoverContent>
+        )}
       </Popover>
 
       {/* Hidden input */}

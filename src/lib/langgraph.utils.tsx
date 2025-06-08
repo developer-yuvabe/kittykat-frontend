@@ -423,23 +423,19 @@ export function formatUpdateMessage(
   const baseMessage = `Let's update the ${label} from "${oldValue}" to "${newValue}".`;
 
   const doNotRenderBlock = customDoNotRenderMessage
-    ? `
-    
-    <kittykat-do-not-render>
-    \n
-    ${agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""}
-    ${customDoNotRenderMessage}\n</kittykat-do-not-render>`
+    ? `<kittykat-do-not-render>
+${
+  agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""
+}${customDoNotRenderMessage}
+</kittykat-do-not-render>`
     : `<kittykat-do-not-render>
-        Key: ${fieldPath}
-        ${
-          agentHint
-            ? `Agent Hint - You must use this agent: ${agentHint}\n`
-            : ""
-        }
-        Action: ${baseMessage}
-      </kittykat-do-not-render>`;
+Key: ${fieldPath}
+${
+  agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""
+}Action: ${baseMessage}
+</kittykat-do-not-render>`;
 
-  return `${baseMessage}${doNotRenderBlock}`;
+  return `${baseMessage.trimEnd()}${doNotRenderBlock}`;
 }
 
 export function formatUpdateArrayMessage(
@@ -447,7 +443,8 @@ export function formatUpdateArrayMessage(
   oldArray: string[],
   newArray: string[],
   agentHint?: string,
-  prettyLabel?: string
+  prettyLabel?: string,
+  extraInfo?: string // New parameter
 ): string | null {
   // Return null if no change
   if (JSON.stringify(oldArray) === JSON.stringify(newArray)) {
@@ -470,8 +467,10 @@ export function formatUpdateArrayMessage(
 
   return `${baseMessage}<kittykat-do-not-render>
 Key: ${fieldPath}
-${agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""}
-Action: Update the array field **${fieldPath}** with the new list of values below:
+${
+  agentHint ? `Agent Hint - You must use this agent: ${agentHint}\n` : ""
+}Action: Update the array field **${fieldPath}** with the new list of values below:
 Updated Array: ${JSON.stringify(newArray)}
+${extraInfo ? `\n${extraInfo}` : ""}
 </kittykat-do-not-render>`;
 }

@@ -1,35 +1,81 @@
 import { ContentSection } from "@/components/shared/ContentSection";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { getFontColorForBackground } from "@/lib/langgraph.utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  getFontColorForBackground,
+  formatUpdateArrayMessage,
+} from "@/lib/langgraph.utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { toast } from "sonner";
 import React, { useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Pencil } from "lucide-react";
 import { Agents } from "@/types/types";
-
 interface CampaignColorsProps {
   colors: string[];
+  campaignId: string;
+  campaignTitle: string | undefined;
 }
 
-export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
-  // Filter valid colors
-  const validColors = colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color));
+export const CampaignColors: React.FC<CampaignColorsProps> = ({
+  colors,
+  campaignId,
+  campaignTitle,
+}) => {
   const [copied, setCopied] = useState<number | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [newColor, setNewColor] = useState<string>("");
+  const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
+  const stream = useStreamContext();
 
-  // Skip rendering if no valid colors
+  const validColors = colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color));
   if (validColors.length === 0) return null;
 
-  const copyToClipboard = (colorHex: string, idx: number) => {
-    try {
-      navigator.clipboard.writeText(colorHex);
-      setCopied(idx);
+  const handleEditClick = (idx: number) => {
+    setEditingIndex(idx);
+    setNewColor(validColors[idx]);
+    setPopoverOpen(idx);
+  };
 
-      toast.success(`Color ${colorHex} copied to clipboard!`, {
-        position: "top-right",
-      });
-      setTimeout(() => setCopied(null), 2000);
-    } catch (error) {
-      console.error("Failed to copy color:", error);
+  const copyToClipboard = (colorHex: string, idx: number) => {
+    navigator.clipboard.writeText(colorHex);
+    setCopied(idx);
+    toast.success(`Color ${colorHex} copied!`, { position: "top-right" });
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleSave = async () => {
+    if (editingIndex === null || !/^#[0-9A-Fa-f]{6}$/.test(newColor)) return;
+
+    const oldColor = validColors[editingIndex];
+    if (oldColor === newColor) {
+      setPopoverOpen(null);
+      return;
     }
+
+    const newColorArray = [...validColors];
+    newColorArray[editingIndex] = newColor;
+
+    const msg = formatUpdateArrayMessage(
+      "colors",
+      validColors,
+      newColorArray,
+      "campaignAgent",
+      "Campaign Colors",
+      `Change my ${campaignTitle}'s color at index ${editingIndex} from ${oldColor} to ${newColor} (campaignId: ${campaignId})`
+    );
+
+    if (msg) {
+      submitOptimisticMessage({ stream, text: msg });
+    }
+
+    setPopoverOpen(null);
   };
 
   return (
@@ -43,7 +89,6 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
                 className="h-24 w-24 rounded shadow-md transition-transform duration-200 group-hover:scale-95"
                 style={{ backgroundColor: color }}
               >
-                {/* Copy Button */}
                 <TooltipIconButton
                   tooltip="Copy color"
                   side="top"
@@ -53,12 +98,58 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({ colors }) => {
                   {copied == idx ? <Check size={16} /> : <Copy size={16} />}
                 </TooltipIconButton>
 
-                {/* Color Info on Hover */}
+                {/* Edit Button */}
+                <Popover
+                  open={popoverOpen === idx}
+                  onOpenChange={(open) => setPopoverOpen(open ? idx : null)}
+                >
+                  <PopoverTrigger asChild>
+                    <TooltipIconButton
+                      tooltip="Edit color"
+                      side="top"
+                      onClick={() => handleEditClick(idx)}
+                      className="absolute -top-3 right-4 bg-white p-1 rounded-full shadow hover:bg-gray-100 z-10 opacity-0 group-hover:opacity-100"
+                    >
+                      <Pencil size={16} />
+                    </TooltipIconButton>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-4" side="top">
+                    <div className="space-y-3">
+                      <Input
+                        value={newColor}
+                        onChange={(e) => setNewColor(e.target.value)}
+                        placeholder="#FF0000"
+                        className="font-mono"
+                      />
+                      {!/^#[0-9A-Fa-f]{6}$/.test(newColor) && (
+                        <p className="text-sm text-red-500">
+                          Invalid hex color
+                        </p>
+                      )}
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={handleSave}
+                          disabled={!/^#[0-9A-Fa-f]{6}$/.test(newColor)}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setPopoverOpen(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Color info */}
                 <div
-                  className={`absolute inset-0 flex flex-col items-center justify-center bg-transparent bg-opacity-40 transition-opacity rounded`}
+                  className="absolute inset-0 flex flex-col items-center justify-center text-center"
                   style={{ color: getFontColorForBackground(color) }}
                 >
-                  <div className="text-base text-[10px]">{color}</div>
+                  <div className="text-xs">{color}</div>
                 </div>
               </div>
             </div>

@@ -71,6 +71,7 @@ export function Thread() {
     isUploading,
   } = useFileUpload({ brandId: user!.thread_id! });
 
+
   useEffect(() => {
     if (!stream.error) {
       lastError.current = undefined;
@@ -129,8 +130,8 @@ export function Thread() {
         {
           type: "text",
           text: pinnedContextMessage
-            ? `${pinnedContextMessage}${input}`
-            : input,
+            ? `${pinnedContextMessage}${input.trimEnd()}`
+            : input.trimEnd(),
         },
         ...contentBlocks,
       ] as Message["content"],

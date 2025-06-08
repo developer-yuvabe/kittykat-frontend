@@ -63,7 +63,7 @@ export function InlineEditableField({
   };
 
   return (
-    <div className="flex items-start gap-2 w-full">
+    <div className="flex items-start gap-2 w-full pr-5">
       {showLabel && (
         <span className="font-bold whitespace-nowrap">{label}:</span>
       )}
@@ -84,18 +84,29 @@ export function InlineEditableField({
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               className="w-full"
+              onClick={(e) => e.stopPropagation()}
             />
           )}
           <div className="flex gap-1">
             <Button
               size="xs"
               variant="ghost"
-              onClick={handleSave}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSave();
+              }}
               disabled={isSaving}
             >
               <Check className="w-4 h-4" />
             </Button>
-            <Button size="xs" variant="ghost" onClick={handleCancel}>
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCancel();
+              }}
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -116,7 +127,10 @@ export function InlineEditableField({
               <TooltipIconButton
                 tooltip="Edit"
                 size={"xs"}
-                onClick={handleEditClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditClick();
+                }}
                 className="absolute inset-0 flex items-center justify-center p-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary transition-opacity"
               >
                 <Pencil />
