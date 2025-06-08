@@ -21,7 +21,6 @@ import { useState } from "react";
 
 export default function BrandSelector() {
   const [open, setOpen] = useState(false);
-  const [brandSearchQuery, setBrandSearchQuery] = useState("");
   const { brands, selectedBrandId, setSelectedBrandId, isBrandsFetched } =
     useBrandStore();
 
@@ -46,9 +45,7 @@ export default function BrandSelector() {
               <CommandInput
                 placeholder="Search brands..."
                 className="h-9 border-0 outline-none focus-visible:ring-0"
-                value={brandSearchQuery}
                 disabled={!isBrandsFetched}
-                onValueChange={(value) => setBrandSearchQuery(value)}
               />
             </div>
             <CommandList>
@@ -65,7 +62,7 @@ export default function BrandSelector() {
                 {brands.map((brand) => (
                   <CommandItem
                     key={brand.id}
-                    value={brand.name}
+                    value={brand.id}
                     onSelect={() => {
                       setSelectedBrandId(brand.id);
                       setOpen(false);

@@ -60,7 +60,6 @@ const StreamSession = ({
   if (!user) {
     console.log("User ID: if not found, debug this is IMPORTANT");
   }
-  console.log(user?.thread_id);
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
