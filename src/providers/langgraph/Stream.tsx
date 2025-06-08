@@ -56,7 +56,7 @@ const StreamSession = ({
   apiUrl: string;
   assistantId: string;
 }) => {
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
   if (!user) {
     console.log("User ID: if not found, debug this is IMPORTANT");
   }
@@ -67,6 +67,11 @@ const StreamSession = ({
     threadId: user?.thread_id,
     onThreadId: (id) => {
       updateUser(user!.id, {
+        thread_id: id,
+      });
+
+      setUser({
+        ...user!,
         thread_id: id,
       });
     },
