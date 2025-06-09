@@ -194,13 +194,8 @@ const MediaPlatformTags: React.FC = () => {
 };
 
 // Main Component
-interface InitialPlaceHolderProps {
-  setThreadId: (id: string | null) => void;
-}
 
-export const InitialPlaceHolder: React.FC<InitialPlaceHolderProps> = ({
-  setThreadId,
-}) => {
+export const InitialPlaceHolder: React.FC = ({}) => {
   const [brandExpanded, setBrandExpanded] = useState(true);
 
   const renderBrandFieldContent = (field: string) => {
@@ -217,7 +212,7 @@ export const InitialPlaceHolder: React.FC<InitialPlaceHolderProps> = ({
         avatarFallback="B"
         avatarBgColor="bg-blue-500"
         fields={brandFields}
-        customSelector={<BrandSelector setThreadId={setThreadId} />}
+        customSelector={<BrandSelector />}
         newButtonTooltip="New Brand"
         onNewClick={() => {
           console.log("New Brand clicked");

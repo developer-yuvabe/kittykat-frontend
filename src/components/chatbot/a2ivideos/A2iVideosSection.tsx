@@ -5,19 +5,20 @@ import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import { ReferenceA2iImage } from "./ReferenceImage";
 import EnhancedParameterConfiguration from "./EnhancedParameterConfiguration";
 import { A2IImages } from "../a2i/A2iImages";
+import { useBrandStore } from "@/store/brand.store";
 
 interface A2iVideosSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
-  brandId: string | null;
   campaignInformation: ThreadCampaign[] | undefined;
 }
 
 export default function A2iVideosSection({
   a2iImageInformation,
-  brandId,
   campaignInformation,
 }: A2iVideosSectionProps) {
   const [expanded, setExpanded] = useState(true);
+
+  const { selectedBrandId } = useBrandStore();
 
   return (
     <>
@@ -55,13 +56,13 @@ export default function A2iVideosSection({
             {/* 1. Reference Image */}
             <ReferenceA2iImage
               a2iImageInformation={a2iImageInformation}
-              brandId={brandId || ""}
+              brandId={selectedBrandId || ""}
             />
 
             {/* 8. Core Parameters */}
             <EnhancedParameterConfiguration
               a2iImageInformation={a2iImageInformation}
-              brandId={brandId || ""}
+              brandId={selectedBrandId || ""}
             />
 
             {/* <A2IImages generatedImages={a2iImageInformation?.images || []} /> */}

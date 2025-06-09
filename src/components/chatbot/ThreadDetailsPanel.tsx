@@ -13,7 +13,6 @@ import A2iVideosSection from "./a2ivideos/A2iVideosSection";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 
-
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
 }
@@ -52,10 +51,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             />
           }
           {campaignInformation ? (
-            <CampaignSection
-              campaignInformation={campaignInformation}
-              brandId={threadId!}
-            />
+            <CampaignSection campaignInformation={campaignInformation} />
           ) : (
             <PlaceholderSection
               title="Campaign"
@@ -75,8 +71,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
                 }))
               }
             />
-          {campaignInformation && (
-            <CampaignSection campaignInformation={campaignInformation} />
           )}
 
           {campaignInformation && campaignInformation?.length > 0 && (
@@ -89,7 +83,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
           {campaignInformation && campaignInformation?.length > 0 && (
             <A2iVideosSection
               a2iImageInformation={a2iImageInformation}
-              brandId={threadId}
               campaignInformation={campaignInformation}
             />
           )}
