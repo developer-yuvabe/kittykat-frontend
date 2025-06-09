@@ -73,11 +73,12 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
           <CircleX size={20} className="cursor-pointer" />
         </TooltipIconButton>
         {/* Expand Icon with Modal Trigger */}
-        <TooltipIconButton
-          tooltip="Expand"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <Expand size={20} className="cursor-pointer" />
+        <TooltipIconButton tooltip="Expand">
+          <Expand
+            size={20}
+            className="cursor-pointer"
+            onClick={() => setIsModalOpen(true)}
+          />
         </TooltipIconButton>
         {/* Copy Icon with Popover */}
         <Popover open={copyPopoverOpen} onOpenChange={setCopyPopoverOpen}>

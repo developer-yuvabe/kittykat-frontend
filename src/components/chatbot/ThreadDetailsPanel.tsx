@@ -5,6 +5,11 @@ import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import React from "react";
 import { CardSkeleton } from "../thread/messages/message-skeleton";
 import A2iImagesSection from "./a2i/A2iImagesSection";
+import {
+  campaignFields,
+  PlaceholderSection,
+} from "./brands/InitialPlaceHolder";
+import A2iVideosSection from "./a2ivideos/A2iVideosSection";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 
@@ -45,12 +50,38 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               clearPinnedItems={removePinnedItem}
             />
           }
-          {campaignInformation && (
+          {campaignInformation ? (
             <CampaignSection campaignInformation={campaignInformation} />
+          ) : (
+            <PlaceholderSection
+              title="Campaign"
+              avatarFallback="C"
+              avatarBgColor="bg-green-500"
+              fields={campaignFields}
+              searchPlaceholder="Load existing Campaign"
+              newButtonTooltip="New Campaign"
+              onNewClick={() => {
+                console.log("New Campaign clicked");
+              }}
+              isExpanded={expandedSections["campaignSection"]}
+              onToggleExpanded={() =>
+                setExpandedSections((prev) => ({
+                  ...prev,
+                  campaignSection: !prev["campaignSection"],
+                }))
+              }
+            />
           )}
 
           {campaignInformation && campaignInformation?.length > 0 && (
             <A2iImagesSection
+              a2iImageInformation={a2iImageInformation}
+              campaignInformation={campaignInformation}
+            />
+          )}
+
+          {campaignInformation && campaignInformation?.length > 0 && (
+            <A2iVideosSection
               a2iImageInformation={a2iImageInformation}
               campaignInformation={campaignInformation}
             />
