@@ -38,7 +38,6 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   const [copyPopoverOpen, setCopyPopoverOpen] = useState(false);
   const [metadataPopoverOpen, setMetadataPopoverOpen] = useState(false);
 
-  console.log("metadata", metadata);
   const handleCopyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(prompt);

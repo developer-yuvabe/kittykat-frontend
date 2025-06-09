@@ -1,9 +1,14 @@
 import Logo from "@/assets/kittykat-logo.svg";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
 import {
+  DO_NOT_RENDER_ID_PREFIX,
+  RENDER_FILE_ID_PREFIX,
+} from "@/lib/constants";
+import {
+  addFileWrappers,
   ensureToolCallsHaveResponses,
   getPinnedItemContextMessage,
+  removeFileWrappers,
 } from "@/lib/langgraph.utils";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
@@ -14,13 +19,12 @@ import { MessageContentFiles } from "@/types/langgraph.types";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import Image from "next/image";
 import { parseAsBoolean, useQueryState } from "nuqs";
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { StickToBottom } from "use-stick-to-bottom";
 import { v4 as uuidv4 } from "uuid";
 import { ChatInput } from "../chatbot/ChatInput";
 import { ChatMessageList } from "../chatbot/ChatMessageList";
 import { ScrollToBottom } from "../chatbot/ScrollToBottom";
-import { SettingsPopover } from "../chatbot/SettingsPopover";
 import { StickyToBottomContent } from "../chatbot/StickyToBottomContent";
 import ThreadDetailsPanel from "../chatbot/ThreadDetailsPanel";
 import {
@@ -29,68 +33,23 @@ import {
   ResizablePanelGroup,
 } from "../ui/resizable";
 import { ChatSkeleton } from "./messages/message-skeleton";
-import { useBrandUpdates } from "@/hooks/useBrandUpdates";
+import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { ChatSuggestions } from "../chatbot/ChatSuggestions";
+import { useFileUpload } from "@/hooks/useFileUploadToAgent";
+import { useBrandStore } from "@/store/brand.store";
 
 export function Thread() {
-  const lastInteractedBrandId = useUserStore((state) =>
-    state.getLastInteractedBrandId()
-  );
   const { pinnedItem } = usePinnedContextStore();
-  const [threadId, setThreadId] = useQueryState("threadId");
-  const { threads, threadsLoading, setThreadsLoading } = useThreads();
-  const [initializingThread, setInitializingThread] = useState(true);
-  const { isFectchingThreadInfo } = useBrandUpdates(threadId);
-
-  const handleThreadChange = (id: string | null): void => {
-    setThreadsLoading(true);
-
-    (async () => {
-      if (id) {
-        setThreadId(id);
-        // Mock wait for 2 sec
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-      } else {
-        setThreadId(id);
-      }
-
-      setThreadsLoading(false);
-    })();
-  };
-
-  useEffect(() => {
-    if (threadsLoading) return; // Wait for threads to load
-
-    // Check if the last interacted brand ID is valid
-    if (lastInteractedBrandId && !threadId) {
-      const isValidThread = threads.some(
-        (thread) => thread.thread_id === lastInteractedBrandId
-      );
-
-      if (isValidThread) {
-        setThreadId(lastInteractedBrandId);
-      }
-    }
-
-    // If there's a threadId but it's not in the threads list, reset it
-    if (threadId) {
-      const isValidThread = threads.some(
-        (thread) => thread.thread_id === threadId
-      );
-
-      if (!isValidThread) {
-        setThreadId(null);
-      }
-    }
-
-    // Mark initialization as complete
-    setInitializingThread(false);
-  }, [threadsLoading]);
-
+  const { user } = useUserStore();
+  const { selectedBrandId, setSelectedBrandId } = useBrandStore();
+  useBrandUpdates(selectedBrandId);
+  const { threadsLoading } = useThreads();
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
   );
+  const [input, setInput] = useState("");
+  const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
 
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
@@ -101,6 +60,17 @@ export function Thread() {
   const isLoading = stream.isLoading;
 
   const lastError = useRef<string | undefined>(undefined);
+
+  const {
+    contentBlocks,
+    setContentBlocks,
+    handleFileUpload,
+    dropRef,
+    removeBlock,
+    handlePaste,
+    isUploading,
+  } = useFileUpload({ brandId: user!.thread_id! });
+
 
   useEffect(() => {
     if (!stream.error) {
@@ -137,16 +107,21 @@ export function Thread() {
     prevMessageLength.current = messages.length;
   }, [messages]);
 
-  const handleSubmit = (
-    input: string,
-    contentBlocks: any[],
-    fileList: MessageContentFiles[]
-  ) => {
+  useEffect(() => {
+    if (stream.values.currentBrandContextId) {
+      setSelectedBrandId(stream.values.currentBrandContextId);
+    }
+  }, [stream.values.currentBrandContextId]);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
     if (!input.trim() || isLoading) return;
     setFirstTokenReceived(false);
     const pinnedContextMessage: string | null = pinnedItem
       ? getPinnedItemContextMessage(pinnedItem)
       : null;
+
+    resetFiles();
 
     const newHumanMessage: Message = {
       id: uuidv4(),
@@ -179,6 +154,8 @@ export function Thread() {
     stream.submit(
       {
         messages: [...toolMessages, ...newFileList, newHumanMessage],
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
       },
       {
         streamMode: ["values"],
@@ -193,6 +170,9 @@ export function Thread() {
         }),
       }
     );
+
+    setInput("");
+    setContentBlocks([]);
   };
 
   const handleRegenerate = (
@@ -207,7 +187,7 @@ export function Thread() {
     });
   };
 
-  const chatStarted = !!threadId || !!messages.length;
+  const chatStarted = !!messages.length;
   const hasNoAIOrToolMessages = !messages.find(
     (m) => m.type === "ai" || m.type === "tool"
   );
@@ -218,17 +198,25 @@ export function Thread() {
 
   const nonToolMessages = filteredMessages.filter((m) => m.type !== "tool");
 
-  const setLastInteractedBrandId = useUserStore(
-    (state) => state.setLastInteractedBrandId
-  );
-  const { removePinnedItem } = usePinnedContextStore();
+  const handleAddFile = (url: string) => {
+    addFileWrappers(url, setFileList);
+  };
+
+  const handleRemoveFile = (id: string) => {
+    const trimmedId = id
+      .replace(RENDER_FILE_ID_PREFIX, "")
+      .replace(DO_NOT_RENDER_ID_PREFIX, "");
+    removeFileWrappers(trimmedId, setFileList);
+  };
+
+  const resetFiles = () => {
+    setFileList([]);
+  };
 
   useEffect(() => {
-    if (threadId) {
-      setLastInteractedBrandId(threadId);
-      removePinnedItem();
-    }
-  }, [threadId]);
+    console.log(input);
+    console.log(contentBlocks);
+  }, [input]);
 
   return (
     <div className="flex w-full h-[calc(100vh-8rem)] overflow-hidden">
@@ -239,11 +227,7 @@ export function Thread() {
         >
           {/* Tool Results Panel - Left Side */}
           <ResizablePanel defaultSize={70} minSize={30}>
-            <ThreadDetailsPanel
-              isLargeScreen={isLargeScreen}
-              setThreadId={handleThreadChange}
-              threadId={threadId}
-            />
+            <ThreadDetailsPanel isLargeScreen={isLargeScreen} />
           </ResizablePanel>
           <ResizableHandle className="mx-3 bg-transparent" withHandle />
           <ResizablePanel defaultSize={30} minSize={30}>
@@ -254,25 +238,9 @@ export function Thread() {
                 !chatStarted && "grid-rows-[1fr]"
               )}
             >
-              {!chatStarted && (
-                <div className="absolute top-0 left-0 z-10 flex items-center justify-between w-full gap-3 p-2 pl-4">
-                  <div className="flex justify-end mt-2 mr-3 space-x-3">
-                    <SettingsPopover />
-                  </div>
-                </div>
-              )}
-
               <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
-                {chatStarted && (
-                  <div className="flex justify-start mt-3 z-20 ml-3 space-x-3">
-                    <SettingsPopover />
-                  </div>
-                )}
-
                 {/* Only show skeleton during loading, nothing else */}
-                {threadsLoading ||
-                initializingThread ||
-                isFectchingThreadInfo ? (
+                {threadsLoading ? (
                   <div className="absolute inset-0 px-4 overflow-y-scroll scrollbar">
                     <div className="pt-8 pb-2 ml-auto mr-0 flex flex-col gap-1 w-full">
                       <ChatSkeleton />
@@ -319,14 +287,27 @@ export function Thread() {
                         )}
 
                         {/* Always show the chat input unless we're in loading states */}
-                        {!(threadsLoading || initializingThread) && (
-                          <ChatInput
-                            handleSubmit={handleSubmit}
-                            hideToolCalls={hideToolCalls}
-                            setHideToolCalls={setHideToolCalls}
-                            threadId={threadId}
-                            brandId={threadId}
-                          />
+                        {!threadsLoading && (
+                          <div ref={dropRef} className="w-full">
+                            <ChatInput
+                              input={input}
+                              setInput={setInput}
+                              handleSubmit={handleSubmit}
+                              hideToolCalls={hideToolCalls}
+                              setHideToolCalls={setHideToolCalls}
+                              isLoading={isLoading}
+                              stream={stream}
+                              handleAddFiles={handleFileUpload}
+                              handleRemoveImageFile={removeBlock}
+                              handlePaste={handlePaste}
+                              threadId={user!.thread_id!}
+                              files={contentBlocks}
+                              isFileUploading={isUploading}
+                              fileList={fileList}
+                              handleAddFile={handleAddFile}
+                              handleRemoveFile={handleRemoveFile}
+                            />
+                          </div>
                         )}
                       </div>
                     }

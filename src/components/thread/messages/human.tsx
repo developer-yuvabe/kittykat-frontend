@@ -18,6 +18,8 @@ import {
 import { FileContentTypeResult } from "@/types/langgraph.types";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import { ContentBlock } from "@/hooks/useFileUploadToAgent";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 interface FileAttachmentProps {
   fileUrl: string;
@@ -164,6 +166,8 @@ export function HumanMessage({
 }) {
   console.log("humanmsg", message.id);
   const thread = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
 
@@ -181,7 +185,11 @@ export function HumanMessage({
 
     const newMessage: Message = { type: "human", content: value };
     thread.submit(
-      { messages: [newMessage] },
+      {
+        messages: [newMessage],
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      },
       {
         checkpoint: parentCheckpoint,
         streamMode: ["values"],

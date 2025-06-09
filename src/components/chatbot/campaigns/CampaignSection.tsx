@@ -14,16 +14,19 @@ import { v4 as uuidv4 } from "uuid";
 import { Message } from "@langchain/langgraph-sdk";
 import { motion } from "framer-motion";
 import CampaignVisualStyleReferences from "./CampaignVisualStyleReferences";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { formatUpdateMessage } from "@/lib/langgraph.utils";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
-  brandId: string;
-}> = ({ campaignInformation, brandId }) => {
+}> = ({ campaignInformation }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
 
+  const { selectedBrandId } = useBrandStore();
+  const { user } = useUserStore();
   const stream = useStreamContext();
   const latestCampaignInformation = campaignInformation.length - 1;
 
@@ -41,7 +44,6 @@ export const CampaignSection: React.FC<{
   }, [campaignInformation.length]);
 
   const currentCampaign = campaignInformation[selectedCampaignIndex];
-  console.log("current campaign info", currentCampaign);
   const dynamicData = currentCampaign?.dynamic;
 
   return (
@@ -133,6 +135,8 @@ export const CampaignSection: React.FC<{
                   stream.submit(
                     {
                       messages: [newHumanMessage],
+                      currentBrandContextId: selectedBrandId,
+                      userId: user!.id,
                     },
                     {
                       streamMode: ["values"],
@@ -186,7 +190,7 @@ export const CampaignSection: React.FC<{
 
                 <CampaignMoodboard
                   moodboards={currentCampaign.moodboards || []}
-                  brandId={brandId}
+                  brandId={selectedBrandId!}
                   campaignId={currentCampaign.id}
                 />
               </div>

@@ -4,7 +4,13 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { ERROR_MESSAGES } from "@/lib/constants";
 
-const Splash = ({ showRetry }: { showRetry?: boolean }) => {
+const Splash = ({
+  showRetry,
+}: {
+  showRetry?: boolean;
+  className?: string;
+  showProgress?: boolean;
+}) => {
   useEffect(() => {
     if (showRetry) {
       setTimeout(() => {

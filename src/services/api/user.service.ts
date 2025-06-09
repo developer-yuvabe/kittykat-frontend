@@ -1,166 +1,145 @@
-import axiosInstance from "@/config/axios/api-server.config";
-import { User } from "@/types/types";
-
-export const fetchUser = async () => {
-  try {
-    const response = await axiosInstance.get("/users/me");
-    return response.data.data as User;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-export const createUser = async ({
-  name,
-  email,
-  id,
-}: {
-  name: string;
-  email: string;
-  id: string;
-}) => {
-  try {
-    const response = await axiosInstance.post("/users", {
-      name,
-      email,
-      firebase_uid: id,
-    });
-    return response.data.data as User;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
+import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
+import { inviationSchema } from "@/schema/inviation.schema";
+import { PaginationMeta } from "@/types/types";
+import { User, UserBrand, UserListItem } from "@/types/user.types";
+import { z } from "zod";
 
-import axios from "axios";
-import {
-  PresignedURLRequest,
-  UserCreate,
-  UserResponse,
-  UsersListResponse,
-  UserUpdate,
-  UserWithRole,
-} from "@/types/user.types";
-
-class UserService {
-  async createUser(request: UserCreate): Promise<UserResponse> {
-    return handleApiRequest<UserResponse>(
-      axiosInstance.post("/users", request)
-    );
+export const updateUser = async (
+  userId: string,
+  userData: Pick<User, "thread_id"> & {
+    roleId?: string;
+    brand_access?: string[];
   }
-
-  async getCurrentUser(): Promise<UserWithRole> {
-    return handleApiRequest<UserWithRole>(axiosInstance.get("/users/me"));
-  }
-
-  async searchUsers(query: string): Promise<UserResponse[]> {
-    return handleApiRequest<UserResponse[]>(
-      axiosInstance.get("/users/search", {
-        params: { query },
-      })
-    );
-  }
-
-  async getUsersByRole(
-    role_id: string,
-    skip = 0,
-    limit = 10
-  ): Promise<UsersListResponse> {
-    return handleApiRequest<UsersListResponse>(
-      axiosInstance.get(`/users/role/${role_id}`, {
-        params: { skip, limit },
-      })
-    );
-  }
-
-  async getUsersByBrand(
-    brand_id: string,
-    skip = 0,
-    limit = 10
-  ): Promise<UsersListResponse> {
-    return handleApiRequest<UsersListResponse>(
-      axiosInstance.get(`/users/brand/${brand_id}`, {
-        params: { skip, limit },
-      })
-    );
-  }
-
-  async getUserById(user_id: string): Promise<UserResponse> {
-    return handleApiRequest<UserResponse>(
-      axiosInstance.get(`/users/${user_id}`)
-    );
-  }
-
-  async getAllUsers(skip = 0, limit = 10): Promise<UsersListResponse> {
-    return handleApiRequest<UsersListResponse>(
-      axiosInstance.get("/users", {
-        params: { skip, limit },
-      })
-    );
-  }
-
-  async updateUser(
-    user_id: string,
-    userUpdate: UserUpdate
-  ): Promise<UserResponse> {
-    return handleApiRequest<UserResponse>(
-      axiosInstance.put(`/users/${user_id}`, userUpdate)
-    );
-  }
-
-  async deleteUser(user_id: string): Promise<{ id: string }> {
-    return handleApiRequest<{ id: string }>(
-      axiosInstance.delete(`/users/${user_id}`)
-    );
-  }
-
-  async generatePresignedUrls(
-    thread_id: string,
-    fileName: string,
-    contentType: string
-  ): Promise<{ upload_url: string; download_url: string }> {
-    const requestData: PresignedURLRequest = {
-      file_name: fileName,
-      content_type: contentType,
+): Promise<User | null> => {
+  try {
+    const fieldsToUpdate = {
+      role_id: userData.roleId,
+      thread_id: userData.thread_id,
+      brand_access: userData.brand_access,
     };
 
-    return handleApiRequest<{ upload_url: string; download_url: string }>(
-      axiosInstance.post(`/users/thread/${thread_id}/file/upload`, requestData)
+    const updatedUser = await handleApiRequest<User | null>(
+      axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
     );
+
+    return updatedUser;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
   }
+};
 
-  async uploadFileWithPresignedUrl(
-    thread_id: string,
-    fileName: string,
-    fileType: string,
-    file: File
-  ): Promise<string> {
-    try {
-      // Get the presigned URLs
-      const response = await this.generatePresignedUrls(
-        thread_id,
-        fileName,
-        fileType
-      );
-      const { upload_url, download_url } = response;
+export const fetchAllUsers = async (
+  page: number,
+  limit: number,
+  searchQuery?: string
+): Promise<{
+  users: UserListItem[];
+  pagination: PaginationMeta;
+} | null> => {
+  try {
+    const skip = (page - 1) * limit;
 
-      // Upload the file to the presigned URL
-      await axios.put(upload_url, file, {
-        headers: {
-          "Content-Type": fileType,
-        },
-      });
+    const data = await handleApiRequest<{
+      users: UserListItem[];
+      pagination: PaginationMeta;
+    } | null>(
+      axiosInstance.get(
+        `${searchQuery ? `/users?search=${searchQuery}` : `/users`}`,
+        {
+          params: { skip, limit },
+        }
+      )
+    );
 
-      // Return the download URL
-      return download_url;
-    } catch (error) {
-      console.error("Error in uploadFileWithPresignedUrl:", error);
-      throw new Error("File upload failed. Please try again.");
-    }
+    return data;
+  } catch {
+    return null;
   }
-}
+};
 
-export const userService = new UserService();
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  try {
+    await handleApiRequest(axiosInstance.delete(`/users/${userId}`));
+    return true;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
+  }
+};
+
+export const fetchUserBrands = async (
+  userId: string
+): Promise<UserBrand[] | null> => {
+  try {
+    const data = await handleApiRequest<UserBrand[] | null>(
+      axiosInstance.get(`/users/${userId}/brands`)
+    );
+    return data;
+  } catch (e) {
+    console.log("Error fetching user brands", e);
+    return [];
+  }
+};
+
+export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
+  try {
+    const response = await handleApiRequest<User | null>(
+      axiosInstance.post("/invitations", {
+        email: data.email,
+        role: data.role,
+        brand_access: data.brandAccess,
+      })
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const resendInvitation = async (invitationId: string) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.post(`/invitations/${invitationId}/resend`)
+    );
+  } catch (error) {
+    console.error("Error resending invitation:", error);
+    throw error;
+  }
+};
+
+export const acceptInvitation = async (
+  invitationId: string,
+  firebase_uid: string,
+  name: string
+) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.post(`/invitations/${invitationId}/accept`, {
+        name,
+        firebase_uid,
+      })
+    );
+  } catch (error) {
+    console.error("Error accepting invitation:", error);
+    throw error;
+  }
+};
+
+export const checkIfEmailExists = async (email: string): Promise<boolean> => {
+  try {
+    const response = await handleApiRequest<{
+      exists: boolean;
+    }>(
+      axiosInstance.get("/users/check", {
+        params: { email },
+      })
+    );
+
+    return response.exists === true;
+  } catch (error) {
+    console.error("Email check failed:", error);
+    return false; // fail safe
+  }
+};

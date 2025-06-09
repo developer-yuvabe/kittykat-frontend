@@ -1,11 +1,3 @@
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  onboarding_completed: boolean;
-  brand_ids: string[];
-};
-
 export interface BaseApiResponse<T> {
   status_code: number;
   message: string;
@@ -191,4 +183,14 @@ export interface QueueItem {
 export type Context = {
   agentId?: Agents;
   data: Record<string, any> | string;
+};
+
+export type PaginationMeta = {
+  total: number;
+  skip: number;
+  limit: number;
+  has_next: boolean;
+  has_previous: boolean;
+  next_skip?: number;
+  previous_skip?: number;
 };

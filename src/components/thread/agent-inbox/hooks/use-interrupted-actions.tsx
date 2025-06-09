@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { HumanInterrupt, HumanResponse } from "@langchain/langgraph/prebuilt";
 import { END } from "@langchain/langgraph/web";
 import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 interface UseInterruptedActionsInput {
   interrupt: HumanInterrupt;
@@ -54,6 +56,8 @@ export default function useInterruptedActions({
   interrupt,
 }: UseInterruptedActionsInput): UseInterruptedActionsValue {
   const thread = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   const [humanResponse, setHumanResponse] = useState<HumanResponseWithEdits[]>(
     []
   );
@@ -83,7 +87,10 @@ export default function useInterruptedActions({
   const resumeRun = (response: HumanResponse[]): boolean => {
     try {
       thread.submit(
-        {},
+        {
+          userId: user!.id,
+          currentBrandContextId: selectedBrandId,
+        },
         {
           command: {
             resume: response,
@@ -254,7 +261,10 @@ export default function useInterruptedActions({
 
     try {
       thread.submit(
-        {},
+        {
+          userId: user!.id,
+          currentBrandContextId: selectedBrandId,
+        },
         {
           command: {
             goto: END,

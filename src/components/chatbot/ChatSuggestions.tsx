@@ -5,6 +5,8 @@ import { MessageSquare } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { Message } from "@langchain/langgraph-sdk";
 import { ensureToolCallsHaveResponses } from "@/lib/langgraph.utils";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 type ChatSuggestionsProps = {
   setFirstTokenReceived: (value: SetStateAction<boolean>) => void;
@@ -13,6 +15,8 @@ type ChatSuggestionsProps = {
 export function ChatSuggestions({
   setFirstTokenReceived,
 }: ChatSuggestionsProps) {
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   const suggestions = [
     "Help me get started with branding—what do you need to know from me?",
     "I want to set up my brand—can you guide me through the first steps?",
@@ -31,7 +35,11 @@ export function ChatSuggestions({
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
 
     stream.submit(
-      { messages: [...toolMessages, newHumanMessage] },
+      {
+        messages: [...toolMessages, newHumanMessage],
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      },
 
       {
         streamMode: ["values"],

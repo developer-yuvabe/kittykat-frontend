@@ -1,5 +1,3 @@
-import "server-only";
-
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from "axios";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";

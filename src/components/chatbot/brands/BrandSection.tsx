@@ -28,7 +28,6 @@ import { InitialPlaceHolder } from "./InitialPlaceHolder";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
-  setThreadId: (id: string | null) => void;
   expandedSections: { [key: string]: boolean };
   setExpandedSections: React.Dispatch<
     React.SetStateAction<{ [key: string]: boolean }>
@@ -36,13 +35,11 @@ export const BrandSection: React.FC<{
   clearPinnedItems: () => void;
 }> = ({
   brandingInformation,
-  setThreadId,
   expandedSections,
   setExpandedSections,
   clearPinnedItems,
 }) => {
-  if (!brandingInformation)
-    return <InitialPlaceHolder setThreadId={setThreadId} />;
+  if (!brandingInformation) return <InitialPlaceHolder />;
 
   return (
     <div className="flex flex-col gap-4">
@@ -54,7 +51,6 @@ export const BrandSection: React.FC<{
               ...prev,
               [section]: !prev[section],
             })),
-          setThreadId,
           brandingInformation.static,
           brandingInformation.dynamic,
           brandingInformation.brand_media,
@@ -68,7 +64,6 @@ export const BrandSection: React.FC<{
 export const renderBrandData = (
   expandedSections: { [key: string]: boolean },
   toggleSection: (section: string) => void,
-  setThreadId: (id: string | null) => void,
   staticData: ThreadBrand["static"],
   dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
@@ -118,7 +113,7 @@ export const renderBrandData = (
                     <div className="absolute right-3 top-6 ">
                       <div className="flex justify-between gap-x-2">
                         <div>
-                          <BrandSelector setThreadId={setThreadId} />
+                          <BrandSelector />
                         </div>
                         <TooltipIconButton
                           size="lg"
@@ -127,7 +122,6 @@ export const renderBrandData = (
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setThreadId(null);
                             clearPinnedItems();
                           }}
                         >
@@ -172,7 +166,7 @@ export const renderBrandData = (
                   <div className="absolute right-3 top-6 ">
                     <div className="flex justify-between gap-x-2">
                       <div>
-                        <BrandSelector setThreadId={setThreadId} />
+                        <BrandSelector />
                       </div>
                       <TooltipIconButton
                         size="lg"
@@ -180,7 +174,6 @@ export const renderBrandData = (
                         tooltip="New Brand"
                         variant="ghost"
                         onClick={() => {
-                          setThreadId(null);
                           clearPinnedItems();
                         }}
                       >
@@ -278,7 +271,7 @@ export const renderBrandData = (
           <CardTitle className="text-xl font-semibold text-primary">
             <div className="flex justify-between">
               <div>No brand found</div>
-              <BrandSelector setThreadId={setThreadId} />
+              <BrandSelector />
             </div>
           </CardTitle>
         </CardHeader>

@@ -88,10 +88,11 @@ export const brandService = new BrandService();
 
 // API functions - moved outside hook to prevent recreation
 export const updateA2iImageParameters = async (
+  brandId: string,
   payload: A2iImageUpdateRequest
 ): Promise<BaseApiResponse<ThreadA2iImage>> => {
   const response = await axios.put<BaseApiResponse<ThreadA2iImage>>(
-    `/brands/a2i`,
+    `/brands/${brandId}/a2i`,
     payload
   );
   return response.data;

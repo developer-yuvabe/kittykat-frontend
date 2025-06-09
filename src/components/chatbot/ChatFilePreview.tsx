@@ -20,7 +20,6 @@ export const ChatFilePreview: React.FC<ChatFilePreviewProps> = ({
   size = "md",
   className,
 }) => {
-  console.log("chatfile", blocks);
   if (!blocks?.length) return null;
   return (
     <div className={cn("flex flex-wrap gap-2 p-3.5 pb-0", className)}>
