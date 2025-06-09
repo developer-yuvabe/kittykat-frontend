@@ -5,6 +5,7 @@ export type GalleryItem = {
   asset_source: string;
   asset_title: string;
   asset_url: string;
+  preview_url?: string;
   size: string;
   size_bytes?: number;
   dimensions?: { width: number; height: number };
