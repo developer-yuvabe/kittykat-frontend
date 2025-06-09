@@ -25,24 +25,26 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   });
 
   // Map asset type for filtering
-  // Map asset type for filtering
   const getAssetTypesFromFilter = () => {
     if (!filters.assetType || filters.assetType === "all-media")
       return undefined;
     return filters.assetType;
   };
 
+  // Generate query key for current filters
+  const getGalleryQueryKey = () => [
+    "gallery-items",
+    filters.assetType,
+    filters.favorites,
+    filters.source,
+    filters.creator,
+    filters.searchQuery,
+    filters.selectedFilters,
+  ];
+
   // Infinite query for gallery items with filters
   const galleryQuery = useInfiniteQuery({
-    queryKey: [
-      "gallery-items",
-      filters.assetType,
-      filters.favorites,
-      filters.source,
-      filters.creator,
-      filters.searchQuery,
-      filters.selectedFilters,
-    ],
+    queryKey: getGalleryQueryKey(),
     queryFn: async ({ pageParam = 0 }) => {
       try {
         if (filters.searchQuery) {
@@ -91,10 +93,9 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
         });
       } catch (error) {
         console.error("Gallery query failed:", error);
-        throw error; // so TanStack knows it's an error
+        throw error;
       }
     },
-
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.has_more) return undefined;
       return lastPage.pagination.skip + lastPage.pagination.limit;
@@ -106,76 +107,216 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   const galleryItems =
     galleryQuery.data?.pages.flatMap((page) => page.gallery_items) || [];
 
+  // Get single gallery item by ID
+  const useGalleryItem = (itemId: string) => {
+    return useQuery({
+      queryKey: ["gallery-item", itemId],
+      queryFn: () => galleryService.getGalleryItemById(itemId),
+      enabled: !!itemId,
+    });
+  };
+
+  // Create new gallery item mutation
+  const addToGalleryMutation = useMutation({
+    mutationFn: (newItem: GalleryItem) =>
+      galleryService.createGalleryItem(newItem),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+      toast.success("Item added to gallery");
+    },
+    onError: () => {
+      toast.error("Failed to add item to gallery");
+    },
+  });
+
+  // Update gallery item mutation
+  const updateItemMutation = useMutation({
+    mutationFn: ({ itemId, data }: { itemId: string; data: GalleryItem }) =>
+      galleryService.updateGalleryItem(itemId, data),
+    onSuccess: (updatedItem) => {
+      // Update the item in cache
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      // Invalidate gallery items list to reflect changes
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+      toast.success("Item updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update item");
+    },
+  });
+
+  // Patch gallery item mutation with optimistic updates
+  const patchItemMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      data,
+    }: {
+      itemId: string;
+      data: Partial<GalleryItem>;
+    }) => galleryService.patchGalleryItem(itemId, data),
+
+    onMutate: async ({ itemId, data }) => {
+      const queryKey = getGalleryQueryKey();
+
+      console.log("🔄 Patching item optimistically:", {
+        itemId,
+        data,
+        queryKey,
+      });
+
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey: ["gallery-item", itemId] });
+
+      // Snapshot the previous values for rollback
+      const previousGalleryData = queryClient.getQueryData(queryKey);
+      const previousItemData = queryClient.getQueryData([
+        "gallery-item",
+        itemId,
+      ]);
+
+      console.log("📦 Previous gallery data exists:", !!previousGalleryData);
+
+      // Optimistically update gallery items list
+      queryClient.setQueryData(queryKey, (old: any) => {
+        console.log("🔄 Updating gallery cache optimistically", { old: !!old });
+
+        if (!old) return old;
+
+        const updated = {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.map(
+              (item: GalleryItemResponse) => {
+                if (item.id === itemId) {
+                  console.log("✅ Found and updating item:", itemId);
+                  return { ...item, ...data };
+                }
+                return item;
+              }
+            ),
+          })),
+        };
+
+        console.log("🎯 Gallery cache updated optimistically");
+        return updated;
+      });
+
+      // Optimistically update single item cache if it exists
+      if (previousItemData) {
+        queryClient.setQueryData(["gallery-item", itemId], (old: any) =>
+          old ? { ...old, ...data } : old
+        );
+      }
+
+      // Return context for potential rollback
+      return { previousGalleryData, previousItemData, queryKey };
+    },
+
+    onError: (error, { itemId }, context) => {
+      console.log("❌ Patch failed, rolling back optimistic updates");
+
+      // Rollback optimistic updates
+      if (context?.previousGalleryData) {
+        queryClient.setQueryData(context.queryKey, context.previousGalleryData);
+      }
+      if (context?.previousItemData) {
+        queryClient.setQueryData(
+          ["gallery-item", itemId],
+          context.previousItemData
+        );
+      }
+      toast.error("Failed to update item");
+    },
+
+    onSuccess: (updatedItem) => {
+      const queryKey = getGalleryQueryKey();
+
+      console.log(
+        "✅ Patch successful, updating with server data:",
+        updatedItem.id
+      );
+
+      // Update the item in gallery items list with server response
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
+              item.id === updatedItem.id ? updatedItem : item
+            ),
+          })),
+        };
+      });
+
+      // Update single item cache with server response
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+
+      toast.success("Item updated successfully");
+    },
+  });
+
   // Toggle favorite mutation with optimistic updates
   const toggleFavoriteMutation = useMutation({
     mutationFn: (itemId: string) => galleryService.toggleFavorite(itemId),
     onMutate: async (itemId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["gallery-items"] });
+      const queryKey = getGalleryQueryKey();
 
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData([
-        "gallery-items",
-        filters.assetType,
-        filters.favorites,
-        filters.source,
-        filters.creator,
-        filters.searchQuery,
-        filters.selectedFilters,
+      await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey: ["gallery-item", itemId] });
+
+      const previousGalleryData = queryClient.getQueryData(queryKey);
+      const previousItemData = queryClient.getQueryData([
+        "gallery-item",
+        itemId,
       ]);
 
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          filters.assetType,
-          filters.favorites,
-          filters.source,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-        (old: any) => {
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => {
-              return {
-                ...page,
-                gallery_items: filters.favorites
-                  ? page.gallery_items.filter(
-                      (item: GalleryItemResponse) => item.id !== itemId
-                    )
-                  : page.gallery_items.map((item: GalleryItemResponse) =>
-                      item.id === itemId
-                        ? { ...item, is_favourite: !item.is_favourite }
-                        : item
-                    ),
-              };
-            }),
-          };
-        }
-      );
+      // Optimistically update gallery items list
+      queryClient.setQueryData(queryKey, (old: any) => {
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => {
+            return {
+              ...page,
+              gallery_items: filters.favorites
+                ? page.gallery_items.filter(
+                    (item: GalleryItemResponse) => item.id !== itemId
+                  )
+                : page.gallery_items.map((item: GalleryItemResponse) =>
+                    item.id === itemId
+                      ? { ...item, is_favourite: !item.is_favourite }
+                      : item
+                  ),
+            };
+          }),
+        };
+      });
 
-      // Return a context object with the snapshot
-      return { previousData };
+      return { previousGalleryData, previousItemData, queryKey };
     },
     onError: (err, itemId, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          filters.assetType,
-          filters.favorites,
-          filters.source,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-        context?.previousData
-      );
+      if (context?.previousGalleryData) {
+        queryClient.setQueryData(context.queryKey, context.previousGalleryData);
+      }
+      if (context?.previousItemData) {
+        queryClient.setQueryData(
+          ["gallery-item", itemId],
+          context.previousItemData
+        );
+      }
       toast.error("Failed to update favorite status");
     },
     onSuccess: (data) => {
+      // Update single item cache with server response
+      queryClient.setQueryData(["gallery-item", data.id], data);
       toast.success(
         data.is_favourite ? "Added to favorites" : "Removed from favorites"
       );
@@ -186,64 +327,34 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   const deleteItemMutation = useMutation({
     mutationFn: (itemId: string) => galleryService.deleteGalleryItem(itemId),
     onMutate: async (itemId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["gallery-items"] });
+      const queryKey = getGalleryQueryKey();
+      await queryClient.cancelQueries({ queryKey });
 
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData([
-        "gallery-items",
-        filters.assetType,
-        filters.favorites,
-        filters.source,
-        filters.creator,
-        filters.searchQuery,
-        filters.selectedFilters,
-      ]);
+      const previousData = queryClient.getQueryData(queryKey);
 
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          filters.assetType,
-          filters.favorites,
-          filters.source,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-        (old: any) => {
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              gallery_items: page.gallery_items.filter(
-                (item: GalleryItemResponse) => item.id !== itemId
-              ),
-            })),
-          };
-        }
-      );
+      queryClient.setQueryData(queryKey, (old: any) => {
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.filter(
+              (item: GalleryItemResponse) => item.id !== itemId
+            ),
+          })),
+        };
+      });
 
-      // Return a context object with the snapshot
-      return { previousData };
+      return { previousData, queryKey };
     },
     onError: (err, itemId, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          filters.assetType,
-          filters.favorites,
-          filters.source,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-        context?.previousData
-      );
+      if (context?.previousData) {
+        queryClient.setQueryData(context.queryKey, context.previousData);
+      }
       toast.error("Failed to delete item");
     },
-    onSuccess: () => {
+    onSuccess: (data, itemId) => {
+      // Remove item from single item cache
+      queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       toast.success("Item deleted successfully");
     },
   });
@@ -251,72 +362,105 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (itemIds: string[]) => {
-      // Delete items one by one
       const promises = itemIds.map((id) =>
         galleryService.deleteGalleryItem(id)
       );
       return Promise.all(promises);
     },
     onMutate: async (itemIds) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["gallery-items"] });
+      const queryKey = getGalleryQueryKey();
+      await queryClient.cancelQueries({ queryKey });
 
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData([
-        "gallery-items",
-        filters.assetType,
-        filters.favorites,
-        filters.source,
-        filters.creator,
-        filters.searchQuery,
-        filters.selectedFilters,
-      ]);
+      const previousData = queryClient.getQueryData(queryKey);
 
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          filters.assetType,
-          filters.favorites,
-          filters.source,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-        (old: any) => {
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              gallery_items: page.gallery_items.filter(
-                (item: GalleryItemResponse) => !itemIds.includes(item.id)
-              ),
-            })),
-          };
-        }
-      );
+      queryClient.setQueryData(queryKey, (old: any) => {
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.filter(
+              (item: GalleryItemResponse) => !itemIds.includes(item.id)
+            ),
+          })),
+        };
+      });
 
-      // Return a context object with the snapshot
-      return { previousData };
+      return { previousData, queryKey };
     },
     onError: (err, itemIds, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        [
-          "gallery-items",
-          filters.assetType,
-          filters.favorites,
-          filters.source,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-        context?.previousData
-      );
+      if (context?.previousData) {
+        queryClient.setQueryData(context.queryKey, context.previousData);
+      }
       toast.error("Failed to delete items");
     },
-    onSuccess: (data) => {
+    onSuccess: (data, itemIds) => {
+      // Remove items from single item cache
+      itemIds.forEach((itemId) => {
+        queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
+      });
       toast.success(`${data.length} items deleted successfully`);
+    },
+  });
+
+  // Add comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentData,
+    }: {
+      itemId: string;
+      commentData: { text: string };
+    }) => galleryService.addCommentToGalleryItem(itemId, commentData),
+    onSuccess: (updatedItem) => {
+      // Update both single item and gallery items cache
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Comment added successfully");
+    },
+    onError: () => {
+      toast.error("Failed to add comment");
+    },
+  });
+
+  // Update comment mutation
+  const updateCommentMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentId,
+      commentData,
+    }: {
+      itemId: string;
+      commentId: string;
+      commentData: { text: string };
+    }) =>
+      galleryService.updateCommentOnGalleryItem(itemId, commentId, commentData),
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Comment updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update comment");
+    },
+  });
+
+  // Delete comment mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentId,
+    }: {
+      itemId: string;
+      commentId: string;
+    }) => galleryService.deleteCommentFromGalleryItem(itemId, commentId),
+    onSuccess: (_, { itemId }) => {
+      // Invalidate and refetch the item to get updated comments
+      queryClient.invalidateQueries({ queryKey: ["gallery-item", itemId] });
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Comment deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete comment");
     },
   });
 
@@ -342,29 +486,6 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
     }
   };
 
-  // Add new gallery item mutation
-  const addToGalleryMutation = useMutation({
-    mutationFn: (newItem: GalleryItem) =>
-      galleryService.createGalleryItem(newItem),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [
-          "gallery-items",
-          filters.source,
-          filters.favorites,
-          filters.assetType,
-          filters.creator,
-          filters.searchQuery,
-          filters.selectedFilters,
-        ],
-      });
-      toast.success("Item added to gallery");
-    },
-    onError: () => {
-      toast.error("Failed to add item to gallery");
-    },
-  });
-
   return {
     // Queries
     brandsData: brandsQuery.data,
@@ -378,11 +499,36 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
     fetchNextPage: galleryQuery.fetchNextPage,
     isFetching: galleryQuery.isFetching,
 
+    // Single item query hook
+    useGalleryItem,
+
     // Mutations
     addToGallery: addToGalleryMutation.mutate,
+    isAddingToGallery: addToGalleryMutation.isPending,
+
+    updateItem: updateItemMutation.mutate,
+    isUpdatingItem: updateItemMutation.isPending,
+
+    patchItem: patchItemMutation.mutate,
+    isPatchingItem: patchItemMutation.isPending,
+
     toggleFavorite: toggleFavoriteMutation.mutate,
+    isTogglingFavorite: toggleFavoriteMutation.isPending,
+
     deleteItem: deleteItemMutation.mutate,
+    isDeletingItem: deleteItemMutation.isPending,
+
     bulkDelete: bulkDeleteMutation.mutate,
+    isBulkDeleting: bulkDeleteMutation.isPending,
+
+    addComment: addCommentMutation.mutate,
+    isAddingComment: addCommentMutation.isPending,
+
+    updateComment: updateCommentMutation.mutate,
+    isUpdatingComment: updateCommentMutation.isPending,
+
+    deleteComment: deleteCommentMutation.mutate,
+    isDeletingComment: deleteCommentMutation.isPending,
 
     // Download helpers
     downloadItem,

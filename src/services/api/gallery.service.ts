@@ -144,6 +144,55 @@ class GalleryService {
       axiosInstance.patch(`/gallery/${itemId}/favorite`)
     );
   }
+
+  /**
+   * Add a comment to a gallery item
+   */
+  async addCommentToGalleryItem(
+    itemId: string,
+    commentData: { text: string }
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.post(`/gallery/${itemId}/comments`, commentData)
+    );
+  }
+
+  /**
+   * Update a comment on a gallery item
+   */
+  async updateCommentOnGalleryItem(
+    itemId: string,
+    commentId: string,
+    commentData: { text: string }
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.put(`/gallery/${itemId}/comments/${commentId}`, commentData)
+    );
+  }
+
+  /**
+   * Delete a comment from a gallery item
+   */
+  async deleteCommentFromGalleryItem(
+    itemId: string,
+    commentId: string
+  ): Promise<{ id: string }> {
+    return handleApiRequest<{ id: string }>(
+      axiosInstance.delete(`/gallery/${itemId}/comments/${commentId}`)
+    );
+  }
+
+  /**
+   * Partially update a gallery item by ID
+   */
+  async patchGalleryItem(
+    itemId: string,
+    patchData: Partial<GalleryItem>
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.patch(`/gallery/${itemId}`, patchData)
+    );
+  }
 }
 
 export const galleryService = new GalleryService();

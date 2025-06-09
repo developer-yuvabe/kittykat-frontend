@@ -72,6 +72,10 @@ export function MediaLibrary({
     deleteItem,
     bulkDelete,
     downloadItem,
+    patchItem,
+    addComment,
+    deleteComment,
+    updateComment,
   } = useGalleryQuery({
     assetType: activeTab,
     favorites,
@@ -137,7 +141,7 @@ export function MediaLibrary({
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      await bulkDelete(selectedItems);
+      bulkDelete(selectedItems);
       setSelectedItems([]);
     } finally {
       setIsDeleting(false);
@@ -197,14 +201,54 @@ export function MediaLibrary({
     }
   };
 
+  const handleEditTitle = async (
+    itemId: string,
+    newTitle: string
+  ): Promise<void> => {
+    patchItem({
+      itemId,
+      data: { asset_title: newTitle },
+    });
+  };
+
+  const handleAddComment = async (
+    itemId: string,
+    text: string
+  ): Promise<void> => {
+    addComment({
+      itemId,
+      commentData: { text },
+    });
+  };
+
+  const handleUpdateComment = async (
+    itemId: string,
+    commentId: string,
+    text: string
+  ): Promise<void> => {
+    updateComment({
+      itemId,
+      commentId,
+      commentData: { text },
+    });
+  };
+
+  const handleDeleteComment = async (
+    itemId: string,
+    commentId: string
+  ): Promise<void> => {
+    deleteComment({
+      itemId,
+      commentId,
+    });
+  };
+
   useEffect(() => {
     setSource(activeTab);
     console.log("so", activeTab, source);
   }, [activeTab, handleTabChange]);
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
-      <div></div>
-
       <Tabs
         defaultValue="all-media"
         value={activeTab}
@@ -336,6 +380,11 @@ export function MediaLibrary({
                     onDelete={handleDeleteItem}
                     onDownload={downloadItem}
                     isMediaSelectDialog={isMediaSelectDialog}
+                    handleUpdateTitle={handleEditTitle}
+                    handleUpdateComment={handleUpdateComment}
+                    handleDeleteComment={handleDeleteComment}
+                    handleAddComment={handleAddComment}
+                    handleUpdatePartialData={patchItem}
                   />
 
                   {/* Infinite scroll loading indicator */}
