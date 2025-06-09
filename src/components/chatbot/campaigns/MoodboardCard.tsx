@@ -15,14 +15,25 @@ import {
 } from "@/components/ui/custom-icon";
 import MoodboardDetail from "../MoodboardDetail";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
-import { MoodboardAsset } from "@/types/types";
+import { MoodboardAsset, ThreadBrand, ThreadCampaign } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  updateReferenceCampaignId,
+  updateReferenceMoodboardId,
+} from "@/hooks/useParameterManagement";
+import { parseAsBoolean, parseAsString, useQueryState } from "nuqs";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 
 interface MoodboardCardProps {
   moodboard: MoodboardAsset;
   campaignId: string;
   brandId: string;
   onExpand: (url: string) => void;
+  campaignInformation: ThreadCampaign | undefined;
+  brandInformation: ThreadBrand | undefined;
 }
 
 export const MoodboardCard: React.FC<MoodboardCardProps> = ({
@@ -30,6 +41,8 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
   campaignId,
   brandId,
   onExpand,
+  brandInformation,
+  campaignInformation,
 }) => {
   const moodboardId = moodboard.id || `moodboard-${moodboard.asset_url}`;
   const [isLiked, setIsLiked] = useState<boolean | undefined>(
@@ -60,6 +73,29 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
         });
       });
   };
+
+  const [, setReferanceImageLoading] = useQueryState("loading", parseAsBoolean);
+  const [, setReferenceImage] = useQueryState("scrollTo", parseAsString);
+  const stream = useStreamContext();
+
+  const { selectedBrandId } = useBrandStore();
+  const { user } = useUserStore();
+
+  const a2iRequestText = `Let's create an A2I image for my campaign.<kittykat-do-not-render>
+I’m working on the brand "${brandInformation?.static?.brand}" under the campaign "${campaignInformation?.campaign?.title}". I really like the moodboard titled "${moodboard.asset_title}". It has the following visual description: "${moodboard.visual_description}".
+
+For context:
+- A **moodboard** is a set of inspiration images used to define visual themes, typically in a bento grid style.
+- An **A2I image** is a single creative output.
+
+I only want **one image** generated unless I explicitly ask for more. The moodboard should serve as inspiration only.
+
+✅ Do **not** explain this distinction (e.g., avoid saying things like “Since an A2I image is a single, polished visual...” or similar) in your response. The user already understands this. 
+
+❗ Instead, ask me how I’d like to proceed with generating the next A2I image. Use this background to start a conversation, but don’t trigger any tools yet.
+
+agentHint: use A2I_IMAGES_AGENT for this request
+</kittykat-do-not-render>`;
 
   return (
     <div className="relative rounded-lg overflow-hidden border border-gray-200 h-full flex flex-col group">
@@ -221,7 +257,27 @@ export const MoodboardCard: React.FC<MoodboardCardProps> = ({
         <Button
           variant="default"
           size="sm"
-          className="bg-[#636AE8FF] hover:bg-[#636AE8FF]"
+          className="bg-[#636AE8FF] hover:bg-[#636AE8FF] cursor-pointer"
+          onClick={async () => {
+            setReferanceImageLoading(true);
+            setReferenceImage("reference");
+
+            await Promise.all([
+              updateReferenceMoodboardId(brandId, moodboard.id),
+              updateReferenceCampaignId(brandId, campaignId),
+            ]);
+            if (user) {
+              submitOptimisticMessage({
+                stream,
+                text: a2iRequestText,
+                userId: user?.id,
+                currentBrandContextId: selectedBrandId,
+              });
+            }
+            await new Promise((resolve) => setTimeout(resolve, 800));
+
+            setReferanceImageLoading(null);
+          }}
         >
           Create Image
         </Button>

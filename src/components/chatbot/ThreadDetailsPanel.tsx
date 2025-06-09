@@ -9,7 +9,6 @@ import {
   campaignFields,
   PlaceholderSection,
 } from "./brands/InitialPlaceHolder";
-import A2iVideosSection from "./a2ivideos/A2iVideosSection";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 
@@ -51,7 +50,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             />
           }
           {campaignInformation ? (
-            <CampaignSection campaignInformation={campaignInformation} />
+            <CampaignSection
+              campaignInformation={campaignInformation}
+              brandInformation={brandingInformation}
+            />
           ) : (
             <PlaceholderSection
               title="Campaign"
@@ -73,19 +75,19 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             />
           )}
 
-          {campaignInformation && campaignInformation?.length > 0 && (
+          {
             <A2iImagesSection
               a2iImageInformation={a2iImageInformation}
               campaignInformation={campaignInformation}
             />
-          )}
+          }
 
-          {campaignInformation && campaignInformation?.length > 0 && (
+          {/* {campaignInformation && campaignInformation?.length > 0 && (
             <A2iVideosSection
               a2iImageInformation={a2iImageInformation}
               campaignInformation={campaignInformation}
             />
-          )}
+          )} */}
         </>
       )}
     </div>
