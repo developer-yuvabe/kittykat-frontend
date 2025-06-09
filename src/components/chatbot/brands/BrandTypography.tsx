@@ -13,6 +13,8 @@ import { Pencil } from "lucide-react";
 import { Agents } from "@/types/types";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 interface FontDetails {
   name?: string;
@@ -29,6 +31,8 @@ export const BrandTypography: React.FC<TypographyProps> = ({
   secondaryFont,
 }) => {
   const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   const [editingFontKey, setEditingFontKey] = useState<
     "primary" | "secondary" | null
   >(null);
@@ -61,6 +65,8 @@ FontWeights: ${formState.weights?.join(", ") || ""}
     submitOptimisticMessage({
       stream,
       text: message,
+      userId: user!.id,
+      currentBrandContextId: selectedBrandId,
     });
 
     setEditingFontKey(null);

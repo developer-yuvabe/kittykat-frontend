@@ -6,6 +6,8 @@ import { Agents } from "@/types/types";
 import { InlineEditableField } from "../shared/InlineEditableField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 interface DynamicContentSectionProps {
   dynamicData: Record<string, unknown>;
@@ -19,6 +21,8 @@ const RenderValue: React.FC<{
   agentId?: Agents;
 }> = ({ value, depth = 0, path = "", agentId }) => {
   const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
 
   const handleSave = async (newVal: string) => {
     const oldVal = String(value);
@@ -38,6 +42,8 @@ const RenderValue: React.FC<{
       submitOptimisticMessage({
         stream,
         text: msg,
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
       });
     }
   };

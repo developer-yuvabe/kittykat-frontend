@@ -21,6 +21,8 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import React from "react";
 import { Agents } from "@/types/types";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 
 interface BrandColorsProps {
   colors: Color[];
@@ -44,6 +46,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
 
   const stream = useStreamContext();
   const { isLoading } = useStreamContext();
@@ -145,6 +149,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
         submitOptimisticMessage({
           stream,
           text: enhancedMsg,
+          userId: user!.id,
+          currentBrandContextId: selectedBrandId,
         });
       }
     } catch (err) {

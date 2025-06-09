@@ -9,6 +9,8 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Agents } from "@/types/types";
 import React from "react";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 interface BrandOverviewProps {
   tagline?: string;
@@ -22,6 +24,8 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
   name,
 }) => {
   const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   return (
     <ContentSection
       title="Brand Overview"
@@ -47,6 +51,8 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
                     submitOptimisticMessage({
                       stream,
                       text: msg,
+                      userId: user!.id,
+                      currentBrandContextId: selectedBrandId,
                     });
                   }
                 }}
@@ -75,6 +81,8 @@ export const BrandOverview: React.FC<BrandOverviewProps> = ({
                     submitOptimisticMessage({
                       stream,
                       text: msg,
+                      userId: user!.id,
+                      currentBrandContextId: selectedBrandId,
                     });
                   }
                 }}

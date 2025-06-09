@@ -19,6 +19,8 @@ import { Pencil } from "lucide-react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { formatUpdateMessage } from "@/lib/langgraph.utils";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 
 interface BrandMediaProps {
   brandMedia: ThreadBrand["brand_media"];
@@ -35,6 +37,8 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
   socialMedia,
 }) => {
   const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
   const [newUrl, setNewUrl] = useState<string>("");
@@ -201,7 +205,12 @@ export const BrandMedia: React.FC<BrandMediaProps> = ({
                           if (msg) {
                             setSavingPlatform(platform);
                             setEditingPlatform(null); // Close popover immediately
-                            submitOptimisticMessage({ stream, text: msg });
+                            submitOptimisticMessage({
+                              stream,
+                              text: msg,
+                              currentBrandContextId: selectedBrandId,
+                              userId: user!.id,
+                            });
                           }
                         }}
                       >
