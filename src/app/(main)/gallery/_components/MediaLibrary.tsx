@@ -1,22 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UploadDropzone } from "./UploadDropzone";
-import { SearchFilters } from "./SearchFilters";
-import { MasonryGrid } from "./MasonryGrid";
-import { BulkActions } from "./BulkActions";
-import FilterSidebar from "./FilterSidebar";
+import { useState, useEffect, useMemo } from "react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { MediaUploadDropzone } from "./MediaUploadDropzone";
+import { MediaSearchFilters } from "./MediaSearchFilters";
+import { MediaGrid } from "./MediaGrid";
+
 import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
-import {
+import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
+import MediaLibraryTabs from "./MediaLibraryTabs";
+import { MediaBulkActions } from "./MediaBulkActions";
+import MediaFilterSidebar from "./MediaFilterSidebar";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -28,7 +30,6 @@ export function MediaLibrary({
   isMediaSelectDialog = false,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
-
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -85,20 +86,11 @@ export function MediaLibrary({
     selectedFilters,
   });
 
-  console.log("Gallery items:", galleryItems);
-
   useEffect(() => {
     if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
-      console.log("Brands list:", brandsData.brands);
       setSelectedBrand(brandsData.brands[0]);
     }
   }, [brandsLoading, brandsData, selectedBrand]);
-
-  useEffect(() => {
-    if (selectedBrand) {
-      console.log("Selected brand updated:", selectedBrand);
-    }
-  }, [selectedBrand]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -160,7 +152,7 @@ export function MediaLibrary({
       debounce((query: string) => {
         setSearchQuery(query);
       }, 500),
-    [] // add dependencies if needed
+    []
   );
 
   const handleSourceChange = (value: string) => {
@@ -245,8 +237,8 @@ export function MediaLibrary({
 
   useEffect(() => {
     setSource(activeTab);
-    console.log("so", activeTab, source);
-  }, [activeTab, handleTabChange]);
+  }, [activeTab]);
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
       <Tabs
@@ -254,56 +246,12 @@ export function MediaLibrary({
         value={activeTab}
         onValueChange={handleTabChange}
       >
-        <div
-          className={`${
-            isMediaSelectDialog ? " sticky top-0 z-40 bg-white" : ""
-          }`}
-        >
-          <h1 className="text-2xl font-bold mb-4">Media library</h1>
-          <TabsList className="mb-4 border-b w-full justify-start rounded-none h-auto p-0 bg-transparent">
-            <TabsTrigger
-              value="all-media"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-            >
-              All Media
-            </TabsTrigger>
-            <TabsTrigger
-              value="moodboard"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-            >
-              Moodboards
-            </TabsTrigger>
-            <TabsTrigger
-              value="images"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-            >
-              Images
-            </TabsTrigger>
-            <TabsTrigger
-              value="videos"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-            >
-              Videos
-            </TabsTrigger>
-            <TabsTrigger
-              value="models"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-            >
-              Models
-            </TabsTrigger>
-            <TabsTrigger
-              value="products"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-[#636AE8] data-[state=active]:shadow-none data-[state=active]:text-[#636AE8] data-[state=active]:bg-[#F3F4F6FF] px-4 py-2 h-auto bg-transparent"
-            >
-              Products
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <MediaLibraryTabs />
         <TabsContent
           value={activeTab}
           className="p-3 rounded-3xl bg-white mt-0"
         >
-          <UploadDropzone
+          <MediaUploadDropzone
             activeTab={activeTab}
             galleryFilters={{
               assetType: activeTab,
@@ -331,7 +279,7 @@ export function MediaLibrary({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <FilterSidebar
+              <MediaFilterSidebar
                 selectedFilters={selectedFilters}
                 onApply={handleApplyFilters}
                 brandsWithCampaigns={brandsData?.brands || []}
@@ -345,7 +293,7 @@ export function MediaLibrary({
                 showFilters ? "w-full md:w-3/4" : "w-full"
               } transition-all duration-300 ease-in-out`}
             >
-              <SearchFilters
+              <MediaSearchFilters
                 onSearchChange={handleSearchChange}
                 onSourceChange={handleSourceChange}
                 onCreatorChange={handleCreatorChange}
@@ -359,7 +307,7 @@ export function MediaLibrary({
               />
 
               {galleryStatus === "pending" ? (
-                <div className="flex   justify-center items-center py-36 2xl:py-60 ">
+                <div className="flex justify-center items-center py-36 2xl:py-60">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                 </div>
               ) : galleryStatus === "error" ? (
@@ -372,7 +320,7 @@ export function MediaLibrary({
                 </div>
               ) : (
                 <>
-                  <MasonryGrid
+                  <MediaGrid
                     items={galleryItems}
                     selectedItems={selectedItems}
                     onSelect={handleSelect}
@@ -408,7 +356,7 @@ export function MediaLibrary({
       </Tabs>
 
       {selectedItems.length > 0 && (
-        <BulkActions
+        <MediaBulkActions
           selectedCount={selectedItems.length}
           onUnselectAll={handleUnselectAll}
           onDelete={handleBulkDeleteClick}

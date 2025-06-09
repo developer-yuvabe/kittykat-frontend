@@ -170,17 +170,6 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
 
       // Cancel any outgoing refetches to avoid overwriting optimistic update
       await queryClient.cancelQueries({ queryKey });
-      await queryClient.cancelQueries({ queryKey: ["gallery-item", itemId] });
-
-      // Snapshot the previous values for rollback
-      const previousGalleryData = queryClient.getQueryData(queryKey);
-      const previousItemData = queryClient.getQueryData([
-        "gallery-item",
-        itemId,
-      ]);
-
-      console.log("📦 Previous gallery data exists:", !!previousGalleryData);
-
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
         console.log("🔄 Updating gallery cache optimistically", { old: !!old });
@@ -207,30 +196,13 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
         return updated;
       });
 
-      // Optimistically update single item cache if it exists
-      if (previousItemData) {
-        queryClient.setQueryData(["gallery-item", itemId], (old: any) =>
-          old ? { ...old, ...data } : old
-        );
-      }
-
       // Return context for potential rollback
-      return { previousGalleryData, previousItemData, queryKey };
+      return { queryKey };
     },
 
-    onError: (error, { itemId }, context) => {
+    onError: () => {
       console.log("❌ Patch failed, rolling back optimistic updates");
 
-      // Rollback optimistic updates
-      if (context?.previousGalleryData) {
-        queryClient.setQueryData(context.queryKey, context.previousGalleryData);
-      }
-      if (context?.previousItemData) {
-        queryClient.setQueryData(
-          ["gallery-item", itemId],
-          context.previousItemData
-        );
-      }
       toast.error("Failed to update item");
     },
 
@@ -256,9 +228,6 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
           })),
         };
       });
-
-      // Update single item cache with server response
-      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
 
       toast.success("Item updated successfully");
     },

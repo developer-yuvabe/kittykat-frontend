@@ -8,7 +8,7 @@ import React from "react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 
-interface SearchFiltersProps {
+interface MediaSearchFiltersProps {
   onSearchChange: (query: string) => void;
   onSourceChange: (source: string) => void;
   onCreatorChange: (creator: string) => void;
@@ -21,13 +21,13 @@ interface SearchFiltersProps {
   selectedFilters: EnhancedSelectedFilters;
 }
 
-export function SearchFilters({
+export function MediaSearchFilters({
   onSearchChange,
   onFavoritesChange,
   onToggleFilters,
   favorites,
   showFilters,
-}: SearchFiltersProps) {
+}: MediaSearchFiltersProps) {
   return (
     <div className="flex flex-col gap-3 mb-6 mt-3 relative">
       <div className="flex items-center gap-3">

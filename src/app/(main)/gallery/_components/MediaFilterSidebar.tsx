@@ -29,7 +29,7 @@ import {
 } from "@/lib/gallery.utils";
 import { ExpandableCard } from "@/components/ui/expandable-card";
 
-interface FilterSidebarProps {
+interface MediaFilterSidebarProps {
   selectedFilters: EnhancedSelectedFilters;
   onApply: (filters: EnhancedSelectedFilters) => void;
   brandsWithCampaigns: BrandCampaignResponse[];
@@ -37,13 +37,13 @@ interface FilterSidebarProps {
   setShowFilter: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function FilterSidebar({
+export default function MediaFilterSidebar({
   selectedFilters,
   onApply,
   brandsWithCampaigns,
   product_categories,
   setShowFilter,
-}: FilterSidebarProps) {
+}: MediaFilterSidebarProps) {
   const [filters, setFilters] =
     useState<EnhancedSelectedFilters>(selectedFilters);
 
