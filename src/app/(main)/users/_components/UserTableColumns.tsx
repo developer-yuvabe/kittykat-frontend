@@ -180,7 +180,9 @@ export const getUserTableColumns = (
               <>
                 <EditUser user={row.original}>
                   <DropdownMenuItem
-                    disabled={isActionsDisabled}
+                    disabled={
+                      isActionsDisabled || row.original.is_default_admin
+                    }
                     onSelect={(e) => e.preventDefault()}
                   >
                     Edit
@@ -203,7 +205,7 @@ export const getUserTableColumns = (
 
             <DropdownMenuItem
               variant="destructive"
-              disabled={isActionsDisabled}
+              disabled={isActionsDisabled || row.original.is_default_admin}
               onClick={handleRevokeAccess}
             >
               Revoke Access

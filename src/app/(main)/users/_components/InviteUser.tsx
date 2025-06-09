@@ -106,7 +106,12 @@ export function InviteUser() {
           Invite user
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent
+        className="sm:max-w-xl"
+        onInteractOutside={(e) => {
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Invite User</DialogTitle>
           <DialogDescription>
