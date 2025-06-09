@@ -1,4 +1,4 @@
-import { handleApiRequest } from "@/lib/utils";
+import { handleApiRequest, PlatformApiError } from "@/lib/utils";
 import axiosInstance from "@/config/axios/api-server.config";
 import { User } from "@/types/user.types";
 
@@ -12,7 +12,16 @@ export const fetchUser = async () => {
       error: null,
       user,
     };
-  } catch {
+  } catch (e) {
+    console.error("Error fetching user:");
+
+    if (e instanceof PlatformApiError) {
+      return {
+        error: null,
+        user: null,
+      };
+    }
+
     return {
       error: "Failed to fetch user",
       user: null,

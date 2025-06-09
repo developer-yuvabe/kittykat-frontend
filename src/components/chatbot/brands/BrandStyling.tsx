@@ -47,6 +47,8 @@ export const BrandStyling = (props: StylingProps) => {
                         submitOptimisticMessage({
                           stream,
                           text: msg,
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
                         });
                       }
                     }}

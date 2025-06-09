@@ -50,6 +50,8 @@ export const BrandPhotography = (props: PhotographyProps) => {
                         submitOptimisticMessage({
                           stream,
                           text: msg,
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
                         });
                       }
                     }}

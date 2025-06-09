@@ -47,6 +47,8 @@ export const BrandSetting = (props: SettingProps) => {
                         submitOptimisticMessage({
                           stream,
                           text: msg,
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
                         });
                       }
                     }}

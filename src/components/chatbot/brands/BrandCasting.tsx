@@ -51,6 +51,8 @@ export const BrandCasting = (props: CastingProps) => {
                         submitOptimisticMessage({
                           stream,
                           text: msg,
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
                         });
                       }
                     }}

@@ -25,6 +25,8 @@ import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import InitialPlaceHolder from "./InitialPlaceHolder";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -75,6 +77,8 @@ export const renderBrandData = (
     const allColors = extractAllColors(staticData);
     const [showDynamicData, setShowDynamicData] = React.useState(false);
     const stream = useStreamContext();
+    const { user } = useUserStore();
+    const { selectedBrandId } = useBrandStore();
 
     return (
       <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -122,6 +126,12 @@ export const renderBrandData = (
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
+                            submitOptimisticMessage({
+                              stream,
+                              text: "Let's create a new brand.",
+                              userId: user!.id,
+                              currentBrandContextId: selectedBrandId,
+                            });
                             clearPinnedItems();
                           }}
                         >
@@ -155,6 +165,8 @@ export const renderBrandData = (
                         submitOptimisticMessage({
                           stream,
                           text: msg,
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
                         });
                       }
                     }}
@@ -174,6 +186,12 @@ export const renderBrandData = (
                         tooltip="New Brand"
                         variant="ghost"
                         onClick={() => {
+                          submitOptimisticMessage({
+                            stream,
+                            text: "Let's create a new brand.",
+                            userId: user!.id,
+                            currentBrandContextId: selectedBrandId,
+                          });
                           clearPinnedItems();
                         }}
                       >
