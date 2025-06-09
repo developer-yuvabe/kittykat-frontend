@@ -93,6 +93,8 @@ export const CampaignSection: React.FC<{
                       submitOptimisticMessage({
                         stream,
                         text: msg,
+                        userId: user!.id,
+                        currentBrandContextId: selectedBrandId,
                       });
                     }
                   }}

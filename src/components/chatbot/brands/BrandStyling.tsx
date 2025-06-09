@@ -3,6 +3,8 @@ import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { formatUpdateMessage } from "@/lib/langgraph.utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 import { Agents } from "@/types/types";
 
 interface StylingProps {
@@ -16,6 +18,8 @@ export const BrandStyling = (props: StylingProps) => {
   if (!hasContent) return null;
 
   const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
 
   return (
     <ContentSection
@@ -47,6 +51,8 @@ export const BrandStyling = (props: StylingProps) => {
                         submitOptimisticMessage({
                           stream,
                           text: msg,
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
                         });
                       }
                     }}

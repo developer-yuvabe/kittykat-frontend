@@ -14,11 +14,11 @@ import {
   type RemoveUIMessage,
 } from "@langchain/langgraph-sdk/react-ui";
 import { useQueryState } from "nuqs";
-import Splash from "@/components/shared/Splash";
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { env } from "@/config/env";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
+import { Loader2 } from "lucide-react";
 
 export type StateType = {
   messages: Message[];
@@ -116,7 +116,11 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   if (!isInitialized) {
-    return <Splash />;
+    return (
+      <div className="flex items-center justify-center w-full h-[85vh]">
+        <Loader2 className="text-primary animate-spin" size={40} />
+      </div>
+    );
   }
 
   return (

@@ -59,6 +59,13 @@ export const isNearWhite = (hex: string) => {
   return brightness > 230; // Threshold for "near white"
 };
 
+export class PlatformApiError extends Error {
+  constructor(message: string, public statusCode?: number) {
+    super(message);
+    this.name = "PlatformApiError";
+  }
+}
+
 export async function handleApiRequest<T>(
   request: Promise<AxiosResponse>
 ): Promise<T> {
@@ -74,13 +81,18 @@ export async function handleApiRequest<T>(
     const message =
       response.data?.message || `Unexpected status code: ${response.status}`;
     console.error("API Error:", message);
-    throw new Error(message);
+    throw new PlatformApiError(message, response.data.status_code);
   } catch (error: any) {
     console.error("API Request Error:", error);
 
     // Prefer the message from the API response if present
     const message =
       error.response?.data?.message || error.message || "API request failed";
+
+    if (error instanceof PlatformApiError) {
+      console.log("first");
+      throw error;
+    }
 
     throw new Error(message);
   }

@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import React, { useState } from "react";
 import { Check, Copy, Pencil } from "lucide-react";
 import { Agents } from "@/types/types";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 interface CampaignColorsProps {
   colors: string[];
   campaignId: string;
@@ -33,7 +35,8 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
   const [newColor, setNewColor] = useState<string>("");
   const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
   const stream = useStreamContext();
-
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
   const validColors = colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color));
   if (validColors.length === 0) return null;
 
@@ -72,7 +75,13 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
     );
 
     if (msg) {
-      submitOptimisticMessage({ stream, text: msg });
+      submitOptimisticMessage({
+        stream,
+        text: msg,
+
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      });
     }
 
     setPopoverOpen(null);

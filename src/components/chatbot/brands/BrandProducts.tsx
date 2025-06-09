@@ -3,6 +3,8 @@ import { InlineEditableBadges } from "@/components/shared/InlineEditableBadges";
 import { formatUpdateArrayMessage } from "@/lib/langgraph.utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 import { Agents } from "@/types/types";
 import React from "react";
 
@@ -13,6 +15,9 @@ interface ProductsSectionProps {
 export const BrandProducts: React.FC<ProductsSectionProps> = ({ products }) => {
   if (!products || products.length === 0) return null;
   const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
+
   return (
     <ContentSection
       title="Products"
@@ -34,6 +39,8 @@ export const BrandProducts: React.FC<ProductsSectionProps> = ({ products }) => {
                 submitOptimisticMessage({
                   stream,
                   text: message,
+                  userId: user!.id,
+                  currentBrandContextId: selectedBrandId,
                 });
               }
             }}

@@ -1,3 +1,4 @@
+import { StreamContextType } from "@/providers/langgraph/Stream";
 import { Message } from "@langchain/langgraph-sdk";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
@@ -36,11 +37,18 @@ export const getShowboardConfig = async () => {
 };
 
 type SubmitOptions = {
-  stream: any;
+  stream: StreamContextType;
   text: string;
+  userId: string;
+  currentBrandContextId: string | null;
 };
 
-export function submitOptimisticMessage({ stream, text }: SubmitOptions) {
+export function submitOptimisticMessage({
+  stream,
+  text,
+  userId,
+  currentBrandContextId,
+}: SubmitOptions) {
   const newMessage: Message = {
     id: uuidv4(),
     type: "human",
@@ -55,6 +63,8 @@ export function submitOptimisticMessage({ stream, text }: SubmitOptions) {
   stream.submit(
     {
       messages: [newMessage],
+      userId,
+      currentBrandContextId,
     },
     {
       streamMode: ["values"],
