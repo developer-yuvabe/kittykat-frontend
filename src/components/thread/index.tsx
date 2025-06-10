@@ -48,6 +48,7 @@ export function Thread() {
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
   );
+
   const [input, setInput] = useState("");
   const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
@@ -70,7 +71,6 @@ export function Thread() {
     handlePaste,
     isUploading,
   } = useFileUpload({ brandId: user!.thread_id! });
-
 
   useEffect(() => {
     if (!stream.error) {

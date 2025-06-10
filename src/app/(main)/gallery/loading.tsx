@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import GallerySkeletonGrid from "./_components/GallerySkeletonGrid";
+import MediaSkeletonGrid from "./_components/MediaSkeletonGrid";
 
 export default function MediaLibrarySkeleton() {
   return (
@@ -24,7 +24,7 @@ export default function MediaLibrarySkeleton() {
         {/* Main Grid Area */}
         <div className="w-full  space-y-6">
           {/* Gallery grid */}
-          <GallerySkeletonGrid />
+          <MediaSkeletonGrid />
 
           {/* Infinite scroll loader */}
           <div className="flex justify-center py-8">

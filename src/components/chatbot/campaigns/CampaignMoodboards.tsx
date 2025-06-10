@@ -6,25 +6,30 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "../../ui/carousel";
-import { Agents, MoodboardAsset } from "@/types/types";
+import { Agents, ThreadBrand, ThreadCampaign } from "@/types/types";
 import React, { useState } from "react";
 import { MoodboardCard } from "./MoodboardCard";
 import { ImageModal } from "../../shared/ImageModal";
 
 interface CampaignMoodboardProps {
-  moodboards: MoodboardAsset[];
+  currentCampaign: ThreadCampaign | undefined;
   brandId: string;
   campaignId: string;
+  brandInformation: ThreadBrand | undefined;
 }
 
 export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
-  moodboards,
+  currentCampaign,
   brandId,
   campaignId,
+  brandInformation,
 }) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
-  if (!moodboards || moodboards.length === 0) return null;
+  if (!currentCampaign?.moodboards || currentCampaign?.moodboards?.length === 0)
+    return null;
+
+  const moodboards = currentCampaign.moodboards;
 
   return (
     <ContentSection
@@ -43,6 +48,8 @@ export const CampaignMoodboard: React.FC<CampaignMoodboardProps> = ({
                     campaignId={campaignId}
                     brandId={brandId}
                     onExpand={() => setExpandedImage(moodboard.asset_url)}
+                    brandInformation={brandInformation}
+                    campaignInformation={currentCampaign}
                   />
                 </CarouselItem>
               ))}

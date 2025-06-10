@@ -22,10 +22,12 @@ import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
-}> = ({ campaignInformation }) => {
+  brandInformation: ThreadDetails["brand_information"];
+}> = ({ campaignInformation, brandInformation }) => {
   if (!campaignInformation || !campaignInformation.length) return null;
 
   const { selectedBrandId } = useBrandStore();
+
   const { user } = useUserStore();
   const stream = useStreamContext();
   const latestCampaignInformation = campaignInformation.length - 1;
@@ -191,9 +193,10 @@ export const CampaignSection: React.FC<{
                 />
 
                 <CampaignMoodboard
-                  moodboards={currentCampaign.moodboards || []}
+                  currentCampaign={currentCampaign}
                   brandId={selectedBrandId!}
                   campaignId={currentCampaign.id}
+                  brandInformation={brandInformation}
                 />
               </div>
             </motion.div>

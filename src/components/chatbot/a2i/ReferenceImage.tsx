@@ -1,31 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
-import { ImageDisplay } from "./ImageDisplay";
+import { useState, useEffect, useRef } from "react";
 import { ContentSection } from "@/components/shared/ContentSection";
-import { ActionButtonsRow } from "./ActionButtonsRow";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-import { CheckCircle, Image, Target, Palette, Users } from "lucide-react";
+import { Target, Palette, Users, Loader2 } from "lucide-react";
 import { MoodboardAsset, ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import {
   updateReferenceCampaignId,
   updateReferenceMoodboardId,
 } from "@/hooks/useParameterManagement";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { parseAsBoolean, parseAsString, useQueryState } from "nuqs";
+import { MoodboardSelectionModal } from "./MoodboardSelectionModal";
+import { MoodboardDisplayPanel } from "./MoodboardDisplayPanel";
 
 interface ReferenceImageSectionProps {
   campaignInformation: ThreadCampaign[] | undefined;
@@ -38,12 +25,34 @@ export function ReferenceImage({
   a2iImageInformation,
   brandId,
 }: ReferenceImageSectionProps) {
+  // Keep local state for fallback scenarios
   const [selectedMoodboard, setSelectedMoodboard] =
     useState<MoodboardAsset | null>(null);
   const [selectedCampaign, setSelectedCampaign] =
     useState<ThreadCampaign | null>(null);
   const [isMoodboardModalOpen, setIsMoodboardModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [referanceImageLoading] = useQueryState("loading", parseAsBoolean);
+  const [refernceImage, setReferenceImage] = useQueryState(
+    "scrollTo",
+    parseAsString
+  );
+  const [, setScrollTo] = useQueryState("scrollTo");
+  const refSection = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to reference section when needed
+  useEffect(() => {
+    if (refernceImage === "reference") {
+      setTimeout(() => {
+        refSection.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        setScrollTo(null);
+        setReferenceImage(null);
+      }, 100);
+    }
+  }, [refernceImage, setScrollTo, setReferenceImage]);
 
   // Get all moodboards from all campaigns
   const getAllMoodboards = (): (MoodboardAsset & {
@@ -62,71 +71,127 @@ export function ReferenceImage({
     );
   };
 
-  // Initialize with existing references
+  // Derived state functions - Primary source of truth
+  const getCurrentMoodboard = ():
+    | (MoodboardAsset & {
+        campaignId: string;
+        campaignTitle?: string;
+      })
+    | null => {
+    // Show loading during updates
+    if (isUpdating || referanceImageLoading) {
+      return null;
+    }
+
+    // Prefer API data as source of truth
+    if (a2iImageInformation?.reference_moodboard_id) {
+      const allMoodboards = getAllMoodboards();
+      const apiMoodboard = allMoodboards.find(
+        (mb) => mb.id === a2iImageInformation.reference_moodboard_id
+      );
+      if (apiMoodboard) {
+        return apiMoodboard;
+      }
+    }
+
+    // Fallback to local state
+    return selectedMoodboard as
+      | (MoodboardAsset & {
+          campaignId: string;
+          campaignTitle?: string;
+        })
+      | null;
+  };
+
+  const getCurrentCampaign = (): ThreadCampaign | null => {
+    // Show loading during updates
+    if (isUpdating || referanceImageLoading) {
+      return null;
+    }
+
+    // Prefer API data as source of truth
+    if (a2iImageInformation?.reference_campaign_id) {
+      const apiCampaign = campaignInformation?.find(
+        (c) => c.id === a2iImageInformation.reference_campaign_id
+      );
+      if (apiCampaign) {
+        return apiCampaign;
+      }
+    }
+
+    // Fallback to local state
+    return selectedCampaign;
+  };
+
+  // Sync local state with API data when available (for fallback scenarios)
   useEffect(() => {
-    if (campaignInformation?.length) {
-      // Set existing reference campaign if available
+    if (campaignInformation?.length && !isUpdating && !referanceImageLoading) {
+      // Sync campaign
       if (a2iImageInformation?.reference_campaign_id) {
         const existingCampaign = campaignInformation.find(
           (c) => c.id === a2iImageInformation.reference_campaign_id
         );
-        if (existingCampaign) {
+        if (existingCampaign && existingCampaign.id !== selectedCampaign?.id) {
           setSelectedCampaign(existingCampaign);
         }
       }
 
-      // Set existing reference moodboard if available
+      // Sync moodboard
       if (a2iImageInformation?.reference_moodboard_id) {
         const allMoodboards = getAllMoodboards();
         const existingMoodboard = allMoodboards.find(
           (mb) => mb.id === a2iImageInformation.reference_moodboard_id
         );
-        if (existingMoodboard) {
+        if (
+          existingMoodboard &&
+          existingMoodboard.id !== selectedMoodboard?.id
+        ) {
           setSelectedMoodboard(existingMoodboard);
-          // Also set the campaign if not already set
-          if (!selectedCampaign) {
-            const campaign = campaignInformation.find(
-              (c) => c.id === existingMoodboard.campaignId
-            );
-            if (campaign) {
-              setSelectedCampaign(campaign);
-            }
-          }
         }
       }
     }
-  }, [campaignInformation, a2iImageInformation]);
+  }, [
+    campaignInformation,
+    a2iImageInformation,
+    isUpdating,
+    referanceImageLoading,
+  ]);
 
   const handleMoodboardSelect = async (
     moodboard: MoodboardAsset & { campaignId: string }
   ) => {
     setIsUpdating(true);
-    try {
-      // Update both moodboard and campaign IDs in parallel
-      const campaign = campaignInformation?.find(
-        (c) => c.id === moodboard.campaignId
-      );
 
+    try {
+      // Update API in parallel
       await Promise.all([
         updateReferenceMoodboardId(brandId, moodboard.id),
         updateReferenceCampaignId(brandId, moodboard.campaignId),
       ]);
 
-      setSelectedMoodboard(moodboard);
-      if (campaign) {
-        setSelectedCampaign(campaign);
-      }
-
       setIsMoodboardModalOpen(false);
+
+      // Small delay to allow API response to be processed
+      setTimeout(() => {
+        setIsUpdating(false);
+      }, 150);
     } catch (error) {
       console.error("Failed to update reference image:", error);
-    } finally {
       setIsUpdating(false);
     }
   };
 
   const renderSelectedView = () => {
-    if (!selectedCampaign && !selectedMoodboard) {
+    const currentMoodboard = getCurrentMoodboard();
+    const currentCampaign = getCurrentCampaign();
+
+    // Show empty state when no selection
+    if (
+      !currentCampaign &&
+      !currentMoodboard &&
+      !isUpdating &&
+      !referanceImageLoading
+    ) {
       return (
         <div className="text-center py-12">
           <Target className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
@@ -146,180 +211,195 @@ export function ReferenceImage({
       );
     }
 
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Image */}
-        <div className="space-y-4">
-          {selectedMoodboard ? (
-            <div className="space-y-4">
-              <ImageDisplay
-                src={selectedMoodboard.asset_url}
-                alt={selectedMoodboard.asset_title}
-                className="aspect-square w-full max-w-md mx-auto"
-                onSelect={() => {}}
-              />
-
-              <ActionButtonsRow
-                buttons={[
-                  {
-                    label: "Go to Generator",
-                    onClick: () => console.log("Navigate to generator"),
-                    color: "#EA916E",
-                    hoverColor: "#e7845d",
-                  },
-                  {
-                    label: "Select Board",
-                    onClick: () => setIsMoodboardModalOpen(true),
-                    hoverColor: "#5b5fd1",
-                    color: "#636AE8",
-                  },
-                ]}
-                className="flex justify-between 2xl:mx-8"
-              />
+    // Show loading state
+    if (
+      referanceImageLoading ||
+      isUpdating ||
+      (!currentMoodboard && !currentCampaign)
+    ) {
+      return (
+        <div>
+          <div ref={refSection} className="absolute -top-5"></div>
+          <div className="text-center py-16">
+            <div className="relative">
+              <Loader2 className="mx-auto h-12 w-12 mb-4 text-primary animate-spin" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/40 rounded-full blur-xl -z-10" />
             </div>
-          ) : (
-            <div className="text-center py-8 border-2 border-dashed rounded-lg">
-              <Image className="mx-auto h-8 w-8 mb-2 opacity-50" />
-              <p className="text-muted-foreground mb-4">
-                No moodboard selected
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">
+                {referanceImageLoading
+                  ? "Loading Reference Image"
+                  : "Updating Selection"}
+              </h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Please wait while we process your reference selection...
               </p>
-              <Button onClick={() => setIsMoodboardModalOpen(true)}>
-                Select Moodboard
-              </Button>
             </div>
-          )}
+
+            {/* Animated progress dots */}
+            <div className="flex justify-center items-center gap-1 mt-6">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 bg-primary rounded-full animate-pulse"
+                  style={{
+                    animationDelay: `${i * 0.2}s`,
+                    animationDuration: "1s",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
+      );
+    }
 
-        {/* Right Column - Details */}
-        <div className="space-y-6">
-          {/* Moodboard Details */}
-          <Card>
-            <CardContent className="px-6 py-2">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Moodboard Details</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsMoodboardModalOpen(true)}
-                >
-                  Change
-                </Button>
-              </div>
+    // Show content
+    return (
+      <div ref={refSection}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Image */}
+          <MoodboardDisplayPanel
+            selectedMoodboard={currentMoodboard}
+            onOpenMoodboardModal={() => setIsMoodboardModalOpen(true)}
+            onGoToGenerator={() => console.log("Navigate to generator")}
+          />
 
-              {selectedMoodboard ? (
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-medium">
-                      {selectedMoodboard.asset_title}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      From: {(selectedMoodboard as any).campaignTitle}
-                    </p>
-                  </div>
+          {/* Right Column - Details */}
+          <div className="space-y-6">
+            {/* Moodboard Details */}
+            <Card>
+              <CardContent className="px-6 py-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Moodboard Details</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMoodboardModalOpen(true)}
+                    disabled={isUpdating}
+                  >
+                    Change
+                  </Button>
+                </div>
 
-                  <div className="flex items-center gap-4">
-                    <Badge variant="secondary">
-                      {selectedMoodboard.aspect_ratio}
-                    </Badge>
-                    <Badge variant="outline">
-                      {selectedMoodboard.media_format.toUpperCase()}
-                    </Badge>
-                  </div>
-
-                  {selectedMoodboard.comment && (
+                {currentMoodboard ? (
+                  <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-medium">Description</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedMoodboard.comment}
+                      <h4 className="font-medium">
+                        {currentMoodboard.asset_title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        From: {currentMoodboard.campaignTitle}
                       </p>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  <p>No moodboard selected</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          {/* Campaign Details */}
-          <Card>
-            <CardContent className="px-6 py-2">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Campaign Details</h3>
-              </div>
 
-              {selectedCampaign ? (
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium">
-                      {selectedCampaign.campaign?.title ||
-                        `Campaign ${selectedCampaign.id.slice(0, 8)}`}
-                    </h4>
-                    {selectedCampaign.campaign?.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedCampaign.campaign.description}
-                      </p>
-                    )}
-                  </div>
+                    <div className="flex items-center gap-4">
+                      <Badge variant="secondary">
+                        {currentMoodboard.aspect_ratio}
+                      </Badge>
+                      <Badge variant="outline">
+                        {currentMoodboard.media_format.toUpperCase()}
+                      </Badge>
+                    </div>
 
-                  {selectedCampaign.target_audience && (
-                    <div className="flex items-start gap-2">
-                      <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                    {currentMoodboard.comment && (
                       <div>
-                        <p className="text-sm font-medium">Target Audience</p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedCampaign.target_audience}
+                        <p className="text-sm font-medium">Description</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {currentMoodboard.comment}
                         </p>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>No moodboard selected</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-                  {selectedCampaign.colors &&
-                    selectedCampaign.colors.length > 0 && (
+            {/* Campaign Details */}
+            <Card>
+              <CardContent className="px-6 py-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Campaign Details</h3>
+                </div>
+
+                {currentCampaign ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium">
+                        {currentCampaign.campaign?.title ||
+                          `Campaign ${currentCampaign.id.slice(0, 8)}`}
+                      </h4>
+                      {currentCampaign.campaign?.description && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {currentCampaign.campaign.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {currentCampaign.target_audience && (
                       <div className="flex items-start gap-2">
-                        <Palette className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                        <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                         <div>
-                          <p className="text-sm font-medium">Colors</p>
-                          <div className="flex gap-1 mt-1">
-                            {selectedCampaign.colors.map((color, index) => (
-                              <div
-                                key={index}
-                                className="w-6 h-6 rounded-full border border-gray-200"
-                                style={{ backgroundColor: color }}
-                                title={color}
-                              />
-                            ))}
+                          <p className="text-sm font-medium">Target Audience</p>
+                          <p className="text-sm text-muted-foreground">
+                            {currentCampaign.target_audience}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentCampaign.colors &&
+                      currentCampaign.colors.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <Palette className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Colors</p>
+                            <div className="flex gap-1 mt-1">
+                              {currentCampaign.colors.map((color, index) => (
+                                <div
+                                  key={index}
+                                  className="w-6 h-6 rounded-full border border-gray-200"
+                                  style={{ backgroundColor: color }}
+                                  title={color}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                  {selectedCampaign.campaign?.tone &&
-                    selectedCampaign.campaign.tone.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium mb-2">Tone</p>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedCampaign.campaign.tone.map((tone, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {tone}
-                            </Badge>
-                          ))}
+                    {currentCampaign.campaign?.tone &&
+                      currentCampaign.campaign.tone.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Tone</p>
+                          <div className="flex flex-wrap gap-1">
+                            {currentCampaign.campaign.tone.map(
+                              (tone, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {tone}
+                                </Badge>
+                              )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  <p>No campaign selected</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>No campaign selected</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -345,93 +425,15 @@ export function ReferenceImage({
     <>
       <ContentSection title="Reference Setup" content={renderContent()} />
 
-      {/* Moodboard Selection Modal */}
-      <Dialog
-        open={isMoodboardModalOpen}
+      <MoodboardSelectionModal
+        isOpen={isMoodboardModalOpen}
         onOpenChange={setIsMoodboardModalOpen}
-      >
-        <DialogContent className="sm:w-lg md:min-w-4xl lg:min-w-6xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Select Reference Moodboard</DialogTitle>
-          </DialogHeader>
-
-          {getAllMoodboards().length ? (
-            <Carousel className="w-full mt-4">
-              <CarouselContent>
-                {getAllMoodboards().map((moodboard, index) => (
-                  <CarouselItem
-                    key={moodboard.id || index}
-                    className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4 m-2"
-                  >
-                    <Card
-                      className={`cursor-pointer transition-all hover:shadow-md h-full ${
-                        selectedMoodboard?.id === moodboard.id
-                          ? "ring-2 ring-primary"
-                          : ""
-                      } ${isUpdating ? "opacity-50 pointer-events-none" : ""}`}
-                      onClick={() => handleMoodboardSelect(moodboard)}
-                    >
-                      <CardContent className="p-4 h-full flex flex-col justify-between">
-                        <div className="flex-1 flex items-center justify-center relative mb-3">
-                          <img
-                            src={moodboard.asset_url}
-                            alt={moodboard.asset_title}
-                            className="w-full max-h-32 object-contain rounded-md"
-                          />
-                          {selectedMoodboard?.id === moodboard.id && (
-                            <div className="absolute top-2 right-2">
-                              <CheckCircle className="h-6 w-6 text-primary bg-white rounded-full" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-sm truncate">
-                            {moodboard.asset_title}
-                          </h4>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {moodboard.campaignTitle}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <Badge variant="secondary" className="text-xs">
-                              {moodboard.aspect_ratio}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {moodboard.media_format.toUpperCase()}
-                            </span>
-                          </div>
-                          {moodboard.comment && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {moodboard.comment}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-
-              <div className="flex justify-center mt-4">
-                <CarouselPrevious className="relative transform-none mx-2" />
-                <CarouselNext className="relative transform-none mx-2" />
-              </div>
-            </Carousel>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Image className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>No moodboards available</p>
-            </div>
-          )}
-
-          {isUpdating && (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-4">
-              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-              Updating reference...
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        moodboards={getAllMoodboards()}
+        selectedMoodboard={getCurrentMoodboard()}
+        isUpdating={isUpdating}
+        onSelect={handleMoodboardSelect}
+        campaignInformation={getCurrentCampaign()}
+      />
     </>
   );
 }

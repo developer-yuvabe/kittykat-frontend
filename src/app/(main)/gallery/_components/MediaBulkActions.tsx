@@ -5,19 +5,19 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { PiShareFat } from "react-icons/pi";
 
-interface BulkActionsProps {
+interface MediaBulkActionsProps {
   selectedCount: number;
   onUnselectAll: () => void;
   onDelete: () => void;
   onDownload: () => void;
 }
 
-export function BulkActions({
+export function MediaBulkActions({
   selectedCount,
   onUnselectAll,
   onDelete,
   onDownload,
-}: BulkActionsProps) {
+}: MediaBulkActionsProps) {
   return (
     <div className="fixed bottom-0 left-0  right-0 bg-white border-t shadow-lg py-3 px-4 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-end gap-x-2">

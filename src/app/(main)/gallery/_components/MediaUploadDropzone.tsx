@@ -7,7 +7,6 @@ import {
   X,
   Loader2,
   Check,
-  ChevronsUpDown,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
@@ -53,7 +52,7 @@ interface UploadDropzoneProps {
   brands: BrandCampaignListResponse["brands"];
 }
 
-export function UploadDropzone({
+export function MediaUploadDropzone({
   activeTab,
   onUploadComplete,
   addToGallery = true,
