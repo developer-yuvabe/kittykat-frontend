@@ -15,17 +15,9 @@ import {
 } from "@/components/ui/custom-icon";
 import MoodboardDetail from "../MoodboardDetail";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
-import { MoodboardAsset, ThreadBrand, ThreadCampaign } from "@/types/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  updateReferenceCampaignId,
-  updateReferenceMoodboardId,
-} from "@/hooks/useParameterManagement";
-import { parseAsBoolean, parseAsString, useQueryState } from "nuqs";
-import { submitOptimisticMessage } from "@/services/api/langgraph.service";
-import { useStreamContext } from "@/providers/langgraph/Stream";
-import { useBrandStore } from "@/store/brand.store";
-import { useUserStore } from "@/store/user.store";
+import { MoodboardAsset } from "@/types/types";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+
 
 interface MoodboardCardProps {
   moodboard: MoodboardAsset;
@@ -100,90 +92,48 @@ agentHint: use A2I_IMAGES_AGENT for this request
   return (
     <div className="relative rounded-lg overflow-hidden border border-gray-200 h-full flex flex-col group">
       {/* Top Right Actions */}
-      <div className="absolute top-1 right-2 z-10 flex space-x-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onExpand(moodboard.asset_url)}
-          className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
+      <div className="flex py-2 gap-x-1 justify-end px-2">
+        <TooltipIconButton
+          tooltip="Expand"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExpand(moodboard.asset_url);
+          }}
         >
           <ExpandIcon size={14} />
-        </Button>
+        </TooltipIconButton>
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-white p-1 rounded-full shadow hover:bg-gray-100"
-            >
+            <TooltipIconButton tooltip="Copy">
               <Copy size={14} />
-            </Button>
+            </TooltipIconButton>
           </PopoverTrigger>
           <PopoverContent
-            className="w-xl p-4 max-h-[700px] overflow-y-scroll"
+            className="w-xl p-4 max-h-[500px] overflow-y-scroll"
             side="right"
           >
-            <Tabs defaultValue="base-prompt" className="w-full">
-              <TabsList className="w-full ">
-                <TabsTrigger value="prompt">Prompt</TabsTrigger>
-                <TabsTrigger value="visual-description">
-                  Visual description
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="prompt" className="w-full">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Prompt</h4>
-                  <p className="text-sm text-gray-700">
-                    {moodboard.input_prompt}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-2"
-                    onClick={() =>
-                      handleCopy(moodboard.input_prompt!, "Prompt copied!")
-                    }
-                  >
-                    <Copy className="mr-2 h-4 w-4" /> Copy Prompt
-                  </Button>
-                </div>
-              </TabsContent>
-              <TabsContent value="visual-description">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Visual Description</h4>
-                  {moodboard.visual_description ? (
-                    <p className="text-sm text-gray-700">
-                      {moodboard.visual_description}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-gray-700">
-                      No visual description available.
-                    </p>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-2"
-                    onClick={() =>
-                      handleCopy(
-                        moodboard.visual_description!,
-                        "Visual description copied!"
-                      )
-                    }
-                  >
-                    <Copy className="mr-2 h-4 w-4" /> Copy Description
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-2">
+              <h4 className="font-medium">Moodboard prompt</h4>
+              <p className="text-sm text-gray-700">{moodboard.input_prompt}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full mt-2"
+                onClick={() =>
+                  handleCopy(moodboard.input_prompt!, "Prompt copied!")
+                }
+              >
+                <Copy className="mr-2 h-4 w-4" /> Copy Prompt
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
 
       {/* Image and Rating */}
       <div
-        className="relative aspect-square flex items-center justify-center group mt-10"
+        className="relative aspect-square flex items-center justify-center group border-l border-r"
         onClick={(e) => {
           e.stopPropagation();
           onExpand(moodboard.asset_url);
@@ -253,7 +203,7 @@ agentHint: use A2I_IMAGES_AGENT for this request
       </div>
 
       {/* Footer Actions */}
-      <div className="px-2 py-4 flex gap-x-2 justify-end bg-gray-50 mt-auto">
+      <div className="px-2 py-2 flex gap-x-2 justify-end bg-gray-50 mt-auto">
         <Button
           variant="default"
           size="sm"
