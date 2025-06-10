@@ -1,34 +1,45 @@
-import { Checkpoint, Message } from "@langchain/langgraph-sdk";
-import React from "react";
+import { Checkpoint } from "@langchain/langgraph-sdk";
+import React, { Dispatch, RefObject, SetStateAction } from "react";
 import { HumanMessage } from "../thread/messages/human";
 import {
   AssistantMessage,
   AssistantMessageLoading,
 } from "../thread/messages/ai";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
-import { StreamContextType } from "@/providers/langgraph/Stream";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { parseAsBoolean, useQueryState } from "nuqs";
 
 type ChatMessageListProps = {
-  messages: Message[];
-  isLoading: boolean;
   firstTokenReceived: boolean;
-  hasNoAIOrToolMessages: boolean;
-  stream: StreamContextType;
-  handleRegenerate: (parentCheckpoint?: Checkpoint | null) => void;
+  setFirstTokenReceived: Dispatch<SetStateAction<boolean>>;
+  prevMessageLength: RefObject<number>;
 };
 
 export const ChatMessageList: React.FC<ChatMessageListProps> = ({
-  messages,
-  isLoading,
   firstTokenReceived,
-  hasNoAIOrToolMessages,
-  stream,
-  handleRegenerate,
+  setFirstTokenReceived,
+  prevMessageLength,
 }) => {
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
+  );
+
+  const { messages, isLoading, interrupt, values, submit } = useStreamContext();
+
+  const handleRegenerate = (
+    parentCheckpoint: Checkpoint | null | undefined
+  ) => {
+    prevMessageLength.current = prevMessageLength.current - 1;
+    setFirstTokenReceived(false);
+    submit(undefined, {
+      checkpoint: parentCheckpoint,
+      streamMode: ["values"],
+    });
+  };
+
+  const hasNoAIOrToolMessages = !messages.find(
+    (m) => m.type === "ai" || m.type === "tool"
   );
 
   return (
@@ -54,7 +65,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
           );
         })}
 
-      {hasNoAIOrToolMessages && !!stream.interrupt && (
+      {hasNoAIOrToolMessages && !!interrupt && (
         <AssistantMessage
           key="interrupt-msg"
           message={undefined}
@@ -70,7 +81,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
         <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg w-max">
           <h3 className="text-gray-900 text-sm">
             Agent Triggered:{" "}
-            <span className="font-semibold">{stream.values.next}</span>
+            <span className="font-semibold">{values.next}</span>
           </h3>
         </div>
       )}
