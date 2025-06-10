@@ -41,14 +41,13 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         <CardSkeleton />
       ) : (
         <>
-          {
-            <BrandSection
-              brandingInformation={brandingInformation}
-              expandedSections={expandedSections}
-              setExpandedSections={setExpandedSections}
-              clearPinnedItems={removePinnedItem}
-            />
-          }
+          <BrandSection
+            brandingInformation={brandingInformation}
+            expandedSections={expandedSections}
+            setExpandedSections={setExpandedSections}
+            clearPinnedItems={removePinnedItem}
+          />
+
           {campaignInformation ? (
             <CampaignSection
               campaignInformation={campaignInformation}
