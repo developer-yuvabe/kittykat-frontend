@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, X, FileText as FileTextIcon } from "lucide-react";
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import UrlUploadDialog from "./UrlUploadDialog";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import {
@@ -186,6 +192,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     ]
   );
 
+  // Inside ChatInput component
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const updatePlaceholderVisibility = () => {
+      const width = textareaRef.current?.offsetWidth || 0;
+      setShowPlaceholder(width > 150); // threshold, adjust as needed
+    };
+
+    updatePlaceholderVisibility();
+
+    const observer = new ResizeObserver(updatePlaceholderVisibility);
+    if (textareaRef.current) {
+      observer.observe(textareaRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
       ref={dropRef}
@@ -240,6 +266,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <ChatFilePreview blocks={contentBlocks} onRemove={removeBlock} />
         <div className="flex flex-row justify-between">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -255,8 +282,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 form?.requestSubmit();
               }
             }}
-            placeholder="Type your message here..."
-            className="p-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
+            placeholder={
+              showPlaceholder ? "Type your message here..." : "Type here..."
+            }
+            className="p-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0  resize-none pr-24  overflow-auto scrollbar"
             onPaste={handlePaste}
           />
 

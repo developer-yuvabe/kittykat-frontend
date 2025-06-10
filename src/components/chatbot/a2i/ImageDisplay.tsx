@@ -45,7 +45,6 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   const [copied, setCopied] = useState(false);
   const [copyPopoverOpen, setCopyPopoverOpen] = useState(false);
   const [metadataPopoverOpen, setMetadataPopoverOpen] = useState(false);
-  console.log("s", selectionTriggered);
 
   const handleCopyPrompt = async () => {
     try {

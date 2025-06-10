@@ -33,14 +33,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   return (
     <div
-      className={`w-full min-h-full h-full rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
-        !isLargeScreen ? "hidden md:flex" : ""
+      className={`rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
+        isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
       {threadsLoading || isFetchingBrandInfo ? (
         <CardSkeleton />
       ) : (
-        <>
+        <div>
           <BrandSection
             brandingInformation={brandingInformation}
             expandedSections={expandedSections}
@@ -87,7 +87,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               campaignInformation={campaignInformation}
             />
           )} */}
-        </>
+        </div>
       )}
     </div>
   );

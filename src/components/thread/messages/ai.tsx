@@ -9,7 +9,7 @@ import { MessageContentComplex } from "@langchain/core/messages";
 import { parsePartialJson } from "@langchain/core/output_parsers";
 import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { parseAsBoolean, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ThreadView } from "../agent-inbox";
 import { MarkdownText } from "../markdown-text";
 import { getContentString } from "../utils";
@@ -50,7 +50,7 @@ export function AssistantMessage({
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
 }) {
   const content = message?.content ?? [];
-  const contentString = getContentString(content);
+  const contentString = useMemo(() => getContentString(content), [content]);
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false)
@@ -178,7 +178,6 @@ export function AssistantMessageLoading({
   tool?: { name?: string } | null;
 }) {
   const [currentMessage, setCurrentMessage] = useState<string | null>(null);
-  const [messageIndex, setMessageIndex] = useState(0);
 
   // Get loading message configuration based on tool name
   const loadingConfig = tool?.name ? getLoadingMessageForTool(tool.name) : null;
@@ -199,21 +198,9 @@ export function AssistantMessageLoading({
 
     // After 3 seconds, start showing extended loading messages
     const initialTimeout = setTimeout(() => {
-      setMessageIndex(0);
       setCurrentMessage(extendedLoadingMessages[0]);
 
-      // Rotate through extended messages every 4 seconds
-      const messageInterval = setInterval(() => {
-        setMessageIndex((prevIndex: number) => {
-          const nextIndex = (prevIndex + 1) % extendedLoadingMessages.length;
-          setCurrentMessage(extendedLoadingMessages[nextIndex]);
-          return nextIndex;
-        });
-      }, 4000);
-
-      return () => {
-        clearInterval(messageInterval);
-      };
+      return () => {};
     }, 4000);
 
     return () => {
