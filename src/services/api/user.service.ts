@@ -23,6 +23,8 @@ export const updateUser = async (
       axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
     );
 
+    console.log("Updated user:", updatedUser);
+
     return updatedUser;
   } catch (error) {
     console.error("Error updating user:", error);

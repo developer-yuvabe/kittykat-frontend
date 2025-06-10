@@ -164,7 +164,6 @@ export function HumanMessage({
   message: Message;
   isLoading: boolean;
 }) {
-  console.log("humanmsg", message.id);
   const thread = useStreamContext();
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
