@@ -147,9 +147,6 @@ agentHint: use A2I_IMAGES_AGENT for this request
           onExpand(moodboard.asset_url);
         }}
       >
-        {/* Curvy gradient overlay at top-right */}
-        {/* <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-br from-black/50 to-transparent rounded-bl-[10%]"></div> */}
-        {/* Bottom-to-top gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
 
         <img

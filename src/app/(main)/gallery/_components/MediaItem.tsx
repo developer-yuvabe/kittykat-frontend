@@ -367,7 +367,6 @@ export function MediaItem({
           onClick={handleFavoriteClick}
         >
           <Heart
-            color={!item.is_favourite ? "#000000" : ""}
             className={`h-4 w-4 transition-all duration-300 ${
               item.is_favourite ? "fill-red-500 text-red-500" : "text-white"
             }`}
