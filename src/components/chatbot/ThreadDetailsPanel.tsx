@@ -3,10 +3,10 @@ import { useThreads } from "@/providers/langgraph/Thread";
 import { useBrandStore } from "@/store/brand.store";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import React from "react";
-import { CardSkeleton } from "../thread/messages/message-skeleton";
 import A2iImagesSection from "./a2i/A2iImagesSection";
 import {
   campaignFields,
+  InitialPlaceHolder,
   PlaceholderSection,
 } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
@@ -24,7 +24,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   }>({ brandOverview: true });
   const { threadsLoading } = useThreads();
   const { removePinnedItem } = usePinnedContextStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
 
   const brandingInformation = data?.brand_information;
@@ -37,8 +37,8 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
-      {threadsLoading || isFetchingBrandInfo ? (
-        <CardSkeleton />
+      {threadsLoading || isFetchingBrandInfo || !isBrandsFetched ? (
+        <InitialPlaceHolder isLoading />
       ) : (
         <div>
           <BrandSection
@@ -74,19 +74,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             />
           )}
 
-          {
-            <A2iImagesSection
-              a2iImageInformation={a2iImageInformation}
-              campaignInformation={campaignInformation}
-            />
-          }
-
-          {/* {campaignInformation && campaignInformation?.length > 0 && (
-            <A2iVideosSection
-              a2iImageInformation={a2iImageInformation}
-              campaignInformation={campaignInformation}
-            />
-          )} */}
+          <A2iImagesSection
+            a2iImageInformation={a2iImageInformation}
+            campaignInformation={campaignInformation}
+          />
         </div>
       )}
     </div>
