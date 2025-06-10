@@ -132,3 +132,12 @@ export const uploadThreadFile = async (
     );
   }
 };
+
+export async function deleteA2iImage(
+  brand_id: string,
+  image_id: string
+): Promise<{ brand_id: string; image_id: string }> {
+  return handleApiRequest<{ brand_id: string; image_id: string }>(
+    axiosInstance.delete(`/brands/${brand_id}/images/${image_id}`)
+  );
+}

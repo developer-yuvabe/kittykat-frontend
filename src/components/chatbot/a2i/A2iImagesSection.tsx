@@ -66,7 +66,10 @@ export default function A2iImagesSection({
               brandId={selectedBrandId || ""} // Ensure brandId is defined
             />
 
-            <A2IImages generatedImages={a2iImageInformation?.images || []} />
+            <A2IImages
+              generatedImages={a2iImageInformation?.images || []}
+              brandId={selectedBrandId || ""}
+            />
           </CardContent>
         )}
       </Card>
