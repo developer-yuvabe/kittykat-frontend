@@ -733,22 +733,15 @@ export function MediaItemDetailsDialog({
                   { value: "failed", label: "Failed" },
                 ]
               )}
-              {renderEditableField(
-                "Brand ID",
-                "brand_id",
-                displayItem.brand_id
-              )}
-              {renderEditableField(
-                "Created By",
-                "created_by",
-                displayItem.created_by
-              )}
-              {renderEditableField(
-                "Size (Bytes)",
-                "size_bytes",
-                displayItem.size_bytes,
-                "number"
-              )}
+
+              {displayItem.size_bytes !== undefined &&
+                renderEditableField(
+                  "Size (Bytes)",
+                  "size_bytes",
+                  displayItem.size_bytes,
+                  "number",
+                  false
+                )}
               {renderEditableField(
                 "Aspect Ratio",
                 "aspect_ratio",
