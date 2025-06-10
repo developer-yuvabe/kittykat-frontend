@@ -15,9 +15,17 @@ import {
 } from "@/components/ui/custom-icon";
 import MoodboardDetail from "../MoodboardDetail";
 import { updateCampaignMoodboard } from "@/services/api/brand.service";
-import { MoodboardAsset } from "@/types/types";
+import { MoodboardAsset, ThreadBrand, ThreadCampaign } from "@/types/types";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-
+import { parseAsBoolean, parseAsString, useQueryState } from "nuqs";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
+import {
+  updateReferenceCampaignId,
+  updateReferenceMoodboardId,
+} from "@/hooks/useParameterManagement";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 
 interface MoodboardCardProps {
   moodboard: MoodboardAsset;
