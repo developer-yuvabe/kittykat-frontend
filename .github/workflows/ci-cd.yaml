@@ -91,5 +91,5 @@ jobs:
             --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
             --set-env-vars=USE_SECURE_COOKIES='${{ secrets.USE_SECURE_COOKIES }}' \
             --set-env-vars=NEXT_PUBLIC_ENVIRONMENT='${{ secrets.NEXT_PUBLIC_ENVIRONMENT }}' \
-            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}'
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}' \
             --set-env-vars=NEXT_PUBLIC_LANGSMITH_API_KEY='${{ secrets.NEXT_PUBLIC_LANGSMITH_API_KEY }}'
