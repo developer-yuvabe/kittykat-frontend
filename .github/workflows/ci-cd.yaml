@@ -62,7 +62,7 @@ jobs:
             --build-arg AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
             --build-arg USE_SECURE_COOKIES='${{ secrets.USE_SECURE_COOKIES }}' \
             --build-arg NEXT_PUBLIC_ENVIRONMENT='${{ secrets.NEXT_PUBLIC_ENVIRONMENT }}' \
-            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}'
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}' \
             --build-arg NEXT_PUBLIC_LANGSMITH_API_KEY='${{ secrets.NEXT_PUBLIC_LANGSMITH_API_KEY }}'
 
       - name: Push the image to the Google Artifact Registry
