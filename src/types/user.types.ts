@@ -2,7 +2,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  thread_id?: string;
+  thread_id?: string | null;
   brand_access?: UserBrand[];
   role: UserRole;
 };

@@ -10,6 +10,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+
+import { useRemixStore } from "@/store/remix.store";
 import { useState } from "react";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
@@ -22,17 +24,21 @@ import { GalleryItem } from "@/types/gallery.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { handleDownloadImage } from "@/lib/utils";
 
+
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
   brandId: string;
   campaignId: string;
 };
 
+
 export const A2IImages = ({
   generatedImages,
   brandId,
   campaignId,
 }: A2IImagesProps) => {
+    const { setRemixUrl, setRemixSize } = useRemixStore();
+
   // State for selected items and dialog
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,8 +53,9 @@ export const A2IImages = ({
     console.log("Creating video for image:", imageId);
   };
 
-  const handleRemixImage = (imageId: string) => {
-    console.log("Remixing image:", imageId);
+  const handleRemixImage = (url: string, size: string) => {
+    setRemixUrl(url);
+    setRemixSize(size);
   };
 
   const handleUnselectAll = () => {
@@ -228,9 +235,13 @@ export const A2IImages = ({
                             },
                             {
                               label: "Remix",
-                              onClick: () => handleRemixImage(image.id),
-                              color: "#EA916E",
-                              hoverColor: "#e7845d",
+                              onClick: () =>
+                                handleRemixImage(
+                                  image.url,
+                                  image.parameters?.size
+                                ),
+                              color: "#E7845d",
+                              hoverColor: "#EA916E",
                             },
                           ]}
                         />

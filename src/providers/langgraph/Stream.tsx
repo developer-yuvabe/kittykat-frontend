@@ -19,6 +19,7 @@ import { env } from "@/config/env";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
 import { Loader2 } from "lucide-react";
+import { client } from "./langgraph.client";
 
 export type StateType = {
   messages: Message[];
@@ -56,15 +57,40 @@ const StreamSession = ({
   apiUrl: string;
   assistantId: string;
 }) => {
+  const [isValidThread, setIsValidThread] = useState<boolean>(false);
   const { user, setUser } = useUserStore();
   if (!user) {
     console.log("User ID: if not found, debug this is IMPORTANT");
   }
+
+  useEffect(() => {
+    if (user?.thread_id) {
+      client.threads
+        .get(user.thread_id)
+        .then(() => {
+          setIsValidThread(true);
+        })
+        .catch(() => {
+          console.info("Thread not found, resetting user thread_id");
+          setIsValidThread(false);
+          updateUser(user!.id, {
+            thread_id: null,
+          });
+          setUser({
+            ...user!,
+            thread_id: null,
+          });
+        });
+    }
+  }, []);
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
-    threadId: user?.thread_id,
+    ...(isValidThread && {
+      threadId: user!.thread_id,
+    }),
     onThreadId: (id) => {
       updateUser(user!.id, {
         thread_id: id,

@@ -15,8 +15,8 @@ export const useUserBrands = (userId?: string) => {
     setSelectedBrandId,
   } = useBrandStore();
   const { user } = useUserStore();
-  const { data } = useQuery({
-    queryKey: ["bands"],
+  const { data, error } = useQuery({
+    queryKey: ["brands"],
     queryFn: () => fetchUserBrands(user!.id),
   });
 
@@ -25,7 +25,11 @@ export const useUserBrands = (userId?: string) => {
       setBrands(data);
       setIsBrandsFetched(true);
     }
-  }, [data]);
+
+    if (error) {
+      console.error("Error fetching user brands:", error);
+    }
+  }, [data, error]);
 
   useEffect(() => {
     if (!userId) return;
