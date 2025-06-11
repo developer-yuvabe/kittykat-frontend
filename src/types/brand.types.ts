@@ -1,6 +1,3 @@
-import { createBrandSchema, urlExtractionSchema } from "@/schema/brand.schema";
-import { z } from "zod";
-
 export interface Brand {
   name: string;
   tagline: string;
@@ -134,10 +131,6 @@ export interface BrandsListResponse {
 export interface BrandURLRequest {
   brand_url: string;
 }
-
-// Type for the form values
-export type BrandFormValues = z.infer<typeof createBrandSchema>;
-export type UrlExtractionFormValues = z.infer<typeof urlExtractionSchema>;
 
 export interface PresignedURLRequest {
   file_name: string;

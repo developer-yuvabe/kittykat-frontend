@@ -1,13 +1,17 @@
 import React from "react";
-import { capitalizeKey, formatUpdateMessage } from "@/lib/langgraph.utils";
+import {
+  capitalizeKey,
+  formatUpdateArrayMessage,
+  formatUpdateMessage,
+} from "@/lib/langgraph.utils";
 import { ContentSection } from "../shared/ContentSection";
-import { Badge } from "../ui/badge";
 import { Agents } from "@/types/types";
 import { InlineEditableField } from "../shared/InlineEditableField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { InlineEditableBadges } from "../shared/InlineEditableBadges";
 
 interface DynamicContentSectionProps {
   dynamicData: Record<string, unknown>;
@@ -73,17 +77,29 @@ const RenderValue: React.FC<{
     }
 
     if (value.every((item) => typeof item !== "object" || item === null)) {
+      const items = value.map((item) => String(item));
       return (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {value.map((item, idx) => (
-            <Badge
-              key={idx}
-              variant="outline"
-              className="text-xs bg-gray-50 text-gray-700 border-gray-200"
-            >
-              {String(item)}
-            </Badge>
-          ))}
+        <div className="mt-1">
+          <InlineEditableBadges
+            values={items}
+            onSave={async (newValues) => {
+              const message = formatUpdateArrayMessage(
+                path, // fieldPath
+                items, // old value
+                newValues, // new value
+                "BrandingAgent" // optional agent hint
+              );
+              if (message) {
+                submitOptimisticMessage({
+                  stream,
+                  text: message,
+                  userId: user!.id,
+                  currentBrandContextId: selectedBrandId,
+                });
+              }
+            }}
+            showLabel={false} // set to true and pass a label if needed
+          />
         </div>
       );
     } else {

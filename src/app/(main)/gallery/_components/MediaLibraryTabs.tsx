@@ -9,7 +9,7 @@ function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
     { value: "all-media", label: "All Media" },
     { value: "moodboard", label: "Moodboards" },
     { value: "images", label: "Images" },
-    { value: "videos", label: "Videos" },
+    // { value: "videos", label: "Videos" },
     { value: "models", label: "Models" },
     { value: "products", label: "Products" },
   ];

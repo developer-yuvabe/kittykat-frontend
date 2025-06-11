@@ -6,14 +6,10 @@ import { CgAttachment } from "react-icons/cg";
 import { Loader2 } from "lucide-react"; // Loader icon
 
 interface FileUploaderProps {
-  prefix: string | null;
   onUploadComplete: (url: string) => void;
 }
 
-export default function FileUploader({
-  prefix,
-  onUploadComplete,
-}: FileUploaderProps) {
+export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

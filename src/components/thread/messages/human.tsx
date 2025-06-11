@@ -1,4 +1,4 @@
-import React, { JSX, useEffect } from "react";
+import React, { JSX, useEffect, useMemo } from "react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { Message } from "@langchain/langgraph-sdk";
 import { useState } from "react";
@@ -66,7 +66,6 @@ function FileAttachment({
   fileName,
 }: FileAttachmentProps): JSX.Element {
   const { contentType, isLoading } = useFileContentType(fileUrl);
-  const [isHovered, setIsHovered] = useState<boolean>(false);
 
   // Get file name from URL if not provided
   const displayName = fileName || fileUrl.split("/").pop() || "File";
@@ -117,8 +116,6 @@ function FileAttachment({
     <div
       className="flex items-center p-3 bg-gray-100 rounded-lg max-w-xs hover:bg-gray-200 cursor-pointer transition-colors"
       onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex-shrink-0 mr-3">{getFileIcon()}</div>
       <div className="overflow-hidden">
@@ -156,7 +153,6 @@ function EditableContent({
     />
   );
 }
-
 export function HumanMessage({
   message,
   isLoading,
@@ -167,22 +163,32 @@ export function HumanMessage({
   const thread = useStreamContext();
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
+
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
 
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState("");
-  const contentString = removeKittyKatTags(getContentString(message.content));
 
-  // Check if this is a file message
-  const isFileMessage =
-    message.id && message.id.startsWith(RENDER_FILE_ID_PREFIX);
+  const contentString = useMemo(
+    () => removeKittyKatTags(getContentString(message.content)),
+    [message.content]
+  );
+
+  const isFileMessage = message.id?.startsWith(RENDER_FILE_ID_PREFIX) ?? false;
   const fileUrl = isFileMessage ? contentString : null;
+
+  const isContentBlock = (block: unknown): block is ContentBlock =>
+    typeof block === "object" &&
+    block !== null &&
+    "type" in block &&
+    "source_type" in block &&
+    ["file", "image", "audio"].includes((block as any).type);
 
   const handleSubmitEdit = () => {
     setIsEditing(false);
-
     const newMessage: Message = { type: "human", content: value };
+
     thread.submit(
       {
         messages: [newMessage],
@@ -205,24 +211,14 @@ export function HumanMessage({
     );
   };
 
-  const isContentBlock = (block: unknown): block is ContentBlock => {
-    return (
-      typeof block === "object" &&
-      block !== null &&
-      "type" in block &&
-      "source_type" in block &&
-      ["file", "image", "audio"].includes((block as any).type)
-    );
-  };
-
   return (
     <div
       className={cn(
-        "flex items-center w-[90%] justify-end   ml-auto gap-2 group",
+        "flex items-center justify-end w-[90%] ml-auto gap-2 group",
         isEditing && "w-full max-w-lg"
       )}
     >
-      <div className={cn("flex flex-col  gap-2", isEditing && "w-full")}>
+      <div className={cn("flex flex-col gap-2", isEditing && "w-full")}>
         {isEditing ? (
           <EditableContent
             value={value}
@@ -231,46 +227,42 @@ export function HumanMessage({
           />
         ) : (
           <div className={cn("ml-auto", isFileMessage && "mt-4")}>
-            {/* Render images and files if no text */}
             {Array.isArray(message.content) && message.content.length > 0 && (
-              <div className="flex flex-wrap  items-end mb-3 justify-end gap-2">
-                {message.content.map((block, idx) =>
-                  isContentBlock(block) ? (
-                    <FilePreview key={idx} block={block} size="md" />
-                  ) : null
+              <div className="flex flex-wrap items-end justify-end gap-2 mb-3">
+                {message.content.map(
+                  (block, idx) =>
+                    isContentBlock(block) && (
+                      <FilePreview key={idx} block={block} size="md" />
+                    )
                 )}
               </div>
             )}
 
-            {/* Render text if present, otherwise fallback to file/image name */}
             {isFileMessage ? (
-              <div className="ml-auto ">
-                {fileUrl && (
-                  <div className="mb-2">
-                    <FileAttachment
-                      fileUrl={fileUrl}
-                      fileName={
-                        new URL(fileUrl).pathname.split("/").pop() ||
-                        "Uploaded File"
-                      }
-                    />
-                  </div>
-                )}
-              </div>
+              fileUrl && (
+                <div className="ml-auto mb-2">
+                  <FileAttachment
+                    fileUrl={fileUrl}
+                    fileName={
+                      new URL(fileUrl).pathname.split("/").pop() ??
+                      "Uploaded File"
+                    }
+                  />
+                </div>
+              )
             ) : (
-              <p
-                className={`px-4 py-2 bg-blue-100 rounded-2xl  w-fit ml-auto whitespace-pre-wrap break-words`}
-              >
+              <p className="px-4 py-2 bg-blue-100 rounded-2xl w-fit ml-auto whitespace-pre-wrap break-words">
                 {contentString}
               </p>
             )}
           </div>
         )}
+
         {!isFileMessage && (
           <div
             className={cn(
-              "flex gap-2 items-center ml-auto transition-opacity",
-              "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+              "flex items-center gap-2 ml-auto transition-opacity",
+              "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
               isEditing && "opacity-100"
             )}
           >
@@ -284,14 +276,12 @@ export function HumanMessage({
               isLoading={isLoading}
               content={contentString}
               isEditing={isEditing}
-              setIsEditing={(c) => {
-                if (c) {
-                  setValue(contentString);
-                }
-                setIsEditing(c);
+              setIsEditing={(editing) => {
+                if (editing) setValue(contentString);
+                setIsEditing(editing);
               }}
               handleSubmitEdit={handleSubmitEdit}
-              isHumanMessage={true}
+              isHumanMessage
             />
           </div>
         )}

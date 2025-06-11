@@ -179,3 +179,28 @@ export const formatToLocalTime = (dateString: string) => {
     return dateString;
   }
 };
+
+export function getChatLayoutConfig(isLargeScreen: boolean) {
+  return {
+    containerHeight: isLargeScreen
+      ? "h-[calc(100vh-8rem)]"
+      : "h-[calc(100vh-6rem)]",
+    containerPadding: isLargeScreen ? "px-4" : "px-3",
+    threadPanelDefault: isLargeScreen ? 60 : 50, // decreased
+    threadPanelMin: isLargeScreen ? 20 : 30, // decreased
+    threadPanelMax: isLargeScreen ? 70 : 60, // decreased
+
+    chatPanelDefault: isLargeScreen ? 40 : 50, // increased
+    chatPanelMin: isLargeScreen ? 30 : 40, // increased
+    chatPanelMax: isLargeScreen ? 80 : 70, // increased
+
+    handleMargin: isLargeScreen ? "mx-3" : "mx-2",
+    contentPadding: isLargeScreen ? "px-4" : "px-3",
+    contentPaddingTop: isLargeScreen ? "pt-8" : "pt-6",
+    logoSize: {
+      width: isLargeScreen ? 100 : 90,
+      height: isLargeScreen ? 40 : 36,
+    },
+    marginTop: isLargeScreen ? "mt-[15vh]" : "mt-[10vh]",
+  };
+}

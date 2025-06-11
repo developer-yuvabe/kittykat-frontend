@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { capitalizeKey } from "@/lib/langgraph.utils";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type ImageDisplayProps = {
   src: string;
@@ -22,6 +23,12 @@ type ImageDisplayProps = {
   handleLikeDislike?: (liked: boolean) => void;
   prompt?: string;
   metadata?: Record<string, any>;
+  checkbox?: {
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+  };
+  onDelete?: () => void;
+  selectionTriggered?: boolean;
 };
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({
@@ -32,6 +39,9 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   handleLikeDislike,
   prompt = "",
   metadata = {},
+  checkbox,
+  onDelete,
+  selectionTriggered = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -69,16 +79,24 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
     <div className={`relative group ${className}`}>
       {/* Top Action Icons */}
       <div className="flex justify-end gap-x-1 pb-2">
-        <TooltipIconButton tooltip="Remove">
+        <TooltipIconButton
+          tooltip="Remove"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete?.();
+          }}
+        >
           <CircleX size={20} className="cursor-pointer" />
         </TooltipIconButton>
         {/* Expand Icon with Modal Trigger */}
-        <TooltipIconButton tooltip="Expand">
-          <Expand
-            size={20}
-            className="cursor-pointer"
-            onClick={() => setIsModalOpen(true)}
-          />
+        <TooltipIconButton
+          tooltip="Expand"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsModalOpen(true);
+          }}
+        >
+          <Expand size={20} />
         </TooltipIconButton>
         {/* Copy Icon with Popover */}
         <Popover open={copyPopoverOpen} onOpenChange={setCopyPopoverOpen}>
@@ -159,8 +177,24 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
       >
         <img src={src} alt={alt} className="w-full h-full" />
       </div>
+      {checkbox && (
+        <div
+          className={`absolute top-8 left-0 z-10 w-full text-white ${
+            !selectionTriggered
+              ? "opacity-0 group-hover:opacity-100"
+              : "opacity-100"
+          } bg-gradient-to-b from-black/85 transition-opacity duration-200`}
+        >
+          <Checkbox
+            checked={checkbox.checked}
+            onCheckedChange={checkbox.onCheckedChange}
+            className="mt-2 ml-2"
+          />
+        </div>
+      )}
 
       {/* Like/Dislike Hover Bar */}
+
       <div className="absolute bottom-0 w-full py-3 px-4 flex items-center justify-between text-white bg-gradient-to-t from-black/85 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <div className="text-sm font-medium shadow-2xl">Rate this image</div>
         <div className="flex space-x-5">

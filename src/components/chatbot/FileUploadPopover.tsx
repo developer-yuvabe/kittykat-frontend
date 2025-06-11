@@ -6,7 +6,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
-import { useQueryState } from "nuqs";
+import { useUserStore } from "@/store/user.store";
 
 type FileTriggerType = "image" | "file";
 
@@ -19,7 +19,8 @@ export function FileUploadPopover({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [threadId] = useQueryState("threadId");
+  const { user } = useUserStore();
+
   const [acceptType, setAcceptType] = useState<string>("");
   const [open, setOpen] = useState(false);
 
@@ -30,8 +31,8 @@ export function FileUploadPopover({
     setTimeout(() => fileInputRef.current?.click(), 0);
   };
 
-  const disabled = isFileUploading || !threadId;
-  const tooltipText = !threadId
+  const disabled = isFileUploading || !user?.thread_id;
+  const tooltipText = !user?.thread_id
     ? "Initiate a conversation to upload a file"
     : "Add Photos and Files";
 
