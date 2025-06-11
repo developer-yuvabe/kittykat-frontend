@@ -68,6 +68,7 @@ export default function A2iImagesSection({
 
             <A2IImages
               generatedImages={a2iImageInformation?.images || []}
+              campaignId={a2iImageInformation?.reference_campaign_id || ""}
               brandId={selectedBrandId || ""}
             />
           </CardContent>

@@ -18,18 +18,28 @@ import { Trash2, Download, Send, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { PiShareFat } from "react-icons/pi";
+import { GalleryItem } from "@/types/gallery.types";
+import { useGalleryQuery } from "@/hooks/useGallery";
 import { handleDownloadImage } from "@/lib/utils";
 
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
   brandId: string;
+  campaignId: string;
 };
 
-export const A2IImages = ({ generatedImages, brandId }: A2IImagesProps) => {
+export const A2IImages = ({
+  generatedImages,
+  brandId,
+  campaignId,
+}: A2IImagesProps) => {
   // State for selected items and dialog
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
+  const { addToGallery } = useGalleryQuery({});
   const selectionTriggered = selectedItems.length > 0;
 
   // Handlers for actions
@@ -68,6 +78,11 @@ export const A2IImages = ({ generatedImages, brandId }: A2IImagesProps) => {
     }
   };
 
+  const handleSingleDeleteClick = (imageId: string) => {
+    setSingleDeleteId(imageId);
+    setIsDialogOpen(true);
+  };
+
   const handleBulkDeleteClick = () => {
     if (selectedItems.length > 0) {
       setIsDialogOpen(true);
@@ -77,17 +92,82 @@ export const A2IImages = ({ generatedImages, brandId }: A2IImagesProps) => {
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      for (const imageId of selectedItems) {
-        await deleteA2iImage(brandId, imageId);
+      if (singleDeleteId) {
+        await deleteA2iImage(brandId, singleDeleteId);
+        toast.success("Image deleted");
+        setSingleDeleteId(null);
+      } else {
+        for (const imageId of selectedItems) {
+          await deleteA2iImage(brandId, imageId);
+        }
+        toast.success(`Images Deleted`);
+        console.log("Deleting items:", selectedItems);
+        setSelectedItems([]);
       }
-      toast.success(`Images Deleted`);
-      console.log("Deleting items:", selectedItems);
-      setSelectedItems([]);
     } catch (error) {
       console.error("Bulk delete error:", error);
     } finally {
       setIsDeleting(false);
       setIsDialogOpen(false);
+      setSingleDeleteId(null);
+    }
+  };
+
+  const handleAddToLibrary = async () => {
+    if (selectedItems.length === 0 || !brandId) {
+      toast.error("No images selected or brand ID missing");
+      return;
+    }
+
+    const selectedImages = generatedImages.filter((item) =>
+      selectedItems.includes(item.id)
+    );
+
+    const toastId = toast.loading("Adding Images to Library...");
+
+    try {
+      for (const image of selectedImages) {
+        if (image.url) {
+          const galleryItem: GalleryItem = {
+            asset_type: "generated",
+            asset_source: "images",
+            asset_title: `Image ${image.id}`,
+            asset_url: image.url,
+            input_prompt: image.prompt || "",
+            size: image.parameters?.size || "", // Use size from parameters
+            media_format: image.parameters?.output_format || "webp", // Use output_format from parameters
+            is_favourite: false,
+            workflow_status: "draft",
+            user_feedback: "neutral",
+            is_archived: false,
+            brand_id: brandId,
+            related_asset_ids: [],
+            prompt_modifiers: [],
+            ai_tags: [],
+            visual_style_tags: [],
+            detected_objects: [],
+            detected_emotions: [],
+            detected_colors: [],
+            intent_tags: [],
+            search_keywords: [],
+            custom_tags: [],
+            campaign_id: campaignId,
+          };
+          console.log("gallery items", galleryItem);
+          try {
+            await addToGallery(galleryItem);
+          } catch (error) {
+            console.error("Failed to add to library", error);
+          }
+        }
+      }
+      toast.success(`${selectedImages.length} image(s) added to library`);
+      setSelectedItems([]);
+    } catch (error) {
+      console.error("Failed to add to library", error);
+      toast.error("Failed to add images to library");
+    } finally {
+      toast.dismiss(toastId);
     }
   };
 
@@ -133,6 +213,7 @@ export const A2IImages = ({ generatedImages, brandId }: A2IImagesProps) => {
                               onCheckedChange: (checked: boolean) =>
                                 handleCheckboxChange(image.id, checked),
                             }}
+                            onDelete={() => handleSingleDeleteClick(image.id)}
                             selectionTriggered={selectionTriggered}
                           />
                         </div>
@@ -196,6 +277,7 @@ export const A2IImages = ({ generatedImages, brandId }: A2IImagesProps) => {
                 <Button
                   variant="default"
                   className="flex items-center gap-2 bg-[#9095A0] hover:bg-[#9095A0]"
+                  onClick={handleAddToLibrary}
                 >
                   <span>Add to library</span>
                   <BookOpen className="pt-[2px]" />
@@ -211,9 +293,18 @@ export const A2IImages = ({ generatedImages, brandId }: A2IImagesProps) => {
           {/* Delete Confirmation Dialog */}
           <ReusableAlertDialog
             open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) {
+                setSingleDeleteId(null);
+              }
+            }}
             title="Delete Items"
-            description={`Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`}
+            description={
+              singleDeleteId
+                ? "Are you sure you want to delete this image? This action cannot be undone."
+                : `Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`
+            }
             confirmLabel="Delete"
             cancelLabel="Cancel"
             onConfirm={handleConfirmDelete}

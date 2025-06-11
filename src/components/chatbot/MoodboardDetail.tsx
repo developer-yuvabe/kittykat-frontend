@@ -108,6 +108,7 @@ export default function MoodboardDetail({
   };
 
   const handleAddToLibrary = async () => {
+    const toastId = toast.loading("Adding Image to Library...");
     if (moodboard.asset_url && brandId) {
       const galleryItem: GalleryItem = {
         asset_type: "generated",
@@ -136,10 +137,14 @@ export default function MoodboardDetail({
       };
 
       try {
-        addToGallery(galleryItem);
+        await addToGallery(galleryItem);
         console.log("Added to library successfully");
+        toast.success("Image Added to library Successfully");
       } catch (error) {
         console.error("Failed to add to library", error);
+        toast.error("Failed to add Image");
+      } finally {
+        toast.dismiss(toastId);
       }
     }
   };

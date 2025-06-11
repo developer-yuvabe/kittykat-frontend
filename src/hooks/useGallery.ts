@@ -124,7 +124,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-      toast.success("Item added to gallery");
+      // toast.success("Item added to gallery");
     },
     onError: () => {
       toast.error("Failed to add item to gallery");
@@ -472,7 +472,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
     useGalleryItem,
 
     // Mutations
-    addToGallery: addToGalleryMutation.mutate,
+    addToGallery: addToGalleryMutation.mutateAsync,
     isAddingToGallery: addToGalleryMutation.isPending,
 
     updateItem: updateItemMutation.mutate,

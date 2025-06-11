@@ -27,6 +27,7 @@ type ImageDisplayProps = {
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
   };
+  onDelete?: () => void;
   selectionTriggered?: boolean;
 };
 
@@ -39,6 +40,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   prompt = "",
   metadata = {},
   checkbox,
+  onDelete,
   selectionTriggered = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,16 +79,24 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
     <div className={`relative group ${className}`}>
       {/* Top Action Icons */}
       <div className="flex justify-end gap-x-1 pb-2">
-        <TooltipIconButton tooltip="Remove">
+        <TooltipIconButton
+          tooltip="Remove"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete?.();
+          }}
+        >
           <CircleX size={20} className="cursor-pointer" />
         </TooltipIconButton>
         {/* Expand Icon with Modal Trigger */}
-        <TooltipIconButton tooltip="Expand">
-          <Expand
-            size={20}
-            className="cursor-pointer"
-            onClick={() => setIsModalOpen(true)}
-          />
+        <TooltipIconButton
+          tooltip="Expand"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsModalOpen(true);
+          }}
+        >
+          <Expand size={20} />
         </TooltipIconButton>
         {/* Copy Icon with Popover */}
         <Popover open={copyPopoverOpen} onOpenChange={setCopyPopoverOpen}>
