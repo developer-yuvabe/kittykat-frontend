@@ -308,13 +308,6 @@ export const InitialPlaceHolder: React.FC<{ isLoading?: boolean }> = ({
         onToggleExpanded={() => setBrandExpanded(!brandExpanded)}
         isLoading={isLoading}
       />
-
-      {/* Demo buttons to test skeleton state */}
-      <div className="mt-4 flex gap-2">
-        <Button onClick={() => window.location.reload()}>
-          Toggle Skeleton (Reload to see normal state)
-        </Button>
-      </div>
     </div>
   );
 };
