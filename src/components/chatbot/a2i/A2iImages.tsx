@@ -11,7 +11,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useState } from "react";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog"; // Assuming this is the correct import
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
 import { deleteA2iImage } from "@/services/api/brand.service";
 import { Trash2, Download, Send, BookOpen } from "lucide-react";
@@ -20,6 +20,7 @@ import React from "react";
 import { PiShareFat } from "react-icons/pi";
 import { GalleryItem } from "@/types/gallery.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
+import { handleDownloadImage } from "@/lib/utils";
 
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
@@ -36,8 +37,10 @@ export const A2IImages = ({
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const { addToGallery } = useGalleryQuery({});
+  const selectionTriggered = selectedItems.length > 0;
 
   // Handlers for actions
   const handleCreateVideo = (imageId: string) => {
@@ -58,27 +61,6 @@ export const A2IImages = ({
     );
   };
 
-  const downloadItem = async (item: ImageDetail) => {
-    try {
-      const response = await fetch(item.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `image-${item.id}.jpg`; // Using item.id for file name; adjust if needed
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success(`Downloaded image-${item.id}`);
-      return true;
-    } catch (error) {
-      toast.error("Failed to download file");
-      console.error("Download error:", error);
-      return false;
-    }
-  };
-
   const handleBulkDownload = async () => {
     if (selectedItems.length === 0) return;
 
@@ -88,7 +70,7 @@ export const A2IImages = ({
 
     try {
       for (const item of selectedImages) {
-        await downloadItem(item);
+        await handleDownloadImage(item.url);
       }
     } catch (error) {
       console.error("Bulk download error:", error);
@@ -228,13 +210,11 @@ export const A2IImages = ({
                             metadata={image.parameters}
                             checkbox={{
                               checked: selectedItems.includes(image.id),
-                              onCheckedChange: (checked) =>
-                                handleCheckboxChange(
-                                  image.id,
-                                  checked as boolean
-                                ),
+                              onCheckedChange: (checked: boolean) =>
+                                handleCheckboxChange(image.id, checked),
                             }}
                             onDelete={() => handleSingleDeleteClick(image.id)}
+                            selectionTriggered={selectionTriggered}
                           />
                         </div>
                         <ActionButtonsRow
@@ -268,7 +248,6 @@ export const A2IImages = ({
 
           {/* Bulk Actions */}
           {selectedItems.length > 0 && (
-            // <div className="absolute bottom-0 left-0 right-0 bg-white border-t shadow-lg py-3 px-4 z-50">
             <div className="bg-white border-gray-400 shadow-lg py-3 px-4 z-50">
               <div className="max-w-7xl mx-auto flex items-center justify-end gap-x-2">
                 <Button

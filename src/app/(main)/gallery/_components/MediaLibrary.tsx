@@ -19,6 +19,7 @@ import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
 import { MediaBulkActions } from "./MediaBulkActions";
 import MediaFilterSidebar from "./MediaFilterSidebar";
+import { createMediaItemHelper } from "@/lib/gallery.utils";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -86,6 +87,16 @@ export function MediaLibrary({
     selectedFilters,
   });
 
+  const mediaHelper = createMediaItemHelper({
+    patchItem,
+    addComment,
+    updateComment,
+    deleteComment,
+    toggleFavorite,
+    bulkDelete,
+    deleteItem,
+  });
+
   useEffect(() => {
     if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
       setSelectedBrand(brandsData.brands[0]);
@@ -116,18 +127,6 @@ export function MediaLibrary({
 
   const handleUnselectAll = () => {
     setSelectedItems([]);
-  };
-
-  const handleToggleFavorite = (id: string) => {
-    toggleFavorite(id);
-  };
-
-  const handleDeleteItem = (id: string) => {
-    deleteItem(id);
-    // Remove from selected if needed
-    if (selectedItems.includes(id)) {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
-    }
   };
 
   const handleConfirmDelete = async () => {
@@ -191,48 +190,6 @@ export function MediaLibrary({
     } catch (error) {
       console.error("Bulk download error:", error);
     }
-  };
-
-  const handleEditTitle = async (
-    itemId: string,
-    newTitle: string
-  ): Promise<void> => {
-    patchItem({
-      itemId,
-      data: { asset_title: newTitle },
-    });
-  };
-
-  const handleAddComment = async (
-    itemId: string,
-    text: string
-  ): Promise<void> => {
-    addComment({
-      itemId,
-      commentData: { text },
-    });
-  };
-
-  const handleUpdateComment = async (
-    itemId: string,
-    commentId: string,
-    text: string
-  ): Promise<void> => {
-    updateComment({
-      itemId,
-      commentId,
-      commentData: { text },
-    });
-  };
-
-  const handleDeleteComment = async (
-    itemId: string,
-    commentId: string
-  ): Promise<void> => {
-    deleteComment({
-      itemId,
-      commentId,
-    });
   };
 
   useEffect(() => {
@@ -324,14 +281,14 @@ export function MediaLibrary({
                     items={galleryItems}
                     selectedItems={selectedItems}
                     onSelect={handleSelect}
-                    onToggleFavorite={handleToggleFavorite}
-                    onDelete={handleDeleteItem}
+                    onToggleFavorite={mediaHelper.toggleFavorite}
+                    onDelete={mediaHelper.deleteItem}
                     onDownload={downloadItem}
                     isMediaSelectDialog={isMediaSelectDialog}
-                    handleUpdateTitle={handleEditTitle}
-                    handleUpdateComment={handleUpdateComment}
-                    handleDeleteComment={handleDeleteComment}
-                    handleAddComment={handleAddComment}
+                    handleUpdateTitle={mediaHelper.editTitle}
+                    handleUpdateComment={mediaHelper.updateComment}
+                    handleDeleteComment={mediaHelper.deleteComment}
+                    handleAddComment={mediaHelper.addComment}
                     handleUpdatePartialData={patchItem}
                   />
 

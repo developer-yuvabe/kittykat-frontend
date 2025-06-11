@@ -28,6 +28,7 @@ type ImageDisplayProps = {
     onCheckedChange: (checked: boolean) => void;
   };
   onDelete?: () => void;
+  selectionTriggered?: boolean;
 };
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({
@@ -40,6 +41,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   metadata = {},
   checkbox,
   onDelete,
+  selectionTriggered = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -175,9 +177,14 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
       >
         <img src={src} alt={alt} className="w-full h-full" />
       </div>
-
       {checkbox && (
-        <div className="absolute top-9 left-0 z-10 w-full text-white bg-gradient-to-b from-black/85">
+        <div
+          className={`absolute top-8 left-0 z-10 w-full text-white ${
+            !selectionTriggered
+              ? "opacity-0 group-hover:opacity-100"
+              : "opacity-100"
+          } bg-gradient-to-b from-black/85 transition-opacity duration-200`}
+        >
           <Checkbox
             checked={checkbox.checked}
             onCheckedChange={checkbox.onCheckedChange}
