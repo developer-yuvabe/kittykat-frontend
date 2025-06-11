@@ -3,6 +3,7 @@ import React from "react";
 import { Thread } from "@/components/thread";
 import { StreamProvider } from "@/providers/langgraph/Stream";
 import { ThreadProvider } from "@/providers/langgraph/Thread";
+import Remix from "./_components/remix/Remix";
 
 export default function Page() {
   return (
@@ -12,6 +13,7 @@ export default function Page() {
           <Thread />
         </StreamProvider>
       </ThreadProvider>
+      <Remix />
     </div>
   );
 }

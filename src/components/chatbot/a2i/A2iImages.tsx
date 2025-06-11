@@ -12,18 +12,21 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { useRemixStore } from "@/store/remix.store";
 
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
 };
 
 export const A2IImages = ({ generatedImages }: A2IImagesProps) => {
+  const { setRemixUrl, setRemixSize } = useRemixStore();
   const handleCreateVideo = (imageId: string) => {
     console.log("Creating video for image:", imageId);
   };
 
-  const handleRemixImage = (imageId: string) => {
-    console.log("Remixing image:", imageId);
+  const handleRemixImage = (url: string, size: string) => {
+    setRemixUrl(url);
+    setRemixSize(size);
   };
 
   const EmptyState = () => (
@@ -77,9 +80,13 @@ export const A2IImages = ({ generatedImages }: A2IImagesProps) => {
                             },
                             {
                               label: "Remix",
-                              onClick: () => handleRemixImage(image.id),
-                              color: "#EA916E",
-                              hoverColor: "#e7845d",
+                              onClick: () =>
+                                handleRemixImage(
+                                  image.url,
+                                  image.parameters?.size
+                                ),
+                              color: "#E7845d",
+                              hoverColor: "#EA916E",
                             },
                           ]}
                         />
