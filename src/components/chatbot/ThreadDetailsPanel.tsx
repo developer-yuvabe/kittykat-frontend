@@ -1,3 +1,5 @@
+"use client";
+
 import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { useBrandStore } from "@/store/brand.store";
@@ -73,11 +75,12 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               }
             />
           )}
-
-          <A2iImagesSection
-            a2iImageInformation={a2iImageInformation}
-            campaignInformation={campaignInformation}
-          />
+          {brandingInformation && (
+            <A2iImagesSection
+              a2iImageInformation={a2iImageInformation}
+              campaignInformation={campaignInformation}
+            />
+          )}
         </div>
       )}
     </div>

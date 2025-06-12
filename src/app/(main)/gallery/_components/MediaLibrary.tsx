@@ -222,6 +222,7 @@ export function MediaLibrary({
             selectedBrand={selectedBrand}
             setSelectedBrand={setSelectedBrand}
             brands={brandsData?.brands || []}
+            brandsLoading={brandsLoading}
           />
 
           <div className="flex flex-col md:flex-row gap-4">

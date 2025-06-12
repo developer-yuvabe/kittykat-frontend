@@ -38,6 +38,7 @@ import {
   getStatusIcon,
 } from "@/lib/gallery.utils";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UploadDropzoneProps {
   activeTab: string;
@@ -50,6 +51,7 @@ interface UploadDropzoneProps {
     React.SetStateAction<BrandCampaignListResponse["brands"][number] | null>
   >;
   brands: BrandCampaignListResponse["brands"];
+  brandsLoading: boolean;
 }
 
 export function MediaUploadDropzone({
@@ -61,7 +63,10 @@ export function MediaUploadDropzone({
   selectedBrand,
   setSelectedBrand,
   brands,
+  brandsLoading,
 }: UploadDropzoneProps) {
+  console.log("brands", brands);
+
   const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -255,19 +260,25 @@ export function MediaUploadDropzone({
           <div className="w-52">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full justify-between text-xs pt-2 hover:bg-white"
-                >
-                  {selectedBrand ? selectedBrand.brand_name : "Select brand..."}
-                  {open ? (
-                    <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  ) : (
-                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  )}
-                </Button>
+                {brandsLoading || brands.length < 0 ? (
+                  <Skeleton className="w-full h-9 rounded-md" />
+                ) : (
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between text-xs pt-2 hover:bg-white"
+                  >
+                    {selectedBrand
+                      ? selectedBrand.brand_name
+                      : "Select brand..."}
+                    {open ? (
+                      <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    ) : (
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    )}
+                  </Button>
+                )}
               </PopoverTrigger>
               <PopoverContent className="w-64 p-0">
                 <Command>
@@ -314,7 +325,7 @@ export function MediaUploadDropzone({
           <Button
             variant="outline"
             className="bg-[#636AE8] hover:bg-[#636AE8] hover:text-white text-white mb-2"
-            disabled={isUploading}
+            disabled={isUploading || brands.length === 0 || brandsLoading}
           >
             {isUploading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -323,17 +334,23 @@ export function MediaUploadDropzone({
             )}
             {isUploading ? "Uploading..." : "Upload"}
           </Button>
-          <p className="text-sm pt-2 text-gray-500">
-            {isDragActive
-              ? "or drop media here to upload"
-              : `${currentConfig.placeholder}`}{" "}
-            ({currentConfig.text})
-            {addToGallery && (
-              <span className="block text-xs text-purple-600 mt-1">
-                Files will be added to brand gallery
-              </span>
-            )}
-          </p>
+          {brands.length === 0 && !brandsLoading ? (
+            <p className="text-sm pt-2 text-gray-500">
+              Set up a brand to get started
+            </p>
+          ) : (
+            <p className="text-sm pt-2 text-gray-500">
+              {isDragActive
+                ? "or drop media here to upload"
+                : `${currentConfig.placeholder}`}{" "}
+              ({currentConfig.text})
+              {addToGallery && (
+                <span className="block text-xs text-purple-600 mt-1">
+                  Files will be added to brand gallery
+                </span>
+              )}
+            </p>
+          )}
         </div>
 
         {filesWithStatus.length > 0 && (
