@@ -248,12 +248,12 @@ export default function MaskingDialog() {
         });
 
         // Download the mask image
-        const downloadLink = document.createElement("a");
-        downloadLink.href = URL.createObjectURL(file);
-        downloadLink.download = "mask-image.png";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        // const downloadLink = document.createElement("a");
+        // downloadLink.href = URL.createObjectURL(file);
+        // downloadLink.download = "mask-image.png";
+        // document.body.appendChild(downloadLink);
+        // downloadLink.click();
+        // document.body.removeChild(downloadLink);
 
         const maskUrl = await uploadFileAndReturnUrl(
           file.name,
