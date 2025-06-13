@@ -29,12 +29,14 @@ function SelectTrigger({
   size = "default",
   variant = "default",
   label,
+  disableDropdown = false,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default";
   variant?: "default" | "overlapping-label";
   label?: string;
+  disableDropdown?: boolean;
 }) {
   const triggerContent = (
     <SelectPrimitive.Trigger
@@ -52,9 +54,11 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4 opacity-50" />
-      </SelectPrimitive.Icon>
+      {!disableDropdown && (
+        <SelectPrimitive.Icon asChild>
+          <ChevronDownIcon className="size-4 opacity-50" />
+        </SelectPrimitive.Icon>
+      )}
     </SelectPrimitive.Trigger>
   );
 
@@ -130,8 +134,11 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  disabledAcknowledge = false,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+}: React.ComponentProps<typeof SelectPrimitive.Item> & {
+  disabledAcknowledge?: boolean;
+}) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -141,11 +148,13 @@ function SelectItem({
       )}
       {...props}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
+      {!disabledAcknowledge && (
+        <span className="absolute right-2 flex size-3.5 items-center justify-center">
+          <SelectPrimitive.ItemIndicator>
+            <CheckIcon className="size-4" />
+          </SelectPrimitive.ItemIndicator>
+        </span>
+      )}
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );

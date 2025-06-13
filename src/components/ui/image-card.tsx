@@ -47,7 +47,7 @@ const ImageCard = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "h-full flex flex-col rounded-lg border overflow-hidden bg-white",
+          "h-full flex flex-col rounded-lg border overflow-hidden bg-white min-h-80",
           className
         )}
         {...props}

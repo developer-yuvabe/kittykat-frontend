@@ -178,6 +178,7 @@ export interface QueueItem {
   id: string;
   type: "image";
   created_at: string;
+  metadata?: Record<string, any>;
 }
 
 export type Context = {
