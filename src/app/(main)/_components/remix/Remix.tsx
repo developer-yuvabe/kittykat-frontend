@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useRemixStore } from "@/store/remix.store";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
@@ -18,12 +17,8 @@ import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import RemixInput from "./RemixInput";
 import { z } from "zod";
 import { Eraser, X, Undo, Redo } from "lucide-react";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 export default function MaskingDialog() {
   const { remixUrl, setRemixUrl, remixSize } = useRemixStore();
@@ -37,7 +32,6 @@ export default function MaskingDialog() {
   const [offScreenCtx, setOffScreenCtx] =
     useState<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  // State for undo/redo
 
   // Use the custom undo/redo hook
   const {
@@ -224,30 +218,42 @@ export default function MaskingDialog() {
 
   const handleSubmit = useCallback(
     async (data: z.infer<typeof remixImageSchema>) => {
-      const image = imageRef.current;
       const offScreenCanvas = offScreenCanvasRef.current;
-      if (!image || !offScreenCanvas) return;
+      if (!offScreenCanvas) return;
 
       try {
-        // Create composite canvas for final mask
         const compositeCanvas = document.createElement("canvas");
         compositeCanvas.width = offScreenCanvas.width;
         compositeCanvas.height = offScreenCanvas.height;
 
-        const compositeCtx = compositeCanvas.getContext("2d", { alpha: true });
+        const compositeCtx = compositeCanvas.getContext("2d");
         if (!compositeCtx) throw new Error("Failed to get canvas context");
 
-        // Draw the original image
-        compositeCtx.globalCompositeOperation = "source-over";
-        compositeCtx.drawImage(image, 0, 0);
+        compositeCtx.fillStyle = "black";
+        compositeCtx.fillRect(
+          0,
+          0,
+          compositeCanvas.width,
+          compositeCanvas.height
+        );
 
-        // Draw the mask with transparency
-        compositeCtx.globalAlpha = 0.7;
+        compositeCtx.globalCompositeOperation = "lighten";
         compositeCtx.drawImage(offScreenCanvas, 0, 0);
-        compositeCtx.globalAlpha = 1.0;
+
+        compositeCtx.globalCompositeOperation = "source-over";
 
         const blob = await canvasToBlob(compositeCanvas, "image/png");
-        const file = new File([blob], "mask-image.png", { type: "image/png" });
+        const file = new File([blob], "mask-image.png", {
+          type: "image/png",
+        });
+
+        // Download the mask image
+        const downloadLink = document.createElement("a");
+        downloadLink.href = URL.createObjectURL(file);
+        downloadLink.download = "mask-image.png";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
 
         const maskUrl = await uploadFileAndReturnUrl(
           file.name,
@@ -256,7 +262,7 @@ export default function MaskingDialog() {
           file
         );
 
-        await remixImageService(selectedBrandId!, user!.id, data, maskUrl);
+        remixImageService(selectedBrandId!, user!.id, data, maskUrl);
         setRemixUrl(null);
       } catch (err) {
         console.error(err);
@@ -276,96 +282,90 @@ export default function MaskingDialog() {
       <DialogContent
         className="p-4 h-[100dvh] w-[100dvw] max-w-[100dvw]! min-w-full rounded-none shadow-xl overflow-hidden flex flex-col justify-between"
         hideCloseIcon
+        onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <div className="flex justify-between">
             <DialogTitle>Remix Image</DialogTitle>
             <div className="flex gap-2 items-center">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={undo}
-                    disabled={!canUndo}
-                  >
-                    <Undo />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Undo last action</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={redo}
-                    disabled={!canRedo}
-                  >
-                    <Redo />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Redo last action</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={clearCanvas}>
-                    <Eraser />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Clear canvas</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setRemixUrl(null)}
-                  >
-                    <X />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Close dialog</TooltipContent>
-              </Tooltip>
+              <TooltipIconButton
+                tooltip="Undo"
+                variant="outline"
+                size="icon"
+                onClick={undo}
+                disabled={!canUndo}
+              >
+                <Undo />
+              </TooltipIconButton>
+
+              <TooltipIconButton
+                tooltip="Redo"
+                variant="outline"
+                size="icon"
+                onClick={redo}
+                disabled={!canRedo}
+              >
+                <Redo />
+              </TooltipIconButton>
+
+              <TooltipIconButton
+                tooltip="Clear"
+                variant="outline"
+                size="icon"
+                onClick={clearCanvas}
+              >
+                <Eraser />
+              </TooltipIconButton>
+
+              <TooltipIconButton
+                tooltip="Close"
+                variant="outline"
+                size="icon"
+                onClick={() => setRemixUrl(null)}
+              >
+                <X />
+              </TooltipIconButton>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex justify-center items-center overflow-auto max-h-[75vh] max-w-[95vw] mx-auto scrollbar">
-          <div className="relative">
-            <img
-              ref={imageRef}
-              src={remixUrl || ""}
-              crossOrigin="anonymous"
-              alt="Editable"
-              className="block max-w-[95vw] max-h-[75vh] object-contain border w-max"
-              onLoad={(e) => {
-                const img = e.currentTarget;
-                if (canvasRef.current) {
-                  canvasRef.current.style.width = `${img.clientWidth}px`;
-                  canvasRef.current.style.height = `${img.clientHeight}px`;
-                }
-              }}
-            />
-            <canvas
-              ref={canvasRef}
-              className="absolute top-0 left-0"
-              style={{ pointerEvents: "auto" }}
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-            />
-          </div>
-        </div>
-
         {remixUrl && (
-          <RemixInput
-            remixUrl={remixUrl}
-            remixSize={remixSize || "1024x1024"}
-            handleSubmit={handleSubmit}
-          />
+          <>
+            <div className="flex justify-center items-center overflow-auto max-h-[75vh] max-w-[95vw] mx-auto scrollbar">
+              <div className="relative">
+                <img
+                  ref={imageRef}
+                  src={remixUrl || ""}
+                  crossOrigin="anonymous"
+                  alt="Editable"
+                  className="block max-w-[95vw] max-h-[75vh] object-contain border w-max"
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    if (canvasRef.current) {
+                      canvasRef.current.style.width = `${img.clientWidth}px`;
+                      canvasRef.current.style.height = `${img.clientHeight}px`;
+                    }
+                  }}
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0"
+                  style={{ pointerEvents: "auto" }}
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                />
+              </div>
+            </div>
+
+            <RemixInput
+              remixUrl={remixUrl}
+              remixSize={remixSize || "1024x1024"}
+              handleSubmit={handleSubmit}
+            />
+          </>
         )}
       </DialogContent>
     </Dialog>
