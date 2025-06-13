@@ -191,7 +191,7 @@ export const A2IImages = ({
       content={
         <div className="relative">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ImageCard className="border-dashed border-2 flex flex-col gap-y-4 items-center justify-center cursor-pointer transition-all bg-muted text-muted-foreground">
+            <ImageCard className="border-dashed border flex flex-col gap-y-4 items-center justify-center cursor-pointer transition-all bg-muted text-muted-foreground">
               <ImagePlus />
               <Button onClick={handleImageGeneration}>
                 Generate a new image

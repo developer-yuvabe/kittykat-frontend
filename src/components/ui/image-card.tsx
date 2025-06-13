@@ -17,6 +17,8 @@ import { DislikeIcon, LikeIcon } from "./custom-icon";
 type ImageCardContextType = {
   expanded: boolean;
   setExpanded: (v: boolean) => void;
+  overlayVisible?: boolean;
+  setOverlayVisible?: (v: boolean) => void;
 };
 
 type ImageOverlayProps = {
@@ -81,21 +83,29 @@ const ImageCardImage = ({
 
   return (
     <div className="relative group">
-      <Image
-        alt={alt}
-        src={
-          isLoadError
-            ? `data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`
-            : src
-        }
-        placeholder={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-        onError={() => setIsLoadError(true)}
-        onClick={() => setExpanded(true)}
-        width={700}
-        height={475}
-        className={cn("bg-muted object-contain aspect-square", className)}
-      />
-
+      {isLoadError ? (
+        <Image
+          src={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+          alt={alt}
+          width={700}
+          height={475}
+          className={cn("w-full h-full", className)}
+          onClick={() => setExpanded(true)}
+        />
+      ) : (
+        <Image
+          alt={alt}
+          src={src}
+          width={700}
+          height={475}
+          onClick={() => setExpanded(true)}
+          placeholder={`data:image/svg+xml;base64,${toBase64(
+            shimmer(700, 475)
+          )}`}
+          className={cn("bg-muted object-contain aspect-square", className)}
+          onError={() => setIsLoadError(true)}
+        />
+      )}
       {children}
       <ImageModal
         imageUrl={src}
