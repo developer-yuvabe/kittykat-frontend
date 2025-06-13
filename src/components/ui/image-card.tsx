@@ -281,13 +281,13 @@ const ImageActionsPrompt = ({ prompt }: { prompt: string }) => {
           <Copy className="cursor-pointer" />
         </TooltipIconButton>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <div className="space-y-3">
+      <PopoverContent className="w-80 max-h-80 overflow-y-auto p-0">
+        <div className="space-y-3 p-4">
           <div className="text-sm font-medium">Prompt</div>
-          <div className="text-sm bg-muted p-3 rounded border max-h-32 overflow-y-auto">
-            {prompt}
-          </div>
-          <Button onClick={handleCopy} className="w-full">
+          <p className="text-sm">{prompt}</p>
+        </div>
+        <div className="sticky bottom-0 w-full bg-popover p-4 pt-0">
+          <Button onClick={handleCopy} className="w-full" variant="outline">
             {copied ? (
               <>
                 <Check size={16} className="mr-2" />
