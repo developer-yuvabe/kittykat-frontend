@@ -19,12 +19,17 @@ const CampaignVisualStyleReferences = ({
     return (
       <ContentSection
         title={`Visual Style References`}
+        showCopy={false}
         content={
           <p className="text-gray-500 text-sm">
             No visual style references available. Please add some visual style
             images to the campaign to see them here.
           </p>
         }
+        context={{
+          agentId: Agents.CAMPAIGN_AGENT,
+          data: "I want to set up visual style references for my campaign.",
+        }}
       />
     );
   }
