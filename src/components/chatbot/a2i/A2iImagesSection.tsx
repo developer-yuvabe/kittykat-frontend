@@ -7,6 +7,7 @@ import { A2IImages } from "./A2iImages";
 import EnhancedParameterConfiguration from "./EnhancedParameterConfiguration";
 import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import { useBrandStore } from "@/store/brand.store";
+import VirtualTryOn from "./VirtualTryOn";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -59,6 +60,8 @@ export default function A2iImagesSection({
               a2iImageInformation={a2iImageInformation}
               brandId={selectedBrandId || ""} // Ensure brandId is defined
             />
+
+            <VirtualTryOn />
 
             {/* 8. Core Parameters */}
             <EnhancedParameterConfiguration

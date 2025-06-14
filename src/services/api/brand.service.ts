@@ -87,6 +87,6 @@ export async function deleteA2iImage(
   image_id: string
 ): Promise<{ brand_id: string; image_id: string }> {
   return handleApiRequest<{ brand_id: string; image_id: string }>(
-    axiosInstance.delete(`/brands/${brand_id}/images/${image_id}`)
+    axiosInstance.delete(`/brands/${brand_id}/a2i/images/${image_id}`)
   );
 }

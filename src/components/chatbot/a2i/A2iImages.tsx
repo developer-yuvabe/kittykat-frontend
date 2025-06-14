@@ -115,6 +115,7 @@ export const A2IImages = ({
       setIsDeleting(false);
       setIsDialogOpen(false);
       setSingleDeleteId(null);
+      setSelectedItems([]);
     }
   };
 
@@ -184,6 +185,8 @@ export const A2IImages = ({
       currentBrandContextId: selectedBrandId,
     });
   };
+
+  console.log(generatedImages, "Generated Images");
 
   return (
     <ContentSection

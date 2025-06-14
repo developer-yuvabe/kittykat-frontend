@@ -318,10 +318,8 @@ const RemixInput = ({
                               {IMAGE_VARIATIONS[value] ? (
                                 <div className="w-full">
                                   {(() => {
-                                    const Icon = IMAGE_VARIATIONS[value].icon;
                                     return (
                                       <div className="flex items-center gap-2">
-                                        <Icon className="h-4 w-4" />
                                         {IMAGE_VARIATIONS[value].label}
                                       </div>
                                     );
