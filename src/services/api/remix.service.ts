@@ -22,7 +22,7 @@ export const remixImageService = async (
       })
     );
   } catch (error) {
-    console.error("Error accepting invitation:", error);
+    console.error("Error remixing image:", error);
     throw error;
   }
 };

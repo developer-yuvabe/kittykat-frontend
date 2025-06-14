@@ -6,17 +6,23 @@ import { MediaLibrary } from "@/app/(main)/gallery/_components/MediaLibrary";
 interface MediaLibraryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onMediaItemSelected: (url: string) => void;
 }
 
 export function MediaLibraryDialog({
   open,
   onOpenChange,
+  onMediaItemSelected,
 }: MediaLibraryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90%] min-w-6xl overflow-y-scroll p-0">
         <div className="px-4">
-          <MediaLibrary activeTab="all-media" isMediaSelectDialog={true} />
+          <MediaLibrary
+            activeTab="all-media"
+            isMediaSelectDialog={true}
+            onMediaItemSelected={onMediaItemSelected}
+          />
         </div>
       </DialogContent>
     </Dialog>

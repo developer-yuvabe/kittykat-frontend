@@ -7,7 +7,13 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { ImageCard } from "@/components/ui/image-card";
+import {
+  ImageActionsDelete,
+  ImageActionsExpand,
+  ImageCard,
+  ImageCardHeader,
+  ImageCardImage,
+} from "@/components/ui/image-card";
 import { Textarea } from "@/components/ui/textarea";
 import { vtonSchema } from "@/schema/vton.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,15 +25,31 @@ import { cn } from "@/lib/utils";
 import GarmentSvg from "@/assets/garment.svg";
 import ModelSvg from "@/assets/model.svg";
 import Image from "next/image";
+import { toast } from "sonner";
+import { createVtonImage } from "@/services/api/vton.service";
+import { useUserStore } from "@/store/user.store";
+import { useBrandStore } from "@/store/brand.store";
 
 const VirtualTryOn = () => {
-  const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState(false);
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
+  const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
+    null | "model" | "product"
+  >(null);
   const form = useForm<z.infer<typeof vtonSchema>>({
     resolver: zodResolver(vtonSchema),
   });
 
-  const onSubmit = (data: z.infer<typeof vtonSchema>) => {
-    console.log("Form submitted with data:", data);
+  const onSubmit = async (data: z.infer<typeof vtonSchema>) => {
+    try {
+      await createVtonImage(user!.id, selectedBrandId!, data);
+
+      form.reset();
+    } catch {
+      toast.error(
+        "An error occurred while processing your virtual try on request. Please try again."
+      );
+    }
   };
 
   return (
@@ -59,12 +81,25 @@ const VirtualTryOn = () => {
                             />
                             <Button
                               type="button"
-                              onClick={() => setMediaLibraryOpen(true)}
+                              onClick={() => setMediaLibraryOpen("model")}
                             >
                               Select Board
                             </Button>
                           </div>
-                        ) : null}
+                        ) : (
+                          <>
+                            <ImageCardHeader>
+                              <ImageActionsDelete
+                                onDelete={() => {
+                                  field.onChange("");
+                                  field.onBlur();
+                                }}
+                              />
+                              <ImageActionsExpand />
+                            </ImageCardHeader>
+                            <ImageCardImage src={field.value} />
+                          </>
+                        )}
                       </ImageCard>
                     </FormItem>
                   )}
@@ -89,9 +124,27 @@ const VirtualTryOn = () => {
                               src={GarmentSvg}
                               height={160}
                             />
-                            <Button type="button">Select Board</Button>
+                            <Button
+                              type="button"
+                              onClick={() => setMediaLibraryOpen("product")}
+                            >
+                              Select Board
+                            </Button>
                           </div>
-                        ) : null}
+                        ) : (
+                          <>
+                            <ImageCardHeader>
+                              <ImageActionsDelete
+                                onDelete={() => {
+                                  field.onChange("");
+                                  field.onBlur();
+                                }}
+                              />
+                              <ImageActionsExpand />
+                            </ImageCardHeader>
+                            <ImageCardImage src={field.value} />
+                          </>
+                        )}
                       </ImageCard>
                     </FormItem>
                   )}
@@ -120,9 +173,23 @@ const VirtualTryOn = () => {
                 />
               </div>
               <MediaLibraryDialog
-                open={mediaLibraryOpen}
+                onMediaItemSelected={(url) => {
+                  if (mediaLibraryOpen === "model") {
+                    form.setValue("model_image", url, {
+                      shouldValidate: true,
+                    });
+                  } else if (mediaLibraryOpen === "product") {
+                    form.setValue("product_image", url, {
+                      shouldValidate: true,
+                    });
+                  }
+                  setMediaLibraryOpen(null);
+                }}
+                open={!!mediaLibraryOpen}
                 onOpenChange={(o) => {
-                  setMediaLibraryOpen(o);
+                  if (!o) {
+                    setMediaLibraryOpen(null);
+                  }
                 }}
               />
               <Button
