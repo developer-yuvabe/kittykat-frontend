@@ -24,20 +24,18 @@ import { GalleryItem } from "@/types/gallery.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { handleDownloadImage } from "@/lib/utils";
 
-
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
   brandId: string;
   campaignId: string;
 };
 
-
 export const A2IImages = ({
   generatedImages,
   brandId,
   campaignId,
 }: A2IImagesProps) => {
-    const { setRemixUrl, setRemixSize } = useRemixStore();
+  const { setRemixUrl, setRemixSize } = useRemixStore();
 
   // State for selected items and dialog
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -49,6 +47,7 @@ export const A2IImages = ({
   const selectionTriggered = selectedItems.length > 0;
 
   // Handlers for actions
+
   const handleCreateVideo = (imageId: string) => {
     console.log("Creating video for image:", imageId);
   };

@@ -1,3 +1,5 @@
+import { SourceHandle, TagItem, VisualImage } from "./campaign.types";
+
 export interface BaseApiResponse<T> {
   status_code: number;
   message: string;
@@ -148,6 +150,19 @@ export interface ThreadCampaign {
   };
   moodboards?: MoodboardAsset[];
   dynamic?: Record<string, any>;
+  is_manual: boolean;
+  created_at: string;
+  updated_at: string;
+  visual_images: VisualImage[];
+  selected_sources: SourceHandle[];
+  tags: {
+    [category: string]: TagItem[];
+  };
+  moodboard_ready: boolean;
+  completed: boolean;
+  style_analysis_ready?: boolean;
+  style_analysis_progress_messages?: string[];
+  style_analysis_progress?: number;
 }
 
 export type ImageDetail = {

@@ -81,6 +81,8 @@ export const renderBrandData = (
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
 
+  
+
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
       <CardHeader className="py-1">

@@ -28,13 +28,26 @@ class GalleryService {
     query: string,
     skip: number,
     limit: number,
-    method = "vector"
+    method:
+      | "semantic_text_search"
+      | "vector_text_search"
+      | "vector_image_search" = "vector_text_search",
+    image_url?: string,
+    brand_id?: string,
+    campaign_id?: string
   ): Promise<GalleryItemsListResponse> {
     const response = await handleApiRequest<GalleryItemsListResponse>(
-      axiosInstance.get("/gallery/search", {
-        params: { query, skip, limit, method },
+      axiosInstance.post("/gallery/search", {
+        method,
+        query,
+        image_url,
+        skip,
+        limit,
+        brand_id,
+        campaign_id,
       })
     );
+
     const has_more =
       (response.gallery_items?.length || 0) + skip < response.pagination.total;
 

@@ -1,7 +1,9 @@
+"use client";
+
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
@@ -9,9 +11,10 @@ import {
 } from "@/components/ui/popover";
 import { Command, CommandEmpty } from "@/components/ui/command";
 import { Search, Copy, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
-import { TooltipIconButton } from "../../thread/tooltip-icon-button";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { PinIcon } from "@/components/ui/custom-icon";
 import BrandSelector from "./BrandSelector";
+import { SubSectionCard } from "./SubSectionCard";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -23,13 +26,13 @@ const skeletonStyles = `
       background-position: calc(200px + 100%) 0;
     }
   }
-  
+
   .skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
     background-size: 400px 100%;
     animation: shimmer 1.5s ease-in-out infinite;
   }
-  
+
   .skeleton-text {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
     background-size: 400px 100%;
@@ -39,7 +42,6 @@ const skeletonStyles = `
   }
 `;
 
-// Reusable SubSection Card Component
 const brandFields = [
   "Brand Overview",
   "Brand Purpose",
@@ -54,7 +56,6 @@ const brandFields = [
   "Target Audience",
   "Media",
 ];
-
 export const campaignFields = [
   "Campaign Overview",
   "Campaign Colors",
@@ -62,50 +63,6 @@ export const campaignFields = [
   "Visual Style",
   "Moodboard",
 ];
-
-interface SubSectionCardProps {
-  label: string;
-  children?: React.ReactNode;
-  isLoading?: boolean;
-}
-
-const SubSectionCard: React.FC<SubSectionCardProps> = ({
-  label,
-  children,
-  isLoading = false,
-}) => {
-  return (
-    <Card className="my-4 border border-gray-300">
-      <CardHeader className="flex flex-row items-center justify-between">
-        {isLoading ? (
-          <div className="skeleton-text w-24 h-4"></div>
-        ) : (
-          <h4 className="font-medium text-sm">{label}</h4>
-        )}
-        {!isLoading && (
-          <div className="flex justify-center">
-            <TooltipIconButton tooltip="Copy" side="top">
-              <Copy size={16} />
-            </TooltipIconButton>
-            <TooltipIconButton tooltip="Pin" side="top">
-              <PinIcon size={16} />
-            </TooltipIconButton>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="px-4">
-        {isLoading ? (
-          <div className="skeleton h-10 rounded-md" />
-        ) : (
-          <div className="bg-gray-100 h-10 rounded-md px-3 py-2 text-sm text-gray-600 flex items-center" />
-        )}
-        {children}
-      </CardContent>
-    </Card>
-  );
-};
-
-// Reusable Placeholder Section Component
 interface PlaceholderSectionProps {
   title: string;
   avatarSrc?: string;
@@ -161,15 +118,12 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                   <div className="skeleton w-4 h-4 rounded"></div>
                 </div>
               )}
-              <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-2 overflow-hidden">
+              <Avatar className="w-10 h-10 mr-2 overflow-hidden">
                 {isLoading ? (
                   <div className="skeleton w-full h-full rounded-full"></div>
                 ) : (
                   <>
-                    <AvatarImage
-                      src={avatarSrc}
-                      alt={`@${title.toLowerCase()}`}
-                    />
+                    <AvatarImage src={avatarSrc} />
                     <AvatarFallback className={avatarBgColor}>
                       <span className="text-white font-bold">
                         {avatarFallback}
@@ -195,14 +149,13 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                         <Button
                           variant="outline"
                           role="combobox"
-                          aria-expanded={openPopover}
                           className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
                         >
                           <Search size={10} className="text-black" />
                           {searchPlaceholder || `Load existing ${title}`}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[300px] relative p-0">
+                      <PopoverContent className="w-[300px] p-0">
                         <Command>
                           <CommandEmpty>No Existing {title}</CommandEmpty>
                         </Command>
@@ -227,23 +180,20 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
             </div>
           </div>
 
-          {/* Expandable Content */}
-          {isExpanded && (
-            <div>
-              {fields.map((field) => (
-                <SubSectionCard key={field} label={field} isLoading={isLoading}>
-                  {!isLoading && renderFieldContent?.(field)}
-                </SubSectionCard>
-              ))}
-            </div>
-          )}
+          {/* Expandable Fields */}
+          {isExpanded &&
+            fields.map((field) => (
+              <SubSectionCard key={field} label={field} isLoading={isLoading}>
+                {!isLoading && renderFieldContent?.(field)}
+              </SubSectionCard>
+            ))}
         </Card>
       </div>
     </>
   );
 };
 
-// Media Platform Tags Component
+// Media Field Custom Tags
 const MediaPlatformTags: React.FC<{ isLoading?: boolean }> = ({
   isLoading = false,
 }) => {
@@ -257,8 +207,8 @@ const MediaPlatformTags: React.FC<{ isLoading?: boolean }> = ({
   if (isLoading) {
     return (
       <div className="flex gap-2 pt-3 flex-wrap">
-        {[...Array(4)].map((_, index) => (
-          <div key={index} className="skeleton w-16 h-6 rounded-full"></div>
+        {[...Array(4)].map((_, idx) => (
+          <div key={idx} className="skeleton w-16 h-6 rounded-full" />
         ))}
       </div>
     );
@@ -266,19 +216,19 @@ const MediaPlatformTags: React.FC<{ isLoading?: boolean }> = ({
 
   return (
     <div className="flex gap-2 pt-3 flex-wrap">
-      {platforms.map((platform) => (
+      {platforms.map((p) => (
         <span
-          key={platform.name}
-          className={`text-xs px-3 py-1 rounded-full font-medium ${platform.bgColor} ${platform.textColor}`}
+          key={p.name}
+          className={`text-xs px-3 py-1 rounded-full font-medium ${p.bgColor} ${p.textColor}`}
         >
-          {platform.name}
+          {p.name}
         </span>
       ))}
     </div>
   );
 };
 
-// Main Component
+// Main Exported Component
 export const InitialPlaceHolder: React.FC<{ isLoading?: boolean }> = ({
   isLoading = false,
 }) => {
@@ -300,9 +250,7 @@ export const InitialPlaceHolder: React.FC<{ isLoading?: boolean }> = ({
         fields={brandFields}
         customSelector={!isLoading ? <BrandSelector /> : undefined}
         newButtonTooltip="New Brand"
-        onNewClick={() => {
-          console.log("New Brand clicked");
-        }}
+        onNewClick={() => console.log("New Brand clicked")}
         renderFieldContent={renderBrandFieldContent}
         isExpanded={brandExpanded}
         onToggleExpanded={() => setBrandExpanded(!brandExpanded)}
