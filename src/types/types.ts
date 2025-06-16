@@ -170,6 +170,10 @@ export type ImageDetail = {
   url: string;
   prompt: string;
   parameters?: Record<string, any>;
+  vton_parameters?: {
+    model_image: string;
+    product_image: string;
+  };
 };
 
 export type ThreadA2iImage = {
@@ -193,6 +197,7 @@ export interface QueueItem {
   id: string;
   type: "image";
   created_at: string;
+  metadata?: Record<string, any>;
 }
 
 export type Context = {

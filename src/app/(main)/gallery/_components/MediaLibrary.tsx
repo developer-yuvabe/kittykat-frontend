@@ -24,11 +24,13 @@ import { createMediaItemHelper } from "@/lib/gallery.utils";
 type MediaLibraryProps = {
   activeTab?: string;
   isMediaSelectDialog?: boolean;
+  onMediaItemSelected?: (url: string) => void;
 };
 
 export function MediaLibrary({
   activeTab: initialTab = "all-media",
   isMediaSelectDialog = false,
+  onMediaItemSelected,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -196,6 +198,17 @@ export function MediaLibrary({
     setSource(activeTab);
   }, [activeTab]);
 
+  useEffect(() => {
+    if (isMediaSelectDialog && selectedItems.length > 0) {
+      const selectedItem = galleryItems.find((item) =>
+        selectedItems.includes(item.id)
+      );
+
+      onMediaItemSelected?.(selectedItem!.asset_url);
+      setSelectedItems([]);
+    }
+  }, [isMediaSelectDialog, selectedItems]);
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
       <Tabs
@@ -313,7 +326,7 @@ export function MediaLibrary({
         </TabsContent>
       </Tabs>
 
-      {selectedItems.length > 0 && (
+      {selectedItems.length > 0 && !isMediaSelectDialog && (
         <MediaBulkActions
           selectedCount={selectedItems.length}
           onUnselectAll={handleUnselectAll}

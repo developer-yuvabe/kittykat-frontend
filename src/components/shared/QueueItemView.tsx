@@ -24,6 +24,18 @@ const QueueItemView = ({ item }: { item: QueueItem }) => {
       </div>
       <div>
         <p className="text-sm font-medium leading-none">{item.title}</p>
+        {item.metadata?.images && (
+          <div className="flex gap-2 mt-2">
+            {item.metadata.images.map((url: string) => (
+              <div
+                key={url}
+                className="text-xs text-muted-foreground rounded-xs w-6 h-6 overflow-hidden"
+              >
+                <img src={url} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
         <p
           className={cn(
             "text-sm leading-none text-muted-foreground capitalize mt-1",

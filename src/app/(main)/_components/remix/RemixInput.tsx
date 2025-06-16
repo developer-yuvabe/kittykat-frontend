@@ -1,15 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { remixImageSchema } from "@/schema/remix.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import {
   Form,
   FormControl,
   FormField,
@@ -17,8 +7,19 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { AppConfig } from "@/config/app.config";
+import { cn } from "@/lib/utils";
+import { remixImageSchema } from "@/schema/remix.schema";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
   Loader2,
-  LucideIcon,
   Plus,
   RectangleHorizontal,
   RectangleVertical,
@@ -28,11 +29,10 @@ import {
   Tally4,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { AppConfig } from "@/config/app.config";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const IMAGE_SIZE = {
   "1024x1024": {
@@ -49,16 +49,16 @@ const IMAGE_SIZE = {
   },
 };
 
-const IMAGE_VARIATIONS: Record<number, { label: string; icon: LucideIcon }> = {
-  1: {
+const IMAGE_VARIATIONS = {
+  "1": {
     label: "1 image",
     icon: Tally1,
   },
-  2: {
+  "2": {
     label: "2 images",
     icon: Tally2,
   },
-  4: {
+  "4": {
     label: "4 images",
     icon: Tally4,
   },
@@ -243,36 +243,38 @@ const RemixInput = ({
                 <FormField
                   control={form.control}
                   name="size"
-                  render={({ field }) => {
-                    const ICON = IMAGE_SIZE[field.value]?.icon;
-
-                    return (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="rounded-xl w-max"
-                          >
-                            {<ICON className="mr-2 h-4 w-4" />}
-
-                            {IMAGE_SIZE[field.value].label}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-80 rounded-xl px-2"
-                          align="start"
-                        >
-                          <FormLabel className="mb-2">Aspect Ratio</FormLabel>
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger disableDropdown className="!gap-0">
+                            {IMAGE_SIZE[field.value] ? (
+                              <div className="w-full">
+                                {(() => {
+                                  const Icon = IMAGE_SIZE[field.value].icon;
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <Icon className="h-4 w-4" />
+                                      {IMAGE_SIZE[field.value].label}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            ) : null}
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="w-44">
                           {Object.entries(IMAGE_SIZE).map(
                             ([value, { label, icon: Icon }]) => (
                               <FormControl key={value}>
-                                <FormItem
-                                  onClick={() => field.onChange(value)}
+                                <SelectItem
+                                  disabledAcknowledge
+                                  value={value}
                                   className={cn(
-                                    "flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted",
-                                    {
-                                      "bg-muted": field.value === value,
-                                    }
+                                    "flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
                                   )}
                                 >
                                   <FormLabel className="font-normal">
@@ -281,73 +283,84 @@ const RemixInput = ({
                                   </FormLabel>
                                   <div
                                     className={cn(
-                                      "w-4 h-4 rounded-full border",
+                                      "w-4 h-4 rounded-full border absolute right-2 top-1/2 -translate-y-1/2",
                                       {
                                         "border-4 border-foreground":
                                           field.value === value,
                                       }
                                     )}
-                                  ></div>
-                                </FormItem>
+                                  />
+                                </SelectItem>
                               </FormControl>
                             )
                           )}
-                        </PopoverContent>
-                      </Popover>
-                    );
-                  }}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
                 />
 
                 <FormField
                   control={form.control}
                   name="n"
                   render={({ field }) => {
+                    const value =
+                      field.value.toString() as keyof typeof IMAGE_VARIATIONS;
+
                     return (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="rounded-xl w-max"
-                          >
-                            {IMAGE_VARIATIONS[field.value].label}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-80 rounded-xl px-2"
-                          align="start"
+                      <FormItem>
+                        <Select
+                          onValueChange={(val) => field.onChange(Number(val))}
+                          defaultValue={field.value.toString()}
                         >
-                          <FormLabel className="mb-2">Aspect Ratio</FormLabel>
-                          {Object.entries(IMAGE_VARIATIONS).map(
-                            ([value, { label, icon: Icon }]) => (
-                              <FormControl key={value}>
-                                <FormItem
-                                  onClick={() => field.onChange(value)}
-                                  className={cn(
-                                    "flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted",
-                                    {
-                                      "bg-muted": field.value === Number(value),
-                                    }
-                                  )}
-                                >
-                                  <FormLabel className="font-normal">
-                                    {Icon && <Icon className="mr-2 h-4 w-4" />}
-                                    {label}
-                                  </FormLabel>
-                                  <div
+                          <FormControl>
+                            <SelectTrigger disableDropdown className="!gap-0">
+                              {IMAGE_VARIATIONS[value] ? (
+                                <div className="w-full">
+                                  {(() => {
+                                    return (
+                                      <div className="flex items-center gap-2">
+                                        {IMAGE_VARIATIONS[value].label}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              ) : null}
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="w-44">
+                            {Object.entries(IMAGE_VARIATIONS).map(
+                              ([v, { label, icon: Icon }]) => (
+                                <FormControl key={v}>
+                                  <SelectItem
+                                    disabledAcknowledge
+                                    value={v}
                                     className={cn(
-                                      "w-4 h-4 rounded-full border",
-                                      {
-                                        "border-4 border-foreground":
-                                          field.value === Number(value),
-                                      }
+                                      "flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
                                     )}
-                                  ></div>
-                                </FormItem>
-                              </FormControl>
-                            )
-                          )}
-                        </PopoverContent>
-                      </Popover>
+                                  >
+                                    <FormLabel className="font-normal">
+                                      {Icon && (
+                                        <Icon className="mr-2 h-4 w-4" />
+                                      )}
+                                      {label}
+                                    </FormLabel>
+                                    <div
+                                      className={cn(
+                                        "w-4 h-4 rounded-full border absolute right-2 top-1/2 -translate-y-1/2",
+                                        {
+                                          "border-4 border-foreground":
+                                            value === v,
+                                        }
+                                      )}
+                                    />
+                                  </SelectItem>
+                                </FormControl>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
                     );
                   }}
                 />

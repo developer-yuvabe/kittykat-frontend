@@ -14,11 +14,12 @@ export async function updateCampaignMoodboard(
   moodboardData: Record<string, unknown>
 ): Promise<BrandResponse> {
   return handleApiRequest<BrandResponse>(
-    axiosInstance.put(`/brands/moodboard/${moodboardId}`, {
-      brand_id: brandId,
-      campaign_id: campaignId,
-      ...moodboardData,
-    })
+    axiosInstance.put(
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}`,
+      {
+        ...moodboardData,
+      }
+    )
   );
 }
 
@@ -28,9 +29,9 @@ export async function deleteCampaignMoodboard(
   moodboardId: string
 ): Promise<BrandResponse> {
   return handleApiRequest<BrandResponse>(
-    axiosInstance.delete(`/brands/moodboard/${moodboardId}`, {
-      data: { brand_id: brandId, campaign_id: campaignId },
-    })
+    axiosInstance.delete(
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}`
+    )
   );
 }
 
@@ -86,6 +87,6 @@ export async function deleteA2iImage(
   image_id: string
 ): Promise<{ brand_id: string; image_id: string }> {
   return handleApiRequest<{ brand_id: string; image_id: string }>(
-    axiosInstance.delete(`/brands/${brand_id}/images/${image_id}`)
+    axiosInstance.delete(`/brands/${brand_id}/a2i/images/${image_id}`)
   );
 }

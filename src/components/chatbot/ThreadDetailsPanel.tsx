@@ -35,14 +35,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   return (
     <div
-      className={`rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
+      className={`relative rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
       {threadsLoading || isFetchingBrandInfo || !isBrandsFetched ? (
         <InitialPlaceHolder isLoading />
       ) : (
-        <div>
+        <div className="relative">
           <BrandSection
             brandingInformation={brandingInformation}
             expandedSections={expandedSections}
