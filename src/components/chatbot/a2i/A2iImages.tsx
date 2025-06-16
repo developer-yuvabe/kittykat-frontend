@@ -29,6 +29,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 
+
 type A2IImagesProps = {
   generatedImages: ImageDetail[];
   brandId: string;
@@ -41,6 +42,7 @@ export const A2IImages = ({
   campaignId,
 }: A2IImagesProps) => {
   const { setRemixUrl, setRemixSize } = useRemixStore();
+
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
   const stream = useStreamContext();
@@ -53,6 +55,7 @@ export const A2IImages = ({
   const { addToGallery } = useGalleryQuery({});
 
   // Handlers for actions
+
   const handleCreateVideo = (imageId: string) => {
     console.log("Creating video for image:", imageId);
   };

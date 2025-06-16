@@ -6,15 +6,20 @@ import React from "react";
 
 const CampaignVisualStyleReferences = ({
   visualStyleReferences,
+  hideImages = false,
 }: {
   visualStyleReferences: ThreadCampaign["visual_style_references"];
+  hideImages?: boolean;
 }) => {
   const [expandedImage, setExpandedImage] = React.useState<string | null>(null);
 
   if (
     !visualStyleReferences ||
-    !visualStyleReferences.images ||
-    visualStyleReferences.images.length === 0
+    (!hideImages &&
+      (!visualStyleReferences.images ||
+        visualStyleReferences.images.length === 0) &&
+      (!visualStyleReferences.analysis ||
+        Object.keys(visualStyleReferences.analysis).length === 0))
   ) {
     return (
       <ContentSection
@@ -23,7 +28,7 @@ const CampaignVisualStyleReferences = ({
         content={
           <p className="text-gray-500 text-sm">
             No visual style references available. Please add some visual style
-            images to the campaign to see them here.
+            data to the campaign to see them here.
           </p>
         }
         context={{
@@ -39,17 +44,19 @@ const CampaignVisualStyleReferences = ({
       title={`Visual Style References`}
       content={
         <div className="space-y-3">
-          <div className="grid grid-cols-4">
-            {visualStyleReferences.images.map((image, index) => (
-              <div
-                key={index}
-                className="w-full h-64"
-                onClick={() => setExpandedImage(image)}
-              >
-                <img src={image} className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
+          {!hideImages && visualStyleReferences.images?.length > 0 && (
+            <div className="grid grid-cols-4">
+              {visualStyleReferences.images.map((image, index) => (
+                <div
+                  key={index}
+                  className="w-full h-64 cursor-pointer"
+                  onClick={() => setExpandedImage(image)}
+                >
+                  <img src={image} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
           {Object.entries(visualStyleReferences.analysis ?? {}).map(
             ([key, value]) => (
               <ContentSection

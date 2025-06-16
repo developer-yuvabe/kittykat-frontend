@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { MessageCircle } from "lucide-react";
 
-import ThreadDetailsPanel from "./ThreadDetailsPanel"; // Adjust the path as needed
+import ThreadDetailsPanel from "./ThreadDetailsPanel";
 import { ChatComponent } from "./ChatComponent";
 import { useThreads } from "@/providers/langgraph/Thread";
 
