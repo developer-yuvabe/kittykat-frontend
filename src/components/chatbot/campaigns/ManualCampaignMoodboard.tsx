@@ -139,7 +139,7 @@ function ManualCampaignMoodboard({
                   onRefresh={() => handleGenerateMoodboard()}
                   onChange={setNoOfImagesForMoodboard}
                 />
-                <UploadInput />
+                <UploadInput brandId={brandId} campaignId={campaign.id} />
               </div>
               <SortableGallery
                 gallery={RowsPhotoAlbum}
@@ -155,6 +155,9 @@ function ManualCampaignMoodboard({
                     clone[index] = { ...clone[index], liked };
                     return clone;
                   });
+                }}
+                removedPhoto={(id: string) => {
+                  setPhotos((prev) => prev.filter((photo) => photo.id !== id));
                 }}
               />
               <Button
@@ -173,7 +176,7 @@ function ManualCampaignMoodboard({
                   onRefresh={() => {}}
                   onChange={setNoOfImagesForMoodboard}
                 />
-                <UploadInput />
+                <UploadInput brandId={brandId} campaignId={campaign.id} />
               </div>
               <ManualMoodboardSkeleton />
 

@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import EmblaCarousel from "@/components/ui/embla-carousel";
+import React, { useState } from "react";
 import { ImageModal } from "@/components/shared/ImageModal";
-import { Skeleton } from "@/components/ui/skeleton"; // Assuming you use shadcn/ui
-import { Loader } from "lucide-react"; // Or any spinner
 import { VisualImage } from "@/types/campaign.types";
 import {
   Carousel,

@@ -160,7 +160,12 @@ export interface ThreadCampaign {
   };
   moodboard_ready: boolean;
   completed: boolean;
-  style_analysis_ready?: boolean;
+  style_analysis_status?:
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed"
+    | "partially_completed";
   style_analysis_progress_messages?: string[];
   style_analysis_progress?: number;
 }

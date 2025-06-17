@@ -149,11 +149,15 @@ export const generateMoodboardFromTags = async (
   }
 };
 
+export type LimitsState = {
+  pinterest_limit: number;
+  instagram_limit: number;
+  facebook_limit: number;
+};
+
 const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
   campaign,
   socialMediaPlatforms,
-  setIsManualMoodboardGenerating,
-  isManualMoodboardGenerating,
   setManualMoodboardImages,
   manualMoodboardImages,
   brandId,
@@ -165,8 +169,12 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [socialOptions, setSocialOptions] = useState<SocialOption[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
+
+  const [limits, setLimits] = useState<LimitsState>({
+    pinterest_limit: 10,
+    instagram_limit: 10,
+    facebook_limit: 10,
+  });
 
   const { selectedBrandId } = useBrandStore();
 
@@ -185,6 +193,18 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
       workflow_status: [],
     },
   });
+
+  // Helper function to determine if analysis is in progress
+  const isAnalysisInProgress = () => {
+    return campaign.style_analysis_status === "in_progress";
+  };
+
+  // Helper function to get analysis progress
+  const getAnalysisProgress = () => {
+    if (campaign.style_analysis_status === "completed") return 100;
+    if (campaign.style_analysis_status === "failed") return 0;
+    return campaign.style_analysis_progress || 0;
+  };
 
   // Initialize social options from props and campaign data
   useEffect(() => {
@@ -268,22 +288,6 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
 
     initializeSocialOptions();
   }, [campaign, socialMediaPlatforms]);
-
-  // Track analysis progress
-  useEffect(() => {
-    // Set analyzing state based on campaign properties
-    if (
-      campaign.style_analysis_progress !== undefined &&
-      campaign.style_analysis_progress < 100 &&
-      !campaign.style_analysis_ready
-    ) {
-      setIsAnalyzing(true);
-      setAnalysisProgress(campaign.style_analysis_progress || 0);
-    } else if (campaign.style_analysis_ready) {
-      setIsAnalyzing(false);
-      setAnalysisProgress(100);
-    }
-  }, [campaign.style_analysis_progress, campaign.style_analysis_ready]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -445,10 +449,6 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
   const startAnalysis = async () => {
     if (!selectedBrandId) return;
 
-    // Optimistic UI update
-    setIsAnalyzing(true);
-    setAnalysisProgress(5); // Start with a small progress value
-
     try {
       await updateCampaign(selectedBrandId, campaign.id, {
         selected_sources: socialOptions.map((opt) => ({
@@ -457,11 +457,10 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
           selected: selectedOptions.includes(opt.id),
         })),
       });
-      await analyzeCampaignImages(selectedBrandId, campaign.id);
+      await analyzeCampaignImages(selectedBrandId, campaign.id, limits);
       // The actual progress updates will come from the campaign prop via event source
     } catch (error) {
       console.error("Failed to start image analysis:", error);
-      setIsAnalyzing(false);
     }
   };
 
@@ -478,47 +477,73 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
     });
   }, [selectedBrandId, campaign.visual_images]); // Add other fields you care about
 
+  const getAnalysisStatusMessage = () => {
+    switch (campaign.style_analysis_status) {
+      case "not_started":
+        return "Ready to analyze your style";
+      case "in_progress":
+        return "Analyzing your style...";
+      case "completed":
+        return "Analysis Complete!";
+      case "failed":
+        return "Analysis failed - please try again";
+      case "partially_completed":
+        return "Analysis partially completed";
+      default:
+        return "Ready to analyze your style";
+    }
+  };
+
+  const shouldShowAnalysisStatus = () => {
+    return (
+      campaign.style_analysis_status !== "not_started" &&
+      campaign.style_analysis_status !== undefined
+    );
+  };
+
   const renderAnalysisStatus = () => {
-    if (!isAnalyzing && !campaign.style_analysis_ready) return null;
+    if (!shouldShowAnalysisStatus()) return null;
+
+    const progress = getAnalysisProgress();
+    const statusMessage = getAnalysisStatusMessage();
 
     return (
       <div className="mt-6 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-gray-800">
-              {campaign.style_analysis_ready
-                ? "Analysis Complete!"
-                : "Analyzing your style..."}
-            </h3>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 rounded-full"
-                >
-                  <InfoIcon className="h-4 w-4 text-gray-500" />
-                  <span className="sr-only">View analysis details</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Analysis Progress</h4>
-                  <div className="max-h-40 overflow-y-auto space-y-1 text-sm text-gray-600">
-                    {campaign.style_analysis_progress_messages?.map(
-                      (message, index) => <p key={index}>{message}</p>
-                    ) || <p>No progress messages available</p>}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <h3 className="font-medium text-gray-800">{statusMessage}</h3>
+            {campaign.style_analysis_progress_messages &&
+              campaign.style_analysis_progress_messages.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 rounded-full"
+                    >
+                      <InfoIcon className="h-4 w-4 text-gray-500" />
+                      <span className="sr-only">View analysis details</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Analysis Progress</h4>
+                      <div className="max-h-40 overflow-y-auto space-y-1 text-sm text-gray-600">
+                        {campaign.style_analysis_progress_messages.map(
+                          (message, index) => (
+                            <p key={index}>{message}</p>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
           </div>
-          <span className="text-sm font-medium text-gray-700">
-            {analysisProgress}%
-          </span>
+          <span className="text-sm font-medium text-gray-700">{progress}%</span>
         </div>
         <Progress
-          value={analysisProgress}
+          value={progress}
           className="h-2 transition-all duration-300"
         />
       </div>
@@ -531,7 +556,7 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
       content={
         <div>
           {(!campaign?.tags || Object.keys(campaign.tags).length === 0) &&
-            (campaign.style_analysis_progress ?? 0) === 0 && (
+            campaign.style_analysis_status !== "completed" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column - File Upload */}
 
@@ -555,6 +580,8 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
                   cancelEditing={cancelEditing}
                   startEditing={startEditing}
                   toggleOption={toggleOption}
+                  limits={limits}
+                  setLimits={setLimits}
                 />
               </div>
             )}
@@ -579,18 +606,19 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
           )}
 
           {/* Footer Button */}
-          {!campaign?.tags || Object.keys(campaign.tags).length === 0 ? (
+          {(!campaign?.tags || Object.keys(campaign.tags).length === 0) &&
+          campaign.style_analysis_status !== "completed" ? (
             <div className="mt-8">
               <Button
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
                 disabled={
                   (uploadedImages.length === 0 &&
                     selectedOptions.length === 0) ||
-                  isAnalyzing
+                  isAnalysisInProgress()
                 }
                 onClick={startAnalysis}
               >
-                {isAnalyzing ? (
+                {isAnalysisInProgress() ? (
                   <span className="flex items-center gap-2">
                     <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
                     Analyzing...
@@ -601,14 +629,16 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
               </Button>
             </div>
           ) : (
-            <div className="mt-8">
-              <Button
-                onClick={handleGenerateMoodboard}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
-              >
-                <Presentation size={28} /> Generate Moodboard
-              </Button>
-            </div>
+            campaign.style_analysis_status === "completed" && (
+              <div className="mt-8">
+                <Button
+                  onClick={handleGenerateMoodboard}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
+                >
+                  <Presentation size={28} /> Generate Moodboard
+                </Button>
+              </div>
+            )
           )}
         </div>
       }

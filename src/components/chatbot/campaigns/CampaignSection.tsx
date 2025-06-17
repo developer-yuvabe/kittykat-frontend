@@ -34,7 +34,6 @@ import { toast } from "sonner";
 import ManualCampaignMoodboard, {
   ManualMoodboardItem,
 } from "./ManualCampaignMoodboard";
-import { imageLink } from "@/components/gallery/photos";
 
 interface ManualCampaignForm {
   title: string;

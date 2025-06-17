@@ -10,9 +10,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Command, CommandEmpty } from "@/components/ui/command";
-import { Search, Copy, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { PinIcon } from "@/components/ui/custom-icon";
 import BrandSelector from "./BrandSelector";
 import { SubSectionCard } from "./SubSectionCard";
 

@@ -39,13 +39,21 @@ export async function addVisualImage(
   );
 }
 
+interface ImageAnalysisLimits {
+  pinterest_limit?: number;
+  instagram_limit?: number;
+  facebook_limit?: number;
+}
+
 export async function analyzeCampaignImages(
   brandId: string,
-  campaignId: string
+  campaignId: string,
+  limits: ImageAnalysisLimits = {} // optional param with defaults
 ): Promise<void> {
   return handleApiRequest<void>(
     axiosInstance.post(
-      `/brands/${brandId}/campaign/${campaignId}/visual-image/analysis`
+      `/brands/${brandId}/campaign/${campaignId}/visual-image/analysis`,
+      limits
     )
   );
 }
@@ -64,6 +72,23 @@ export async function analyzeCampaignMoodboard(
     axiosInstance.post(
       `/brands/${brandId}/campaign/${campaignId}/image-analysis`,
       request
+    )
+  );
+}
+
+export interface AddVisualImage {
+  url: string;
+}
+
+export async function addVisualImageToCampaign(
+  brandId: string,
+  campaignId: string,
+  image: AddVisualImage
+): Promise<CampaignResponse> {
+  return handleApiRequest<CampaignResponse>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/visual-image`,
+      image
     )
   );
 }

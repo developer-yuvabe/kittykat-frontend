@@ -26,7 +26,7 @@ import {
 import classes from "./SortableGallery.module.css";
 import Sortable from "./Sortable";
 import Overlay from "./Overlay";
-import { Heart } from "lucide-react";
+import { Heart, X } from "lucide-react";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
@@ -54,6 +54,7 @@ type SortableGalleryProps<
   movePhoto: (oldIndex: number, newIndex: number) => void;
   onPhotoLike?: (index: number, liked: boolean) => void;
   photos: SortablePhoto<TPhoto>[];
+  removedPhoto: (id: string) => void;
 };
 
 export default function SortableGallery<
@@ -65,6 +66,7 @@ export default function SortableGallery<
   movePhoto,
   onPhotoLike,
   render,
+  removedPhoto,
 
   ...rest
 }: SortableGalleryProps<TPhoto, TGalleryType>) {
@@ -144,7 +146,17 @@ export default function SortableGallery<
                   const sortablePhoto = photo as SortablePhoto<TPhoto>;
                   return (
                     <>
-                      {/* Like Icon (bottom-right) */}
+                      <div className="absolute top-2 left-2 z-10">
+                        <X
+                          size={16}
+                          className={`w-5 h-5 cursor-pointer transition-colors text-white fill-whitehover:scale-110 active:scale-95`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            removedPhoto(sortablePhoto.id);
+                          }}
+                        />
+                      </div>
                       {/* Like Icon (bottom-right) */}
                       <div className="absolute bottom-2 right-2 z-10">
                         <Heart
