@@ -34,6 +34,10 @@ import { toast } from "sonner";
 import ManualCampaignMoodboard, {
   ManualMoodboardItem,
 } from "./ManualCampaignMoodboard";
+import {
+  campaignFields,
+  PlaceholderSection,
+} from "../brands/InitialPlaceHolder";
 
 interface ManualCampaignForm {
   title: string;
@@ -51,47 +55,77 @@ export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
   brandInformation: ThreadDetails["brand_information"];
 }> = ({ campaignInformation, brandInformation }) => {
-  // Early return for empty campaign information
-  if (!campaignInformation?.length) return null;
-
+  const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
   const { selectedBrandId } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
-  const latestCampaignIndex = useMemo(
-    () => campaignInformation.length - 1,
-    [campaignInformation.length]
-  );
+  console.log(campaignInformation);
 
+  // All other state hooks
   const [expanded, setExpanded] = useState(true);
-  const [selectedCampaignIndex, setSelectedCampaignIndex] =
-    useState(latestCampaignIndex);
   const [fadeKey, setFadeKey] = useState(0);
   const [open, setOpen] = useState(false);
   const [isCreatingManual, setIsCreatingManual] = useState(false);
   const [manualCampaignForm, setManualCampaignForm] =
     useState<ManualCampaignForm>(INITIAL_MANUAL_FORM);
   const [newToneInput, setNewToneInput] = useState("");
+  const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
+    useState<number>(10);
+  const [manualMoodboardImages, setManualMoodboardImages] = useState<
+    ManualMoodboardItem[]
+  >([]);
+  const [isManualMoodboardGenerating, setIsManualMoodboardGenerating] =
+    useState<boolean>(false);
+
+  // All useMemo hooks
+  const latestCampaignIndex = useMemo(
+    () =>
+      campaignInformation && campaignInformation.length > 0
+        ? campaignInformation.length - 1
+        : 0,
+    [campaignInformation]
+  );
+
+  const [selectedCampaignIndex, setSelectedCampaignIndex] =
+    useState(latestCampaignIndex);
 
   const currentCampaign = useMemo(
-    () => campaignInformation[selectedCampaignIndex],
+    () =>
+      campaignInformation && campaignInformation[selectedCampaignIndex]
+        ? campaignInformation[selectedCampaignIndex]
+        : null,
     [campaignInformation, selectedCampaignIndex]
   );
+
   const dynamicData = useMemo(
     () => currentCampaign?.dynamic,
     [currentCampaign]
   );
+
   const isManualCampaign = useMemo(
     () => currentCampaign?.is_manual === true,
     [currentCampaign]
   );
 
-  // Update selected index when campaign information changes
+  const isFormValid = useMemo(
+    () => manualCampaignForm.title.trim().length > 0,
+    [manualCampaignForm.title]
+  );
+
+  // All useEffect hooks
   useEffect(() => {
     setFadeKey((prev) => prev + 1);
     setSelectedCampaignIndex(latestCampaignIndex);
   }, [latestCampaignIndex]);
 
+  useEffect(() => {
+    // if (isManualCampaign && currentCampaign?.moodboard) {
+    //   setManualMoodboardImages(currentCampaign.moodboard);
+    // }
+  }, [isManualCampaign, currentCampaign]);
+
+  // All useCallback hooks
   const resetManualForm = useCallback(() => {
     setManualCampaignForm(INITIAL_MANUAL_FORM);
     setNewToneInput("");
@@ -163,7 +197,7 @@ export const CampaignSection: React.FC<{
     resetManualForm();
     setIsCreatingManual(false);
     toast.success("Campaign created successfully!");
-  }, [manualCampaignForm, resetManualForm]);
+  }, [manualCampaignForm, resetManualForm, selectedBrandId]);
 
   const handleCancelManualCreation = useCallback(() => {
     resetManualForm();
@@ -175,7 +209,7 @@ export const CampaignSection: React.FC<{
       console.log(`Saving manual campaign ${field}:`, newValue);
 
       const updatePayload = {
-        campaignId: currentCampaign.id,
+        campaignId: currentCampaign?.id,
         field: field,
         newValue: newValue,
         timestamp: new Date().toISOString(),
@@ -229,6 +263,7 @@ export const CampaignSection: React.FC<{
   );
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
+
   const togglePopover = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setOpen((prev) => !prev);
@@ -244,29 +279,8 @@ export const CampaignSection: React.FC<{
     []
   );
 
-  const isFormValid = useMemo(
-    () => manualCampaignForm.title.trim().length > 0,
-    [manualCampaignForm.title]
-  );
-
-  const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
-    useState<number>(10);
-
-  const [manualMoodboardImages, setManualMoodboardImages] = useState<
-    ManualMoodboardItem[]
-  >([]);
-
-  useEffect(() => {
-    // if (isManualCampaign && currentCampaign?.moodboard) {
-    //   setManualMoodboardImages(currentCampaign.moodboard);
-    // }
-  }, [isManualCampaign, currentCampaign]);
-
-  const [isManualMoodboardGenerating, setIsManualMoodboardGenerating] =
-    useState<boolean>(false);
-
-  const handleGenerateMoodboard = async () => {
-    if (!selectedBrandId || !currentCampaign.tags) return;
+  const handleGenerateMoodboard = useCallback(async () => {
+    if (!selectedBrandId || !currentCampaign?.tags) return;
 
     await generateMoodboardFromTags(
       currentCampaign,
@@ -275,7 +289,33 @@ export const CampaignSection: React.FC<{
       setManualMoodboardImages,
       noOfImagesForMoodboard
     );
-  };
+  }, [selectedBrandId, currentCampaign, noOfImagesForMoodboard]);
+
+  // NOW CONDITIONAL LOGIC CAN HAPPEN AFTER ALL HOOKS
+  // Early return for empty campaign information
+  if (
+    (!campaignInformation || campaignInformation.length === 0) &&
+    !isCreatingManual
+  ) {
+    return (
+      <PlaceholderSection
+        title="Campaign"
+        avatarFallback="C"
+        avatarBgColor="bg-green-500"
+        fields={campaignFields}
+        searchPlaceholder="Load existing Campaign"
+        newButtonTooltip="New Campaign"
+        onNewClick={() => {
+          handleManual();
+        }}
+        isExpanded={isPlaceholderExpanded}
+        onToggleExpanded={() =>
+          setIsPlaceholderExpanded((prev: boolean) => !prev)
+        }
+      />
+    );
+  }
+
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
       <CardHeader className="py-1">
@@ -323,11 +363,13 @@ export const CampaignSection: React.FC<{
           </div>
           {expanded && (
             <div className="absolute right-3 top-6 flex gap-x-2">
-              <CampaignSelector
-                campaigns={campaignInformation}
-                selectedCampaignIndex={selectedCampaignIndex}
-                setSelectedCampaignIndex={handleCampaignIndexChange}
-              />
+              {campaignInformation && (
+                <CampaignSelector
+                  campaigns={campaignInformation}
+                  selectedCampaignIndex={selectedCampaignIndex}
+                  setSelectedCampaignIndex={handleCampaignIndexChange}
+                />
+              )}
               {!isCreatingManual && (
                 <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
@@ -493,7 +535,7 @@ export const CampaignSection: React.FC<{
             )}
 
             {/* Existing campaign content */}
-            {!isCreatingManual && (
+            {!isCreatingManual && currentCampaign && (
               <motion.div
                 key={fadeKey}
                 initial={{ opacity: 0 }}
@@ -504,7 +546,6 @@ export const CampaignSection: React.FC<{
                 <div className="mt-1 space-y-6">
                   {isManualCampaign ? (
                     // Manual Campaign UI - Simplified with only overview
-
                     <>
                       <ManualCampaignOverview
                         title={currentCampaign?.campaign?.title}

@@ -50,37 +50,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             clearPinnedItems={removePinnedItem}
           />
 
-          {campaignInformation ? (
-            <CampaignSection
-              campaignInformation={campaignInformation}
-              brandInformation={brandingInformation}
-            />
-          ) : (
-            <PlaceholderSection
-              title="Campaign"
-              avatarFallback="C"
-              avatarBgColor="bg-green-500"
-              fields={campaignFields}
-              searchPlaceholder="Load existing Campaign"
-              newButtonTooltip="New Campaign"
-              onNewClick={() => {
-                console.log("New Campaign clicked");
-              }}
-              isExpanded={expandedSections["campaignSection"]}
-              onToggleExpanded={() =>
-                setExpandedSections((prev) => ({
-                  ...prev,
-                  campaignSection: !prev["campaignSection"],
-                }))
-              }
-            />
-          )}
-          {brandingInformation && (
-            <A2iImagesSection
-              a2iImageInformation={a2iImageInformation}
-              campaignInformation={campaignInformation}
-            />
-          )}
+          <CampaignSection
+            campaignInformation={campaignInformation}
+            brandInformation={brandingInformation}
+          />
         </div>
       )}
     </div>
