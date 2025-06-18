@@ -15,14 +15,32 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 import { Check } from "lucide-react";
 import { useState } from "react";
 
 export default function BrandSelector() {
+  const { user } = useUserStore();
   const [open, setOpen] = useState(false);
+  const stream = useStreamContext();
+
   const { brands, selectedBrandId, setSelectedBrandId, isBrandsFetched } =
     useBrandStore();
+
+  const handleBrandSelect = (brandId: string) => {
+    setSelectedBrandId(brandId);
+    setOpen(false);
+
+    if (user?.thread_id) {
+      stream.client.threads.updateState(user?.thread_id, {
+        values: {
+          currentBrandContextId: brandId,
+        },
+      });
+    }
+  };
 
   return (
     <div className="">
@@ -63,10 +81,7 @@ export default function BrandSelector() {
                   <CommandItem
                     key={brand.id}
                     value={brand.id}
-                    onSelect={() => {
-                      setSelectedBrandId(brand.id);
-                      setOpen(false);
-                    }}
+                    onSelect={handleBrandSelect}
                     className="flex items-center  justify-between group"
                     onClick={(e) => {
                       e.stopPropagation();
