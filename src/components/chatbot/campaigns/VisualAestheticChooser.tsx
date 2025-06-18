@@ -13,10 +13,15 @@ import {
 import {
   addVisualImage,
   analyzeCampaignImages,
+  createManualMoodboardForCampaign,
   updateCampaign,
 } from "@/services/api/campaign.service";
 import { useBrandStore } from "@/store/brand.store";
-import type { SourceHandle } from "@/types/campaign.types";
+import {
+  SocialOptionId,
+  type SocialOption,
+  type SourceHandle,
+} from "@/types/campaign.types";
 import type { ThreadCampaign } from "@/types/types";
 import { ManualCampaignDropzone } from "./ManualCampaignDropzone";
 import { ManualCampaignUploadStatus } from "./ManualCampaignUploadStatus";
@@ -30,11 +35,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ContentSection } from "@/components/shared/ContentSection";
-import { ManualMoodboardItem } from "./ManualCampaignMoodboard";
-import { galleryService } from "@/services/api/gallery.service";
+
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useUserStore } from "@/store/user.store";
 import { useQueryClient } from "@tanstack/react-query";
+import { ImageCountCard } from "@/components/shared/ImageCountCard";
 
 interface UploadedImage {
   id: string;
@@ -43,30 +48,9 @@ interface UploadedImage {
   file: File;
 }
 
-export enum SocialOptionId {
-  Instagram = "instagram",
-  Facebook = "facebook",
-  Pintrest = "pintrest",
-  Website = "website",
-}
-
-export interface SocialOption {
-  id: SocialOptionId;
-  name: string;
-  url: string;
-  icon: React.ReactNode;
-  isEditing: boolean;
-  editValue: string;
-}
-
 interface VisualAestheticChooserProps {
   campaign: ThreadCampaign;
-  setIsManualMoodboardGenerating: React.Dispatch<React.SetStateAction<boolean>>;
-  isManualMoodboardGenerating: boolean;
-  setManualMoodboardImages: React.Dispatch<
-    React.SetStateAction<ManualMoodboardItem[]>
-  >;
-  manualMoodboardImages: ManualMoodboardItem[];
+
   noOfImagesForMoodboard: number;
   brandId: string;
   socialMediaPlatforms:
@@ -79,75 +63,8 @@ interface VisualAestheticChooserProps {
       }
     | undefined;
 
-  handleGenerateMoodboard: () => Promise<void>;
+  setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
 }
-
-// Helper function to generate moodboard from selected campaign tags
-export const generateMoodboardFromTags = async (
-  campaign: ThreadCampaign,
-  brandId: string,
-  setIsManualMoodboardGenerating: React.Dispatch<React.SetStateAction<boolean>>,
-  setManualMoodboardImages: React.Dispatch<
-    React.SetStateAction<ManualMoodboardItem[]>
-  >,
-  noOfImagesForMoodboard: number
-): Promise<void> => {
-  if (!campaign.tags || Object.keys(campaign.tags).length === 0) {
-    console.warn("No tags available for moodboard generation");
-    return;
-  }
-
-  setIsManualMoodboardGenerating(true);
-
-  try {
-    // Extract selected tags and convert to comma-separated query
-    const selectedTags = Object.entries(campaign.tags)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([tag, _]) => tag);
-
-    if (selectedTags.length === 0) {
-      console.warn("No tags selected for moodboard generation");
-      return;
-    }
-
-    const searchQuery = selectedTags.join(", ");
-
-    // Search gallery with the tags query
-    const response = await galleryService.searchGalleryItems(
-      searchQuery,
-      0, // skip
-      noOfImagesForMoodboard, // limit - adjust based on how many images you want in moodboard
-      "vector_text_search", // or "semantic_text_search" based on preference
-      undefined, // image_url
-      brandId,
-      campaign.id
-    );
-
-    // Transform gallery items to ManualMoodboardItem format
-    const moodboardItems: ManualMoodboardItem[] = response.gallery_items.map(
-      (item, index) => ({
-        id: item.id,
-        asset_url: item.asset_url,
-        is_liked: false, // Default to not liked
-        ignored: false, // Default to not ignored
-        position: index, // Set position based on array index
-      })
-    );
-
-    // Update the moodboard images state
-    setManualMoodboardImages(moodboardItems);
-
-    console.log(
-      `Generated moodboard with ${moodboardItems.length} items from tags:`,
-      selectedTags
-    );
-  } catch (error) {
-    console.error("Failed to generate moodboard from tags:", error);
-    // Optionally show error message to user
-  } finally {
-    setIsManualMoodboardGenerating(false);
-  }
-};
 
 export type LimitsState = {
   pinterest_limit: number;
@@ -158,11 +75,8 @@ export type LimitsState = {
 const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
   campaign,
   socialMediaPlatforms,
-  setManualMoodboardImages,
-  manualMoodboardImages,
-  brandId,
   noOfImagesForMoodboard,
-  handleGenerateMoodboard,
+  setNoOfImagesForMoodboard,
 }) => {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -170,13 +84,13 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [socialOptions, setSocialOptions] = useState<SocialOption[]>([]);
 
+  const { selectedBrandId } = useBrandStore();
+
   const [limits, setLimits] = useState<LimitsState>({
     pinterest_limit: 10,
     instagram_limit: 10,
     facebook_limit: 10,
   });
-
-  const { selectedBrandId } = useBrandStore();
 
   const { user } = useUserStore();
 
@@ -296,59 +210,40 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
 
       try {
         const uploadPromises = acceptedFiles.map(async (file) => {
-          // Create preview URL
-          const previewUrl = URL.createObjectURL(file);
-          const tempId = Math.random().toString(36).substr(2, 9);
+          const downloadUrl = await uploadFileAndReturnUrl(
+            file.name,
+            file.type,
+            "threads",
+            file
+          );
 
-          // Add to state immediately with preview
-          const tempImage: UploadedImage = {
-            id: tempId,
-            url: previewUrl,
-            name: file.name,
-            file,
+          const uploadedImagePayload = {
+            id: crypto.randomUUID(),
+            filename: file.name,
+            url: downloadUrl,
+            source: "upload",
           };
 
-          setUploadedImages((prev) => [...prev, tempImage]);
-
-          try {
-            // Upload file and get actual URL
-            const downloadUrl = await uploadFileAndReturnUrl(
-              file.name,
-              file.type,
-              "threads",
-              file
-            );
-
-            // Update with actual URL
-            setUploadedImages((prev) =>
-              prev.map((img) =>
-                img.id === tempId ? { ...img, url: downloadUrl } : img
-              )
-            );
-
-            const uploadedImagePayload = {
-              id: tempId,
-              filename: file.name,
+          // Add to state
+          setUploadedImages((prev) => [
+            ...prev,
+            {
+              id: uploadedImagePayload.id,
               url: downloadUrl,
-              source: "upload",
-            };
+              name: file.name,
+              file,
+            },
+          ]);
 
-            if (selectedBrandId) {
-              await addVisualImage(
-                selectedBrandId,
-                campaign.id,
-                uploadedImagePayload
-              );
-            }
-
-            return downloadUrl;
-          } catch (error) {
-            // Remove failed upload
-            setUploadedImages((prev) =>
-              prev.filter((img) => img.id !== tempId)
+          if (selectedBrandId) {
+            await addVisualImage(
+              selectedBrandId,
+              campaign.id,
+              uploadedImagePayload
             );
-            throw error;
           }
+
+          return downloadUrl;
         });
 
         await Promise.all(uploadPromises);
@@ -550,6 +445,14 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
     );
   };
 
+  async function handleGenerateMoodboard(): Promise<void> {
+    if (selectedBrandId) {
+      await createManualMoodboardForCampaign(selectedBrandId, campaign.id, {
+        no_of_images: noOfImagesForMoodboard,
+      });
+    }
+  }
+
   return (
     <ContentSection
       title={`Choose your Visual Aesthetic`}
@@ -587,12 +490,22 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
             )}
 
           <ManualCampaigVisualImages
-            images={(galleryItems || []).map((item) => ({
-              id: item.id,
-              filename: item.asset_title ?? "Untitled",
-              url: item.asset_url,
-              source: item.asset_source,
-            }))}
+            images={(galleryItems || []).map((item) => {
+              // Find the corresponding visual image by id
+              const visualImage = campaign.visual_images.find(
+                (img) => img.id === item.id
+              );
+
+              console.log("here", visualImage);
+              return {
+                id: item.id,
+                filename: item.asset_title ?? "Untitled",
+                url: item.asset_url,
+                source: item.asset_source,
+                is_liked: visualImage?.is_liked ?? false,
+                ignored: visualImage?.ignored ?? false,
+              };
+            })}
           />
 
           {/* Analysis Status with Progress Bar */}
@@ -630,13 +543,39 @@ const VisualAestheticChooser: React.FC<VisualAestheticChooserProps> = ({
             </div>
           ) : (
             campaign.style_analysis_status === "completed" && (
-              <div className="mt-8">
-                <Button
-                  onClick={handleGenerateMoodboard}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
-                >
-                  <Presentation size={28} /> Generate Moodboard
-                </Button>
+              <div className="mt-8 flex flex-row gap-x-2 items-center">
+                <div className="flex-[9]">
+                  <Button
+                    onClick={handleGenerateMoodboard}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
+                    disabled={
+                      campaign.manual_moodboard_generation_status ===
+                      "in_progress"
+                    }
+                  >
+                    {campaign.manual_moodboard_generation_status ===
+                    "in_progress" ? (
+                      <span className="flex items-center gap-2">
+                        <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                        Generating...
+                      </span>
+                    ) : (
+                      <>
+                        <Presentation size={28} className="mr-2" />
+                        Generate Moodboard
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="flex-[1]">
+                  <ImageCountCard
+                    imageCount={noOfImagesForMoodboard}
+                    onRefresh={() => handleGenerateMoodboard()}
+                    onChange={setNoOfImagesForMoodboard}
+                    hideRefresh
+                    maxCount={campaign.visual_images.length}
+                  />
+                </div>
               </div>
             )
           )}

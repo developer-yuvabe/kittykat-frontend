@@ -26,18 +26,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ManualCampaignOverview } from "./ManualCampaignOverview";
 import { createCampaign } from "@/services/api/campaign.service";
-import VisualAestheticChooser, {
-  generateMoodboardFromTags,
-} from "./VisualAestheticChooser";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
-import ManualCampaignMoodboard, {
-  ManualMoodboardItem,
-} from "./ManualCampaignMoodboard";
+import ManualCampaignMoodboard from "./ManualCampaignMoodboard";
 import {
   campaignFields,
   PlaceholderSection,
 } from "../brands/InitialPlaceHolder";
+import VisualAestheticChooser from "./VisualAestheticChooser";
 
 interface ManualCampaignForm {
   title: string;
@@ -70,11 +67,7 @@ export const CampaignSection: React.FC<{
   const [manualCampaignForm, setManualCampaignForm] =
     useState<ManualCampaignForm>(INITIAL_MANUAL_FORM);
   const [newToneInput, setNewToneInput] = useState("");
-  const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
-    useState<number>(10);
-  const [manualMoodboardImages, setManualMoodboardImages] = useState<
-    ManualMoodboardItem[]
-  >([]);
+
   const [isManualMoodboardGenerating, setIsManualMoodboardGenerating] =
     useState<boolean>(false);
 
@@ -98,6 +91,33 @@ export const CampaignSection: React.FC<{
     [campaignInformation, selectedCampaignIndex]
   );
 
+  const visualImageCount = currentCampaign?.visual_images?.length || 0;
+
+  console.log("visual image count", visualImageCount);
+
+  const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] = useState<number>(
+    () => {
+      if (currentCampaign?.manual_moodboard_assets?.length) {
+        return currentCampaign.manual_moodboard_assets.length;
+      }
+      return visualImageCount < 8
+        ? visualImageCount
+        : Math.min(visualImageCount, 16);
+    }
+  );
+
+  useEffect(() => {
+    if (currentCampaign?.manual_moodboard_assets?.length) {
+      setNoOfImagesForMoodboard(
+        currentCampaign?.manual_moodboard_assets.length
+      );
+    } else {
+      setNoOfImagesForMoodboard(
+        visualImageCount < 8 ? visualImageCount : Math.min(visualImageCount, 16)
+      );
+    }
+  }, [visualImageCount, currentCampaign?.manual_moodboard_assets?.length]);
+
   const dynamicData = useMemo(
     () => currentCampaign?.dynamic,
     [currentCampaign]
@@ -118,12 +138,6 @@ export const CampaignSection: React.FC<{
     setFadeKey((prev) => prev + 1);
     setSelectedCampaignIndex(latestCampaignIndex);
   }, [latestCampaignIndex]);
-
-  useEffect(() => {
-    // if (isManualCampaign && currentCampaign?.moodboard) {
-    //   setManualMoodboardImages(currentCampaign.moodboard);
-    // }
-  }, [isManualCampaign, currentCampaign]);
 
   // All useCallback hooks
   const resetManualForm = useCallback(() => {
@@ -278,18 +292,6 @@ export const CampaignSection: React.FC<{
     },
     []
   );
-
-  const handleGenerateMoodboard = useCallback(async () => {
-    if (!selectedBrandId || !currentCampaign?.tags) return;
-
-    await generateMoodboardFromTags(
-      currentCampaign,
-      selectedBrandId,
-      setIsManualMoodboardGenerating,
-      setManualMoodboardImages,
-      noOfImagesForMoodboard
-    );
-  }, [selectedBrandId, currentCampaign, noOfImagesForMoodboard]);
 
   // NOW CONDITIONAL LOGIC CAN HAPPEN AFTER ALL HOOKS
   // Early return for empty campaign information
@@ -559,17 +561,9 @@ export const CampaignSection: React.FC<{
                         socialMediaPlatforms={
                           brandInformation?.static?.social_media
                         }
-                        setIsManualMoodboardGenerating={
-                          setIsManualMoodboardGenerating
-                        }
-                        isManualMoodboardGenerating={
-                          isManualMoodboardGenerating
-                        }
-                        setManualMoodboardImages={setManualMoodboardImages}
-                        manualMoodboardImages={manualMoodboardImages}
                         brandId={selectedBrandId || ""}
                         noOfImagesForMoodboard={noOfImagesForMoodboard}
-                        handleGenerateMoodboard={handleGenerateMoodboard}
+                        setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                       />
                       <ManualCampaignMoodboard
                         campaign={currentCampaign}
@@ -577,8 +571,6 @@ export const CampaignSection: React.FC<{
                         noOfImagesForMoodboard={noOfImagesForMoodboard}
                         setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                         isGenerating={isManualMoodboardGenerating}
-                        moodboard={manualMoodboardImages}
-                        handleGenerateMoodboard={handleGenerateMoodboard}
                       />
                       {currentCampaign?.visual_style_references && (
                         <CampaignVisualStyleReferences

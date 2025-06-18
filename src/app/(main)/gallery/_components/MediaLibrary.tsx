@@ -14,6 +14,7 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
+  GalleryItemResponse,
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
@@ -25,12 +26,20 @@ type MediaLibraryProps = {
   activeTab?: string;
   isMediaSelectDialog?: boolean;
   onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: GalleryItemResponse) => void; // 👈 new prop
+  filters?: EnhancedSelectedFilters;
+  brandId?: string;
+  campaignId?: string;
 };
 
 export function MediaLibrary({
   activeTab: initialTab = "all-media",
   isMediaSelectDialog = false,
   onMediaItemSelected,
+  filters,
+  brandId,
+  campaignId,
+  onFullMediaItemSelected,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -42,22 +51,28 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
+  const initialFilters = useMemo(() => {
+    return (
+      filters ?? {
+        brands: [],
+        campaigns: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        has_product: undefined,
+        has_people: undefined,
+        has_lifestyle_context: undefined,
+        is_favourite: undefined,
+        is_archived: undefined,
+      }
+    );
+  }, [filters]);
+
   const [selectedFilters, setSelectedFilters] =
-    useState<EnhancedSelectedFilters>({
-      brands: [],
-      campaigns: [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
-      has_product: undefined,
-      has_people: undefined,
-      has_lifestyle_context: undefined,
-      is_favourite: undefined,
-      is_archived: undefined,
-    });
+    useState<EnhancedSelectedFilters>(initialFilters);
 
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
@@ -101,9 +116,21 @@ export function MediaLibrary({
 
   useEffect(() => {
     if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
+      // If brandId is provided, try to find that brand
+      if (brandId) {
+        const matchedBrand = brandsData.brands.find(
+          (brand) => brand.brand_id === brandId
+        );
+        if (matchedBrand) {
+          setSelectedBrand(matchedBrand);
+          return;
+        }
+      }
+
+      // Fallback: Select first brand
       setSelectedBrand(brandsData.brands[0]);
     }
-  }, [brandsLoading, brandsData, selectedBrand]);
+  }, [brandsLoading, brandsData, brandId, selectedBrand]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -204,8 +231,11 @@ export function MediaLibrary({
         selectedItems.includes(item.id)
       );
 
-      onMediaItemSelected?.(selectedItem!.asset_url);
-      setSelectedItems([]);
+      if (selectedItem) {
+        onMediaItemSelected?.(selectedItem.asset_url); // original
+        onFullMediaItemSelected?.(selectedItem); // new full item
+        setSelectedItems([]);
+      }
     }
   }, [isMediaSelectDialog, selectedItems]);
 
@@ -236,6 +266,7 @@ export function MediaLibrary({
             setSelectedBrand={setSelectedBrand}
             brands={brandsData?.brands || []}
             brandsLoading={brandsLoading}
+            selectedCampaignId={campaignId}
           />
 
           <div className="flex flex-col md:flex-row gap-4">

@@ -6,11 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Save, X, Edit } from "lucide-react";
-import {
-  LimitsState,
-  SocialOption,
-  SocialOptionId,
-} from "./VisualAestheticChooser";
+import { LimitsState } from "./VisualAestheticChooser";
+import { SocialOption, SocialOptionId } from "@/types/campaign.types";
 
 interface SocialLinksEditorProps {
   socialOptions: SocialOption[];

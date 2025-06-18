@@ -1,7 +1,7 @@
 "use client";
 
 import { RefreshCcw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import clsx from "clsx";
 
 export function ImageCountCard({
@@ -12,6 +12,8 @@ export function ImageCountCard({
   textColor = "text-gray-500",
   borderColor = "border-[#7F55E0]",
   isRefreshing = false,
+  hideRefresh = false,
+  maxCount,
 }: {
   imageCount: number;
   onRefresh: () => void;
@@ -20,15 +22,23 @@ export function ImageCountCard({
   textColor?: string;
   borderColor?: string;
   isRefreshing?: boolean;
+  hideRefresh?: boolean;
+  maxCount: number;
 }) {
   const [value, setValue] = useState(imageCount.toString());
+
+  useEffect(() => {
+    setValue(imageCount.toString());
+  }, [imageCount]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setValue(val);
+
     const numeric = Number(val);
     if (!isNaN(numeric)) {
-      onChange?.(numeric);
+      const clamped = Math.min(Math.max(numeric, 1), maxCount);
+      onChange?.(clamped);
     }
   };
 
@@ -42,13 +52,17 @@ export function ImageCountCard({
           id="image_count_input"
           placeholder=" "
           disabled={isRefreshing}
+          min={1}
+          max={maxCount}
           className={clsx(
-            "peer block w-20 appearance-none font-bold  rounded-md border-2 rounded-r-none bg-transparent px-2.5 pt-4 pb-2.5 text-sm focus:outline-none focus:ring-0",
+            "peer block w-20 appearance-none font-bold rounded-md border-2 bg-transparent px-2.5 pt-4 pb-2.5 text-sm focus:outline-none focus:ring-0",
+            !hideRefresh && "rounded-r-none",
             textColor,
             borderColor,
             `border ${borderColor} focus:border-[#7F55E0]`
           )}
         />
+
         <label
           htmlFor="image_count_input"
           className={clsx(
@@ -61,25 +75,26 @@ export function ImageCountCard({
           {fieldName}
         </label>
       </div>
-
-      <div
-        className={clsx(
-          "flex items-center justify-center px-2 border-2 border-l-0 rounded-md rounded-l-none",
-          borderColor
-        )}
-      >
-        {isRefreshing ? (
-          <div
-            className="h-5 w-5 animate-spin rounded-full border-2 border-[#7F55E0] border-t-transparent"
-            title="Refreshing"
-          />
-        ) : (
-          <RefreshCcw
-            className="h-5 w-5 text-[#7F55E0] cursor-pointer"
-            onClick={onRefresh}
-          />
-        )}
-      </div>
+      {!hideRefresh && (
+        <div
+          className={clsx(
+            "flex items-center justify-center px-2 border-2 border-l-0 rounded-md rounded-l-none",
+            borderColor
+          )}
+        >
+          {isRefreshing ? (
+            <div
+              className="h-5 w-5 animate-spin rounded-full border-2 border-[#7F55E0] border-t-transparent"
+              title="Refreshing"
+            />
+          ) : (
+            <RefreshCcw
+              className="h-5 w-5 text-[#7F55E0] cursor-pointer"
+              onClick={onRefresh}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

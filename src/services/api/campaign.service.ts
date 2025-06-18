@@ -92,3 +92,92 @@ export async function addVisualImageToCampaign(
     )
   );
 }
+
+export type VisualImagePatchPayload = {
+  is_liked?: boolean;
+  ignored?: boolean;
+};
+
+export async function patchVisualImage(
+  brandId: string,
+  campaignId: string,
+  imageId: string,
+  updates: VisualImagePatchPayload
+): Promise<CampaignResponse> {
+  return handleApiRequest<CampaignResponse>(
+    axiosInstance.patch(
+      `/brands/${brandId}/campaign/${campaignId}/visual-image/${imageId}`,
+      updates
+    )
+  );
+}
+
+export interface ManualMoodboardAsset {
+  id: string;
+  position: number;
+}
+
+export async function updateManualMoodboardAssets(
+  brandId: string,
+  campaignId: string,
+  assets: ManualMoodboardAsset[]
+): Promise<CampaignResponse> {
+  return handleApiRequest<any>(
+    axiosInstance.patch(
+      `/brands/${brandId}/campaign/${campaignId}/manual-moodboard-assets`,
+      assets
+    )
+  );
+}
+
+export interface CreateMoodboardRequest {
+  no_of_images: number;
+}
+
+export async function createManualMoodboardForCampaign(
+  brandId: string,
+  campaignId: string,
+  data: CreateMoodboardRequest
+): Promise<null> {
+  return handleApiRequest<null>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/manual-moodboard`,
+      data
+    )
+  );
+}
+
+export interface AddMoodboardImageRequest {
+  id: string;
+}
+
+export async function addManualMoodboardImage(
+  brandId: string,
+  campaignId: string,
+  data: AddMoodboardImageRequest
+): Promise<CampaignResponse> {
+  return handleApiRequest<CampaignResponse>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/manual-moodboard-assets`,
+      data
+    )
+  );
+}
+
+export interface ReplaceMoodboardImageRequest {
+  image_to_replace_id: string;
+  replacement_image_url: string;
+}
+
+export async function replaceManualMoodboardImage(
+  brandId: string,
+  campaignId: string,
+  data: ReplaceMoodboardImageRequest
+): Promise<CampaignResponse> {
+  return handleApiRequest<CampaignResponse>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/manual-moodboard-assets/replace`,
+      data
+    )
+  );
+}

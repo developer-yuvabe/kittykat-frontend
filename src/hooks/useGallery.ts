@@ -120,14 +120,25 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   const addToGalleryMutation = useMutation({
     mutationFn: (newItem: GalleryItem) =>
       galleryService.createGalleryItem(newItem),
-    onSuccess: () => {
+
+    onMutate: () => {
+      // Show loading toast and store the ID
+      const toastId = toast.loading("Adding item to gallery...");
+      return { toastId };
+    },
+
+    onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-      // toast.success("Item added to gallery");
+
+      // Update the loading toast to success
+      toast.success("Item added to gallery", { id: context?.toastId });
     },
-    onError: () => {
-      toast.error("Failed to add item to gallery");
+
+    onError: (_error, _variables, context) => {
+      // Update the loading toast to error
+      toast.error("Failed to add item to gallery", { id: context?.toastId });
     },
   });
 

@@ -14,6 +14,8 @@ export interface VisualImage {
   filename?: string;
   url: string;
   source?: string;
+  is_liked?: boolean;
+  ignored?: boolean;
 }
 
 export interface SourceHandle {
@@ -97,4 +99,20 @@ export interface CampaignResponse {
   };
   moodboard_ready: boolean;
   completed: boolean;
+}
+
+export enum SocialOptionId {
+  Instagram = "instagram",
+  Facebook = "facebook",
+  Pintrest = "pintrest",
+  Website = "website",
+}
+
+export interface SocialOption {
+  id: SocialOptionId;
+  name: string;
+  url: string;
+  icon: React.ReactNode;
+  isEditing: boolean;
+  editValue: string;
 }

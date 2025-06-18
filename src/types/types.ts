@@ -168,6 +168,16 @@ export interface ThreadCampaign {
     | "partially_completed";
   style_analysis_progress_messages?: string[];
   style_analysis_progress?: number;
+  manual_moodboard_generation_status?:
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed";
+
+  manual_moodboard_assets?: {
+    id: string;
+    position: number;
+  }[];
 }
 
 export type ImageDetail = {
