@@ -8,6 +8,7 @@ import { A2iImageGeneration } from "@/types/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import A2iImageEditFeatures from "./A2iImageEditFeatures";
 
 const A2iImagePlaceholderCard = () => {
   return <div className="border bg-muted min-w-60 aspect-square"> </div>;
@@ -15,6 +16,7 @@ const A2iImagePlaceholderCard = () => {
 
 const A2iImageCard = ({ generation }: { generation: A2iImageGeneration }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showEditFeatures, setShowEditFeatures] = useState(false);
   const images = generation.images ?? [];
   const currentImage = images[currentIndex] ?? null;
 
@@ -128,6 +130,7 @@ const A2iImageCard = ({ generation }: { generation: A2iImageGeneration }) => {
         {/* Bottom Left */}
         {currentImage && (
           <TooltipIconButton
+            onClick={() => setShowEditFeatures(true)}
             variant={"ghost"}
             tooltip="Expand"
             className="absolute bottom-2 left-2 text-white hover:text-black"
@@ -136,6 +139,13 @@ const A2iImageCard = ({ generation }: { generation: A2iImageGeneration }) => {
           </TooltipIconButton>
         )}
       </div>
+
+      {showEditFeatures && currentImage && (
+        <A2iImageEditFeatures
+          image={currentImage}
+          onClose={() => setShowEditFeatures(false)}
+        />
+      )}
     </div>
   );
 };

@@ -11,7 +11,6 @@ type A2iImagesWrapperProps = {
 const INTIAL_IMAGE_PLACEHOLDER = 18;
 
 export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
-  console.log("Rendering A2iImagesWrapper", generations);
   return (
     <ContentSection
       title=""
