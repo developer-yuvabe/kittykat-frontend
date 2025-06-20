@@ -102,7 +102,8 @@ export const createGalleryItemFromFile = async (
   galleryFilters: GalleryFilters,
   activeTab: string,
   brandId: string,
-  campaignId?: string
+  campaignId?: string,
+  moodboardId?: string
 ): Promise<GalleryItem> => {
   const dimensions = await getImageDimensions(file);
 
@@ -125,6 +126,7 @@ export const createGalleryItemFromFile = async (
     related_asset_ids: [],
 
     campaign_id: campaignId,
+    moodboard_id: moodboardId,
 
     // AI & Generation Info
     prompt_modifiers: [],

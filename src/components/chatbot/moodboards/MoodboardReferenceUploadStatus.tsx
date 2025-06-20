@@ -1,14 +1,14 @@
 // components/ManualCampaignUploadStatus.tsx
 
-interface ManualCampaignUploadStatusProps {
+interface MoodboardReferenceUploadStatusProps {
   isUploading: boolean;
   uploadError?: string | null;
 }
 
-export const ManualCampaignUploadStatus = ({
+export const MoodboardReferenceUploadStatus = ({
   isUploading,
   uploadError,
-}: ManualCampaignUploadStatusProps) => {
+}: MoodboardReferenceUploadStatusProps) => {
   return (
     <div className="space-y-4">
       {/* Upload Status */}

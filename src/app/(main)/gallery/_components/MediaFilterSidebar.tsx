@@ -83,6 +83,7 @@ export default function MediaFilterSidebar({
       has_lifestyle_context: undefined,
       is_favourite: undefined,
       is_archived: undefined,
+      moodboards: [],
     };
     setFilters(cleared);
     onApply(cleared);

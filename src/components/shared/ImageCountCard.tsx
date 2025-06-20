@@ -14,6 +14,7 @@ export function ImageCountCard({
   isRefreshing = false,
   hideRefresh = false,
   maxCount,
+  disabled = false,
 }: {
   imageCount: number;
   onRefresh: () => void;
@@ -24,6 +25,7 @@ export function ImageCountCard({
   isRefreshing?: boolean;
   hideRefresh?: boolean;
   maxCount: number;
+  disabled?: boolean;
 }) {
   const [value, setValue] = useState(imageCount.toString());
 
@@ -51,7 +53,7 @@ export function ImageCountCard({
           onChange={handleInputChange}
           id="image_count_input"
           placeholder=" "
-          disabled={isRefreshing}
+          disabled={isRefreshing || disabled}
           min={1}
           max={maxCount}
           className={clsx(
@@ -59,7 +61,8 @@ export function ImageCountCard({
             !hideRefresh && "rounded-r-none",
             textColor,
             borderColor,
-            `border ${borderColor} focus:border-[#7F55E0]`
+            `border ${borderColor} focus:border-[#7F55E0]`,
+            (isRefreshing || disabled) && "cursor-not-allowed bg-gray-100"
           )}
         />
 
@@ -75,11 +78,13 @@ export function ImageCountCard({
           {fieldName}
         </label>
       </div>
+
       {!hideRefresh && (
         <div
           className={clsx(
             "flex items-center justify-center px-2 border-2 border-l-0 rounded-md rounded-l-none",
-            borderColor
+            borderColor,
+            isRefreshing && "bg-gray-100"
           )}
         >
           {isRefreshing ? (
@@ -89,8 +94,15 @@ export function ImageCountCard({
             />
           ) : (
             <RefreshCcw
-              className="h-5 w-5 text-[#7F55E0] cursor-pointer"
-              onClick={onRefresh}
+              className={clsx(
+                "h-5 w-5 text-[#7F55E0]",
+                isRefreshing
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer"
+              )}
+              onClick={() => {
+                if (!isRefreshing) onRefresh();
+              }}
             />
           )}
         </div>

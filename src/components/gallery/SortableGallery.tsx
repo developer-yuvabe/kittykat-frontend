@@ -59,9 +59,11 @@ type SortableGalleryProps<
     imageToReplaceId,
     replacementImageUrl,
   }: {
-    imageToReplaceId: any;
-    replacementImageUrl: any;
+    imageToReplaceId: string;
+    replacementImageUrl: string;
   }) => Promise<void>;
+  targetRowHeight: number;
+  hasUnsavedChanges: boolean;
 };
 
 export default function SortableGallery<
@@ -75,6 +77,7 @@ export default function SortableGallery<
   render,
   removedPhoto,
   onReplaceImage,
+  hasUnsavedChanges,
   ...rest
 }: SortableGalleryProps<TPhoto, TGalleryType>) {
   const ref = useRef<HTMLDivElement>(null);
@@ -117,15 +120,17 @@ export default function SortableGallery<
     T extends keyof Pick<JSX.IntrinsicElements, "div" | "button" | "a">
   >(
     Component: T,
-    index: number,
+    _index: number,
     photo: TPhoto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     props: ComponentProps<any>
-  ) => (
-    <Sortable key={index} id={(photo as SortablePhoto<TPhoto>).id}>
-      <Component {...props} />
-    </Sortable>
-  );
+  ) => {
+    const sortablePhoto = photo as SortablePhoto<TPhoto>;
+    return (
+      <Sortable key={sortablePhoto.id} id={sortablePhoto.id}>
+        <Component {...props} />
+      </Sortable>
+    );
+  };
 
   return (
     <DndContext
@@ -166,21 +171,22 @@ export default function SortableGallery<
                     </div>
 
                     {/* Regenerate Icon (bottom-left) */}
-                    <div className="absolute bottom-2 left-2 z-10">
-                      <RotateCcw
-                        size={16}
-                        className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-                        onClick={async (event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          await onReplaceImage({
-                            imageToReplaceId: sortablePhoto.id,
-                            replacementImageUrl: sortablePhoto.src,
-                          });
-                        }}
-                      />
-                    </div>
-
+                    {!hasUnsavedChanges && (
+                      <div className="absolute bottom-2 left-2 z-10">
+                        <RotateCcw
+                          size={16}
+                          className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
+                          onClick={async (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            await onReplaceImage({
+                              imageToReplaceId: sortablePhoto.id,
+                              replacementImageUrl: sortablePhoto.src,
+                            });
+                          }}
+                        />
+                      </div>
+                    )}
                     {/* Like Icon (bottom-right) - only show if onPhotoLike is provided */}
                     {onPhotoLike && (
                       <div className="absolute bottom-2 right-2 z-10">

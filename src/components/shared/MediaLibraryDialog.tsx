@@ -15,6 +15,7 @@ interface MediaLibraryDialogProps {
   brandId?: string;
   campaignId?: string;
   onFullMediaItemSelected?: (item: GalleryItemResponse) => void; // 👈 new prop
+  moodboardId?: string;
 }
 
 export function MediaLibraryDialog({
@@ -24,6 +25,7 @@ export function MediaLibraryDialog({
   filters,
   brandId,
   campaignId,
+  moodboardId,
   onFullMediaItemSelected,
 }: MediaLibraryDialogProps) {
   return (
@@ -38,6 +40,7 @@ export function MediaLibraryDialog({
             brandId={brandId}
             campaignId={campaignId}
             onFullMediaItemSelected={onFullMediaItemSelected}
+            moodboardId={moodboardId}
           />
         </div>
       </DialogContent>

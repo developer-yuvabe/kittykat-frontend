@@ -18,15 +18,17 @@ interface DynamicContentSectionProps {
   agentId?: Agents;
 }
 
-const RenderValue: React.FC<{
+export const RenderValue: React.FC<{
   value: unknown;
   depth?: number;
   path?: string;
   agentId?: Agents;
-}> = ({ value, depth = 0, path = "", agentId }) => {
+  enableEdit?: boolean;
+}> = ({ value, depth = 0, path = "", agentId, enableEdit }) => {
   const stream = useStreamContext();
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
+  const editable = enableEdit ?? true;
 
   const handleSave = async (newVal: string) => {
     const oldVal = String(value);
@@ -63,6 +65,7 @@ const RenderValue: React.FC<{
   ) {
     return (
       <InlineEditableField
+        enableEdit={editable}
         label={path}
         value={String(value)}
         onSave={handleSave}
@@ -99,6 +102,7 @@ const RenderValue: React.FC<{
               }
             }}
             showLabel={false} // set to true and pass a label if needed
+            enableEdit={editable}
           />
         </div>
       );

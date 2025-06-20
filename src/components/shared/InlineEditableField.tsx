@@ -14,6 +14,7 @@ type InlineEditableFieldProps = {
   textClassName?: string;
   showLabel?: boolean;
   isTextarea?: boolean;
+  enableEdit?: boolean;
 };
 
 export function InlineEditableField({
@@ -23,6 +24,7 @@ export function InlineEditableField({
   textClassName = "",
   showLabel = false,
   isTextarea = true,
+  enableEdit = true,
 }: InlineEditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputVal, setInputVal] = useState(value);

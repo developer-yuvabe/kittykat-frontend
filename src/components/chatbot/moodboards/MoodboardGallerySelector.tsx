@@ -3,15 +3,17 @@
 import { ChevronDown, Upload, Loader2 } from "lucide-react";
 import React, { useState } from "react";
 
-import { MediaLibraryDialog } from "../chatbot/a2i/MediaLibraryDialog";
-import { addManualMoodboardImage } from "@/services/api/campaign.service";
+import { MediaLibraryDialog } from "../../shared/MediaLibraryDialog";
+import { addImageToMoodboard } from "@/services/api/moodboard.service";
 
-export function UploadInput({
+export function MoodboardGallerySelector({
   brandId,
   campaignId,
+  moodboardId,
 }: {
   brandId: string;
   campaignId: string;
+  moodboardId: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
@@ -36,14 +38,14 @@ export function UploadInput({
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                <span>Upload</span>
+                <span>Select From Gallery</span>
                 <ChevronDown className="h-4 w-4" />
               </>
             )}
           </button>
           <MediaLibraryDialog
             onFullMediaItemSelected={async (item) => {
-              await addManualMoodboardImage(brandId, campaignId, {
+              await addImageToMoodboard(brandId, campaignId, moodboardId, {
                 id: item.id,
               });
               setMediaLibraryOpen(null);
@@ -68,9 +70,11 @@ export function UploadInput({
               workflow_status: [],
               is_favourite: undefined,
               is_archived: undefined,
+              moodboards: [moodboardId],
             }}
             brandId={brandId}
             campaignId={campaignId}
+            moodboardId={moodboardId}
           />
         </div>
       )}

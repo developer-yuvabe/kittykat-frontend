@@ -85,10 +85,7 @@ export function AssistantMessage({
 
   // Check if this is an agent communication that should be hidden
 
-  const isToolCallTrigger =
-    message?.type === "ai" && (message?.tool_calls?.length ?? 0) > 0;
-
-  if (isToolResult && hideToolCalls && isToolCallTrigger) {
+  if (isToolResult && hideToolCalls) {
     return null;
   }
 

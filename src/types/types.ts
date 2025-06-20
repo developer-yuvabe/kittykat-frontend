@@ -1,5 +1,3 @@
-import { SourceHandle, TagItem, VisualImage } from "./campaign.types";
-
 export interface BaseApiResponse<T> {
   status_code: number;
   message: string;
@@ -10,38 +8,6 @@ export enum Agents {
   BRANDING_AGENT = "brandingAgent",
   CAMPAIGN_AGENT = "campaignAgent",
   A2I_IMAGES_AGENT = "A2I_IMAGES_AGENT",
-}
-
-export interface MoodboardAsset {
-  id: string;
-  comment: string | null;
-
-  asset_title: string;
-  asset_type: string;
-  media_format: string;
-  asset_url: string;
-
-  size_bytes: {
-    $numberInt: string;
-  };
-
-  dimensions: {
-    width: { $numberInt: string };
-    height: { $numberInt: string };
-  };
-
-  aspect_ratio: string;
-
-  source: string;
-  generation_engine?: string;
-  input_prompt?: string;
-  base_prompt?: string;
-  visual_description?: string;
-
-  created_at: string;
-  updated_at: string;
-
-  is_liked?: boolean;
 }
 
 export interface ThreadBrand {
@@ -112,6 +78,7 @@ export interface ThreadBrand {
       instagram: string;
       facebook: string;
       tiktok: string;
+      pintrest?: string;
     };
   };
 
@@ -137,47 +104,9 @@ export interface ThreadCampaign {
     tone?: string[];
   };
   colors?: string[];
-  target_audience?: string;
-  visual_style_references?: {
-    images: string[];
-    analysis: Record<
-      string,
-      {
-        tag: string;
-        weight: number | string;
-      }[]
-    >;
-  };
-  moodboards?: MoodboardAsset[];
   dynamic?: Record<string, any>;
-  is_manual: boolean;
   created_at: string;
   updated_at: string;
-  visual_images: VisualImage[];
-  selected_sources: SourceHandle[];
-  tags: {
-    [category: string]: TagItem[];
-  };
-  moodboard_ready: boolean;
-  completed: boolean;
-  style_analysis_status?:
-    | "not_started"
-    | "in_progress"
-    | "completed"
-    | "failed"
-    | "partially_completed";
-  style_analysis_progress_messages?: string[];
-  style_analysis_progress?: number;
-  manual_moodboard_generation_status?:
-    | "not_started"
-    | "in_progress"
-    | "completed"
-    | "failed";
-
-  manual_moodboard_assets?: {
-    id: string;
-    position: number;
-  }[];
 }
 
 export type ImageDetail = {
@@ -203,6 +132,7 @@ export interface ThreadDetails {
   brand_information?: ThreadBrand;
   campaign_information?: ThreadCampaign[];
   a2i_image_information?: ThreadA2iImage;
+  moodboard_information?: MoodboardInformation[];
 }
 
 export interface QueueItem {
@@ -229,3 +159,68 @@ export type PaginationMeta = {
   next_skip?: number;
   previous_skip?: number;
 };
+
+export interface MoodboardInformation {
+  id: string;
+  campaign_id: string;
+  title: string;
+  concept: string;
+
+  visual_style_images: VisualImage[];
+
+  aggregated_tags: Record<string, AggregatedTagItem[]>;
+
+  style_analysis_status:
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed"
+    | "partially_completed";
+
+  style_analysis_progress_messages?: string[] | null;
+  style_analysis_progress?: number | null;
+
+  moodboard_assets: MoodboardAsset[];
+
+  moodboard_generation_status?:
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed";
+
+  visual_sources?: SourceHandle[];
+  moodboard_analysis_status?:
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed";
+  moodboard_tags?: Record<string, string[]>;
+}
+
+export interface VisualImage {
+  gallery_item_id: string;
+  is_liked: boolean;
+  to_ignore: boolean;
+  tags: Record<string, TagItem[]>;
+}
+
+export interface TagItem {
+  tag: string;
+  weight: number;
+}
+
+export interface AggregatedTagItem {
+  value: string;
+  selected: boolean;
+}
+
+export interface MoodboardAsset {
+  gallery_item_id: string;
+  position: number;
+}
+
+export interface SourceHandle {
+  platform: string; // e.g., 'facebook', 'instagram'
+  url?: string | null;
+  selected: boolean;
+}

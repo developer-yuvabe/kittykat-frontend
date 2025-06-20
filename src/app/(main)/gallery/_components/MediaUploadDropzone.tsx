@@ -72,6 +72,7 @@ interface UploadDropzoneProps {
   brands: BrandCampaignListResponse["brands"];
   brandsLoading: boolean;
   selectedCampaignId: string | undefined;
+  selecteMoodboardId: string | undefined;
 }
 
 export function MediaUploadDropzone({
@@ -85,6 +86,7 @@ export function MediaUploadDropzone({
   brands,
   brandsLoading,
   selectedCampaignId,
+  selecteMoodboardId,
 }: UploadDropzoneProps) {
   console.log("brands", brands);
 
@@ -148,7 +150,8 @@ export function MediaUploadDropzone({
               galleryFilters,
               activeTab,
               selectedBrand?.brand_id,
-              selectedCampaignId
+              selectedCampaignId,
+              selecteMoodboardId
             );
             addToGalleryMutation(galleryItem);
           } catch (galleryError) {
@@ -264,6 +267,7 @@ export function MediaUploadDropzone({
               intent_tags: [],
               search_keywords: [],
               custom_tags: [],
+              moodboard_id: selecteMoodboardId,
             };
             addToGalleryMutation(galleryItem);
           } catch (galleryError) {

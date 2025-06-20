@@ -11,22 +11,20 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-interface ManualCampaigVisualImagesProps {
+interface MoodboardVisualImagesProps {
   images: VisualImage[];
   title?: string;
 }
 
-export const ManualCampaigVisualImages: React.FC<
-  ManualCampaigVisualImagesProps
-> = ({ images, title = "Visual Images" }) => {
+export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
+  images,
+}) => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   if (!images || images.length === 0) return null;
 
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-medium text-gray-700 mb-3">{title}</h3>
-
       <div className="flex items-center justify-between">
         <Carousel className="mx-auto max-w-3xl">
           <div className="">

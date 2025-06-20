@@ -30,6 +30,7 @@ type MediaLibraryProps = {
   filters?: EnhancedSelectedFilters;
   brandId?: string;
   campaignId?: string;
+  moodboardId?: string;
 };
 
 export function MediaLibrary({
@@ -40,6 +41,7 @@ export function MediaLibrary({
   brandId,
   campaignId,
   onFullMediaItemSelected,
+  moodboardId,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -67,6 +69,7 @@ export function MediaLibrary({
         has_lifestyle_context: undefined,
         is_favourite: undefined,
         is_archived: undefined,
+        moodboards: [],
       }
     );
   }, [filters]);
@@ -267,6 +270,7 @@ export function MediaLibrary({
             brands={brandsData?.brands || []}
             brandsLoading={brandsLoading}
             selectedCampaignId={campaignId}
+            selecteMoodboardId={moodboardId}
           />
 
           <div className="flex flex-col md:flex-row gap-4">

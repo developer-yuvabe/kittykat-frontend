@@ -12,7 +12,7 @@ import type {
 } from "@/types/gallery.types";
 import { toast } from "sonner";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 50;
 
 export const useGalleryQuery = (filters: GalleryFilters) => {
   const queryClient = useQueryClient();
@@ -63,11 +63,14 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
             filters.favorites ||
             filters.selectedFilters?.is_favourite ||
             undefined,
-          brand_ids: filters.selectedFilters?.brands.length
+          brand_ids: filters.selectedFilters?.brands?.length
             ? filters.selectedFilters.brands
             : undefined,
-          campaign_ids: filters.selectedFilters?.campaigns.length
+          campaign_ids: filters.selectedFilters?.campaigns?.length
             ? filters.selectedFilters.campaigns
+            : undefined,
+          moodboard_ids: filters?.selectedFilters?.moodboards?.length
+            ? filters?.selectedFilters?.moodboards
             : undefined,
           has_product: filters.selectedFilters?.has_product,
           has_people: filters.selectedFilters?.has_people,

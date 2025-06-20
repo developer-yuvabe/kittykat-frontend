@@ -46,6 +46,7 @@ export function ContentSection({
   contentClassName = "",
   showCopy = true,
   showPin = true,
+
   customActions,
 }: ContentSectionProps) {
   const [copied, setCopied] = useState(false);

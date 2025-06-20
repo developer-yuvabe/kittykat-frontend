@@ -4,13 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 
-interface ManualCampaignDropzoneProps {
+interface MoodboardReferenceDropzoneProps {
   onDrop: (acceptedFiles: File[]) => void;
 }
 
-export const ManualCampaignDropzone = ({
+export const MoodboardReferenceDropzone = ({
   onDrop,
-}: ManualCampaignDropzoneProps) => {
+}: MoodboardReferenceDropzoneProps) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
