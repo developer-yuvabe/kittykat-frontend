@@ -46,6 +46,18 @@ import { LimitsState, UploadedImage } from "@/types/moodboard.types";
 import { MoodboardReferenceDropzone } from "./MoodboardReferenceDropzone";
 import { MoodboardReferenceUploadStatus } from "./MoodboardReferenceUploadStatus";
 import { MoodboardSocialOptions } from "./MoodboardSocialOptions";
+import { GalleryItem } from "@/types/gallery.types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -101,9 +113,17 @@ export const MoodboardSection: React.FC<{
   const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
     useState<number>(10);
 
+  // Enforce a maximum limit of 16 images
+  useEffect(() => {
+    if (noOfImagesForMoodboard > 16) {
+      setNoOfImagesForMoodboard(16);
+    }
+  }, [noOfImagesForMoodboard]);
+
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
   const [socialOptions, setSocialOptions] = useState<SocialOption[]>([]);
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
 
   const [limits, setLimits] = useState<LimitsState>({
     pinterest_limit: 10,
@@ -197,6 +217,24 @@ export const MoodboardSection: React.FC<{
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setUploadedImages([]);
+  }, [currentMoodboard?.id]);
+
+  const { addToGallery } = useGalleryQuery({
+    selectedFilters: {
+      campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
+      moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
+      brands: selectedBrandId ? [selectedBrandId] : [],
+      product_categories: [],
+      asset_types: [],
+      asset_sources: [],
+      media_format: [],
+      aspect_ratio: [],
+      workflow_status: [],
+    },
+  });
+
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       setIsUploading(true);
@@ -228,15 +266,6 @@ export const MoodboardSection: React.FC<{
               file,
             },
           ]);
-
-          if (selectedBrandId && currentCampaign && currentMoodboard) {
-            await addImageToMoodboard(
-              selectedBrandId,
-              currentCampaign?.id,
-              currentMoodboard?.id,
-              uploadedImagePayload
-            );
-          }
 
           return downloadUrl;
         });
@@ -317,7 +346,6 @@ export const MoodboardSection: React.FC<{
   async function handleFindStyle() {
     if (!selectedBrandId || !currentCampaign?.id) return;
 
-    // Construct visual_sources from selected social options
     const visualSources: SourceHandle[] = socialOptions
       .filter((opt) => selectedOptions.includes(opt.id))
       .map((opt) => ({
@@ -327,6 +355,7 @@ export const MoodboardSection: React.FC<{
       }));
 
     try {
+      // Step 1: Create the new moodboard
       const newMoodboard = await createMoodboard(
         selectedBrandId,
         currentCampaign.id,
@@ -337,6 +366,39 @@ export const MoodboardSection: React.FC<{
         }
       );
 
+      // Step 2: Upload selected images to gallery and add to moodboard
+      const uploadPromises = uploadedImages.map(async (file) => {
+        const galleryItem: GalleryItem = {
+          brand_id: selectedBrandId,
+          campaign_id: currentCampaign.id,
+          moodboard_id: newMoodboard.id, // ✅ use the new moodboard ID here
+          asset_title: file.name,
+          asset_url: file.url,
+          asset_type: "image",
+          asset_source: "upload",
+          size: "unknown",
+          media_format: "jpg",
+          // Optional enrichment fields (can be empty if not available)
+          related_asset_ids: [],
+          prompt_modifiers: [],
+          ai_tags: [],
+          visual_style_tags: [],
+          detected_objects: [],
+          detected_emotions: [],
+          detected_colors: [],
+          intent_tags: [],
+          search_keywords: [],
+          custom_tags: [],
+        };
+
+        const galleryResponse = await addToGallery(galleryItem);
+      });
+
+      await Promise.all(uploadPromises);
+
+      setUploadedImages([]);
+
+      // Step 4: Analyze the newly created moodboard
       await analyzeMoodboardImages(
         selectedBrandId,
         currentCampaign.id,
@@ -344,10 +406,10 @@ export const MoodboardSection: React.FC<{
         limits
       );
 
-      // Optional: handle success feedback here
+      // Optional: Show success notification
     } catch (error) {
-      console.error("Failed to create moodboard:", error);
-      // Optional: show error UI
+      console.error("Failed to create moodboard and upload images:", error);
+      // Optional: Error handling UI
     }
   }
 
@@ -500,7 +562,10 @@ export const MoodboardSection: React.FC<{
                         <div className="grid grid-cols-1 bg-white lg:grid-cols-2 gap-6">
                           {/* Left Column - File Upload */}
                           <div className="space-y-4">
-                            <MoodboardReferenceDropzone onDrop={onDrop} />
+                            <MoodboardReferenceDropzone
+                              onDrop={onDrop}
+                              uploadedImages={uploadedImages}
+                            />
                             <MoodboardReferenceUploadStatus
                               isUploading={isUploading}
                               uploadError={uploadError}
@@ -527,6 +592,7 @@ export const MoodboardSection: React.FC<{
                       progressMessages={
                         currentMoodboard?.style_analysis_progress_messages
                       }
+                      retryAnalysis={handleFindStyle}
                     />
                     {currentMoodboard?.aggregated_tags &&
                       Object.keys(currentMoodboard?.aggregated_tags).length >
@@ -615,24 +681,68 @@ export const MoodboardSection: React.FC<{
                     currentMoodboard?.style_analysis_status !==
                       "in_progress" && (
                       <div className="mt-2">
-                        <Button
-                          className="w-full"
-                          onClick={handleFindStyle}
-                          disabled={
-                            (uploadedImages.length === 0 &&
-                              selectedOptions.length === 0) ||
-                            isAnalysisInProgress()
-                          }
+                        <AlertDialog
+                          open={showVerifyDialog}
+                          onOpenChange={setShowVerifyDialog}
                         >
-                          {isAnalysisInProgress() ? (
-                            <span className="flex items-center gap-2">
-                              <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
-                              Analyzing...
-                            </span>
-                          ) : (
-                            "Find your style!"
-                          )}
-                        </Button>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              className="w-full"
+                              onClick={() => setShowVerifyDialog(true)}
+                              disabled={
+                                (uploadedImages.length === 0 &&
+                                  selectedOptions.length === 0) ||
+                                isAnalysisInProgress()
+                              }
+                            >
+                              {isAnalysisInProgress() ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                                  Analyzing...
+                                </span>
+                              ) : (
+                                "Find your style!"
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Verify your social handles
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Please ensure that the following links are
+                                correct, public, and the accounts have posts:
+                                <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-gray-700">
+                                  {socialOptions.map((opt) => (
+                                    <li key={opt.id}>
+                                      <a
+                                        href={opt.editValue || opt.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 underline hover:text-blue-800"
+                                      >
+                                        {opt.name}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => {
+                                  setShowVerifyDialog(false);
+                                  handleFindStyle();
+                                }}
+                              >
+                                Continue
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                 </div>

@@ -133,16 +133,15 @@ function MoodboardLayout({
     };
   }, [moodboard.moodboard_assets, moodboard.moodboard_generation_status]);
 
-  // Check if there are unsaved changes
+  // Check if there are unsaved changes (excluding like status)
   const hasUnsavedChanges = useMemo(() => {
     if (photos.length !== originalPhotos.length) return true;
 
     return photos.some((photo, index) => {
       const originalPhoto = originalPhotos[index];
       return (
-        !originalPhoto ||
-        photo.id !== originalPhoto.id ||
-        photo.liked !== originalPhoto.liked
+        !originalPhoto || photo.id !== originalPhoto.id
+        // Removed liked comparison since likes are handled directly
       );
     });
   }, [photos, originalPhotos]);
@@ -353,40 +352,78 @@ function MoodboardLayout({
     setNoOfImagesForMoodboard(newPhotos.length);
   };
 
-  // Local photo like function (no API call)
-  const onPhotoLike = (index: number, liked: boolean) => {
+  // Direct API call for photo like/dislike
+  const onPhotoLike = async (index: number, liked: boolean) => {
+    const photo = photos[index];
+
+    // Optimistically update the UI
     setPhotos((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], liked };
       return updated;
     });
+
+    // Also update original photos to keep them in sync for like status
+    setOriginalPhotos((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], liked };
+      return updated;
+    });
+
+    try {
+      // Find the visual style image for this photo
+      const visualImage = moodboard.visual_style_images?.find(
+        (img) => img.gallery_item_id === photo.id
+      );
+
+      if (visualImage) {
+        // Update only the visual style images with the new like status
+        const updatedVisualImages = moodboard.visual_style_images.map((img) =>
+          img.gallery_item_id === photo.id ? { ...img, is_liked: liked } : img
+        );
+
+        await patchMoodboard(brandId, moodboard.id, {
+          visual_style_images: updatedVisualImages,
+        });
+
+        console.log(`Photo ${photo.id} like status updated to: ${liked}`);
+      }
+    } catch (error) {
+      console.error("Failed to update photo like status:", error);
+
+      // Revert the optimistic update on error
+      setPhotos((prev) => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], liked: !liked };
+        return updated;
+      });
+
+      setOriginalPhotos((prev) => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], liked: !liked };
+        return updated;
+      });
+    }
   };
 
-  // Save changes to API
+  // Save changes to API (now only for position changes, not likes)
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      // Update moodboard assets positions
+      // Update moodboard assets positions only
       const updatedAssets: MoodboardAsset[] = photos.map((photo, index) => ({
         gallery_item_id: photo.id,
         position: index,
       }));
 
-      // Update visual style images with like status
-      const updatedVisualImages = moodboard.visual_style_images.map((img) => {
-        const photo = photos.find((p) => p.id === img.gallery_item_id);
-        return photo ? { ...img, is_liked: photo.liked || false } : img;
-      });
-
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
-        visual_style_images: updatedVisualImages,
       });
 
-      // Update original state to match current state
+      // Update original state to match current state (but preserve like status)
       setOriginalPhotos([...photos]);
 
-      console.log("Changes saved successfully");
+      console.log("Position changes saved successfully");
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {
@@ -394,10 +431,19 @@ function MoodboardLayout({
     }
   };
 
-  // Cancel changes and revert to original state
+  // Cancel changes and revert to original state (but preserve like status)
   const handleCancelChanges = () => {
-    setPhotos([...originalPhotos]);
-    setNoOfImagesForMoodboard(originalPhotos.length);
+    // Revert positions but keep current like status
+    const revertedPhotos = originalPhotos.map((originalPhoto, index) => {
+      const currentPhoto = photos.find((p) => p.id === originalPhoto.id);
+      return {
+        ...originalPhoto,
+        liked: currentPhoto?.liked ?? originalPhoto.liked, // Keep current like status
+      };
+    });
+
+    setPhotos(revertedPhotos);
+    setNoOfImagesForMoodboard(revertedPhotos.length);
   };
 
   return (
@@ -454,15 +500,17 @@ function MoodboardLayout({
                             }
                           }}
                           onChange={setNoOfImagesForMoodboard}
+                          hasUnsavedChanges={hasUnsavedChanges}
                         />
                         <MoodboardGallerySelector
                           brandId={brandId}
                           campaignId={moodboard.campaign_id}
                           moodboardId={moodboard.id}
+                          hasUnsavedChanges={hasUnsavedChanges}
                         />
                       </div>
 
-                      {/* Save/Cancel Controls */}
+                      {/* Save/Cancel Controls - now only for position changes */}
                       {hasUnsavedChanges && (
                         <div className="flex gap-x-2">
                           <Button
@@ -487,39 +535,40 @@ function MoodboardLayout({
                         </div>
                       )}
                     </div>
-
-                    <SortableGallery
-                      targetRowHeight={220}
-                      gallery={RowsPhotoAlbum}
-                      spacing={16}
-                      padding={10}
-                      photos={photos}
-                      movePhoto={movePhoto}
-                      onPhotoLike={onPhotoLike}
-                      removedPhoto={removedPhoto}
-                      onReplaceImage={async ({
-                        imageToReplaceId,
-                        replacementImageUrl,
-                      }) => {
-                        try {
-                          await replaceMoodboardImage(
-                            brandId,
-                            moodboard.campaign_id,
-                            moodboard.id,
-                            {
-                              image_to_replace_id: imageToReplaceId,
-                              replacement_image_url: replacementImageUrl,
-                            }
-                          );
-                        } catch (error) {
-                          console.error(
-                            "Failed to replace moodboard image:",
-                            error
-                          );
-                        }
-                      }}
-                      hasUnsavedChanges={hasUnsavedChanges}
-                    />
+                    <div className="mx-auto max-w-2xl w-full px-2">
+                      <SortableGallery
+                        targetRowHeight={220}
+                        gallery={RowsPhotoAlbum}
+                        spacing={16}
+                        padding={10}
+                        photos={photos}
+                        movePhoto={movePhoto}
+                        onPhotoLike={onPhotoLike}
+                        removedPhoto={removedPhoto}
+                        onReplaceImage={async ({
+                          imageToReplaceId,
+                          replacementImageUrl,
+                        }) => {
+                          try {
+                            await replaceMoodboardImage(
+                              brandId,
+                              moodboard.campaign_id,
+                              moodboard.id,
+                              {
+                                image_to_replace_id: imageToReplaceId,
+                                replacement_image_url: replacementImageUrl,
+                              }
+                            );
+                          } catch (error) {
+                            console.error(
+                              "Failed to replace moodboard image:",
+                              error
+                            );
+                          }
+                        }}
+                        hasUnsavedChanges={hasUnsavedChanges}
+                      />
+                    </div>
                     <Button
                       className="w-full"
                       disabled={analyzeLoading}

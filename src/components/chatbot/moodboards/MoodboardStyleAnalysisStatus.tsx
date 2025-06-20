@@ -12,6 +12,7 @@ type StyleAnalysisStatusProps = {
   status: string | undefined;
   progress: number | null | undefined;
   progressMessages?: string[] | null | undefined;
+  retryAnalysis: () => Promise<void>;
 };
 
 const getAnalysisStatusMessage = (status: string | undefined): string => {
@@ -30,20 +31,21 @@ const getAnalysisStatusMessage = (status: string | undefined): string => {
       return "Ready to analyze your style";
   }
 };
-
 export const MoodboardStyleAnalysisStatus: React.FC<
   StyleAnalysisStatusProps
-> = ({ status, progress, progressMessages = [] }) => {
+> = ({ status, progress, progressMessages = [], retryAnalysis }) => {
   if (!status || status === "not_started") return null;
 
   const statusMessage = getAnalysisStatusMessage(status);
+
+  const showRetryMessage = status === "failed";
 
   return (
     <div className="mt-6 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-gray-800">{statusMessage}</h3>
-          {progressMessages && progressMessages?.length > 0 && (
+          {progressMessages && progressMessages.length > 0 && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -59,7 +61,7 @@ export const MoodboardStyleAnalysisStatus: React.FC<
                 <div className="space-y-2">
                   <h4 className="font-medium">Analysis Progress</h4>
                   <div className="max-h-40 overflow-y-auto space-y-1 text-sm text-gray-600">
-                    {progressMessages?.map((message, index) => (
+                    {progressMessages.map((message, index) => (
                       <p key={index}>{message}</p>
                     ))}
                   </div>
@@ -68,9 +70,27 @@ export const MoodboardStyleAnalysisStatus: React.FC<
             </Popover>
           )}
         </div>
-        <span className="text-sm font-medium text-gray-700">{progress}%</span>
+        <span className="text-sm font-medium text-gray-700">
+          {progress ?? 0}%
+        </span>
       </div>
-      <Progress value={progress} className="h-2 transition-all duration-300" />
+
+      <Progress
+        value={progress ?? 0}
+        className="h-2 transition-all duration-300"
+      />
+
+      {showRetryMessage && (
+        <div className="mt-2 space-y-2 text-sm text-red-600">
+          <p>
+            Analysis failed. Please verify the social handles provided. They may
+            be private, have no posts, or the username might not exist.
+          </p>
+          <Button variant="outline" onClick={retryAnalysis}>
+            Retry Analysis
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
