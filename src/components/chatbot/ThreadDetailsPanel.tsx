@@ -6,11 +6,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import React from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
-import {
-  campaignFields,
-  InitialPlaceHolder,
-  PlaceholderSection,
-} from "./brands/InitialPlaceHolder";
+import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 
@@ -57,10 +53,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         </div>
       )}
       {brandingInformation && (
-        <A2iImagesSection
-          a2iImageInformation={a2iImageInformation}
-          campaignInformation={campaignInformation}
-        />
+        <A2iImagesSection a2iImageInformation={a2iImageInformation} />
       )}
     </div>
   );

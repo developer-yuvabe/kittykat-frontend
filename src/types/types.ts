@@ -170,23 +170,25 @@ export interface ThreadCampaign {
   style_analysis_progress?: number;
 }
 
-export type ImageDetail = {
+export type A2iImageDetail = {
   id: string;
   url: string;
-  prompt: string;
-  parameters?: Record<string, any>;
-  vton_parameters?: {
-    model_image: string;
-    product_image: string;
-  };
+  created_at: string;
+};
+
+export type A2iImageGeneration = {
+  id: string;
+  status: "processing" | "completed" | "failed";
+  type: "a2i" | "vton" | "remix" | "video";
+  created_at: string;
+  updated_at: string;
+  parameters: Record<string, any>;
+  images?: A2iImageDetail[];
+  position?: number;
 };
 
 export type ThreadA2iImage = {
-  reference_campaign_id?: string;
-  reference_moodboard_id?: string;
-  parameters?: Record<string, any>;
-  images?: ImageDetail[];
-  reference_image_id?: string;
+  generations: A2iImageGeneration[];
 };
 
 export interface ThreadDetails {

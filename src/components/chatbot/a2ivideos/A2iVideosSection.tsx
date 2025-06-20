@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, Image } from "lucide-react";
 import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import { ReferenceA2iImage } from "./ReferenceImage";
 import EnhancedParameterConfiguration from "./EnhancedParameterConfiguration";
-import { A2IImages } from "../a2i/A2iImages";
+import { A2IImages } from "../a2i/A2iImagesWrapper";
 import { useBrandStore } from "@/store/brand.store";
 
 interface A2iVideosSectionProps {

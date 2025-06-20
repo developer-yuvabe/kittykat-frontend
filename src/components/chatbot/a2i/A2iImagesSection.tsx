@@ -1,25 +1,17 @@
-import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Image } from "lucide-react";
-import { ReferenceImage } from "./ReferenceImage";
-
-import { A2IImages } from "./A2iImages";
-import EnhancedParameterConfiguration from "./EnhancedParameterConfiguration";
-import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
-import { useBrandStore } from "@/store/brand.store";
-import VirtualTryOn from "./VirtualTryOn";
+import { useState } from "react";
+import { ThreadA2iImage } from "@/types/types";
+import { A2iImagesWrapper } from "./A2iImagesWrapper";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
-  campaignInformation: ThreadCampaign[] | undefined;
 }
 
 export default function A2iImagesSection({
   a2iImageInformation,
-  campaignInformation,
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
-  const { selectedBrandId } = useBrandStore();
 
   return (
     <>
@@ -40,10 +32,11 @@ export default function A2iImagesSection({
                   <Image className="text-white" size={24} />
                 </div>
                 <div className="flex flex-col">
-                  <div className="text-sm font-medium">A2i Images</div>
+                  <div className="text-sm font-medium">A2i Media</div>
+
                   {!expanded && (
                     <div className="text-xs text-[#6e7787]">
-                      Generate fashion images with AI models
+                      Generate fashion images and videos with AI models
                     </div>
                   )}
                 </div>
@@ -54,25 +47,8 @@ export default function A2iImagesSection({
 
         {expanded && (
           <CardContent className="px-6  space-y-6">
-            {/* 1. Reference Image */}
-            <ReferenceImage
-              campaignInformation={campaignInformation}
-              a2iImageInformation={a2iImageInformation}
-              brandId={selectedBrandId || ""} // Ensure brandId is defined
-            />
-
-            <VirtualTryOn />
-
-            {/* 8. Core Parameters */}
-            <EnhancedParameterConfiguration
-              a2iImageInformation={a2iImageInformation}
-              brandId={selectedBrandId || ""} // Ensure brandId is defined
-            />
-
-            <A2IImages
-              generatedImages={a2iImageInformation?.images || []}
-              campaignId={a2iImageInformation?.reference_campaign_id || ""}
-              brandId={selectedBrandId || ""}
+            <A2iImagesWrapper
+              generations={a2iImageInformation?.generations || []}
             />
           </CardContent>
         )}
