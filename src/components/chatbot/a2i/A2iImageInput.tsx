@@ -28,7 +28,7 @@ import { Settings2, Ruler, Loader2, X, Images } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { z } from "zod";
-import GptImag1AdvanceParameters from "./GptImag1AdvanceParameters";
+import GptImag1AdvanceParameters from "./GptImage1AdvanceParameters";
 import { useBrandStore } from "@/store/brand.store";
 import { generateImage } from "@/services/api/a2i.service";
 import { delay } from "@/lib/utils";
