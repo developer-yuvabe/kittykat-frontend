@@ -14,13 +14,6 @@ export async function uploadFileAndReturnUrl(
       .replace(/\s+/g, "_") // replace internal spaces with underscores
       .replace(/\.[^/.]+$/, ""); // remove file extension
 
-    // Simulate a delay to mimic network call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Return a random placeholder image URL
-    const randomId = Math.floor(Math.random() * 100000);
-    return `https://picsum.photos/seed/${cleanedFileName}_${randomId}/512/512`;
-
     // Get the presigned URL
     const response = await axiosInstance.post(`/users/file/upload`, {
       file_name: cleanedFileName,

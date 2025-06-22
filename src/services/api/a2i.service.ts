@@ -57,3 +57,23 @@ export const toggleA2iImageLike = async (
     throw error;
   }
 };
+
+export const updateA2iImagePositions = async (
+  brandId: string,
+  updates: {
+    generation_id: string;
+    image_id: string;
+    position: number;
+  }[]
+) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.put(`/brands/${brandId}/a2i/images/positions`, {
+        updates,
+      })
+    );
+  } catch (error) {
+    console.error("Failed to update image positions:", error);
+    throw error;
+  }
+};

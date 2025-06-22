@@ -19,6 +19,8 @@ export type A2iImageCardProps = {
   status: A2iImageGeneration["status"];
   generationId: A2iImageGeneration["id"];
   parameters: A2iImageGeneration["parameters"];
+  dragListeners?: any;
+  dragAttributes?: any;
 };
 
 const A2iImageCard = ({
@@ -26,6 +28,8 @@ const A2iImageCard = ({
   status,
   parameters,
   generationId,
+  dragListeners,
+  dragAttributes,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -125,6 +129,15 @@ const A2iImageCard = ({
         {/* Gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30"></div>
 
+        {/* Top Center */}
+        {status === "completed" && (
+          <div
+            className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute"
+            {...dragAttributes}
+            {...dragListeners}
+          />
+        )}
+
         {/* Top Left */}
         {status !== "processing" && (
           <TooltipIconButton
@@ -139,14 +152,14 @@ const A2iImageCard = ({
 
         {/* Top Right */}
         {image && (
-          <TooltipIconButton
+          <Button
             onClick={() => setShowEditFeatures(true)}
-            tooltip="Go to image editor"
+            size={"icon"}
             variant={"ghost"}
-            className="absolute top-2 right-2 text-white hover:text-black"
+            className="absolute top-2 right-2 size-7 text-white hover:text-black"
           >
             <ExpandIcon />
-          </TooltipIconButton>
+          </Button>
         )}
 
         {/* Bottom Right */}
