@@ -48,66 +48,73 @@ const A2iImageInput = () => {
     }[]
   >([]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return;
 
-    setIsUploading(true);
+      setIsUploading(true);
 
-    acceptedFiles.forEach((file) => {
-      const reader = new FileReader();
+      const uploadPromises = acceptedFiles.map((file) => {
+        return new Promise<void>((resolve) => {
+          const reader = new FileReader();
 
-      reader.onloadend = async () => {
-        const previewUrl = reader.result as string;
+          reader.onloadend = async () => {
+            const previewUrl = reader.result as string;
+            let blockIndex = -1;
 
-        let blockIndex = -1;
+            setImageBlocks((prev) => {
+              blockIndex = prev.length;
+              return [...prev, { previewUrl, url: null }];
+            });
 
-        // Insert preview + capture index
-        setImageBlocks((prev) => {
-          blockIndex = prev.length;
-          return [...prev, { previewUrl, url: null }];
+            try {
+              const uploadedUrl = await uploadFileAndReturnUrl(
+                file.name,
+                file.type,
+                "brands",
+                file
+              );
+
+              setImageBlocks((prev) => {
+                const updated = [...prev];
+                updated[blockIndex] = {
+                  ...updated[blockIndex],
+                  url: uploadedUrl,
+                };
+                return updated;
+              });
+
+              const formName = refernceImagesModelInfo.formName;
+
+              const value =
+                refernceImagesModelInfo.maxImages > 1
+                  ? [...(form.getValues(formName) || []), uploadedUrl]
+                  : uploadedUrl;
+
+              form.setValue(formName, value, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            } catch {
+              console.error("Upload failed for", file.name);
+              setImageBlocks((prev) =>
+                prev.filter((_, idx) => idx !== blockIndex)
+              );
+            } finally {
+              resolve();
+            }
+          };
+
+          reader.readAsDataURL(file);
         });
+      });
 
-        try {
-          // Upload the file
-          const uploadedUrl = await uploadFileAndReturnUrl(
-            file.name,
-            file.type,
-            "brands",
-            file
-          );
-
-          //  Update just this one image block
-          setImageBlocks((prev) => {
-            const updated = [...prev];
-            updated[blockIndex] = {
-              ...updated[blockIndex],
-              url: uploadedUrl,
-            };
-            return updated;
-          });
-
-          const formName = refernceImagesModelInfo.formName;
-
-          form.setValue(
-            formName,
-            refernceImagesModelInfo.maxImages > 1
-              ? [...(form.getValues(formName) || []), uploadedUrl]
-              : uploadedUrl
-          );
-        } catch {
-          console.error("Upload failed for", file.name);
-          // Remove the block if upload fails
-          setImageBlocks((prev) => {
-            return prev.filter((_, index) => index !== blockIndex);
-          });
-        } finally {
-          setIsUploading(false);
-        }
-      };
-
-      reader.readAsDataURL(file);
-    });
-  }, []);
+      await Promise.allSettled(uploadPromises);
+      setIsUploading(false);
+    },
+    [refernceImagesModelInfo.formName]
+  );
 
   const { getInputProps } = useDropzone({
     onDrop,
@@ -203,7 +210,7 @@ const A2iImageInput = () => {
                 className="space-y-2 w-64"
               >
                 <div className="space-y-4">
-                  <FormLabel className="py-0 text-sm">
+                  <FormLabel className="py-0 text-xs">
                     Advance Parameters
                   </FormLabel>
                   {selectedModel.advancedParameters.map((advParam) => {

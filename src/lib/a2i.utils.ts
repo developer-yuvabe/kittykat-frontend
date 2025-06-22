@@ -16,7 +16,7 @@ export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
   parameters: [
     {
       name: "Reference Image(s)",
-      formName: "referece_images",
+      formName: "reference_images",
       type: "file",
       maxImages: 10,
       maxSize: AppConfig.MAX_FILE_SIZE,
@@ -106,7 +106,7 @@ export const fluxDevModel: ModelInformation<typeof fluxDevSchema> = {
   parameters: [
     {
       name: "Reference Image(s)",
-      formName: "image_prompt",
+      formName: "image",
       type: "file",
       maxImages: 1,
       maxSize: AppConfig.MAX_FILE_SIZE,
@@ -222,7 +222,7 @@ export const fluxProModel: ModelInformation<typeof fluxProSchema> = {
   parameters: [
     {
       name: "Reference Image(s)",
-      formName: "image",
+      formName: "image_prompt",
       type: "file",
       maxImages: 1,
       maxSize: AppConfig.MAX_FILE_SIZE,
@@ -304,7 +304,7 @@ export const fluxProUltraModel: ModelInformation<typeof fluxProUltraSchema> = {
   parameters: [
     {
       name: "Reference Image(s)",
-      formName: "image",
+      formName: "image_prompt",
       type: "file",
       maxImages: 1,
       maxSize: AppConfig.MAX_FILE_SIZE,

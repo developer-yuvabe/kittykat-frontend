@@ -174,6 +174,8 @@ export type A2iImageDetail = {
   id: string;
   url: string;
   created_at: string;
+  position?: number;
+  is_liked?: boolean;
 };
 
 export type A2iImageGeneration = {
@@ -184,7 +186,6 @@ export type A2iImageGeneration = {
   updated_at: string;
   parameters: Record<string, any>;
   images?: A2iImageDetail[];
-  position?: number;
 };
 
 export type ThreadA2iImage = {

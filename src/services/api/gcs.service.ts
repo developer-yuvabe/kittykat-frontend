@@ -14,6 +14,13 @@ export async function uploadFileAndReturnUrl(
       .replace(/\s+/g, "_") // replace internal spaces with underscores
       .replace(/\.[^/.]+$/, ""); // remove file extension
 
+    // Simulate a delay to mimic network call
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Return a random placeholder image URL
+    const randomId = Math.floor(Math.random() * 100000);
+    return `https://picsum.photos/seed/${cleanedFileName}_${randomId}/512/512`;
+
     // Get the presigned URL
     const response = await axiosInstance.post(`/users/file/upload`, {
       file_name: cleanedFileName,
@@ -42,13 +49,11 @@ export async function uploadFileAndReturnUrl(
 export async function deleteFile(url: string): Promise<void> {
   try {
     // Get the presigned URL for deletion
-    const response = await axiosInstance.delete(`/users/file/delete`, {
+    await axiosInstance.delete(`/users/file/delete`, {
       data: {
         url,
       },
     });
-
-    console.log("File deleted successfully:", response.data);
   } catch (error) {
     console.error("Error occured in deleting file:", error);
   }
