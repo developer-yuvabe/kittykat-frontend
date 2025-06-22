@@ -180,3 +180,20 @@ export async function analyzeMoodboard(
     )
   );
 }
+
+export interface GalleryItemReferencePayload {
+  gallery_item_id: string;
+}
+
+export const addGalleryItemToMoodboard = async (
+  brandId: string,
+  moodboardId: string,
+  payload: GalleryItemReferencePayload
+): Promise<MoodboardInformation> => {
+  return handleApiRequest<MoodboardInformation>(
+    axiosInstance.post<MoodboardInformation>(
+      `/brands/${brandId}/moodboard/${moodboardId}/visual-style-reference`,
+      payload
+    )
+  );
+};

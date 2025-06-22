@@ -496,7 +496,8 @@ export function MediaUploadDropzone({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowUrlInput(false);
                     setUrlInput("");
                   }}
@@ -506,7 +507,10 @@ export function MediaUploadDropzone({
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleUrlSubmit}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUrlSubmit();
+                  }}
                   disabled={!urlInput.trim() || isUploading}
                   className="bg-[#636AE8] hover:bg-[#5A61D9] text-white"
                 >

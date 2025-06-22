@@ -1,12 +1,12 @@
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import {
   Command,
   CommandEmpty,
@@ -15,151 +15,146 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { AvatarFallback, Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Check } from "lucide-react";
 import { SearchIcon } from "@/components/ui/custom-icon";
+import { MoodboardInformation } from "@/types/types";
 
-interface TransformedCampaign {
+interface TransformedMoodboard {
   id: string;
   displayName: string;
   initial: string;
   searchKey: string;
-  raw: any;
+  raw: MoodboardInformation;
 }
 
-interface CampaignSelectorProps {
-  campaigns: any[];
-  setSelectedCampaignIndex: (index: number) => void;
-  selectedCampaignIndex: number;
+interface MoodboardSelectorProps {
+  moodboards: MoodboardInformation[];
+  selectedMoodboard: MoodboardInformation | null;
+  setSelectedMoodboard: (mb: MoodboardInformation) => void;
+  campaignId: string;
+  onNewMoodboard: () => void;
+  isCreatingNew: boolean;
 }
 
 export default function MoodboardSelector({
-  campaigns,
-  setSelectedCampaignIndex,
-  selectedCampaignIndex,
-}: CampaignSelectorProps) {
+  moodboards,
+  selectedMoodboard,
+  setSelectedMoodboard,
+  campaignId,
+}: MoodboardSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [transformedCampaigns, setTransformedCampaigns] = useState<
-    TransformedCampaign[]
+  const [transformedMoodboards, setTransformedMoodboards] = useState<
+    TransformedMoodboard[]
   >([]);
-  const [filteredCampaigns, setFilteredCampaigns] = useState<
-    TransformedCampaign[]
+  const [filteredMoodboards, setFilteredMoodboards] = useState<
+    TransformedMoodboard[]
   >([]);
   const [loading] = useState(false);
 
-  // Transform campaigns on initial load
+  // Transform moodboards (filtered by campaignId)
   useEffect(() => {
-    if (campaigns.length > 0) {
-      const transformed = campaigns.map((campaign) => {
-        const displayName = campaign?.campaign?.title || "Unnamed Campaign";
-        return {
-          id: campaign.id,
-          displayName,
-          initial: displayName.charAt(0).toUpperCase(),
-          searchKey: `${displayName}::${campaign.id}`,
-          raw: campaign,
-        };
-      });
+    if (!campaignId) return;
 
-      setTransformedCampaigns(transformed);
-      setFilteredCampaigns(transformed);
-    }
-  }, [campaigns]);
+    const filtered = moodboards.filter((mb) => mb.campaign_id === campaignId);
+    const transformed = filtered.map((mb) => {
+      const displayName = mb.title || "Unnamed Moodboard";
+      return {
+        id: mb.id,
+        displayName,
+        initial: displayName.charAt(0).toUpperCase(),
+        searchKey: `${displayName}::${mb.id}`,
+        raw: mb,
+      };
+    });
 
-  // Update filtered campaigns when search query changes
+    setTransformedMoodboards(transformed);
+    setFilteredMoodboards(transformed);
+  }, [moodboards, campaignId]);
+
+  // Filter by search query
   useEffect(() => {
-    if (transformedCampaigns.length === 0) return;
-
     if (searchQuery.trim() === "") {
-      setFilteredCampaigns(transformedCampaigns);
+      setFilteredMoodboards(transformedMoodboards);
     } else {
-      const filtered = transformedCampaigns.filter((campaign) =>
-        campaign.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+      setFilteredMoodboards(
+        transformedMoodboards.filter((mb) =>
+          mb.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       );
-      setFilteredCampaigns(filtered);
     }
-  }, [searchQuery, transformedCampaigns]);
+  }, [searchQuery, transformedMoodboards]);
 
-  const handleCampaignSelect = (campaignId: string) => {
-    const index = campaigns.findIndex((campaign) => campaign.id === campaignId);
-    if (index !== -1) {
-      setSelectedCampaignIndex(index);
+  // Auto-select moodboard when campaignId changes
+
+  const handleSelect = (id: string) => {
+    const match = moodboards.find((mb) => mb.id === id);
+    if (match) {
+      setSelectedMoodboard(match);
       setOpen(false);
-      toast.success(`Campaign '${campaigns[index].campaign.title}' selected`, {
+      toast.success(`Moodboard '${match.title}' selected`, {
         position: "top-right",
       });
     }
   };
 
-  // Custom filtering implementation
-  const handleInputChange = (value: string) => {
-    setSearchQuery(value);
-  };
-
-  const selectedCampaignId = campaigns[selectedCampaignIndex]?.id;
+  const selectedMoodboardId = selectedMoodboard?.id;
 
   return (
-    <div className="">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SearchIcon size={10} className="text-black" />
-            Select Moodboard
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
-          <Command shouldFilter={false} className="flex-wrap w-full">
-            <div className="flex items-center border-b px-3">
-              <CommandInput
-                placeholder="Search campaigns..."
-                className="h-9 border-0 outline-none focus-visible:ring-0"
-                value={searchQuery}
-                onValueChange={handleInputChange}
-              />
-            </div>
-            <CommandList className="w-full">
-              <CommandEmpty>
-                {loading ? "Loading..." : "No campaigns found."}
-              </CommandEmpty>
-              <CommandGroup>
-                {filteredCampaigns.map((campaign) => (
-                  <CommandItem
-                    key={campaign.id}
-                    value={campaign.searchKey}
-                    onSelect={() => {
-                      handleCampaignSelect(campaign.id);
-                    }}
-                    className="flex items-center justify-between"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <div className="flex items-center min-w-0  w-full">
-                      <Avatar className="h-6 w-6 mr-2">
-                        <AvatarFallback className="bg-blue-500 text-white">
-                          {campaign.initial}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate">
-                        {campaign.displayName} {campaign.displayName}
-                      </span>
-                    </div>
-                    {selectedCampaignId === campaign.id && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SearchIcon size={10} className="text-black mr-1" />
+          {selectedMoodboard?.title || "Select Moodboard"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0">
+        <Command shouldFilter={false}>
+          <div className="flex items-center border-b px-3">
+            <CommandInput
+              placeholder="Search moodboards..."
+              className="h-9 border-0 outline-none focus-visible:ring-0"
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+            />
+          </div>
+          <CommandList>
+            <CommandEmpty>
+              {loading ? "Loading..." : "No moodboards found."}
+            </CommandEmpty>
+            <CommandGroup>
+              {filteredMoodboards.map((mb) => (
+                <CommandItem
+                  key={mb.id}
+                  value={mb.searchKey}
+                  onSelect={() => handleSelect(mb.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center min-w-0 w-full">
+                    <Avatar className="h-6 w-6 mr-2">
+                      <AvatarFallback className="bg-blue-500 text-white">
+                        {mb.initial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{mb.displayName}</span>
+                  </div>
+                  {selectedMoodboardId === mb.id && (
+                    <Check className="h-4 w-4" />
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

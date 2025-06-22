@@ -12,9 +12,12 @@ import type {
 } from "@/types/gallery.types";
 import { toast } from "sonner";
 
-const ITEMS_PER_PAGE = 50;
+const ITEMS_PER_PAGE = 20;
 
-export const useGalleryQuery = (filters: GalleryFilters) => {
+export const useGalleryQuery = (
+  filters: GalleryFilters,
+  items_per_page: number = ITEMS_PER_PAGE
+) => {
   const queryClient = useQueryClient();
 
   // Fetch brands and campaigns for filters
@@ -51,7 +54,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
           return await galleryService.searchGalleryItems(
             filters.searchQuery,
             pageParam,
-            ITEMS_PER_PAGE
+            items_per_page
           );
         }
 
@@ -92,7 +95,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
             ? filters.selectedFilters.product_categories
             : undefined,
           skip: pageParam,
-          limit: ITEMS_PER_PAGE,
+          limit: items_per_page,
         });
       } catch (error) {
         console.error("Gallery query failed:", error);

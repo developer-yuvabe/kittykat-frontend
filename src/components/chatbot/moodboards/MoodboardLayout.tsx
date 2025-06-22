@@ -72,20 +72,23 @@ function MoodboardLayout({
   const { selectedBrandId } = useBrandStore();
   const { user } = useUserStore();
 
-  const { galleryItems } = useGalleryQuery({
-    creator: user?.id,
-    selectedFilters: {
-      moodboards: [moodboard.id],
-      brands: [brandId],
-      campaigns: [moodboard?.campaign_id],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
+  const { galleryItems } = useGalleryQuery(
+    {
+      creator: user?.id,
+      selectedFilters: {
+        moodboards: [moodboard.id],
+        brands: [brandId],
+        campaigns: [moodboard?.campaign_id],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+      },
     },
-  });
+    200
+  );
 
   console.log("Moodboard assets:", moodboard.moodboard_assets);
   console.log("Gallery items:", galleryItems);
@@ -268,7 +271,7 @@ function MoodboardLayout({
       setPhotos([]);
       setOriginalPhotos([]);
     }
-  }, [currentMoodboardId, moodboard?.moodboard_assets?.length]);
+  }, [currentMoodboardId, moodboard?.moodboard_assets]);
 
   // Trigger load when moodboard status changes or gallery items become available
   useEffect(() => {
@@ -431,14 +434,12 @@ function MoodboardLayout({
     }
   };
 
-  // Cancel changes and revert to original state (but preserve like status)
   const handleCancelChanges = () => {
-    // Revert positions but keep current like status
-    const revertedPhotos = originalPhotos.map((originalPhoto, index) => {
+    const revertedPhotos = originalPhotos.map((originalPhoto) => {
       const currentPhoto = photos.find((p) => p.id === originalPhoto.id);
       return {
         ...originalPhoto,
-        liked: currentPhoto?.liked ?? originalPhoto.liked, // Keep current like status
+        liked: currentPhoto?.liked ?? originalPhoto.liked,
       };
     });
 
@@ -507,6 +508,9 @@ function MoodboardLayout({
                           campaignId={moodboard.campaign_id}
                           moodboardId={moodboard.id}
                           hasUnsavedChanges={hasUnsavedChanges}
+                          inSelectionGalleryIds={photos.map(
+                            (photo) => photo.id
+                          )}
                         />
                       </div>
 

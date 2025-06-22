@@ -11,22 +11,30 @@ interface MediaLibraryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: GalleryItemResponse) => void;
+  onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void; // 👈 new prop for multi-select
   filters?: EnhancedSelectedFilters;
   brandId?: string;
   campaignId?: string;
-  onFullMediaItemSelected?: (item: GalleryItemResponse) => void; // 👈 new prop
   moodboardId?: string;
+  inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
+  isMultiSelect?: boolean; // 👈 new prop to enable multi-select mode
+  maxSelectionCount?: number;
 }
 
 export function MediaLibraryDialog({
   open,
   onOpenChange,
   onMediaItemSelected,
+  onFullMediaItemSelected,
+  onMultipleMediaItemsSelected,
   filters,
   brandId,
   campaignId,
   moodboardId,
-  onFullMediaItemSelected,
+  inSelectionGalleryIds,
+  isMultiSelect = false,
+  maxSelectionCount,
 }: MediaLibraryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,11 +44,15 @@ export function MediaLibraryDialog({
             activeTab="all-media"
             isMediaSelectDialog={true}
             onMediaItemSelected={onMediaItemSelected}
+            onFullMediaItemSelected={onFullMediaItemSelected}
+            onMultipleMediaItemsSelected={onMultipleMediaItemsSelected}
             filters={filters}
             brandId={brandId}
             campaignId={campaignId}
-            onFullMediaItemSelected={onFullMediaItemSelected}
             moodboardId={moodboardId}
+            inSelectionGalleryIds={inSelectionGalleryIds}
+            isMultiSelect={isMultiSelect}
+            maxSelectionCount={maxSelectionCount}
           />
         </div>
       </DialogContent>

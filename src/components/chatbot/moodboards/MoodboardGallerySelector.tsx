@@ -9,17 +9,20 @@ import {
 } from "@/components/ui/tooltip"; // Make sure this path is correct
 import { MediaLibraryDialog } from "../../shared/MediaLibraryDialog";
 import { addImageToMoodboard } from "@/services/api/moodboard.service";
+import { toast } from "sonner";
 
 export function MoodboardGallerySelector({
   brandId,
   campaignId,
   moodboardId,
   hasUnsavedChanges,
+  inSelectionGalleryIds,
 }: {
   brandId: string;
   campaignId: string;
   moodboardId: string;
   hasUnsavedChanges: boolean;
+  inSelectionGalleryIds: string[];
 }) {
   const [loading, setLoading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
@@ -94,6 +97,27 @@ export function MoodboardGallerySelector({
         brandId={brandId}
         campaignId={campaignId}
         moodboardId={moodboardId}
+        isMultiSelect
+        onMultipleMediaItemsSelected={async (items) => {
+          toast.promise(
+            (async () => {
+              for (const item of items) {
+                await addImageToMoodboard(brandId, campaignId, moodboardId, {
+                  id: item.id,
+                });
+              }
+            })(),
+            {
+              loading: "Adding selected media...",
+              success: `Added ${items.length} media items to moodboard!`,
+              error: "Failed to add one or more media items.",
+            }
+          );
+
+          setMediaLibraryOpen(null);
+        }}
+        inSelectionGalleryIds={inSelectionGalleryIds}
+        maxSelectionCount={16}
       />
     </div>
   );
