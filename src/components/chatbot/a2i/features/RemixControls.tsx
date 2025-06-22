@@ -178,8 +178,8 @@ const RemixControls = ({
     accept: {
       "image/*": [],
     },
-    disabled: isUploading,
-    maxFiles: 10,
+    disabled: isUploading || 10 - imageBlocks.length <= 0,
+    maxFiles: 10 - imageBlocks.length,
     maxSize: AppConfig.MAX_FILE_SIZE,
   });
 

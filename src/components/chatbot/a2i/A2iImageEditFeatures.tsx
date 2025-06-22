@@ -96,7 +96,7 @@ const A2iImageEditFeatures = ({
               <img
                 src={image.url}
                 alt={parameters.prompt}
-                className="block max-h-[85vh] object-contain border w-max"
+                className="block max-h-[85vh] object-contain w-max"
               />
             )}
           </div>
@@ -108,9 +108,9 @@ const A2iImageEditFeatures = ({
                     onClick={() => setCurrentFeature(feature)}
                     key={feature.name}
                     className={cn(
-                      "flex flex-1 flex-col items-center gap-2 p-4 text-muted-foreground hover:bg-muted cursor-pointer transition-colors hover:border-b-4",
+                      "flex flex-1 flex-col items-center gap-2 p-4 text-muted-foreground bg-muted cursor-pointer transition-colors border-b-4 hover:bg-primary/10 hover:border-primary",
                       {
-                        "text-primary border-b-4 border-primary":
+                        "text-primary border-b-4 border-primary bg-primary/20":
                           currentFeature.name === feature.name,
                       }
                     )}
