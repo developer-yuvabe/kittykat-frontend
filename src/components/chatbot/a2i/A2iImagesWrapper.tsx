@@ -39,7 +39,17 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
     const flatImages = generations.flatMap(
       (generation): A2iImageCardProps[] => {
         const images = generation.images;
-        if (!images || images.length === 0) return [];
+        if (!images || images.length === 0) {
+          return [
+            {
+              image: null,
+              status: generation.status,
+              generationId: generation.id,
+              parameters: generation.parameters,
+            },
+          ];
+        }
+
         return images.map((img) => ({
           image: img,
           status: generation.status,

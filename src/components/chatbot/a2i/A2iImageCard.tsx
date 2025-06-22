@@ -153,7 +153,7 @@ const A2iImageCard = ({
         {/* Top Right */}
         {image && (
           <Button
-            onClick={() => setShowEditFeatures(true)}
+            onClick={() => setShowEditFeatures((prev) => !prev)}
             size={"icon"}
             variant={"ghost"}
             className="absolute top-2 right-2 size-7 text-white hover:text-black"
@@ -203,10 +203,12 @@ const A2iImageCard = ({
         )}
       </div>
 
-      {showEditFeatures && (
+      {image && (
         <A2iImageEditFeatures
-          image={image!}
+          image={image}
+          open={showEditFeatures}
           onClose={() => setShowEditFeatures(false)}
+          parameters={parameters}
         />
       )}
 
