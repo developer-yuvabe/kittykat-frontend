@@ -1,142 +1,388 @@
-import { ModelSchema, Parameter, ParameterGroup } from "@/types/a2i.types";
+import { AppConfig } from "@/config/app.config";
+import {
+  fluxDevSchema,
+  fluxProSchema,
+  fluxProUltraSchema,
+  gptImage1Schema,
+} from "@/schema/image-gen.schema";
+import { ModelInformation } from "@/types/a2i-media.types";
+import { Ruler } from "lucide-react";
 
-export const PARAMETER_PRIORITIES = {
-  // Core essentials (1-10)
-  prompt: 1,
-  aspect_ratio: 2,
-  width: 3,
-  height: 4,
-  image_input: 5,
-
-  // Generation control (11-20)
-  prompt_strength: 11,
-  num_outputs: 12,
-  num_inference_steps: 13,
-  guidance: 14,
-
-  // Output settings (21-30)
-  output_format: 21,
-  output_quality: 22,
-  megapixels: 23,
-
-  // Performance & Advanced (31-40)
-  go_fast: 31,
-  seed: 32,
-  disable_safety_checker: 33,
-  safety_tolerance: 34,
-  prompt_upsampling: 35,
-};
-
-export const PARAMETER_GROUPS = {
-  ESSENTIALS: {
-    id: "essentials",
-    title: "Essential Settings",
-    description: "Core parameters that define your image generation",
-    priority: 1,
+export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
+  id: "gpt-image-1",
+  name: "GPT Image 1",
+  provider: "openai",
+  disabled: false,
+  parameters: [
+    {
+      name: "Reference Image(s)",
+      formName: "referece_images",
+      type: "file",
+      maxImages: 10,
+      maxSize: AppConfig.MAX_FILE_SIZE,
+      accept: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
+      disabled: false,
+    },
+    {
+      name: "Size",
+      formName: "size",
+      type: "select",
+      options: [
+        { value: "1024x1024", label: "1:1" },
+        { value: "1536x1024", label: "3:2" },
+        { value: "1024x1536", label: "2:3" },
+      ],
+      icon: Ruler,
+      disabled: false,
+    },
+    {
+      name: "Output Format",
+      formName: "output_format",
+      type: "select",
+      options: [
+        { value: "png", label: "PNG" },
+        { value: "jpeg", label: "JPEG" },
+        { value: "webp", label: "WEBP" },
+      ],
+    },
+    {
+      name: "Number of Images to be generated",
+      formName: "n",
+      type: "slider",
+      constraints: { min: 1, max: 10, step: 1 },
+    },
+  ],
+  advancedParameters: [
+    {
+      name: "Quality",
+      formName: "quality",
+      type: "select",
+      options: [
+        { label: "High", value: "high" },
+        { label: "Medium", value: "medium" },
+        { label: "Low", value: "low" },
+      ],
+    },
+    {
+      name: "Background",
+      formName: "background",
+      type: "select",
+      options: [
+        { label: "Auto", value: "auto" },
+        { label: "Transparency", value: "transparency" },
+        { label: "Opaque", value: "opaque" },
+      ],
+    },
+    {
+      name: "Moderation",
+      formName: "moderation",
+      type: "select",
+      options: [
+        { label: "Auto", value: "auto" },
+        { label: "Low", value: "low" },
+      ],
+    },
+  ],
+  zodSchema: gptImage1Schema,
+  defaultValues: {
+    prompt: "",
+    model: "gpt-image-1",
+    provider: "openai",
+    size: "1024x1024",
+    n: 1,
+    quality: "high",
+    output_format: "png",
+    output_compression: 100,
+    background: "auto",
+    moderation: "auto",
   },
-  GENERATION: {
-    id: "generation",
-    title: "Generation Control",
-    description: "Fine-tune how your image is generated",
-    priority: 2,
+};
+
+export const fluxDevModel: ModelInformation<typeof fluxDevSchema> = {
+  id: "black-forest-labs/flux-dev",
+  name: "Flux Dev",
+  provider: "replicate",
+  disabled: false,
+  parameters: [
+    {
+      name: "Reference Image(s)",
+      formName: "image_prompt",
+      type: "file",
+      maxImages: 1,
+      maxSize: AppConfig.MAX_FILE_SIZE,
+      accept: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
+      disabled: false,
+    },
+    {
+      name: "Size",
+      formName: "aspect_ratio",
+      type: "select",
+      options: [
+        { value: "1:1", label: "1:1" },
+        { value: "16:9", label: "16:9" },
+        { value: "21:9", label: "21:9" },
+        { value: "3:2", label: "3:2" },
+        { value: "2:3", label: "2:3" },
+        { value: "4:5", label: "4:5" },
+        { value: "5:4", label: "5:4" },
+        { value: "3:4", label: "3:4" },
+        { value: "4:3", label: "4:3" },
+        { value: "9:16", label: "9:16" },
+        { value: "9:21", label: "9:21" },
+      ],
+      icon: Ruler,
+      disabled: false,
+    },
+    {
+      name: "Output Format",
+      formName: "output_format",
+      type: "select",
+      options: [
+        { value: "png", label: "PNG" },
+        { value: "jpg", label: "JPG" },
+        { value: "webp", label: "WEBP" },
+      ],
+    },
+    {
+      name: "Number of Images to be generated",
+      formName: "num_outputs",
+      type: "slider",
+      constraints: { min: 1, max: 4, step: 1 },
+    },
+  ],
+  advancedParameters: [
+    {
+      name: "Output Quality",
+      formName: "output_quality",
+      type: "slider",
+      constraints: { min: 0, max: 100, step: 1 },
+    },
+
+    {
+      name: "Prompt Strength",
+      formName: "prompt_strength",
+      type: "slider",
+      constraints: { min: 0.0, max: 1.0, step: 0.01 },
+    },
+    {
+      name: "Number of Inference Steps",
+      formName: "num_inference_steps",
+      type: "slider",
+      constraints: { min: 1, max: 50, step: 1 },
+    },
+    {
+      name: "Guidance Scale",
+      formName: "guidance",
+      type: "slider",
+      constraints: { min: 0, max: 10, step: 0.1 },
+    },
+    {
+      name: "Go Fast",
+      formName: "go_fast",
+      type: "boolean",
+    },
+    {
+      name: "Disable Safety Checker",
+      formName: "disable_safety_checker",
+      type: "boolean",
+    },
+    {
+      name: "Megapixels",
+      formName: "megapixels",
+      type: "select",
+      options: [
+        { label: "1", value: "1" },
+        { label: "0.25", value: "0.25" },
+      ],
+    },
+  ],
+  zodSchema: fluxDevSchema,
+  defaultValues: {
+    prompt: "",
+    model: "black-forest-labs/flux-dev",
+    provider: "replicate",
+    output_format: "webp",
+    aspect_ratio: "1:1",
+    output_quality: 80,
+    go_fast: true,
+    prompt_strength: 0.8,
+    num_outputs: 1,
+    num_inference_steps: 28,
+    guidance: 3.5,
+    disable_safety_checker: false,
+    megapixels: "1",
   },
-  OUTPUT: {
-    id: "output",
-    title: "Output Settings",
-    description: "Control the format and quality of your generated images",
-    priority: 3,
+};
+
+export const fluxProModel: ModelInformation<typeof fluxProSchema> = {
+  id: "black-forest-labs/flux-1.1-pro",
+  name: "Flux 1.1 Pro",
+  provider: "replicate",
+  disabled: false,
+  parameters: [
+    {
+      name: "Reference Image(s)",
+      formName: "image",
+      type: "file",
+      maxImages: 1,
+      maxSize: AppConfig.MAX_FILE_SIZE,
+      accept: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
+      disabled: false,
+    },
+    {
+      name: "Size",
+      formName: "aspect_ratio",
+      type: "select",
+      options: [
+        { value: "1:1", label: "1:1" },
+        { value: "16:9", label: "16:9" },
+        { value: "3:2", label: "3:2" },
+        { value: "2:3", label: "2:3" },
+        { value: "4:5", label: "4:5" },
+        { value: "5:4", label: "5:4" },
+        { value: "3:4", label: "3:4" },
+        { value: "4:3", label: "4:3" },
+        { value: "9:16", label: "9:16" },
+      ],
+      icon: Ruler,
+      disabled: false,
+    },
+    {
+      name: "Output Format",
+      formName: "output_format",
+      type: "select",
+      options: [
+        { value: "png", label: "PNG" },
+        { value: "jpg", label: "JPG" },
+        { value: "webp", label: "WEBP" },
+      ],
+    },
+    {
+      name: "Number of Images to be generated",
+      formName: "num_outputs",
+      type: "slider",
+      disabled: true,
+    },
+  ],
+  advancedParameters: [
+    {
+      name: "Output Quality",
+      formName: "output_quality",
+      type: "slider",
+      constraints: { min: 0, max: 100, step: 1 },
+    },
+    {
+      name: "Safety Tolerance",
+      formName: "safety_tolerance",
+      type: "slider",
+      constraints: { min: 1, max: 6, step: 1 },
+    },
+    {
+      name: "Prompt Upsampling",
+      formName: "prompt_upsampling",
+      type: "boolean",
+    },
+  ],
+  zodSchema: fluxProSchema,
+  defaultValues: {
+    prompt: "",
+    model: "black-forest-labs/flux-1.1-pro",
+    provider: "replicate",
+    output_format: "webp",
+    aspect_ratio: "1:1",
+    output_quality: 80,
+    safety_tolerance: 2,
+    prompt_upsampling: false,
   },
-  ADVANCED: {
-    id: "advanced",
-    title: "Advanced Options",
-    description: "Performance and experimental settings",
-    priority: 4,
+};
+
+export const fluxProUltraModel: ModelInformation<typeof fluxProUltraSchema> = {
+  id: "black-forest-labs/flux-1.1-pro-ultra",
+  name: "Flux 1.1 Pro Ultra",
+  provider: "replicate",
+  disabled: false,
+  parameters: [
+    {
+      name: "Reference Image(s)",
+      formName: "image",
+      type: "file",
+      maxImages: 1,
+      maxSize: AppConfig.MAX_FILE_SIZE,
+      accept: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
+      disabled: false,
+    },
+    {
+      name: "Size",
+      formName: "aspect_ratio",
+      type: "select",
+      options: [
+        { value: "1:1", label: "1:1" },
+        { value: "16:9", label: "16:9" },
+        { value: "21:9", label: "21:9" },
+        { value: "3:2", label: "3:2" },
+        { value: "2:3", label: "2:3" },
+        { value: "4:5", label: "4:5" },
+        { value: "5:4", label: "5:4" },
+        { value: "3:4", label: "3:4" },
+        { value: "4:3", label: "4:3" },
+        { value: "9:16", label: "9:16" },
+        { value: "9:21", label: "9:21" },
+      ],
+
+      icon: Ruler,
+      disabled: false,
+    },
+    {
+      name: "Output Format",
+      formName: "output_format",
+      type: "select",
+      options: [
+        { value: "png", label: "PNG" },
+        { value: "jpg", label: "JPG" },
+      ],
+    },
+    {
+      name: "Number of Images to be generated",
+      formName: "num_outputs",
+      type: "slider",
+      disabled: true,
+    },
+  ],
+  advancedParameters: [
+    {
+      name: "Safety Tolerance",
+      formName: "safety_tolerance",
+      type: "slider",
+      constraints: { min: 1, max: 6, step: 1 },
+    },
+    {
+      name: "Image Prompt Strength",
+      formName: "image_prompt_strength",
+      type: "slider",
+      constraints: { min: 0.0, max: 1.0, step: 0.01 },
+    },
+    {
+      name: "Raw Output",
+      formName: "raw",
+      type: "boolean",
+    },
+  ],
+  zodSchema: fluxProUltraSchema,
+  defaultValues: {
+    prompt: "",
+    model: "black-forest-labs/flux-1.1-pro-ultra",
+    provider: "replicate",
+    output_format: "jpg",
+    aspect_ratio: "1:1",
+    safety_tolerance: 2,
+    raw: false,
+    image_prompt_strength: 0.1,
   },
 };
 
-export const getParameterDisplayTitle = (
-  key: string,
-  param: Parameter
-): string => {
-  const displayTitles: Record<string, string> = {
-    prompt: "What do you want to create?",
-    aspect_ratio: "Image Shape",
-    width: "Custom Width",
-    height: "Custom Height",
-    image_input: "Reference Image",
-    prompt_strength: "How much to follow the reference image",
-    num_outputs: "Number of images to generate",
-    num_inference_steps: "Generation quality (more steps = better quality)",
-    guidance: "How closely to follow your prompt",
-    output_format: "Image file format",
-    output_quality: "Image compression quality",
-    megapixels: "Image resolution",
-    go_fast: "Fast generation mode",
-    seed: "Reproducibility seed",
-    disable_safety_checker: "Skip content safety checks",
-    safety_tolerance: "Content safety level",
-    prompt_upsampling: "Enhance prompt automatically",
-  };
-
-  return param.displayTitle || displayTitles[key] || param.title;
-};
-
-export const getParameterGroup = (key: string, param: Parameter): string => {
-  if (param["x-group"]) return param["x-group"];
-
-  const priority =
-    PARAMETER_PRIORITIES[key as keyof typeof PARAMETER_PRIORITIES] || 999;
-
-  if (priority <= 10) return PARAMETER_GROUPS.ESSENTIALS.id;
-  if (priority <= 20) return PARAMETER_GROUPS.GENERATION.id;
-  if (priority <= 30) return PARAMETER_GROUPS.OUTPUT.id;
-  return PARAMETER_GROUPS.ADVANCED.id;
-};
-
-export const sortParametersByPriority = (
-  params: Array<[string, Parameter]>
-): Array<[string, Parameter]> => {
-  return params.sort(([keyA], [keyB]) => {
-    const priorityA =
-      PARAMETER_PRIORITIES[keyA as keyof typeof PARAMETER_PRIORITIES] || 999;
-    const priorityB =
-      PARAMETER_PRIORITIES[keyB as keyof typeof PARAMETER_PRIORITIES] || 999;
-    return priorityA - priorityB;
-  });
-};
-
-export const groupParameters = (schema: ModelSchema): ParameterGroup[] => {
-  if (!schema || !schema.properties) return [];
-  const paramEntries = Object.entries(schema.properties);
-  const sortedParams = sortParametersByPriority(paramEntries);
-
-  const groups: Record<string, ParameterGroup> = {};
-
-  // Initialize groups
-  Object.values(PARAMETER_GROUPS).forEach((group) => {
-    groups[group.id] = {
-      ...group,
-      parameters: [],
-    };
-  });
-
-  // Distribute parameters to groups
-  sortedParams.forEach(([key, param]) => {
-    const groupId = getParameterGroup(key, param);
-    if (groups[groupId]) {
-      groups[groupId].parameters.push([key, param]);
-    }
-  });
-
-  // Return only non-empty groups, sorted by priority
-  return Object.values(groups)
-    .filter((group) => group.parameters.length > 0)
-    .sort((a, b) => a.priority - b.priority);
-};
-
-export const roundToNearestMultiple = (
-  value: number,
-  multiple: number = 32
-): number => {
-  return Math.round(value / multiple) * multiple;
-};
+export const IMAGE_GENERATION_MODELS = [
+  gptImage1Model,
+  fluxDevModel,
+  fluxProModel,
+  fluxProUltraModel,
+] as const;

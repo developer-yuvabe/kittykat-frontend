@@ -8,9 +8,10 @@ type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
 };
 
-const INTIAL_IMAGE_PLACEHOLDER = 18;
+const INTIAL_IMAGE_PLACEHOLDER = 16;
 
 export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
+  console.log("Rendering A2iImagesWrapper", generations);
   return (
     <ContentSection
       title=""
@@ -21,8 +22,11 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
         data: {},
       }}
       content={
-        <div className="relative h-[48rem] overflow-y-auto scrollbar bg-muted rounded-md overflow-hidden">
-          <div className="grid grid-cols-[repeat(auto-fit,_minmax(15rem,_1fr))]">
+        <div className="relative h-[48rem] bg-muted rounded-md">
+          <div
+            className="grid grid-cols-[repeat(auto-fill,_minmax(15rem,_1fr))] h-full relative overflow-y-auto scrollbar gap-[1px] content-start justify-center
+          "
+          >
             {generations.map((generation, index) => (
               <A2iImageCard key={index} generation={generation} />
             ))}

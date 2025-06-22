@@ -1,11 +1,10 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
-import { gptImage1Schema } from "@/schema/image-gen.schema";
-import { z } from "zod";
+import { z, ZodTypeAny } from "zod";
 
-export const generateImage = async (
+export const generateImage = async <T extends ZodTypeAny>(
   brandId: string,
-  data: z.infer<typeof gptImage1Schema>
+  data: z.infer<T>
 ) => {
   try {
     await handleApiRequest(

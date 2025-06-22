@@ -12,42 +12,33 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { AppConfig } from "@/config/app.config";
 import { useImageGenForm } from "@/hooks/useImageGenForm";
-import { gptImage1Schema } from "@/schema/image-gen.schema";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { Settings2, Ruler, Loader2, X, Images } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { z } from "zod";
-import GptImag1AdvanceParameters from "./GptImage1AdvanceParameters";
-import { useBrandStore } from "@/store/brand.store";
-import { generateImage } from "@/services/api/a2i.service";
 import { delay } from "@/lib/utils";
-
-const sizeOptions = [
-  { value: "1024x1024", label: "1:1" },
-  { value: "1536x1024", label: "3:2" },
-  { value: "1024x1536", label: "2:3" },
-];
-
-const outputFormat = [
-  { value: "png", label: "PNG" },
-  { value: "jpeg", label: "JPEG" },
-  { value: "webp", label: "WEBP" },
-];
+import { generateImage } from "@/services/api/a2i.service";
+import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { useA2iStore } from "@/store/a2i.store";
+import { useBrandStore } from "@/store/brand.store";
+import { Images, Loader2, Settings2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { z, ZodTypeAny } from "zod";
+import { DynamicFormField } from "./DynamicFormField";
+import { FileParameter } from "@/types/a2i-media.types";
 
 const A2iImageInput = () => {
   const { selectedBrandId } = useBrandStore();
+  const { selectedModel } = useA2iStore();
   const form = useImageGenForm();
+
+  // Reference to the file input element
+  const refernceImagesModelInfo = useMemo(
+    () =>
+      selectedModel.parameters.find(
+        (param) => param.name === "Reference Image(s)"
+      )! as FileParameter,
+    [selectedModel]
+  );
   const inputFileRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imageBlocks, setImageBlocks] = useState<
@@ -95,12 +86,20 @@ const A2iImageInput = () => {
             return updated;
           });
 
-          form.setValue("reference_images", [
-            ...(form.getValues("reference_images") || []),
-            uploadedUrl,
-          ]);
+          const formName = refernceImagesModelInfo.formName;
+
+          form.setValue(
+            formName,
+            refernceImagesModelInfo.maxImages > 1
+              ? [...(form.getValues(formName) || []), uploadedUrl]
+              : uploadedUrl
+          );
         } catch {
           console.error("Upload failed for", file.name);
+          // Remove the block if upload fails
+          setImageBlocks((prev) => {
+            return prev.filter((_, index) => index !== blockIndex);
+          });
         } finally {
           setIsUploading(false);
         }
@@ -112,26 +111,36 @@ const A2iImageInput = () => {
 
   const { getInputProps } = useDropzone({
     onDrop,
-    multiple: true,
-    accept: {
-      "image/*": [],
-    },
+    multiple: refernceImagesModelInfo.maxImages > 1,
+    accept: Object.fromEntries(
+      refernceImagesModelInfo.accept.map((type) => [type, []])
+    ),
+    preventDropOnDocument: true,
     disabled: isUploading,
-    maxFiles: 10,
-    maxSize: AppConfig.MAX_FILE_SIZE,
+    maxFiles: refernceImagesModelInfo.maxImages,
+    maxSize: refernceImagesModelInfo.maxSize,
   });
 
   function removeReferenceImage(urlToRemove: string) {
-    const currentImages = form.getValues("reference_images");
+    const formName = refernceImagesModelInfo.formName;
+    const currentImages = form.getValues(formName);
+
     if (!currentImages) return;
-    const updatedImages = currentImages.filter((url) => url !== urlToRemove);
-    form.setValue("reference_images", updatedImages);
+
+    let updatedImages;
+    if (Array.isArray(currentImages)) {
+      updatedImages = currentImages.filter((url) => url !== urlToRemove);
+    }
+    form.setValue(formName, updatedImages);
 
     // Remove from imageBlocks
     setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
+
+    // delete the file from GCS
+    deleteFile(urlToRemove);
   }
 
-  const onSubmit = async (data: z.infer<typeof gptImage1Schema>) => {
+  const onSubmit = async (data: z.infer<ZodTypeAny>) => {
     generateImage(selectedBrandId!, data);
 
     await delay(3000);
@@ -140,11 +149,21 @@ const A2iImageInput = () => {
     setImageBlocks([]);
   };
 
+  useEffect(() => {
+    for (const block of imageBlocks) {
+      if (block.url) {
+        deleteFile(block.url);
+      }
+    }
+
+    setImageBlocks([]);
+  }, [selectedModel.id]);
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden"
+        className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden shadow-2xl"
       >
         <div className="flex gap-2 justify-between items-center px-4 pb-4 pt-2">
           <div className="flex items-center gap-2">
@@ -160,124 +179,16 @@ const A2iImageInput = () => {
               </Button>
             </div>
 
-            <FormField
-              control={form.control}
-              name="size"
-              render={({ field }) => (
-                <FormItem>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger disableDropdown className="!gap-0">
-                        {(() => {
-                          const selected = sizeOptions.find(
-                            (opt) => opt.value === field.value
-                          );
-                          return selected ? (
-                            <div className="flex items-center gap-2 w-full">
-                              <Ruler className="h-4 w-4" />
-                              {selected.label}
-                            </div>
-                          ) : null;
-                        })()}
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="w-44">
-                      {sizeOptions.map(({ value, label }) => (
-                        <SelectItem
-                          key={value}
-                          value={value}
-                          className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
-                        >
-                          <FormLabel className="font-normal">{label}</FormLabel>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="n"
-              render={({ field }) => (
-                <FormItem>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="!gap-0 !px-2 !py-1"
-                      >
-                        {field.value}x
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      side="top"
-                      className="space-y-2 w-64"
-                    >
-                      <FormLabel className="text-sm">
-                        Number of images
-                      </FormLabel>
-                      <FormControl>
-                        <Slider
-                          value={[field.value]}
-                          onValueChange={(val) => field.onChange(val[0])}
-                          min={1}
-                          max={10}
-                          step={1}
-                        />
-                      </FormControl>
-                    </PopoverContent>
-                  </Popover>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="output_format"
-              render={({ field }) => (
-                <FormItem>
-                  <Select
-                    onValueChange={(v) => {
-                      field.onChange(v);
-                      form.setValue("background", "auto");
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger disableDropdown className="!gap-0">
-                        {(() => {
-                          const selected = outputFormat.find(
-                            (opt) => opt.value === field.value
-                          );
-                          return selected ? (
-                            <div className="flex items-center gap-2 w-full">
-                              {selected.label}
-                            </div>
-                          ) : null;
-                        })()}
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="w-44">
-                      {outputFormat.map(({ value, label }) => (
-                        <SelectItem
-                          key={value}
-                          value={value}
-                          className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
-                        >
-                          <FormLabel className="font-normal">{label}</FormLabel>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
+            {selectedModel.parameters.map((param) => {
+              return (
+                <DynamicFormField
+                  key={param.formName}
+                  param={param}
+                  form={form}
+                  type="initial"
+                />
+              );
+            })}
 
             <Popover>
               <PopoverTrigger asChild>
@@ -291,9 +202,21 @@ const A2iImageInput = () => {
                 side="top"
                 className="space-y-2 w-64"
               >
-                <GptImag1AdvanceParameters
-                  outputFormat={form.getValues("output_format")}
-                />
+                <div className="space-y-4">
+                  <FormLabel className="py-0 text-sm">
+                    Advance Parameters
+                  </FormLabel>
+                  {selectedModel.advancedParameters.map((advParam) => {
+                    return (
+                      <DynamicFormField
+                        key={advParam.formName}
+                        param={advParam}
+                        form={form}
+                        type="advanced"
+                      />
+                    );
+                  })}
+                </div>
               </PopoverContent>
             </Popover>
           </div>

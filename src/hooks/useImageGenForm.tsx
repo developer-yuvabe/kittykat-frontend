@@ -1,30 +1,25 @@
-import { useForm } from "react-hook-form";
+import { useA2iStore } from "@/store/a2i.store";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { gptImage1Schema } from "@/schema/image-gen.schema";
 
-export const useImageGenForm = () => {
-  const methods = useForm<z.infer<typeof gptImage1Schema>>({
-    resolver: zodResolver(gptImage1Schema),
-    defaultValues: {
-      prompt: "",
-      model: "gpt-image-1",
-      provider: "openai",
-      size: "1024x1024",
-      n: 1,
-      quality: "high",
-      output_format: "png",
-      output_compression: 100,
-      background: "auto",
-      moderation: "auto",
-    },
+export const useImageGenForm = (): UseFormReturn<any> => {
+  const { selectedModel } = useA2iStore();
+
+  const form = useForm<any>({
+    resolver: zodResolver(selectedModel.zodSchema as z.ZodTypeAny),
+    defaultValues: selectedModel.defaultValues,
     mode: "onChange",
   });
 
-  const watchModel = methods.watch("model");
+  useEffect(() => {
+    queueMicrotask(() => {
+      form.reset({
+        ...selectedModel.defaultValues,
+      });
+    });
+  }, [selectedModel.id]);
 
-  return {
-    ...methods,
-    watchModel,
-  };
+  return form;
 };

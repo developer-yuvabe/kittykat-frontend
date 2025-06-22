@@ -20,10 +20,7 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
-import {
-  updateReferenceCampaignId,
-  updateReferenceMoodboardId,
-} from "@/hooks/useParameterManagement";
+
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 
@@ -218,8 +215,8 @@ agentHint: use A2I_IMAGES_AGENT for this request
             setReferenceImage("reference");
 
             await Promise.all([
-              updateReferenceMoodboardId(brandId, moodboard.id),
-              updateReferenceCampaignId(brandId, campaignId),
+              // updateReferenceMoodboardId(brandId, moodboard.id),
+              // updateReferenceCampaignId(brandId, campaignId),
             ]);
             if (user) {
               submitOptimisticMessage({

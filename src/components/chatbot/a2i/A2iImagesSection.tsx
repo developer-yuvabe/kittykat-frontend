@@ -48,7 +48,7 @@ export default function A2iImagesSection({
         {expanded && (
           <CardContent className="px-6  space-y-6">
             <A2iImagesWrapper
-              generations={a2iImageInformation?.generations || []}
+              generations={[...(a2iImageInformation?.generations || [])]}
             />
           </CardContent>
         )}
