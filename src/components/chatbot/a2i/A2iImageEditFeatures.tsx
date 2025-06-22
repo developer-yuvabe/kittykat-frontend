@@ -104,8 +104,11 @@ const A2iImageEditFeatures = ({
                 );
               })}
             </div>
-            <div className="overflow-y-auto p-4">
-              <currentFeature.component />
+            <div className="overflow-y-auto p-4 h-full">
+              <currentFeature.component
+                productImage={image.url}
+                closeDialog={onClose}
+              />
             </div>
           </div>
         </div>

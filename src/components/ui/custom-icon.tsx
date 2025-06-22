@@ -1091,3 +1091,67 @@ export const VideoRecorderIcon: React.FC<CustomIconProps> = ({
     />
   </svg>
 );
+
+export const BrainIcon: React.FC<CustomIconProps> = ({
+  color = "currentColor",
+  size = 24,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="none"
+    {...props}
+  >
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M6.86 12.88a4.3 4.3 0 0 1 0-8.6c.052 0 .101.014.153.015a2.574 2.574 0 0 1 5.007.845V6a2.58 2.58 0 0 1-2.58 2.58h-.86M20.464 16.116c.087.334.132.677.136 1.021a4.3 4.3 0 0 1-8.6 0 4.3 4.3 0 0 1-8.6 0c.004-.344.05-.688.136-1.021"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M3.571 11.293a3.4 3.4 0 0 0-1.011 2.42c0 1.9 1.54 3.44 3.44 3.44h.86"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M7.71 9.43a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72ZM7.71 18a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72Z"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M20.429 11.293a3.4 3.4 0 0 1 1.011 2.42c0 1.9-1.54 3.44-3.44 3.44h-.86"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M12 17.15v-3.44M16.29 18a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72Z"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M17.14 12.88a4.3 4.3 0 0 0 0-8.6c-.053 0-.102.014-.153.015a2.574 2.574 0 0 0-5.007.845V6a2.58 2.58 0 0 0 2.58 2.58h.86"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M16.29 9.43a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72ZM12 13.72A.86.86 0 1 0 12 12a.86.86 0 0 0 0 1.72Z"
+    />
+  </svg>
+);

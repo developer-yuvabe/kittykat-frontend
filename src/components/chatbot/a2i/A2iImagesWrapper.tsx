@@ -46,6 +46,8 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
               status: generation.status,
               generationId: generation.id,
               parameters: generation.parameters,
+              type: generation.type,
+              vtonParameters: generation.vton_parameters,
             },
           ];
         }
@@ -55,6 +57,8 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
           status: generation.status,
           generationId: generation.id,
           parameters: generation.parameters,
+          type: generation.type,
+          vtonParameters: generation.vton_parameters,
         }));
       }
     );

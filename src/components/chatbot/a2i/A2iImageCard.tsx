@@ -19,6 +19,8 @@ export type A2iImageCardProps = {
   status: A2iImageGeneration["status"];
   generationId: A2iImageGeneration["id"];
   parameters: A2iImageGeneration["parameters"];
+  type: A2iImageGeneration["type"];
+  vtonParameters?: A2iImageGeneration["vton_parameters"];
   dragListeners?: any;
   dragAttributes?: any;
 };
@@ -30,6 +32,7 @@ const A2iImageCard = ({
   generationId,
   dragListeners,
   dragAttributes,
+  vtonParameters,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -116,6 +119,20 @@ const A2iImageCard = ({
       {status !== "completed" && (
         <div className="flex flex-col items-center justify-center gap-2 h-full px-10">
           {<p className="text-sm text-center">{parameters.prompt}</p>}
+          {vtonParameters && (
+            <div className="flex gap-6">
+              <img
+                src={vtonParameters.model_image}
+                alt="Model"
+                className="w-16 h-16 object-cover rounded-md"
+              />
+              <img
+                src={vtonParameters.product_image}
+                alt="Garment"
+                className="w-16 h-16 object-cover rounded-md"
+              />
+            </div>
+          )}
           {status === "failed" && (
             <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
               Failed

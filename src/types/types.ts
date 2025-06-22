@@ -186,6 +186,10 @@ export type A2iImageGeneration = {
   updated_at: string;
   parameters: Record<string, any>;
   images?: A2iImageDetail[];
+  vton_parameters?: {
+    model_image: string;
+    product_image: string;
+  };
 };
 
 export type ThreadA2iImage = {

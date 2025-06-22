@@ -1,20 +1,16 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
-import { vtonSchema } from "@/schema/vton.schema";
-import { z } from "zod";
 
 export const createVtonImage = async (
-  userId: string,
   brandId: string,
-  data: z.infer<typeof vtonSchema>
+  modelImage: string,
+  productImage: string
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/a2i/vton`, {
-        user_id: userId,
-        product_image: data.product_image,
-        model_image: data.model_image,
-        prompt: data.prompt,
+        model_image: modelImage,
+        product_image: productImage,
       })
     );
   } catch (error) {
