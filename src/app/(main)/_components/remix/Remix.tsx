@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useRemixStore } from "@/store/remix.store";
-import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
 import { remixImageSchema } from "@/schema/remix.schema";
 import { toast } from "sonner";
@@ -22,7 +21,6 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 export default function MaskingDialog() {
   const { remixUrl, setRemixUrl, remixSize } = useRemixStore();
-  const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -262,14 +260,14 @@ export default function MaskingDialog() {
           file
         );
 
-        remixImageService(selectedBrandId!, user!.id, data, maskUrl);
+        remixImageService(selectedBrandId!, data, maskUrl);
         setRemixUrl(null);
       } catch (err) {
         console.error(err);
         toast.error("Failed to process the mask.");
       }
     },
-    [selectedBrandId, user, canvasToBlob, setRemixUrl]
+    [selectedBrandId, canvasToBlob, setRemixUrl]
   );
 
   return (

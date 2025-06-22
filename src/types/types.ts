@@ -190,6 +190,10 @@ export type A2iImageGeneration = {
     model_image: string;
     product_image: string;
   };
+  remix_parameters?: {
+    base_image: string;
+    reference_images: string[];
+  };
 };
 
 export type ThreadA2iImage = {

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,26 +11,27 @@ import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
 import { ShirtIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VirtualTryOn from "./features/VirtualTryOn";
-import Remix from "./features/Remix";
+import RemixControls from "./features/RemixControls";
 import { BrushIcon, VideoRecorderIcon } from "@/components/ui/custom-icon";
 import VideoGeneration from "./features/VideoGeneration";
 import { cn } from "@/lib/utils";
+import RemixImage, {
+  RemixImageHandle,
+} from "@/app/(main)/_components/remix/RemixImage";
+import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 
 const FEATURES = [
   {
     name: "Virtual Try-On",
     icon: ShirtIcon,
-    component: VirtualTryOn,
   },
   {
     name: "In-Paint Editing",
     icon: BrushIcon,
-    component: Remix,
   },
   {
     name: "Video Generation",
     icon: VideoRecorderIcon,
-    component: VideoGeneration,
   },
 ];
 
@@ -46,6 +47,13 @@ const A2iImageEditFeatures = ({
   onClose: () => void;
 }) => {
   const [currentFeature, setCurrentFeature] = React.useState(FEATURES[0]);
+  const isRemixEnabled = currentFeature.name === "In-Paint Editing";
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const remixImageRef = useRef<RemixImageHandle>(null);
+  const remixHistory = useUndoRedoRemix();
 
   return (
     <Dialog
@@ -75,11 +83,22 @@ const A2iImageEditFeatures = ({
 
         <div className="w-full h-full flex gap-x-4">
           <div className="w-[40%] h-full flex items-center justify-center">
-            <img
-              src={image.url}
-              alt={parameters.prompt}
-              className="block max-h-[85vh] object-contain border w-max"
-            />
+            {isRemixEnabled ? (
+              <RemixImage
+                ref={remixImageRef}
+                imageRef={imageRef}
+                canvasRef={canvasRef}
+                offScreenCanvasRef={offScreenCanvasRef}
+                url={image.url}
+                remixHistory={remixHistory}
+              />
+            ) : (
+              <img
+                src={image.url}
+                alt={parameters.prompt}
+                className="block max-h-[85vh] object-contain border w-max"
+              />
+            )}
           </div>
           <div className="w-[60%] h-full flex flex-col">
             <div className="flex w-full h-max">
@@ -105,10 +124,25 @@ const A2iImageEditFeatures = ({
               })}
             </div>
             <div className="overflow-y-auto p-4 h-full">
-              <currentFeature.component
-                productImage={image.url}
-                closeDialog={onClose}
-              />
+              {currentFeature.name === "Virtual Try-On" && (
+                <VirtualTryOn productImage={image.url} closeDialog={onClose} />
+              )}
+              {currentFeature.name === "In-Paint Editing" && (
+                <RemixControls
+                  image={{ url: image.url, size: parameters.size }}
+                  closeDialog={() => onClose()}
+                  canUndo={remixHistory.canUndo}
+                  canRedo={remixHistory.canRedo}
+                  onUndo={() => remixImageRef.current?.undo()}
+                  onRedo={() => remixImageRef.current?.redo()}
+                  onClear={() => remixImageRef.current?.clearCanvas()}
+                  offScreenCanvasRef={offScreenCanvasRef}
+                />
+              )}
+
+              {currentFeature.name === "Video Generation" && (
+                <VideoGeneration />
+              )}
             </div>
           </div>
         </div>
