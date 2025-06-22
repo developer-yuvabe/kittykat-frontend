@@ -123,8 +123,11 @@ const A2iImageInput = () => {
       refernceImagesModelInfo.accept.map((type) => [type, []])
     ),
     preventDropOnDocument: true,
-    disabled: isUploading,
-    maxFiles: refernceImagesModelInfo.maxImages,
+    disabled:
+      isUploading ||
+      form.formState.isSubmitting ||
+      refernceImagesModelInfo.maxImages - imageBlocks.length <= 0,
+    maxFiles: refernceImagesModelInfo.maxImages - imageBlocks.length,
     maxSize: refernceImagesModelInfo.maxSize,
   });
 
