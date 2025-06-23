@@ -26,7 +26,8 @@ import {
 import classes from "./SortableGallery.module.css";
 import Sortable from "./Sortable";
 import Overlay from "./Overlay";
-import { Heart, X, RotateCcw } from "lucide-react";
+import { Heart, X, RotateCcw, Maximize2 } from "lucide-react";
+import { ImageModal } from "../shared/ImageModal";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
@@ -82,6 +83,10 @@ export default function SortableGallery<
 }: SortableGalleryProps<TPhoto, TGalleryType>) {
   const ref = useRef<HTMLDivElement>(null);
   const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
+  const [expandedImage, setExpandedImage] = useState<{
+    url: string;
+    alt: string;
+  } | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -116,6 +121,17 @@ export default function SortableGallery<
     setActivePhoto(undefined);
   };
 
+  const handleExpandImage = (photo: SortablePhoto<TPhoto>) => {
+    setExpandedImage({
+      url: photo.src,
+      alt: photo.alt || `Image ${photo.id}`,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setExpandedImage(null);
+  };
+
   const renderSortable = <
     T extends keyof Pick<JSX.IntrinsicElements, "div" | "button" | "a">
   >(
@@ -133,94 +149,120 @@ export default function SortableGallery<
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragEnd={handleDragEnd}
-      onDragStart={handleDragStart}
-      collisionDetection={closestCenter}
-    >
-      <SortableContext items={photos}>
-        <div className={classes.gallery}>
-          <Gallery
-            ref={ref}
-            photos={photos}
-            render={{
-              ...render,
-              link: (props, { index, photo }) =>
-                renderSortable("a", index, photo, props),
-              wrapper: (props, { index, photo }) =>
-                renderSortable("div", index, photo, props),
-              button: (props, { index, photo }) =>
-                renderSortable("button", index, photo, props),
-              // Add extras render function for all icons
-              extras: (_, { photo, index }) => {
-                const sortablePhoto = photo as SortablePhoto<TPhoto>;
-                return (
-                  <>
-                    {/* Delete Icon (top-left) */}
-                    <div className="absolute top-2 left-2 z-10">
-                      <X
-                        size={16}
-                        className={`w-5 h-5 cursor-pointer transition-colors text-white fill-white hover:scale-110 active:scale-95`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          removedPhoto(sortablePhoto.id);
-                        }}
-                      />
-                    </div>
-
-                    {/* Regenerate Icon (bottom-left) */}
-                    {!hasUnsavedChanges && (
-                      <div className="absolute bottom-2 left-2 z-10">
-                        <RotateCcw
+    <>
+      <DndContext
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+        onDragStart={handleDragStart}
+        collisionDetection={closestCenter}
+      >
+        <SortableContext items={photos}>
+          <div className={classes.gallery}>
+            <Gallery
+              ref={ref}
+              photos={photos}
+              render={{
+                ...render,
+                link: (props, { index, photo }) =>
+                  renderSortable("a", index, photo, props),
+                wrapper: (props, { index, photo }) =>
+                  renderSortable("div", index, photo, props),
+                button: (props, { index, photo }) =>
+                  renderSortable("button", index, photo, props),
+                // Add extras render function for all icons
+                extras: (_, { photo, index }) => {
+                  const sortablePhoto = photo as SortablePhoto<TPhoto>;
+                  return (
+                    <>
+                      {/* Delete Icon (top-left) */}
+                      <div className="absolute top-2 left-2 z-10">
+                        <X
                           size={16}
-                          className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-                          onClick={async (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            await onReplaceImage({
-                              imageToReplaceId: sortablePhoto.id,
-                              replacementImageUrl: sortablePhoto.src,
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
-                    {/* Like Icon (bottom-right) - only show if onPhotoLike is provided */}
-                    {onPhotoLike && (
-                      <div className="absolute bottom-2 right-2 z-10">
-                        <Heart
-                          size={16}
-                          className={`w-5 h-5 cursor-pointer transition-colors ${
-                            sortablePhoto.liked
-                              ? "text-red-500 fill-red-500"
-                              : "text-white fill-white"
-                          } hover:scale-110 active:scale-95`}
+                          className={`w-5 h-5 cursor-pointer transition-colors text-white fill-white hover:scale-110 active:scale-95`}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            onPhotoLike(index, !sortablePhoto.liked);
+                            removedPhoto(sortablePhoto.id);
                           }}
                         />
                       </div>
-                    )}
-                  </>
-                );
-              },
-            }}
-            {...rest}
-            padding={0}
-            spacing={1}
-          />
-        </div>
-      </SortableContext>
 
-      <DragOverlay>
-        {activePhoto && (
-          <Overlay className={classes.overlay} {...activePhoto} />
-        )}
-      </DragOverlay>
-    </DndContext>
+                      {/* Expand Icon (top-right) */}
+                      <div className="absolute top-2 right-2 z-10">
+                        <Maximize2
+                          size={16}
+                          className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleExpandImage(sortablePhoto);
+                          }}
+                        />
+                      </div>
+
+                      {/* Regenerate Icon (bottom-left) */}
+                      {!hasUnsavedChanges && (
+                        <div className="absolute bottom-2 left-2 z-10">
+                          <RotateCcw
+                            size={16}
+                            className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
+                            onClick={async (event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              await onReplaceImage({
+                                imageToReplaceId: sortablePhoto.id,
+                                replacementImageUrl: sortablePhoto.src,
+                              });
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Like Icon (bottom-right) - only show if onPhotoLike is provided */}
+                      {onPhotoLike && (
+                        <div className="absolute bottom-2 right-2 z-10">
+                          <Heart
+                            size={16}
+                            className={`w-5 h-5 cursor-pointer transition-colors ${
+                              sortablePhoto.liked
+                                ? "text-red-500 fill-red-500"
+                                : "text-white fill-white"
+                            } hover:scale-110 active:scale-95`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              onPhotoLike(index, !sortablePhoto.liked);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </>
+                  );
+                },
+              }}
+              {...rest}
+              padding={0}
+              spacing={1}
+            />
+          </div>
+        </SortableContext>
+
+        <DragOverlay>
+          {activePhoto && (
+            <Overlay className={classes.overlay} {...activePhoto} />
+          )}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Image Modal */}
+      {expandedImage && (
+        <ImageModal
+          imageUrl={expandedImage.url}
+          alt={expandedImage.alt}
+          isOpen={!!expandedImage}
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
   );
 }

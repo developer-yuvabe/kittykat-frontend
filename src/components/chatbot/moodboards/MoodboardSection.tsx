@@ -37,7 +37,6 @@ import {
 } from "@/services/api/moodboard.service";
 import { MoodboardStyleAnalysisStatus } from "./MoodboardStyleAnalysisStatus";
 import MoodboardTagsSelector from "./MoodboardTagsSelector";
-import { MoodboardVisualImages } from "./MoodboardVisualImages";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import MoodboardLayout from "./MoodboardLayout";
 import { ImageCountCard } from "@/components/shared/ImageCountCard";
@@ -52,6 +51,7 @@ import MoodboardSelector from "./MoodboardSelector";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
+import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -160,14 +160,12 @@ export const MoodboardSection: React.FC<{
   const [expanded, setExpanded] = useState(true);
 
   const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
-    useState<number>(10);
+    useState<number>(0);
 
-  // Enforce a maximum limit of 16 images
   useEffect(() => {
-    if (noOfImagesForMoodboard > 16) {
-      setNoOfImagesForMoodboard(16);
-    }
-  }, [noOfImagesForMoodboard]);
+    const imageCount = currentMoodboard?.visual_style_images?.length ?? 0;
+    setNoOfImagesForMoodboard(Math.min(16, imageCount));
+  }, [currentMoodboard?.id]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
@@ -669,13 +667,15 @@ export const MoodboardSection: React.FC<{
               title={`Choose your visual aesthetic `}
               content={
                 <div>
-                  {currentMoodboard && !isCreatingNewMoodboard && (
-                    <div className="mt-6">
-                      <MoodboardVisualImages
-                        currentMoodboard={currentMoodboard}
-                        galleryItems={galleryItems || []}
-                      />
-                    </div>
+                  {currentCampaign && currentMoodboard && (
+                    <MoodboardVisualSectionHeader
+                      currentMoodboard={currentMoodboard}
+                      isCreatingNewMoodboard={isCreatingNewMoodboard}
+                      galleryItems={galleryItems || []}
+                      brandName={brandInformation?.static?.brand?.name}
+                      currentCampaign={currentCampaign}
+                      moodboard={currentMoodboard}
+                    />
                   )}
 
                   <div>
@@ -798,7 +798,11 @@ export const MoodboardSection: React.FC<{
                                 onChange={setNoOfImagesForMoodboard}
                                 hideRefresh
                                 maxCount={
-                                  currentMoodboard.visual_style_images.length
+                                  currentMoodboard.visual_style_images.length >
+                                  16
+                                    ? 16
+                                    : currentMoodboard.visual_style_images
+                                        .length
                                 }
                               />
                             </div>
