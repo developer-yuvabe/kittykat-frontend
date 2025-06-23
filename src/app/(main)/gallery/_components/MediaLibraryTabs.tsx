@@ -16,7 +16,6 @@ function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
 
   return (
     <div className={isSticky ? "sticky top-0 z-40 bg-white" : ""}>
-      <h1 className="text-2xl font-bold mb-4">Media library</h1>
       <TabsList className="mb-4 border-b w-full justify-start rounded-none h-auto p-0 bg-transparent">
         {tabs.map((tab) => (
           <TabsTrigger

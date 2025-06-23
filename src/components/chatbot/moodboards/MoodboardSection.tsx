@@ -448,7 +448,7 @@ export const MoodboardSection: React.FC<{
       }));
 
     try {
-      await toast.promise(
+      toast.promise(
         (async () => {
           // Step 1: Create the new moodboard
           const newMoodboard = await createMoodboard(

@@ -31,6 +31,7 @@ export interface MoodboardImageAnalysisRequest {
   pinterest_limit?: number;
   instagram_limit?: number;
   facebook_limit?: number;
+  reanalyze?: boolean;
 }
 
 export interface MoodboardPatchRequest {
