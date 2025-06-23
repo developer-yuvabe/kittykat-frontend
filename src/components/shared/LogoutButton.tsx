@@ -11,6 +11,8 @@ export function LogoutButton() {
   async function handleLogout() {
     await signOut(auth);
     await fetch("/api/logout");
+    // reload the page to ensure the user is logged out
+    window.location.reload();
     router.push("/login");
   }
 
