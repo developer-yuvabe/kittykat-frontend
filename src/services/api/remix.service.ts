@@ -5,14 +5,12 @@ import { z } from "zod";
 
 export const remixImageService = async (
   brandId: string,
-  userId: string,
   data: z.infer<typeof remixImageSchema>,
   maskImageUrl: string
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/a2i/remix`, {
-        user_id: userId,
         prompt: data.prompt,
         size: data.size,
         n: data.n,

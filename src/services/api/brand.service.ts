@@ -1,9 +1,8 @@
 // src/services/brand.service.ts
 import axiosInstance from "@/config/axios/api-client.config";
-import { A2iImageUpdateRequest } from "@/hooks/useParameterManagement";
 import { handleApiRequest } from "@/lib/utils";
 
-import { BaseApiResponse, ThreadA2iImage } from "@/types/types";
+import { BaseApiResponse } from "@/types/types";
 import axios from "@/config/axios/api-client.config";
 import { BrandResponse, ThreadFileResponse } from "@/types/brand.types";
 
@@ -34,18 +33,6 @@ export async function deleteCampaignMoodboard(
     )
   );
 }
-
-// API functions - moved outside hook to prevent recreation
-export const updateA2iImageParameters = async (
-  brandId: string,
-  payload: A2iImageUpdateRequest
-): Promise<BaseApiResponse<ThreadA2iImage>> => {
-  const response = await axios.put<BaseApiResponse<ThreadA2iImage>>(
-    `/brands/${brandId}/a2i`,
-    payload
-  );
-  return response.data;
-};
 
 export const uploadThreadFile = async (
   brandId: string,

@@ -4,12 +4,9 @@ import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { useBrandStore } from "@/store/brand.store";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
-import React, { useMemo, useState } from "react";
-import {
-  campaignFields,
-  InitialPlaceHolder,
-  PlaceholderSection,
-} from "./brands/InitialPlaceHolder";
+import React from "react";
+import A2iImagesSection from "./a2i/A2iImagesSection";
+import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { MoodboardSection } from "./moodboards/MoodboardSection";
@@ -78,6 +75,9 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             moodboardInformation={moodboardInformation}
           />
         </div>
+      )}
+      {brandingInformation && (
+        <A2iImagesSection a2iImageInformation={a2iImageInformation} />
       )}
     </div>
   );

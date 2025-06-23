@@ -1016,3 +1016,142 @@ export const PintrestIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
     ></path>
   </svg>
 );
+
+export const ShirtIcon: React.FC<CustomIconProps> = ({
+  color = "currentColor",
+  size = 24,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="none"
+    {...props}
+  >
+    <path
+      stroke={color}
+      color={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M15.44 3.4A3.45 3.45 0 0 1 12 6.84 3.45 3.45 0 0 1 8.56 3.4H5.98L2.54 5.12v5.16h3.44V20.6h12.04V10.28h3.44V5.12L18.02 3.4h-2.58Z"
+    />
+  </svg>
+);
+
+export const BrushIcon: React.FC<CustomIconProps> = ({
+  color = "currentColor",
+  size = 20,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="none"
+    {...props}
+  >
+    <path
+      fill={color}
+      d="M5.062 19.97c1.523 0 2.84-.543 3.91-1.613 1.123-1.123 1.707-2.854 1.55-4.494l8.565-8.564a3.123 3.123 0 0 0-.003-4.414c-1.177-1.18-3.233-1.18-4.412 0L5.79 9.769c-1.913.169-3.807 1.521-3.807 3.919 0 .303.02.588.042.86.08 1.031.109 1.418-1.471 2.208a1.001 1.001 0 0 0-.122 1.717c.09.06 2.193 1.497 4.63 1.497ZM16.086 2.298a1.144 1.144 0 0 1 1.587.002 1.12 1.12 0 0 1 0 1.584L10 11.556 8.415 9.97l7.672-7.672ZM4.02 14.393c-.018-.224-.037-.458-.037-.706 0-1.545 1.445-1.953 2.21-1.953.356 0 .699.073.964.206.945.475 1.26 1.293 1.357 1.896.177 1.09-.217 2.368-.956 3.107-.691.691-1.507 1.027-2.495 1.027-.75 0-1.48-.196-2.075-.427 1.082-.973 1.12-1.989 1.032-3.15Z"
+    />
+  </svg>
+);
+
+export const VideoRecorderIcon: React.FC<CustomIconProps> = ({
+  color = "currentColor",
+  size = 22,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="none"
+    {...props}
+  >
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M14.9 6.26H2V18.3h12.9V6.26Z"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M20.89 16.58 14.87 14v-3.44l6.02-2.58v8.6ZM14.89 3.72V2H8.01"
+    />
+    <path
+      fill={color}
+      d="M5.45 10.57a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72Z"
+    />
+  </svg>
+);
+
+export const BrainIcon: React.FC<CustomIconProps> = ({
+  color = "currentColor",
+  size = 24,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="none"
+    {...props}
+  >
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M6.86 12.88a4.3 4.3 0 0 1 0-8.6c.052 0 .101.014.153.015a2.574 2.574 0 0 1 5.007.845V6a2.58 2.58 0 0 1-2.58 2.58h-.86M20.464 16.116c.087.334.132.677.136 1.021a4.3 4.3 0 0 1-8.6 0 4.3 4.3 0 0 1-8.6 0c.004-.344.05-.688.136-1.021"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M3.571 11.293a3.4 3.4 0 0 0-1.011 2.42c0 1.9 1.54 3.44 3.44 3.44h.86"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M7.71 9.43a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72ZM7.71 18a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72Z"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M20.429 11.293a3.4 3.4 0 0 1 1.011 2.42c0 1.9-1.54 3.44-3.44 3.44h-.86"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M12 17.15v-3.44M16.29 18a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72Z"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M17.14 12.88a4.3 4.3 0 0 0 0-8.6c-.053 0-.102.014-.153.015a2.574 2.574 0 0 0-5.007.845V6a2.58 2.58 0 0 0 2.58 2.58h.86"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="square"
+      strokeMiterlimit={10}
+      strokeWidth={2.064}
+      d="M16.29 9.43a.86.86 0 1 0 0-1.72.86.86 0 0 0 0 1.72ZM12 13.72A.86.86 0 1 0 12 12a.86.86 0 0 0 0 1.72Z"
+    />
+  </svg>
+);
