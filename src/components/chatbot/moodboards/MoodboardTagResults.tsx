@@ -3,6 +3,8 @@ import { capitalizeKey } from "@/lib/langgraph.utils";
 import { MoodboardInformation } from "@/types/types";
 import React from "react";
 import { RenderValue } from "../DynamicSection";
+import { Button } from "@/components/ui/button";
+import { Brain } from "lucide-react";
 
 function MoodboardTagResults({
   moodboard_tags,
@@ -31,6 +33,9 @@ function MoodboardTagResults({
           context={undefined}
         />
       ))}
+      <Button className="w-full" onClick={() => {}}>
+        <Brain /> A2i Showboard Generation
+      </Button>
     </div>
   );
 }

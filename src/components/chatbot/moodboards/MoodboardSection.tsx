@@ -748,7 +748,7 @@ export const MoodboardSection: React.FC<{
                                     );
                                   }
                                 }}
-                                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
+                                className="w-full "
                                 disabled={
                                   currentMoodboard.moodboard_generation_status ===
                                   "in_progress"
