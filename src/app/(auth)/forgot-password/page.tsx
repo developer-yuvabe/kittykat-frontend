@@ -38,13 +38,13 @@ import {
 } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { Loader } from "@/components/ui/loader";
 
 type PageMode = "email" | "reset" | "loading" | "error";
 
-const ForgotPasswordPage = () => {
+const ForgotPasswordPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
@@ -324,6 +324,14 @@ const ForgotPasswordPage = () => {
         <Card className="shadow-none border-0 w-sm md:w-[28rem]">{renderContent()}</Card>
       </div>
     </AuthUiWrapper>
+  );
+};
+
+const ForgotPasswordPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ForgotPasswordPageContent />
+    </Suspense>
   );
 };
 
