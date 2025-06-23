@@ -9,6 +9,7 @@ import A2iImagesSection from "./a2i/A2iImagesSection";
 import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
+import { MoodboardSection } from "./moodboards/MoodboardSection";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -28,10 +29,22 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information;
   const a2iImageInformation = data?.a2i_image_information;
+  const moodboardInformation = data?.moodboard_information;
+
+  const latestCampaignIndex = useMemo(
+    () =>
+      campaignInformation && campaignInformation.length > 0
+        ? campaignInformation.length - 1
+        : 0,
+    [campaignInformation]
+  );
+
+  const [selectedCampaignIndex, setSelectedCampaignIndex] =
+    useState(latestCampaignIndex);
 
   return (
     <div
-      className={`relative rounded-2xl bg-[#f3f4f6] p-8 flex flex-col overflow-auto scrollbar ${
+      className={`relative rounded-2xl p-8 flex flex-col overflow-auto scrollbar ${
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
@@ -49,6 +62,17 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
           <CampaignSection
             campaignInformation={campaignInformation}
             brandInformation={brandingInformation}
+            latestCampaignIndex={latestCampaignIndex}
+            selectedCampaignIndex={selectedCampaignIndex}
+            setSelectedCampaignIndex={setSelectedCampaignIndex}
+          />
+
+          <MoodboardSection
+            brandInformation={brandingInformation}
+            campaignInformation={campaignInformation}
+            setSelectedCampaignIndex={setSelectedCampaignIndex}
+            selectedCampaignIndex={selectedCampaignIndex}
+            moodboardInformation={moodboardInformation}
           />
         </div>
       )}

@@ -1,6 +1,7 @@
 export type GalleryItem = {
   // 🧱 Basic Asset Info
   brand_id: string;
+  moodboard_id?: string;
   asset_type: string;
   asset_source: string;
   asset_title: string;
@@ -185,6 +186,7 @@ export interface EnhancedSelectedFilters {
   // Existing filters
   brands: string[];
   campaigns: string[];
+  moodboards: string[];
   product_categories: string[];
 
   // New content-based filters

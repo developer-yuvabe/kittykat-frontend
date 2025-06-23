@@ -23,7 +23,7 @@ interface MediaItemProps {
   item: GalleryItemResponse;
   isSelected: boolean;
   isHovered: boolean;
-  isMediaSelectDialog: boolean;
+  isMediaSelectDialog?: boolean;
   onSelect: (id: string, selected: boolean) => void;
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
@@ -39,6 +39,10 @@ interface MediaItemProps {
   ) => Promise<void>;
   handleDeleteComment: (itemId: string, commentId: string) => Promise<void>;
   handleAddComment: (itemId: string, text: string) => Promise<void>;
+  inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
+  isMultiSelect?: boolean; // 👈 new prop to enable multi-select mode
+  selectedCount?: number;
+  maxSelectionCount?: number;
 }
 
 // Main MediaItem Component
@@ -58,9 +62,16 @@ export function MediaItem({
   handleUpdateComment,
   handleDeleteComment,
   handleAddComment,
+  inSelectionGalleryIds,
+  isMultiSelect,
+  selectedCount,
+  maxSelectionCount,
 }: MediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
+
+  const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
+  const isDisabled = isAlreadySelected && isMultiSelect;
 
   const handleImageLoad = (event: any) => {
     const target = event.target as HTMLImageElement;
@@ -110,6 +121,11 @@ export function MediaItem({
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
           onToggleFavorite={onToggleFavorite}
+          isAlreadySelected={isAlreadySelected}
+          isDisabled={isDisabled}
+          isMultiSelectMode={isMultiSelect}
+          maxSelectionCount={maxSelectionCount}
+          selectedCount={selectedCount}
         />
 
         {/* More options popover */}

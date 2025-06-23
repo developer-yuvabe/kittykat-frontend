@@ -89,6 +89,7 @@ class GalleryService {
     aspect_ratio?: string[];
     workflow_status?: string[];
     is_archived?: boolean;
+    moodboard_ids?:string[]
   }): Promise<GalleryItemsListResponse> {
     const {
       skip = 0,

@@ -101,7 +101,9 @@ export const createGalleryItemFromFile = async (
   url: string,
   galleryFilters: GalleryFilters,
   activeTab: string,
-  brandId: string
+  brandId: string,
+  campaignId?: string,
+  moodboardId?: string
 ): Promise<GalleryItem> => {
   const dimensions = await getImageDimensions(file);
 
@@ -122,6 +124,9 @@ export const createGalleryItemFromFile = async (
     brand_id: brandId,
     // Versioning
     related_asset_ids: [],
+
+    campaign_id: campaignId,
+    moodboard_id: moodboardId,
 
     // AI & Generation Info
     prompt_modifiers: [],
@@ -145,6 +150,22 @@ export const createGalleryItemFromFile = async (
   };
 
   return galleryItem;
+};
+
+// Helper function to get image dimensions from URL (if you need it separately)
+export const getImageDimensionsFromUrl = async (
+  url: string
+): Promise<{ width: number; height: number } | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+    img.src = url;
+  });
 };
 
 // Helper function to format bytes
@@ -255,6 +276,7 @@ export const getSafeMediaFormat = (file: File): string => {
   const fallback = mimeToExt[file.type];
   return allowedFormats.includes(fallback) ? fallback : "unknown";
 };
+/// <reference lib="dom" />
 import { UseMutateFunction, MutateOptions } from "@tanstack/react-query";
 
 // Types

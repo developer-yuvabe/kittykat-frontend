@@ -6,13 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Save, X, Edit } from "lucide-react";
-import {
-  LimitsState,
-  SocialOption,
-  SocialOptionId,
-} from "./VisualAestheticChooser";
+import { SocialOption, SocialOptionId } from "@/types/campaign.types";
+import { LimitsState } from "@/types/moodboard.types";
 
-interface SocialLinksEditorProps {
+interface MoodboardSocialOptionsProps {
   socialOptions: SocialOption[];
   selectedOptions: string[];
   updateEditValue: (id: SocialOptionId, value: string) => void;
@@ -24,7 +21,7 @@ interface SocialLinksEditorProps {
   setLimits: React.Dispatch<React.SetStateAction<LimitsState>>;
 }
 
-export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({
+export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
   socialOptions,
   selectedOptions,
   updateEditValue,

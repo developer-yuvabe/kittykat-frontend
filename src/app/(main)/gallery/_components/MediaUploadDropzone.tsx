@@ -9,6 +9,7 @@ import {
   Check,
   ChevronUp,
   ChevronDown,
+  Link,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ import type {
   GalleryFilters,
   FileWithStatus,
   BrandCampaignListResponse,
+  GalleryItem,
 } from "@/types/gallery.types";
 import {
   acceptedFileTypes,
@@ -39,6 +41,23 @@ import {
 } from "@/lib/gallery.utils";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+// Extended interface to handle both files and URLs
+interface MediaWithStatus extends Omit<FileWithStatus, "file"> {
+  file?: File;
+  url?: string;
+  originalUrl?: string;
+  name: string;
+  type: "file" | "url";
+}
 
 interface UploadDropzoneProps {
   activeTab: string;
@@ -52,6 +71,8 @@ interface UploadDropzoneProps {
   >;
   brands: BrandCampaignListResponse["brands"];
   brandsLoading: boolean;
+  selectedCampaignId: string | undefined;
+  selecteMoodboardId: string | undefined;
 }
 
 export function MediaUploadDropzone({
@@ -64,15 +85,18 @@ export function MediaUploadDropzone({
   setSelectedBrand,
   brands,
   brandsLoading,
+  selectedCampaignId,
+  selecteMoodboardId,
 }: UploadDropzoneProps) {
   console.log("brands", brands);
 
-  const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
+  const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
 
   // Use gallery hook to get addToGallery mutation
-  console.log("dzone", galleryFilters);
   const { addToGallery: addToGalleryMutation } =
     useGalleryQuery(galleryFilters);
 
@@ -90,21 +114,23 @@ export function MediaUploadDropzone({
 
   const uploadFiles = async (files: File[]) => {
     setIsUploading(true);
-    const newFilesWithStatus: FileWithStatus[] = files.map((file) => ({
+    const newItemsWithStatus: MediaWithStatus[] = files.map((file) => ({
+      name: file.name,
       file,
       status: "pending",
+      type: "file",
     }));
 
-    setFilesWithStatus((prev) => [...prev, ...newFilesWithStatus]);
+    setMediaWithStatus((prev) => [...prev, ...newItemsWithStatus]);
 
     const uploadPromises = files.map(async (file, index) => {
-      const fileIndex = filesWithStatus.length + index;
+      const itemIndex = mediaWithStatus.length + index;
 
       try {
         // Update status to uploading
-        setFilesWithStatus((prev) =>
+        setMediaWithStatus((prev) =>
           prev.map((item, idx) =>
-            idx === fileIndex ? { ...item, status: "uploading" } : item
+            idx === itemIndex ? { ...item, status: "uploading" } : item
           )
         );
 
@@ -115,13 +141,6 @@ export function MediaUploadDropzone({
           file
         );
 
-        // Update status to success
-        setFilesWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === fileIndex ? { ...item, status: "success", url } : item
-          )
-        );
-
         // Add to gallery if enabled
         if (addToGallery && selectedBrand) {
           try {
@@ -129,8 +148,10 @@ export function MediaUploadDropzone({
               file,
               url,
               galleryFilters,
-              source,
-              selectedBrand?.brand_id
+              activeTab,
+              selectedBrand?.brand_id,
+              selectedCampaignId,
+              selecteMoodboardId
             );
             addToGalleryMutation(galleryItem);
           } catch (galleryError) {
@@ -139,15 +160,22 @@ export function MediaUploadDropzone({
           }
         }
 
+        // Update status to success
+        setMediaWithStatus((prev) =>
+          prev.map((item, idx) =>
+            idx === itemIndex ? { ...item, status: "success", url } : item
+          )
+        );
+
         return url;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Upload failed";
 
         // Update status to error
-        setFilesWithStatus((prev) =>
+        setMediaWithStatus((prev) =>
           prev.map((item, idx) =>
-            idx === fileIndex
+            idx === itemIndex
               ? { ...item, status: "error", error: errorMessage }
               : item
           )
@@ -169,22 +197,6 @@ export function MediaUploadDropzone({
       const failedCount = urls.length - successfulUrls.length;
 
       if (successfulUrls.length > 0) {
-        const successMessage = addToGallery
-          ? `${successfulUrls.length} file${
-              successfulUrls.length > 1 ? "s" : ""
-            } uploaded and added to gallery`
-          : `${successfulUrls.length} file${
-              successfulUrls.length > 1 ? "s" : ""
-            } uploaded successfully`;
-
-        toast.success(successMessage, {
-          description: files
-            .slice(0, successfulUrls.length)
-            .map((file) => file.name)
-            .join(", "),
-          duration: 3000,
-        });
-
         // Call the callback with successful URLs
         onUploadComplete?.(successfulUrls);
       }
@@ -209,6 +221,123 @@ export function MediaUploadDropzone({
     }
   };
 
+  const uploadUrls = async (urls: string[]) => {
+    setIsUploading(true);
+    const newItemsWithStatus: MediaWithStatus[] = urls.map((url) => ({
+      name: url.split("/").pop() || url,
+      originalUrl: url,
+      status: "pending",
+      type: "url",
+    }));
+
+    setMediaWithStatus((prev) => [...prev, ...newItemsWithStatus]);
+
+    const uploadPromises = urls.map(async (url, index) => {
+      const itemIndex = mediaWithStatus.length + index;
+
+      try {
+        // Update status to uploading
+        setMediaWithStatus((prev) =>
+          prev.map((item, idx) =>
+            idx === itemIndex ? { ...item, status: "uploading" } : item
+          )
+        );
+
+        // Add to gallery if enabled
+        if (addToGallery && selectedBrand) {
+          try {
+            // Get extension from URL
+            const extension =
+              url.split(".").pop()?.split(/\#|\?/)[0]?.toLowerCase() || "";
+            const galleryItem: GalleryItem = {
+              brand_id: selectedBrand.brand_id,
+              asset_url: url,
+              asset_source: source,
+              asset_type: "image",
+              media_format: extension,
+              asset_title: url,
+              size: "",
+              related_asset_ids: [],
+              prompt_modifiers: [],
+              ai_tags: [],
+              visual_style_tags: [],
+              detected_objects: [],
+              detected_emotions: [],
+              detected_colors: [],
+              intent_tags: [],
+              search_keywords: [],
+              custom_tags: [],
+              moodboard_id: selecteMoodboardId,
+            };
+            addToGalleryMutation(galleryItem);
+          } catch (galleryError) {
+            console.warn("Failed to add to gallery:", galleryError);
+            // Don't fail the upload if gallery addition fails
+          }
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "URL upload failed";
+
+        // Update status to error
+        setMediaWithStatus((prev) =>
+          prev.map((item, idx) =>
+            idx === itemIndex
+              ? { ...item, status: "error", error: errorMessage }
+              : item
+          )
+        );
+
+        throw error;
+      }
+    });
+
+    try {
+      const results = await Promise.allSettled(uploadPromises);
+      const successfulUrls = results
+        .filter(
+          (result): result is PromiseFulfilledResult<void> =>
+            result.status === "fulfilled"
+        )
+        .map((result) => result.value);
+
+      const failedCount = results.length - successfulUrls.length;
+
+      if (failedCount > 0) {
+        toast.error(
+          `${failedCount} URL${failedCount > 1 ? "s" : ""} failed to upload`,
+          {
+            description: "Please try again",
+            duration: 3000,
+          }
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("URL upload failed", {
+        description: "Please try again",
+        duration: 3000,
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (!urlInput.trim()) return;
+
+    const urls = urlInput
+      .split("\n")
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0);
+
+    if (urls.length > 0) {
+      uploadUrls(urls);
+      setUrlInput("");
+      setShowUrlInput(false);
+    }
+  };
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
@@ -218,8 +347,8 @@ export function MediaUploadDropzone({
     [uploadFiles, activeTab]
   );
 
-  const removeFile = (index: number) => {
-    setFilesWithStatus((prev) => prev.filter((_, idx) => idx !== index));
+  const removeItem = (index: number) => {
+    setMediaWithStatus((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const {
@@ -254,7 +383,7 @@ export function MediaUploadDropzone({
         </div>
         {/* Brand Selector */}
         <div
-          className="flex z-20 justify-start absolute top-3 left-2 "
+          className="flex z-20 justify-start absolute top-3 left-2"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-52">
@@ -321,6 +450,7 @@ export function MediaUploadDropzone({
           </div>
         </div>
         <input {...getInputProps()} />
+
         <div className="flex gap-x-3">
           <Button
             variant="outline"
@@ -332,85 +462,146 @@ export function MediaUploadDropzone({
             ) : (
               <Upload className="mr-2 h-4 w-4" />
             )}
-            {isUploading ? "Uploading..." : "Upload"}
+            {isUploading ? "Uploading..." : "Upload Files"}
           </Button>
-          {brands.length === 0 && !brandsLoading ? (
-            <p className="text-sm pt-2 text-gray-500">
-              Set up a brand to get started
-            </p>
-          ) : (
-            <p className="text-sm pt-2 text-gray-500">
-              {isDragActive
-                ? "or drop media here to upload"
-                : `${currentConfig.placeholder}`}{" "}
-              ({currentConfig.text})
-              {addToGallery && (
-                <span className="block text-xs text-purple-600 mt-1">
-                  Files will be added to brand gallery
-                </span>
-              )}
-            </p>
-          )}
+          <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={isUploading || brands.length === 0 || brandsLoading}
+                className="mb-2 border-[#636AE8] text-[#636AE8] hover:bg-[#636AE8] hover:text-white"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Link className="mr-2 h-4 w-4" />
+                Add URLs
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent
+              onPointerDownOutside={(e) => e.preventDefault()} // Prevent accidental close
+              className="sm:max-w-md"
+            >
+              <DialogHeader>
+                <DialogTitle>Add Media URLs</DialogTitle>
+              </DialogHeader>
+              <textarea
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder={`Enter media URLs (one per line)\nhttps://example.com/image1.jpg\nhttps://example.com/video1.mp4`}
+                className="w-full p-3 border border-gray-300 rounded-md text-sm resize-none"
+                rows={3}
+                disabled={isUploading}
+              />
+              <DialogFooter className="mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowUrlInput(false);
+                    setUrlInput("");
+                  }}
+                  disabled={isUploading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUrlSubmit();
+                  }}
+                  disabled={!urlInput.trim() || isUploading}
+                  className="bg-[#636AE8] hover:bg-[#5A61D9] text-white"
+                >
+                  Add URLs
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {filesWithStatus.length > 0 && (
+        {brands.length === 0 && !brandsLoading ? (
+          <p className="text-sm text-gray-500">Set up a brand to get started</p>
+        ) : (
+          <p className="text-sm text-gray-500">
+            {isDragActive
+              ? "Drop media here to upload"
+              : `${currentConfig.placeholder} or add URLs`}{" "}
+            ({currentConfig.text})
+            {addToGallery && (
+              <span className="block text-xs text-purple-600 mt-1">
+                Files will be added to brand gallery
+              </span>
+            )}
+          </p>
+        )}
+
+        {mediaWithStatus.length > 0 && (
           <div className="mt-4 w-full max-w-md">
-            <p className="text-xs font-medium text-gray-700 mb-1">Files:</p>
+            <p className="text-xs font-medium text-gray-700 mb-1">Media:</p>
             <div className="max-h-32 overflow-y-auto space-y-1">
-              {filesWithStatus.map((fileWithStatus, index) => (
+              {mediaWithStatus.map((mediaItem, index) => (
                 <div
                   key={index}
                   className={`flex items-center justify-between text-xs py-2 px-3 rounded-md border ${
-                    fileWithStatus.status === "error"
+                    mediaItem.status === "error"
                       ? "bg-red-50 border-red-200"
-                      : fileWithStatus.status === "success"
+                      : mediaItem.status === "success"
                       ? "bg-green-50 border-green-200"
-                      : fileWithStatus.status === "uploading"
+                      : mediaItem.status === "uploading"
                       ? "bg-blue-50 border-blue-200"
                       : "bg-gray-50 border-gray-200"
                   }`}
                 >
                   <div className="flex items-center min-w-0 flex-1">
-                    {getStatusIcon(fileWithStatus.status)}
+                    {getStatusIcon(mediaItem.status)}
                     <span
                       className={`ml-2 truncate ${getStatusColor(
-                        fileWithStatus.status
+                        mediaItem.status
                       )}`}
+                      title={
+                        mediaItem.type === "url"
+                          ? mediaItem.originalUrl
+                          : mediaItem.name
+                      }
                     >
-                      {fileWithStatus.file.name}
+                      {mediaItem.type === "url" && (
+                        <Link className="inline w-3 h-3 mr-1" />
+                      )}
+                      {mediaItem.name}
                     </span>
                   </div>
                   <div className="flex items-center ml-2">
-                    {fileWithStatus.status === "error" && (
+                    {mediaItem.status === "error" && (
                       <span
                         className="text-xs text-red-500 mr-2"
-                        title={fileWithStatus.error}
+                        title={mediaItem.error}
                       >
                         Failed
                       </span>
                     )}
-                    {fileWithStatus.status === "success" &&
-                      fileWithStatus.url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-1 h-auto text-xs text-blue-500 hover:text-blue-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(fileWithStatus.url!);
-                            toast.success("URL copied to clipboard");
-                          }}
-                        >
-                          Copy URL
-                        </Button>
-                      )}
+                    {mediaItem.status === "success" && mediaItem.url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 h-auto text-xs text-blue-500 hover:text-blue-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(mediaItem.url!);
+                          toast.success("URL copied to clipboard");
+                        }}
+                      >
+                        Copy URL
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
                       className="p-1 h-auto ml-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeFile(index);
+                        removeItem(index);
                       }}
                     >
                       <X className="h-3 w-3" />

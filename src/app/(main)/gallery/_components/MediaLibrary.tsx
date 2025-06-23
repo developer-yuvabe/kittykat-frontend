@@ -7,13 +7,14 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { MediaGrid } from "./MediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Plus } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
+  GalleryItemResponse,
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
@@ -25,15 +26,34 @@ type MediaLibraryProps = {
   activeTab?: string;
   isMediaSelectDialog?: boolean;
   onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: GalleryItemResponse) => void;
+  onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void; // 👈 new prop for multi-select
+  filters?: EnhancedSelectedFilters;
+  brandId?: string;
+  campaignId?: string;
+  moodboardId?: string;
+  inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
+  isMultiSelect?: boolean; // 👈 new prop to enable multi-select mode
+  maxSelectionCount?: number;
 };
 
 export function MediaLibrary({
   activeTab: initialTab = "all-media",
   isMediaSelectDialog = false,
   onMediaItemSelected,
+  onFullMediaItemSelected,
+  onMultipleMediaItemsSelected,
+  filters,
+  brandId,
+  campaignId,
+  moodboardId,
+  inSelectionGalleryIds = [],
+  isMultiSelect = false,
+  maxSelectionCount,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]); // 👈 separate state for multi-select
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<boolean>(false);
@@ -42,22 +62,29 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
+  const initialFilters = useMemo(() => {
+    return (
+      filters ?? {
+        brands: [],
+        campaigns: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        has_product: undefined,
+        has_people: undefined,
+        has_lifestyle_context: undefined,
+        is_favourite: undefined,
+        is_archived: undefined,
+        moodboards: [],
+      }
+    );
+  }, [filters]);
+
   const [selectedFilters, setSelectedFilters] =
-    useState<EnhancedSelectedFilters>({
-      brands: [],
-      campaigns: [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
-      has_product: undefined,
-      has_people: undefined,
-      has_lifestyle_context: undefined,
-      is_favourite: undefined,
-      is_archived: undefined,
-    });
+    useState<EnhancedSelectedFilters>(initialFilters);
 
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
@@ -101,9 +128,21 @@ export function MediaLibrary({
 
   useEffect(() => {
     if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
+      // If brandId is provided, try to find that brand
+      if (brandId) {
+        const matchedBrand = brandsData.brands.find(
+          (brand) => brand.brand_id === brandId
+        );
+        if (matchedBrand) {
+          setSelectedBrand(matchedBrand);
+          return;
+        }
+      }
+
+      // Fallback: Select first brand
       setSelectedBrand(brandsData.brands[0]);
     }
-  }, [brandsLoading, brandsData, selectedBrand]);
+  }, [brandsLoading, brandsData, brandId, selectedBrand]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -117,25 +156,39 @@ export function MediaLibrary({
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSelectedItems([]);
+    setMultiSelectItems([]);
   };
 
   const handleSelect = (id: string, selected: boolean) => {
-    if (selected) {
-      setSelectedItems((prev) => [...prev, id]);
+    if (isMultiSelect) {
+      // Multi-select mode: manage separate multi-select state
+      if (selected) {
+        setMultiSelectItems((prev) => [...prev, id]);
+      } else {
+        setMultiSelectItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
     } else {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      // Single select mode: existing behavior
+      if (selected) {
+        setSelectedItems((prev) => [...prev, id]);
+      } else {
+        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
     }
   };
 
   const handleUnselectAll = () => {
     setSelectedItems([]);
+    setMultiSelectItems([]);
   };
 
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      bulkDelete(selectedItems);
+      const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
+      bulkDelete(itemsToDelete);
       setSelectedItems([]);
+      setMultiSelectItems([]);
     } finally {
       setIsDeleting(false);
       setIsDialogOpen(false);
@@ -143,7 +196,8 @@ export function MediaLibrary({
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedItems.length > 0) {
+    const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
+    if (itemsToDelete.length > 0) {
       setIsDialogOpen(true);
     }
   };
@@ -178,10 +232,11 @@ export function MediaLibrary({
 
   // Bulk download selected items
   const handleBulkDownload = async () => {
-    if (selectedItems.length === 0) return;
+    const itemsToDownload = isMultiSelect ? multiSelectItems : selectedItems;
+    if (itemsToDownload.length === 0) return;
 
     const selectedItemsData = galleryItems.filter((item) =>
-      selectedItems.includes(item.id)
+      itemsToDownload.includes(item.id)
     );
 
     try {
@@ -194,20 +249,48 @@ export function MediaLibrary({
     }
   };
 
+  // 👈 Handle multi-select "Add" button
+  const handleAddSelectedItems = () => {
+    if (isMultiSelect && multiSelectItems.length > 0) {
+      const selectedItemsData = galleryItems.filter((item) =>
+        multiSelectItems.includes(item.id)
+      );
+      onMultipleMediaItemsSelected?.(selectedItemsData);
+      setMultiSelectItems([]);
+    }
+  };
+
   useEffect(() => {
     setSource(activeTab);
   }, [activeTab]);
 
+  // Handle single select mode
   useEffect(() => {
-    if (isMediaSelectDialog && selectedItems.length > 0) {
+    if (isMediaSelectDialog && !isMultiSelect && selectedItems.length > 0) {
       const selectedItem = galleryItems.find((item) =>
         selectedItems.includes(item.id)
       );
 
-      onMediaItemSelected?.(selectedItem!.asset_url);
-      setSelectedItems([]);
+      if (selectedItem) {
+        onMediaItemSelected?.(selectedItem.asset_url);
+        onFullMediaItemSelected?.(selectedItem);
+        setSelectedItems([]);
+      }
     }
-  }, [isMediaSelectDialog, selectedItems]);
+  }, [
+    isMediaSelectDialog,
+    isMultiSelect,
+    selectedItems,
+    galleryItems,
+    onMediaItemSelected,
+    onFullMediaItemSelected,
+  ]);
+
+  // Determine which items are currently selected for display
+  const currentlySelectedItems = isMultiSelect
+    ? multiSelectItems
+    : selectedItems;
+  const currentSelectionCount = currentlySelectedItems.length;
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
@@ -236,6 +319,8 @@ export function MediaLibrary({
             setSelectedBrand={setSelectedBrand}
             brands={brandsData?.brands || []}
             brandsLoading={brandsLoading}
+            selectedCampaignId={campaignId}
+            selecteMoodboardId={moodboardId}
           />
 
           <div className="flex flex-col md:flex-row gap-4">
@@ -277,6 +362,41 @@ export function MediaLibrary({
                 selectedFilters={selectedFilters}
               />
 
+              {/* 👈 Multi-select mode header */}
+              {isMultiSelect && isMediaSelectDialog && (
+                <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      Multi-select mode
+                    </span>
+                    {currentSelectionCount > 0 && (
+                      <span className="text-sm text-gray-500">
+                        ({currentSelectionCount} selected)
+                      </span>
+                    )}
+                  </div>
+                  {currentSelectionCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUnselectAll}
+                      >
+                        Clear Selection
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleAddSelectedItems}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Selected ({currentSelectionCount})
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {galleryStatus === "pending" ? (
                 <div className="flex justify-center items-center py-36 2xl:py-60">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -293,7 +413,7 @@ export function MediaLibrary({
                 <>
                   <MediaGrid
                     items={galleryItems}
-                    selectedItems={selectedItems}
+                    selectedItems={currentlySelectedItems}
                     onSelect={handleSelect}
                     onToggleFavorite={mediaHelper.toggleFavorite}
                     onDelete={mediaHelper.deleteItem}
@@ -304,6 +424,9 @@ export function MediaLibrary({
                     handleDeleteComment={mediaHelper.deleteComment}
                     handleAddComment={mediaHelper.addComment}
                     handleUpdatePartialData={patchItem}
+                    isMultiSelect={isMultiSelect}
+                    inSelectionGalleryIds={inSelectionGalleryIds}
+                    maxSelectionCount={maxSelectionCount}
                   />
 
                   {/* Infinite scroll loading indicator */}
@@ -326,19 +449,22 @@ export function MediaLibrary({
         </TabsContent>
       </Tabs>
 
-      {selectedItems.length > 0 && !isMediaSelectDialog && (
-        <MediaBulkActions
-          selectedCount={selectedItems.length}
-          onUnselectAll={handleUnselectAll}
-          onDelete={handleBulkDeleteClick}
-          onDownload={handleBulkDownload}
-        />
-      )}
+      {/* Bulk actions - show for non-dialog mode or single-select dialog mode */}
+      {currentSelectionCount > 0 &&
+        (!isMediaSelectDialog || !isMultiSelect) && (
+          <MediaBulkActions
+            selectedCount={currentSelectionCount}
+            onUnselectAll={handleUnselectAll}
+            onDelete={handleBulkDeleteClick}
+            onDownload={handleBulkDownload}
+          />
+        )}
+
       <ReusableAlertDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         title="Delete Items"
-        description={`Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${currentSelectionCount} item(s)? This action cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={handleConfirmDelete}

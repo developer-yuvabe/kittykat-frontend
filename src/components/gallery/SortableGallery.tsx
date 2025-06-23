@@ -26,7 +26,7 @@ import {
 import classes from "./SortableGallery.module.css";
 import Sortable from "./Sortable";
 import Overlay from "./Overlay";
-import { Heart, X } from "lucide-react";
+import { Heart, X, RotateCcw } from "lucide-react";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
@@ -55,6 +55,15 @@ type SortableGalleryProps<
   onPhotoLike?: (index: number, liked: boolean) => void;
   photos: SortablePhoto<TPhoto>[];
   removedPhoto: (id: string) => void;
+  onReplaceImage: ({
+    imageToReplaceId,
+    replacementImageUrl,
+  }: {
+    imageToReplaceId: string;
+    replacementImageUrl: string;
+  }) => Promise<void>;
+  targetRowHeight: number;
+  hasUnsavedChanges: boolean;
 };
 
 export default function SortableGallery<
@@ -67,7 +76,8 @@ export default function SortableGallery<
   onPhotoLike,
   render,
   removedPhoto,
-
+  onReplaceImage,
+  hasUnsavedChanges,
   ...rest
 }: SortableGalleryProps<TPhoto, TGalleryType>) {
   const ref = useRef<HTMLDivElement>(null);
@@ -110,15 +120,17 @@ export default function SortableGallery<
     T extends keyof Pick<JSX.IntrinsicElements, "div" | "button" | "a">
   >(
     Component: T,
-    index: number,
+    _index: number,
     photo: TPhoto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     props: ComponentProps<any>
-  ) => (
-    <Sortable key={index} id={(photo as SortablePhoto<TPhoto>).id}>
-      <Component {...props} />
-    </Sortable>
-  );
+  ) => {
+    const sortablePhoto = photo as SortablePhoto<TPhoto>;
+    return (
+      <Sortable key={sortablePhoto.id} id={sortablePhoto.id}>
+        <Component {...props} />
+      </Sortable>
+    );
+  };
 
   return (
     <DndContext
@@ -140,24 +152,43 @@ export default function SortableGallery<
                 renderSortable("div", index, photo, props),
               button: (props, { index, photo }) =>
                 renderSortable("button", index, photo, props),
-              // Add extras render function for selection functionality if available
-              ...(onPhotoLike && {
-                extras: (_, { photo, index }) => {
-                  const sortablePhoto = photo as SortablePhoto<TPhoto>;
-                  return (
-                    <>
-                      <div className="absolute top-2 left-2 z-10">
-                        <X
+              // Add extras render function for all icons
+              extras: (_, { photo, index }) => {
+                const sortablePhoto = photo as SortablePhoto<TPhoto>;
+                return (
+                  <>
+                    {/* Delete Icon (top-left) */}
+                    <div className="absolute top-2 left-2 z-10">
+                      <X
+                        size={16}
+                        className={`w-5 h-5 cursor-pointer transition-colors text-white fill-white hover:scale-110 active:scale-95`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          removedPhoto(sortablePhoto.id);
+                        }}
+                      />
+                    </div>
+
+                    {/* Regenerate Icon (bottom-left) */}
+                    {!hasUnsavedChanges && (
+                      <div className="absolute bottom-2 left-2 z-10">
+                        <RotateCcw
                           size={16}
-                          className={`w-5 h-5 cursor-pointer transition-colors text-white fill-whitehover:scale-110 active:scale-95`}
-                          onClick={(event) => {
+                          className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
+                          onClick={async (event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            removedPhoto(sortablePhoto.id);
+                            await onReplaceImage({
+                              imageToReplaceId: sortablePhoto.id,
+                              replacementImageUrl: sortablePhoto.src,
+                            });
                           }}
                         />
                       </div>
-                      {/* Like Icon (bottom-right) */}
+                    )}
+                    {/* Like Icon (bottom-right) - only show if onPhotoLike is provided */}
+                    {onPhotoLike && (
                       <div className="absolute bottom-2 right-2 z-10">
                         <Heart
                           size={16}
@@ -173,10 +204,10 @@ export default function SortableGallery<
                           }}
                         />
                       </div>
-                    </>
-                  );
-                },
-              }),
+                    )}
+                  </>
+                );
+              },
             }}
             {...rest}
             padding={0}

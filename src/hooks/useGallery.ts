@@ -14,7 +14,10 @@ import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 20;
 
-export const useGalleryQuery = (filters: GalleryFilters) => {
+export const useGalleryQuery = (
+  filters: GalleryFilters,
+  items_per_page: number = ITEMS_PER_PAGE
+) => {
   const queryClient = useQueryClient();
 
   // Fetch brands and campaigns for filters
@@ -51,7 +54,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
           return await galleryService.searchGalleryItems(
             filters.searchQuery,
             pageParam,
-            ITEMS_PER_PAGE
+            items_per_page
           );
         }
 
@@ -63,11 +66,14 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
             filters.favorites ||
             filters.selectedFilters?.is_favourite ||
             undefined,
-          brand_ids: filters.selectedFilters?.brands.length
+          brand_ids: filters.selectedFilters?.brands?.length
             ? filters.selectedFilters.brands
             : undefined,
-          campaign_ids: filters.selectedFilters?.campaigns.length
+          campaign_ids: filters.selectedFilters?.campaigns?.length
             ? filters.selectedFilters.campaigns
+            : undefined,
+          moodboard_ids: filters?.selectedFilters?.moodboards?.length
+            ? filters?.selectedFilters?.moodboards
             : undefined,
           has_product: filters.selectedFilters?.has_product,
           has_people: filters.selectedFilters?.has_people,
@@ -89,7 +95,7 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
             ? filters.selectedFilters.product_categories
             : undefined,
           skip: pageParam,
-          limit: ITEMS_PER_PAGE,
+          limit: items_per_page,
         });
       } catch (error) {
         console.error("Gallery query failed:", error);
@@ -120,14 +126,25 @@ export const useGalleryQuery = (filters: GalleryFilters) => {
   const addToGalleryMutation = useMutation({
     mutationFn: (newItem: GalleryItem) =>
       galleryService.createGalleryItem(newItem),
-    onSuccess: () => {
+
+    onMutate: () => {
+      // Show loading toast and store the ID
+      const toastId = toast.loading("Adding item to gallery...");
+      return { toastId };
+    },
+
+    onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-      // toast.success("Item added to gallery");
+
+      // Update the loading toast to success
+      toast.success("Item added to gallery", { id: context?.toastId });
     },
-    onError: () => {
-      toast.error("Failed to add item to gallery");
+
+    onError: (_error, _variables, context) => {
+      // Update the loading toast to error
+      toast.error("Failed to add item to gallery", { id: context?.toastId });
     },
   });
 
