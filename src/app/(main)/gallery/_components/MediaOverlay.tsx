@@ -123,7 +123,7 @@ export function MediaOverlay({
       {/* Disabled Overlay for Already Selected Items */}
       {isAlreadySelected && (
         <div className="absolute inset-0 bg-black/20 z-5 pointer-events-none">
-          <div className="absolute inset-0 border-2 border-green-400 " />
+          <div className="absolute inset-0 border-2 border-purple-600 " />
         </div>
       )}
 

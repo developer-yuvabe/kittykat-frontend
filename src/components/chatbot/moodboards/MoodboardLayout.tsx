@@ -30,6 +30,7 @@ import { useUserStore } from "@/store/user.store";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ManualMoodboardSkeleton from "./MoodboardSkeleton";
 import MoodboardSelector from "./MoodboardSelector";
+import { toast } from "sonner";
 
 // Fixed interface to match the data structure
 export interface MoodboardAssetItem {
@@ -114,12 +115,19 @@ function MoodboardLayout({
   }, [galleryItems]);
 
   const handleAnalyzeMoodboard = async () => {
-    try {
-      setAnalyzeLoading(true);
+    setAnalyzeLoading(true);
 
-      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-        image_urls: photos.map((photo) => photo.src),
-      });
+    try {
+      toast.promise(
+        analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
+          image_urls: photos.map((photo) => photo.src),
+        }),
+        {
+          loading: "Analyzing moodboard...",
+          success: "Moodboard analyzed successfully!",
+          error: "Image analysis failed. Please try again.",
+        }
+      );
     } catch (error) {
       console.error("Image analysis failed:", error);
     } finally {
