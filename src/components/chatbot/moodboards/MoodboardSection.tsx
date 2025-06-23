@@ -809,6 +809,7 @@ export const MoodboardSection: React.FC<{
                     {selectedBrandId &&
                       currentMoodboard &&
                       currentCampaign &&
+                      moodboardInformation &&
                       !isCreatingNewMoodboard && (
                         <MoodboardLayout
                           brandId={selectedBrandId}
@@ -819,6 +820,11 @@ export const MoodboardSection: React.FC<{
                             currentMoodboard?.moodboard_generation_status ===
                             "in_progress"
                           }
+                          isCreatingNew={isCreatingNewMoodboard}
+                          moodboards={moodboardInformation}
+                          onNewMoodboard={handleCreateNewMoodboard}
+                          selectedMoodboard={currentMoodboard}
+                          setSelectedMoodboard={handleMoodboardSelect}
                         />
                       )}
                   </div>
