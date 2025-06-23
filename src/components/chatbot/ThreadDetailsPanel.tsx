@@ -4,7 +4,7 @@ import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { useBrandStore } from "@/store/brand.store";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
-import React from "react";
+import React, { useMemo, useState } from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
 import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
