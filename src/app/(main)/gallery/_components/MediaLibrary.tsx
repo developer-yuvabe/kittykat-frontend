@@ -7,7 +7,7 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { MediaGrid } from "./MediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { X, Loader2, Plus } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
@@ -21,19 +21,31 @@ import MediaLibraryTabs from "./MediaLibraryTabs";
 import { MediaBulkActions } from "./MediaBulkActions";
 import MediaFilterSidebar from "./MediaFilterSidebar";
 import { createMediaItemHelper } from "@/lib/gallery.utils";
+import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
+import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
+import { MediaFolderView } from "./MediaFolderView";
+import { useQueryState } from "nuqs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type MediaLibraryProps = {
   activeTab?: string;
   isMediaSelectDialog?: boolean;
   onMediaItemSelected?: (url: string) => void;
   onFullMediaItemSelected?: (item: GalleryItemResponse) => void;
-  onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void; // 👈 new prop for multi-select
+  onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void;
   filters?: EnhancedSelectedFilters;
   brandId?: string;
   campaignId?: string;
   moodboardId?: string;
-  inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
-  isMultiSelect?: boolean; // 👈 new prop to enable multi-select mode
+  inSelectionGalleryIds?: string[];
+  isMultiSelect?: boolean;
   maxSelectionCount?: number;
 };
 
@@ -53,7 +65,7 @@ export function MediaLibrary({
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]); // 👈 separate state for multi-select
+  const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<boolean>(false);
@@ -292,163 +304,179 @@ export function MediaLibrary({
     : selectedItems;
   const currentSelectionCount = currentlySelectedItems.length;
 
+  const [localGalleryView, setLocalGalleryView] = useLocalStorage<
+    "grid" | "folder"
+  >("gallery-view-mode", "grid");
+
+  // URL query state
+  const [galleryView, setGalleryViewRaw] = useQueryState<"grid" | "folder">(
+    "view",
+    {
+      parse: (value) =>
+        value === "grid" || value === "folder" ? value : "grid",
+      serialize: (value) => value,
+      history: "push",
+      defaultValue: localGalleryView, // load from localStorage
+    }
+  );
+
+  const setGalleryView = (value: "grid" | "folder") => {
+    setLocalGalleryView(value);
+    setGalleryViewRaw(value);
+  };
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
-      <Tabs
-        defaultValue="all-media"
-        value={activeTab}
-        onValueChange={handleTabChange}
-      >
-        <MediaLibraryTabs />
-        <TabsContent
-          value={activeTab}
-          className="p-3 rounded-3xl bg-white mt-0"
+      <div className="flex justify-between mb-2">
+        <h1 className="text-2xl font-bold">Media library</h1>
+        <Select
+          value={galleryView}
+          onValueChange={(val) => setGalleryView(val as "grid" | "folder")}
         >
-          <MediaUploadDropzone
+          <SelectTrigger className="w-[130px] text-purple-600 border-purple-600">
+            <SelectValue placeholder="View" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="grid">Grid View</SelectItem>
+            <SelectItem value="folder">Folder View</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {galleryView === "folder" && (
+        <div>
+          <MediaFolderView
             activeTab={activeTab}
-            galleryFilters={{
-              assetType: activeTab,
-              favorites,
-              source,
-              creator,
-              searchQuery,
-              selectedFilters,
-            }}
-            source={source}
             selectedBrand={selectedBrand}
             setSelectedBrand={setSelectedBrand}
             brands={brandsData?.brands || []}
             brandsLoading={brandsLoading}
             selectedCampaignId={campaignId}
             selecteMoodboardId={moodboardId}
+            galleryView={galleryView}
           />
+        </div>
+      )}
+      {galleryView === "grid" && (
+        <Tabs
+          defaultValue="all-media"
+          value={activeTab}
+          onValueChange={handleTabChange}
+        >
+          <MediaLibraryTabs />
+          <TabsContent
+            value={activeTab}
+            className="p-3 rounded-3xl bg-white mt-0"
+          >
+            <MediaUploadDropzone
+              activeTab={activeTab}
+              galleryFilters={{
+                assetType: activeTab,
+                favorites,
+                source,
+                creator,
+                searchQuery,
+                selectedFilters,
+              }}
+              source={source}
+              selectedBrand={selectedBrand}
+              setSelectedBrand={setSelectedBrand}
+              brands={brandsData?.brands || []}
+              brandsLoading={brandsLoading}
+              selectedCampaignId={campaignId}
+              selecteMoodboardId={moodboardId}
+            />
 
-          <div className="flex flex-col md:flex-row gap-4">
-            <div
-              className={`${
-                showFilters ? "w-full md:w-1/4" : "hidden"
-              } transition-all duration-300 ease-in-out`}
-            >
-              <div className="md:hidden flex justify-between items-center mb-2">
-                <h3 className="font-medium">Filters</h3>
-                <Button variant="ghost" size="sm" onClick={toggleFilters}>
-                  <X className="h-4 w-4" />
-                </Button>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div
+                className={`${
+                  showFilters ? "w-full md:w-1/4" : "hidden"
+                } transition-all duration-300 ease-in-out`}
+              >
+                <div className="md:hidden flex justify-between items-center mb-2">
+                  <h3 className="font-medium">Filters</h3>
+                  <Button variant="ghost" size="sm" onClick={toggleFilters}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <MediaFilterSidebar
+                  selectedFilters={selectedFilters}
+                  onApply={handleApplyFilters}
+                  brandsWithCampaigns={brandsData?.brands || []}
+                  product_categories={brandsData?.product_categories || []}
+                  setShowFilter={setShowFilters}
+                />
               </div>
-              <MediaFilterSidebar
-                selectedFilters={selectedFilters}
-                onApply={handleApplyFilters}
-                brandsWithCampaigns={brandsData?.brands || []}
-                product_categories={brandsData?.product_categories || []}
-                setShowFilter={setShowFilters}
-              />
-            </div>
 
-            <div
-              className={`${
-                showFilters ? "w-full md:w-3/4" : "w-full"
-              } transition-all duration-300 ease-in-out`}
-            >
-              <MediaSearchFilters
-                onSearchChange={handleSearchChange}
-                onSourceChange={handleSourceChange}
-                onCreatorChange={handleCreatorChange}
-                onFavoritesChange={handleFavoritesChange}
-                onToggleFilters={toggleFilters}
-                source={source}
-                creator={creator}
-                favorites={favorites}
-                showFilters={showFilters}
-                selectedFilters={selectedFilters}
-              />
+              <div
+                className={`${
+                  showFilters ? "w-full md:w-3/4" : "w-full"
+                } transition-all duration-300 ease-in-out`}
+              >
+                <MediaSearchFilters
+                  onSearchChange={handleSearchChange}
+                  onSourceChange={handleSourceChange}
+                  onCreatorChange={handleCreatorChange}
+                  onFavoritesChange={handleFavoritesChange}
+                  onToggleFilters={toggleFilters}
+                  source={source}
+                  creator={creator}
+                  favorites={favorites}
+                  showFilters={showFilters}
+                  selectedFilters={selectedFilters}
+                />
 
-              {/* 👈 Multi-select mode header */}
-              {isMultiSelect && isMediaSelectDialog && (
-                <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">
-                      Multi-select mode
-                    </span>
-                    {currentSelectionCount > 0 && (
-                      <span className="text-sm text-gray-500">
-                        ({currentSelectionCount} selected)
-                      </span>
+                <MediaDialogMultiSelectHeader
+                  isActive={isMultiSelect && isMediaSelectDialog}
+                  currentSelectionCount={currentSelectionCount}
+                  onClearSelection={handleUnselectAll}
+                  onAddSelectedItems={handleAddSelectedItems}
+                />
+
+                <MediaGalleryStatusDisplay
+                  galleryStatus={galleryStatus}
+                  galleryItemsLength={galleryItems.length}
+                />
+
+                {galleryStatus === "success" && galleryItems.length > 0 && (
+                  <div>
+                    <MediaGrid
+                      items={galleryItems}
+                      selectedItems={currentlySelectedItems}
+                      onSelect={handleSelect}
+                      onToggleFavorite={mediaHelper.toggleFavorite}
+                      onDelete={mediaHelper.deleteItem}
+                      onDownload={downloadItem}
+                      isMediaSelectDialog={isMediaSelectDialog}
+                      handleUpdateTitle={mediaHelper.editTitle}
+                      handleUpdateComment={mediaHelper.updateComment}
+                      handleDeleteComment={mediaHelper.deleteComment}
+                      handleAddComment={mediaHelper.addComment}
+                      handleUpdatePartialData={patchItem}
+                      isMultiSelect={isMultiSelect}
+                      inSelectionGalleryIds={inSelectionGalleryIds}
+                      maxSelectionCount={maxSelectionCount}
+                    />
+
+                    {/* Infinite scroll loading indicator */}
+                    {hasNextPage && (
+                      <div
+                        ref={ref}
+                        className="flex justify-center items-center py-8"
+                      >
+                        {isFetchingNextPage ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                        ) : (
+                          <p className="text-sm text-gray-500">Load more</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                  {currentSelectionCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleUnselectAll}
-                      >
-                        Clear Selection
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleAddSelectedItems}
-                        className="bg-purple-600 hover:bg-purple-700"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Selected ({currentSelectionCount})
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {galleryStatus === "pending" ? (
-                <div className="flex justify-center items-center py-36 2xl:py-60">
-                  <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-                </div>
-              ) : galleryStatus === "error" ? (
-                <div className="flex justify-center items-center py-20">
-                  <p className="text-red-500">Error loading gallery items</p>
-                </div>
-              ) : galleryItems.length === 0 ? (
-                <div className="flex justify-center items-center py-20">
-                  <p className="text-gray-500">No items found</p>
-                </div>
-              ) : (
-                <>
-                  <MediaGrid
-                    items={galleryItems}
-                    selectedItems={currentlySelectedItems}
-                    onSelect={handleSelect}
-                    onToggleFavorite={mediaHelper.toggleFavorite}
-                    onDelete={mediaHelper.deleteItem}
-                    onDownload={downloadItem}
-                    isMediaSelectDialog={isMediaSelectDialog}
-                    handleUpdateTitle={mediaHelper.editTitle}
-                    handleUpdateComment={mediaHelper.updateComment}
-                    handleDeleteComment={mediaHelper.deleteComment}
-                    handleAddComment={mediaHelper.addComment}
-                    handleUpdatePartialData={patchItem}
-                    isMultiSelect={isMultiSelect}
-                    inSelectionGalleryIds={inSelectionGalleryIds}
-                    maxSelectionCount={maxSelectionCount}
-                  />
-
-                  {/* Infinite scroll loading indicator */}
-                  {hasNextPage && (
-                    <div
-                      ref={ref}
-                      className="flex justify-center items-center py-8"
-                    >
-                      {isFetchingNextPage ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                      ) : (
-                        <p className="text-sm text-gray-500">Load more</p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
+          </TabsContent>
+        </Tabs>
+      )}
       {/* Bulk actions - show for non-dialog mode or single-select dialog mode */}
       {currentSelectionCount > 0 &&
         (!isMediaSelectDialog || !isMultiSelect) && (

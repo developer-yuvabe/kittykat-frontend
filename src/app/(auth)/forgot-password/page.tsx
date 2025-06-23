@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { processAuthError } from "@/lib/utils";
 import {
@@ -181,7 +180,10 @@ const ForgotPasswordPage = () => {
             Request New Reset Link
           </Button>
           <div className="text-center">
-            <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
+            <Link
+              href={loginRoute}
+              className="text-sm font-medium text-primary hover:underline"
+            >
               Back to Login
             </Link>
           </div>
@@ -201,7 +203,10 @@ const ForgotPasswordPage = () => {
       </CardHeader>
       <CardContent>
         <Form {...emailForm}>
-          <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
+          <form
+            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+            className="space-y-6"
+          >
             <FormField
               control={emailForm.control}
               name="email"
@@ -221,17 +226,29 @@ const ForgotPasswordPage = () => {
               <div className="text-left">
                 <p className="text-sm text-green-600">{formSuccess}</p>
                 <p className="text-sm mt-2">
-                  Redirecting to login in {countdown !== null ? countdown : 5} seconds...
+                  Redirecting to login in {countdown !== null ? countdown : 5}{" "}
+                  seconds...
                 </p>
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={emailForm.formState.isSubmitting}>
-              {emailForm.formState.isSubmitting ? <Loader /> : "Send Reset Link"}
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={emailForm.formState.isSubmitting}
+            >
+              {emailForm.formState.isSubmitting ? (
+                <Loader />
+              ) : (
+                "Send Reset Link"
+              )}
             </Button>
 
             <div className="text-center">
-              <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
+              <Link
+                href={loginRoute}
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 Back to Login
               </Link>
             </div>
@@ -247,12 +264,17 @@ const ForgotPasswordPage = () => {
         <Logo />
         <CardTitle className="text-xl">Reset Password</CardTitle>
         <CardDescription className="text-center md:text-left">
-          {userEmail ? `Resetting password for ${userEmail}` : "Enter your new password below."}
+          {userEmail
+            ? `Resetting password for ${userEmail}`
+            : "Enter your new password below."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...passwordForm}>
-          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+          <form
+            onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+            className="space-y-6"
+          >
             <FormField
               control={passwordForm.control}
               name="password"
@@ -260,7 +282,10 @@ const ForgotPasswordPage = () => {
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="Enter your new password" {...field} />
+                    <PasswordInput
+                      placeholder="Enter your new password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -273,7 +298,10 @@ const ForgotPasswordPage = () => {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="Confirm your new password" {...field} />
+                    <PasswordInput
+                      placeholder="Confirm your new password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -285,17 +313,29 @@ const ForgotPasswordPage = () => {
               <div className="text-left">
                 <p className="text-sm text-green-600">{formSuccess}</p>
                 <p className="text-sm mt-2">
-                  Redirecting to login in {countdown !== null ? countdown : 3} seconds...
+                  Redirecting to login in {countdown !== null ? countdown : 3}{" "}
+                  seconds...
                 </p>
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={passwordForm.formState.isSubmitting}>
-              {passwordForm.formState.isSubmitting ? <Loader /> : "Reset Password"}
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={passwordForm.formState.isSubmitting}
+            >
+              {passwordForm.formState.isSubmitting ? (
+                <Loader />
+              ) : (
+                "Reset Password"
+              )}
             </Button>
 
             <div className="text-center">
-              <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
+              <Link
+                href={loginRoute}
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 Back to Login
               </Link>
             </div>
@@ -321,7 +361,9 @@ const ForgotPasswordPage = () => {
   return (
     <AuthUiWrapper>
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Card className="shadow-none border-0 w-sm md:w-[28rem]">{renderContent()}</Card>
+        <Card className="shadow-none border-0 w-sm md:w-[28rem]">
+          {renderContent()}
+        </Card>
       </div>
     </AuthUiWrapper>
   );

@@ -11,7 +11,10 @@ import { MoodboardInformation, ThreadCampaign } from "@/types/types";
 import { PintrestIcon, InstagramIcon } from "@/components/ui/custom-icon";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
-import { addGalleryItemToMoodboard } from "@/services/api/moodboard.service";
+import {
+  addGalleryItemToMoodboard,
+  analyzeMoodboardImages,
+} from "@/services/api/moodboard.service";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 
 interface MoodboardVisualSectionProps {
@@ -126,6 +129,16 @@ export const MoodboardVisualSectionHeader = ({
 
         await Promise.all(chunkPromises);
       }
+
+      // Step 3: Analyze the newly created moodboard
+      await analyzeMoodboardImages(
+        selectedBrandId,
+        currentCampaign.id,
+        moodboard.id,
+        {
+          reanalyze: true,
+        }
+      );
     } finally {
       setIsUploading(false);
 
