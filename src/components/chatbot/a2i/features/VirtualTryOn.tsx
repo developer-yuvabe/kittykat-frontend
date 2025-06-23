@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
 import { BrainIcon, X } from "lucide-react";
 import React, { useState } from "react";
-import { MediaLibraryDialog } from "../MediaLibraryDialog";
 import { cn, delay } from "@/lib/utils";
 import { createVtonImage } from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
 import { toast } from "sonner";
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 
 type VirtualTryOnProps = {
   productImage: string;
