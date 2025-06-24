@@ -474,6 +474,7 @@ export const birkenstockModel: ModelInformation<
     raw: false,
     image_prompt_strength: 0.1,
   },
+  prefix: "brik50_cap",
 };
 
 export const IMAGE_GENERATION_MODELS = [
