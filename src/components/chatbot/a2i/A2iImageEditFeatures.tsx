@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,17 +8,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
-import { ShirtIcon, X } from "lucide-react";
+import { ShirtIcon, X, BrushIcon, VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import VirtualTryOn from "./features/VirtualTryOn";
 import RemixControls from "./features/RemixControls";
-import { BrushIcon, VideoRecorderIcon } from "@/components/ui/custom-icon";
-import VideoGeneration from "./features/VideoGeneration";
 import { cn } from "@/lib/utils";
 import RemixImage, {
   RemixImageHandle,
 } from "@/app/(main)/_components/remix/RemixImage";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import VideoGeneration from "./features/VideoGeneration";
 
 const FEATURES = [
   {
@@ -31,7 +31,7 @@ const FEATURES = [
   },
   {
     name: "Video Generation",
-    icon: VideoRecorderIcon,
+    icon: VideoIcon,
   },
 ];
 
@@ -47,6 +47,7 @@ const A2iImageEditFeatures = ({
   onClose: () => void;
 }) => {
   const [currentFeature, setCurrentFeature] = React.useState(FEATURES[0]);
+  const [brushSize, setBrushSize] = React.useState(80);
   const isRemixEnabled = currentFeature.name === "In-Paint Editing";
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,6 +55,16 @@ const A2iImageEditFeatures = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const remixImageRef = useRef<RemixImageHandle>(null);
   const remixHistory = useUndoRedoRemix();
+
+  const handleBrushSizeChange = useCallback(
+    (size: number) => {
+      setBrushSize(size);
+      if (remixImageRef.current && isRemixEnabled) {
+        remixImageRef.current.setBrushSize?.(size); // Update canvas without callback loop
+      }
+    },
+    [isRemixEnabled]
+  );
 
   return (
     <Dialog
@@ -72,7 +83,7 @@ const A2iImageEditFeatures = ({
       >
         <DialogHeader>
           <div className="flex items-center justify-between border-b pb-2">
-            <DialogTitle>A2i Image Tools </DialogTitle>
+            <DialogTitle>A2i Image Tools</DialogTitle>
             <div className="flex gap-2 items-center">
               <Button variant="outline" size="icon" onClick={() => onClose()}>
                 <X />
@@ -91,6 +102,7 @@ const A2iImageEditFeatures = ({
                 offScreenCanvasRef={offScreenCanvasRef}
                 url={image.url}
                 remixHistory={remixHistory}
+                brushSize={brushSize}
               />
             ) : (
               <img
@@ -102,26 +114,22 @@ const A2iImageEditFeatures = ({
           </div>
           <div className="w-[60%] h-full flex flex-col">
             <div className="flex w-full h-max">
-              {FEATURES.map((feature) => {
-                return (
-                  <button
-                    onClick={() => setCurrentFeature(feature)}
-                    key={feature.name}
-                    className={cn(
-                      "flex flex-1 flex-col items-center gap-2 p-4 text-muted-foreground bg-muted cursor-pointer transition-colors border-b-4 hover:bg-primary/10 hover:border-primary",
-                      {
-                        "text-primary border-b-4 border-primary bg-primary/20":
-                          currentFeature.name === feature.name,
-                      }
-                    )}
-                  >
-                    <feature.icon className="w-6 h-6" />
-                    <span className="text-lg font-semibold">
-                      {feature.name}
-                    </span>
-                  </button>
-                );
-              })}
+              {FEATURES.map((feature) => (
+                <button
+                  key={feature.name}
+                  onClick={() => setCurrentFeature(feature)}
+                  className={cn(
+                    "flex flex-1 flex-col items-center gap-2 p-4 text-muted-foreground bg-muted cursor-pointer transition-colors border-b-4 hover:bg-primary/10 hover:border-primary",
+                    {
+                      "text-primary border-b-4 border-primary bg-primary/20":
+                        currentFeature.name === feature.name,
+                    }
+                  )}
+                >
+                  <feature.icon className="w-6 h-6" />
+                  <span className="text-lg font-semibold">{feature.name}</span>
+                </button>
+              ))}
             </div>
             <div className="overflow-y-auto p-4 h-full">
               {currentFeature.name === "Virtual Try-On" && (
@@ -137,9 +145,10 @@ const A2iImageEditFeatures = ({
                   onRedo={() => remixImageRef.current?.redo()}
                   onClear={() => remixImageRef.current?.clearCanvas()}
                   offScreenCanvasRef={offScreenCanvasRef}
+                  brushSize={brushSize}
+                  onBrushSizeChange={handleBrushSizeChange}
                 />
               )}
-
               {currentFeature.name === "Video Generation" && (
                 <VideoGeneration startImage={image.url} closeDialog={onClose} />
               )}

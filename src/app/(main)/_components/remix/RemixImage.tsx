@@ -15,20 +15,30 @@ type RemixImageProps = {
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   url: string;
   remixHistory: ReturnType<typeof useUndoRedoRemix>;
+  brushSize: number;
 };
 
 export type RemixImageHandle = {
   undo: () => void;
   redo: () => void;
   clearCanvas: () => void;
+  setBrushSize?: (size: number) => void;
 };
 
 const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
-  ({ imageRef, canvasRef, offScreenCanvasRef, url, remixHistory }, ref) => {
+  (
+    { imageRef, canvasRef, offScreenCanvasRef, url, remixHistory, brushSize },
+    ref
+  ) => {
     const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
     const [offScreenCtx, setOffScreenCtx] =
       useState<CanvasRenderingContext2D | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
+    const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+      null
+    );
+    const [lastBrushSize, setLastBrushSize] = useState(brushSize);
+
     const {
       saveState,
       undo: undoState,
@@ -38,66 +48,128 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       canRedo,
     } = remixHistory;
 
-    const updateMainCanvas = useCallback(() => {
-      if (!ctx || !offScreenCanvasRef.current || !canvasRef.current) return;
+    const updateMainCanvas = useCallback(
+      (showPreview = false, previewX?: number, previewY?: number) => {
+        if (!ctx || !offScreenCanvasRef.current || !canvasRef.current) return;
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      ctx.globalAlpha = 0.2;
-      ctx.drawImage(offScreenCanvasRef.current, 0, 0);
-      ctx.globalAlpha = 1.0;
-    }, [ctx]);
+        ctx.globalAlpha = 0.2;
+        ctx.drawImage(offScreenCanvasRef.current!, 0, 0);
+        ctx.globalAlpha = 1.0;
 
-    const undo = useCallback(() => {
-      if (!canUndo || !offScreenCtx || !offScreenCanvasRef.current) return;
+        if (
+          showPreview &&
+          previewX !== undefined &&
+          previewY !== undefined &&
+          !isDrawing
+        ) {
+          ctx.save();
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(previewX, previewY, brushSize / 2, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+      },
+      [ctx, brushSize, isDrawing]
+    );
 
-      const previousState = undoState();
-      if (previousState) {
-        offScreenCtx.putImageData(previousState, 0, 0);
-        updateMainCanvas();
-      }
-    }, [canUndo, offScreenCtx, undoState, updateMainCanvas]);
+    const rescaleExistingMask = useCallback(() => {
+      if (
+        !offScreenCtx ||
+        !offScreenCanvasRef.current ||
+        lastBrushSize === brushSize
+      )
+        return;
 
-    const redo = useCallback(() => {
-      if (!canRedo || !offScreenCtx || !offScreenCanvasRef.current) return;
+      const canvas = offScreenCanvasRef.current;
+      const scaleFactor = brushSize / lastBrushSize;
 
-      const nextState = redoState();
-      if (nextState) {
-        offScreenCtx.putImageData(nextState, 0, 0);
-        updateMainCanvas();
-      }
-    }, [canRedo, offScreenCtx, redoState, updateMainCanvas]);
-
-    const clearCanvas = useCallback(() => {
-      const canvas = canvasRef.current;
-      if (!canvas || !ctx || !offScreenCtx) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      offScreenCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const blankState = offScreenCtx.getImageData(
+      const currentImageData = offScreenCtx.getImageData(
         0,
         0,
         canvas.width,
         canvas.height
       );
-      clearHistory(blankState);
-    }, [ctx, offScreenCtx, clearHistory]);
+      const hasAlpha = currentImageData.data.some(
+        (_, i) => i % 4 === 3 && currentImageData.data[i] > 0
+      );
+      if (!hasAlpha) return;
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        undo,
-        redo,
-        clearCanvas,
-      }),
-      [undo, redo, clearCanvas]
-    );
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return;
+
+      tempCtx.putImageData(currentImageData, 0, 0);
+
+      const iterations = Math.ceil(Math.abs(scaleFactor - 1) * 3);
+      for (let i = 0; i < iterations; i++) {
+        const imageData = tempCtx.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        const newData = new Uint8ClampedArray(imageData.data);
+
+        for (let y = 1; y < canvas.height - 1; y++) {
+          for (let x = 1; x < canvas.width - 1; x++) {
+            const idx = (y * canvas.width + x) * 4;
+
+            if (scaleFactor > 1 && imageData.data[idx + 3] > 0) {
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  const nIdx = ((y + dy) * canvas.width + (x + dx)) * 4;
+                  newData[nIdx + 3] = Math.max(
+                    newData[nIdx + 3],
+                    imageData.data[idx + 3]
+                  );
+                }
+              }
+            }
+
+            if (scaleFactor < 1 && imageData.data[idx + 3] > 0) {
+              let shouldKeep = true;
+              for (let dy = -1; dy <= 1 && shouldKeep; dy++) {
+                for (let dx = -1; dx <= 1 && shouldKeep; dx++) {
+                  const nIdx = ((y + dy) * canvas.width + (x + dx)) * 4;
+                  if (imageData.data[nIdx + 3] === 0) shouldKeep = false;
+                }
+              }
+              if (!shouldKeep) newData[idx + 3] = 0;
+            }
+          }
+        }
+
+        const newImageData = new ImageData(
+          newData,
+          canvas.width,
+          canvas.height
+        );
+        tempCtx.putImageData(newImageData, 0, 0);
+      }
+
+      const finalImageData = tempCtx.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+      offScreenCtx.clearRect(0, 0, canvas.width, canvas.height);
+      offScreenCtx.putImageData(finalImageData, 0, 0);
+      saveState(finalImageData);
+    }, [offScreenCtx, brushSize, lastBrushSize, saveState]);
 
     useEffect(() => {
       const image = new Image();
       image.crossOrigin = "anonymous";
       image.src = url;
-
       image.onload = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -118,22 +190,22 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         if (context && offScreenContext) {
           offScreenContext.lineJoin = "round";
           offScreenContext.lineCap = "round";
-          offScreenContext.lineWidth = 80;
+          offScreenContext.lineWidth = brushSize;
           offScreenContext.strokeStyle = "rgba(255, 255, 255, 1)";
-          offScreenContext.setLineDash([]);
           offScreenContext.clearRect(0, 0, canvas.width, canvas.height);
           setOffScreenCtx(offScreenContext);
 
           context.clearRect(0, 0, canvas.width, canvas.height);
           setCtx(context);
 
-          const initialMaskState = offScreenContext.getImageData(
+          const initialMask = offScreenContext.getImageData(
             0,
             0,
             canvas.width,
             canvas.height
           );
-          clearHistory(initialMaskState);
+          clearHistory(initialMask);
+          setLastBrushSize(brushSize);
         }
 
         if (imageRef.current) {
@@ -141,15 +213,14 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
           imageRef.current.height = image.naturalHeight;
         }
       };
-    }, [url, clearHistory]);
+    }, [url, clearHistory, brushSize]);
 
     const getPointerCoords = useCallback(
-      (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+      (e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current!;
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-
         return {
           x: (e.clientX - rect.left) * scaleX,
           y: (e.clientY - rect.top) * scaleY,
@@ -158,44 +229,142 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       []
     );
 
+    const handleMouseMove = useCallback(
+      (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const { x, y } = getPointerCoords(e);
+        setMousePos({ x, y });
+        if (isDrawing && offScreenCtx) {
+          offScreenCtx.lineWidth = brushSize;
+          offScreenCtx.lineTo(x, y);
+          offScreenCtx.stroke();
+          updateMainCanvas();
+        } else {
+          updateMainCanvas(true, x, y);
+        }
+      },
+      [isDrawing, offScreenCtx, brushSize, getPointerCoords, updateMainCanvas]
+    );
+
     const startDrawing = useCallback(
       (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!offScreenCtx) return;
-
         setIsDrawing(true);
         const { x, y } = getPointerCoords(e);
         offScreenCtx.beginPath();
         offScreenCtx.moveTo(x, y);
+        offScreenCtx.lineWidth = brushSize;
         updateMainCanvas();
       },
-      [offScreenCtx, getPointerCoords, updateMainCanvas]
-    );
-
-    const draw = useCallback(
-      (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDrawing || !offScreenCtx || !canvasRef.current) return;
-
-        const { x, y } = getPointerCoords(e);
-        offScreenCtx.lineTo(x, y);
-        offScreenCtx.stroke();
-        updateMainCanvas();
-      },
-      [isDrawing, offScreenCtx, getPointerCoords, updateMainCanvas]
+      [offScreenCtx, getPointerCoords, updateMainCanvas, brushSize]
     );
 
     const stopDrawing = useCallback(() => {
       if (!isDrawing || !offScreenCtx || !offScreenCanvasRef.current) return;
-
       setIsDrawing(false);
-
-      const currentMaskState = offScreenCtx.getImageData(
+      const mask = offScreenCtx.getImageData(
         0,
         0,
         offScreenCanvasRef.current.width,
         offScreenCanvasRef.current.height
       );
-      saveState(currentMaskState);
-    }, [isDrawing, offScreenCtx, saveState]);
+      saveState(mask);
+      if (mousePos) updateMainCanvas(true, mousePos.x, mousePos.y);
+    }, [isDrawing, offScreenCtx, mousePos, saveState, updateMainCanvas]);
+
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const { x, y } = getPointerCoords(e);
+        setMousePos({ x, y });
+        updateMainCanvas(true, x, y);
+      },
+      [getPointerCoords, updateMainCanvas]
+    );
+
+    const handleMouseLeave = useCallback(() => {
+      setMousePos(null);
+      updateMainCanvas(false);
+      if (isDrawing && offScreenCtx && offScreenCanvasRef.current) {
+        setIsDrawing(false);
+        const mask = offScreenCtx.getImageData(
+          0,
+          0,
+          offScreenCanvasRef.current.width,
+          offScreenCanvasRef.current.height
+        );
+        saveState(mask);
+      }
+    }, [isDrawing, offScreenCtx, updateMainCanvas, saveState]);
+
+    const undo = useCallback(() => {
+      const prev = undoState();
+      if (prev && offScreenCtx) {
+        offScreenCtx.putImageData(prev, 0, 0);
+        updateMainCanvas(mousePos !== null, mousePos?.x, mousePos?.y);
+      }
+    }, [offScreenCtx, undoState, updateMainCanvas, mousePos]);
+
+    const redo = useCallback(() => {
+      const next = redoState();
+      if (next && offScreenCtx) {
+        offScreenCtx.putImageData(next, 0, 0);
+        updateMainCanvas(mousePos !== null, mousePos?.x, mousePos?.y);
+      }
+    }, [offScreenCtx, redoState, updateMainCanvas, mousePos]);
+
+    const clearCanvas = useCallback(() => {
+      if (!ctx || !offScreenCtx || !canvasRef.current) return;
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      offScreenCtx.clearRect(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
+      const blank = offScreenCtx.getImageData(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
+      clearHistory(blank);
+      if (mousePos) updateMainCanvas(true, mousePos.x, mousePos.y);
+    }, [
+      ctx,
+      offScreenCtx,
+      canvasRef,
+      clearHistory,
+      mousePos,
+      updateMainCanvas,
+    ]);
+
+    const setBrushSize = useCallback(
+      (size: number) => {
+        if (offScreenCtx && size !== lastBrushSize) {
+          offScreenCtx.lineWidth = size;
+          rescaleExistingMask();
+          setLastBrushSize(size);
+          updateMainCanvas(mousePos !== null, mousePos?.x, mousePos?.y);
+        }
+      },
+      [
+        offScreenCtx,
+        lastBrushSize,
+        mousePos,
+        updateMainCanvas,
+        rescaleExistingMask,
+      ]
+    );
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        undo,
+        redo,
+        clearCanvas,
+        setBrushSize,
+      }),
+      [undo, redo, clearCanvas, setBrushSize]
+    );
 
     return (
       <div className="relative">
@@ -215,12 +384,13 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         />
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0"
+          className="absolute top-0 left-0 cursor-none"
           style={{ pointerEvents: "auto" }}
           onMouseDown={startDrawing}
-          onMouseMove={draw}
+          onMouseMove={handleMouseMove}
           onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         />
       </div>
     );
