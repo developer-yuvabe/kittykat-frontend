@@ -20,21 +20,15 @@ function A2iImageCardDraggable({
     transition,
     isDragging,
   } = useSortable({
-      id: imageData.image?.id || imageData.video?.id || imageData.generationId,
+    id: imageData.image?.id || imageData.video?.id || imageData.generationId,
     disabled: disableDrag,
   });
-
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: transition || undefined,
     opacity: isDragging ? 0.8 : 1,
     zIndex: isDragging ? 1000 : 1,
-    width: "100%",
-    height: "100%",
-    aspectRatio: "1",
-    minWidth: "240px",
-    minHeight: "240px",
   };
 
   return (

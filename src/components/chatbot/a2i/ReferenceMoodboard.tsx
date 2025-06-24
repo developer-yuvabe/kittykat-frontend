@@ -45,8 +45,6 @@ const ReferenceMoodboard = ({
     200
   );
 
-  console.log(galleryItems);
-
   return (
     <ContentSection
       title="Reference Moodboard"
@@ -58,98 +56,18 @@ const ReferenceMoodboard = ({
       content={
         <div className="space-y-4">
           {referenceMoodboardId && !isFetching ? (
-            <div
-              className="h-full overflow-y-auto pb-20"
-              style={{
-                columnCount: "auto",
-                columnWidth: "300px",
-                columnGap: "16px",
-                height: "calc(100vh - 120px)",
-              }}
-            >
-              {galleryItems.map((item, index) => (
-                <div
-                  key={item.asset_url}
-                  className="break-inside-avoid mb-4 group cursor-pointer"
-                >
-                  <div className="relative overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105">
-                    <img
-                      src={item.asset_url}
-                      alt={`Gallery item ${index + 1}`}
-                      className="w-full h-auto object-cover transition-transform duration-300"
-                    />
-
-                    {/* Hover overlay */}
-                    <div
-                      className={`absolute inset-0 bg-black bg-opacity-0 transition-all duration-300 flex items-center justify-center`}
-                    ></div>
-                  </div>
-                </div>
+            <div className="h-max columns-4 gap-[1px]">
+              {galleryItems.map((item, idx) => (
+                <img
+                  key={item.id}
+                  src={item.asset_url}
+                  alt={`Image ${idx + 1}`}
+                  className="w-full break-inside-avoid"
+                />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-8 grid-rows-5 gap-2">
-              <div
-                className={cn(
-                  "col-span-2 row-span-3 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 row-span-2 col-start-3 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 row-span-3 col-start-7 row-start-1 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 row-span-2 col-start-5 row-start-1 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 row-span-2 col-start-1 row-start-4 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 row-span-2 col-start-7 row-start-4 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 row-span-2 col-start-4 row-start-3 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "row-span-3 col-start-3 row-start-3 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "row-span-3 col-start-6 row-start-3 bg-muted rounded-md",
-                  isFetching && "animate-pulse"
-                )}
-              />
-              <div
-                className={cn(
-                  "col-span-2 col-start-4 row-start-5 bg-muted rounded-md h-24",
-                  isFetching && "animate-pulse"
-                )}
-              />
-            </div>
+            <ImageGridSkeleton isLoading={isFetching} />
           )}
 
           {prompts && prompts.length > 0 && (
@@ -216,3 +134,43 @@ const ReferenceMoodboard = ({
 };
 
 export default ReferenceMoodboard;
+
+export const ImageGridSkeleton = ({ isLoading }: { isLoading: boolean }) => {
+  const gridItems = [
+    { colSpan: 2, rowSpan: 3, colStart: 1, rowStart: 1 },
+    { colSpan: 2, rowSpan: 2, colStart: 3, rowStart: 1 },
+    { colSpan: 2, rowSpan: 3, colStart: 7, rowStart: 1 },
+    { colSpan: 2, rowSpan: 2, colStart: 5, rowStart: 1 },
+    { colSpan: 2, rowSpan: 2, colStart: 1, rowStart: 4 },
+    { colSpan: 2, rowSpan: 2, colStart: 7, rowStart: 4 },
+    { colSpan: 2, rowSpan: 2, colStart: 4, rowStart: 3 },
+    { colSpan: 1, rowSpan: 3, colStart: 3, rowStart: 3 },
+    { colSpan: 1, rowSpan: 3, colStart: 6, rowStart: 3 },
+    { colSpan: 2, rowSpan: 1, colStart: 4, rowStart: 5, extra: "h-24" },
+  ];
+  return (
+    <div
+      className={cn("grid grid-cols-8 grid-rows-5 gap-2", {
+        "animate-pulse": isLoading,
+      })}
+    >
+      {gridItems.map((item, idx) => {
+        const { colSpan = 1, rowSpan = 1, colStart, rowStart, extra } = item;
+        return (
+          <div
+            key={idx}
+            className={cn(
+              "bg-muted rounded-md",
+              `col-span-${colSpan}`,
+              `row-span-${rowSpan}`,
+              colStart && `col-start-${colStart}`,
+              rowStart && `row-start-${rowStart}`,
+              extra,
+              isLoading && "animate-pulse"
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+};
