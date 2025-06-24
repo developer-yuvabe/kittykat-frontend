@@ -143,7 +143,7 @@ export default function SortableGallery<
     const sortablePhoto = photo as SortablePhoto<TPhoto>;
     return (
       <Sortable key={sortablePhoto.id} id={sortablePhoto.id}>
-        <Component {...props} className="relative group" />
+        <Component {...props} />
       </Sortable>
     );
   };
@@ -157,7 +157,7 @@ export default function SortableGallery<
         collisionDetection={closestCenter}
       >
         <SortableContext items={photos}>
-          <div className={`${classes.gallery} `}>
+          <div className={classes.gallery}>
             <Gallery
               ref={ref}
               photos={photos}
@@ -175,10 +175,7 @@ export default function SortableGallery<
                   return (
                     <>
                       {/* Delete Icon (top-left) */}
-                      {/* Gradient overlays */}
-                      <div className="absolute top-0 left-0 right-0 h-1/5 bg-gradient-to-b from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
-                      <div className="absolute bottom-0 left-0 right-0 h-1/5 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
-                      <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="absolute top-2 left-2 z-10">
                         <X
                           size={16}
                           className={`w-5 h-5 cursor-pointer transition-colors text-white fill-white hover:scale-110 active:scale-95`}
@@ -191,7 +188,7 @@ export default function SortableGallery<
                       </div>
 
                       {/* Expand Icon (top-right) */}
-                      <div className="absolute top-2 right-2 z-10  opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="absolute top-2 right-2 z-10">
                         <Maximize2
                           size={16}
                           className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
@@ -205,7 +202,7 @@ export default function SortableGallery<
 
                       {/* Regenerate Icon (bottom-left) */}
                       {!hasUnsavedChanges && (
-                        <div className="absolute bottom-2 left-2 z-10  opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute bottom-2 left-2 z-10">
                           <RotateCcw
                             size={16}
                             className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
@@ -223,7 +220,7 @@ export default function SortableGallery<
 
                       {/* Like Icon (bottom-right) - only show if onPhotoLike is provided */}
                       {onPhotoLike && (
-                        <div className="absolute bottom-2 right-2 z-10  opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute bottom-2 right-2 z-10">
                           <Heart
                             size={16}
                             className={`w-5 h-5 cursor-pointer transition-colors ${

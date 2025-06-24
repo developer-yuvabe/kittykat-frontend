@@ -1,3 +1,4 @@
+import CustomGridGallery from "@/components/gallery/CustomGridGallery";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,10 @@ import { useBrandStore } from "@/store/brand.store";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useMutation } from "@tanstack/react-query";
 import { WandSparkles } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { SortablePhoto } from "@/components/gallery/SortableGallery";
+import { Photo } from "react-photo-album";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -21,13 +24,18 @@ type ReferenceMoodboardProps = {
 const ReferenceMoodboard = ({
   referenceMoodboardId,
   prompts,
+  moodboardInformation,
 }: ReferenceMoodboardProps) => {
   const [n, setN] = React.useState(`${prompts?.length || 0}`);
+  const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const { selectedBrandId } = useBrandStore();
   const { mutate: generateShowboard, isPending } = useMutation({
     mutationFn: () =>
       generateA2iShowboard(selectedBrandId!, referenceMoodboardId!, Number(n)),
   });
+
   const { galleryItems, isFetching } = useGalleryQuery(
     {
       selectedFilters: {
@@ -45,6 +53,112 @@ const ReferenceMoodboard = ({
     200
   );
 
+  const selectedMoodboard = moodboardInformation?.find(
+    (mb) => mb.id === referenceMoodboardId
+  );
+  // Filter and order gallery items by moodboard position
+  const filteredGalleryItems = useMemo(() => {
+    if (
+      !galleryItems ||
+      !selectedMoodboard?.moodboard_assets ||
+      selectedMoodboard.moodboard_assets.length === 0
+    ) {
+      return [];
+    }
+
+    // Create a map of gallery_item_id to position for efficient lookup
+    const positionMap = new Map(
+      selectedMoodboard.moodboard_assets.map((asset) => [
+        asset.gallery_item_id,
+        asset.position,
+      ])
+    );
+
+    // Filter gallery items that exist in moodboard and add position info
+    const itemsWithPosition = galleryItems
+      .filter((item) => positionMap.has(item.id))
+      .map((item) => ({
+        ...item,
+        position: positionMap.get(item.id)!,
+      }));
+
+    // Sort by position
+    return itemsWithPosition.sort((a, b) => a.position - b.position);
+  }, [galleryItems, selectedMoodboard?.moodboard_assets]);
+
+  // Load images with proper width/height calculation - following MoodboardLayout approach
+  const loadImagesWithDimensions = useCallback(async () => {
+    if (!filteredGalleryItems || filteredGalleryItems.length === 0) {
+      setPhotos([]);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const loaded = await Promise.all(
+        filteredGalleryItems.map(
+          (item) =>
+            new Promise<SortablePhoto<Photo>>((resolve) => {
+              const img = new Image();
+              img.src = item.asset_url;
+              img.onload = () => {
+                resolve({
+                  id: item.id,
+                  src: item.asset_url,
+                  width: img.naturalWidth,
+                  height: img.naturalHeight,
+                  alt: `Reference image ${item.id}`,
+                  liked: false, // Reference images don't have like functionality
+                });
+              };
+              img.onerror = () => {
+                console.warn("Could not load image", item.asset_url);
+                resolve({
+                  id: item.id,
+                  src: item.asset_url,
+                  width: 800,
+                  height: 600,
+                  alt: `Fallback reference image ${item.id}`,
+                  liked: false,
+                });
+              };
+            })
+        )
+      );
+
+      console.log("Loaded reference photos:", loaded);
+      setPhotos(loaded);
+    } catch (error) {
+      console.error("Failed to load reference images:", error);
+      setPhotos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filteredGalleryItems]);
+
+  // Load images when filtered gallery items are available
+  useEffect(() => {
+    if (filteredGalleryItems.length > 0) {
+      const timeoutId = setTimeout(() => {
+        loadImagesWithDimensions();
+      }, 50);
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Clear photos if no filtered items
+      setPhotos([]);
+    }
+  }, [filteredGalleryItems.length, loadImagesWithDimensions]);
+
+  // Display logic
+  const showGallery = useMemo(() => {
+    return photos.length > 0 && !loading && !isFetching;
+  }, [photos.length, loading, isFetching]);
+
+  const showLoadingState = useMemo(() => {
+    return (loading && photos.length === 0) || isFetching;
+  }, [loading, photos.length, isFetching]);
+
   return (
     <ContentSection
       title="Reference Moodboard"
@@ -55,20 +169,13 @@ const ReferenceMoodboard = ({
       }}
       content={
         <div className="space-y-4">
-          {referenceMoodboardId && !isFetching ? (
-            <div className="h-max columns-4 gap-[1px]">
-              {galleryItems.map((item, idx) => (
-                <img
-                  key={item.id}
-                  src={item.asset_url}
-                  alt={`Image ${idx + 1}`}
-                  className="w-full break-inside-avoid"
-                />
-              ))}
+          {showGallery && photos.length > 0 && (
+            <div className="mx-auto max-w-7xl w-full px-2">
+              <CustomGridGallery photos={photos} />
             </div>
-          ) : (
-            <ImageGridSkeleton isLoading={isFetching} />
           )}
+
+          {showLoadingState && <ImageGridSkeleton isLoading={true} />}
 
           {prompts && prompts.length > 0 && (
             <div className="space-y-2">

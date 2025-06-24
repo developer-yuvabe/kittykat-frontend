@@ -9,10 +9,8 @@ import React, {
 } from "react";
 
 import { SubSectionCard } from "../brands/SubSectionCard";
-import SortableGallery, {
-  SortablePhoto,
-} from "@/components/gallery/SortableGallery";
-import { Photo, RowsPhotoAlbum } from "react-photo-album";
+import { SortablePhoto } from "@/components/gallery/SortableGallery";
+import { Photo } from "react-photo-album";
 import { arrayMove } from "@dnd-kit/sortable";
 import "react-photo-album/rows.css";
 import { ImageCountCard } from "@/components/shared/ImageCountCard";
@@ -32,6 +30,7 @@ import ManualMoodboardSkeleton from "./MoodboardSkeleton";
 import MoodboardSelector from "./MoodboardSelector";
 import { toast } from "sonner";
 import { AnalysisChartIcon, SaveIcon2 } from "@/components/ui/custom-icon";
+import CustomGridGallery from "@/components/gallery/CustomGridGallery";
 
 // Fixed interface to match the data structure
 export interface MoodboardAssetItem {
@@ -102,9 +101,6 @@ function MoodboardLayout({
     },
     200
   );
-
-  console.log("Moodboard assets:", moodboard.moodboard_assets);
-  console.log("Gallery items:", galleryItems);
 
   // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
@@ -191,8 +187,6 @@ function MoodboardLayout({
       currentMoodboard.moodboard_generation_status === "completed";
     const shouldShowCompletedMoodboard =
       hasMoodboardAssets && isMoodboardCompleted;
-
-    console.log("has ma", hasMoodboardAssets);
 
     if (shouldShowCompletedMoodboard && currentMoodboard.moodboard_assets) {
       const imagesToLoad = currentMoodboard.moodboard_assets
@@ -359,10 +353,6 @@ function MoodboardLayout({
     }
   }
 
-  useEffect(() => {
-    console.log("Show gallery:", showGallery);
-  }, [showGallery]);
-
   // Local move photo function (no API call)
   const movePhoto = (oldIndex: number, newIndex: number) => {
     const newPhotos = arrayMove(photos, oldIndex, newIndex);
@@ -512,7 +502,11 @@ function MoodboardLayout({
                         />
                         <ImageCountCard
                           disabled
-                          maxCount={moodboard?.visual_style_images?.length}
+                          maxCount={
+                            moodboard.visual_style_images.length > 16
+                              ? 16
+                              : moodboard.visual_style_images.length
+                          }
                           imageCount={noOfImagesForMoodboard}
                           onRefresh={async () => {
                             if (selectedBrandId) {
@@ -568,12 +562,9 @@ function MoodboardLayout({
                         </div>
                       )}
                     </div>
-                    <div className="mx-auto max-w-2xl w-full px-2">
-                      <SortableGallery
-                        targetRowHeight={220}
-                        gallery={RowsPhotoAlbum}
-                        spacing={16}
-                        padding={10}
+
+                    <div className="mx-auto max-w-7xl  w-full px-2">
+                      <CustomGridGallery
                         photos={photos}
                         movePhoto={movePhoto}
                         onPhotoLike={onPhotoLike}
@@ -602,6 +593,7 @@ function MoodboardLayout({
                         hasUnsavedChanges={hasUnsavedChanges}
                       />
                     </div>
+
                     <Button
                       className="w-full"
                       disabled={analyzeLoading}

@@ -51,7 +51,8 @@ export function ImageCountCard({
     }
   };
 
-  const isDisabled = disabled || isRefreshing || hasUnsavedChanges;
+  const isDisabled =
+    disabled || isRefreshing || hasUnsavedChanges || imageCount >= maxCount;
 
   return (
     <div className="flex flex-row">
@@ -107,6 +108,11 @@ export function ImageCountCard({
                 borderColor,
                 hasUnsavedChanges && "bg-gray-100"
               )}
+              onClick={() => {
+                if (!hasUnsavedChanges && imageCount < maxCount) {
+                  onRefresh();
+                }
+              }}
             >
               {isRefreshing ? (
                 <div
@@ -121,9 +127,6 @@ export function ImageCountCard({
                       ? "cursor-not-allowed opacity-50"
                       : "cursor-pointer"
                   )}
-                  onClick={() => {
-                    if (!hasUnsavedChanges) onRefresh();
-                  }}
                 />
               )}
             </div>
