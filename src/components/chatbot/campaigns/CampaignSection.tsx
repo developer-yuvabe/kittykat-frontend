@@ -112,6 +112,7 @@ export const CampaignSection: React.FC<{
         onToggleExpanded={() =>
           setIsPlaceholderExpanded((prev: boolean) => !prev)
         }
+        onNewClick={handleViaAgent}
       />
     );
   }

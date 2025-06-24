@@ -7,7 +7,7 @@ import {
 } from "./A2iImageCard";
 import A2iImageInput from "./A2iImageInput";
 import A2iImageModelSelector from "./A2iImageModelSelector";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -36,14 +36,13 @@ const INTIAL_IMAGE_PLACEHOLDER = 16;
 export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
-  const initialLoad = useRef(true);
   const isUpdatingServer = useRef(false);
 
   useEffect(() => {
-    if (initialLoad.current) {
     const flatImages = generations.flatMap(
       (generation): A2iImageCardProps[] => {
         const images = generation.images;
+
         if (!images || images.length === 0) {
           return [
             {
@@ -58,7 +57,6 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
             },
           ];
         }
-      );
 
         return images.map((img) => ({
           image: img,
@@ -77,18 +75,14 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
       const aPos = a.image?.position ?? Infinity;
       const bPos = b.image?.position ?? Infinity;
 
-        if (aPos !== bPos) {
-          return aPos - bPos;
-        }
+      if (aPos !== bPos) return aPos - bPos;
 
-        const aDate = new Date(a.image?.created_at ?? "").getTime();
-        const bDate = new Date(b.image?.created_at ?? "").getTime();
-        return bDate - aDate;
-      });
+      const aDate = new Date(a.image?.created_at ?? "").getTime();
+      const bDate = new Date(b.image?.created_at ?? "").getTime();
+      return bDate - aDate;
+    });
 
-      setItems(flatImages);
-      initialLoad.current = false;
-    }
+    setItems(flatImages);
   }, [generations]);
 
   const sensors = useSensors(
@@ -103,15 +97,15 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || active.id === over.id || isUpdatingServer.current) {
-      return;
-    }
+    if (!over || active.id === over.id || isUpdatingServer.current) return;
 
     const activeIndex = items.findIndex(
-      (item, index) => generateUniqueId(item, index) === active.id
+      (item) =>
+        item.image?.id || item.video?.id || item.generationId === active.id
     );
     const overIndex = items.findIndex(
-      (item, index) => generateUniqueId(item, index) === over.id
+      (item) =>
+        item.image?.id || item.video?.id || item.generationId === active.id
     );
 
     if (activeIndex === -1 || overIndex === -1) {
@@ -124,9 +118,7 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
       return;
     }
 
-    if (activeIndex === overIndex) {
-      return;
-    }
+    if (activeIndex === overIndex) return;
 
     const newItems = arrayMove(items, activeIndex, overIndex);
     setItems(newItems);
@@ -143,16 +135,14 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
         position: newPosition,
       }));
 
-    if (updates.length === 0) {
-      return;
-    }
+    if (updates.length === 0) return;
 
     isUpdatingServer.current = true;
     try {
       await updateA2iImagePositions(selectedBrandId!, updates);
     } catch (error) {
       console.error("Failed to update image positions:", error);
-      setItems(items);
+      setItems(items); // rollback
       toast.error("Failed to save new order. Please try again.", {
         position: "bottom-right",
       });
@@ -161,19 +151,13 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
     }
   };
 
-  const sortableItems = items.map((item, index) =>
-    generateUniqueId(item, index)
-  );
-
   return (
     <ContentSection
       title=""
       customActions={<A2iImageModelSelector />}
       showCopy={false}
       showPin={false}
-      context={{
-        data: {},
-      }}
+      context={{ data: {} }}
       content={
         <div className="relative h-[48rem] bg-muted rounded-md">
           <DndContext
@@ -182,13 +166,13 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={sortableItems}
+              items={items.map(
+                (item) => item.image?.id || item.video?.id || item.generationId
+              )}
               strategy={rectSortingStrategy}
             >
               <div className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full relative overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1">
-                {items.map((image, index) => {
-                  const uniqueId = generateUniqueId(image, index);
-
+                {items.map((image) => {
                   if (image.status === "completed") {
                     return (
                       <A2iImageCardDraggable
@@ -201,7 +185,15 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
                       />
                     );
                   }
-                  return <A2iImageCard key={uniqueId} {...image} />;
+
+                  return (
+                    <A2iImageCard
+                      key={
+                        image.image?.id || image.video?.id || image.generationId
+                      }
+                      {...image}
+                    />
+                  );
                 })}
 
                 {Array.from({
@@ -214,6 +206,7 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
               </div>
             </SortableContext>
           </DndContext>
+
           <A2iImageInput />
         </div>
       }
