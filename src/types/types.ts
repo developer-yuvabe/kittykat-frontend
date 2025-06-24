@@ -117,6 +117,14 @@ export type A2iImageDetail = {
   is_liked?: boolean;
 };
 
+export type A2iVideoDetail = {
+  id: string;
+  url: string;
+  created_at: string;
+  // position?: number;
+  // is_liked?: boolean;
+};
+
 export type A2iImageGeneration = {
   id: string;
   status: "processing" | "completed" | "failed";
@@ -133,6 +141,7 @@ export type A2iImageGeneration = {
     base_image: string;
     reference_images: string[];
   };
+  video?: A2iVideoDetail;
 };
 
 export type ThreadA2iImage = {

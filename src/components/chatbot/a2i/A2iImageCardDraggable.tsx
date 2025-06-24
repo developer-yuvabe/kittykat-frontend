@@ -8,7 +8,9 @@ function A2iImageCardDraggable({
   imageData: A2iImageCardProps;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: imageData.image!.id });
+    useSortable({
+      id: imageData.image?.id || imageData.video?.id || imageData.generationId,
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
