@@ -5,15 +5,27 @@ import React from "react";
 import { RenderValue } from "../DynamicSection";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { generateA2iShowboard } from "@/services/api/moodboard.service";
+import { useBrandStore } from "@/store/brand.store";
+import { Loader } from "@/components/ui/loader";
+import { toast } from "sonner";
 
 function MoodboardTagResults({
   moodboard_tags,
+  moodboardId,
 }: {
   moodboard_tags: MoodboardInformation["moodboard_tags"];
+  moodboardId?: MoodboardInformation["id"];
 }) {
   if (!moodboard_tags || Object.keys(moodboard_tags).length === 0) {
     return null;
   }
+
+  const { selectedBrandId } = useBrandStore();
+  const { mutate: generateShowboard, isPending } = useMutation({
+    mutationFn: () => generateA2iShowboard(selectedBrandId!, moodboardId!),
+  });
 
   return (
     <div className="mt-4 space-y-6">
@@ -33,8 +45,24 @@ function MoodboardTagResults({
           context={undefined}
         />
       ))}
-      <Button className="w-full" onClick={() => {}}>
-        <Brain /> A2i Showboard Generation
+      <Button
+        className="w-full"
+        onClick={() =>
+          generateShowboard(undefined, {
+            onError: () => {
+              toast.error(`Failed to generate showboard. Please try again.`);
+            },
+          })
+        }
+        disabled={isPending}
+      >
+        {isPending ? (
+          <Loader />
+        ) : (
+          <>
+            <Brain /> A2i Showboard Generation
+          </>
+        )}
       </Button>
     </div>
   );

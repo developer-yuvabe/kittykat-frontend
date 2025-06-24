@@ -847,6 +847,7 @@ export const MoodboardSection: React.FC<{
             />
             {currentMoodboard && !isCreatingNewMoodboard && (
               <MoodboardTagResults
+                moodboardId={currentMoodboard.id}
                 moodboard_tags={currentMoodboard?.moodboard_tags}
               />
             )}

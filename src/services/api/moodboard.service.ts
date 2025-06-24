@@ -197,3 +197,14 @@ export const addGalleryItemToMoodboard = async (
     )
   );
 };
+
+export const generateA2iShowboard = async (
+  brandId: string,
+  moodboardId: string
+): Promise<void> => {
+  return handleApiRequest<void>(
+    axiosInstance.post<void>(`/brands/${brandId}/a2i/prompt-generation`, {
+      moodboard_id: moodboardId,
+    })
+  );
+};

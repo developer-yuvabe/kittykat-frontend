@@ -49,7 +49,8 @@ export default function A2iImagesSection({
         {expanded && (
           <CardContent className="px-6  space-y-6">
             <ReferenceMoodboard
-              referenceMoodboard={a2iImageInformation?.reference_moodboard}
+              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+              prompts={a2iImageInformation?.prompts}
             />
             <A2iImagesWrapper
               generations={[...(a2iImageInformation?.generations || [])]}
