@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { ChevronDown, ChevronRight, CirclePlus } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import { MdOutlineCampaign } from "react-icons/md";
 import { DynamicContentSection } from "../DynamicSection";
 import { Agents, ThreadDetails } from "@/types/types";
@@ -7,7 +7,7 @@ import { CampaignColors } from "./CampaignColors";
 import { CampaignOverview } from "./CampaignOverview";
 import CampaignSelector from "./CampaignSelector";
 import { useStreamContext } from "@/providers/langgraph/Stream";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { InlineEditableField } from "@/components/shared/InlineEditableField";
@@ -28,11 +28,12 @@ export const CampaignSection: React.FC<{
   setSelectedCampaignIndex: React.Dispatch<React.SetStateAction<number>>;
 }> = ({
   campaignInformation,
-  brandInformation,
   latestCampaignIndex,
   selectedCampaignIndex,
   setSelectedCampaignIndex,
 }) => {
+  const [showDynamicData, setShowDynamicData] = React.useState(false);
+
   const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
   const { selectedBrandId } = useBrandStore();
   const { user } = useUserStore();
@@ -50,11 +51,6 @@ export const CampaignSection: React.FC<{
         ? campaignInformation[selectedCampaignIndex]
         : null,
     [campaignInformation, selectedCampaignIndex]
-  );
-
-  const dynamicData = useMemo(
-    () => currentCampaign?.dynamic,
-    [currentCampaign]
   );
 
   // All useEffect hooks
@@ -210,13 +206,55 @@ export const CampaignSection: React.FC<{
                       campaignTitle={currentCampaign.campaign?.title}
                     />
                     <DynamicContentSection
-                      dynamicData={dynamicData ?? {}}
+                      dynamicData={{
+                        "Target Audience": currentCampaign.target_audience,
+                      }}
                       agentId={Agents.CAMPAIGN_AGENT}
                     />
+                    <DynamicContentSection
+                      dynamicData={{
+                        "Content Campaign Ideas":
+                          currentCampaign.content_campaign_ideas,
+                      }}
+                      agentId={Agents.CAMPAIGN_AGENT}
+                    />
+                    <AnimatePresence>
+                      {showDynamicData && (
+                        <motion.div
+                          key="dynamic-section"
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          className="space-y-6"
+                          transition={{ duration: 0.1 }}
+                          variants={{
+                            hidden: { opacity: 0, y: 5 },
+                            visible: { opacity: 1, y: 0 },
+                            exit: { opacity: 0, y: 5 },
+                          }}
+                        >
+                          <DynamicContentSection
+                            dynamicData={currentCampaign.dynamic ?? {}}
+                            agentId={Agents.CAMPAIGN_AGENT}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </>
                 </div>
               </motion.div>
             )}
+
+            <Button
+              onClick={() => {
+                setShowDynamicData(!showDynamicData);
+              }}
+              className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
+              variant="ghost"
+            >
+              {showDynamicData ? <ChevronUp /> : <ChevronDown />}
+              {showDynamicData ? " Less details" : "More details"}
+            </Button>
           </CardContent>
         </div>
       )}

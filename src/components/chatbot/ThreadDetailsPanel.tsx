@@ -77,7 +77,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         </div>
       )}
       {brandingInformation && (
-        <A2iImagesSection a2iImageInformation={a2iImageInformation} />
+        <A2iImagesSection
+          a2iImageInformation={a2iImageInformation}
+          moodboardInformation={moodboardInformation}
+        />
       )}
     </div>
   );

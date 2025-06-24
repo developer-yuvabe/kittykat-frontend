@@ -197,3 +197,33 @@ export const addGalleryItemToMoodboard = async (
     )
   );
 };
+
+export const generateA2iShowboard = async (
+  brandId: string,
+  moodboardId: string,
+  n: number = 3
+): Promise<void> => {
+  return handleApiRequest<void>(
+    axiosInstance.post<void>(`/brands/${brandId}/a2i/prompt-generation`, {
+      moodboard_id: moodboardId,
+      num_of_prompts: n,
+    })
+  );
+};
+
+export const enhancePrompt = async (
+  brandId: string,
+  basePrompt: string
+): Promise<{
+  prompts: string[];
+}> => {
+  return handleApiRequest<{
+    prompts: string[];
+  }>(
+    axiosInstance.post<{
+      prompts: string[];
+    }>(`/brands/${brandId}/a2i/enhance-prompt`, {
+      base_prompt: basePrompt,
+    })
+  );
+};

@@ -169,6 +169,7 @@ const A2iImageCard = ({
 
           <Dialog>
             <DialogTrigger asChild>
+
               <button className="absolute inset-0 flex items-center justify-center">
                 <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
               </button>
@@ -319,34 +320,76 @@ const A2iImageCard = ({
                 "text-red-500 fill-red-500": isLiked,
               })}
             />
-          </Button>
-        )}
+          )}
+
 
         {/* Bottom Left */}
         {(image || video) && (
           <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
             <TooltipIconButton
-              onClick={handleDownload}
-              tooltip="Download"
+              onClick={() => setShowDeleteDialog(true)}
+              tooltip="Delete image"
               variant={"ghost"}
-              className="text-white hover:text-black"
+              className="absolute top-2 left-2 text-white hover:text-black"
             >
-              <DownloadIcon />
+              <X />
             </TooltipIconButton>
-            {parameters.prompt && (
+          )}
+
+          {/* Top Right */}
+          {image && (
+            <Button
+              onClick={() => setShowEditFeatures((prev) => !prev)}
+              size={"icon"}
+              variant={"ghost"}
+              className="absolute top-2 right-2 size-7 text-white hover:text-black"
+            >
+              <ExpandIcon />
+            </Button>
+          )}
+
+          {/* Bottom Right */}
+          {image && (
+            <Button
+              onClick={handleLikeToggle}
+              size={"icon"}
+              variant={"ghost"}
+              className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
+            >
+              <HeartIcon
+                className={cn("text-white", {
+                  "text-red-500 fill-red-500": isLiked,
+                })}
+              />
+            </Button>
+          )}
+
+          {/* Bottom Left */}
+          {image && (
+            <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
               <TooltipIconButton
-                onClick={handleCopyPrompt}
-                tooltip="Copy prompt"
+                onClick={handleDownload}
+                tooltip="Download"
                 variant={"ghost"}
                 className="text-white hover:text-black"
               >
-                {copied ? <Check /> : <CopyIcon />}
+                <DownloadIcon />
               </TooltipIconButton>
-            )}
-          </div>
-        )}
-      </div>
-      {/* )} */}
+              {parameters.prompt && (
+                <TooltipIconButton
+                  onClick={handleCopyPrompt}
+                  tooltip="Copy prompt"
+                  variant={"ghost"}
+                  className="text-white hover:text-black"
+                >
+                  {copied ? <Check /> : <CopyIcon />}
+                </TooltipIconButton>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {image && (
         <A2iImageEditFeatures

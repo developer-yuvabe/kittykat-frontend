@@ -26,6 +26,7 @@ export const videoGenerationService = async (
   }
 };
 
+
 export const deleteA2iVideo = async (brandId: string, generationId: string) => {
   try {
     await handleApiRequest(
