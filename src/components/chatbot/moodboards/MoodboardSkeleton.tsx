@@ -1,7 +1,7 @@
 // ManualMoodboardSkeleton.tsx
 
 import { Button } from "@/components/ui/button";
-import { ChartNoAxesCombined } from "lucide-react";
+import { AnalysisChartIcon } from "@/components/ui/custom-icon";
 import React from "react";
 
 interface ManualMoodboardSkeletonProps {
@@ -51,7 +51,7 @@ const ManualMoodboardSkeleton: React.FC<ManualMoodboardSkeletonProps> = ({
           disabled
           className="w-full py-3 text-lg font-medium bg-purple-600 hover:bg-purple-700"
         >
-          <ChartNoAxesCombined /> Moodboard Analysis
+          <AnalysisChartIcon /> Moodboard Analysis
         </Button>
       )}
     </>

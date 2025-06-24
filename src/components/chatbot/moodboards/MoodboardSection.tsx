@@ -24,6 +24,7 @@ import {
 import {
   FacebookIcon,
   InstagramIcon,
+  MoodboardIcon,
   PintrestIcon,
 } from "@/components/ui/custom-icon";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
@@ -757,12 +758,12 @@ export const MoodboardSection: React.FC<{
                                 {currentMoodboard.moodboard_generation_status ===
                                 "in_progress" ? (
                                   <span className="flex items-center gap-2">
-                                    <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                                    <Loader className="animate-spin  text-white" />
                                     Generating...
                                   </span>
                                 ) : (
                                   <>
-                                    <Presentation size={28} className="mr-2" />
+                                    <MoodboardIcon />
                                     Generate Moodboard
                                   </>
                                 )}

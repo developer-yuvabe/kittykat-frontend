@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, SquareArrowOutUpLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import {
   Tooltip,
@@ -10,6 +10,7 @@ import {
 import { MediaLibraryDialog } from "../../shared/MediaLibraryDialog";
 import { addImageToMoodboard } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
+import { SelectIcon } from "@/components/ui/custom-icon";
 
 export function MoodboardGallerySelector({
   brandId,
@@ -59,7 +60,7 @@ export function MoodboardGallerySelector({
                 ) : (
                   <>
                     <span>Gallery</span>
-                    <SquareArrowOutUpLeft className="h-4 w-4" />
+                    <SelectIcon size={20} />
                   </>
                 )}
               </button>

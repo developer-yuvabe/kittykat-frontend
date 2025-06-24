@@ -1,6 +1,5 @@
 "use client";
 
-import { RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import {
@@ -8,6 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { RegenerateIcon } from "../ui/custom-icon";
 
 export function ImageCountCard({
   imageCount,
@@ -114,7 +114,7 @@ export function ImageCountCard({
                   title="Refreshing"
                 />
               ) : (
-                <RefreshCcw
+                <RegenerateIcon
                   className={clsx(
                     "h-5 w-5 text-[#7F55E0]",
                     hasUnsavedChanges

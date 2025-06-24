@@ -18,7 +18,7 @@ import "react-photo-album/rows.css";
 import { ImageCountCard } from "@/components/shared/ImageCountCard";
 import { MoodboardGallerySelector } from "@/components/chatbot/moodboards/MoodboardGallerySelector";
 import { Button } from "@/components/ui/button";
-import { Save, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   analyzeMoodboard,
   createMoodboardForCampaign,
@@ -31,6 +31,7 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import ManualMoodboardSkeleton from "./MoodboardSkeleton";
 import MoodboardSelector from "./MoodboardSelector";
 import { toast } from "sonner";
+import { AnalysisChartIcon, SaveIcon2 } from "@/components/ui/custom-icon";
 
 // Fixed interface to match the data structure
 export interface MoodboardAssetItem {
@@ -561,7 +562,7 @@ function MoodboardLayout({
                             disabled={isSaving}
                             className="flex items-center gap-x-1"
                           >
-                            <Save size={16} />
+                            <SaveIcon2 size={16} />
                             {isSaving ? "Saving..." : "Save"}
                           </Button>
                         </div>
@@ -606,7 +607,13 @@ function MoodboardLayout({
                       disabled={analyzeLoading}
                       onClick={handleAnalyzeMoodboard}
                     >
-                      {analyzeLoading ? "Analyzing..." : "Analyze Moodboard"}
+                      {analyzeLoading ? (
+                        "Analyzing..."
+                      ) : (
+                        <>
+                          <AnalysisChartIcon /> Moodboard Analysis
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
