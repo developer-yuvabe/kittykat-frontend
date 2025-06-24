@@ -152,3 +152,32 @@ export const fluxProUltraSchema = z.object({
   raw: z.boolean().default(false),
   image_prompt_strength: z.number().min(0).max(1).default(0.1),
 });
+
+export const fluxProUltraFinetunedSchema = z.object({
+  prompt: z.string().trim().min(1),
+  provider: z.literal("replicate"),
+  model: z.literal("black-forest-labs/flux-1.1-pro-ultra-finetuned"),
+  finetune_id: z.string().trim().min(1),
+  finetune_strength: z.number().min(0).max(2).default(1),
+  image_prompt: z.string().url().optional(),
+  output_format: z.enum(["png", "jpg"]).default("jpg"),
+  aspect_ratio: z
+    .enum([
+      "1:1",
+      "16:9",
+      "21:9",
+      "3:2",
+      "2:3",
+      "4:5",
+      "5:4",
+      "3:4",
+      "4:3",
+      "9:16",
+      "9:21",
+    ])
+    .default("1:1"),
+  safety_tolerance: z.number().int().min(1).max(6).default(2),
+  seed: z.number().int().optional(),
+  raw: z.boolean().default(false),
+  image_prompt_strength: z.number().min(0).max(1).default(0.1),
+});

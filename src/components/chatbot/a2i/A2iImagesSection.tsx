@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Image } from "lucide-react";
 import { useState } from "react";
 import { ThreadA2iImage } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
+import ReferenceMoodboard from "./ReferenceMoodboard";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -47,6 +48,9 @@ export default function A2iImagesSection({
 
         {expanded && (
           <CardContent className="px-6  space-y-6">
+            <ReferenceMoodboard
+              referenceMoodboard={a2iImageInformation?.reference_moodboard}
+            />
             <A2iImagesWrapper
               generations={[...(a2iImageInformation?.generations || [])]}
             />
