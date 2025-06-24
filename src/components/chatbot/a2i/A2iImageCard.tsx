@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
 import { cn, handleDownloadImage } from "@/lib/utils";
 import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
-import { Check, CopyIcon, HeartIcon, X } from "lucide-react";
+import { Check, CopyIcon, HeartIcon, PlayCircle, X } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import A2iImageEditFeatures from "./A2iImageEditFeatures";
@@ -13,6 +13,7 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
 import { deleteA2iImage, toggleA2iImageLike } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -22,6 +23,7 @@ export type A2iImageCardProps = {
   type: A2iImageGeneration["type"];
   vtonParameters?: A2iImageGeneration["vton_parameters"];
   remixParameters?: A2iImageGeneration["remix_parameters"];
+  video?: A2iImageGeneration["video"];
   dragListeners?: any;
   dragAttributes?: any;
 };
@@ -35,6 +37,7 @@ const A2iImageCard = ({
   dragListeners,
   dragAttributes,
   vtonParameters,
+  video,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -107,6 +110,32 @@ const A2iImageCard = ({
         />
       )}
 
+      {video && (
+        <div className="relative w-full h-full">
+          <video
+            src={video.url}
+            className="object-contain w-full h-full"
+            muted
+          />
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition">
+                <PlayCircle className="w-16 h-16 text-white hover:scale-105 transition-transform" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl w-full aspect-video p-0 shadow-md">
+              <video
+                src={video.url}
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
       {status !== "completed" && (
         <Ripple
           numCircles={status === "failed" ? 0 : 8}
@@ -154,83 +183,85 @@ const A2iImageCard = ({
       )}
 
       {/* Image Actions */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30"></div>
+      {image && (
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30"></div>
 
-        {/* Top Center */}
-        {status === "completed" && (
-          <div
-            className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute"
-            {...dragAttributes}
-            {...dragListeners}
-          />
-        )}
-
-        {/* Top Left */}
-        {status !== "processing" && (
-          <TooltipIconButton
-            onClick={() => setShowDeleteDialog(true)}
-            tooltip="Delete image"
-            variant={"ghost"}
-            className="absolute top-2 left-2 text-white hover:text-black"
-          >
-            <X />
-          </TooltipIconButton>
-        )}
-
-        {/* Top Right */}
-        {image && (
-          <Button
-            onClick={() => setShowEditFeatures((prev) => !prev)}
-            size={"icon"}
-            variant={"ghost"}
-            className="absolute top-2 right-2 size-7 text-white hover:text-black"
-          >
-            <ExpandIcon />
-          </Button>
-        )}
-
-        {/* Bottom Right */}
-        {image && (
-          <Button
-            onClick={handleLikeToggle}
-            size={"icon"}
-            variant={"ghost"}
-            className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
-          >
-            <HeartIcon
-              className={cn("text-white", {
-                "text-red-500 fill-red-500": isLiked,
-              })}
+          {/* Top Center */}
+          {status === "completed" && (
+            <div
+              className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute"
+              {...dragAttributes}
+              {...dragListeners}
             />
-          </Button>
-        )}
+          )}
 
-        {/* Bottom Left */}
-        {image && (
-          <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
+          {/* Top Left */}
+          {status !== "processing" && (
             <TooltipIconButton
-              onClick={handleDownload}
-              tooltip="Download"
+              onClick={() => setShowDeleteDialog(true)}
+              tooltip="Delete image"
               variant={"ghost"}
-              className="text-white hover:text-black"
+              className="absolute top-2 left-2 text-white hover:text-black"
             >
-              <DownloadIcon />
+              <X />
             </TooltipIconButton>
-            {parameters.prompt && (
+          )}
+
+          {/* Top Right */}
+          {image && (
+            <Button
+              onClick={() => setShowEditFeatures((prev) => !prev)}
+              size={"icon"}
+              variant={"ghost"}
+              className="absolute top-2 right-2 size-7 text-white hover:text-black"
+            >
+              <ExpandIcon />
+            </Button>
+          )}
+
+          {/* Bottom Right */}
+          {image && (
+            <Button
+              onClick={handleLikeToggle}
+              size={"icon"}
+              variant={"ghost"}
+              className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
+            >
+              <HeartIcon
+                className={cn("text-white", {
+                  "text-red-500 fill-red-500": isLiked,
+                })}
+              />
+            </Button>
+          )}
+
+          {/* Bottom Left */}
+          {image && (
+            <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
               <TooltipIconButton
-                onClick={handleCopyPrompt}
-                tooltip="Copy prompt"
+                onClick={handleDownload}
+                tooltip="Download"
                 variant={"ghost"}
                 className="text-white hover:text-black"
               >
-                {copied ? <Check /> : <CopyIcon />}
+                <DownloadIcon />
               </TooltipIconButton>
-            )}
-          </div>
-        )}
-      </div>
+              {parameters.prompt && (
+                <TooltipIconButton
+                  onClick={handleCopyPrompt}
+                  tooltip="Copy prompt"
+                  variant={"ghost"}
+                  className="text-white hover:text-black"
+                >
+                  {copied ? <Check /> : <CopyIcon />}
+                </TooltipIconButton>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {image && (
         <A2iImageEditFeatures

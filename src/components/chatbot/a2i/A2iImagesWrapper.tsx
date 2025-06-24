@@ -49,6 +49,7 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
               type: generation.type,
               vtonParameters: generation.vton_parameters,
               remixParameters: generation.remix_parameters,
+              video: generation.video,
             },
           ];
         }
@@ -61,6 +62,7 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
           type: generation.type,
           vtonParameters: generation.vton_parameters,
           remixParameters: generation.remix_parameters,
+          video: generation.video,
         }));
       }
     );
@@ -135,7 +137,11 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
                   if (image.status === "completed") {
                     return (
                       <A2iImageCardDraggable
-                        key={image.image!.id}
+                        key={
+                          image.image?.id ||
+                          image.video?.id ||
+                          image.generationId
+                        }
                         imageData={image}
                       />
                     );

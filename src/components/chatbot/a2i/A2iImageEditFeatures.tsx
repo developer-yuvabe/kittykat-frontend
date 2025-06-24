@@ -141,7 +141,7 @@ const A2iImageEditFeatures = ({
               )}
 
               {currentFeature.name === "Video Generation" && (
-                <VideoGeneration />
+                <VideoGeneration startImage={image.url} closeDialog={onClose} />
               )}
             </div>
           </div>
