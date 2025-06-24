@@ -25,3 +25,36 @@ export const videoGenerationService = async (
     throw error;
   }
 };
+
+export const deleteA2iVideo = async (brandId: string, generationId: string) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.delete(`/brands/${brandId}/a2i/video`, {
+        data: {
+          generation_id: generationId,
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    throw error;
+  }
+};
+
+export const toggleA2iVideoLike = async (
+  brandId: string,
+  generationId: string,
+  isLiked: boolean
+) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.put(`/brands/${brandId}/a2i/video/like`, {
+        generation_id: generationId,
+        is_liked: isLiked,
+      })
+    );
+  } catch (error) {
+    console.error("Error toggling image like status:", error);
+    throw error;
+  }
+};

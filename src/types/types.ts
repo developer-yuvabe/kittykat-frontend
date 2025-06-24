@@ -121,8 +121,8 @@ export type A2iVideoDetail = {
   id: string;
   url: string;
   created_at: string;
+  is_liked?: boolean;
   // position?: number;
-  // is_liked?: boolean;
 };
 
 export type A2iImageGeneration = {

@@ -159,6 +159,52 @@ export const handleDownloadImage = async (
   );
 };
 
+export const handleDownloadVideo = async (
+  url: string,
+  options?: {
+    filename?: string;
+    toastMessages?: {
+      loading?: string;
+      success?: string;
+      error?: string;
+    };
+  }
+) => {
+  const {
+    filename = `video_${new Date().getTime()}.mp4`,
+    toastMessages = {
+      loading: "Downloading video...",
+      success: "Video downloaded successfully!",
+      error: "Failed to download video. Please try again.",
+    },
+  } = options || {};
+
+  toast.promise(
+    (async () => {
+      const videoResponse = await fetch(url, { mode: "cors" });
+      if (!videoResponse.ok)
+        throw new Error(`HTTP error! status: ${videoResponse.status}`);
+
+      const blob = await videoResponse.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    })(),
+    {
+      loading: toastMessages.loading,
+      success: toastMessages.success,
+      error: toastMessages.error,
+    }
+  );
+};
+
 export const formatToLocalTime = (dateString: string) => {
   try {
     // Parse the UTC date string and convert to local timezone
