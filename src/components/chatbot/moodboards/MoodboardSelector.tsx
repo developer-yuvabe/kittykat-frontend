@@ -18,6 +18,13 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Check } from "lucide-react";
 import { SearchIcon } from "@/components/ui/custom-icon";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MoodboardInformation } from "@/types/types";
 
 interface TransformedMoodboard {
@@ -35,6 +42,7 @@ interface MoodboardSelectorProps {
   campaignId: string;
   onNewMoodboard: () => void;
   isCreatingNew: boolean;
+  variant?: "combobox" | "select";
 }
 
 export default function MoodboardSelector({
@@ -42,6 +50,7 @@ export default function MoodboardSelector({
   selectedMoodboard,
   setSelectedMoodboard,
   campaignId,
+  variant = "combobox",
 }: MoodboardSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,10 +61,13 @@ export default function MoodboardSelector({
     TransformedMoodboard[]
   >([]);
   const [loading] = useState(false);
+  const [selectMoodboards, setSelectMoodboards] = useState<
+    MoodboardInformation[]
+  >([]);
 
-  // Transform moodboards (filtered by campaignId)
+  // Transform moodboards (filtered by campaignId) - for combobox variant
   useEffect(() => {
-    if (!campaignId) return;
+    if (!campaignId || variant !== "combobox") return;
 
     const filtered = moodboards.filter((mb) => mb.campaign_id === campaignId);
     const transformed = filtered.map((mb) => {
@@ -71,10 +83,20 @@ export default function MoodboardSelector({
 
     setTransformedMoodboards(transformed);
     setFilteredMoodboards(transformed);
-  }, [moodboards, campaignId]);
+  }, [moodboards, campaignId, variant]);
 
-  // Filter by search query
+  // Filter moodboards for select variant
   useEffect(() => {
+    if (!campaignId || variant !== "select") return;
+
+    const filtered = moodboards.filter((mb) => mb.campaign_id === campaignId);
+    setSelectMoodboards(filtered);
+  }, [moodboards, campaignId, variant]);
+
+  // Filter by search query - for combobox variant
+  useEffect(() => {
+    if (variant !== "combobox") return;
+
     if (searchQuery.trim() === "") {
       setFilteredMoodboards(transformedMoodboards);
     } else {
@@ -84,10 +106,9 @@ export default function MoodboardSelector({
         )
       );
     }
-  }, [searchQuery, transformedMoodboards]);
+  }, [searchQuery, transformedMoodboards, variant]);
 
-  // Auto-select moodboard when campaignId changes
-
+  // Handle selection for combobox variant
   const handleSelect = (id: string) => {
     const match = moodboards.find((mb) => mb.id === id);
     if (match) {
@@ -99,8 +120,41 @@ export default function MoodboardSelector({
     }
   };
 
+  // Handle selection for select variant
+  const handleSelectValueChange = (value: string) => {
+    const selectedMb = selectMoodboards.find((mb) => mb.id === value);
+    if (selectedMb) {
+      setSelectedMoodboard(selectedMb);
+      toast.success(`Moodboard '${selectedMb.title}' selected`, {
+        position: "top-right",
+      });
+    }
+  };
+
   const selectedMoodboardId = selectedMoodboard?.id;
 
+  // Render select variant
+  if (variant === "select") {
+    return (
+      <Select
+        value={selectedMoodboard?.id || ""}
+        onValueChange={handleSelectValueChange}
+      >
+        <SelectTrigger className="w-60 py-[23px]  border-[#7F55E0] border-2">
+          <SelectValue placeholder="Select Moodboard" />
+        </SelectTrigger>
+        <SelectContent>
+          {selectMoodboards.map((mb) => (
+            <SelectItem key={mb.id} value={mb.id}>
+              {mb.title || "Unnamed Moodboard"}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  // Render combobox variant (default)
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

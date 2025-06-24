@@ -29,6 +29,8 @@ import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import ManualMoodboardSkeleton from "./MoodboardSkeleton";
+import MoodboardSelector from "./MoodboardSelector";
+import { toast } from "sonner";
 
 // Fixed interface to match the data structure
 export interface MoodboardAssetItem {
@@ -45,6 +47,11 @@ interface MoodboardLayoutProps {
   noOfImagesForMoodboard: number;
   setNoOfImagesForMoodboard: (count: number) => void;
   isGenerating: boolean;
+  moodboards: MoodboardInformation[];
+  selectedMoodboard: MoodboardInformation | null;
+  setSelectedMoodboard: (mb: MoodboardInformation) => void;
+  onNewMoodboard: () => void;
+  isCreatingNew: boolean;
 }
 
 function MoodboardLayout({
@@ -53,6 +60,11 @@ function MoodboardLayout({
   noOfImagesForMoodboard,
   setNoOfImagesForMoodboard,
   isGenerating = false,
+  moodboards,
+  selectedMoodboard,
+  setSelectedMoodboard,
+  onNewMoodboard,
+  isCreatingNew,
 }: MoodboardLayoutProps) {
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
@@ -103,12 +115,19 @@ function MoodboardLayout({
   }, [galleryItems]);
 
   const handleAnalyzeMoodboard = async () => {
-    try {
-      setAnalyzeLoading(true);
+    setAnalyzeLoading(true);
 
-      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-        image_urls: photos.map((photo) => photo.src),
-      });
+    try {
+      toast.promise(
+        analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
+          image_urls: photos.map((photo) => photo.src),
+        }),
+        {
+          loading: "Analyzing moodboard...",
+          success: "Moodboard analyzed successfully!",
+          error: "Image analysis failed. Please try again.",
+        }
+      );
     } catch (error) {
       console.error("Image analysis failed:", error);
     } finally {
@@ -481,6 +500,15 @@ function MoodboardLayout({
                   <div className="w-full flex flex-col gap-y-4">
                     <div className="flex justify-between items-center">
                       <div className="flex gap-x-3">
+                        <MoodboardSelector
+                          campaignId={moodboard.campaign_id}
+                          isCreatingNew={isCreatingNew}
+                          moodboards={moodboards}
+                          onNewMoodboard={onNewMoodboard}
+                          selectedMoodboard={selectedMoodboard}
+                          setSelectedMoodboard={setSelectedMoodboard}
+                          variant="select"
+                        />
                         <ImageCountCard
                           disabled
                           maxCount={moodboard?.visual_style_images?.length}

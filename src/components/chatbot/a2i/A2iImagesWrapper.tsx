@@ -39,46 +39,43 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
   const initialLoad = useRef(true);
   const isUpdatingServer = useRef(false);
 
-  const generateUniqueId = useCallback(
-    (item: A2iImageCardProps, index: number) => {
-      return item.image?.id || `placeholder-${item.generationId}-${index}`;
-    },
-    []
-  );
-
   useEffect(() => {
     if (initialLoad.current) {
-      const flatImages = generations.flatMap(
-        (generation): A2iImageCardProps[] => {
-          const images = generation.images || [];
-          if (images.length === 0) {
-            return [
-              {
-                image: null,
-                status: generation.status,
-                generationId: generation.id,
-                parameters: generation.parameters,
-                type: generation.type,
-                vtonParameters: generation.vton_parameters,
-                remixParameters: generation.remix_parameters,
-              },
-            ];
-          }
-          return images.map((img) => ({
-            image: img,
-            status: generation.status,
-            generationId: generation.id,
-            parameters: generation.parameters,
-            type: generation.type,
-            vtonParameters: generation.vton_parameters,
-            remixParameters: generation.remix_parameters,
-          }));
+    const flatImages = generations.flatMap(
+      (generation): A2iImageCardProps[] => {
+        const images = generation.images;
+        if (!images || images.length === 0) {
+          return [
+            {
+              image: null,
+              status: generation.status,
+              generationId: generation.id,
+              parameters: generation.parameters,
+              type: generation.type,
+              vtonParameters: generation.vton_parameters,
+              remixParameters: generation.remix_parameters,
+              video: generation.video,
+            },
+          ];
         }
       );
 
-      flatImages.sort((a, b) => {
-        const aPos = a.image?.position ?? Infinity;
-        const bPos = b.image?.position ?? Infinity;
+        return images.map((img) => ({
+          image: img,
+          status: generation.status,
+          generationId: generation.id,
+          parameters: generation.parameters,
+          type: generation.type,
+          vtonParameters: generation.vton_parameters,
+          remixParameters: generation.remix_parameters,
+          video: generation.video,
+        }));
+      }
+    );
+
+    flatImages.sort((a, b) => {
+      const aPos = a.image?.position ?? Infinity;
+      const bPos = b.image?.position ?? Infinity;
 
         if (aPos !== bPos) {
           return aPos - bPos;
@@ -195,9 +192,12 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
                   if (image.status === "completed") {
                     return (
                       <A2iImageCardDraggable
-                        key={uniqueId}
+                        key={
+                          image.image?.id ||
+                          image.video?.id ||
+                          image.generationId
+                        }
                         imageData={image}
-                        id={uniqueId}
                       />
                     );
                   }

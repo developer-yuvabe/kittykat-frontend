@@ -104,6 +104,13 @@ export interface ThreadCampaign {
     tone?: string[];
   };
   colors?: string[];
+  target_audience?: string;
+  content_campaign_ideas?: {
+    title: string;
+    content: string;
+    sections_included: string[];
+    description: string;
+  };
   dynamic?: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -115,6 +122,14 @@ export type A2iImageDetail = {
   created_at: string;
   position?: number;
   is_liked?: boolean;
+};
+
+export type A2iVideoDetail = {
+  id: string;
+  url: string;
+  created_at: string;
+  is_liked?: boolean;
+  // position?: number;
 };
 
 export type A2iImageGeneration = {
@@ -133,10 +148,14 @@ export type A2iImageGeneration = {
     base_image: string;
     reference_images: string[];
   };
+  video?: A2iVideoDetail;
 };
 
 export type ThreadA2iImage = {
   generations: A2iImageGeneration[];
+  reference_moodboard_id?: string;
+  prompts?: string[];
+
 };
 
 export interface ThreadDetails {

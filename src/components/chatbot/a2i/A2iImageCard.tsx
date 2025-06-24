@@ -2,9 +2,9 @@ import { Ripple } from "@/components/magicui/ripple";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
-import { cn, handleDownloadImage } from "@/lib/utils";
+import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
-import { Check, CopyIcon, HeartIcon, X } from "lucide-react";
+import { Check, CopyIcon, HeartIcon, PlayCircle, X } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import A2iImageEditFeatures from "./A2iImageEditFeatures";
@@ -14,6 +14,12 @@ import { toast } from "sonner";
 import { deleteA2iImage, toggleA2iImageLike } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import { CSSProperties } from "react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  deleteA2iVideo,
+  toggleA2iVideoLike,
+} from "@/services/api/video-gen.service";
+
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -23,6 +29,7 @@ export type A2iImageCardProps = {
   type: A2iImageGeneration["type"];
   vtonParameters?: A2iImageGeneration["vton_parameters"];
   remixParameters?: A2iImageGeneration["remix_parameters"];
+  video?: A2iImageGeneration["video"];
   dragListeners?: any;
   dragAttributes?: any;
   isDragging?: boolean;
@@ -42,6 +49,7 @@ const A2iImageCard = ({
   isDragging,
   style,
   disableDrag,
+  video,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -54,10 +62,13 @@ const A2iImageCard = ({
     if (image) {
       handleDownloadImage(image.url);
     }
+    if (video) {
+      handleDownloadVideo(video.url);
+    }
   };
 
   const handleCopyPrompt = () => {
-    if (image && parameters.prompt) {
+    if ((image || video) && parameters.prompt) {
       navigator.clipboard.writeText(parameters.prompt).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -65,34 +76,80 @@ const A2iImageCard = ({
     }
   };
 
-  const handleLikeToggle = () => {
-    if (image) {
-      const prevLikeStatus = isLiked;
-      setIsLiked((p) => !p);
+  // const handleLikeToggle = () => {
+  //   if (image) {
+  //     const prevLikeStatus = isLiked;
 
-      toggleA2iImageLike(
-        selectedBrandId!,
-        generationId,
-        image.id,
-        !isLiked
-      ).catch((error) => {
-        console.error("Error toggling like status:", error);
-        toast.error("Could not update like status. Please try again.", {
-          position: "bottom-right",
-        });
-        setIsLiked(prevLikeStatus);
+  //     setIsLiked((p) => !p);
+
+  //     toggleA2iImageLike(
+  //       selectedBrandId!,
+  //       generationId,
+  //       image.id,
+  //       !isLiked
+  //     ).catch((error) => {
+  //       console.error("Error toggling like status:", error);
+  //       toast.error("Could not update like status. Please try again.", {
+  //         position: "bottom-right",
+  //       });
+
+  //       // Revert the like status if the API call fails
+  //       setIsLiked(prevLikeStatus);
+  //     });
+  //   }
+  // };
+
+  const handleLikeToggle = () => {
+    const prevLikeStatus = isLiked;
+    setIsLiked((p) => !p);
+
+    const toggleFn = image
+      ? () =>
+          toggleA2iImageLike(selectedBrandId!, generationId, image.id, !isLiked)
+      : video
+      ? () => toggleA2iVideoLike(selectedBrandId!, generationId, !isLiked)
+      : null;
+
+    if (!toggleFn) return;
+
+    toggleFn().catch((error) => {
+      console.error("Error toggling like status:", error);
+      toast.error("Could not update like status. Please try again.", {
+        position: "bottom-right",
       });
-    }
+      setIsLiked(prevLikeStatus); // Revert on failure
+    });
   };
 
-  const handleRemoveImage = async () => {
+  // const handleRemoveImage = async () => {
+  //   setIsDeleting(true);
+  //   try {
+  //     await deleteA2iImage(selectedBrandId!, generationId, image?.id || null);
+  //     setShowDeleteDialog(false);
+  //   } catch (error) {
+  //     console.error("Error deleting moodboard:", error);
+  //     toast.error("Could not delete image at the moment. Please try again.", {
+  //       position: "bottom-right",
+  //     });
+  //   } finally {
+  //     setIsDeleting(false);
+  //   }
+  // };
+
+  const handleRemoveItem = async () => {
     setIsDeleting(true);
     try {
-      await deleteA2iImage(selectedBrandId!, generationId, image?.id || null);
+      if (image) {
+        await deleteA2iImage(selectedBrandId!, generationId, image.id);
+      } else if (video) {
+        await deleteA2iVideo(selectedBrandId!, generationId);
+      }
+
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("Error deleting image:", error);
       toast.error("Could not delete image at the moment. Please try again.", {
+
         position: "bottom-right",
       });
     } finally {
@@ -116,6 +173,33 @@ const A2iImageCard = ({
           className="object-contain"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
         />
+      )}
+
+      {video && (
+        <div className="relative w-full h-full">
+          <video
+            src={video.url}
+            className="object-contain w-full h-full"
+            muted
+          />
+
+          <Dialog>
+            <DialogTrigger asChild>
+
+              <button className="absolute inset-0 flex items-center justify-center">
+                <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl w-full aspect-video p-0 shadow-md">
+              <video
+                src={video.url}
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
 
       {status !== "completed" && (
@@ -155,6 +239,17 @@ const A2iImageCard = ({
               />
             </div>
           )}
+
+          {video && (
+            <div className="flex gap-6">
+              <img
+                src={video.url}
+                alt="Video"
+                className="w-16 h-16 object-cover rounded-md"
+              />
+            </div>
+          )}
+
           {status === "failed" && (
             <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
               Failed
@@ -163,6 +258,9 @@ const A2iImageCard = ({
         </div>
       )}
 
+
+      {/* Image Actions */}
+      {/* {image && ( */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30"></div>
 
@@ -177,12 +275,24 @@ const A2iImageCard = ({
           />
         )}
 
-        {status !== "processing" && (
+        {/* Top Left */}
+        {/* {status !== "processing" && (
           <TooltipIconButton
             onClick={() => setShowDeleteDialog(true)}
             tooltip="Delete image"
             variant={"ghost"}
             className="absolute top-2 left-2 text-white hover:text-black size-7"
+          >
+            <X />
+          </TooltipIconButton>
+        )} */}
+
+        {(image || video) && status !== "processing" && (
+          <TooltipIconButton
+            onClick={() => setShowDeleteDialog(true)}
+            tooltip={`Delete ${image ? "image" : "video"}`}
+            variant={"ghost"}
+            className="absolute top-2 left-2 text-white hover:text-black"
           >
             <X />
           </TooltipIconButton>
@@ -199,7 +309,9 @@ const A2iImageCard = ({
           </Button>
         )}
 
-        {image && (
+
+        {/* Bottom Right */}
+        {/* {image && (
           <Button
             onClick={handleLikeToggle}
             size={"icon"}
@@ -212,31 +324,90 @@ const A2iImageCard = ({
               })}
             />
           </Button>
-        )}
+        )} */}
+        {(image || video) && (
+          <Button
+            onClick={handleLikeToggle}
+            size={"icon"}
+            variant={"ghost"}
+            className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
+          >
+            <HeartIcon
+              className={cn("text-white", {
+                "text-red-500 fill-red-500": isLiked,
+              })}
+            />
+          )}
 
-        {image && (
+
+
+        {/* Bottom Left */}
+        {(image || video) && (
           <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
             <TooltipIconButton
-              onClick={handleDownload}
-              tooltip="Download"
+              onClick={() => setShowDeleteDialog(true)}
+              tooltip="Delete image"
               variant={"ghost"}
-              className="text-white hover:text-black size-7"
+              className="absolute top-2 left-2 text-white hover:text-black"
             >
-              <DownloadIcon />
+              <X />
             </TooltipIconButton>
-            {parameters.prompt && (
+          )}
+
+          {/* Top Right */}
+          {image && (
+            <Button
+              onClick={() => setShowEditFeatures((prev) => !prev)}
+              size={"icon"}
+              variant={"ghost"}
+              className="absolute top-2 right-2 size-7 text-white hover:text-black"
+            >
+              <ExpandIcon />
+            </Button>
+          )}
+
+          {/* Bottom Right */}
+          {image && (
+            <Button
+              onClick={handleLikeToggle}
+              size={"icon"}
+              variant={"ghost"}
+              className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
+            >
+              <HeartIcon
+                className={cn("text-white", {
+                  "text-red-500 fill-red-500": isLiked,
+                })}
+              />
+            </Button>
+          )}
+
+          {/* Bottom Left */}
+          {image && (
+            <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
               <TooltipIconButton
-                onClick={handleCopyPrompt}
-                tooltip="Copy prompt"
+                onClick={handleDownload}
+                tooltip="Download"
                 variant={"ghost"}
                 className="text-white hover:text-black size-7"
               >
-                {copied ? <Check /> : <CopyIcon />}
+                <DownloadIcon />
               </TooltipIconButton>
-            )}
-          </div>
-        )}
-      </div>
+              {parameters.prompt && (
+                <TooltipIconButton
+                  onClick={handleCopyPrompt}
+                  tooltip="Copy prompt"
+                  variant={"ghost"}
+                  className="text-white hover:text-black"
+                >
+                  {copied ? <Check /> : <CopyIcon />}
+                </TooltipIconButton>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {image && (
         <A2iImageEditFeatures
@@ -247,7 +418,7 @@ const A2iImageCard = ({
         />
       )}
 
-      <ReusableAlertDialog
+      {/* <ReusableAlertDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Delete image generation"
@@ -255,6 +426,19 @@ const A2iImageCard = ({
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={handleRemoveImage}
+        isLoading={isDeleting}
+        danger
+      /> */}
+      <ReusableAlertDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title={`Delete ${image ? "image" : "video"} generation`}
+        description={`Are you sure you want to delete this ${
+          image ? "image" : "video"
+        } generation? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleRemoveItem}
         isLoading={isDeleting}
         danger
       />

@@ -5,13 +5,11 @@ import { CSSProperties } from "react";
 
 interface A2iImageCardDraggableProps {
   imageData: A2iImageCardProps;
-  id: string;
   disableDrag?: boolean;
 }
 
 function A2iImageCardDraggable({
   imageData,
-  id,
   disableDrag = false,
 }: A2iImageCardDraggableProps) {
   const {
@@ -22,9 +20,10 @@ function A2iImageCardDraggable({
     transition,
     isDragging,
   } = useSortable({
-    id,
+      id: imageData.image?.id || imageData.video?.id || imageData.generationId,
     disabled: disableDrag,
   });
+
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),

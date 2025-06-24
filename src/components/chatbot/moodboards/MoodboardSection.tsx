@@ -37,7 +37,6 @@ import {
 } from "@/services/api/moodboard.service";
 import { MoodboardStyleAnalysisStatus } from "./MoodboardStyleAnalysisStatus";
 import MoodboardTagsSelector from "./MoodboardTagsSelector";
-import { MoodboardVisualImages } from "./MoodboardVisualImages";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import MoodboardLayout from "./MoodboardLayout";
 import { ImageCountCard } from "@/components/shared/ImageCountCard";
@@ -52,6 +51,7 @@ import MoodboardSelector from "./MoodboardSelector";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
+import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -160,14 +160,12 @@ export const MoodboardSection: React.FC<{
   const [expanded, setExpanded] = useState(true);
 
   const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
-    useState<number>(10);
+    useState<number>(0);
 
-  // Enforce a maximum limit of 16 images
   useEffect(() => {
-    if (noOfImagesForMoodboard > 16) {
-      setNoOfImagesForMoodboard(16);
-    }
-  }, [noOfImagesForMoodboard]);
+    const imageCount = currentMoodboard?.visual_style_images?.length ?? 0;
+    setNoOfImagesForMoodboard(Math.min(16, imageCount));
+  }, [currentMoodboard?.id]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
@@ -450,7 +448,7 @@ export const MoodboardSection: React.FC<{
       }));
 
     try {
-      await toast.promise(
+      toast.promise(
         (async () => {
           // Step 1: Create the new moodboard
           const newMoodboard = await createMoodboard(
@@ -669,13 +667,15 @@ export const MoodboardSection: React.FC<{
               title={`Choose your visual aesthetic `}
               content={
                 <div>
-                  {currentMoodboard && !isCreatingNewMoodboard && (
-                    <div className="mt-6">
-                      <MoodboardVisualImages
-                        currentMoodboard={currentMoodboard}
-                        galleryItems={galleryItems || []}
-                      />
-                    </div>
+                  {currentCampaign && currentMoodboard && (
+                    <MoodboardVisualSectionHeader
+                      currentMoodboard={currentMoodboard}
+                      isCreatingNewMoodboard={isCreatingNewMoodboard}
+                      galleryItems={galleryItems || []}
+                      brandName={brandInformation?.static?.brand?.name}
+                      currentCampaign={currentCampaign}
+                      moodboard={currentMoodboard}
+                    />
                   )}
 
                   <div>
@@ -748,7 +748,7 @@ export const MoodboardSection: React.FC<{
                                     );
                                   }
                                 }}
-                                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-medium transition-all duration-300"
+                                className="w-full "
                                 disabled={
                                   currentMoodboard.moodboard_generation_status ===
                                   "in_progress"
@@ -798,7 +798,11 @@ export const MoodboardSection: React.FC<{
                                 onChange={setNoOfImagesForMoodboard}
                                 hideRefresh
                                 maxCount={
-                                  currentMoodboard.visual_style_images.length
+                                  currentMoodboard.visual_style_images.length >
+                                  16
+                                    ? 16
+                                    : currentMoodboard.visual_style_images
+                                        .length
                                 }
                               />
                             </div>
@@ -809,6 +813,7 @@ export const MoodboardSection: React.FC<{
                     {selectedBrandId &&
                       currentMoodboard &&
                       currentCampaign &&
+                      moodboardInformation &&
                       !isCreatingNewMoodboard && (
                         <MoodboardLayout
                           brandId={selectedBrandId}
@@ -819,6 +824,11 @@ export const MoodboardSection: React.FC<{
                             currentMoodboard?.moodboard_generation_status ===
                             "in_progress"
                           }
+                          isCreatingNew={isCreatingNewMoodboard}
+                          moodboards={moodboardInformation}
+                          onNewMoodboard={handleCreateNewMoodboard}
+                          selectedMoodboard={currentMoodboard}
+                          setSelectedMoodboard={handleMoodboardSelect}
                         />
                       )}
                   </div>
@@ -837,6 +847,7 @@ export const MoodboardSection: React.FC<{
             />
             {currentMoodboard && !isCreatingNewMoodboard && (
               <MoodboardTagResults
+                moodboardId={currentMoodboard.id}
                 moodboard_tags={currentMoodboard?.moodboard_tags}
               />
             )}
