@@ -274,7 +274,7 @@ const A2iImageInput = () => {
                       }
                     }}
                     className={cn(
-                      "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-4 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
+                      "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-6 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
                     )}
                     placeholder="Describe what you want to see ..."
                   />
