@@ -20,7 +20,6 @@ import {
   toggleA2iVideoLike,
 } from "@/services/api/video-gen.service";
 
-
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
   status: A2iImageGeneration["status"];
@@ -59,12 +58,8 @@ const A2iImageCard = ({
   const { selectedBrandId } = useBrandStore();
 
   const handleDownload = () => {
-    if (image) {
-      handleDownloadImage(image.url);
-    }
-    if (video) {
-      handleDownloadVideo(video.url);
-    }
+    if (image) handleDownloadImage(image.url);
+    if (video) handleDownloadVideo(video.url);
   };
 
   const handleCopyPrompt = () => {
@@ -75,29 +70,6 @@ const A2iImageCard = ({
       });
     }
   };
-
-  // const handleLikeToggle = () => {
-  //   if (image) {
-  //     const prevLikeStatus = isLiked;
-
-  //     setIsLiked((p) => !p);
-
-  //     toggleA2iImageLike(
-  //       selectedBrandId!,
-  //       generationId,
-  //       image.id,
-  //       !isLiked
-  //     ).catch((error) => {
-  //       console.error("Error toggling like status:", error);
-  //       toast.error("Could not update like status. Please try again.", {
-  //         position: "bottom-right",
-  //       });
-
-  //       // Revert the like status if the API call fails
-  //       setIsLiked(prevLikeStatus);
-  //     });
-  //   }
-  // };
 
   const handleLikeToggle = () => {
     const prevLikeStatus = isLiked;
@@ -117,24 +89,9 @@ const A2iImageCard = ({
       toast.error("Could not update like status. Please try again.", {
         position: "bottom-right",
       });
-      setIsLiked(prevLikeStatus); // Revert on failure
+      setIsLiked(prevLikeStatus);
     });
   };
-
-  // const handleRemoveImage = async () => {
-  //   setIsDeleting(true);
-  //   try {
-  //     await deleteA2iImage(selectedBrandId!, generationId, image?.id || null);
-  //     setShowDeleteDialog(false);
-  //   } catch (error) {
-  //     console.error("Error deleting moodboard:", error);
-  //     toast.error("Could not delete image at the moment. Please try again.", {
-  //       position: "bottom-right",
-  //     });
-  //   } finally {
-  //     setIsDeleting(false);
-  //   }
-  // };
 
   const handleRemoveItem = async () => {
     setIsDeleting(true);
@@ -144,12 +101,10 @@ const A2iImageCard = ({
       } else if (video) {
         await deleteA2iVideo(selectedBrandId!, generationId);
       }
-
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("Error deleting image:", error);
       toast.error("Could not delete image at the moment. Please try again.", {
-
         position: "bottom-right",
       });
     } finally {
@@ -182,10 +137,8 @@ const A2iImageCard = ({
             className="object-contain w-full h-full"
             muted
           />
-
           <Dialog>
             <DialogTrigger asChild>
-
               <button className="absolute inset-0 flex items-center justify-center">
                 <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
               </button>
@@ -203,66 +156,62 @@ const A2iImageCard = ({
       )}
 
       {status !== "completed" && (
-        <Ripple
-          numCircles={status === "failed" ? 0 : 8}
-          mainCircleSize={10}
-          className={cn({
-            "bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none":
-              status === "failed",
-          })}
-        />
+        <>
+          <Ripple
+            numCircles={status === "failed" ? 0 : 8}
+            mainCircleSize={10}
+            className={cn({
+              "bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none":
+                status === "failed",
+            })}
+          />
+          <div className="flex flex-col items-center justify-center gap-2 h-full px-10">
+            <p className="text-sm text-center overflow-hidden text-ellipsis line-clamp-5 max-h-40">
+              {parameters.prompt}
+            </p>
+            {vtonParameters && (
+              <div className="flex gap-6">
+                <img
+                  src={vtonParameters.model_image}
+                  alt="Model"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+                <img
+                  src={vtonParameters.product_image}
+                  alt="Garment"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </div>
+            )}
+            {remixParameters && (
+              <div className="flex gap-6">
+                <img
+                  src={remixParameters.base_image}
+                  alt="Base"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </div>
+            )}
+            {video && (
+              <div className="flex gap-6">
+                <img
+                  src={video.url}
+                  alt="Video"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </div>
+            )}
+            {status === "failed" && (
+              <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
+                Failed
+              </Badge>
+            )}
+          </div>
+        </>
       )}
 
-      {status !== "completed" && (
-        <div className="flex flex-col items-center justify-center gap-2 h-full px-10">
-          <p className="text-sm text-center">{parameters.prompt}</p>
-          {vtonParameters && (
-            <div className="flex gap-6">
-              <img
-                src={vtonParameters.model_image}
-                alt="Model"
-                className="w-16 h-16 object-cover rounded-md"
-              />
-              <img
-                src={vtonParameters.product_image}
-                alt="Garment"
-                className="w-16 h-16 object-cover rounded-md"
-              />
-            </div>
-          )}
-          {remixParameters && (
-            <div className="flex gap-6">
-              <img
-                src={remixParameters.base_image}
-                alt="Base"
-                className="w-16 h-16 object-cover rounded-md"
-              />
-            </div>
-          )}
-
-          {video && (
-            <div className="flex gap-6">
-              <img
-                src={video.url}
-                alt="Video"
-                className="w-16 h-16 object-cover rounded-md"
-              />
-            </div>
-          )}
-
-          {status === "failed" && (
-            <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
-              Failed
-            </Badge>
-          )}
-        </div>
-      )}
-
-
-      {/* Image Actions */}
-      {/* {image && ( */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
 
         {status === "completed" && !showEditFeatures && (
           <div
@@ -274,18 +223,6 @@ const A2iImageCard = ({
             {...(dragListeners || {})}
           />
         )}
-
-        {/* Top Left */}
-        {/* {status !== "processing" && (
-          <TooltipIconButton
-            onClick={() => setShowDeleteDialog(true)}
-            tooltip="Delete image"
-            variant={"ghost"}
-            className="absolute top-2 left-2 text-white hover:text-black size-7"
-          >
-            <X />
-          </TooltipIconButton>
-        )} */}
 
         {(image || video) && status !== "processing" && (
           <TooltipIconButton
@@ -309,9 +246,7 @@ const A2iImageCard = ({
           </Button>
         )}
 
-
-        {/* Bottom Right */}
-        {/* {image && (
+        {(image || video) && (
           <Button
             onClick={handleLikeToggle}
             size={"icon"}
@@ -324,90 +259,31 @@ const A2iImageCard = ({
               })}
             />
           </Button>
-        )} */}
-        {(image || video) && (
-          <Button
-            onClick={handleLikeToggle}
-            size={"icon"}
-            variant={"ghost"}
-            className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
-          >
-            <HeartIcon
-              className={cn("text-white", {
-                "text-red-500 fill-red-500": isLiked,
-              })}
-            />
-          )}
+        )}
 
-
-
-        {/* Bottom Left */}
         {(image || video) && (
           <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
             <TooltipIconButton
-              onClick={() => setShowDeleteDialog(true)}
-              tooltip="Delete image"
+              onClick={handleDownload}
+              tooltip="Download"
               variant={"ghost"}
-              className="absolute top-2 left-2 text-white hover:text-black"
+              className="text-white hover:text-black size-7"
             >
-              <X />
+              <DownloadIcon />
             </TooltipIconButton>
-          )}
-
-          {/* Top Right */}
-          {image && (
-            <Button
-              onClick={() => setShowEditFeatures((prev) => !prev)}
-              size={"icon"}
-              variant={"ghost"}
-              className="absolute top-2 right-2 size-7 text-white hover:text-black"
-            >
-              <ExpandIcon />
-            </Button>
-          )}
-
-          {/* Bottom Right */}
-          {image && (
-            <Button
-              onClick={handleLikeToggle}
-              size={"icon"}
-              variant={"ghost"}
-              className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
-            >
-              <HeartIcon
-                className={cn("text-white", {
-                  "text-red-500 fill-red-500": isLiked,
-                })}
-              />
-            </Button>
-          )}
-
-          {/* Bottom Left */}
-          {image && (
-            <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
+            {parameters.prompt && (
               <TooltipIconButton
-                onClick={handleDownload}
-                tooltip="Download"
+                onClick={handleCopyPrompt}
+                tooltip="Copy prompt"
                 variant={"ghost"}
-                className="text-white hover:text-black size-7"
+                className="text-white hover:text-black"
               >
-                <DownloadIcon />
+                {copied ? <Check /> : <CopyIcon />}
               </TooltipIconButton>
-              {parameters.prompt && (
-                <TooltipIconButton
-                  onClick={handleCopyPrompt}
-                  tooltip="Copy prompt"
-                  variant={"ghost"}
-                  className="text-white hover:text-black"
-                >
-                  {copied ? <Check /> : <CopyIcon />}
-                </TooltipIconButton>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
+            )}
+          </div>
+        )}
+      </div>
 
       {image && (
         <A2iImageEditFeatures
@@ -418,17 +294,6 @@ const A2iImageCard = ({
         />
       )}
 
-      {/* <ReusableAlertDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        title="Delete image generation"
-        description={`Are you sure you want to delete the image generation? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        onConfirm={handleRemoveImage}
-        isLoading={isDeleting}
-        danger
-      /> */}
       <ReusableAlertDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}

@@ -236,20 +236,46 @@ const A2iImageInput = () => {
               </PopoverContent>
             </Popover>
           </div>
-          <Button
-            size={"icon"}
-            disabled={
-              !form.formState.isValid ||
-              form.formState.isSubmitting ||
-              isUploading
-            }
-          >
-            {form.formState.isSubmitting ? (
-              <Loader2 className="animate-spin h-4 w-4" />
-            ) : (
-              <SendIcon className="h-4 w-4" />
-            )}
-          </Button>
+          <div className="flex gap-x-2">
+            <Button
+              type="button"
+              disabled={!form.watch("prompt") || isPending}
+              variant={"outline"}
+              className="border-primary text-primary"
+              onClick={() => {
+                if (!form.getValues("prompt")) return;
+                handleEnhancePrompt(undefined, {
+                  onSuccess: (data) => {
+                    form.setValue("prompt", data.prompts[0], {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
+                  },
+                  onError: () => {
+                    toast.error("Failed to enhance prompt. Please try again.");
+                  },
+                });
+              }}
+            >
+              <WandSparkles />
+              {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
+            </Button>
+            <Button
+              size={"icon"}
+              disabled={
+                !form.formState.isValid ||
+                form.formState.isSubmitting ||
+                isUploading
+              }
+            >
+              {form.formState.isSubmitting ? (
+                <Loader2 className="animate-spin h-4 w-4" />
+              ) : (
+                <SendIcon className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
         <FormField
           control={form.control}
@@ -274,32 +300,10 @@ const A2iImageInput = () => {
                       }
                     }}
                     className={cn(
-                      "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-6 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
+                      "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
                     )}
                     placeholder="Describe what you want to see ..."
                   />
-                  <Button
-                    type="button"
-                    disabled={!field.value || isPending}
-                    variant={"outline"}
-                    className="absolute right-4 bottom-0 z-10 border-primary text-primary"
-                    onClick={() => {
-                      if (!field.value) return;
-                      handleEnhancePrompt(undefined, {
-                        onSuccess: (data) => {
-                          field.onChange(data.prompts[0]);
-                        },
-                        onError: () => {
-                          toast.error(
-                            "Failed to enhance prompt. Please try again."
-                          );
-                        },
-                      });
-                    }}
-                  >
-                    <WandSparkles />
-                    {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
-                  </Button>
                 </div>
               </FormControl>
             </FormItem>
