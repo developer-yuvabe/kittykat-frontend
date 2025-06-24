@@ -210,3 +210,20 @@ export const generateA2iShowboard = async (
     })
   );
 };
+
+export const enhancePrompt = async (
+  brandId: string,
+  basePrompt: string
+): Promise<{
+  prompts: string[];
+}> => {
+  return handleApiRequest<{
+    prompts: string[];
+  }>(
+    axiosInstance.post<{
+      prompts: string[];
+    }>(`/brands/${brandId}/a2i/enhance-prompt`, {
+      base_prompt: basePrompt,
+    })
+  );
+};

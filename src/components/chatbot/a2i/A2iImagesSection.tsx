@@ -1,16 +1,18 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Image } from "lucide-react";
 import { useState } from "react";
-import { ThreadA2iImage } from "@/types/types";
+import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
+  moodboardInformation: ThreadDetails["moodboard_information"];
 }
 
 export default function A2iImagesSection({
   a2iImageInformation,
+  moodboardInformation,
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
 
@@ -51,6 +53,7 @@ export default function A2iImagesSection({
             <ReferenceMoodboard
               referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
               prompts={a2iImageInformation?.prompts}
+              moodboardInformation={moodboardInformation}
             />
             <A2iImagesWrapper
               generations={[...(a2iImageInformation?.generations || [])]}

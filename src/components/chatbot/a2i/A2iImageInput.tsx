@@ -14,22 +14,28 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useImageGenForm } from "@/hooks/useImageGenForm";
-import { delay } from "@/lib/utils";
+import { cn, delay } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useA2iStore } from "@/store/a2i.store";
 import { useBrandStore } from "@/store/brand.store";
-import { Images, Loader2, Settings2, X } from "lucide-react";
+import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
 import { FileParameter } from "@/types/a2i-media.types";
+import { useMutation } from "@tanstack/react-query";
+import { enhancePrompt } from "@/services/api/moodboard.service";
+import { toast } from "sonner";
 
 const A2iImageInput = () => {
   const { selectedBrandId } = useBrandStore();
   const { selectedModel } = useA2iStore();
   const form = useImageGenForm();
+  const { mutate: handleEnhancePrompt, isPending } = useMutation({
+    mutationFn: () => enhancePrompt(selectedBrandId!, form.getValues("prompt")),
+  });
 
   // Reference to the file input element
   const refernceImagesModelInfo = useMemo(
@@ -251,24 +257,50 @@ const A2iImageInput = () => {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Textarea
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.shiftKey) {
-                      // Allow new line on Shift + Enter
-                      return;
-                    }
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      form.handleSubmit(onSubmit)();
-                    }
-                  }}
-                  className="w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 py-2 pt-4 h-max min-h-0"
-                  placeholder="Describe what you want to see ..."
-                />
+                <div className="relative h-full">
+                  <Textarea
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && e.shiftKey) {
+                        // Allow new line on Shift + Enter
+                        return;
+                      }
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        form.handleSubmit(onSubmit)();
+                      }
+                    }}
+                    className={cn(
+                      "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-4 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
+                    )}
+                    placeholder="Describe what you want to see ..."
+                  />
+                  <Button
+                    type="button"
+                    disabled={!field.value || isPending}
+                    variant={"outline"}
+                    className="absolute right-4 bottom-0 z-10 border-primary text-primary"
+                    onClick={() => {
+                      if (!field.value) return;
+                      handleEnhancePrompt(undefined, {
+                        onSuccess: (data) => {
+                          field.onChange(data.prompts[0]);
+                        },
+                        onError: () => {
+                          toast.error(
+                            "Failed to enhance prompt. Please try again."
+                          );
+                        },
+                      });
+                    }}
+                  >
+                    <WandSparkles />
+                    {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
+                  </Button>
+                </div>
               </FormControl>
             </FormItem>
           )}
