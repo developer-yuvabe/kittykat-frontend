@@ -2,6 +2,7 @@ import { AppConfig } from "@/config/app.config";
 import {
   fluxDevSchema,
   fluxProSchema,
+  fluxProUltraFinetunedSchema,
   fluxProUltraSchema,
   gptImage1Schema,
 } from "@/schema/image-gen.schema";
@@ -380,9 +381,105 @@ export const fluxProUltraModel: ModelInformation<typeof fluxProUltraSchema> = {
   },
 };
 
+export const birkenstockModel: ModelInformation<
+  typeof fluxProUltraFinetunedSchema
+> = {
+  id: "black-forest-labs/flux-1.1-pro-ultra-finetuned",
+  name: "Birkenstock V1",
+  provider: "replicate",
+  disabled: false,
+  parameters: [
+    {
+      name: "Reference Image(s)",
+      formName: "image_prompt",
+      type: "file",
+      maxImages: 1,
+      maxSize: AppConfig.MAX_FILE_SIZE,
+      accept: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
+      disabled: false,
+    },
+    {
+      name: "Size",
+      formName: "aspect_ratio",
+      type: "select",
+      options: [
+        { value: "1:1", label: "1:1" },
+        { value: "16:9", label: "16:9" },
+        { value: "21:9", label: "21:9" },
+        { value: "3:2", label: "3:2" },
+        { value: "2:3", label: "2:3" },
+        { value: "4:5", label: "4:5" },
+        { value: "5:4", label: "5:4" },
+        { value: "3:4", label: "3:4" },
+        { value: "4:3", label: "4:3" },
+        { value: "9:16", label: "9:16" },
+        { value: "9:21", label: "9:21" },
+      ],
+
+      icon: Ruler,
+      disabled: false,
+    },
+    {
+      name: "Output Format",
+      formName: "output_format",
+      type: "select",
+      options: [
+        { value: "png", label: "PNG" },
+        { value: "jpg", label: "JPG" },
+      ],
+    },
+    {
+      name: "Number of Images to be generated",
+      formName: "num_outputs",
+      type: "slider",
+      disabled: true,
+    },
+  ],
+  advancedParameters: [
+    {
+      name: "Safety Tolerance",
+      formName: "safety_tolerance",
+      type: "slider",
+      constraints: { min: 1, max: 6, step: 1 },
+    },
+    {
+      name: "Image Prompt Strength",
+      formName: "image_prompt_strength",
+      type: "slider",
+      constraints: { min: 0.0, max: 1.0, step: 0.01 },
+    },
+    {
+      name: "Raw Output",
+      formName: "raw",
+      type: "boolean",
+    },
+
+    {
+      name: "Fine-tune Strength",
+      formName: "finetune_strength",
+      type: "slider",
+      constraints: { min: 0, max: 2, step: 0.1 },
+    },
+  ],
+  zodSchema: fluxProUltraFinetunedSchema,
+  defaultValues: {
+    prompt: "",
+    model: "black-forest-labs/flux-1.1-pro-ultra-finetuned",
+    finetune_id: "22a60eb3-7bd6-4603-b52e-12b72dbc5752",
+    finetune_strength: 1,
+    provider: "replicate",
+    output_format: "jpg",
+    aspect_ratio: "1:1",
+    safety_tolerance: 2,
+    raw: false,
+    image_prompt_strength: 0.1,
+  },
+};
+
 export const IMAGE_GENERATION_MODELS = [
   gptImage1Model,
   fluxDevModel,
   fluxProModel,
   fluxProUltraModel,
+  birkenstockModel,
 ] as const;
