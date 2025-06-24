@@ -128,8 +128,8 @@ export type A2iVideoDetail = {
   id: string;
   url: string;
   created_at: string;
+  is_liked?: boolean;
   // position?: number;
-  // is_liked?: boolean;
 };
 
 export type A2iImageGeneration = {
@@ -155,6 +155,7 @@ export type ThreadA2iImage = {
   generations: A2iImageGeneration[];
   reference_moodboard_id?: string;
   prompts?: string[];
+
 };
 
 export interface ThreadDetails {

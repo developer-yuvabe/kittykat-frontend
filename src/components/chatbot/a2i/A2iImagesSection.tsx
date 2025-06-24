@@ -54,6 +54,7 @@ export default function A2iImagesSection({
               referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
               prompts={a2iImageInformation?.prompts}
               moodboardInformation={moodboardInformation}
+
             />
             <A2iImagesWrapper
               generations={[...(a2iImageInformation?.generations || [])]}
