@@ -76,4 +76,5 @@ export type ModelInformation<TSchema extends ZodTypeAny> = {
   disabled?: boolean;
   zodSchema: TSchema;
   defaultValues: z.infer<TSchema>;
+  prefix?: string;
 };

@@ -157,6 +157,10 @@ const A2iImageInput = () => {
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
+    if (selectedModel.prefix) {
+      data.prompt = `${selectedModel.prefix} ${data.prompt}`;
+    }
+
     generateImage(selectedBrandId!, data);
 
     await delay(3000);
