@@ -85,6 +85,9 @@ type RemixControlsProps = {
   };
   closeDialog: () => void;
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+  // Add brush size props
+  brushSize: number;
+  onBrushSizeChange: (size: number) => void;
 };
 
 const RemixControls = ({
@@ -96,6 +99,8 @@ const RemixControls = ({
   onClear,
   canUndo,
   closeDialog,
+  brushSize,
+  onBrushSizeChange,
 }: RemixControlsProps) => {
   const { selectedBrandId } = useBrandStore();
   const inputFileRef = React.useRef<HTMLInputElement | null>(null);
@@ -222,14 +227,6 @@ const RemixControls = ({
         type: "image/png",
       });
 
-      // Download the mask image
-      // const downloadLink = document.createElement("a");
-      // downloadLink.href = URL.createObjectURL(file);
-      // downloadLink.download = "mask-image.png";
-      // document.body.appendChild(downloadLink);
-      // downloadLink.click();
-      // document.body.removeChild(downloadLink);
-
       const maskUrl = await uploadFileAndReturnUrl(
         file.name,
         file.type,
@@ -253,7 +250,16 @@ const RemixControls = ({
       <div className="flex gap-x-4 w-full">
         <div className="flex gap-6 items-center border p-4 rounded-md flex-1">
           <BrushIcon className="text-primary" />
-          <Slider disabled value={[60]} />
+          <div className="flex-1 flex items-center gap-3">
+            <Slider
+              value={[brushSize]}
+              onValueChange={(value) => onBrushSizeChange(value[0])}
+              max={100}
+              min={5}
+              step={1}
+              className="flex-1"
+            />
+          </div>
         </div>
         <div className="flex gap-2 items-center rounded-md">
           <TooltipIconButton

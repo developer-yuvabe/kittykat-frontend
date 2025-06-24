@@ -13,6 +13,7 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
 import { deleteA2iImage, toggleA2iImageLike } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
+import { CSSProperties } from "react";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -24,6 +25,9 @@ export type A2iImageCardProps = {
   remixParameters?: A2iImageGeneration["remix_parameters"];
   dragListeners?: any;
   dragAttributes?: any;
+  isDragging?: boolean;
+  style?: CSSProperties;
+  disableDrag?: boolean;
 };
 
 const A2iImageCard = ({
@@ -35,6 +39,9 @@ const A2iImageCard = ({
   dragListeners,
   dragAttributes,
   vtonParameters,
+  isDragging,
+  style,
+  disableDrag,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -61,7 +68,6 @@ const A2iImageCard = ({
   const handleLikeToggle = () => {
     if (image) {
       const prevLikeStatus = isLiked;
-
       setIsLiked((p) => !p);
 
       toggleA2iImageLike(
@@ -74,8 +80,6 @@ const A2iImageCard = ({
         toast.error("Could not update like status. Please try again.", {
           position: "bottom-right",
         });
-
-        // Revert the like status if the API call fails
         setIsLiked(prevLikeStatus);
       });
     }
@@ -87,7 +91,7 @@ const A2iImageCard = ({
       await deleteA2iImage(selectedBrandId!, generationId, image?.id || null);
       setShowDeleteDialog(false);
     } catch (error) {
-      console.error("Error deleting moodboard:", error);
+      console.error("Error deleting image:", error);
       toast.error("Could not delete image at the moment. Please try again.", {
         position: "bottom-right",
       });
@@ -97,13 +101,20 @@ const A2iImageCard = ({
   };
 
   return (
-    <div className="relative border bg-muted min-w-60 aspect-square group">
+    <div
+      className={cn(
+        "relative border bg-muted min-w-60 aspect-square group transition-all duration-200 ease-in-out",
+        isDragging && "scale-[1.03] shadow-xl z-50"
+      )}
+      style={style}
+    >
       {image && (
         <Image
           src={image.url}
           alt={parameters.prompt}
           fill
           className="object-contain"
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
         />
       )}
 
@@ -120,7 +131,7 @@ const A2iImageCard = ({
 
       {status !== "completed" && (
         <div className="flex flex-col items-center justify-center gap-2 h-full px-10">
-          {<p className="text-sm text-center">{parameters.prompt}</p>}
+          <p className="text-sm text-center">{parameters.prompt}</p>
           {vtonParameters && (
             <div className="flex gap-6">
               <img
@@ -135,12 +146,11 @@ const A2iImageCard = ({
               />
             </div>
           )}
-
           {remixParameters && (
             <div className="flex gap-6">
               <img
                 src={remixParameters.base_image}
-                alt="Model"
+                alt="Base"
                 className="w-16 h-16 object-cover rounded-md"
               />
             </div>
@@ -153,33 +163,31 @@ const A2iImageCard = ({
         </div>
       )}
 
-      {/* Image Actions */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {/* Gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30"></div>
 
-        {/* Top Center */}
-        {status === "completed" && (
+        {status === "completed" && !showEditFeatures && (
           <div
-            className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute"
-            {...dragAttributes}
-            {...dragListeners}
+            className={cn(
+              "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute",
+              !disableDrag && "opacity-60 hover:opacity-100"
+            )}
+            {...(dragAttributes || {})}
+            {...(dragListeners || {})}
           />
         )}
 
-        {/* Top Left */}
         {status !== "processing" && (
           <TooltipIconButton
             onClick={() => setShowDeleteDialog(true)}
             tooltip="Delete image"
             variant={"ghost"}
-            className="absolute top-2 left-2 text-white hover:text-black"
+            className="absolute top-2 left-2 text-white hover:text-black size-7"
           >
             <X />
           </TooltipIconButton>
         )}
 
-        {/* Top Right */}
         {image && (
           <Button
             onClick={() => setShowEditFeatures((prev) => !prev)}
@@ -191,7 +199,6 @@ const A2iImageCard = ({
           </Button>
         )}
 
-        {/* Bottom Right */}
         {image && (
           <Button
             onClick={handleLikeToggle}
@@ -207,14 +214,13 @@ const A2iImageCard = ({
           </Button>
         )}
 
-        {/* Bottom Left */}
         {image && (
           <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
             <TooltipIconButton
               onClick={handleDownload}
               tooltip="Download"
               variant={"ghost"}
-              className="text-white hover:text-black"
+              className="text-white hover:text-black size-7"
             >
               <DownloadIcon />
             </TooltipIconButton>
@@ -223,7 +229,7 @@ const A2iImageCard = ({
                 onClick={handleCopyPrompt}
                 tooltip="Copy prompt"
                 variant={"ghost"}
-                className="text-white hover:text-black"
+                className="text-white hover:text-black size-7"
               >
                 {copied ? <Check /> : <CopyIcon />}
               </TooltipIconButton>
@@ -257,7 +263,7 @@ const A2iImageCard = ({
 };
 
 const A2iImagePlaceholderCard = () => {
-  return <div className="border bg-muted min-w-60 aspect-square"> </div>;
+  return <div className="border bg-muted min-w-60 aspect-square" />;
 };
 
 export { A2iImageCard, A2iImagePlaceholderCard };
