@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { processAuthError } from "@/lib/utils";
 import {
@@ -37,26 +38,36 @@ import {
 } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { Loader } from "@/components/ui/loader";
 
 type PageMode = "email" | "reset" | "loading" | "error";
 
-const ForgotPasswordPage = () => {
+const ForgotPasswordPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [pageMode, setPageMode] = useState<PageMode>("email");
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
 
   const loginRoute = "/login";
 
   const oobCode = searchParams.get("oobCode");
   const mode = searchParams.get("mode");
   const continueUrl = searchParams.get("continueUrl");
+
+  // Determine initial page mode based on URL parameters
+  const [pageMode, setPageMode] = useState<PageMode>(() => {
+    if (oobCode && mode === "resetPassword") {
+      return "loading";
+    }
+    return "email";
+  });
+
 
   const emailForm = useForm<ForgotPasswordSchema>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -74,12 +85,19 @@ const ForgotPasswordPage = () => {
   });
 
   useEffect(() => {
-    if (oobCode && mode === "resetPassword") {
-      verifyResetCode();
-    } else if (oobCode || mode || continueUrl) {
-      setFormError("Invalid or incomplete reset link parameters.");
-      setPageMode("error");
-    }
+    const handleResetFlow = async () => {
+      if (oobCode && mode === "resetPassword") {
+        setPageMode("loading");
+        setIsVerifying(true);
+        await verifyResetCode();
+        setIsVerifying(false);
+      } else if (oobCode || mode || continueUrl) {
+        setFormError("Invalid or incomplete reset link parameters.");
+        setPageMode("error");
+      }
+    };
+
+    handleResetFlow();
   }, [oobCode, mode, continueUrl]);
 
   const verifyResetCode = async () => {
@@ -90,11 +108,16 @@ const ForgotPasswordPage = () => {
     }
 
     try {
+      console.log("Verifying reset code..."); // Debug log
       const email = await verifyPasswordResetCode(auth, oobCode);
+      console.log("Reset code verified for email:", email); // Debug log
+        
       setUserEmail(email);
       setPageMode("reset");
       setFormError(null);
     } catch (error) {
+      console.error("Reset code verification failed:", error); // Debug log
+
       const errorMsg = processAuthError(error);
       setFormError(errorMsg || "Invalid or expired reset link.");
       setPageMode("error");
@@ -157,6 +180,45 @@ const ForgotPasswordPage = () => {
     }
   };
 
+  const renderLoading = () => (
+    <>
+      <CardHeader className="flex flex-col items-center md:items-start">
+        <Logo />
+        <div className="w-28 h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+        <div className="w-48 h-4 bg-gray-200 rounded animate-pulse"></div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {/* Password field skeleton */}
+          <div className="space-y-2">
+            <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          
+          {/* Confirm password field skeleton */}
+          <div className="space-y-2">
+            <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          {/* Button skeleton */}
+          <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
+
+          {/* Loading spinner */}
+          <div className="flex items-center justify-center">
+            <Loader />
+          </div>
+
+          {/* Back to login link skeleton */}
+          <div className="text-center">
+            <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
+          </div>
+        </div>
+      </CardContent>
+    </>
+  );
+
+
   const renderError = () => (
     <>
       <CardHeader className="flex flex-col items-center md:items-start">
@@ -180,10 +242,7 @@ const ForgotPasswordPage = () => {
             Request New Reset Link
           </Button>
           <div className="text-center">
-            <Link
-              href={loginRoute}
-              className="text-sm font-medium text-primary hover:underline"
-            >
+            <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
               Back to Login
             </Link>
           </div>
@@ -203,10 +262,7 @@ const ForgotPasswordPage = () => {
       </CardHeader>
       <CardContent>
         <Form {...emailForm}>
-          <form
-            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
-            className="space-y-6"
-          >
+          <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
             <FormField
               control={emailForm.control}
               name="email"
@@ -226,29 +282,17 @@ const ForgotPasswordPage = () => {
               <div className="text-left">
                 <p className="text-sm text-green-600">{formSuccess}</p>
                 <p className="text-sm mt-2">
-                  Redirecting to login in {countdown !== null ? countdown : 5}{" "}
-                  seconds...
+                  Redirecting to login in {countdown !== null ? countdown : 5} seconds...
                 </p>
               </div>
             )}
 
-            <Button
-              className="w-full"
-              type="submit"
-              disabled={emailForm.formState.isSubmitting}
-            >
-              {emailForm.formState.isSubmitting ? (
-                <Loader />
-              ) : (
-                "Send Reset Link"
-              )}
+            <Button className="w-full" type="submit" disabled={emailForm.formState.isSubmitting}>
+              {emailForm.formState.isSubmitting ? <Loader /> : "Send Reset Link"}
             </Button>
 
             <div className="text-center">
-              <Link
-                href={loginRoute}
-                className="text-sm font-medium text-primary hover:underline"
-              >
+              <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
                 Back to Login
               </Link>
             </div>
@@ -264,17 +308,12 @@ const ForgotPasswordPage = () => {
         <Logo />
         <CardTitle className="text-xl">Reset Password</CardTitle>
         <CardDescription className="text-center md:text-left">
-          {userEmail
-            ? `Resetting password for ${userEmail}`
-            : "Enter your new password below."}
+          {userEmail ? `Resetting password for ${userEmail}` : "Enter your new password below."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...passwordForm}>
-          <form
-            onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
-            className="space-y-6"
-          >
+          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
             <FormField
               control={passwordForm.control}
               name="password"
@@ -282,10 +321,7 @@ const ForgotPasswordPage = () => {
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <PasswordInput
-                      placeholder="Enter your new password"
-                      {...field}
-                    />
+                    <PasswordInput placeholder="Enter your new password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -298,10 +334,7 @@ const ForgotPasswordPage = () => {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <PasswordInput
-                      placeholder="Confirm your new password"
-                      {...field}
-                    />
+                    <PasswordInput placeholder="Confirm your new password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -313,29 +346,17 @@ const ForgotPasswordPage = () => {
               <div className="text-left">
                 <p className="text-sm text-green-600">{formSuccess}</p>
                 <p className="text-sm mt-2">
-                  Redirecting to login in {countdown !== null ? countdown : 3}{" "}
-                  seconds...
+                  Redirecting to login in {countdown !== null ? countdown : 3} seconds...
                 </p>
               </div>
             )}
 
-            <Button
-              className="w-full"
-              type="submit"
-              disabled={passwordForm.formState.isSubmitting}
-            >
-              {passwordForm.formState.isSubmitting ? (
-                <Loader />
-              ) : (
-                "Reset Password"
-              )}
+            <Button className="w-full" type="submit" disabled={passwordForm.formState.isSubmitting}>
+              {passwordForm.formState.isSubmitting ? <Loader /> : "Reset Password"}
             </Button>
 
             <div className="text-center">
-              <Link
-                href={loginRoute}
-                className="text-sm font-medium text-primary hover:underline"
-              >
+              <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
                 Back to Login
               </Link>
             </div>
@@ -347,6 +368,8 @@ const ForgotPasswordPage = () => {
 
   const renderContent = () => {
     switch (pageMode) {
+      case "loading":
+        return renderLoading();
       case "error":
         return renderError();
       case "reset":
@@ -361,12 +384,19 @@ const ForgotPasswordPage = () => {
   return (
     <AuthUiWrapper>
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Card className="shadow-none border-0 w-sm md:w-[28rem]">
-          {renderContent()}
-        </Card>
+        <Card className="shadow-none border-0 w-sm md:w-[28rem]">{renderContent()}</Card>
       </div>
     </AuthUiWrapper>
   );
 };
 
+const ForgotPasswordPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ForgotPasswordPageContent />
+    </Suspense>
+  );
+};
+
 export default ForgotPasswordPage;
+
