@@ -67,6 +67,7 @@ export function ImageCountCard({
             <input
               type="number"
               value={value}
+              disabled={disabled}
               onChange={handleInputChange}
               id="image_count_input"
               placeholder=" "

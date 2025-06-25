@@ -430,6 +430,9 @@ export function MediaLibrary({
                   currentSelectionCount={currentSelectionCount}
                   onClearSelection={handleUnselectAll}
                   onAddSelectedItems={handleAddSelectedItems}
+                  totalAssets={
+                    inSelectionGalleryIds.length + currentSelectionCount
+                  }
                 />
 
                 <MediaGalleryStatusDisplay
