@@ -104,7 +104,7 @@ export interface CampaignResponse {
 export enum SocialOptionId {
   Instagram = "instagram",
   Facebook = "facebook",
-  Pintrest = "pintrest",
+  Pinterest = "pinterest",
   Website = "website",
 }
 

@@ -25,7 +25,7 @@ import {
   FacebookIcon,
   InstagramIcon,
   MoodboardIcon,
-  PintrestIcon,
+  PinterestIcon,
 } from "@/components/ui/custom-icon";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { ContentSection } from "@/components/shared/ContentSection";
@@ -239,17 +239,17 @@ export const MoodboardSection: React.FC<{
       ];
 
       options.push({
-        id: SocialOptionId.Pintrest,
+        id: SocialOptionId.Pinterest,
         name: "Use Pinterest Images",
         url:
-          existingSourcesMap.pintrest?.url ||
-          socialMediaPlatforms?.pintrest ||
+          existingSourcesMap.pinterest?.url ||
+          socialMediaPlatforms?.pinterest ||
           "https://",
-        icon: <PintrestIcon size={44} />,
+        icon: <PinterestIcon size={44} />,
         isEditing: false,
         editValue:
-          existingSourcesMap.pintrest?.url ||
-          socialMediaPlatforms?.pintrest ||
+          existingSourcesMap.pinterest?.url ||
+          socialMediaPlatforms?.pinterest ||
           "https://",
       });
 
