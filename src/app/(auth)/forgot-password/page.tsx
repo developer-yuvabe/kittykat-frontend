@@ -1,5 +1,4 @@
 "use client";
-
 import AuthUiWrapper from "@/components/shared/AuthUiWrapper";
 import ErrorMessage from "@/components/shared/ErrorMessage";
 import Logo from "@/components/shared/Logo";
