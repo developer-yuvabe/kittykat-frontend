@@ -84,7 +84,7 @@ function MoodboardLayout({
   const { selectedBrandId } = useBrandStore();
   const { user } = useUserStore();
 
-  const { galleryItems } = useGalleryQuery(
+  const { galleryItems, isFetching } = useGalleryQuery(
     {
       creator: user?.id,
       selectedFilters: {
@@ -269,8 +269,6 @@ function MoodboardLayout({
             )
         );
 
-        console.log("Loaded photos:", loaded);
-
         // Only update photos if we're still on the same moodboard
         if (currentMoodboard.id === currentMoodboardId) {
           setPhotos(loaded);
@@ -301,7 +299,6 @@ function MoodboardLayout({
   }, [
     moodboardStatus.shouldShowCompletedMoodboard,
     galleryItems.length > 0,
-    loadImagesWithCurrentData,
     moodboard.id,
   ]);
 
@@ -335,7 +332,8 @@ function MoodboardLayout({
     return (
       isGenerating ||
       (loading && photos.length === 0) ||
-      moodboardStatus.isMoodboardInProgress
+      moodboardStatus.isMoodboardInProgress ||
+      isFetching
     );
   }, [
     isGenerating,
@@ -343,6 +341,7 @@ function MoodboardLayout({
     photos.length,
     moodboardStatus.isMoodboardInProgress,
     moodboard.id,
+    isFetching,
   ]);
 
   const showFailedState = moodboardStatus.isMoodboardFailed;
@@ -534,6 +533,8 @@ function MoodboardLayout({
                           inSelectionGalleryIds={photos.map(
                             (photo) => photo.id
                           )}
+                          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+                          noOfImagesForMoodboard={noOfImagesForMoodboard}
                         />
                       </div>
 

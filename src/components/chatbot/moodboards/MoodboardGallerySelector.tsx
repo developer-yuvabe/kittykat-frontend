@@ -18,12 +18,16 @@ export function MoodboardGallerySelector({
   moodboardId,
   hasUnsavedChanges,
   inSelectionGalleryIds,
+  setNoOfImagesForMoodboard,
+  noOfImagesForMoodboard,
 }: {
   brandId: string;
   campaignId: string;
   moodboardId: string;
   hasUnsavedChanges: boolean;
   inSelectionGalleryIds: string[];
+  setNoOfImagesForMoodboard: (count: number) => void;
+  noOfImagesForMoodboard: number;
 }) {
   const [loading, setLoading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
@@ -115,6 +119,8 @@ export function MoodboardGallerySelector({
                 await addImageToMoodboard(brandId, campaignId, moodboardId, {
                   id: item.id,
                 });
+                setNoOfImagesForMoodboard(noOfImagesForMoodboard + 1);
+                setMediaLibraryOpen(null);
               }
             })(),
             {
@@ -123,8 +129,6 @@ export function MoodboardGallerySelector({
               error: "Failed to add one or more media items.",
             }
           );
-
-          setMediaLibraryOpen(null);
         }}
         inSelectionGalleryIds={inSelectionGalleryIds}
         maxSelectionCount={16}
