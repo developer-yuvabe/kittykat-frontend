@@ -432,7 +432,7 @@ const ForgotPasswordPageContent = () => {
 
 const ForgotPasswordPage = () => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<></>}>
       <ForgotPasswordPageContent />
     </Suspense>
   );
