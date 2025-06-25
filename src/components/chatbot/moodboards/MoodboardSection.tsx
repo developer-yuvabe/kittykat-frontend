@@ -171,7 +171,7 @@ export const MoodboardSection: React.FC<{
     const finalCount = assetCount > 0 ? assetCount : fallbackImageCount;
 
     setNoOfImagesForMoodboard(Math.min(16, finalCount));
-  }, [currentMoodboard?.id]);
+  }, [currentMoodboard?.id, currentMoodboard?.visual_style_images.length]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 

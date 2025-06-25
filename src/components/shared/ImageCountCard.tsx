@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { RegenerateIcon } from "../ui/custom-icon";
+import { toast } from "sonner";
 
 export function ImageCountCard({
   imageCount,
@@ -42,17 +43,21 @@ export function ImageCountCard({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setValue(val);
-
     const numeric = Number(val);
+
     if (!isNaN(numeric)) {
-      const clamped = Math.min(Math.max(numeric, 1), maxCount);
-      onChange?.(clamped);
+      if (numeric > maxCount) {
+        toast.warning(`Maximum allowed is ${maxCount}`);
+        setValue(maxCount.toString());
+        onChange?.(maxCount);
+      } else {
+        setValue(val);
+        onChange?.(Math.max(numeric, 1));
+      }
+    } else {
+      setValue(val);
     }
   };
-
-  const isDisabled =
-    disabled || isRefreshing || hasUnsavedChanges || imageCount >= maxCount;
 
   return (
     <div className="flex flex-row">
@@ -65,7 +70,6 @@ export function ImageCountCard({
               onChange={handleInputChange}
               id="image_count_input"
               placeholder=" "
-              disabled={isDisabled}
               min={1}
               max={maxCount}
               className={clsx(
@@ -73,11 +77,9 @@ export function ImageCountCard({
                 !hideRefresh && "rounded-r-none",
                 textColor,
                 borderColor,
-                `border ${borderColor} focus:border-[#7F55E0]`,
-                isDisabled && "cursor-not-allowed bg-gray-100"
+                `border ${borderColor} focus:border-[#7F55E0]`
               )}
             />
-
             <label
               htmlFor="image_count_input"
               className={clsx(
@@ -111,6 +113,8 @@ export function ImageCountCard({
               onClick={() => {
                 if (!hasUnsavedChanges && imageCount < maxCount) {
                   onRefresh();
+                } else if (imageCount >= maxCount) {
+                  toast.warning("Maximum image count reached");
                 }
               }}
             >
