@@ -26,14 +26,19 @@ import { updateA2iImagePositions } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
+import { UseFormReturn } from "react-hook-form";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
+  form: UseFormReturn<any>;
 };
 
 const INTIAL_IMAGE_PLACEHOLDER = 16;
 
-export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
+export const A2iImagesWrapper = ({
+  generations,
+  form,
+}: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const isUpdatingServer = useRef(false);
@@ -207,7 +212,7 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
             </SortableContext>
           </DndContext>
 
-          <A2iImageInput />
+          <A2iImageInput form={form} />
         </div>
       }
     />

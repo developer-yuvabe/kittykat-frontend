@@ -15,8 +15,10 @@ export const useImageGenForm = (): UseFormReturn<any> => {
 
   useEffect(() => {
     queueMicrotask(() => {
+      const prompt = form.getValues("prompt");
       form.reset({
         ...selectedModel.defaultValues,
+        prompt,
       });
     });
   }, [selectedModel.id]);

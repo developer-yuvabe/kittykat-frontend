@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { SendIcon } from "@/components/ui/custom-icon";
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -13,7 +12,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { cn, delay } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
@@ -28,11 +26,11 @@ import { FileParameter } from "@/types/a2i-media.types";
 import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
+import { UseFormReturn } from "react-hook-form";
 
-const A2iImageInput = () => {
+const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
   const { selectedBrandId } = useBrandStore();
   const { selectedModel } = useA2iStore();
-  const form = useImageGenForm();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
     mutationFn: () => enhancePrompt(selectedBrandId!, form.getValues("prompt")),
   });
@@ -180,170 +178,168 @@ const A2iImageInput = () => {
   }, [selectedModel.id]);
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden shadow-2xl"
-      >
-        <div className="flex gap-2 justify-between items-center px-4 pb-4 pt-2">
-          <div className="flex items-center gap-2">
-            <div>
-              <input {...getInputProps()} ref={inputFileRef} />
-              <Button
-                variant="outline"
-                size="icon"
-                type="button"
-                onClick={() => inputFileRef.current?.click()}
-              >
-                <Images />
-              </Button>
-            </div>
-
-            {selectedModel.parameters.map((param) => {
-              return (
-                <DynamicFormField
-                  key={param.formName}
-                  param={param}
-                  form={form}
-                  type="initial"
-                />
-              );
-            })}
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button size={"icon"} variant={"outline"}>
-                  <Settings2 />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                forceMount
-                align="center"
-                side="top"
-                className="space-y-2 w-64"
-              >
-                <div className="space-y-4">
-                  <FormLabel className="py-0 text-xs">
-                    Advance Parameters
-                  </FormLabel>
-                  {selectedModel.advancedParameters.map((advParam) => {
-                    return (
-                      <DynamicFormField
-                        key={advParam.formName}
-                        param={advParam}
-                        form={form}
-                        type="advanced"
-                      />
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="flex gap-x-2">
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden shadow-2xl z-[1000]"
+    >
+      <div className="flex gap-2 justify-between items-center px-4 pb-4 pt-2">
+        <div className="flex items-center gap-2">
+          <div>
+            <input {...getInputProps()} ref={inputFileRef} />
             <Button
+              variant="outline"
+              size="icon"
               type="button"
-              disabled={!form.watch("prompt") || isPending}
-              variant={"outline"}
-              className="border-primary text-primary"
-              onClick={() => {
-                if (!form.getValues("prompt")) return;
-                handleEnhancePrompt(undefined, {
-                  onSuccess: (data) => {
-                    form.setValue("prompt", data.prompts[0], {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                      shouldTouch: true,
-                    });
-                  },
-                  onError: () => {
-                    toast.error("Failed to enhance prompt. Please try again.");
-                  },
-                });
-              }}
+              onClick={() => inputFileRef.current?.click()}
             >
-              <WandSparkles />
-              {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
-            </Button>
-            <Button
-              size={"icon"}
-              disabled={
-                !form.formState.isValid ||
-                form.formState.isSubmitting ||
-                isUploading
-              }
-            >
-              {form.formState.isSubmitting ? (
-                <Loader2 className="animate-spin h-4 w-4" />
-              ) : (
-                <SendIcon className="h-4 w-4" />
-              )}
+              <Images />
             </Button>
           </div>
-        </div>
-        <FormField
-          control={form.control}
-          name="prompt"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <div className="relative h-full">
-                  <Textarea
-                    {...field}
-                    onChange={(e) => {
-                      field.onChange(e.target.value);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && e.shiftKey) {
-                        // Allow new line on Shift + Enter
-                        return;
-                      }
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        form.handleSubmit(onSubmit)();
-                      }
-                    }}
-                    className={cn(
-                      "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
-                    )}
-                    placeholder="Describe what you want to see ..."
-                  />
-                </div>
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        {imageBlocks.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-4 pt-2">
-            {imageBlocks.map((block, index) => (
-              <div
-                key={block.previewUrl}
-                className="relative w-12 h-12 rounded-lg"
-              >
-                <img
-                  src={block.previewUrl}
-                  alt={`Uploaded preview ${index + 1}`}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-                {!!block.url && (
-                  <button
-                    onClick={() => removeReferenceImage(block.url!)}
-                    className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-[100]"
-                  >
-                    <X className="h-2 w-2" />
-                  </button>
-                )}
-                {!block.url && (
-                  <div className="absolute top-0 right-0 bg-black/30 text-white text-xs  px-1 flex items-center justify-center w-full h-full rounded-lg">
-                    <Loader2 className="animate-spin" />
-                  </div>
-                )}
+
+          {selectedModel.parameters.map((param) => {
+            return (
+              <DynamicFormField
+                key={param.formName}
+                param={param}
+                form={form}
+                type="initial"
+              />
+            );
+          })}
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size={"icon"} variant={"outline"}>
+                <Settings2 />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              forceMount
+              align="center"
+              side="top"
+              className="space-y-2 w-64"
+            >
+              <div className="space-y-4">
+                <FormLabel className="py-0 text-xs">
+                  Advance Parameters
+                </FormLabel>
+                {selectedModel.advancedParameters.map((advParam) => {
+                  return (
+                    <DynamicFormField
+                      key={advParam.formName}
+                      param={advParam}
+                      form={form}
+                      type="advanced"
+                    />
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="flex gap-x-2">
+          <Button
+            type="button"
+            disabled={!form.watch("prompt") || isPending}
+            variant={"outline"}
+            className="border-primary text-primary"
+            onClick={() => {
+              if (!form.getValues("prompt")) return;
+              handleEnhancePrompt(undefined, {
+                onSuccess: (data) => {
+                  form.setValue("prompt", data.prompts[0], {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  });
+                },
+                onError: () => {
+                  toast.error("Failed to enhance prompt. Please try again.");
+                },
+              });
+            }}
+          >
+            <WandSparkles />
+            {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
+          </Button>
+          <Button
+            size={"icon"}
+            disabled={
+              !form.formState.isValid ||
+              form.formState.isSubmitting ||
+              isUploading
+            }
+          >
+            {form.formState.isSubmitting ? (
+              <Loader2 className="animate-spin h-4 w-4" />
+            ) : (
+              <SendIcon className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+      <FormField
+        control={form.control}
+        name="prompt"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <div className="relative h-full">
+                <Textarea
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.shiftKey) {
+                      // Allow new line on Shift + Enter
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      form.handleSubmit(onSubmit)();
+                    }
+                  }}
+                  className={cn(
+                    "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
+                  )}
+                  placeholder="Describe what you want to see ..."
+                />
+              </div>
+            </FormControl>
+          </FormItem>
         )}
-      </form>
-    </Form>
+      />
+      {imageBlocks.length > 0 && (
+        <div className="flex flex-wrap gap-2 px-4 pt-2">
+          {imageBlocks.map((block, index) => (
+            <div
+              key={block.previewUrl}
+              className="relative w-12 h-12 rounded-lg"
+            >
+              <img
+                src={block.previewUrl}
+                alt={`Uploaded preview ${index + 1}`}
+                className="w-full h-full object-cover rounded-lg"
+              />
+              {!!block.url && (
+                <button
+                  onClick={() => removeReferenceImage(block.url!)}
+                  className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-[100]"
+                >
+                  <X className="h-2 w-2" />
+                </button>
+              )}
+              {!block.url && (
+                <div className="absolute top-0 right-0 bg-black/30 text-white text-xs  px-1 flex items-center justify-center w-full h-full rounded-lg">
+                  <Loader2 className="animate-spin" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </form>
   );
 };
 
