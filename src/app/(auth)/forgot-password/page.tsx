@@ -53,7 +53,6 @@ const ForgotPasswordPageContent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-
   const loginRoute = "/login";
 
   const oobCode = searchParams.get("oobCode");
@@ -67,7 +66,6 @@ const ForgotPasswordPageContent = () => {
     }
     return "email";
   });
-
 
   const emailForm = useForm<ForgotPasswordSchema>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -111,7 +109,7 @@ const ForgotPasswordPageContent = () => {
       console.log("Verifying reset code..."); // Debug log
       const email = await verifyPasswordResetCode(auth, oobCode);
       console.log("Reset code verified for email:", email); // Debug log
-        
+
       setUserEmail(email);
       setPageMode("reset");
       setFormError(null);
@@ -194,7 +192,7 @@ const ForgotPasswordPageContent = () => {
             <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
             <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
           </div>
-          
+
           {/* Confirm password field skeleton */}
           <div className="space-y-2">
             <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
@@ -217,7 +215,6 @@ const ForgotPasswordPageContent = () => {
       </CardContent>
     </>
   );
-
 
   const renderError = () => (
     <>
@@ -242,7 +239,10 @@ const ForgotPasswordPageContent = () => {
             Request New Reset Link
           </Button>
           <div className="text-center">
-            <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
+            <Link
+              href={loginRoute}
+              className="text-sm font-medium text-primary hover:underline"
+            >
               Back to Login
             </Link>
           </div>
@@ -262,7 +262,10 @@ const ForgotPasswordPageContent = () => {
       </CardHeader>
       <CardContent>
         <Form {...emailForm}>
-          <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
+          <form
+            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+            className="space-y-6"
+          >
             <FormField
               control={emailForm.control}
               name="email"
@@ -282,17 +285,29 @@ const ForgotPasswordPageContent = () => {
               <div className="text-left">
                 <p className="text-sm text-green-600">{formSuccess}</p>
                 <p className="text-sm mt-2">
-                  Redirecting to login in {countdown !== null ? countdown : 5} seconds...
+                  Redirecting to login in {countdown !== null ? countdown : 5}{" "}
+                  seconds...
                 </p>
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={emailForm.formState.isSubmitting}>
-              {emailForm.formState.isSubmitting ? <Loader /> : "Send Reset Link"}
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={emailForm.formState.isSubmitting}
+            >
+              {emailForm.formState.isSubmitting ? (
+                <Loader />
+              ) : (
+                "Send Reset Link"
+              )}
             </Button>
 
             <div className="text-center">
-              <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
+              <Link
+                href={loginRoute}
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 Back to Login
               </Link>
             </div>
@@ -308,12 +323,17 @@ const ForgotPasswordPageContent = () => {
         <Logo />
         <CardTitle className="text-xl">Reset Password</CardTitle>
         <CardDescription className="text-center md:text-left">
-          {userEmail ? `Resetting password for ${userEmail}` : "Enter your new password below."}
+          {userEmail
+            ? `Resetting password for ${userEmail}`
+            : "Enter your new password below."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...passwordForm}>
-          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+          <form
+            onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+            className="space-y-6"
+          >
             <FormField
               control={passwordForm.control}
               name="password"
@@ -321,7 +341,10 @@ const ForgotPasswordPageContent = () => {
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="Enter your new password" {...field} />
+                    <PasswordInput
+                      placeholder="Enter your new password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -334,7 +357,10 @@ const ForgotPasswordPageContent = () => {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="Confirm your new password" {...field} />
+                    <PasswordInput
+                      placeholder="Confirm your new password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -346,17 +372,29 @@ const ForgotPasswordPageContent = () => {
               <div className="text-left">
                 <p className="text-sm text-green-600">{formSuccess}</p>
                 <p className="text-sm mt-2">
-                  Redirecting to login in {countdown !== null ? countdown : 3} seconds...
+                  Redirecting to login in {countdown !== null ? countdown : 3}{" "}
+                  seconds...
                 </p>
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={passwordForm.formState.isSubmitting}>
-              {passwordForm.formState.isSubmitting ? <Loader /> : "Reset Password"}
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={passwordForm.formState.isSubmitting}
+            >
+              {passwordForm.formState.isSubmitting ? (
+                <Loader />
+              ) : (
+                "Reset Password"
+              )}
             </Button>
 
             <div className="text-center">
-              <Link href={loginRoute} className="text-sm font-medium text-primary hover:underline">
+              <Link
+                href={loginRoute}
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 Back to Login
               </Link>
             </div>
@@ -384,7 +422,9 @@ const ForgotPasswordPageContent = () => {
   return (
     <AuthUiWrapper>
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Card className="shadow-none border-0 w-sm md:w-[28rem]">{renderContent()}</Card>
+        <Card className="shadow-none border-0 w-sm md:w-[28rem]">
+          {renderContent()}
+        </Card>
       </div>
     </AuthUiWrapper>
   );
@@ -399,4 +439,3 @@ const ForgotPasswordPage = () => {
 };
 
 export default ForgotPasswordPage;
-
