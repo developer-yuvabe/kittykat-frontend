@@ -535,6 +535,7 @@ function MoodboardLayout({
                           )}
                           setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                           noOfImagesForMoodboard={noOfImagesForMoodboard}
+                          assetsLength={moodboard.moodboard_assets.length}
                         />
                       </div>
 
