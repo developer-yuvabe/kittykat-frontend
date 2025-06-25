@@ -9,14 +9,13 @@ function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
     { value: "all-media", label: "All Media" },
     { value: "moodboard", label: "Moodboards" },
     { value: "images", label: "Images" },
-    { value: "videos", label: "Videos" },
+    // { value: "videos", label: "Videos" },
     { value: "models", label: "Models" },
     { value: "products", label: "Products" },
   ];
 
   return (
     <div className={isSticky ? "sticky top-0 z-40 bg-white" : ""}>
-      <h1 className="text-2xl font-bold mb-4">Media library</h1>
       <TabsList className="mb-4 border-b w-full justify-start rounded-none h-auto p-0 bg-transparent">
         {tabs.map((tab) => (
           <TabsTrigger

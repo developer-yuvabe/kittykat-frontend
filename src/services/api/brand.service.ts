@@ -1,61 +1,10 @@
 // src/services/brand.service.ts
 import axiosInstance from "@/config/axios/api-client.config";
-import { A2iImageUpdateRequest } from "@/hooks/useParameterManagement";
 import { handleApiRequest } from "@/lib/utils";
-import {
-  BrandIdentity,
-  BrandResponse,
-  BrandsListResponse,
-  BrandURLRequest,
-  ThreadFileResponse,
-} from "@/types/brand.types";
-import { BaseApiResponse, ThreadA2iImage } from "@/types/types";
+
+import { BaseApiResponse } from "@/types/types";
 import axios from "@/config/axios/api-client.config";
-
-class BrandService {
-  async createBrand(request: BrandIdentity): Promise<BrandResponse> {
-    return handleApiRequest<BrandResponse>(
-      axiosInstance.post("/brands", request)
-    );
-  }
-
-  async getAllBrands(skip = 0, limit = 10): Promise<BrandsListResponse> {
-    return handleApiRequest<BrandsListResponse>(
-      axiosInstance.get("/brands", {
-        params: { skip, limit },
-      })
-    );
-  }
-
-  async getBrandById(brand_id: string): Promise<BrandResponse> {
-    return handleApiRequest<BrandResponse>(
-      axiosInstance.get(`/brands/${brand_id}`)
-    );
-  }
-
-  async updateBrand(
-    brand_id: string,
-    brandUpdate: BrandIdentity
-  ): Promise<BrandResponse> {
-    return handleApiRequest<BrandResponse>(
-      axiosInstance.put(`/brands/${brand_id}`, brandUpdate)
-    );
-  }
-
-  async deleteBrand(brand_id: string): Promise<{ id: string }> {
-    return handleApiRequest<{ id: string }>(
-      axiosInstance.delete(`/brands/${brand_id}`)
-    );
-  }
-
-  async extractBrandDataFromUrl(
-    request: BrandURLRequest
-  ): Promise<BrandIdentity> {
-    return handleApiRequest<BrandIdentity>(
-      axiosInstance.post("/brands/extract-brand", request)
-    );
-  }
-}
+import { BrandResponse, ThreadFileResponse } from "@/types/brand.types";
 
 export async function updateCampaignMoodboard(
   brandId: string,
@@ -64,11 +13,12 @@ export async function updateCampaignMoodboard(
   moodboardData: Record<string, unknown>
 ): Promise<BrandResponse> {
   return handleApiRequest<BrandResponse>(
-    axiosInstance.put(`/brands/moodboard/${moodboardId}`, {
-      brand_id: brandId,
-      campaign_id: campaignId,
-      ...moodboardData,
-    })
+    axiosInstance.put(
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}`,
+      {
+        ...moodboardData,
+      }
+    )
   );
 }
 
@@ -78,25 +28,11 @@ export async function deleteCampaignMoodboard(
   moodboardId: string
 ): Promise<BrandResponse> {
   return handleApiRequest<BrandResponse>(
-    axiosInstance.delete(`/brands/moodboard/${moodboardId}`, {
-      data: { brand_id: brandId, campaign_id: campaignId },
-    })
+    axiosInstance.delete(
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}`
+    )
   );
 }
-
-export const brandService = new BrandService();
-
-// API functions - moved outside hook to prevent recreation
-export const updateA2iImageParameters = async (
-  brandId: string,
-  payload: A2iImageUpdateRequest
-): Promise<BaseApiResponse<ThreadA2iImage>> => {
-  const response = await axios.put<BaseApiResponse<ThreadA2iImage>>(
-    `/brands/${brandId}/a2i`,
-    payload
-  );
-  return response.data;
-};
 
 export const uploadThreadFile = async (
   brandId: string,
@@ -132,3 +68,12 @@ export const uploadThreadFile = async (
     );
   }
 };
+
+export async function deleteA2iImage(
+  brand_id: string,
+  image_id: string
+): Promise<{ brand_id: string; image_id: string }> {
+  return handleApiRequest<{ brand_id: string; image_id: string }>(
+    axiosInstance.delete(`/brands/${brand_id}/a2i/images/${image_id}`)
+  );
+}

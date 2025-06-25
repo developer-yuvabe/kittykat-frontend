@@ -10,6 +10,7 @@ type InlineEditableBadgesProps = {
   values: string[];
   onSave: (newValues: string[]) => Promise<void>;
   showLabel?: boolean;
+  enableEdit?: boolean;
 };
 
 export function InlineEditableBadges({
@@ -17,6 +18,7 @@ export function InlineEditableBadges({
   values,
   onSave,
   showLabel = false,
+  enableEdit = true,
 }: InlineEditableBadgesProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newBadge, setNewBadge] = useState("");
@@ -170,7 +172,7 @@ export function InlineEditableBadges({
         ) : null}
 
         {/* Edit trigger when not editing - shows on container hover */}
-        {!isEditing && (
+        {!isEditing && enableEdit && (
           <button
             onClick={handleStartEditing}
             className="flex items-center justify-center w-7 h-7 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all opacity-0 group-hover:opacity-100"

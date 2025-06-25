@@ -14,23 +14,58 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
+  GalleryItemResponse,
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
 import { MediaBulkActions } from "./MediaBulkActions";
 import MediaFilterSidebar from "./MediaFilterSidebar";
+import { createMediaItemHelper } from "@/lib/gallery.utils";
+import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
+import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
+import { MediaFolderView } from "./MediaFolderView";
+import { useQueryState } from "nuqs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type MediaLibraryProps = {
   activeTab?: string;
   isMediaSelectDialog?: boolean;
+  onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: GalleryItemResponse) => void;
+  onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void;
+  filters?: EnhancedSelectedFilters;
+  brandId?: string;
+  campaignId?: string;
+  moodboardId?: string;
+  inSelectionGalleryIds?: string[];
+  isMultiSelect?: boolean;
+  maxSelectionCount?: number;
 };
 
 export function MediaLibrary({
   activeTab: initialTab = "all-media",
   isMediaSelectDialog = false,
+  onMediaItemSelected,
+  onFullMediaItemSelected,
+  onMultipleMediaItemsSelected,
+  filters,
+  brandId,
+  campaignId,
+  moodboardId,
+  inSelectionGalleryIds = [],
+  isMultiSelect = false,
+  maxSelectionCount,
 }: MediaLibraryProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<boolean>(false);
@@ -39,22 +74,29 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
+  const initialFilters = useMemo(() => {
+    return (
+      filters ?? {
+        brands: [],
+        campaigns: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        has_product: undefined,
+        has_people: undefined,
+        has_lifestyle_context: undefined,
+        is_favourite: undefined,
+        is_archived: undefined,
+        moodboards: [],
+      }
+    );
+  }, [filters]);
+
   const [selectedFilters, setSelectedFilters] =
-    useState<EnhancedSelectedFilters>({
-      brands: [],
-      campaigns: [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
-      has_product: undefined,
-      has_people: undefined,
-      has_lifestyle_context: undefined,
-      is_favourite: undefined,
-      is_archived: undefined,
-    });
+    useState<EnhancedSelectedFilters>(initialFilters);
 
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
@@ -86,11 +128,33 @@ export function MediaLibrary({
     selectedFilters,
   });
 
+  const mediaHelper = createMediaItemHelper({
+    patchItem,
+    addComment,
+    updateComment,
+    deleteComment,
+    toggleFavorite,
+    bulkDelete,
+    deleteItem,
+  });
+
   useEffect(() => {
     if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
+      // If brandId is provided, try to find that brand
+      if (brandId) {
+        const matchedBrand = brandsData.brands.find(
+          (brand) => brand.brand_id === brandId
+        );
+        if (matchedBrand) {
+          setSelectedBrand(matchedBrand);
+          return;
+        }
+      }
+
+      // Fallback: Select first brand
       setSelectedBrand(brandsData.brands[0]);
     }
-  }, [brandsLoading, brandsData, selectedBrand]);
+  }, [brandsLoading, brandsData, brandId, selectedBrand]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -104,37 +168,39 @@ export function MediaLibrary({
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSelectedItems([]);
+    setMultiSelectItems([]);
   };
 
   const handleSelect = (id: string, selected: boolean) => {
-    if (selected) {
-      setSelectedItems((prev) => [...prev, id]);
+    if (isMultiSelect) {
+      // Multi-select mode: manage separate multi-select state
+      if (selected) {
+        setMultiSelectItems((prev) => [...prev, id]);
+      } else {
+        setMultiSelectItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
     } else {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      // Single select mode: existing behavior
+      if (selected) {
+        setSelectedItems((prev) => [...prev, id]);
+      } else {
+        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
     }
   };
 
   const handleUnselectAll = () => {
     setSelectedItems([]);
-  };
-
-  const handleToggleFavorite = (id: string) => {
-    toggleFavorite(id);
-  };
-
-  const handleDeleteItem = (id: string) => {
-    deleteItem(id);
-    // Remove from selected if needed
-    if (selectedItems.includes(id)) {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
-    }
+    setMultiSelectItems([]);
   };
 
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      bulkDelete(selectedItems);
+      const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
+      bulkDelete(itemsToDelete);
       setSelectedItems([]);
+      setMultiSelectItems([]);
     } finally {
       setIsDeleting(false);
       setIsDialogOpen(false);
@@ -142,7 +208,8 @@ export function MediaLibrary({
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedItems.length > 0) {
+    const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
+    if (itemsToDelete.length > 0) {
       setIsDialogOpen(true);
     }
   };
@@ -177,10 +244,11 @@ export function MediaLibrary({
 
   // Bulk download selected items
   const handleBulkDownload = async () => {
-    if (selectedItems.length === 0) return;
+    const itemsToDownload = isMultiSelect ? multiSelectItems : selectedItems;
+    if (itemsToDownload.length === 0) return;
 
     const selectedItemsData = galleryItems.filter((item) =>
-      selectedItems.includes(item.id)
+      itemsToDownload.includes(item.id)
     );
 
     try {
@@ -193,181 +261,238 @@ export function MediaLibrary({
     }
   };
 
-  const handleEditTitle = async (
-    itemId: string,
-    newTitle: string
-  ): Promise<void> => {
-    patchItem({
-      itemId,
-      data: { asset_title: newTitle },
-    });
-  };
-
-  const handleAddComment = async (
-    itemId: string,
-    text: string
-  ): Promise<void> => {
-    addComment({
-      itemId,
-      commentData: { text },
-    });
-  };
-
-  const handleUpdateComment = async (
-    itemId: string,
-    commentId: string,
-    text: string
-  ): Promise<void> => {
-    updateComment({
-      itemId,
-      commentId,
-      commentData: { text },
-    });
-  };
-
-  const handleDeleteComment = async (
-    itemId: string,
-    commentId: string
-  ): Promise<void> => {
-    deleteComment({
-      itemId,
-      commentId,
-    });
+  // 👈 Handle multi-select "Add" button
+  const handleAddSelectedItems = () => {
+    if (isMultiSelect && multiSelectItems.length > 0) {
+      const selectedItemsData = galleryItems.filter((item) =>
+        multiSelectItems.includes(item.id)
+      );
+      onMultipleMediaItemsSelected?.(selectedItemsData);
+      setMultiSelectItems([]);
+    }
   };
 
   useEffect(() => {
     setSource(activeTab);
   }, [activeTab]);
 
+  // Handle single select mode
+  useEffect(() => {
+    if (isMediaSelectDialog && !isMultiSelect && selectedItems.length > 0) {
+      const selectedItem = galleryItems.find((item) =>
+        selectedItems.includes(item.id)
+      );
+
+      if (selectedItem) {
+        onMediaItemSelected?.(selectedItem.asset_url);
+        onFullMediaItemSelected?.(selectedItem);
+        setSelectedItems([]);
+      }
+    }
+  }, [
+    isMediaSelectDialog,
+    isMultiSelect,
+    selectedItems,
+    galleryItems,
+    onMediaItemSelected,
+    onFullMediaItemSelected,
+  ]);
+
+  // Determine which items are currently selected for display
+  const currentlySelectedItems = isMultiSelect
+    ? multiSelectItems
+    : selectedItems;
+  const currentSelectionCount = currentlySelectedItems.length;
+
+  const [localGalleryView, setLocalGalleryView] = useLocalStorage<
+    "grid" | "folder"
+  >("gallery-view-mode", "grid");
+
+  // URL query state
+  const [galleryView, setGalleryViewRaw] = useQueryState<"grid" | "folder">(
+    "view",
+    {
+      parse: (value) =>
+        value === "grid" || value === "folder" ? value : "grid",
+      serialize: (value) => value,
+      history: "push",
+      defaultValue: localGalleryView, // load from localStorage
+    }
+  );
+
+  const setGalleryView = (value: "grid" | "folder") => {
+    setLocalGalleryView(value);
+    setGalleryViewRaw(value);
+  };
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
-      <Tabs
-        defaultValue="all-media"
-        value={activeTab}
-        onValueChange={handleTabChange}
-      >
-        <MediaLibraryTabs />
-        <TabsContent
-          value={activeTab}
-          className="p-3 rounded-3xl bg-white mt-0"
+      <div className="flex justify-between mb-2">
+        <h1 className="text-2xl font-bold">Media library</h1>
+        <Select
+          value={galleryView}
+          onValueChange={(val) => setGalleryView(val as "grid" | "folder")}
         >
-          <MediaUploadDropzone
+          <SelectTrigger className="w-[130px] text-purple-600 border-purple-600">
+            <SelectValue placeholder="View" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="grid">Grid View</SelectItem>
+            <SelectItem value="folder">Folder View</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {galleryView === "folder" && (
+        <div>
+          <MediaFolderView
             activeTab={activeTab}
-            galleryFilters={{
-              assetType: activeTab,
-              favorites,
-              source,
-              creator,
-              searchQuery,
-              selectedFilters,
-            }}
-            source={source}
             selectedBrand={selectedBrand}
             setSelectedBrand={setSelectedBrand}
             brands={brandsData?.brands || []}
+            brandsLoading={brandsLoading}
+            selectedCampaignId={campaignId}
+            selecteMoodboardId={moodboardId}
+            galleryView={galleryView}
           />
-
-          <div className="flex flex-col md:flex-row gap-4">
-            <div
-              className={`${
-                showFilters ? "w-full md:w-1/4" : "hidden"
-              } transition-all duration-300 ease-in-out`}
-            >
-              <div className="md:hidden flex justify-between items-center mb-2">
-                <h3 className="font-medium">Filters</h3>
-                <Button variant="ghost" size="sm" onClick={toggleFilters}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <MediaFilterSidebar
-                selectedFilters={selectedFilters}
-                onApply={handleApplyFilters}
-                brandsWithCampaigns={brandsData?.brands || []}
-                product_categories={brandsData?.product_categories || []}
-                setShowFilter={setShowFilters}
-              />
-            </div>
-
-            <div
-              className={`${
-                showFilters ? "w-full md:w-3/4" : "w-full"
-              } transition-all duration-300 ease-in-out`}
-            >
-              <MediaSearchFilters
-                onSearchChange={handleSearchChange}
-                onSourceChange={handleSourceChange}
-                onCreatorChange={handleCreatorChange}
-                onFavoritesChange={handleFavoritesChange}
-                onToggleFilters={toggleFilters}
-                source={source}
-                creator={creator}
-                favorites={favorites}
-                showFilters={showFilters}
-                selectedFilters={selectedFilters}
-              />
-
-              {galleryStatus === "pending" ? (
-                <div className="flex justify-center items-center py-36 2xl:py-60">
-                  <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-                </div>
-              ) : galleryStatus === "error" ? (
-                <div className="flex justify-center items-center py-20">
-                  <p className="text-red-500">Error loading gallery items</p>
-                </div>
-              ) : galleryItems.length === 0 ? (
-                <div className="flex justify-center items-center py-20">
-                  <p className="text-gray-500">No items found</p>
-                </div>
-              ) : (
-                <>
-                  <MediaGrid
-                    items={galleryItems}
-                    selectedItems={selectedItems}
-                    onSelect={handleSelect}
-                    onToggleFavorite={handleToggleFavorite}
-                    onDelete={handleDeleteItem}
-                    onDownload={downloadItem}
-                    isMediaSelectDialog={isMediaSelectDialog}
-                    handleUpdateTitle={handleEditTitle}
-                    handleUpdateComment={handleUpdateComment}
-                    handleDeleteComment={handleDeleteComment}
-                    handleAddComment={handleAddComment}
-                    handleUpdatePartialData={patchItem}
-                  />
-
-                  {/* Infinite scroll loading indicator */}
-                  {hasNextPage && (
-                    <div
-                      ref={ref}
-                      className="flex justify-center items-center py-8"
-                    >
-                      {isFetchingNextPage ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                      ) : (
-                        <p className="text-sm text-gray-500">Load more</p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {selectedItems.length > 0 && (
-        <MediaBulkActions
-          selectedCount={selectedItems.length}
-          onUnselectAll={handleUnselectAll}
-          onDelete={handleBulkDeleteClick}
-          onDownload={handleBulkDownload}
-        />
+        </div>
       )}
+      {galleryView === "grid" && (
+        <Tabs
+          defaultValue="all-media"
+          value={activeTab}
+          onValueChange={handleTabChange}
+        >
+          <MediaLibraryTabs />
+          <TabsContent
+            value={activeTab}
+            className="p-3 rounded-3xl bg-white mt-0"
+          >
+            <MediaUploadDropzone
+              activeTab={activeTab}
+              galleryFilters={{
+                assetType: activeTab,
+                favorites,
+                source,
+                creator,
+                searchQuery,
+                selectedFilters,
+              }}
+              source={source}
+              selectedBrand={selectedBrand}
+              setSelectedBrand={setSelectedBrand}
+              brands={brandsData?.brands || []}
+              brandsLoading={brandsLoading}
+              selectedCampaignId={campaignId}
+              selecteMoodboardId={moodboardId}
+            />
+
+            <div className="flex flex-col md:flex-row gap-4">
+              <div
+                className={`${
+                  showFilters ? "w-full md:w-1/4" : "hidden"
+                } transition-all duration-300 ease-in-out`}
+              >
+                <div className="md:hidden flex justify-between items-center mb-2">
+                  <h3 className="font-medium">Filters</h3>
+                  <Button variant="ghost" size="sm" onClick={toggleFilters}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <MediaFilterSidebar
+                  selectedFilters={selectedFilters}
+                  onApply={handleApplyFilters}
+                  brandsWithCampaigns={brandsData?.brands || []}
+                  product_categories={brandsData?.product_categories || []}
+                  setShowFilter={setShowFilters}
+                />
+              </div>
+
+              <div
+                className={`${
+                  showFilters ? "w-full md:w-3/4" : "w-full"
+                } transition-all duration-300 ease-in-out`}
+              >
+                <MediaSearchFilters
+                  onSearchChange={handleSearchChange}
+                  onSourceChange={handleSourceChange}
+                  onCreatorChange={handleCreatorChange}
+                  onFavoritesChange={handleFavoritesChange}
+                  onToggleFilters={toggleFilters}
+                  source={source}
+                  creator={creator}
+                  favorites={favorites}
+                  showFilters={showFilters}
+                  selectedFilters={selectedFilters}
+                />
+
+                <MediaDialogMultiSelectHeader
+                  isActive={isMultiSelect && isMediaSelectDialog}
+                  currentSelectionCount={currentSelectionCount}
+                  onClearSelection={handleUnselectAll}
+                  onAddSelectedItems={handleAddSelectedItems}
+                />
+
+                <MediaGalleryStatusDisplay
+                  galleryStatus={galleryStatus}
+                  galleryItemsLength={galleryItems.length}
+                />
+
+                {galleryStatus === "success" && galleryItems.length > 0 && (
+                  <div>
+                    <MediaGrid
+                      items={galleryItems}
+                      selectedItems={currentlySelectedItems}
+                      onSelect={handleSelect}
+                      onToggleFavorite={mediaHelper.toggleFavorite}
+                      onDelete={mediaHelper.deleteItem}
+                      onDownload={downloadItem}
+                      isMediaSelectDialog={isMediaSelectDialog}
+                      handleUpdateTitle={mediaHelper.editTitle}
+                      handleUpdateComment={mediaHelper.updateComment}
+                      handleDeleteComment={mediaHelper.deleteComment}
+                      handleAddComment={mediaHelper.addComment}
+                      handleUpdatePartialData={patchItem}
+                      isMultiSelect={isMultiSelect}
+                      inSelectionGalleryIds={inSelectionGalleryIds}
+                      maxSelectionCount={maxSelectionCount}
+                    />
+
+                    {/* Infinite scroll loading indicator */}
+                    {hasNextPage && (
+                      <div
+                        ref={ref}
+                        className="flex justify-center items-center py-8"
+                      >
+                        {isFetchingNextPage ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                        ) : (
+                          <p className="text-sm text-gray-500">Load more</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+      {/* Bulk actions - show for non-dialog mode or single-select dialog mode */}
+      {currentSelectionCount > 0 &&
+        (!isMediaSelectDialog || !isMultiSelect) && (
+          <MediaBulkActions
+            selectedCount={currentSelectionCount}
+            onUnselectAll={handleUnselectAll}
+            onDelete={handleBulkDeleteClick}
+            onDownload={handleBulkDownload}
+          />
+        )}
+
       <ReusableAlertDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         title="Delete Items"
-        description={`Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${currentSelectionCount} item(s)? This action cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={handleConfirmDelete}

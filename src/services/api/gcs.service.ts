@@ -38,3 +38,16 @@ export async function uploadFileAndReturnUrl(
     throw new Error("File upload failed. Please try again.");
   }
 }
+
+export async function deleteFile(url: string): Promise<void> {
+  try {
+    // Get the presigned URL for deletion
+    await axiosInstance.delete(`/users/file/delete`, {
+      data: {
+        url,
+      },
+    });
+  } catch (error) {
+    console.error("Error occured in deleting file:", error);
+  }
+}

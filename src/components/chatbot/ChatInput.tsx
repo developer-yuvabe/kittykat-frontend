@@ -1,38 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, X, FileText as FileTextIcon } from "lucide-react";
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import UrlUploadDialog from "./UrlUploadDialog";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
-import { getFileIcon } from "@/lib/langgraph.utils";
+import {
+  getFileIcon,
+  addFileWrappers,
+  removeFileWrappers,
+  getPinnedItemContextMessage,
+  ensureToolCallsHaveResponses,
+} from "@/lib/langgraph.utils";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
 import { PinIcon, SendIcon } from "../ui/custom-icon";
 import { ChatFilePreview } from "./ChatFilePreview";
-import { ContentBlock } from "@/hooks/useFileUploadToAgent";
 import { FileUploadPopover } from "./FileUploadPopover";
+import { useFileUpload } from "@/hooks/useFileUploadToAgent";
+import { Message } from "@langchain/langgraph-sdk";
+import { v4 as uuidv4 } from "uuid";
+import { useUserStore } from "@/store/user.store";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useBrandStore } from "@/store/brand.store";
 
 type ChatInputProps = {
-  input: string;
-  setInput: (value: string) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  hideToolCalls?: boolean;
-  setHideToolCalls: (value: boolean) => void;
-  isLoading: boolean;
-  stream: {
-    isLoading: boolean;
-    stop: () => void;
-  };
-  handleAddFiles: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
-  handleRemoveImageFile: (idx: number) => void;
-  threadId: string | null;
-  handlePaste: (
-    e: React.ClipboardEvent<HTMLTextAreaElement | HTMLInputElement>
-  ) => Promise<void>;
-  files: ContentBlock[];
-  isFileUploading: boolean;
-  handleAddFile: (url: string) => void;
-  handleRemoveFile: (id: string) => void;
-  fileList: MessageContentFiles[];
+  setFirstTokenReceived: (value: boolean) => void;
 };
 
 const FileThumbnail = ({
@@ -83,25 +80,143 @@ const FileThumbnail = ({
 };
 
 export const ChatInput: React.FC<ChatInputProps> = ({
-  input,
-  setInput,
-  handleSubmit,
-  isLoading,
-  stream,
-  handleAddFiles,
-  handleRemoveImageFile,
-  threadId,
-  handlePaste,
-  files,
-  isFileUploading,
-  fileList,
-  handleAddFile,
-  handleRemoveFile,
+  setFirstTokenReceived,
 }) => {
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
+  const stream = useStreamContext();
+  const { isLoading, stop } = stream;
+
+  const [input, setInput] = useState("");
+  const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
+
+  const {
+    contentBlocks,
+    setContentBlocks,
+    handleFileUpload,
+    dropRef,
+    removeBlock,
+    handlePaste,
+    isUploading,
+  } = useFileUpload({ brandId: user?.thread_id || "" });
+
+  const handleAddFile = useCallback((url: string) => {
+    addFileWrappers(url, setFileList);
+  }, []);
+
+  const handleRemoveFile = useCallback((id: string) => {
+    const trimmedId = id
+      .replace(RENDER_FILE_ID_PREFIX, "")
+      .replace("DO_NOT_RENDER_", "");
+    removeFileWrappers(trimmedId, setFileList);
+  }, []);
+
+  const resetFiles = useCallback(() => {
+    setFileList([]);
+    setContentBlocks([]);
+  }, [setContentBlocks]);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!input.trim() || isLoading) return;
+
+      setFirstTokenReceived(false);
+
+      const pinnedContextMessage: string | null = pinnedItem
+        ? getPinnedItemContextMessage(pinnedItem)
+        : null;
+
+      const newHumanMessage: Message = {
+        id: uuidv4(),
+        type: "human",
+        content: [
+          {
+            type: "text",
+            text: pinnedContextMessage
+              ? `${pinnedContextMessage}${input.trimEnd()}`
+              : input.trimEnd(),
+          },
+          ...contentBlocks,
+        ] as Message["content"],
+      };
+
+      const newFileList: Message[] = fileList.map((item) => ({
+        id: item.id,
+        type: "human",
+        content: [
+          {
+            type: "text",
+            text: item.file.text,
+          },
+        ],
+      }));
+
+      console.log(newHumanMessage, "new human msg");
+
+      // Handle message submission directly
+      const messages = [...newFileList, newHumanMessage];
+      const toolMessages = ensureToolCallsHaveResponses(stream.messages);
+
+      stream.submit(
+        {
+          messages: [...toolMessages, ...messages],
+          userId: user!.id,
+          currentBrandContextId: selectedBrandId,
+        },
+        {
+          streamMode: ["values"],
+          optimisticValues: (prev) => ({
+            ...prev,
+            messages: [...(prev.messages ?? []), ...toolMessages, ...messages],
+          }),
+        }
+      );
+
+      // Reset local state after submission
+      setInput("");
+      resetFiles();
+    },
+    [
+      input,
+      isLoading,
+      setFirstTokenReceived,
+      pinnedItem,
+      contentBlocks,
+      fileList,
+      resetFiles,
+      stream,
+      user,
+      selectedBrandId,
+    ]
+  );
+
+  // Inside ChatInput component
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const updatePlaceholderVisibility = () => {
+      const width = textareaRef.current?.offsetWidth || 0;
+      setShowPlaceholder(width > 150); // threshold, adjust as needed
+    };
+
+    updatePlaceholderVisibility();
+
+    const observer = new ResizeObserver(updatePlaceholderVisibility);
+    if (textareaRef.current) {
+      observer.observe(textareaRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="relative z-10 w-full min-w-full mb-3 border  shadow-xs bg-muted rounded-2xl flex flex-col">
+    <div
+      ref={dropRef}
+      className="relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col"
+    >
       {pinnedItem && (
         <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
           <div className="flex gap-2 flex-wrap items-center">
@@ -123,6 +238,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
       )}
+
       {fileList.length > 0 && (
         <div className="p-3 border-b flex space-x-2 overflow-x-auto">
           {fileList
@@ -142,13 +258,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ))}
         </div>
       )}
+
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-2 w-full rounded-t-xl"
       >
-        <ChatFilePreview blocks={files} onRemove={handleRemoveImageFile} />
+        <ChatFilePreview blocks={contentBlocks} onRemove={removeBlock} />
         <div className="flex flex-row justify-between">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -164,33 +282,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 form?.requestSubmit();
               }
             }}
-            placeholder="Type your message here..."
-            className="p-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 max-h-32 overflow-auto scrollbar"
+            placeholder={
+              showPlaceholder ? "Type your message here..." : "Type here..."
+            }
+            className="p-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0  resize-none pr-24  overflow-auto scrollbar"
             onPaste={handlePaste}
           />
 
           <div className="flex items-center justify-end gap-x-4 px-4">
-            {stream.isLoading ? (
-              <Button key="stop" onClick={() => stream.stop()}>
+            {isLoading ? (
+              <Button key="stop" onClick={() => stop()}>
                 <LoaderCircle className="w-4 h-4 animate-spin" />
                 Cancel
               </Button>
             ) : (
               <>
                 <FileUploadPopover
-                  isFileUploading={isFileUploading}
-                  handleAddFiles={handleAddFiles}
+                  isFileUploading={isUploading}
+                  handleAddFiles={handleFileUpload}
                 />
 
-                <UrlUploadDialog
-                  onUploadComplete={handleAddFile}
-                  prefix={threadId}
-                />
+                <UrlUploadDialog onUploadComplete={handleAddFile} />
                 <Button
                   type="submit"
                   variant="default"
                   size="sm"
-                  disabled={isLoading || !input.trim() || isFileUploading}
+                  disabled={isLoading || !input.trim() || isUploading}
                 >
                   <SendIcon size={10} />
                 </Button>

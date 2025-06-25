@@ -3,6 +3,7 @@ import {
   FileWithStatus,
   GalleryFilters,
   GalleryItem,
+  GalleryItemResponse,
 } from "@/types/gallery.types";
 import { CheckCircle, Loader2, X, File } from "lucide-react";
 import React from "react";
@@ -100,7 +101,9 @@ export const createGalleryItemFromFile = async (
   url: string,
   galleryFilters: GalleryFilters,
   activeTab: string,
-  brandId: string
+  brandId: string,
+  campaignId?: string,
+  moodboardId?: string
 ): Promise<GalleryItem> => {
   const dimensions = await getImageDimensions(file);
 
@@ -121,6 +124,9 @@ export const createGalleryItemFromFile = async (
     brand_id: brandId,
     // Versioning
     related_asset_ids: [],
+
+    campaign_id: campaignId,
+    moodboard_id: moodboardId,
 
     // AI & Generation Info
     prompt_modifiers: [],
@@ -144,6 +150,22 @@ export const createGalleryItemFromFile = async (
   };
 
   return galleryItem;
+};
+
+// Helper function to get image dimensions from URL (if you need it separately)
+export const getImageDimensionsFromUrl = async (
+  url: string
+): Promise<{ width: number; height: number } | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+    img.src = url;
+  });
 };
 
 // Helper function to format bytes
@@ -253,4 +275,143 @@ export const getSafeMediaFormat = (file: File): string => {
 
   const fallback = mimeToExt[file.type];
   return allowedFormats.includes(fallback) ? fallback : "unknown";
+};
+/// <reference lib="dom" />
+import { UseMutateFunction, MutateOptions } from "@tanstack/react-query";
+
+// Types
+type GalleryActions = {
+  patchItem: UseMutateFunction<
+    GalleryItemResponse,
+    Error,
+    { itemId: string; data: Partial<GalleryItem> },
+    { queryKey: (string | boolean | EnhancedSelectedFilters | undefined)[] }
+  >;
+
+  addComment: UseMutateFunction<
+    void | GalleryItemResponse,
+    Error,
+    { itemId: string; commentData: { text: string } },
+    unknown
+  >;
+
+  updateComment: UseMutateFunction<
+    void | GalleryItemResponse,
+    Error,
+    { itemId: string; commentId: string; commentData: { text: string } },
+    unknown
+  >;
+
+  deleteComment: UseMutateFunction<
+    { id: string },
+    Error,
+    { itemId: string; commentId: string },
+    unknown
+  >;
+
+  toggleFavorite: (
+    variables: string,
+    options?: MutateOptions<
+      GalleryItemResponse,
+      Error,
+      string,
+      {
+        previousGalleryData: unknown;
+        previousItemData: unknown;
+        queryKey: (string | boolean | EnhancedSelectedFilters | undefined)[];
+      }
+    >
+  ) => void;
+
+  bulkDelete: (
+    variables: string[],
+    options?: MutateOptions<
+      { id: string }[],
+      Error,
+      string[],
+      {
+        previousData: unknown;
+        queryKey: (string | boolean | EnhancedSelectedFilters | undefined)[];
+      }
+    >
+  ) => void;
+
+  deleteItem: (
+    variables: string,
+    options?: MutateOptions<
+      { id: string },
+      Error,
+      string,
+      {
+        previousData: unknown;
+        queryKey: (string | boolean | EnhancedSelectedFilters | undefined)[];
+      }
+    >
+  ) => void;
+};
+
+// Helper Class
+class MediaItemHelper {
+  constructor(private actions: GalleryActions) {}
+
+  editTitle = async (itemId: string, newTitle: string): Promise<void> => {
+    this.actions.patchItem({
+      itemId,
+      data: { asset_title: newTitle },
+    });
+  };
+
+  addComment = async (itemId: string, text: string): Promise<void> => {
+    this.actions.addComment({
+      itemId,
+      commentData: { text },
+    });
+  };
+
+  updateComment = async (
+    itemId: string,
+    commentId: string,
+    text: string
+  ): Promise<void> => {
+    this.actions.updateComment({
+      itemId,
+      commentId,
+      commentData: { text },
+    });
+  };
+
+  deleteComment = async (itemId: string, commentId: string): Promise<void> => {
+    this.actions.deleteComment({
+      itemId,
+      commentId,
+    });
+  };
+
+  toggleFavorite = (
+    itemId: string,
+    options?: Parameters<GalleryActions["toggleFavorite"]>[1]
+  ): void => {
+    this.actions.toggleFavorite(itemId, options);
+  };
+
+  bulkDelete = (
+    itemIds: string[],
+    options?: Parameters<GalleryActions["bulkDelete"]>[1]
+  ): void => {
+    this.actions.bulkDelete(itemIds, options);
+  };
+
+  deleteItem = (
+    itemId: string,
+    options?: Parameters<GalleryActions["deleteItem"]>[1]
+  ): void => {
+    this.actions.deleteItem(itemId, options);
+  };
+}
+
+// Factory function
+export const createMediaItemHelper = (
+  actions: GalleryActions
+): MediaItemHelper => {
+  return new MediaItemHelper(actions);
 };

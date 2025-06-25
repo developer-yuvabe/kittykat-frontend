@@ -5,7 +5,6 @@ import { useState } from "react";
 import Masonry from "react-masonry-css";
 import type { UseMutateFunction } from "@tanstack/react-query";
 import type { GalleryItemResponse, GalleryItem } from "@/types/gallery.types";
-
 import { MediaItemDetailsDialog } from "./MediaItemDetailsDialog";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { MediaItem } from "./MediaItem";
@@ -17,7 +16,9 @@ interface MediaGridProps {
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
   onDownload: (item: GalleryItemResponse) => void;
-  isMediaSelectDialog: boolean;
+  isMediaSelectDialog?: boolean;
+  isMultiSelect?: boolean;
+  inSelectionGalleryIds?: string[];
   handleUpdateTitle: (itemId: string, newTitle: string) => Promise<void>;
   handleUpdateComment: (
     itemId: string,
@@ -35,6 +36,7 @@ interface MediaGridProps {
     },
     unknown
   >;
+  maxSelectionCount?: number;
 }
 
 export function MediaGrid({
@@ -50,6 +52,9 @@ export function MediaGrid({
   handleDeleteComment,
   handleAddComment,
   handleUpdatePartialData,
+  isMultiSelect,
+  inSelectionGalleryIds,
+  maxSelectionCount,
 }: MediaGridProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -113,6 +118,10 @@ export function MediaGrid({
             handleUpdateComment={handleUpdateComment}
             handleDeleteComment={handleDeleteComment}
             handleAddComment={handleAddComment}
+            isMultiSelect={isMultiSelect}
+            inSelectionGalleryIds={inSelectionGalleryIds}
+            maxSelectionCount={maxSelectionCount}
+            selectedCount={selectedItems.length}
           />
         ))}
       </Masonry>

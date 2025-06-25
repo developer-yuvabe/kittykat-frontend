@@ -1,59 +1,128 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChevronDown, ChevronRight, CirclePlus } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import { MdOutlineCampaign } from "react-icons/md";
 import { DynamicContentSection } from "../DynamicSection";
 import { Agents, ThreadDetails } from "@/types/types";
 import { CampaignColors } from "./CampaignColors";
-import { CampaignMoodboard } from "./CampaignMoodboards";
 import { CampaignOverview } from "./CampaignOverview";
 import CampaignSelector from "./CampaignSelector";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { useStreamContext } from "@/providers/langgraph/Stream";
-import { v4 as uuidv4 } from "uuid";
-import { Message } from "@langchain/langgraph-sdk";
-import { motion } from "framer-motion";
-import CampaignVisualStyleReferences from "./CampaignVisualStyleReferences";
+import { AnimatePresence, motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { formatUpdateMessage } from "@/lib/langgraph.utils";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  campaignFields,
+  PlaceholderSection,
+} from "../brands/InitialPlaceHolder";
+import { Button } from "@/components/ui/button";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
   brandInformation: ThreadDetails["brand_information"];
-}> = ({ campaignInformation, brandInformation }) => {
-  if (!campaignInformation || !campaignInformation.length) return null;
+  latestCampaignIndex: number;
+  selectedCampaignIndex: number;
+  setSelectedCampaignIndex: React.Dispatch<React.SetStateAction<number>>;
+}> = ({
+  campaignInformation,
+  latestCampaignIndex,
+  selectedCampaignIndex,
+  setSelectedCampaignIndex,
+}) => {
+  const [showDynamicData, setShowDynamicData] = React.useState(false);
 
+  const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
   const { selectedBrandId } = useBrandStore();
-
   const { user } = useUserStore();
   const stream = useStreamContext();
-  const latestCampaignInformation = campaignInformation.length - 1;
 
+  console.log(campaignInformation);
+
+  // All other state hooks
   const [expanded, setExpanded] = useState(true);
-  const [selectedCampaignIndex, setSelectedCampaignIndex] = useState(
-    latestCampaignInformation
-  );
-
   const [fadeKey, setFadeKey] = useState(0);
 
-  useEffect(() => {
-    // Trigger fade by incrementing key when campaignInformation length changes
-    setFadeKey((prev) => prev + 1);
-    setSelectedCampaignIndex(campaignInformation.length - 1);
-  }, [campaignInformation.length]);
+  const currentCampaign = useMemo(
+    () =>
+      campaignInformation && campaignInformation[selectedCampaignIndex]
+        ? campaignInformation[selectedCampaignIndex]
+        : null,
+    [campaignInformation, selectedCampaignIndex]
+  );
 
-  const currentCampaign = campaignInformation[selectedCampaignIndex];
-  const dynamicData = currentCampaign?.dynamic;
+  // All useEffect hooks
+  useEffect(() => {
+    setFadeKey((prev) => prev + 1);
+    setSelectedCampaignIndex(latestCampaignIndex);
+  }, [latestCampaignIndex]);
+
+  const handleViaAgent = useCallback(() => {
+    if (user) {
+      submitOptimisticMessage({
+        stream,
+        text: `Let's create a new campaign!`,
+        userId: user.id,
+        currentBrandContextId: selectedBrandId,
+      });
+    }
+  }, [user, stream, selectedBrandId]);
+
+  const handleCampaignIndexChange = useCallback((index: number) => {
+    setFadeKey((prev) => prev + 1);
+    setSelectedCampaignIndex(index);
+  }, []);
+
+  const handleTitleSave = useCallback(
+    async (newVal: string) => {
+      const oldVal = currentCampaign?.campaign?.title || "Unnamed Campaign";
+      const msg = formatUpdateMessage(
+        "campaign.title",
+        oldVal,
+        newVal,
+        "campaignAgent",
+        "Campaign Title"
+      );
+      if (msg && user) {
+        submitOptimisticMessage({
+          stream,
+          text: msg,
+          userId: user.id,
+          currentBrandContextId: selectedBrandId,
+        });
+      }
+    },
+    [currentCampaign, user, selectedBrandId]
+  );
+
+  const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
+
+  if (!campaignInformation || campaignInformation.length === 0) {
+    return (
+      <PlaceholderSection
+        title="Campaign"
+        avatarFallback="C"
+        avatarBgColor="bg-green-500"
+        fields={campaignFields}
+        searchPlaceholder="Load existing Campaign"
+        newButtonTooltip="New Campaign"
+        isExpanded={isPlaceholderExpanded}
+        onToggleExpanded={() =>
+          setIsPlaceholderExpanded((prev: boolean) => !prev)
+        }
+        onNewClick={handleViaAgent}
+      />
+    );
+  }
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
       <CardHeader className="py-1">
         <div
           className="flex items-center justify-between cursor-pointer"
-          onClick={() => setExpanded(!expanded)}
+          onClick={toggleExpanded}
         >
           <div className="flex items-center">
             {expanded ? (
@@ -81,25 +150,7 @@ export const CampaignSection: React.FC<{
                   key={currentCampaign?.campaign?.title}
                   label="Campaign"
                   value={currentCampaign?.campaign?.title || "Unnamed Campaign"}
-                  onSave={async (newVal) => {
-                    const oldVal =
-                      currentCampaign?.campaign?.title || "Unnamed Campaign";
-                    const msg = formatUpdateMessage(
-                      "campaign.title",
-                      oldVal,
-                      newVal,
-                      "campaignAgent",
-                      "Campaign Title"
-                    );
-                    if (msg) {
-                      submitOptimisticMessage({
-                        stream,
-                        text: msg,
-                        userId: user!.id,
-                        currentBrandContextId: selectedBrandId,
-                      });
-                    }
-                  }}
+                  onSave={handleTitleSave}
                   textClassName="font-bold"
                   showLabel={true}
                   isTextarea={false}
@@ -109,97 +160,102 @@ export const CampaignSection: React.FC<{
           </div>
           {expanded && (
             <div className="absolute right-3 top-6 flex gap-x-2">
-              <CampaignSelector
-                campaigns={campaignInformation}
-                selectedCampaignIndex={selectedCampaignIndex}
-                // setSelectedCampaignIndex={setSelectedCampaignIndex}
-                setSelectedCampaignIndex={(index) => {
-                  setFadeKey((prev) => prev + 1); // Trigger fade on campaign change
-                  setSelectedCampaignIndex(index);
-                }}
-              />
-              <TooltipIconButton
+              {campaignInformation && (
+                <CampaignSelector
+                  campaigns={campaignInformation}
+                  selectedCampaignIndex={selectedCampaignIndex}
+                  setSelectedCampaignIndex={handleCampaignIndexChange}
+                />
+              )}
+
+              <Button
                 size="lg"
                 className="p-4"
-                tooltip="New Campaign"
                 variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const newHumanMessage: Message = {
-                    id: uuidv4(),
-                    type: "human",
-                    content: [
-                      {
-                        type: "text",
-                        text: `Let's create a new campaign!`,
-                      },
-                    ],
-                  };
-
-                  stream.submit(
-                    {
-                      messages: [newHumanMessage],
-                      currentBrandContextId: selectedBrandId,
-                      userId: user!.id,
-                    },
-                    {
-                      streamMode: ["values"],
-                      optimisticValues: (prev) => ({
-                        ...prev,
-                        messages: [...(prev.messages ?? []), newHumanMessage],
-                      }),
-                    }
-                  );
-                }}
+                onClick={handleViaAgent}
               >
                 <CirclePlus className="size-5" />
-              </TooltipIconButton>
+              </Button>
             </div>
           )}
         </div>
       </CardHeader>
+
       {expanded && (
         <div>
           <CardContent>
-            <motion.div
-              key={fadeKey}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="pt-0 pb-6"
+            {/* Existing campaign content */}
+            {currentCampaign && (
+              <motion.div
+                key={fadeKey}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="pt-0 pb-6"
+              >
+                <div className="mt-1 space-y-6">
+                  <>
+                    <CampaignOverview
+                      title={currentCampaign?.campaign?.title}
+                      description={currentCampaign?.campaign?.description}
+                      tone={currentCampaign?.campaign?.tone}
+                      campaignId={currentCampaign.id}
+                    />
+                    <CampaignColors
+                      colors={currentCampaign?.colors || []}
+                      campaignId={currentCampaign.id}
+                      campaignTitle={currentCampaign.campaign?.title}
+                    />
+                    <DynamicContentSection
+                      dynamicData={{
+                        "Target Audience": currentCampaign.target_audience,
+                      }}
+                      agentId={Agents.CAMPAIGN_AGENT}
+                    />
+                    <DynamicContentSection
+                      dynamicData={{
+                        "Content Campaign Ideas":
+                          currentCampaign.content_campaign_ideas,
+                      }}
+                      agentId={Agents.CAMPAIGN_AGENT}
+                    />
+                    <AnimatePresence>
+                      {showDynamicData && (
+                        <motion.div
+                          key="dynamic-section"
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          className="space-y-6"
+                          transition={{ duration: 0.1 }}
+                          variants={{
+                            hidden: { opacity: 0, y: 5 },
+                            visible: { opacity: 1, y: 0 },
+                            exit: { opacity: 0, y: 5 },
+                          }}
+                        >
+                          <DynamicContentSection
+                            dynamicData={currentCampaign.dynamic ?? {}}
+                            agentId={Agents.CAMPAIGN_AGENT}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                </div>
+              </motion.div>
+            )}
+
+            <Button
+              onClick={() => {
+                setShowDynamicData(!showDynamicData);
+              }}
+              className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
+              variant="ghost"
             >
-              <div className="mt-1 space-y-6">
-                <CampaignOverview
-                  title={currentCampaign?.campaign?.title}
-                  description={currentCampaign?.campaign?.description}
-                  tone={currentCampaign?.campaign?.tone}
-                  campaignId={currentCampaign.id}
-                />
-                <CampaignColors
-                  colors={currentCampaign?.colors || []}
-                  campaignId={currentCampaign.id}
-                  campaignTitle={currentCampaign.campaign?.title}
-                />
-
-                <CampaignVisualStyleReferences
-                  visualStyleReferences={
-                    currentCampaign.visual_style_references
-                  }
-                />
-
-                <DynamicContentSection
-                  dynamicData={dynamicData ?? {}}
-                  agentId={Agents.CAMPAIGN_AGENT}
-                />
-
-                <CampaignMoodboard
-                  currentCampaign={currentCampaign}
-                  brandId={selectedBrandId!}
-                  campaignId={currentCampaign.id}
-                  brandInformation={brandInformation}
-                />
-              </div>
-            </motion.div>
+              {showDynamicData ? <ChevronUp /> : <ChevronDown />}
+              {showDynamicData ? " Less details" : "More details"}
+            </Button>
           </CardContent>
         </div>
       )}

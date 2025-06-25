@@ -119,8 +119,8 @@ export const UsersTable = () => {
             {isLoading ? (
               Array.from({ length: limit }).map((_, i) => (
                 <TableRow key={i}>
-                  {columns.map((column) => (
-                    <TableCell key={column.id}>
+                  {columns.map((_, idx) => (
+                    <TableCell key={idx}>
                       <Skeleton className="h-6 w-full" />
                     </TableCell>
                   ))}

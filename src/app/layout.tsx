@@ -5,7 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AppConfig } from "@/config/app.config";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import ReactQueryProvider from "@/providers/langgraph/react-query-provider";
+import ReactQueryProvider from "@/providers/react-query-provider";
 import NextTopLoader from "nextjs-toploader";
 
 const geistSans = Geist({

@@ -1,4 +1,5 @@
 "use client";
+
 import AuthUiWrapper from "@/components/shared/AuthUiWrapper";
 import ErrorMessage from "@/components/shared/ErrorMessage";
 import Logo from "@/components/shared/Logo";
@@ -52,6 +53,7 @@ const ForgotPasswordPageContent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
+
   const loginRoute = "/login";
 
   const oobCode = searchParams.get("oobCode");
@@ -65,6 +67,7 @@ const ForgotPasswordPageContent = () => {
     }
     return "email";
   });
+
 
   const emailForm = useForm<ForgotPasswordSchema>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -108,12 +111,13 @@ const ForgotPasswordPageContent = () => {
       console.log("Verifying reset code..."); // Debug log
       const email = await verifyPasswordResetCode(auth, oobCode);
       console.log("Reset code verified for email:", email); // Debug log
-      
+        
       setUserEmail(email);
       setPageMode("reset");
       setFormError(null);
     } catch (error) {
       console.error("Reset code verification failed:", error); // Debug log
+
       const errorMsg = processAuthError(error);
       setFormError(errorMsg || "Invalid or expired reset link.");
       setPageMode("error");
@@ -213,6 +217,7 @@ const ForgotPasswordPageContent = () => {
       </CardContent>
     </>
   );
+
 
   const renderError = () => (
     <>
@@ -394,3 +399,4 @@ const ForgotPasswordPage = () => {
 };
 
 export default ForgotPasswordPage;
+

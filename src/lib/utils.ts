@@ -102,8 +102,7 @@ export function isValidUrl(url: string): boolean {
   try {
     new URL(url);
     return true;
-  } catch (_error) {
-    console.log("Invalid URL:", _error);
+  } catch {
     return false;
   }
 }
@@ -160,6 +159,52 @@ export const handleDownloadImage = async (
   );
 };
 
+export const handleDownloadVideo = async (
+  url: string,
+  options?: {
+    filename?: string;
+    toastMessages?: {
+      loading?: string;
+      success?: string;
+      error?: string;
+    };
+  }
+) => {
+  const {
+    filename = `video_${new Date().getTime()}.mp4`,
+    toastMessages = {
+      loading: "Downloading video...",
+      success: "Video downloaded successfully!",
+      error: "Failed to download video. Please try again.",
+    },
+  } = options || {};
+
+  toast.promise(
+    (async () => {
+      const videoResponse = await fetch(url, { mode: "cors" });
+      if (!videoResponse.ok)
+        throw new Error(`HTTP error! status: ${videoResponse.status}`);
+
+      const blob = await videoResponse.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    })(),
+    {
+      loading: toastMessages.loading,
+      success: toastMessages.success,
+      error: toastMessages.error,
+    }
+  );
+};
+
 export const formatToLocalTime = (dateString: string) => {
   try {
     // Parse the UTC date string and convert to local timezone
@@ -180,3 +225,58 @@ export const formatToLocalTime = (dateString: string) => {
     return dateString;
   }
 };
+
+export function getChatLayoutConfig(isLargeScreen: boolean) {
+  return {
+    containerHeight: isLargeScreen
+      ? "h-[calc(100vh-8rem)]"
+      : "h-[calc(100vh-6rem)]",
+    containerPadding: isLargeScreen ? "px-4" : "px-3",
+    threadPanelDefault: isLargeScreen ? 60 : 50, // decreased
+    threadPanelMin: isLargeScreen ? 20 : 30, // decreased
+    threadPanelMax: isLargeScreen ? 70 : 60, // decreased
+
+    chatPanelDefault: isLargeScreen ? 40 : 50, // increased
+    chatPanelMin: isLargeScreen ? 30 : 40, // increased
+    chatPanelMax: isLargeScreen ? 80 : 70, // increased
+
+    handleMargin: isLargeScreen ? "mx-3" : "mx-2",
+    contentPadding: isLargeScreen ? "px-4" : "px-3",
+    contentPaddingTop: isLargeScreen ? "pt-8" : "pt-6",
+    logoSize: {
+      width: isLargeScreen ? 100 : 90,
+      height: isLargeScreen ? 40 : 36,
+    },
+    marginTop: isLargeScreen ? "mt-[15vh]" : "mt-[10vh]",
+  };
+}
+
+export const shimmer = (w: number, h: number) => `
+<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="g">
+      <stop stop-color="#e5e5e5" offset="20%" />
+      <stop stop-color="#d4d4d4" offset="50%" />
+      <stop stop-color="#e5e5e5" offset="70%" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="#f5f5f5" />
+  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+</svg>`;
+
+export const toBase64 = (str: string) =>
+  typeof window === "undefined"
+    ? Buffer.from(str).toString("base64")
+    : window.btoa(str);
+
+export const delay = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export const canvasToBlob = (canvas: HTMLCanvasElement, type: string) =>
+  new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Canvas toBlob failed"));
+    }, type);
+  });

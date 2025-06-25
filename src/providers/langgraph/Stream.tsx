@@ -19,6 +19,7 @@ import { env } from "@/config/env";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
 import { Loader2 } from "lucide-react";
+import { client } from "./langgraph.client";
 
 export type StateType = {
   messages: Message[];
@@ -60,11 +61,12 @@ const StreamSession = ({
   if (!user) {
     console.log("User ID: if not found, debug this is IMPORTANT");
   }
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
-    threadId: user?.thread_id,
+    threadId: user?.thread_id ?? undefined,
     onThreadId: (id) => {
       updateUser(user!.id, {
         thread_id: id,
@@ -78,7 +80,11 @@ const StreamSession = ({
   });
 
   return (
-    <StreamContext.Provider value={{ ...streamValue }}>
+    <StreamContext.Provider
+      value={{
+        ...streamValue,
+      }}
+    >
       {children}
     </StreamContext.Provider>
   );
@@ -87,14 +93,14 @@ const StreamSession = ({
 export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const envApiKey = process.env.NEXT_PUBLIC_LANGSMITH_API_KEY;
+  const { user, setUser } = useUserStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const [hideToolCalls, setHideToolCalls] = useQueryState("hideToolCalls");
 
   useEffect(() => {
     const initializeParams = async () => {
       try {
-        const hideToolCallsToSet = hideToolCalls || "false";
+        const hideToolCallsToSet = hideToolCalls || "true";
         const promises = [];
 
         if (!hideToolCalls || hideToolCalls !== hideToolCallsToSet) {
@@ -105,10 +111,23 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
           await Promise.all(promises);
         }
 
-        setIsInitialized(true);
+        if (user?.thread_id) {
+          try {
+            await client.threads.get(user.thread_id);
+          } catch {
+            updateUser(user!.id, {
+              thread_id: null,
+            });
+            setUser({
+              ...user!,
+              thread_id: null,
+            });
+          }
+        }
       } catch (error) {
         console.error("Failed to initialize query parameters:", error);
-        setIsInitialized(true);
+      } finally {
+        setTimeout(() => setIsInitialized(true), 100);
       }
     };
 
@@ -125,7 +144,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <StreamSession
-      apiKey={envApiKey || null}
+      apiKey={env.NEXT_PUBLIC_LANGSMITH_API_KEY}
       apiUrl={env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER}
       assistantId={KITTYKAT_AGENT_ID}
     >

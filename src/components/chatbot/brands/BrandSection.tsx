@@ -1,5 +1,7 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { extractAllColors, formatUpdateMessage } from "@/lib/langgraph.utils";
 import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
@@ -71,110 +73,48 @@ export const renderBrandData = (
   brandMedia: any,
   clearPinnedItems: () => void
 ) => {
-  try {
-    const brandName = staticData?.brand?.name || "No Brand Name";
-    const brandInitial = brandName.charAt(0).toUpperCase();
-    const allColors = extractAllColors(staticData);
-    const [showDynamicData, setShowDynamicData] = React.useState(false);
-    const stream = useStreamContext();
-    const { user } = useUserStore();
-    const { selectedBrandId } = useBrandStore();
+  const brandName = staticData?.brand?.name || "No Brand Name";
+  const brandInitial = brandName.charAt(0).toUpperCase();
+  const allColors = extractAllColors(staticData);
+  const [showDynamicData, setShowDynamicData] = React.useState(false);
+  const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId } = useBrandStore();
 
-    return (
-      <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
-        <CardHeader className="py-1">
-          <div
-            className="flex items-center justify-between cursor-pointer"
-            onClick={() => toggleSection("brandOverview")}
-          >
-            <div className="flex items-center">
-              {expandedSections.brandOverview ? (
-                <ChevronDown className="text-[#6e7787] mr-2" size={20} />
-              ) : (
-                <ChevronRight className="text-[#6e7787] mr-2" size={20} />
-              )}
+  
 
-              {!expandedSections.brandOverview ? (
-                <div className="flex items-center ">
-                  <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-3 overflow-hidden">
-                    <AvatarImage src={""} alt="@shadcn" />
-                    <AvatarFallback className="bg-blue-500">
-                      <span className="text-white font-bold">
-                        {brandInitial}
-                      </span>
-                    </AvatarFallback>
-                  </Avatar>
+  return (
+    <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
+      <CardHeader className="py-1">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => toggleSection("brandOverview")}
+        >
+          <div className="flex items-center">
+            {expandedSections.brandOverview ? (
+              <ChevronDown className="text-[#6e7787] mr-2" size={20} />
+            ) : (
+              <ChevronRight className="text-[#6e7787] mr-2" size={20} />
+            )}
 
-                  <div className="flex flex-col">
-                    <div className="text-sm font-medium">
-                      {staticData?.brand?.name
-                        ? `Brand: ${staticData?.brand?.name}`
-                        : "Brand Information"}
-                    </div>
-                    <div className="text-xs text-[#6e7787]">
-                      Set up, switch, and modify your Brand
-                    </div>
-                    <div className="absolute right-3 top-6 ">
-                      <div className="flex justify-between gap-x-2">
-                        <div>
-                          <BrandSelector />
-                        </div>
-                        <TooltipIconButton
-                          size="lg"
-                          className="p-4"
-                          tooltip="New Brand"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            submitOptimisticMessage({
-                              stream,
-                              text: "Let's create a new brand.",
-                              userId: user!.id,
-                              currentBrandContextId: selectedBrandId,
-                            });
-                            clearPinnedItems();
-                          }}
-                        >
-                          <CirclePlus className="size-5" />
-                        </TooltipIconButton>
-                      </div>
-                    </div>
+            {!expandedSections.brandOverview ? (
+              <div className="flex items-center ">
+                <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+                  <AvatarImage src={""} alt="@shadcn" />
+                  <AvatarFallback className="bg-blue-500">
+                    <span className="text-white font-bold">{brandInitial}</span>
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex flex-col">
+                  <div className="text-sm font-medium">
+                    {staticData?.brand?.name
+                      ? `Brand: ${staticData?.brand?.name}`
+                      : "Brand Information"}
                   </div>
-                </div>
-              ) : (
-                <div
-                  className=""
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <InlineEditableField
-                    key={staticData?.brand?.name}
-                    label="Brand"
-                    value={staticData?.brand?.name || ""}
-                    onSave={async (newVal) => {
-                      const oldVal = staticData?.brand?.name || "";
-                      const msg = formatUpdateMessage(
-                        "staticData.brand.name",
-                        oldVal,
-                        newVal,
-                        "brandingAgent",
-                        "Brand Name"
-                      );
-                      if (msg) {
-                        submitOptimisticMessage({
-                          stream,
-                          text: msg,
-                          userId: user!.id,
-                          currentBrandContextId: selectedBrandId,
-                        });
-                      }
-                    }}
-                    textClassName="font-bold"
-                    showLabel={true}
-                    isTextarea={false}
-                  />
-
+                  <div className="text-xs text-[#6e7787]">
+                    Set up, switch, and modify your Brand
+                  </div>
                   <div className="absolute right-3 top-6 ">
                     <div className="flex justify-between gap-x-2">
                       <div>
@@ -185,7 +125,8 @@ export const renderBrandData = (
                         className="p-4"
                         tooltip="New Brand"
                         variant="ghost"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           submitOptimisticMessage({
                             stream,
                             text: "Let's create a new brand.",
@@ -200,105 +141,143 @@ export const renderBrandData = (
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-
-        {expandedSections.brandOverview && (
-          <CardContent className="pt-0  pb-6">
-            <div className="mt-1 space-y-6">
-              <BrandOverview
-                tagline={staticData?.brand?.tagline}
-                values={staticData?.brand?.values}
-                name={staticData?.brand?.name}
-              />
-
-              <BrandPurpose
-                mission={staticData?.brand?.mission}
-                vision={staticData?.brand?.vision}
-              />
-
-              <BrandColors colors={allColors} />
-
-              <BrandTypography
-                primaryFont={staticData?.typography?.primaryFont}
-                secondaryFont={staticData?.typography?.secondaryFont}
-              />
-
-              <BrandPhotography {...staticData?.photography} />
-              <BrandLighting {...staticData?.lighting} />
-              <BrandStyling {...staticData?.styling} />
-              <BrandCasting {...staticData?.casting} />
-              <BrandSetting {...staticData?.setting} />
-
-              <BrandProducts products={staticData?.products || []} />
-
-              <BrandTargetAudience
-                targetAudience={staticData?.target_audience}
-              />
-
-              <BrandMedia
-                socialMedia={staticData?.social_media}
-                brandMedia={brandMedia}
-              />
-
-              <AnimatePresence>
-                {showDynamicData && (
-                  <motion.div
-                    key="dynamic-section"
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    className="space-y-6"
-                    transition={{ duration: 0.1 }}
-                    variants={{
-                      hidden: { opacity: 0, y: 5 },
-                      visible: { opacity: 1, y: 0 },
-                      exit: { opacity: 0, y: 5 },
-                    }}
-                  >
-                    <DynamicContentSection
-                      dynamicData={dynamicData ?? {}}
-                      agentId={Agents.BRANDING_AGENT}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Button
-                onClick={() => {
-                  setShowDynamicData(!showDynamicData);
+              </div>
+            ) : (
+              <div
+                className=""
+                onClick={(e) => {
+                  e.stopPropagation();
                 }}
-                className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
-                variant="ghost"
               >
-                {showDynamicData ? <ChevronUp /> : <ChevronDown />}
-                {showDynamicData ? " Less details" : "More details"}
-              </Button>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-    );
-  } catch (error) {
-    console.error("Error parsing brand data:", error);
-    return (
-      <Card className="bg-gray-50">
-        <CardHeader className="">
-          <CardTitle className="text-xl font-semibold text-primary">
-            <div className="flex justify-between">
-              <div>No brand found</div>
-              <BrandSelector />
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="">
-          <p className="text-sm text-gray-500">
-            No brand information is currently available.
-          </p>
+                <InlineEditableField
+                  key={staticData?.brand?.name}
+                  label="Brand"
+                  value={staticData?.brand?.name || ""}
+                  onSave={async (newVal) => {
+                    const oldVal = staticData?.brand?.name || "";
+                    const msg = formatUpdateMessage(
+                      "staticData.brand.name",
+                      oldVal,
+                      newVal,
+                      "brandingAgent",
+                      "Brand Name"
+                    );
+                    if (msg) {
+                      submitOptimisticMessage({
+                        stream,
+                        text: msg,
+                        userId: user!.id,
+                        currentBrandContextId: selectedBrandId,
+                      });
+                    }
+                  }}
+                  textClassName="font-bold"
+                  showLabel={true}
+                  isTextarea={false}
+                />
+
+                <div className="absolute right-3 top-6 ">
+                  <div className="flex justify-between gap-x-2">
+                    <div>
+                      <BrandSelector />
+                    </div>
+                    <TooltipIconButton
+                      size="lg"
+                      className="p-4"
+                      tooltip="New Brand"
+                      variant="ghost"
+                      onClick={() => {
+                        submitOptimisticMessage({
+                          stream,
+                          text: "Let's create a new brand.",
+                          userId: user!.id,
+                          currentBrandContextId: selectedBrandId,
+                        });
+                        clearPinnedItems();
+                      }}
+                    >
+                      <CirclePlus className="size-5" />
+                    </TooltipIconButton>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      {expandedSections.brandOverview && (
+        <CardContent className="pt-0  pb-6">
+          <div className="mt-1 space-y-6">
+            <BrandOverview
+              tagline={staticData?.brand?.tagline}
+              values={staticData?.brand?.values}
+              name={staticData?.brand?.name}
+            />
+
+            <BrandPurpose
+              mission={staticData?.brand?.mission}
+              vision={staticData?.brand?.vision}
+            />
+
+            <BrandColors colors={allColors} />
+
+            <BrandTypography
+              primaryFont={staticData?.typography?.primaryFont}
+              secondaryFont={staticData?.typography?.secondaryFont}
+            />
+
+            <BrandPhotography {...staticData?.photography} />
+            <BrandLighting {...staticData?.lighting} />
+            <BrandStyling {...staticData?.styling} />
+            <BrandCasting {...staticData?.casting} />
+            <BrandSetting {...staticData?.setting} />
+
+            <BrandProducts products={staticData?.products || []} />
+
+            <BrandTargetAudience targetAudience={staticData?.target_audience} />
+
+            <BrandMedia
+              socialMedia={staticData?.social_media}
+              brandMedia={brandMedia}
+            />
+
+            <AnimatePresence>
+              {showDynamicData && (
+                <motion.div
+                  key="dynamic-section"
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="space-y-6"
+                  transition={{ duration: 0.1 }}
+                  variants={{
+                    hidden: { opacity: 0, y: 5 },
+                    visible: { opacity: 1, y: 0 },
+                    exit: { opacity: 0, y: 5 },
+                  }}
+                >
+                  <DynamicContentSection
+                    dynamicData={dynamicData ?? {}}
+                    agentId={Agents.BRANDING_AGENT}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <Button
+              onClick={() => {
+                setShowDynamicData(!showDynamicData);
+              }}
+              className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
+              variant="ghost"
+            >
+              {showDynamicData ? <ChevronUp /> : <ChevronDown />}
+              {showDynamicData ? " Less details" : "More details"}
+            </Button>
+          </div>
         </CardContent>
-      </Card>
-    );
-  }
+      )}
+    </Card>
+  );
 };

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { User } from "@/types/user.types";
 
-type UserWithoutBrandAccess = Omit<User, "brand_access">;
+export type UserWithoutBrandAccess = Omit<User, "brand_access">;
 
 type Store = {
   user: UserWithoutBrandAccess | null;
