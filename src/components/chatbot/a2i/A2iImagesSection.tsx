@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
+import { Form } from "@/components/ui/form";
+import { useImageGenForm } from "@/hooks/useImageGenForm";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -15,6 +17,7 @@ export default function A2iImagesSection({
   moodboardInformation,
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
+  const form = useImageGenForm();
 
   return (
     <>
@@ -49,17 +52,22 @@ export default function A2iImagesSection({
         </CardHeader>
 
         {expanded && (
-          <CardContent className="px-6  space-y-6">
-            <ReferenceMoodboard
-              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-              prompts={a2iImageInformation?.prompts}
-              moodboardInformation={moodboardInformation}
-
-            />
-            <A2iImagesWrapper
-              generations={[...(a2iImageInformation?.generations || [])]}
-            />
-          </CardContent>
+          <Form {...form}>
+            <CardContent className="px-6  space-y-6">
+              <ReferenceMoodboard
+                referenceMoodboardId={
+                  a2iImageInformation?.reference_moodboard_id
+                }
+                prompts={a2iImageInformation?.prompts}
+                moodboardInformation={moodboardInformation}
+                form={form}
+              />
+              <A2iImagesWrapper
+                form={form}
+                generations={[...(a2iImageInformation?.generations || [])]}
+              />
+            </CardContent>
+          </Form>
         )}
       </Card>
     </>
