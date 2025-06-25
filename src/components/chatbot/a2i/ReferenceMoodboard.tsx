@@ -155,9 +155,15 @@ const ReferenceMoodboard = ({
     return photos.length > 0 && !loading && !isFetching;
   }, [photos.length, loading, isFetching]);
 
-  const showLoadingState = useMemo(() => {
-    return (loading && photos.length === 0) || isFetching;
-  }, [loading, photos.length, isFetching]);
+  useEffect(() => {
+    if (prompts && prompts.length > 0) {
+      setN(`${prompts.length}`);
+    } else {
+      setN("0");
+    }
+  }, [prompts]);
+
+  console.log(photos.length);
 
   return (
     <ContentSection
@@ -168,14 +174,14 @@ const ReferenceMoodboard = ({
         data: {},
       }}
       content={
-        <div className="space-y-4">
+        <div className="space-y-8">
           {showGallery && photos.length > 0 && (
             <div className="mx-auto max-w-7xl w-full px-2">
               <CustomGridGallery photos={photos} />
             </div>
           )}
 
-          {showLoadingState && <ImageGridSkeleton isLoading={true} />}
+          {photos.length == 0 && <ImageGridSkeleton isLoading={isFetching} />}
 
           {prompts && prompts.length > 0 && (
             <div className="space-y-2">
@@ -244,16 +250,21 @@ export default ReferenceMoodboard;
 
 export const ImageGridSkeleton = ({ isLoading }: { isLoading: boolean }) => {
   const gridItems = [
-    { colSpan: 2, rowSpan: 3, colStart: 1, rowStart: 1 },
-    { colSpan: 2, rowSpan: 2, colStart: 3, rowStart: 1 },
-    { colSpan: 2, rowSpan: 3, colStart: 7, rowStart: 1 },
-    { colSpan: 2, rowSpan: 2, colStart: 5, rowStart: 1 },
-    { colSpan: 2, rowSpan: 2, colStart: 1, rowStart: 4 },
-    { colSpan: 2, rowSpan: 2, colStart: 7, rowStart: 4 },
-    { colSpan: 2, rowSpan: 2, colStart: 4, rowStart: 3 },
-    { colSpan: 1, rowSpan: 3, colStart: 3, rowStart: 3 },
-    { colSpan: 1, rowSpan: 3, colStart: 6, rowStart: 3 },
-    { colSpan: 2, rowSpan: 1, colStart: 4, rowStart: 5, extra: "h-24" },
+    { colSpan: 2, rowSpan: 2, colStart: 1, rowStart: 1 },
+    { colSpan: 3, rowSpan: 2, colStart: 3, rowStart: 1 },
+    { colSpan: 3, rowSpan: 1, colStart: 6, rowStart: 1 },
+
+    { colSpan: 3, rowSpan: 1, colStart: 6, rowStart: 2 },
+    { colSpan: 2, rowSpan: 2, colStart: 1, rowStart: 3 },
+    { colSpan: 3, rowSpan: 2, colStart: 3, rowStart: 3 },
+
+    { colSpan: 2, rowSpan: 2, colStart: 6, rowStart: 3 },
+    { colSpan: 2, rowSpan: 1, colStart: 8, rowStart: 3 },
+    { colSpan: 2, rowSpan: 1, colStart: 8, rowStart: 4 },
+
+    { colSpan: 3, rowSpan: 1, colStart: 1, rowStart: 5 },
+    { colSpan: 2, rowSpan: 1, colStart: 4, rowStart: 5 },
+    { colSpan: 3, rowSpan: 1, colStart: 6, rowStart: 5, extra: "h-24" },
   ];
   return (
     <div
