@@ -16,7 +16,11 @@ interface MediaItemCommentSectionProps {
     text: string
   ) => Promise<void>;
   onDeleteComment: (itemId: string, commentId: string) => Promise<void>;
-  onAddComment: (itemId: string, text: string) => Promise<void>;
+  onAddComment: (
+    itemId: string,
+    text: string,
+    attachments: string[] | undefined
+  ) => Promise<void>;
 }
 
 export function MediaItemCommentSection({
@@ -94,7 +98,7 @@ export function MediaItemCommentSection({
 
     setIsAddingCommentLoading(true);
     try {
-      await onAddComment(item.id, newComment);
+      await onAddComment(item.id, newComment, undefined);
       setIsAddingComment(false);
       setNewComment("");
       setComment(newComment);

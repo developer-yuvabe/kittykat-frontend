@@ -1,3 +1,22 @@
+export type Comment = {
+  id: string;
+  text: string;
+  added_by: string;
+  added_at: string;
+  updated_at: string;
+  attachments?: string[];
+  replies?: CommentReply[];
+};
+
+export type CommentReply = {
+  id: string;
+  text: string;
+  added_by: string;
+  added_at: string;
+  updated_at: string;
+  attachments?: string[];
+};
+
 export type GalleryItem = {
   // 🧱 Basic Asset Info
   brand_id: string;
@@ -67,7 +86,6 @@ export type GalleryItem = {
   };
 
   // 📣 Campaign & Brand Info
-
   campaign_id?: string;
   campaign_phase?: string;
   usage_context?: string;
@@ -94,13 +112,7 @@ export type GalleryItem = {
   feedback_thread_id?: string;
   stakeholder_approvals?: Record<string, "approved" | "rejected" | "pending">;
   has_feedback?: boolean;
-  comments?: {
-    id: string;
-    text: string;
-    added_by: string;
-    added_at: string;
-    updated_at: string;
-  }[];
+  comments?: Comment[];
   last_commented_at?: string;
 
   // 📝 Human Editing

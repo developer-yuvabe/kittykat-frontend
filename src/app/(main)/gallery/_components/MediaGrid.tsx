@@ -26,7 +26,11 @@ interface MediaGridProps {
     text: string
   ) => Promise<void>;
   handleDeleteComment: (itemId: string, commentId: string) => Promise<void>;
-  handleAddComment: (itemId: string, text: string) => Promise<void>;
+  handleAddComment: (
+    itemId: string,
+    text: string,
+    attachments?: string[]
+  ) => Promise<void>;
   handleUpdatePartialData: UseMutateFunction<
     GalleryItemResponse,
     Error,
