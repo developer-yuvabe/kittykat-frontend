@@ -116,7 +116,7 @@ const A2iImageCard = ({
     <div
       className={cn(
         "relative border bg-muted min-w-60 aspect-square group transition-all duration-200 ease-in-out",
-        isDragging && "scale-[1.03] shadow-xl z-50"
+        isDragging && "scale-[1.03] shadow-xl"
       )}
       style={style}
     >

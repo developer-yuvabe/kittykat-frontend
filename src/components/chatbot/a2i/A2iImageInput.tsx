@@ -180,7 +180,7 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden shadow-2xl z-[1000]"
+      className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden shadow-2xl z-10"
     >
       <div className="flex gap-2 justify-between items-center px-4 pb-4 pt-2">
         <div className="flex items-center gap-2">
