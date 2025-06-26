@@ -17,7 +17,7 @@ import { ScrollToBottom } from "./ScrollToBottom";
 import { ChatInput } from "./ChatInput";
 import { useThreads } from "@/providers/langgraph/Thread";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Bot } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -53,17 +53,24 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
       )}
     >
       <div className={cn("w-full", layoutConfig.containerPadding)}>
-        {/* Floating expand button when chat panel is hidden */}
         {!showChatPanel && (
-          <div className="absolute bottom-4 right-16 z-30">
-            <Button
-              variant="default"
-              className="flex items-center text-xl xl:text-3xl h-12 gap-2 bg-blue-600 hover:bg-blue-700"
-              onClick={() => setShowChatPanel(true)}
-            >
-              <Bot className="size-10" />
-              Chat
-            </Button>
+          <div className="fixed top-1/2 right-5 -translate-y-1/2 z-30">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center text-xl xl:text-3xl h-8 w-8 gap-2 bg-blue-600 hover:bg-blue-700 rounded-full"
+                    onClick={() => setShowChatPanel(true)}
+                  >
+                    <ChevronLeft className="w-4 h-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Open chat</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
 

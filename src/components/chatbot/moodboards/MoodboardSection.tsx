@@ -181,6 +181,7 @@ export const MoodboardSection: React.FC<{
     pinterest_limit: 10,
     instagram_limit: 10,
     facebook_limit: 10,
+    website_limit: 10,
   });
 
   useEffect(() => {
