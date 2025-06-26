@@ -18,10 +18,10 @@ export function AskKittykatReviewStatus({
           onClick={onAskKittykat}
           className="w-full"
           size="lg"
-          variant="outline"
+          variant="default"
         >
           <Lock className="w-5 h-5 mr-2" />
-          Ask KittyKat for Human Review
+          Ask KittyKat
         </Button>
       ) : (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">

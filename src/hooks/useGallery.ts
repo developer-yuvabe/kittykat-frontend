@@ -565,6 +565,8 @@ export const useGalleryQuery = (
     },
   });
 
+  const totalItems = galleryQuery.data?.pages[0]?.pagination.total ?? 0;
+
   return {
     // Queries
     brandsData: brandsQuery.data,
@@ -623,6 +625,8 @@ export const useGalleryQuery = (
 
     // Download helpers
     downloadItem,
+
+    totalItems,
   };
 };
 

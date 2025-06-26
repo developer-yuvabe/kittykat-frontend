@@ -7,6 +7,7 @@ import type { GalleryItemResponse } from "@/types/gallery.types";
 import { MediaItemDetailsDialog } from "./MediaItemDetailsDialog";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { MediaItem } from "./MediaItem";
+import { MediaEditorDialog } from "./MediaEditorDialog";
 import { GalleryActions } from "@/hooks/useGallery";
 
 interface MediaGridProps {
@@ -35,6 +36,10 @@ export function MediaGrid({
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedItemForDetails, setSelectedItemForDetails] =
     useState<GalleryItemResponse | null>(null);
+
+  // New state for MediaEditor carousel
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [currentEditorIndex, setCurrentEditorIndex] = useState(0);
 
   const breakpointColumnsObj = {
     default: 5,
@@ -65,6 +70,31 @@ export function MediaGrid({
     setDetailsDialogOpen(true);
   };
 
+  // New function to handle opening editor
+  const handleEditClick = (item: GalleryItemResponse) => {
+    const itemIndex = galleryActions.galleryItems.findIndex(
+      (galleryItem) => galleryItem.id === item.id
+    );
+    if (itemIndex !== -1) {
+      setCurrentEditorIndex(itemIndex);
+      setEditorOpen(true);
+    }
+  };
+
+  // Handle carousel navigation
+  const handleEditorNavigate = (direction: "next" | "prev") => {
+    const totalItems = galleryActions.galleryItems.length;
+
+    if (direction === "next" && currentEditorIndex < totalItems - 1) {
+      setCurrentEditorIndex(currentEditorIndex + 1);
+    } else if (direction === "prev" && currentEditorIndex > 0) {
+      setCurrentEditorIndex(currentEditorIndex - 1);
+    }
+  };
+
+  const currentEditorItem =
+    galleryActions.galleryItems[currentEditorIndex] || null;
+
   return (
     <>
       <Masonry
@@ -83,6 +113,7 @@ export function MediaGrid({
             onDelete={handleDeleteClick}
             onDownload={galleryActions.downloadItem}
             onDetailsClick={handleDetailsClick}
+            onEditClick={handleEditClick} // Pass the edit handler
             onMouseEnter={() => setHoveredItem(item.id)}
             onMouseLeave={() => setHoveredItem(null)}
             isMultiSelect={isMultiSelect}
@@ -100,6 +131,17 @@ export function MediaGrid({
         onOpenChange={setDetailsDialogOpen}
         item={selectedItemForDetails}
         handleUpdatePartialData={galleryActions.patchItem}
+      />
+
+      {/* Media Editor Dialog with Carousel */}
+      <MediaEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        item={currentEditorItem}
+        galleryActions={galleryActions}
+        currentIndex={currentEditorIndex}
+        onNavigate={handleEditorNavigate}
+        totalItems={galleryActions.galleryItems.length}
       />
 
       {/* Delete confirmation dialog */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { X, Paperclip, Send } from "lucide-react";
+import { X, Paperclip, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import type {
@@ -36,6 +36,10 @@ interface MediaEditorDialogProps {
   onOpenChange: (open: boolean) => void;
   item: GalleryItemResponse | null;
   galleryActions: GalleryActions;
+  // New props for carousel functionality
+  currentIndex?: number;
+  onNavigate?: (direction: "next" | "prev") => void;
+  totalItems?: number;
 }
 
 export function MediaEditorDialog({
@@ -43,6 +47,9 @@ export function MediaEditorDialog({
   onOpenChange,
   item,
   galleryActions,
+  currentIndex = 0,
+  onNavigate,
+  totalItems = 0,
 }: MediaEditorDialogProps) {
   const [activeTab, setActiveTab] = useState("ask-kittykat");
   const [newComment, setNewComment] = useState("");
@@ -61,7 +68,48 @@ export function MediaEditorDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUserStore();
 
+  // Reset form states when item changes
+  useEffect(() => {
+    if (item) {
+      setNewComment("");
+      setReplyingTo(null);
+      setReplyText("");
+      setEditingComment(null);
+      setEditingReply(null);
+      setAttachments([]);
+      setReplyAttachments([]);
+      setActiveTab("ask-kittykat");
+    }
+  }, [item?.id]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!open || !onNavigate) return;
+
+      if (event.key === "ArrowLeft" && currentIndex > 0) {
+        event.preventDefault();
+        onNavigate("prev");
+      } else if (event.key === "ArrowRight" && currentIndex < totalItems - 1) {
+        event.preventDefault();
+        onNavigate("next");
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, currentIndex, totalItems, onNavigate]);
+
   if (!item) return null;
+
+  const canNavigatePrev = currentIndex > 0;
+  const canNavigateNext = currentIndex < totalItems - 1;
+
+  const handleNavigate = (direction: "next" | "prev") => {
+    if (onNavigate) {
+      onNavigate(direction);
+    }
+  };
 
   const handleFileUpload = async (files: FileList | null, isReply = false) => {
     if (!files || files.length === 0) return;
@@ -267,6 +315,24 @@ export function MediaEditorDialog({
 
   const hasComments = item.comments && item.comments.length > 0;
 
+  useEffect(() => {
+    const prefetchThreshold = 2; // start prefetching 2 items before the end of loaded items
+    const loadedItemsCount = galleryActions.galleryItems.length;
+
+    if (
+      loadedItemsCount - currentIndex <= prefetchThreshold &&
+      galleryActions.hasNextPage &&
+      !galleryActions.isFetchingNextPage
+    ) {
+      galleryActions.fetchNextPage();
+    }
+  }, [
+    currentIndex,
+    galleryActions.galleryItems.length,
+    galleryActions.hasNextPage,
+    galleryActions.isFetchingNextPage,
+  ]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -284,6 +350,35 @@ export function MediaEditorDialog({
               <DialogTitle className="text-xl font-semibold">
                 A2i Image Editor
               </DialogTitle>
+
+              {/* Carousel Navigation Controls */}
+              {onNavigate && totalItems > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    {currentIndex + 1} of {galleryActions.totalItems}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleNavigate("prev")}
+                      disabled={!canNavigatePrev}
+                      className="p-2 h-8 w-8"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleNavigate("next")}
+                      disabled={!canNavigateNext}
+                      className="p-2 h-8 w-8"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogHeader>
 
