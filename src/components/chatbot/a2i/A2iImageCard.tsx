@@ -34,6 +34,7 @@ export type A2iImageCardProps = {
   isDragging?: boolean;
   style?: CSSProperties;
   disableDrag?: boolean;
+  onItemDeleted?: (deletedId: string) => void;
 };
 
 const A2iImageCard = ({
@@ -49,6 +50,7 @@ const A2iImageCard = ({
   style,
   disableDrag,
   video,
+  onItemDeleted,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -57,9 +59,30 @@ const A2iImageCard = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const { selectedBrandId } = useBrandStore();
 
+  // Normalize status for comparison
+  const normalizedStatus = status?.toString().trim().toLowerCase();
+  const isCompleted = normalizedStatus === "completed";
+  const isProcessing =
+    normalizedStatus === "processing" || normalizedStatus === "pending";
+  const isFailed = normalizedStatus === "failed";
+
+  // Check for actual content availability
+  const hasImageContent = !!image?.url;
+  const hasVideoContent = !!video?.url;
+  const hasAnyContent = hasImageContent || hasVideoContent;
+
+  // Show content only when completed AND has actual content
+  const shouldShowContent = isCompleted && hasAnyContent;
+
+  // Show loading when:
+  // 1. Status is processing/pending, OR
+  // 2. Status is completed but no content is available yet, OR
+  // 3. Status is failed
+  const shouldShowLoading = !shouldShowContent;
+
   const handleDownload = () => {
-    if (image) handleDownloadImage(image.url);
-    if (video) handleDownloadVideo(video.url);
+    if (image?.url) handleDownloadImage(image.url);
+    if (video?.url) handleDownloadVideo(video.url);
   };
 
   const handleCopyPrompt = () => {
@@ -96,17 +119,34 @@ const A2iImageCard = ({
   const handleRemoveItem = async () => {
     setIsDeleting(true);
     try {
+      const deletedId = image?.id || video?.id;
+
       if (image) {
         await deleteA2iImage(selectedBrandId!, generationId, image.id);
       } else if (video) {
         await deleteA2iVideo(selectedBrandId!, generationId);
       }
+
       setShowDeleteDialog(false);
-    } catch (error) {
-      console.error("Error deleting image:", error);
-      toast.error("Could not delete image at the moment. Please try again.", {
+
+      // Notify parent component about the deletion
+      if (deletedId && onItemDeleted) {
+        onItemDeleted(deletedId);
+      }
+
+      toast.success(`${image ? "Image" : "Video"} deleted successfully`, {
         position: "bottom-right",
       });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast.error(
+        `Could not delete ${
+          image ? "image" : "video"
+        } at the moment. Please try again.`,
+        {
+          position: "bottom-right",
+        }
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -120,20 +160,22 @@ const A2iImageCard = ({
       )}
       style={style}
     >
-      {image && (
+      {/* Show actual image content when completed and has content */}
+      {shouldShowContent && hasImageContent && (
         <Image
-          src={image.url}
-          alt={parameters.prompt}
+          src={image!.url}
+          alt={parameters.prompt || "Generated image"}
           fill
           className="object-contain"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
         />
       )}
 
-      {video && (
+      {/* Show actual video content when completed and has content */}
+      {shouldShowContent && hasVideoContent && (
         <div className="relative w-full h-full">
           <video
-            src={video.url}
+            src={video!.url}
             className="object-contain w-full h-full"
             muted
           />
@@ -145,7 +187,7 @@ const A2iImageCard = ({
             </DialogTrigger>
             <DialogContent className="max-w-3xl w-full aspect-video p-0 shadow-md">
               <video
-                src={video.url}
+                src={video!.url}
                 controls
                 autoPlay
                 className="w-full h-full object-contain"
@@ -155,14 +197,15 @@ const A2iImageCard = ({
         </div>
       )}
 
-      {status !== "completed" && (
+      {/* Show loading/processing state */}
+      {shouldShowLoading && (
         <>
           <Ripple
-            numCircles={status === "failed" ? 0 : 8}
+            numCircles={isFailed ? 0 : 8}
             mainCircleSize={10}
             className={cn({
               "bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none":
-                status === "failed",
+                isFailed,
             })}
           />
           <div className="flex flex-col items-center justify-center gap-2 h-full px-10">
@@ -192,39 +235,43 @@ const A2iImageCard = ({
                 />
               </div>
             )}
-            {video && (
+            {/* Show loading state for video generation */}
+            {!hasVideoContent && video && (
               <div className="flex gap-6">
-                <img
-                  src={video.url}
-                  alt="Video"
-                  className="w-16 h-16 object-cover rounded-md"
-                />
+                <div className="w-16 h-16 bg-muted-foreground/20 rounded-md flex items-center justify-center">
+                  <PlayCircle className="w-8 h-8 text-muted-foreground/60" />
+                </div>
               </div>
             )}
-            {status === "failed" && (
+            {isFailed && (
               <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
                 Failed
+              </Badge>
+            )}
+            {isProcessing && (
+              <Badge className="bg-blue-500/40 text-blue-700 border-blue-500">
+                {normalizedStatus === "pending" ? "Pending" : ""}
               </Badge>
             )}
           </div>
         </>
       )}
 
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
+      {/* Hover controls overlay - only show when content is ready */}
+      {shouldShowContent && (
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
 
-        {status === "completed" && !showEditFeatures && (
-          <div
-            className={cn(
-              "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute",
-              !disableDrag && "opacity-60 hover:opacity-100"
-            )}
-            {...(dragAttributes || {})}
-            {...(dragListeners || {})}
-          />
-        )}
+          {/* Drag handle - only show when not in edit mode and drag is enabled */}
+          {!showEditFeatures && !disableDrag && (
+            <div
+              className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute opacity-60 hover:opacity-100"
+              {...(dragAttributes || {})}
+              {...(dragListeners || {})}
+            />
+          )}
 
-        {(image || video) && status !== "processing" && (
+          {/* Delete button */}
           <TooltipIconButton
             onClick={() => setShowDeleteDialog(true)}
             tooltip={`Delete ${image ? "image" : "video"}`}
@@ -233,20 +280,20 @@ const A2iImageCard = ({
           >
             <X />
           </TooltipIconButton>
-        )}
 
-        {image && (
-          <Button
-            onClick={() => setShowEditFeatures((prev) => !prev)}
-            size={"icon"}
-            variant={"ghost"}
-            className="absolute top-2 right-2 size-7 text-white hover:text-black"
-          >
-            <ExpandIcon />
-          </Button>
-        )}
+          {/* Edit/Expand button - only for images */}
+          {image && (
+            <Button
+              onClick={() => setShowEditFeatures((prev) => !prev)}
+              size={"icon"}
+              variant={"ghost"}
+              className="absolute top-2 right-2 size-7 text-white hover:text-black"
+            >
+              <ExpandIcon />
+            </Button>
+          )}
 
-        {(image || video) && (
+          {/* Like button */}
           <Button
             onClick={handleLikeToggle}
             size={"icon"}
@@ -259,9 +306,8 @@ const A2iImageCard = ({
               })}
             />
           </Button>
-        )}
 
-        {(image || video) && (
+          {/* Download and copy controls */}
           <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
             <TooltipIconButton
               onClick={handleDownload}
@@ -282,9 +328,10 @@ const A2iImageCard = ({
               </TooltipIconButton>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
+      {/* Edit features modal - only for images */}
       {image && (
         <A2iImageEditFeatures
           image={image}
@@ -294,6 +341,7 @@ const A2iImageCard = ({
         />
       )}
 
+      {/* Delete confirmation dialog */}
       <ReusableAlertDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
