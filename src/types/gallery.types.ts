@@ -3,6 +3,8 @@ export type Comment = {
   text: string;
   added_by: string;
   added_at: string;
+  added_by_name?: string;
+  added_by_role?: string;
   updated_at: string;
   attachments?: string[];
   replies?: CommentReply[];
@@ -15,6 +17,8 @@ export type CommentReply = {
   added_at: string;
   updated_at: string;
   attachments?: string[];
+  added_by_name?: string;
+  added_by_role?: string;
 };
 
 export type GalleryItem = {
@@ -218,4 +222,9 @@ export interface EnhancedSelectedFilters {
   // User preference filters
   is_favourite?: boolean;
   is_archived?: boolean;
+}
+
+export interface CommentReplyCreate {
+  text: string;
+  attachments?: string[];
 }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, Reply } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
+import { UserRoleId } from "@/types/user.types";
 
 interface AskKittykatCommentThreadProps {
   comments: Comment[];
@@ -45,6 +46,7 @@ export const AskKittykatCommentThread: React.FC<
   handleSubmitReply,
   formatTime,
 }) => {
+  console.log(comments);
   return (
     <>
       {comments.map((comment) => (
@@ -53,17 +55,24 @@ export const AskKittykatCommentThread: React.FC<
             <Avatar className="w-8 h-8">
               <AvatarImage src={`/placeholder.svg?height=32&width=32`} />
               <AvatarFallback>
-                {comment.added_by.slice(0, 2).toUpperCase()}
+                {comment.added_by_name?.slice(0, 1).toUpperCase() ||
+                  comment.added_by.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm">{comment.added_by}</span>
-                {comment.added_by.toLowerCase().includes("kitty") && (
+                <span className="font-medium text-sm">
+                  {comment.added_by_name || comment.added_by}{" "}
+                </span>
+                {comment?.added_by_role && (
                   <Badge variant="secondary" className="text-xs">
-                    Kitty Kat
+                    {{
+                      [UserRoleId.ADMIN]: "Admin",
+                      [UserRoleId.USER]: "User",
+                    }[comment.added_by_role] ?? "Unknown"}
                   </Badge>
                 )}
+
                 <span className="text-xs text-gray-500">
                   {formatTime(comment.added_at)}
                 </span>
@@ -147,7 +156,7 @@ export const AskKittykatCommentThread: React.FC<
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-xs">
-                        {reply.added_by}
+                        {reply?.added_by_name || reply.added_by}
                       </span>
                       <span className="text-xs text-gray-500">
                         {formatTime(reply.added_at)}

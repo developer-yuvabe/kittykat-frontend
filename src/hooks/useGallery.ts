@@ -451,25 +451,25 @@ export const useGalleryQuery = (
   });
 
   // Add reply mutation
-  // const addReplyMutation = useMutation({
-  //   mutationFn: ({
-  //     itemId,
-  //     commentId,
-  //     replyData,
-  //   }: {
-  //     itemId: string;
-  //     commentId: string;
-  //     replyData: { text: string; attachments?: string[] };
-  //   }) => galleryService.addReplyToComment(itemId, commentId, replyData),
-  //   onSuccess: (updatedItem) => {
-  //     queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
-  //     queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
-  //     toast.success("Reply added successfully");
-  //   },
-  //   onError: () => {
-  //     toast.error("Failed to add reply");
-  //   },
-  // });
+  const addReplyMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentId,
+      replyData,
+    }: {
+      itemId: string;
+      commentId: string;
+      replyData: { text: string; attachments?: string[] };
+    }) => galleryService.addReplyToComment(itemId, commentId, replyData),
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Reply added successfully");
+    },
+    onError: () => {
+      toast.error("Failed to add reply");
+    },
+  });
 
   // Ask KittyKat mutation
 
@@ -539,10 +539,12 @@ export const useGalleryQuery = (
     deleteComment: deleteCommentMutation.mutate,
     isDeletingComment: deleteCommentMutation.isPending,
 
-    // addReply: addReplyMutation.mutate,
-    // isAddingReply: addReplyMutation.isPending,
+    addReply: addReplyMutation.mutate,
+    isAddingReply: addReplyMutation.isPending,
 
     // Download helpers
     downloadItem,
   };
 };
+
+export type GalleryActions = ReturnType<typeof useGalleryQuery>;

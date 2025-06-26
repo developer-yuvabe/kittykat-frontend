@@ -6,6 +6,7 @@ import {
   GalleryItemResponse,
   GalleryItemsListResponse,
   BrandCampaignListResponse,
+  CommentReplyCreate,
 } from "@/types/gallery.types";
 
 class GalleryService {
@@ -89,7 +90,7 @@ class GalleryService {
     aspect_ratio?: string[];
     workflow_status?: string[];
     is_archived?: boolean;
-    moodboard_ids?:string[]
+    moodboard_ids?: string[];
   }): Promise<GalleryItemsListResponse> {
     const {
       skip = 0,
@@ -205,6 +206,22 @@ class GalleryService {
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.patch(`/gallery/${itemId}`, patchData)
+    );
+  }
+
+  /**
+   * Add a reply to a comment on a gallery item
+   */
+  async addReplyToComment(
+    itemId: string,
+    commentId: string,
+    replyData: CommentReplyCreate
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.post(
+        `/gallery/${itemId}/comments/${commentId}/replies`,
+        replyData
+      )
     );
   }
 }

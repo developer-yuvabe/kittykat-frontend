@@ -3,62 +3,30 @@
 import type React from "react";
 import { useState } from "react";
 import Masonry from "react-masonry-css";
-import type { UseMutateFunction } from "@tanstack/react-query";
-import type { GalleryItemResponse, GalleryItem } from "@/types/gallery.types";
+import type { GalleryItemResponse } from "@/types/gallery.types";
 import { MediaItemDetailsDialog } from "./MediaItemDetailsDialog";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { MediaItem } from "./MediaItem";
+import { GalleryActions } from "@/hooks/useGallery";
 
 interface MediaGridProps {
-  items: GalleryItemResponse[];
   selectedItems: string[];
   onSelect: (id: string, selected: boolean) => void;
-  onToggleFavorite: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDownload: (item: GalleryItemResponse) => void;
   isMediaSelectDialog?: boolean;
   isMultiSelect?: boolean;
   inSelectionGalleryIds?: string[];
-  handleUpdateTitle: (itemId: string, newTitle: string) => Promise<void>;
-  handleUpdateComment: (
-    itemId: string,
-    commentId: string,
-    text: string
-  ) => Promise<void>;
-  handleDeleteComment: (itemId: string, commentId: string) => Promise<void>;
-  handleAddComment: (
-    itemId: string,
-    text: string,
-    attachments?: string[]
-  ) => Promise<void>;
-  handleUpdatePartialData: UseMutateFunction<
-    GalleryItemResponse,
-    Error,
-    {
-      itemId: string;
-      data: Partial<GalleryItem>;
-    },
-    unknown
-  >;
   maxSelectionCount?: number;
+  galleryActions: GalleryActions;
 }
 
 export function MediaGrid({
-  items,
   selectedItems,
   onSelect,
-  onToggleFavorite,
-  onDelete,
-  onDownload,
   isMediaSelectDialog,
-  handleUpdateTitle,
-  handleUpdateComment,
-  handleDeleteComment,
-  handleAddComment,
-  handleUpdatePartialData,
   isMultiSelect,
   inSelectionGalleryIds,
   maxSelectionCount,
+  galleryActions,
 }: MediaGridProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -86,7 +54,7 @@ export function MediaGrid({
 
   const handleDelete = () => {
     if (itemToDelete) {
-      onDelete(itemToDelete);
+      galleryActions.deleteItem(itemToDelete);
       setItemToDelete(null);
       setShowDeleteDialog(false);
     }
@@ -104,7 +72,7 @@ export function MediaGrid({
         className="flex w-auto -ml-4"
         columnClassName="pl-4 bg-clip-padding"
       >
-        {items.map((item) => (
+        {galleryActions.galleryItems.map((item) => (
           <MediaItem
             key={item.id}
             item={item}
@@ -112,20 +80,16 @@ export function MediaGrid({
             isHovered={hoveredItem === item.id}
             isMediaSelectDialog={isMediaSelectDialog}
             onSelect={onSelect}
-            onToggleFavorite={onToggleFavorite}
             onDelete={handleDeleteClick}
-            onDownload={onDownload}
+            onDownload={galleryActions.downloadItem}
             onDetailsClick={handleDetailsClick}
             onMouseEnter={() => setHoveredItem(item.id)}
             onMouseLeave={() => setHoveredItem(null)}
-            handleUpdateTitle={handleUpdateTitle}
-            handleUpdateComment={handleUpdateComment}
-            handleDeleteComment={handleDeleteComment}
-            handleAddComment={handleAddComment}
             isMultiSelect={isMultiSelect}
             inSelectionGalleryIds={inSelectionGalleryIds}
             maxSelectionCount={maxSelectionCount}
             selectedCount={selectedItems.length}
+            galleryActions={galleryActions}
           />
         ))}
       </Masonry>
@@ -135,7 +99,7 @@ export function MediaGrid({
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
         item={selectedItemForDetails}
-        handleUpdatePartialData={handleUpdatePartialData}
+        handleUpdatePartialData={galleryActions.patchItem}
       />
 
       {/* Delete confirmation dialog */}

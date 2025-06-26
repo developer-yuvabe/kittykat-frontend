@@ -37,57 +37,21 @@ import { AskKittykatImageSection } from "./AskKittykatImageSection";
 import { AskKittykatCommentGuidelines } from "./AskKittykatCommentGuidelines";
 import { AskKittykatCommentThread } from "./AskKittykatCommentThread";
 import { AskKittykatTabs } from "./AskKittykatTabs";
+import { GalleryActions } from "@/hooks/useGallery";
+import { createMediaItemHelper } from "@/lib/gallery.utils";
 
 interface MediaEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: GalleryItemResponse | null;
-  onAddComment: (
-    itemId: string,
-    text: string,
-    attachments?: string[]
-  ) => Promise<void>;
-  onUpdateComment: (
-    itemId: string,
-    commentId: string,
-    text: string
-  ) => Promise<void>;
-  onDeleteComment: (itemId: string, commentId: string) => Promise<void>;
-  onAddReply: (
-    itemId: string,
-    commentId: string,
-    text: string,
-    attachments?: string[]
-  ) => Promise<void>;
-  onUpdateReply: (
-    itemId: string,
-    commentId: string,
-    replyId: string,
-    text: string
-  ) => Promise<void>;
-  onDeleteReply: (
-    itemId: string,
-    commentId: string,
-    replyId: string
-  ) => Promise<void>;
-  onAskKittyKat: (
-    itemId: string,
-    message: string,
-    attachments?: string[]
-  ) => Promise<void>;
+  galleryActions: GalleryActions;
 }
 
 export function MediaEditorDialog({
   open,
   onOpenChange,
   item,
-  onAddComment,
-  onUpdateComment,
-  onDeleteComment,
-  onAddReply,
-  onUpdateReply,
-  onDeleteReply,
-  onAskKittyKat,
+  galleryActions,
 }: MediaEditorDialogProps) {
   const [activeTab, setActiveTab] = useState("ask-kittykat");
   const [newComment, setNewComment] = useState("");
@@ -105,6 +69,16 @@ export function MediaEditorDialog({
   const [isKittyKatUnlocked, setIsKittyKatUnlocked] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const mediaHelper = createMediaItemHelper({
+    patchItem: galleryActions.patchItem,
+    addComment: galleryActions.addComment,
+    updateComment: galleryActions.updateComment,
+    deleteComment: galleryActions.deleteComment,
+    toggleFavorite: galleryActions.toggleFavorite,
+    bulkDelete: galleryActions.bulkDelete,
+    deleteItem: galleryActions.deleteItem,
+  });
 
   if (!item) return null;
 
@@ -139,7 +113,13 @@ export function MediaEditorDialog({
 
     setIsSubmitting(true);
     try {
-      await onAddComment(item.id, newComment, attachments);
+      galleryActions.addComment({
+        itemId: item.id,
+        commentData: {
+          text: newComment,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        },
+      });
       setNewComment("");
       setAttachments([]);
       toast.success("Comment added successfully");
@@ -155,11 +135,16 @@ export function MediaEditorDialog({
 
     setIsSubmitting(true);
     try {
-      await onAddReply(item.id, commentId, replyText, attachments);
+      galleryActions.addReply({
+        itemId: item.id,
+        commentId: commentId,
+        replyData: {
+          text: replyText,
+        },
+      });
       setReplyText("");
       setReplyingTo(null);
       setAttachments([]);
-      toast.success("Reply added successfully");
     } catch (error) {
       toast.error("Failed to add reply");
     } finally {
@@ -288,7 +273,7 @@ export function MediaEditorDialog({
                     ) : (
                       <AskKittykatCommentThread
                         comments={item.comments || []}
-                        onUpdateComment={onUpdateComment}
+                        onUpdateComment={mediaHelper.updateComment}
                         editingComment={editingComment}
                         editText={editText}
                         replyingTo={replyingTo}

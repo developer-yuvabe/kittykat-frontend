@@ -40,7 +40,6 @@ import type {
 import {
   acceptedFileTypes,
   createGalleryItemFromFile,
-  createMediaItemHelper,
   getStatusColor,
   getStatusIcon,
 } from "@/lib/gallery.utils";
@@ -127,22 +126,7 @@ export function MediaFolderView({
   );
 
   // Use gallery hook to get addToGallery mutation and gallery items
-  const {
-    addToGallery: addToGalleryMutation,
-    galleryItems,
-    galleryStatus,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    addComment,
-    updateComment,
-    deleteComment,
-    toggleFavorite,
-    bulkDelete,
-    deleteItem,
-    patchItem,
-    downloadItem,
-  } = useGalleryQuery({
+  const galleryActions = useGalleryQuery({
     selectedFilters: {
       brands: selectedBrand ? [selectedBrand.brand_id] : [],
       campaigns: selectedCampaign ? [selectedCampaign] : [],
@@ -156,27 +140,17 @@ export function MediaFolderView({
     },
   });
 
-  const mediaHelper = createMediaItemHelper({
-    patchItem,
-    addComment,
-    updateComment,
-    deleteComment,
-    toggleFavorite,
-    bulkDelete,
-    deleteItem,
-  });
-
   const handleBulkDownload = async () => {
     if (selectedItems.length === 0) return;
 
-    const selectedItemsData = galleryItems.filter((item) =>
+    const selectedItemsData = galleryActions.galleryItems.filter((item) =>
       selectedItems.includes(item.id)
     );
 
     try {
       // For each selected item, trigger a download
       for (const item of selectedItemsData) {
-        await downloadItem(item);
+        await galleryActions.downloadItem(item);
       }
     } catch (error) {
       console.error("Bulk download error:", error);
@@ -185,10 +159,19 @@ export function MediaFolderView({
 
   // Fetch next page when in view
   React.useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+    if (
+      inView &&
+      galleryActions.hasNextPage &&
+      !galleryActions.isFetchingNextPage
+    ) {
+      galleryActions.fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [
+    inView,
+    galleryActions.hasNextPage,
+    galleryActions.isFetchingNextPage,
+    galleryActions.fetchNextPage,
+  ]);
 
   const currentConfig = acceptedFileTypes[
     activeTab as keyof typeof acceptedFileTypes
@@ -253,7 +236,7 @@ export function MediaFolderView({
               selectedCampaignFromUrl || selectedCampaignId,
               selecteMoodboardId
             );
-            addToGalleryMutation(galleryItem);
+            galleryActions.addToGallery(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);
             // Don't fail the upload if gallery addition fails
@@ -369,7 +352,7 @@ export function MediaFolderView({
               moodboard_id: selecteMoodboardId,
               asset_source: "upload",
             };
-            addToGalleryMutation(galleryItem);
+            galleryActions.addToGallery(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);
             // Don't fail the upload if gallery addition fails
@@ -510,7 +493,8 @@ export function MediaFolderView({
                 {currentCampaign.title}
               </h2>
               <p className="text-xs text-gray-500">
-                {selectedBrand.brand_name} • {galleryItems.length} media items
+                {selectedBrand.brand_name} •{" "}
+                {galleryActions.galleryItems.length} media items
               </p>
             </div>
           </div>
@@ -683,46 +667,42 @@ export function MediaFolderView({
 
         {/* Gallery Status Display */}
         <MediaGalleryStatusDisplay
-          galleryStatus={galleryStatus}
-          galleryItemsLength={galleryItems.length}
+          galleryStatus={galleryActions.galleryStatus}
+          galleryItemsLength={galleryActions.galleryItems.length}
         />
 
         {/* Gallery Items */}
-        {galleryStatus === "success" && galleryItems.length > 0 && (
-          <div>
-            <MediaGrid
-              items={galleryItems}
-              selectedItems={selectedItems}
-              onSelect={handleSelect}
-              onToggleFavorite={mediaHelper.toggleFavorite}
-              onDelete={mediaHelper.deleteItem}
-              onDownload={downloadItem}
-              handleUpdateTitle={mediaHelper.editTitle}
-              handleUpdateComment={mediaHelper.updateComment}
-              handleDeleteComment={mediaHelper.deleteComment}
-              handleAddComment={mediaHelper.addComment}
-              handleUpdatePartialData={patchItem}
-            />
+        {galleryActions.galleryStatus === "success" &&
+          galleryActions.galleryItems.length > 0 && (
+            <div>
+              <MediaGrid
+                selectedItems={selectedItems}
+                onSelect={handleSelect}
+                galleryActions={galleryActions}
+              />
 
-            {/* Infinite scroll loading indicator */}
-            {hasNextPage && (
-              <div ref={ref} className="flex justify-center items-center py-8">
-                {isFetchingNextPage ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                ) : (
-                  <p className="text-sm text-gray-500">Load more</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+              {/* Infinite scroll loading indicator */}
+              {galleryActions.hasNextPage && (
+                <div
+                  ref={ref}
+                  className="flex justify-center items-center py-8"
+                >
+                  {galleryActions.isFetchingNextPage ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                  ) : (
+                    <p className="text-sm text-gray-500">Load more</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
         {selectedItems.length > 0 && (
           <MediaBulkActions
             selectedCount={selectedItems.length}
             onUnselectAll={() => setSelectedItems([])}
             onDelete={async () => {
-              bulkDelete(selectedItems);
+              galleryActions.bulkDelete(selectedItems);
             }}
             onDownload={handleBulkDownload}
           />
@@ -1018,47 +998,40 @@ export function MediaFolderView({
         (galleryView === "folder" && !selectedCampaign)) && (
         <>
           <MediaGalleryStatusDisplay
-            galleryStatus={galleryStatus}
-            galleryItemsLength={galleryItems.length}
+            galleryStatus={galleryActions.galleryStatus}
+            galleryItemsLength={galleryActions.galleryItems.length}
           />
 
-          {galleryStatus === "success" && galleryItems.length > 0 && (
-            <div>
-              <MediaGrid
-                items={galleryItems}
-                selectedItems={selectedItems}
-                onSelect={handleSelect}
-                onToggleFavorite={mediaHelper.toggleFavorite}
-                onDelete={mediaHelper.deleteItem}
-                onDownload={downloadItem}
-                handleUpdateTitle={mediaHelper.editTitle}
-                handleUpdateComment={mediaHelper.updateComment}
-                handleDeleteComment={mediaHelper.deleteComment}
-                handleAddComment={mediaHelper.addComment}
-                handleUpdatePartialData={patchItem}
-              />
+          {galleryActions.galleryStatus === "success" &&
+            galleryActions.galleryItems.length > 0 && (
+              <div>
+                <MediaGrid
+                  selectedItems={selectedItems}
+                  onSelect={handleSelect}
+                  galleryActions={galleryActions}
+                />
 
-              {/* Infinite scroll loading indicator */}
-              {hasNextPage && (
-                <div
-                  ref={ref}
-                  className="flex justify-center items-center py-8"
-                >
-                  {isFetchingNextPage ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                  ) : (
-                    <p className="text-sm text-gray-500">Load more</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                {/* Infinite scroll loading indicator */}
+                {galleryActions.hasNextPage && (
+                  <div
+                    ref={ref}
+                    className="flex justify-center items-center py-8"
+                  >
+                    {galleryActions.isFetchingNextPage ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    ) : (
+                      <p className="text-sm text-gray-500">Load more</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           {selectedItems.length > 0 && (
             <MediaBulkActions
               selectedCount={selectedItems.length}
               onUnselectAll={() => setSelectedItems([])}
               onDelete={async () => {
-                bulkDelete(selectedItems);
+                galleryActions.bulkDelete(selectedItems);
               }}
               onDownload={handleBulkDownload}
             />
