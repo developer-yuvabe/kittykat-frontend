@@ -17,9 +17,6 @@ import { MediaItemEditableTitle } from "./MediaItemEditableTitle";
 import { MediaImage } from "./MediaImage";
 import { MediaItemActionsButton } from "./MediaItemActionsButton";
 import { MediaImageDetails } from "./MediaImageDetails";
-import { Button } from "@/components/ui/button";
-import { Edit3 } from "lucide-react";
-import { MediaEditorDialog } from "./MediaEditorDialog";
 import { GalleryActions } from "@/hooks/useGallery";
 import { createMediaItemHelper } from "@/lib/gallery.utils";
 
@@ -40,6 +37,7 @@ interface MediaItemProps {
   selectedCount?: number;
   maxSelectionCount?: number;
   galleryActions: GalleryActions;
+  onEditClick: (item: GalleryItemResponse) => void;
 }
 
 // Main MediaItem Component
@@ -59,6 +57,7 @@ export function MediaItem({
   selectedCount,
   maxSelectionCount,
   galleryActions,
+  onEditClick,
 }: MediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
@@ -90,8 +89,6 @@ export function MediaItem({
     ? (300 * item.dimensions.height) / item.dimensions.width
     : Math.floor(Math.random() * 200) + 200;
 
-  const [editorOpen, setEditorOpen] = useState(false);
-
   return (
     <div
       className="mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
@@ -116,7 +113,11 @@ export function MediaItem({
         }}
       >
         <div className="absolute inset-0 bg-gray-50 flex items-center justify-center">
-          <MediaImage item={item} onImageLoad={handleImageLoad} />
+          <MediaImage
+            item={item}
+            onImageLoad={handleImageLoad}
+            onEditClick={onEditClick}
+          />
         </div>
 
         <MediaOverlay
@@ -175,25 +176,9 @@ export function MediaItem({
                 </PopoverContent>
               </Popover>
             </div>
-            <Button
-              size="sm"
-              className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 shadow-md"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditorOpen(true);
-              }}
-            >
-              <Edit3 className="w-4 h-4" />
-            </Button>
           </>
         )}
       </div>
-      <MediaEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        item={item}
-        galleryActions={galleryActions}
-      />
     </div>
   );
 }
