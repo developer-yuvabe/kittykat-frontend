@@ -394,7 +394,6 @@ export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
                       key={trackingId}
                       {...image}
                       disableDrag={!existingId}
-                      onItemDeleted={handleItemDeleted}
                     />
                   );
                 })}

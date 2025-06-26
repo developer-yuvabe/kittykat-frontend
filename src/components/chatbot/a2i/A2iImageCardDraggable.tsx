@@ -55,7 +55,6 @@ const A2iImageCardDraggable = memo(function A2iImageCardDraggable({
         dragAttributes={shouldUseSortable ? attributes : undefined}
         isDragging={isDragging}
         disableDrag={!shouldUseSortable}
-        onItemDeleted={onItemDeleted}
       />
     </div>
   );
