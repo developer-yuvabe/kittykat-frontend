@@ -72,23 +72,8 @@ export function MediaOverlay({
           shouldShowSelection ? "opacity-100" : "opacity-0"
         }`}
       >
-        {isMediaSelectDialog ? (
-          // Single Select Mode - Button
-          <Button
-            variant="secondary"
-            size="xs"
-            disabled={isCheckboxDisabled}
-            className={`transition-all duration-200 ${
-              isCheckboxDisabled
-                ? "opacity-50 cursor-not-allowed bg-gray-400"
-                : "hover:bg-white hover:text-black"
-            }`}
-            onClick={handleSelectionClick}
-          >
-            {isAlreadySelected ? "Selected" : "Select"}
-          </Button>
-        ) : isMultiSelectMode ? (
-          // Multi Select Mode - Checkbox
+        {isMediaSelectDialog || isMultiSelectMode ? (
+          // Checkbox for both Single and Multi Select Mode
           <div className="flex items-center space-x-1">
             <Checkbox
               checked={isSelected || isAlreadySelected}
