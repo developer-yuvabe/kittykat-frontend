@@ -8,6 +8,7 @@ export type Comment = {
   updated_at: string;
   attachments?: string[];
   replies?: CommentReply[];
+  likes?: string[];
 };
 
 export type CommentReply = {
@@ -19,6 +20,7 @@ export type CommentReply = {
   attachments?: string[];
   added_by_name?: string;
   added_by_role?: string;
+  likes?: string[];
 };
 
 export type GalleryItem = {
@@ -227,4 +229,16 @@ export interface EnhancedSelectedFilters {
 export interface CommentReplyCreate {
   text: string;
   attachments?: string[];
+}
+
+export interface CommentUpdate {
+  text?: string;
+  attachments?: string[];
+  like_action?: "add" | "remove";
+}
+
+export interface CommentReplyUpdate {
+  text?: string;
+  attachments?: string[];
+  like_action?: "add" | "remove";
 }
