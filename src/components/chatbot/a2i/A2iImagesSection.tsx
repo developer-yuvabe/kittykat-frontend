@@ -56,26 +56,23 @@ const A2iImagesSection = memo(function A2iImagesSection({
           </div>
         </div>
       </CardHeader>
-        {expanded && (
-          <Form {...form}>
-            <CardContent className="px-6  space-y-6">
-              <ReferenceMoodboard
-                referenceMoodboardId={
-                  a2iImageInformation?.reference_moodboard_id
-                }
-                prompts={a2iImageInformation?.prompts}
-                moodboardInformation={moodboardInformation}
-                form={form}
-              />
-              <A2iImagesWrapper
-                form={form}
-                generations={[...(a2iImageInformation?.generations || [])]}
-              />
-            </CardContent>
-          </Form>
-        )}
-      </Card>
-    </>
+      {expanded && (
+        <Form {...form}>
+          <CardContent className="px-6  space-y-6">
+            <ReferenceMoodboard
+              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+              prompts={a2iImageInformation?.prompts}
+              moodboardInformation={moodboardInformation}
+              form={form}
+            />
+            <A2iImagesWrapper
+              form={form}
+              generations={[...(a2iImageInformation?.generations || [])]}
+            />
+          </CardContent>
+        </Form>
+      )}
+    </Card>
   );
 });
 
