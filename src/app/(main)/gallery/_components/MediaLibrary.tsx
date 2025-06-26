@@ -20,7 +20,6 @@ import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
 import { MediaBulkActions } from "./MediaBulkActions";
 import MediaFilterSidebar from "./MediaFilterSidebar";
-import { createMediaItemHelper } from "@/lib/gallery.utils";
 import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
 import { MediaFolderView } from "./MediaFolderView";
@@ -103,23 +102,7 @@ export function MediaLibrary({
   >(null);
 
   // Use our custom hook for data fetching and mutations
-  const {
-    brandsData,
-    brandsLoading,
-    galleryItems,
-    galleryStatus,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    toggleFavorite,
-    deleteItem,
-    bulkDelete,
-    downloadItem,
-    patchItem,
-    addComment,
-    deleteComment,
-    updateComment,
-  } = useGalleryQuery({
+  const galleryActions = useGalleryQuery({
     assetType: activeTab,
     favorites,
     source,
@@ -128,21 +111,16 @@ export function MediaLibrary({
     selectedFilters,
   });
 
-  const mediaHelper = createMediaItemHelper({
-    patchItem,
-    addComment,
-    updateComment,
-    deleteComment,
-    toggleFavorite,
-    bulkDelete,
-    deleteItem,
-  });
+  const galleryItems = galleryActions.galleryItems;
 
   useEffect(() => {
-    if (!brandsLoading && brandsData?.brands?.length && !selectedBrand) {
-      // If brandId is provided, try to find that brand
+    if (
+      !galleryActions.brandsLoading &&
+      galleryActions.brandsData?.brands?.length &&
+      !selectedBrand
+    ) {
       if (brandId) {
-        const matchedBrand = brandsData.brands.find(
+        const matchedBrand = galleryActions.brandsData.brands.find(
           (brand) => brand.brand_id === brandId
         );
         if (matchedBrand) {
@@ -152,18 +130,32 @@ export function MediaLibrary({
       }
 
       // Fallback: Select first brand
-      setSelectedBrand(brandsData.brands[0]);
+      setSelectedBrand(galleryActions.brandsData.brands[0]);
     }
-  }, [brandsLoading, brandsData, brandId, selectedBrand]);
+  }, [
+    galleryActions.brandsLoading,
+    galleryActions.brandsData,
+    brandId,
+    selectedBrand,
+  ]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
 
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+    if (
+      inView &&
+      galleryActions.hasNextPage &&
+      !galleryActions.isFetchingNextPage
+    ) {
+      galleryActions.fetchNextPage();
     }
-  }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [
+    inView,
+    galleryActions.fetchNextPage,
+    galleryActions.hasNextPage,
+    galleryActions.isFetchingNextPage,
+  ]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -198,7 +190,7 @@ export function MediaLibrary({
     setIsDeleting(true);
     try {
       const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
-      bulkDelete(itemsToDelete);
+      galleryActions.bulkDelete(itemsToDelete);
       setSelectedItems([]);
       setMultiSelectItems([]);
     } finally {
@@ -254,7 +246,7 @@ export function MediaLibrary({
     try {
       // For each selected item, trigger a download
       for (const item of selectedItemsData) {
-        await downloadItem(item);
+        await galleryActions.downloadItem(item);
       }
     } catch (error) {
       console.error("Bulk download error:", error);
@@ -348,8 +340,8 @@ export function MediaLibrary({
             activeTab={activeTab}
             selectedBrand={selectedBrand}
             setSelectedBrand={setSelectedBrand}
-            brands={brandsData?.brands || []}
-            brandsLoading={brandsLoading}
+            brands={galleryActions.brandsData?.brands || []}
+            brandsLoading={galleryActions.brandsLoading}
             selectedCampaignId={campaignId}
             selecteMoodboardId={moodboardId}
             galleryView={galleryView}
@@ -380,8 +372,8 @@ export function MediaLibrary({
               source={source}
               selectedBrand={selectedBrand}
               setSelectedBrand={setSelectedBrand}
-              brands={brandsData?.brands || []}
-              brandsLoading={brandsLoading}
+              brands={galleryActions.brandsData?.brands || []}
+              brandsLoading={galleryActions.brandsLoading}
               selectedCampaignId={campaignId}
               selecteMoodboardId={moodboardId}
             />
@@ -401,8 +393,10 @@ export function MediaLibrary({
                 <MediaFilterSidebar
                   selectedFilters={selectedFilters}
                   onApply={handleApplyFilters}
-                  brandsWithCampaigns={brandsData?.brands || []}
-                  product_categories={brandsData?.product_categories || []}
+                  brandsWithCampaigns={galleryActions.brandsData?.brands || []}
+                  product_categories={
+                    galleryActions.brandsData?.product_categories || []
+                  }
                   setShowFilter={setShowFilters}
                 />
               </div>
@@ -436,45 +430,37 @@ export function MediaLibrary({
                 />
 
                 <MediaGalleryStatusDisplay
-                  galleryStatus={galleryStatus}
+                  galleryStatus={galleryActions.galleryStatus}
                   galleryItemsLength={galleryItems.length}
                 />
 
-                {galleryStatus === "success" && galleryItems.length > 0 && (
-                  <div>
-                    <MediaGrid
-                      items={galleryItems}
-                      selectedItems={currentlySelectedItems}
-                      onSelect={handleSelect}
-                      onToggleFavorite={mediaHelper.toggleFavorite}
-                      onDelete={mediaHelper.deleteItem}
-                      onDownload={downloadItem}
-                      isMediaSelectDialog={isMediaSelectDialog}
-                      handleUpdateTitle={mediaHelper.editTitle}
-                      handleUpdateComment={mediaHelper.updateComment}
-                      handleDeleteComment={mediaHelper.deleteComment}
-                      handleAddComment={mediaHelper.addComment}
-                      handleUpdatePartialData={patchItem}
-                      isMultiSelect={isMultiSelect}
-                      inSelectionGalleryIds={inSelectionGalleryIds}
-                      maxSelectionCount={maxSelectionCount}
-                    />
+                {galleryActions.galleryStatus === "success" &&
+                  galleryItems.length > 0 && (
+                    <div>
+                      <MediaGrid
+                        galleryActions={galleryActions}
+                        selectedItems={currentlySelectedItems}
+                        onSelect={handleSelect}
+                        isMultiSelect={isMultiSelect}
+                        inSelectionGalleryIds={inSelectionGalleryIds}
+                        maxSelectionCount={maxSelectionCount}
+                      />
 
-                    {/* Infinite scroll loading indicator */}
-                    {hasNextPage && (
-                      <div
-                        ref={ref}
-                        className="flex justify-center items-center py-8"
-                      >
-                        {isFetchingNextPage ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                        ) : (
-                          <p className="text-sm text-gray-500">Load more</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                      {/* Infinite scroll loading indicator */}
+                      {galleryActions.hasNextPage && (
+                        <div
+                          ref={ref}
+                          className="flex justify-center items-center py-8"
+                        >
+                          {galleryActions.isFetchingNextPage ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                          ) : (
+                            <p className="text-sm text-gray-500">Load more</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             </div>
           </TabsContent>

@@ -20,6 +20,8 @@ import { MediaImageDetails } from "./MediaImageDetails";
 import { Button } from "@/components/ui/button";
 import { Edit3 } from "lucide-react";
 import { MediaEditorDialog } from "./MediaEditorDialog";
+import { GalleryActions } from "@/hooks/useGallery";
+import { createMediaItemHelper } from "@/lib/gallery.utils";
 
 // Types
 interface MediaItemProps {
@@ -28,28 +30,16 @@ interface MediaItemProps {
   isHovered: boolean;
   isMediaSelectDialog?: boolean;
   onSelect: (id: string, selected: boolean) => void;
-  onToggleFavorite: (id: string) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
   onDetailsClick: (item: GalleryItemResponse) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  handleUpdateTitle: (itemId: string, newTitle: string) => Promise<void>;
-  handleUpdateComment: (
-    itemId: string,
-    commentId: string,
-    text: string
-  ) => Promise<void>;
-  handleDeleteComment: (itemId: string, commentId: string) => Promise<void>;
-  handleAddComment: (
-    itemId: string,
-    text: string,
-    attachments: string[] | undefined
-  ) => Promise<void>;
   inSelectionGalleryIds?: string[];
   isMultiSelect?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
+  galleryActions: GalleryActions;
 }
 
 // Main MediaItem Component
@@ -59,26 +49,32 @@ export function MediaItem({
   isHovered,
   isMediaSelectDialog,
   onSelect,
-  onToggleFavorite,
   onDelete,
   onDownload,
   onDetailsClick,
   onMouseEnter,
   onMouseLeave,
-  handleUpdateTitle,
-  handleUpdateComment,
-  handleDeleteComment,
-  handleAddComment,
   inSelectionGalleryIds,
   isMultiSelect,
   selectedCount,
   maxSelectionCount,
+  galleryActions,
 }: MediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
   const isDisabled = isAlreadySelected && isMultiSelect;
+
+  const mediaHelper = createMediaItemHelper({
+    patchItem: galleryActions.patchItem,
+    addComment: galleryActions.addComment,
+    updateComment: galleryActions.updateComment,
+    deleteComment: galleryActions.deleteComment,
+    toggleFavorite: galleryActions.toggleFavorite,
+    bulkDelete: galleryActions.bulkDelete,
+    deleteItem: galleryActions.deleteItem,
+  });
 
   const handleImageLoad = (event: any) => {
     const target = event.target as HTMLImageElement;
@@ -95,52 +91,6 @@ export function MediaItem({
     : Math.floor(Math.random() * 200) + 200;
 
   const [editorOpen, setEditorOpen] = useState(false);
-
-  const handleUpdateCommentWithAttachments = async (
-    itemId: string,
-    commentId: string,
-    text: string
-  ) => {
-    await handleUpdateComment(itemId, commentId, text);
-  };
-
-  const handleAddReply = async (
-    itemId: string,
-    commentId: string,
-    text: string,
-    attachments?: string[]
-  ) => {
-    // Implementation for adding replies
-    console.log("Adding reply:", { itemId, commentId, text, attachments });
-  };
-
-  const handleUpdateReply = async (
-    itemId: string,
-    commentId: string,
-    replyId: string,
-    text: string
-  ) => {
-    // Implementation for updating replies
-    console.log("Updating reply:", { itemId, commentId, replyId, text });
-  };
-
-  const handleDeleteReply = async (
-    itemId: string,
-    commentId: string,
-    replyId: string
-  ) => {
-    // Implementation for deleting replies
-    console.log("Deleting reply:", { itemId, commentId, replyId });
-  };
-
-  const handleAskKittyKat = async (
-    itemId: string,
-    message: string,
-    attachments?: string[]
-  ) => {
-    // Implementation for Ask KittyKat functionality
-    console.log("Asking KittyKat:", { itemId, message, attachments });
-  };
 
   return (
     <div
@@ -175,7 +125,7 @@ export function MediaItem({
           isHovered={isHovered}
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
-          onToggleFavorite={onToggleFavorite}
+          onToggleFavorite={mediaHelper.toggleFavorite}
           isAlreadySelected={isAlreadySelected}
           isDisabled={isDisabled}
           isMultiSelectMode={isMultiSelect}
@@ -203,16 +153,16 @@ export function MediaItem({
                   <div className="space-y-2">
                     <MediaItemEditableTitle
                       item={item}
-                      onUpdateTitle={handleUpdateTitle}
+                      onUpdateTitle={mediaHelper.editTitle}
                     />
 
                     <MediaImageDetails item={item} />
 
                     <MediaItemCommentSection
                       item={item}
-                      onUpdateComment={handleUpdateComment}
-                      onDeleteComment={handleDeleteComment}
-                      onAddComment={handleAddComment}
+                      onUpdateComment={mediaHelper.updateComment}
+                      onDeleteComment={mediaHelper.deleteComment}
+                      onAddComment={mediaHelper.addComment}
                     />
 
                     <MediaItemActionsButton
@@ -242,13 +192,7 @@ export function MediaItem({
         open={editorOpen}
         onOpenChange={setEditorOpen}
         item={item}
-        onAddComment={handleAddComment}
-        onUpdateComment={handleUpdateCommentWithAttachments}
-        onDeleteComment={handleDeleteComment}
-        onAddReply={handleAddReply}
-        onUpdateReply={handleUpdateReply}
-        onDeleteReply={handleDeleteReply}
-        onAskKittyKat={handleAskKittyKat}
+        galleryActions={galleryActions}
       />
     </div>
   );
