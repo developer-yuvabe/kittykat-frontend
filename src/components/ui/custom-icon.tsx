@@ -981,7 +981,7 @@ export const InstagramIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
   </svg>
 );
 
-export const PintrestIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
+export const PinterestIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}

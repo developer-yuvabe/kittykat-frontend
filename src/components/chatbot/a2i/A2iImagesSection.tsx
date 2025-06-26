@@ -6,6 +6,8 @@ import { useState, useMemo, memo } from "react";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
+import { Form } from "@/components/ui/form";
+import { useImageGenForm } from "@/hooks/useImageGenForm";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -17,6 +19,7 @@ const A2iImagesSection = memo(function A2iImagesSection({
   moodboardInformation,
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
+  const form = useImageGenForm();
 
   // Memoize the generations array to prevent unnecessary re-renders
   const generations = useMemo(() => {
@@ -53,18 +56,26 @@ const A2iImagesSection = memo(function A2iImagesSection({
           </div>
         </div>
       </CardHeader>
-
-      {expanded && (
-        <CardContent className="px-6 space-y-6">
-          <ReferenceMoodboard
-            referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-            prompts={a2iImageInformation?.prompts}
-            moodboardInformation={moodboardInformation}
-          />
-          <A2iImagesWrapper generations={generations} />
-        </CardContent>
-      )}
-    </Card>
+        {expanded && (
+          <Form {...form}>
+            <CardContent className="px-6  space-y-6">
+              <ReferenceMoodboard
+                referenceMoodboardId={
+                  a2iImageInformation?.reference_moodboard_id
+                }
+                prompts={a2iImageInformation?.prompts}
+                moodboardInformation={moodboardInformation}
+                form={form}
+              />
+              <A2iImagesWrapper
+                form={form}
+                generations={[...(a2iImageInformation?.generations || [])]}
+              />
+            </CardContent>
+          </Form>
+        )}
+      </Card>
+    </>
   );
 });
 

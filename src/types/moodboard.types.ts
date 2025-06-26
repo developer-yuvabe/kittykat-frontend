@@ -9,6 +9,7 @@ export type LimitsState = {
   pinterest_limit: number;
   instagram_limit: number;
   facebook_limit: number;
+  website_limit: number;
 };
 
 export interface UploadedImage {
@@ -31,6 +32,7 @@ export interface MoodboardImageAnalysisRequest {
   pinterest_limit?: number;
   instagram_limit?: number;
   facebook_limit?: number;
+  website_limit?: number;
   reanalyze?: boolean;
 }
 

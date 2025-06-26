@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { cn } from "@/lib/utils";
 import { generateA2iShowboard } from "@/services/api/moodboard.service";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
@@ -14,17 +13,22 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { SortablePhoto } from "@/components/gallery/SortableGallery";
 import { Photo } from "react-photo-album";
+import ManualMoodboardSkeleton from "../moodboards/MoodboardSkeleton";
+import { EditIcon } from "@/components/ui/custom-icon";
+import { UseFormReturn } from "react-hook-form";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
+  form: UseFormReturn<any>;
 };
 
 const ReferenceMoodboard = ({
   referenceMoodboardId,
   prompts,
   moodboardInformation,
+  form,
 }: ReferenceMoodboardProps) => {
   const [n, setN] = React.useState(`${prompts?.length || 0}`);
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
@@ -148,16 +152,18 @@ const ReferenceMoodboard = ({
       // Clear photos if no filtered items
       setPhotos([]);
     }
-  }, [filteredGalleryItems.length, loadImagesWithDimensions]);
+  }, [filteredGalleryItems.length]);
 
   // Display logic
   const showGallery = useMemo(() => {
     return photos.length > 0 && !loading && !isFetching;
   }, [photos.length, loading, isFetching]);
 
-  const showLoadingState = useMemo(() => {
-    return (loading && photos.length === 0) || isFetching;
-  }, [loading, photos.length, isFetching]);
+  useEffect(() => {
+    if (prompts && prompts.length > 0) {
+      setN(`${prompts.length}`);
+    }
+  }, [prompts]);
 
   return (
     <ContentSection
@@ -168,14 +174,16 @@ const ReferenceMoodboard = ({
         data: {},
       }}
       content={
-        <div className="space-y-4">
+        <div className="space-y-8">
           {showGallery && photos.length > 0 && (
             <div className="mx-auto max-w-7xl w-full px-2">
               <CustomGridGallery photos={photos} />
             </div>
           )}
 
-          {showLoadingState && <ImageGridSkeleton isLoading={true} />}
+          {photos.length == 0 && (
+            <ManualMoodboardSkeleton shimmer={isFetching} showButton={false} />
+          )}
 
           {prompts && prompts.length > 0 && (
             <div className="space-y-2">
@@ -224,12 +232,27 @@ const ReferenceMoodboard = ({
               </div>
               <div className="grid grid-cols-3 gap-4 auto">
                 {prompts.map((prompt) => (
-                  <Textarea
-                    key={prompt}
-                    value={prompt}
-                    readOnly
-                    className="min-h-40 max-h-40"
-                  />
+                  <div key={prompt} className="relative">
+                    <Textarea
+                      value={prompt}
+                      readOnly
+                      className="min-h-40 max-h-40 scrollbar"
+                    />
+                    <Button
+                      variant="ghost"
+                      className="absolute bottom-2 right-2"
+                      size="icon"
+                      onClick={() => {
+                        form.setValue("prompt", prompt, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        });
+                      }}
+                    >
+                      <EditIcon />
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -241,43 +264,3 @@ const ReferenceMoodboard = ({
 };
 
 export default ReferenceMoodboard;
-
-export const ImageGridSkeleton = ({ isLoading }: { isLoading: boolean }) => {
-  const gridItems = [
-    { colSpan: 2, rowSpan: 3, colStart: 1, rowStart: 1 },
-    { colSpan: 2, rowSpan: 2, colStart: 3, rowStart: 1 },
-    { colSpan: 2, rowSpan: 3, colStart: 7, rowStart: 1 },
-    { colSpan: 2, rowSpan: 2, colStart: 5, rowStart: 1 },
-    { colSpan: 2, rowSpan: 2, colStart: 1, rowStart: 4 },
-    { colSpan: 2, rowSpan: 2, colStart: 7, rowStart: 4 },
-    { colSpan: 2, rowSpan: 2, colStart: 4, rowStart: 3 },
-    { colSpan: 1, rowSpan: 3, colStart: 3, rowStart: 3 },
-    { colSpan: 1, rowSpan: 3, colStart: 6, rowStart: 3 },
-    { colSpan: 2, rowSpan: 1, colStart: 4, rowStart: 5, extra: "h-24" },
-  ];
-  return (
-    <div
-      className={cn("grid grid-cols-8 grid-rows-5 gap-2", {
-        "animate-pulse": isLoading,
-      })}
-    >
-      {gridItems.map((item, idx) => {
-        const { colSpan = 1, rowSpan = 1, colStart, rowStart, extra } = item;
-        return (
-          <div
-            key={idx}
-            className={cn(
-              "bg-muted rounded-md",
-              `col-span-${colSpan}`,
-              `row-span-${rowSpan}`,
-              colStart && `col-start-${colStart}`,
-              rowStart && `row-start-${rowStart}`,
-              extra,
-              isLoading && "animate-pulse"
-            )}
-          />
-        );
-      })}
-    </div>
-  );
-};

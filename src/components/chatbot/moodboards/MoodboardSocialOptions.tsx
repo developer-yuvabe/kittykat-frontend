@@ -32,14 +32,18 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
   limits,
   setLimits,
 }) => {
+  console.log("socialOptions", socialOptions);
+  console.log("selectedOptions", selectedOptions);
   const getLimitKey = (optionId: SocialOptionId): keyof LimitsState | null => {
     switch (optionId) {
-      case "pintrest":
+      case "pinterest":
         return "pinterest_limit";
       case "instagram":
         return "instagram_limit";
       case "facebook":
         return "facebook_limit";
+      case "website":
+        return "website_limit";
       default:
         return null;
     }

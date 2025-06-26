@@ -7,11 +7,11 @@ interface MediaLibraryTabsProps {
 function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
   const tabs = [
     { value: "all-media", label: "All Media" },
+    { value: "brand-uploads", label: "Brand Uploads" },
     { value: "moodboard", label: "Moodboards" },
-    { value: "images", label: "Images" },
-    // { value: "videos", label: "Videos" },
-    { value: "models", label: "Models" },
-    { value: "products", label: "Products" },
+
+    { value: "showboard-media", label: "Showboard Media" },
+    { value: "a2i-media", label: "A2i Media" },
   ];
 
   return (

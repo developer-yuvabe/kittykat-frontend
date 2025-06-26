@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { MoodboardInformation, ThreadCampaign } from "@/types/types";
-import { PintrestIcon, InstagramIcon } from "@/components/ui/custom-icon";
+import { PinterestIcon, InstagramIcon } from "@/components/ui/custom-icon";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import {
@@ -192,7 +192,7 @@ export const MoodboardVisualSectionHeader = ({
       <div className="flex justify-between">
         <div className="font-semibold flex flex-row gap-x-2">
           {`${currentMoodboard.visual_style_images.length} images of ${brandName} found...`}
-          <PintrestIcon />
+          <PinterestIcon />
           <InstagramIcon />
         </div>
 

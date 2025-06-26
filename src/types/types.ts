@@ -78,7 +78,7 @@ export interface ThreadBrand {
       instagram: string;
       facebook: string;
       tiktok: string;
-      pintrest?: string;
+      pinterest?: string;
     };
   };
 
@@ -155,7 +155,6 @@ export type ThreadA2iImage = {
   generations: A2iImageGeneration[];
   reference_moodboard_id?: string;
   prompts?: string[];
-
 };
 
 export interface ThreadDetails {

@@ -25,7 +25,7 @@ import {
   FacebookIcon,
   InstagramIcon,
   MoodboardIcon,
-  PintrestIcon,
+  PinterestIcon,
 } from "@/components/ui/custom-icon";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { ContentSection } from "@/components/shared/ContentSection";
@@ -171,7 +171,7 @@ export const MoodboardSection: React.FC<{
     const finalCount = assetCount > 0 ? assetCount : fallbackImageCount;
 
     setNoOfImagesForMoodboard(Math.min(16, finalCount));
-  }, [currentMoodboard?.id]);
+  }, [currentMoodboard?.id, currentMoodboard?.visual_style_images.length]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
@@ -181,6 +181,7 @@ export const MoodboardSection: React.FC<{
     pinterest_limit: 10,
     instagram_limit: 10,
     facebook_limit: 10,
+    website_limit: 10,
   });
 
   useEffect(() => {
@@ -239,17 +240,17 @@ export const MoodboardSection: React.FC<{
       ];
 
       options.push({
-        id: SocialOptionId.Pintrest,
+        id: SocialOptionId.Pinterest,
         name: "Use Pinterest Images",
         url:
-          existingSourcesMap.pintrest?.url ||
-          socialMediaPlatforms?.pintrest ||
+          existingSourcesMap.pinterest?.url ||
+          socialMediaPlatforms?.pinterest ||
           "https://",
-        icon: <PintrestIcon size={44} />,
+        icon: <PinterestIcon size={44} />,
         isEditing: false,
         editValue:
-          existingSourcesMap.pintrest?.url ||
-          socialMediaPlatforms?.pintrest ||
+          existingSourcesMap.pinterest?.url ||
+          socialMediaPlatforms?.pinterest ||
           "https://",
       });
 

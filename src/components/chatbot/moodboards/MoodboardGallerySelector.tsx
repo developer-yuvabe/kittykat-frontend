@@ -18,20 +18,30 @@ export function MoodboardGallerySelector({
   moodboardId,
   hasUnsavedChanges,
   inSelectionGalleryIds,
+  setNoOfImagesForMoodboard,
+  noOfImagesForMoodboard,
+  assetsLength,
 }: {
   brandId: string;
   campaignId: string;
   moodboardId: string;
   hasUnsavedChanges: boolean;
   inSelectionGalleryIds: string[];
+  setNoOfImagesForMoodboard: (count: number) => void;
+  noOfImagesForMoodboard: number;
+  assetsLength: number;
 }) {
   const [loading, setLoading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
     null | "model" | "product" | "all-media"
   >(null);
 
-  const isDisabled = loading || hasUnsavedChanges;
-  console.log("des", isDisabled);
+  const isDisabled =
+    loading ||
+    hasUnsavedChanges ||
+    assetsLength >= 16 ||
+    noOfImagesForMoodboard >= 16;
+
   return (
     <div>
       {loading ? (
@@ -70,6 +80,11 @@ export function MoodboardGallerySelector({
             <TooltipContent side="top">
               You have unsaved changes. Please save them before selecting from
               the gallery.
+            </TooltipContent>
+          )}
+          {noOfImagesForMoodboard >= 16 && (
+            <TooltipContent side="top">
+              Moodboard cannot exceed 16 images.
             </TooltipContent>
           )}
         </Tooltip>
@@ -111,20 +126,30 @@ export function MoodboardGallerySelector({
         onMultipleMediaItemsSelected={async (items) => {
           toast.promise(
             (async () => {
+              let count = noOfImagesForMoodboard;
+
               for (const item of items) {
+                if (count >= 16) {
+                  toast.warning(
+                    "You can add a maximum of 16 images to the moodboard."
+                  );
+                  break;
+                }
+
                 await addImageToMoodboard(brandId, campaignId, moodboardId, {
                   id: item.id,
                 });
+                count += 1;
+                setNoOfImagesForMoodboard(count);
+                setMediaLibraryOpen(null);
               }
             })(),
             {
               loading: "Adding selected media...",
-              success: `Added ${items.length} media items to moodboard!`,
+              success: `Added media items to moodboard!`,
               error: "Failed to add one or more media items.",
             }
           );
-
-          setMediaLibraryOpen(null);
         }}
         inSelectionGalleryIds={inSelectionGalleryIds}
         maxSelectionCount={16}
