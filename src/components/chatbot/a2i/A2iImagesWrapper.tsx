@@ -45,7 +45,7 @@ const getItemTrackingId = (item: A2iImageCardProps): string => {
   return getExistingId(item) || `generation-${item.generationId}`;
 };
 
-// Helper function to convert generations to items
+// Helper function to convert generations to item
 const generationsToItems = (
   generations: A2iImageGeneration[]
 ): A2iImageCardProps[] => {
