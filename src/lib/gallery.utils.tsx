@@ -422,3 +422,12 @@ export const createMediaItemHelper = (
 ): MediaItemHelper => {
   return new MediaItemHelper(actions);
 };
+
+export const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};

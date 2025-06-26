@@ -7,6 +7,8 @@ import {
   GalleryItemsListResponse,
   BrandCampaignListResponse,
   CommentReplyCreate,
+  CommentUpdate,
+  CommentReplyUpdate,
 } from "@/types/gallery.types";
 
 class GalleryService {
@@ -221,6 +223,44 @@ class GalleryService {
       axiosInstance.post(
         `/gallery/${itemId}/comments/${commentId}/replies`,
         replyData
+      )
+    );
+  }
+
+  async patchComment(
+    itemId: string,
+    commentId: string,
+    updateData: CommentUpdate
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.patch<GalleryItemResponse>(
+        `gallery/${itemId}/comments/${commentId}`,
+        updateData
+      )
+    );
+  }
+  async deleteReplyFromComment(
+    itemId: string,
+    commentId: string,
+    replyId: string
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.delete<GalleryItemResponse>(
+        `gallery/${itemId}/comments/${commentId}/replies/${replyId}`
+      )
+    );
+  }
+
+  async patchReplyOnComment(
+    itemId: string,
+    commentId: string,
+    replyId: string,
+    updateData: CommentReplyUpdate
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.patch<GalleryItemResponse>(
+        `gallery/${itemId}/comments/${commentId}/replies/${replyId}`,
+        updateData
       )
     );
   }

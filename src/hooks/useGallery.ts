@@ -6,6 +6,8 @@ import {
 } from "@tanstack/react-query";
 import { galleryService } from "@/services/api/gallery.service";
 import type {
+  CommentReplyUpdate,
+  CommentUpdate,
   GalleryFilters,
   GalleryItem,
   GalleryItemResponse,
@@ -495,6 +497,74 @@ export const useGalleryQuery = (
     }
   };
 
+  const patchCommentMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentId,
+      updateData,
+    }: {
+      itemId: string;
+      commentId: string;
+      updateData: CommentUpdate;
+    }) => galleryService.patchComment(itemId, commentId, updateData),
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Comment updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update comment");
+    },
+  });
+
+  const deleteReplyMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentId,
+      replyId,
+    }: {
+      itemId: string;
+      commentId: string;
+      replyId: string;
+    }) => galleryService.deleteReplyFromComment(itemId, commentId, replyId),
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Reply deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete reply");
+    },
+  });
+
+  const patchReplyMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      commentId,
+      replyId,
+      updateData,
+    }: {
+      itemId: string;
+      commentId: string;
+      replyId: string;
+      updateData: CommentReplyUpdate;
+    }) =>
+      galleryService.patchReplyOnComment(
+        itemId,
+        commentId,
+        replyId,
+        updateData
+      ),
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      toast.success("Reply updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update reply");
+    },
+  });
+
   return {
     // Queries
     brandsData: brandsQuery.data,
@@ -541,6 +611,15 @@ export const useGalleryQuery = (
 
     addReply: addReplyMutation.mutate,
     isAddingReply: addReplyMutation.isPending,
+
+    patchComment: patchCommentMutation.mutate,
+    isPatchingComment: patchCommentMutation.isPending,
+
+    deleteReply: deleteReplyMutation.mutate,
+    isDeletingReply: deleteReplyMutation.isPending,
+
+    patchReply: patchReplyMutation.mutate,
+    isPatchingReply: patchReplyMutation.isPending,
 
     // Download helpers
     downloadItem,
