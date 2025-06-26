@@ -291,7 +291,10 @@ type GalleryActions = {
   addComment: UseMutateFunction<
     void | GalleryItemResponse,
     Error,
-    { itemId: string; commentData: { text: string } },
+    {
+      itemId: string;
+      commentData: { text: string; attachments?: string[] | undefined };
+    },
     unknown
   >;
 
@@ -361,10 +364,14 @@ class MediaItemHelper {
     });
   };
 
-  addComment = async (itemId: string, text: string): Promise<void> => {
+  addComment = async (
+    itemId: string,
+    text: string,
+    attachments?: string[]
+  ): Promise<void> => {
     this.actions.addComment({
       itemId,
-      commentData: { text },
+      commentData: { text, attachments },
     });
   };
 

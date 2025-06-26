@@ -247,6 +247,7 @@ function GridItem<TPhoto extends Photo>({
         alt={photo.alt || `Image ${photo.id}`}
         className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
         draggable={false}
+        loading="lazy"
       />
 
       {/* Gradient overlays - only show if there are hover actions */}

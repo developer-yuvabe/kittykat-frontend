@@ -17,6 +17,9 @@ import { MediaItemEditableTitle } from "./MediaItemEditableTitle";
 import { MediaImage } from "./MediaImage";
 import { MediaItemActionsButton } from "./MediaItemActionsButton";
 import { MediaImageDetails } from "./MediaImageDetails";
+import { Button } from "@/components/ui/button";
+import { Edit3 } from "lucide-react";
+import { MediaEditorDialog } from "./MediaEditorDialog";
 
 // Types
 interface MediaItemProps {
@@ -38,9 +41,13 @@ interface MediaItemProps {
     text: string
   ) => Promise<void>;
   handleDeleteComment: (itemId: string, commentId: string) => Promise<void>;
-  handleAddComment: (itemId: string, text: string) => Promise<void>;
-  inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
-  isMultiSelect?: boolean; // 👈 new prop to enable multi-select mode
+  handleAddComment: (
+    itemId: string,
+    text: string,
+    attachments: string[] | undefined
+  ) => Promise<void>;
+  inSelectionGalleryIds?: string[];
+  isMultiSelect?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
 }
@@ -87,6 +94,54 @@ export function MediaItem({
     ? (300 * item.dimensions.height) / item.dimensions.width
     : Math.floor(Math.random() * 200) + 200;
 
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  const handleUpdateCommentWithAttachments = async (
+    itemId: string,
+    commentId: string,
+    text: string
+  ) => {
+    await handleUpdateComment(itemId, commentId, text);
+  };
+
+  const handleAddReply = async (
+    itemId: string,
+    commentId: string,
+    text: string,
+    attachments?: string[]
+  ) => {
+    // Implementation for adding replies
+    console.log("Adding reply:", { itemId, commentId, text, attachments });
+  };
+
+  const handleUpdateReply = async (
+    itemId: string,
+    commentId: string,
+    replyId: string,
+    text: string
+  ) => {
+    // Implementation for updating replies
+    console.log("Updating reply:", { itemId, commentId, replyId, text });
+  };
+
+  const handleDeleteReply = async (
+    itemId: string,
+    commentId: string,
+    replyId: string
+  ) => {
+    // Implementation for deleting replies
+    console.log("Deleting reply:", { itemId, commentId, replyId });
+  };
+
+  const handleAskKittyKat = async (
+    itemId: string,
+    message: string,
+    attachments?: string[]
+  ) => {
+    // Implementation for Ask KittyKat functionality
+    console.log("Asking KittyKat:", { itemId, message, attachments });
+  };
+
   return (
     <div
       className="mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
@@ -130,47 +185,71 @@ export function MediaItem({
 
         {/* More options popover */}
         {isHovered && (
-          <div className="absolute top-0 right-1 z-10 flex space-x-1">
-            <Popover>
-              <PopoverTrigger asChild>
-                <TooltipIconButton
-                  tooltip="More"
-                  className="hover:bg-black/50 "
+          <>
+            <div className="absolute top-0 right-1 z-10 flex space-x-1">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <TooltipIconButton
+                    tooltip="More"
+                    className="hover:bg-black/50 "
+                  >
+                    <MoreIcon size={24} color="#ffffff" />
+                  </TooltipIconButton>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-72 h-max max-h-128 overflow-auto p-2"
+                  side="right"
                 >
-                  <MoreIcon size={24} color="#ffffff" />
-                </TooltipIconButton>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-72 h-max max-h-128 overflow-auto p-2"
-                side="right"
-              >
-                <div className="space-y-2">
-                  <MediaItemEditableTitle
-                    item={item}
-                    onUpdateTitle={handleUpdateTitle}
-                  />
+                  <div className="space-y-2">
+                    <MediaItemEditableTitle
+                      item={item}
+                      onUpdateTitle={handleUpdateTitle}
+                    />
 
-                  <MediaImageDetails item={item} />
+                    <MediaImageDetails item={item} />
 
-                  <MediaItemCommentSection
-                    item={item}
-                    onUpdateComment={handleUpdateComment}
-                    onDeleteComment={handleDeleteComment}
-                    onAddComment={handleAddComment}
-                  />
+                    <MediaItemCommentSection
+                      item={item}
+                      onUpdateComment={handleUpdateComment}
+                      onDeleteComment={handleDeleteComment}
+                      onAddComment={handleAddComment}
+                    />
 
-                  <MediaItemActionsButton
-                    item={item}
-                    onDetailsClick={onDetailsClick}
-                    onDownload={onDownload}
-                    onDelete={onDelete}
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+                    <MediaItemActionsButton
+                      item={item}
+                      onDetailsClick={onDetailsClick}
+                      onDownload={onDownload}
+                      onDelete={onDelete}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <Button
+              size="sm"
+              className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 shadow-md"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditorOpen(true);
+              }}
+            >
+              <Edit3 className="w-4 h-4" />
+            </Button>
+          </>
         )}
       </div>
+      <MediaEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        item={item}
+        onAddComment={handleAddComment}
+        onUpdateComment={handleUpdateCommentWithAttachments}
+        onDeleteComment={handleDeleteComment}
+        onAddReply={handleAddReply}
+        onUpdateReply={handleUpdateReply}
+        onDeleteReply={handleDeleteReply}
+        onAskKittyKat={handleAskKittyKat}
+      />
     </div>
   );
 }
