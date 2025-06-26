@@ -42,14 +42,6 @@ const getExistingId = (item: A2iImageCardProps): string | null => {
   return item.image?.id || item.video?.id || null;
 };
 
-export const A2iImagesWrapper = ({
-  generations,
-  form,
-}: A2iImagesWrapperProps) => {
-  const { selectedBrandId } = useBrandStore();
-  const [items, setItems] = useState<A2iImageCardProps[]>([]);
-  const isUpdatingServer = useRef(false);
-
 // Helper function to get unique identifier for tracking (including processing items)
 const getItemTrackingId = (item: A2iImageCardProps): string => {
   return getExistingId(item) || `generation-${item.generationId}`;
@@ -111,7 +103,10 @@ const getItemTrackingIds = (items: A2iImageCardProps[]): Set<string> => {
   return new Set(items.map(getItemTrackingId));
 };
 
-export const A2iImagesWrapper = ({ generations }: A2iImagesWrapperProps) => {
+export const A2iImagesWrapper = ({
+  generations,
+  form,
+}: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
 
