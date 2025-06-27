@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import AddVersion from "./AddVersion";
 import { toast } from "sonner";
+import { AdminProtected } from "@/components/shared/AdminProtected";
 
 type AskKittykatVersionsProps = {
   item: GalleryItemResponse;
@@ -104,16 +105,18 @@ const AskKittykatVersions = ({
               Version {idx + 2}
             </Button>
           ))}
-          <AddVersion addVersion={addVersion}>
-            <TooltipIconButton
-              size="sm"
-              tooltip="Add Version"
-              side="right"
-              className="h-max"
-            >
-              <Plus />
-            </TooltipIconButton>
-          </AddVersion>
+          <AdminProtected>
+            <AddVersion addVersion={addVersion}>
+              <TooltipIconButton
+                size="sm"
+                tooltip="Add Version"
+                side="right"
+                className="h-max"
+              >
+                <Plus />
+              </TooltipIconButton>
+            </AddVersion>
+          </AdminProtected>
         </div>
       )}
     </div>
