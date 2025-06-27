@@ -7,13 +7,12 @@ import { GalleryActions } from "@/hooks/useGallery";
 
 interface AskKittykatImageSectionProps {
   item: GalleryItemResponse;
-  onAddVersion?: () => void;
   galleryActions: GalleryActions;
 }
 
 export const AskKittykatImageSection: React.FC<
   AskKittykatImageSectionProps
-> = ({ item, onAddVersion, galleryActions }) => {
+> = ({ item, galleryActions }) => {
   return (
     <div className="flex-1 p-6 relative flex items-center justify-center">
       <div className="w-[80%] h-[80%] flex items-center justify-center">
@@ -26,21 +25,6 @@ export const AskKittykatImageSection: React.FC<
           onLike={() => galleryActions.toggleFavorite(item.id)}
         />
       </div>
-
-      {/* Version info UI - optional */}
-      {/*
-      <div className="absolute bottom-6 left-6 text-sm text-gray-600">
-        Version 1 | Version 2 |{" "}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="p-0 h-auto"
-          onClick={onAddVersion}
-        >
-          +
-        </Button>
-      </div>
-      */}
     </div>
   );
 };

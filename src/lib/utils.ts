@@ -280,3 +280,14 @@ export const canvasToBlob = (canvas: HTMLCanvasElement, type: string) =>
       else reject(new Error("Canvas toBlob failed"));
     }, type);
   });
+
+export const getExtensionFromUrl = (url: string): string => {
+  try {
+    const pathname = new URL(url).pathname;
+    const lastSegment = pathname.split("/").pop() || "";
+    const ext = lastSegment.includes(".") ? lastSegment.split(".").pop() : "";
+    return ext?.toLowerCase() || "png";
+  } catch {
+    return "png";
+  }
+};

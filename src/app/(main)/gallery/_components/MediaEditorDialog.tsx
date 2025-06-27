@@ -30,6 +30,7 @@ import { AskKittykatCommentItem } from "./AskKittykatCommentItem";
 import { AskKittykatReplyList } from "./AskKittykatReplyList";
 import { AskKittykatReplyInput } from "./AskKittykatReplyInput";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import AskKittykatVersions from "./AskKittykatVersions";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -51,6 +52,10 @@ export function MediaEditorDialog({
   onNavigate,
   totalItems = 0,
 }: MediaEditorDialogProps) {
+  const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
+    item
+  );
+  // State for tabs, comments, replies, and attachments
   const [activeTab, setActiveTab] = useState("ask-kittykat");
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -79,6 +84,7 @@ export function MediaEditorDialog({
       setAttachments([]);
       setReplyAttachments([]);
       setActiveTab("ask-kittykat");
+      setCurrentItem(item);
     }
   }, [item?.id]);
 
@@ -100,7 +106,7 @@ export function MediaEditorDialog({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, currentIndex, totalItems, onNavigate]);
 
-  if (!item) return null;
+  if (!currentItem) return null;
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
@@ -154,7 +160,7 @@ export function MediaEditorDialog({
     setIsSubmitting(true);
     try {
       galleryActions.addComment({
-        itemId: item.id,
+        itemId: currentItem.id,
         commentData: {
           text: newComment,
           attachments: attachments.length > 0 ? attachments : undefined,
@@ -177,7 +183,7 @@ export function MediaEditorDialog({
     setIsSubmitting(true);
     try {
       galleryActions.addReply({
-        itemId: item.id,
+        itemId: currentItem.id,
         commentId: commentId,
         replyData: {
           text: replyText,
@@ -200,7 +206,7 @@ export function MediaEditorDialog({
   const handleUpdateComment = async (commentId: string, text: string) => {
     try {
       galleryActions.patchComment({
-        itemId: item.id,
+        itemId: currentItem.id,
         commentId,
         updateData: { text },
       });
@@ -219,7 +225,7 @@ export function MediaEditorDialog({
   ) => {
     try {
       galleryActions.patchReply({
-        itemId: item.id,
+        itemId: currentItem.id,
         commentId,
         replyId,
         updateData: { text },
@@ -237,7 +243,7 @@ export function MediaEditorDialog({
 
     try {
       await galleryActions.deleteComment({
-        itemId: item.id,
+        itemId: currentItem.id,
         commentId,
       });
       toast.success("Comment deleted successfully");
@@ -252,7 +258,7 @@ export function MediaEditorDialog({
 
     try {
       galleryActions.deleteReply({
-        itemId: item.id,
+        itemId: currentItem.id,
         commentId,
         replyId,
       });
@@ -294,7 +300,7 @@ export function MediaEditorDialog({
   };
 
   const handleAskKittyKat = async () => {
-    if (item.sent_to_human_queue) {
+    if (currentItem.sent_to_human_queue) {
       toast.info("This item is already in the human editing queue");
       return;
     }
@@ -305,7 +311,7 @@ export function MediaEditorDialog({
   const handleConfirmAskKittyKat = async () => {
     try {
       galleryActions.patchItem({
-        itemId: item.id,
+        itemId: currentItem.id,
         data: { sent_to_human_queue: true, workflow_status: "request_created" },
       });
       setShowConfirmDialog(false);
@@ -318,7 +324,7 @@ export function MediaEditorDialog({
     }
   };
 
-  const hasComments = item.comments && item.comments.length > 0;
+  const hasComments = currentItem.comments && currentItem.comments.length > 0;
 
   useEffect(() => {
     const prefetchThreshold = 2; // start prefetching 2 items before the end of loaded items
@@ -388,11 +394,17 @@ export function MediaEditorDialog({
           </DialogHeader>
 
           <div className="flex flex-1 overflow-hidden gap-x-3">
-            <div className="w-[35%] min-w-[280px]">
+            <div className="w-[35%] min-w-[280px] flex flex-col justify-between">
               <AskKittykatImageSection
-                item={item}
-                onAddVersion={() => {}}
+                item={currentItem}
                 galleryActions={galleryActions}
+              />
+              <AskKittykatVersions
+                item={item!}
+                currentVersion={currentItem}
+                onVersionChange={(updatedItem) => {
+                  setCurrentItem(updatedItem);
+                }}
               />
             </div>
 
@@ -420,11 +432,11 @@ export function MediaEditorDialog({
                       <AskKittykatCommentGuidelines />
                     ) : (
                       <div className="space-y-4  ">
-                        {item.comments?.map((comment) => (
+                        {currentItem.comments?.map((comment) => (
                           <div key={comment.id} className="space-y-3">
                             <AskKittykatCommentItem
                               comment={comment}
-                              itemId={item.id}
+                              itemId={currentItem.id}
                               editingCommentId={editingComment}
                               setEditingComment={setEditingComment}
                               setReplyingTo={setReplyingTo}
@@ -436,7 +448,7 @@ export function MediaEditorDialog({
                             <AskKittykatReplyList
                               replies={comment.replies}
                               commentId={comment.id}
-                              itemId={item.id}
+                              itemId={currentItem.id}
                               editingReply={editingReply}
                               setEditingReply={setEditingReply}
                               onUpdateReply={handleUpdateReply}
@@ -543,7 +555,7 @@ export function MediaEditorDialog({
                   <AskKittykatReviewStatus
                     onAskKittykat={handleAskKittyKat}
                     galleryActions={galleryActions}
-                    item={item}
+                    item={currentItem}
                   />
                 </TabsContent>
               </Tabs>
