@@ -76,25 +76,38 @@ export function MoodboardFindStyleDialog({
 
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Verify your social handles</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please ensure that the following links are correct, public, and
-              the accounts have posts:
-              <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-gray-700">
-                {socialOptions.map((opt) => (
-                  <li key={opt.id}>
-                    <a
-                      href={opt.editValue || opt.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800"
-                    >
-                      {opt.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </AlertDialogDescription>
+            {selectedOptions.length > 0 ? (
+              <>
+                <AlertDialogTitle>Verify your social handles</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please ensure that the following links are correct, public,
+                  and the accounts have posts:
+                  <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-gray-700">
+                    {socialOptions
+                      .filter((opt) => selectedOptions.includes(opt.id))
+                      .map((opt) => (
+                        <li key={opt.id}>
+                          <a
+                            href={opt.editValue || opt.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800"
+                          >
+                            {opt.name}
+                          </a>
+                        </li>
+                      ))}
+                  </ul>
+                </AlertDialogDescription>
+              </>
+            ) : (
+              <>
+                <AlertDialogTitle>Image upload analysis</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Do you want to find the style of your uploaded images?
+                </AlertDialogDescription>
+              </>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -9,11 +9,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ChevronUp } from "lucide-react";
 
 import ThreadDetailsPanel from "./ThreadDetailsPanel";
 import { ChatComponent } from "./ChatComponent";
 import { useThreads } from "@/providers/langgraph/Thread";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 interface MobileChatPanelProps {
   chatStarted: boolean;
@@ -34,14 +40,23 @@ const MobileChatPanel: React.FC<MobileChatPanelProps> = ({
     <div className="flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden">
       <Sheet open={isChatDrawerOpen} onOpenChange={setIsChatDrawerOpen}>
         <SheetTrigger asChild>
-          <Button
-            variant="default"
-            size="sm"
-            className="flex items-center absolute bottom-16 right-10 z-40 gap-2 bg-blue-600 hover:bg-blue-700"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Chat
-          </Button>
+          <div className="fixed top-1/2 right-1 -translate-y-1/2 z-30">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center text-xl xl:text-3xl h-8 w-8 gap-2 bg-blue-600 hover:bg-blue-700 rounded-full"
+                  >
+                    <ChevronUp className="w-4 h-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Open chat</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </SheetTrigger>
         <SheetContent
           side="bottom"

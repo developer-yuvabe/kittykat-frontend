@@ -10,7 +10,9 @@ import { UserRoleId } from "@/types/user.types";
 import { formatTime } from "@/lib/gallery.utils";
 import { useUserStore } from "@/store/user.store";
 import ZoomableImage from "@/components/ui/zoomable-image";
+
 import { LikeIcon } from "@/components/ui/custom-icon";
+
 
 interface AskKittykatCommentItemProps {
   comment: Comment;
@@ -133,7 +135,6 @@ export function AskKittykatCommentItem({
                     isLiked ? "text-blue-600" : ""
                   }`}
                 />
-
                 <span className="text-muted-foreground">{likeCount}</span>
               </div>
               <Button
