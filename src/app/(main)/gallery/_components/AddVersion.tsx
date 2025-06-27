@@ -11,17 +11,11 @@ import { toast } from "sonner";
 
 type AddVersionProps = {
   children?: React.ReactNode;
-  open?: boolean;
-  onClose?: () => void;
   addVersion: (uploadedUrl: string) => void;
 };
 
-const AddVersion = ({
-  children,
-  open,
-  onClose,
-  addVersion,
-}: AddVersionProps) => {
+const AddVersion = ({ children, addVersion }: AddVersionProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [url, setUrl] = useState("");
   const onDrop = useCallback(
@@ -48,6 +42,10 @@ const AddVersion = ({
         );
 
         addVersion(url);
+        setIsOpen(false);
+        setShowUrlInput(false);
+        setUrl("");
+        setIsUploading(false);
       } catch {
         toast.error(
           "An error occurred while uploading the file. Please try again."
@@ -71,10 +69,6 @@ const AddVersion = ({
       "image/*": [],
     },
     disabled: isUploading,
-    onError: (error) => {
-      console.error("Error during file upload:", error);
-      // Handle error here
-    },
   });
 
   let borderColor = "border-gray-300";
@@ -84,23 +78,15 @@ const AddVersion = ({
 
   const uploadUrl = async (url: string) => {
     addVersion(url);
+
+    setIsOpen(false);
+    setShowUrlInput(false);
+    setUrl("");
+    setIsUploading(false);
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          setShowUrlInput(false);
-          setIsUploading(false);
-          setUrl("");
-
-          if (onClose) {
-            onClose();
-          }
-        }
-      }}
-    >
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <AnimatePresence mode="wait">

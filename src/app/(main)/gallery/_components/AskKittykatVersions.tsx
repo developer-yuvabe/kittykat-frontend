@@ -1,12 +1,13 @@
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useGalleryQuery } from "@/hooks/useGallery";
+import { cn, getExtensionFromUrl } from "@/lib/utils";
 import { galleryService } from "@/services/api/gallery.service";
 import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import { Plus } from "lucide-react";
 import AddVersion from "./AddVersion";
-import { useGalleryQuery } from "@/hooks/useGallery";
-import { getExtensionFromUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 type AskKittykatVersionsProps = {
@@ -20,7 +21,6 @@ const AskKittykatVersions = ({
   currentVersion,
   onVersionChange,
 }: AskKittykatVersionsProps) => {
-  const [showAddVersion, setShowAddVersion] = useState(false);
   const { addToGallery } = useGalleryQuery({});
   const { isFetching, data, refetch } = useQuery({
     queryKey: ["versions", item.id],
@@ -48,6 +48,7 @@ const AskKittykatVersions = ({
       search_keywords: [],
       custom_tags: [],
       parent_asset_id: item.id,
+      is_master: false,
     };
 
     addToGallery(galleryItem).then((item) => {
@@ -58,40 +59,44 @@ const AskKittykatVersions = ({
         }
       });
     });
-    setShowAddVersion(false);
   };
 
   return (
     <div>
       {isFetching ? (
-        <div className="flex items-center gap-x-4 flex-row-reverse">
+        <div className="flex items-center gap-x-4 w-max">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton
               key={index}
               className="h-4 w-24 bg-gray-300 animate-pulse"
-              style={{ width: `${index * 100 + 50}px` }}
             />
           ))}
+          <Skeleton className="h-4 w-4 rounded-full bg-gray-300 animate-pulse" />
         </div>
       ) : (
-        <div className="flex items-center gap-x-2">
+        <div className="flex items-center gap-x-2 flex-wrap">
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto"
             onClick={() => {
               if (item.id === currentVersion?.id) return;
               onVersionChange(item);
             }}
+            className={cn("h-max", {
+              "border border-primary bg-muted": currentVersion?.id === item.id,
+            })}
           >
             Version 1
           </Button>
           {data?.map((version, idx) => (
             <Button
               key={version.id}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-auto"
+              className={cn("h-max", {
+                "border border-primary bg-muted":
+                  currentVersion?.id === version.id,
+              })}
               onClick={() => {
                 onVersionChange(version);
               }}
@@ -99,18 +104,15 @@ const AskKittykatVersions = ({
               Version {idx + 2}
             </Button>
           ))}
-          <AddVersion
-            open={showAddVersion}
-            onClose={() => setShowAddVersion(false)}
-            addVersion={addVersion}
-          >
-            <Button
-              variant="ghost"
+          <AddVersion addVersion={addVersion}>
+            <TooltipIconButton
               size="sm"
-              onClick={() => setShowAddVersion(true)}
+              tooltip="Add Version"
+              side="right"
+              className="h-max"
             >
-              +
-            </Button>
+              <Plus />
+            </TooltipIconButton>
           </AddVersion>
         </div>
       )}

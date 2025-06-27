@@ -9,6 +9,7 @@ export function useSessionStorage() {
 
   const getSessionItem = <T,>(key: string): T | null => {
     try {
+      if (typeof window === "undefined") return null; // Ensure this runs in a browser context
       const item = sessionStorage.getItem(key);
       return item ? (JSON.parse(item) as T) : null;
     } catch (err) {
