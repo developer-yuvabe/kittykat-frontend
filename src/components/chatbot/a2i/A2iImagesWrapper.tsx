@@ -246,7 +246,7 @@ export const A2iImagesWrapper = ({
                 })}
 
                 {Array.from({
-                  length: Math.max(0, INTIAL_IMAGE_PLACEHOLDER - items.length),
+                  length: INTIAL_IMAGE_PLACEHOLDER,
                 }).map((_, index) => (
                   <A2iImagePlaceholderCard
                     key={`empty-placeholder-${items.length + index}`}
