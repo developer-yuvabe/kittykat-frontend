@@ -13,7 +13,6 @@ import ZoomableImage from "@/components/ui/zoomable-image";
 
 import { LikeIcon } from "@/components/ui/custom-icon";
 
-
 interface AskKittykatCommentItemProps {
   comment: Comment;
   itemId: string;
@@ -114,12 +113,13 @@ export function AskKittykatCommentItem({
             <p className="text-sm text-gray-700 mb-2">{comment.text}</p>
 
             {comment?.attachments && comment?.attachments?.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="flex flex-row gap-x-2 mb-2">
                 {comment?.attachments.map((attachment, idx) => (
                   <ZoomableImage
                     src={attachment}
                     key={idx}
                     className="w-16 h-16 object-cover rounded border cursor-pointer"
+                    variant="download"
                   />
                 ))}
               </div>
@@ -145,25 +145,31 @@ export function AskKittykatCommentItem({
               >
                 <Reply className="w-3 h-3 mr-1" /> Reply
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0"
-                onClick={() => {
-                  setEditingComment(comment.id);
-                  setEditText(comment.text);
-                }}
-              >
-                <Edit className="w-3 h-3 mr-1" /> Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0 text-red-600 hover:text-red-700"
-                onClick={() => onDeleteComment(comment.id)}
-              >
-                <Trash2 className="w-3 h-3 mr-1" /> Delete
-              </Button>
+              {(user &&
+                (user?.role as unknown as UserRoleId) === UserRoleId.ADMIN) ||
+                (comment.added_by === user?.id && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={() => {
+                        setEditingComment(comment.id);
+                        setEditText(comment.text);
+                      }}
+                    >
+                      <Edit className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 text-red-600 hover:text-red-700"
+                      onClick={() => onDeleteComment(comment.id)}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
+                  </>
+                ))}
             </div>
           </>
         )}

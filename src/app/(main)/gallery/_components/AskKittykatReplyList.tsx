@@ -132,6 +132,7 @@ export function AskKittykatReplyList({
                           src={attachment}
                           key={idx}
                           className="w-16 h-16 object-cover rounded border cursor-pointer"
+                          variant="download"
                         />
                       ))}
                     </div>

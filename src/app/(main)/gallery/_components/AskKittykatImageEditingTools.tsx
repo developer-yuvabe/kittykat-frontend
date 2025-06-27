@@ -52,7 +52,7 @@ export function AskKittykatImageEditingTools() {
   return (
     <>
       {tools.map((tool) => (
-        <TabsContent key={tool.value} value={tool.value} className="flex-1 p-4">
+        <TabsContent key={tool.value} value={tool.value} className="flex-1 p-2">
           <FeatureComingSoon icon={tool.icon} message={tool.message} />
         </TabsContent>
       ))}

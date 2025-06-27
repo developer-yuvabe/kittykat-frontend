@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, Reply } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import { UserRoleId } from "@/types/user.types";
+import ZoomableImage from "@/components/ui/zoomable-image";
 
 interface AskKittykatCommentThreadProps {
   comments: Comment[];
@@ -115,11 +116,12 @@ export const AskKittykatCommentThread: React.FC<
                   {comment.attachments && comment.attachments.length > 0 && (
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       {comment.attachments.map((attachment, idx) => (
-                        <img
+                        <ZoomableImage
                           key={idx}
                           src={attachment || "/placeholder.svg"}
                           alt="Attachment"
                           className="w-full h-20 object-cover rounded border"
+                          variant="download"
                         />
                       ))}
                     </div>

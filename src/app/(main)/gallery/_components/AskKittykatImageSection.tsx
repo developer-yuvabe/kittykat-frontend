@@ -1,30 +1,34 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import { GalleryItemResponse } from "@/types/gallery.types";
+import { GalleryActions } from "@/hooks/useGallery";
 
 interface AskKittykatImageSectionProps {
-  item: {
-    asset_url?: string;
-    asset_title?: string;
-  };
+  item: GalleryItemResponse;
   onAddVersion?: () => void;
+  galleryActions: GalleryActions;
 }
 
 export const AskKittykatImageSection: React.FC<
   AskKittykatImageSectionProps
-> = ({ item, onAddVersion }) => {
+> = ({ item, onAddVersion, galleryActions }) => {
   return (
-    <div className="flex-1 bg-gray-50 flex items-center justify-center p-6 relative">
-      <div className="relative">
+    <div className="flex-1 p-6 relative flex items-center justify-center">
+      <div className="w-[80%] h-[80%] flex items-center justify-center">
         <ZoomableImage
           src={item.asset_url}
           key={item.asset_url}
-          className="max-w-full max-h-[600px] object-contain rounded-lg shadow-lg"
+          className="object-contain rounded-lg shadow-lg max-h-full max-w-full"
+          variant="overlay"
+          isLiked={item.is_favourite}
+          onLike={() => galleryActions.toggleFavorite(item.id)}
         />
       </div>
 
+      {/* Version info UI - optional */}
+      {/*
       <div className="absolute bottom-6 left-6 text-sm text-gray-600">
         Version 1 | Version 2 |{" "}
         <Button
@@ -36,6 +40,7 @@ export const AskKittykatImageSection: React.FC<
           +
         </Button>
       </div>
+      */}
     </div>
   );
 };

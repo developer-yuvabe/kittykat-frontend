@@ -350,9 +350,9 @@ export function MediaEditorDialog({
           }}
           className="p-4 h-[100dvh] w-[100dvw] max-w-[100dvw]! min-w-full rounded-none shadow-xl overflow-hidden flex flex-col justify-between"
         >
-          <DialogHeader className="px-6 py-4 border-b">
+          <DialogHeader className="px-6 py-4 mb-0 pb-0">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-semibold">
+              <DialogTitle className="text-2xl font-semibold">
                 A2i Image Editor
               </DialogTitle>
 
@@ -388,15 +388,16 @@ export function MediaEditorDialog({
           </DialogHeader>
 
           <div className="flex flex-1 overflow-hidden gap-x-3">
-            <AskKittykatImageSection
-              item={item}
-              onAddVersion={() => {
-                // handle add version
-              }}
-            />
+            <div className="w-[35%] min-w-[280px]">
+              <AskKittykatImageSection
+                item={item}
+                onAddVersion={() => {}}
+                galleryActions={galleryActions}
+              />
+            </div>
 
             {/* Right Panel */}
-            <div className="w-full flex-1 flex flex-col">
+            <div className="flex-1 w-[65%] flex flex-col">
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
@@ -409,7 +410,7 @@ export function MediaEditorDialog({
                   value="ask-kittykat"
                   className="flex-1 flex flex-col"
                 >
-                  <div className="px-4 py-3 border-b">
+                  <div className="px-4 py-3 ">
                     <h2 className="font-semibold text-lg">Ask Kitty Kat</h2>
                   </div>
 
