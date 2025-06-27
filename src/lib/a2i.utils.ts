@@ -381,11 +381,39 @@ export const fluxProUltraModel: ModelInformation<typeof fluxProUltraSchema> = {
   },
 };
 
-export const birkenstockModel: ModelInformation<
+export const finetunedModels = [
+  {
+    name: "Birkenstock V1",
+    finetuneId: "22a60eb3-7bd6-4603-b52e-12b72dbc5752",
+    prefix: "brik50_cap",
+  },
+  {
+    name: "Bandolier V1",
+    finetuneId: "e8e86637-9c26-470e-a91b-bd659424ab32",
+    prefix: "bandolier_v1",
+  },
+  {
+    name: "Tod's V1",
+    finetuneId: "276ceef9-d6d5-44c3-897e-94e04e446090",
+    prefix: "tods_trainingV1",
+  },
+  {
+    name: "Madeline Love V1",
+    finetuneId: "3e995990-4ab7-4e52-82d2-6e7e86e5ddd5",
+    prefix: "madeinloveV1",
+  },
+  {
+    name: "Grateful Pet V1",
+    finetuneId: "80690130-a603-4f51-a3b3-80f32ea9eaa0",
+    prefix: "grateful_petsV1",
+  },
+];
+
+export const customFluxProFinetunedModels: ModelInformation<
   typeof fluxProUltraFinetunedSchema
-> = {
-  id: "black-forest-labs/flux-1.1-pro-ultra-finetuned",
-  name: "Birkenstock V1",
+>[] = finetunedModels.map((model) => ({
+  id: `black-forest-labs/flux-1.1-pro-ultra-finetuned-${model.finetuneId}`,
+  name: model.name,
   provider: "replicate",
   disabled: false,
   parameters: [
@@ -465,7 +493,7 @@ export const birkenstockModel: ModelInformation<
   defaultValues: {
     prompt: "",
     model: "black-forest-labs/flux-1.1-pro-ultra-finetuned",
-    finetune_id: "22a60eb3-7bd6-4603-b52e-12b72dbc5752",
+    finetune_id: model.finetuneId,
     finetune_strength: 1,
     provider: "replicate",
     output_format: "jpg",
@@ -474,13 +502,13 @@ export const birkenstockModel: ModelInformation<
     raw: false,
     image_prompt_strength: 0.1,
   },
-  prefix: "brik50_cap",
-};
+  prefix: model.prefix,
+}));
 
 export const IMAGE_GENERATION_MODELS = [
   gptImage1Model,
   fluxDevModel,
   fluxProModel,
   fluxProUltraModel,
-  birkenstockModel,
+  ...customFluxProFinetunedModels,
 ] as const;
