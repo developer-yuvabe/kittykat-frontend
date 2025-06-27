@@ -2,13 +2,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LikeIcon } from "@/components/ui/custom-icon";
 import { Textarea } from "@/components/ui/textarea";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import { formatTime } from "@/lib/gallery.utils";
 import { useUserStore } from "@/store/user.store";
 import { CommentReply } from "@/types/gallery.types";
 import { UserRoleId } from "@/types/user.types";
-import { ThumbsUp, Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 
 import { useState } from "react";
 
@@ -141,11 +142,9 @@ export function AskKittykatReplyList({
                       onClick={() => onLikeReply(reply, itemId, commentId)}
                       className="flex items-center space-x-1 cursor-pointer"
                     >
-                      <ThumbsUp
+                      <LikeIcon
                         className={`w-4 h-4 transition-colors duration-200 ${
-                          isLiked
-                            ? "text-blue-600 fill-blue-600"
-                            : "text-gray-400"
+                          isLiked ? "text-blue-600" : ""
                         }`}
                       />
                       <span className="text-xs text-muted-foreground">

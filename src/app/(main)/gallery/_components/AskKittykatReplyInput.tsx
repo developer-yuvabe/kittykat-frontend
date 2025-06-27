@@ -41,7 +41,7 @@ export function AskKittykatReplyInput({
 
       {/* Reply Attachments Preview */}
       {replyAttachments.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-row gap-x-2">
           {replyAttachments.map((url, idx) => (
             <div key={idx} className="relative">
               <ZoomableImage
@@ -52,7 +52,7 @@ export function AskKittykatReplyInput({
               <Button
                 size="sm"
                 variant="destructive"
-                className="absolute -top-2 -right-2 w-4 h-4 p-0"
+                className="absolute -top-2 -right-2 w-5 h-5 p-0"
                 onClick={() =>
                   setReplyAttachments((prev) =>
                     prev.filter((_, i) => i !== idx)
