@@ -8,13 +8,11 @@ import { type CSSProperties, memo } from "react";
 interface A2iImageCardDraggableProps {
   imageData: A2iImageCardProps;
   disableDrag?: boolean;
-  onItemDeleted?: (deletedId: string) => void;
 }
 
 const A2iImageCardDraggable = memo(function A2iImageCardDraggable({
   imageData,
   disableDrag = false,
-  onItemDeleted,
 }: A2iImageCardDraggableProps) {
   // Get existing ID only - no fallback generation
   const existingId = imageData.image?.id || imageData.video?.id;

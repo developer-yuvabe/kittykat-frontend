@@ -47,62 +47,6 @@ const getItemTrackingId = (item: A2iImageCardProps): string => {
   return getExistingId(item) || `generation-${item.generationId}`;
 };
 
-// Helper function to convert generations to item
-const generationsToItems = (
-  generations: A2iImageGeneration[]
-): A2iImageCardProps[] => {
-  const flatImages = generations.flatMap((generation): A2iImageCardProps[] => {
-    const images = generation.images;
-
-    if (!images || images.length === 0) {
-      return [
-        {
-          image: null,
-          status: generation.status,
-          generationId: generation.id,
-          parameters: generation.parameters,
-          type: generation.type,
-          vtonParameters: generation.vton_parameters,
-          remixParameters: generation.remix_parameters,
-          video: generation.video,
-        },
-      ];
-    }
-
-    return images.map((img) => ({
-      image: img,
-      status: generation.status,
-      generationId: generation.id,
-      parameters: generation.parameters,
-      type: generation.type,
-      vtonParameters: generation.vton_parameters,
-      remixParameters: generation.remix_parameters,
-      video: generation.video,
-    }));
-  });
-
-  // Sort by position first, then by creation date (newest first for same position)
-  flatImages.sort((a, b) => {
-    const aPos = a.image?.position ?? Number.POSITIVE_INFINITY;
-    const bPos = b.image?.position ?? Number.POSITIVE_INFINITY;
-
-    if (aPos !== bPos) {
-      return aPos - bPos;
-    }
-
-    const aDate = new Date(a.image?.created_at ?? "").getTime();
-    const bDate = new Date(b.image?.created_at ?? "").getTime();
-    return bDate - aDate;
-  });
-
-  return flatImages;
-};
-
-// Create a set of existing item tracking IDs for comparison
-const getItemTrackingIds = (items: A2iImageCardProps[]): Set<string> => {
-  return new Set(items.map(getItemTrackingId));
-};
-
 export const A2iImagesWrapper = ({
   generations,
   form,
@@ -115,156 +59,55 @@ export const A2iImagesWrapper = ({
   const isDragging = useRef(false);
   const dragEndTime = useRef(0);
 
-  // Track the last known generations to detect changes
-  const lastGenerationsRef = useRef<A2iImageGeneration[]>([]);
-
-  const updateItems = useCallback((newGenerations: A2iImageGeneration[]) => {
-    const newItems = generationsToItems(newGenerations);
-    setItems(newItems);
-    lastGenerationsRef.current = newGenerations;
-  }, []);
-
-  // Handle item deletion - remove from local state immediately
-  const handleItemDeleted = useCallback((deletedId: string) => {
-    setItems((prevItems) =>
-      prevItems.filter((item) => {
-        const itemId = getExistingId(item);
-        return itemId !== deletedId;
-      })
-    );
-  }, []);
-
   useEffect(() => {
-    const now = Date.now();
+    const flatImages = generations.flatMap(
+      (generation): A2iImageCardProps[] => {
+        const images = generation.images;
 
-    // Don't update during drag operations
-    if (isDragging.current) {
-      return;
-    }
-
-    // Don't update immediately after drag ends (prevent flicker)
-    if (now - dragEndTime.current < 1000) {
-      return;
-    }
-
-    // Don't update during server operations
-    if (isUpdatingServer.current) {
-      return;
-    }
-
-    // Check if this is a meaningful update
-    const currentItems = generationsToItems(generations);
-    const currentTrackingIds = getItemTrackingIds(currentItems);
-    const existingTrackingIds = getItemTrackingIds(items);
-
-    // Check for new items (including processing items)
-    const hasNewItems = currentItems.some((item) => {
-      const trackingId = getItemTrackingId(item);
-      return !existingTrackingIds.has(trackingId);
-    });
-
-    // Check for status changes (processing -> completed)
-    const hasStatusChanges = currentItems.some((currentItem) => {
-      const existingItem = items.find((item) => {
-        const currentTrackingId = getItemTrackingId(currentItem);
-        const existingTrackingId = getItemTrackingId(item);
-        return currentTrackingId === existingTrackingId;
-      });
-      return existingItem && existingItem.status !== currentItem.status;
-    });
-
-    // Check for deleted items (items that exist locally but not in new data)
-    const hasDeletedItems = items.some((item) => {
-      const trackingId = getItemTrackingId(item);
-      return !currentTrackingIds.has(trackingId);
-    });
-
-    // Check for content updates (when images/videos become available)
-    const hasContentUpdates = currentItems.some((currentItem) => {
-      const existingItem = items.find((item) => {
-        const currentTrackingId = getItemTrackingId(currentItem);
-        const existingTrackingId = getItemTrackingId(item);
-        return currentTrackingId === existingTrackingId;
-      });
-
-      if (!existingItem) return false;
-
-      // Check if image/video content became available
-      const hadContent = !!(existingItem.image?.url || existingItem.video?.url);
-      const hasContent = !!(currentItem.image?.url || currentItem.video?.url);
-
-      return !hadContent && hasContent;
-    });
-
-    console.log("SSE Update Check:", {
-      generationsLength: generations.length,
-      currentItemsLength: currentItems.length,
-      existingItemsLength: items.length,
-      hasNewItems,
-      hasStatusChanges,
-      hasDeletedItems,
-      hasContentUpdates,
-      isDragging: isDragging.current,
-      isUpdatingServer: isUpdatingServer.current,
-      timeSinceDrag: now - dragEndTime.current,
-    });
-
-    // Update if there are new items, status changes, deletions, content updates, or first load
-    if (
-      hasNewItems ||
-      hasStatusChanges ||
-      hasDeletedItems ||
-      hasContentUpdates ||
-      items.length === 0
-    ) {
-      console.log("Updating items:", {
-        hasNewItems,
-        hasStatusChanges,
-        hasDeletedItems,
-        hasContentUpdates,
-        itemsLength: items.length,
-      });
-
-      // If we have existing items and there are new ones, append to end
-      if (items.length > 0 && hasNewItems && !hasDeletedItems) {
-        const mergedItems = [...items];
-
-        // Add new items to the END (most recent last)
-        currentItems.forEach((newItem) => {
-          const trackingId = getItemTrackingId(newItem);
-          if (!existingTrackingIds.has(trackingId)) {
-            mergedItems.push(newItem);
-          }
-        });
-
-        // Update status and content of existing items
-        for (let i = 0; i < mergedItems.length; i++) {
-          const existingItem = mergedItems[i];
-          const updatedItem = currentItems.find((item) => {
-            const existingTrackingId = getItemTrackingId(existingItem);
-            const currentTrackingId = getItemTrackingId(item);
-            return existingTrackingId === currentTrackingId;
-          });
-
-          if (
-            updatedItem &&
-            (updatedItem.status !== existingItem.status ||
-              updatedItem.image?.url !== existingItem.image?.url ||
-              updatedItem.video?.url !== existingItem.video?.url)
-          ) {
-            mergedItems[i] = updatedItem;
-          }
+        if (!images || images.length === 0) {
+          return [
+            {
+              image: null,
+              status: generation.status,
+              generationId: generation.id,
+              parameters: generation.parameters,
+              type: generation.type,
+              vtonParameters: generation.vton_parameters,
+              remixParameters: generation.remix_parameters,
+              video: generation.video,
+            },
+          ];
         }
 
-        setItems(mergedItems);
-      } else {
-        // First load, full refresh due to deletions, or no existing items
-        updateItems(generations);
+        return images.map((img) => ({
+          image: img,
+          status: generation.status,
+          generationId: generation.id,
+          parameters: generation.parameters,
+          type: generation.type,
+          vtonParameters: generation.vton_parameters,
+          remixParameters: generation.remix_parameters,
+          video: generation.video,
+        }));
       }
-    }
+    );
 
-    lastGenerationsRef.current = generations;
-  }, [generations, items, updateItems]);
+    // Sort by position first, then by creation date (newest first for same position)
+    flatImages.sort((a, b) => {
+      const aPos = a.image?.position ?? Number.POSITIVE_INFINITY;
+      const bPos = b.image?.position ?? Number.POSITIVE_INFINITY;
+
+      if (aPos !== bPos) {
+        return aPos - bPos;
+      }
+
+      const aDate = new Date(a.image?.created_at ?? "").getTime();
+      const bDate = new Date(b.image?.created_at ?? "").getTime();
+      return bDate - aDate;
+    });
+
+    setItems(flatImages);
+  }, [generations]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -388,7 +231,6 @@ export const A2iImagesWrapper = ({
                       <A2iImageCardDraggable
                         key={trackingId}
                         imageData={image}
-                        onItemDeleted={handleItemDeleted}
                       />
                     );
                   }
