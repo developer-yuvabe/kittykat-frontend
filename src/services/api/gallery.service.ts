@@ -264,6 +264,12 @@ class GalleryService {
       )
     );
   }
+
+  async getGalleryItemVersions(itemId: string): Promise<GalleryItemResponse[]> {
+    return handleApiRequest<GalleryItemResponse[]>(
+      axiosInstance.get(`/gallery/${itemId}/versions`)
+    );
+  }
 }
 
 export const galleryService = new GalleryService();

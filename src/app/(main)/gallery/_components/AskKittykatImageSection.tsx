@@ -27,8 +27,6 @@ export const AskKittykatImageSection: React.FC<
         />
       </div>
 
-      {/* Version info UI - optional */}
-      {/*
       <div className="absolute bottom-6 left-6 text-sm text-gray-600">
         Version 1 | Version 2 |{" "}
         <Button
