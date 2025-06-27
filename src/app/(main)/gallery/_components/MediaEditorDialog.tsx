@@ -306,7 +306,7 @@ export function MediaEditorDialog({
     try {
       galleryActions.patchItem({
         itemId: item.id,
-        data: { sent_to_human_queue: true },
+        data: { sent_to_human_queue: true, workflow_status: "request_created" },
       });
       setShowConfirmDialog(false);
       toast.success(
@@ -541,8 +541,9 @@ export function MediaEditorDialog({
                   </div>
 
                   <AskKittykatReviewStatus
-                    sentToHumanQueue={item?.sent_to_human_queue}
                     onAskKittykat={handleAskKittyKat}
+                    galleryActions={galleryActions}
+                    item={item}
                   />
                 </TabsContent>
               </Tabs>

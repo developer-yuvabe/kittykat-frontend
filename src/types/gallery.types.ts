@@ -113,7 +113,13 @@ export type GalleryItem = {
   >;
 
   // 🔁 Workflow & Collaboration
-  workflow_status?: "draft" | "in_review" | "approved" | "rejected";
+  workflow_status?:
+    | "draft"
+    | "request_created"
+    | "in_progress"
+    | "in_review"
+    | "approved"
+    | "rejected";
   user_feedback?: "liked" | "disliked" | "neutral";
   feedback_thread_id?: string;
   stakeholder_approvals?: Record<string, "approved" | "rejected" | "pending">;
