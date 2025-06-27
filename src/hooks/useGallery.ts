@@ -124,6 +124,25 @@ export const useGalleryQuery = (
     });
   };
 
+  function updateGalleryItemInCache(updatedItem: GalleryItemResponse) {
+    const queryKey = getGalleryQueryKey();
+
+    queryClient.setQueryData(queryKey, (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page: any) => ({
+          ...page,
+          gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
+            item.id === updatedItem.id ? updatedItem : item
+          ),
+        })),
+      };
+    });
+
+    queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
+  }
+
   // Create new gallery item mutation
   const addToGalleryMutation = useMutation({
     mutationFn: (newItem: GalleryItem) =>
@@ -226,28 +245,11 @@ export const useGalleryQuery = (
     },
 
     onSuccess: (updatedItem) => {
-      const queryKey = getGalleryQueryKey();
-
       console.log(
         "✅ Patch successful, updating with server data:",
         updatedItem.id
       );
-
-      // Update the item in gallery items list with server response
-      queryClient.setQueryData(queryKey, (old: any) => {
-        if (!old) return old;
-
-        return {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
-              item.id === updatedItem.id ? updatedItem : item
-            ),
-          })),
-        };
-      });
-
+      updateGalleryItemInCache(updatedItem);
       toast.success("Item updated successfully");
     },
   });
@@ -390,7 +392,6 @@ export const useGalleryQuery = (
     },
   });
 
-  // Add comment mutation with attachments support
   const addCommentMutation = useMutation({
     mutationFn: ({
       itemId,
@@ -399,18 +400,17 @@ export const useGalleryQuery = (
       itemId: string;
       commentData: { text: string; attachments?: string[] };
     }) => galleryService.addCommentToGalleryItem(itemId, commentData),
+
     onSuccess: (updatedItem) => {
-      // Update both single item and gallery items cache
-      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
-      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      updateGalleryItemInCache(updatedItem);
       toast.success("Comment added successfully");
     },
+
     onError: () => {
       toast.error("Failed to add comment");
     },
   });
 
-  // Update comment mutation
   const updateCommentMutation = useMutation({
     mutationFn: ({
       itemId,
@@ -422,17 +422,17 @@ export const useGalleryQuery = (
       commentData: { text: string };
     }) =>
       galleryService.updateCommentOnGalleryItem(itemId, commentId, commentData),
+
     onSuccess: (updatedItem) => {
-      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
-      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      updateGalleryItemInCache(updatedItem);
       toast.success("Comment updated successfully");
     },
+
     onError: () => {
       toast.error("Failed to update comment");
     },
   });
 
-  // Delete comment mutation
   const deleteCommentMutation = useMutation({
     mutationFn: ({
       itemId,
@@ -441,18 +441,48 @@ export const useGalleryQuery = (
       itemId: string;
       commentId: string;
     }) => galleryService.deleteCommentFromGalleryItem(itemId, commentId),
-    onSuccess: (_, { itemId }) => {
-      // Invalidate and refetch the item to get updated comments
-      queryClient.invalidateQueries({ queryKey: ["gallery-item", itemId] });
-      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+
+    onSuccess: (_, { itemId, commentId }) => {
+      const queryKey = getGalleryQueryKey();
+
+      // Update paginated gallery cache
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
+              item.id === itemId
+                ? {
+                    ...item,
+                    comments: item.comments?.filter((c) => c.id !== commentId),
+                  }
+                : item
+            ),
+          })),
+        };
+      });
+
+      // Update single item cache
+      queryClient.setQueryData(["gallery-item", itemId], (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          comments: old.comments?.filter((c: any) => c.id !== commentId),
+        };
+      });
+
       toast.success("Comment deleted successfully");
     },
+
     onError: () => {
       toast.error("Failed to delete comment");
     },
   });
 
-  // Add reply mutation
   const addReplyMutation = useMutation({
     mutationFn: ({
       itemId,
@@ -463,11 +493,13 @@ export const useGalleryQuery = (
       commentId: string;
       replyData: { text: string; attachments?: string[] };
     }) => galleryService.addReplyToComment(itemId, commentId, replyData),
+
     onSuccess: (updatedItem) => {
-      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
-      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      updateGalleryItemInCache(updatedItem);
+
       toast.success("Reply added successfully");
     },
+
     onError: () => {
       toast.error("Failed to add reply");
     },
@@ -507,11 +539,12 @@ export const useGalleryQuery = (
       commentId: string;
       updateData: CommentUpdate;
     }) => galleryService.patchComment(itemId, commentId, updateData),
+
     onSuccess: (updatedItem) => {
-      queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
-      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
+      updateGalleryItemInCache(updatedItem);
       toast.success("Comment updated successfully");
     },
+
     onError: () => {
       toast.error("Failed to update comment");
     },

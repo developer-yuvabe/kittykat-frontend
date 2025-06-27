@@ -10,6 +10,7 @@ import { UserRoleId } from "@/types/user.types";
 import { formatTime } from "@/lib/gallery.utils";
 import { useUserStore } from "@/store/user.store";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import { LikeIcon } from "@/components/ui/custom-icon";
 
 interface AskKittykatCommentItemProps {
   comment: Comment;
@@ -127,11 +128,12 @@ export function AskKittykatCommentItem({
                 onClick={() => onLikeComment(comment, itemId)}
                 className="flex items-center space-x-1 cursor-pointer"
               >
-                <ThumbsUp
+                <LikeIcon
                   className={`w-4 h-4 transition-colors duration-200 ${
-                    isLiked ? "text-blue-600 fill-blue-600" : "text-gray-400"
+                    isLiked ? "text-blue-600" : ""
                   }`}
                 />
+
                 <span className="text-muted-foreground">{likeCount}</span>
               </div>
               <Button

@@ -115,6 +115,10 @@ export function MediaEditorDialog({
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
+
+    // Show loading toast and store the toast ID
+    const toastId = toast.loading("Uploading files...");
+
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         const fileName = `comment-attachment-${Date.now()}-${file.name}`;
@@ -134,15 +138,16 @@ export function MediaEditorDialog({
         setAttachments((prev) => [...prev, ...uploadedUrls]);
       }
 
-      toast.success(`${files.length} file(s) uploaded successfully`);
+      toast.success(`${files.length} file(s) uploaded successfully`, {
+        id: toastId,
+      });
     } catch (error) {
-      toast.error("Failed to upload files");
+      toast.error("Failed to upload files", { id: toastId });
       console.error("Upload error:", error);
     } finally {
       setIsUploading(false);
     }
   };
-
   const handleSubmitComment = async () => {
     if (!newComment.trim() && attachments.length === 0) return;
 
@@ -409,7 +414,7 @@ export function MediaEditorDialog({
                   </div>
 
                   {/* Comments Section - Scrollable */}
-                  <div className="flex-1 p-4 space-y-4 overflow-y-scroll max-h-[35vh]">
+                  <div className="flex-1 p-4 space-y-4 overflow-y-scroll max-h-[35vh] xl:max-h-[45vh]">
                     {!hasComments ? (
                       <AskKittykatCommentGuidelines />
                     ) : (
