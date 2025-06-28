@@ -9,7 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import AddVersion from "./AddVersion";
 import { toast } from "sonner";
-import { AdminProtected } from "@/components/shared/AdminProtected";
+import { useUserStore } from "@/store/user.store";
+import { UserRoleId } from "@/types/user.types";
 
 type AskKittykatVersionsProps = {
   item: GalleryItemResponse;
@@ -22,6 +23,7 @@ const AskKittykatVersions = ({
   currentVersion,
   onVersionChange,
 }: AskKittykatVersionsProps) => {
+  const { user } = useUserStore();
   const { addToGallery } = useGalleryQuery({});
   const { isFetching, data, refetch } = useQuery({
     queryKey: ["versions", item.id],
@@ -105,7 +107,7 @@ const AskKittykatVersions = ({
               Version {idx + 2}
             </Button>
           ))}
-          <AdminProtected>
+          {user?.role.id === UserRoleId.ADMIN && (
             <AddVersion addVersion={addVersion}>
               <TooltipIconButton
                 size="sm"
@@ -116,7 +118,7 @@ const AskKittykatVersions = ({
                 <Plus />
               </TooltipIconButton>
             </AddVersion>
-          </AdminProtected>
+          )}
         </div>
       )}
     </div>
