@@ -394,7 +394,7 @@ export function MediaEditorDialog({
           </DialogHeader>
 
           <div className="flex flex-1 overflow-hidden gap-x-3">
-            <div className="w-[35%] min-w-[280px] flex flex-col justify-between">
+            <div className="w-[35%] min-w-[280px] flex flex-col justify-between gap-y-4">
               <AskKittykatImageSection
                 item={currentItem}
                 galleryActions={galleryActions}

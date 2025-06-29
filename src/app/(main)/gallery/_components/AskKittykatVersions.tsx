@@ -65,7 +65,7 @@ const AskKittykatVersions = ({
   };
 
   return (
-    <div>
+    <div className="flex-shrink-0 flex flex-col py-4">
       {isFetching ? (
         <div className="flex items-center gap-x-4 w-max">
           {Array.from({ length: 3 }).map((_, index) => (
