@@ -1,4 +1,3 @@
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGalleryQuery } from "@/hooks/useGallery";
@@ -65,7 +64,7 @@ const AskKittykatVersions = ({
   };
 
   return (
-    <div className="flex-shrink-0 flex flex-col py-4">
+    <div className="flex-shrink-0 flex flex-col py-2">
       {isFetching ? (
         <div className="flex items-center gap-x-4 w-max">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -109,14 +108,9 @@ const AskKittykatVersions = ({
           ))}
           {user?.role.id === UserRoleId.ADMIN && (
             <AddVersion addVersion={addVersion}>
-              <TooltipIconButton
-                size="sm"
-                tooltip="Add Version"
-                side="right"
-                className="h-max"
-              >
-                <Plus />
-              </TooltipIconButton>
+              <Button size="sm" variant={"ghost"} className="flex-1">
+                <Plus className="w-6 h-6" />
+              </Button>
             </AddVersion>
           )}
         </div>
