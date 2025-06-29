@@ -15,7 +15,7 @@ export const AskKittykatImageSection: React.FC<
 > = ({ item, galleryActions }) => {
   return (
     <div className="flex-1 p-6 relative flex items-center justify-center min-h-0">
-      <div className="w-full h-[80%] flex items-center justify-center overfl">
+      <div className="w-full h-[80%] flex items-center justify-center">
         <ZoomableImage
           src={item.asset_url}
           key={item.asset_url}
