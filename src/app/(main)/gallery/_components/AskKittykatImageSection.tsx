@@ -14,12 +14,12 @@ export const AskKittykatImageSection: React.FC<
   AskKittykatImageSectionProps
 > = ({ item, galleryActions }) => {
   return (
-    <div className="flex-1 p-6 relative flex items-center justify-center">
-      <div className="w-[80%] h-[80%] flex items-center justify-center">
+    <div className="flex-1 p-6 relative flex items-center justify-center min-h-0">
+      <div className="w-full h-full flex items-center justify-center">
         <ZoomableImage
           src={item.asset_url}
           key={item.asset_url}
-          className="object-contain rounded-lg shadow-lg max-h-full max-w-full"
+          className="object- rounded-lg max-w-full max-h-full"
           variant="overlay"
           isLiked={item.is_favourite}
           onLike={() => galleryActions.toggleFavorite(item.id)}
