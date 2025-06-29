@@ -101,7 +101,7 @@ export default function ZoomableImage({
 
     // variant === "overlay"
     return (
-      <div className="relative group w-full h-full max-w-full max-h-full">
+      <div className={cn("relative group")}>
         <img {...baseImageProps} />
 
         {/* Overlay */}
