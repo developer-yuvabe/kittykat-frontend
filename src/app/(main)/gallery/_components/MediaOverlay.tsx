@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Heart } from "lucide-react";
@@ -36,25 +35,13 @@ export function MediaOverlay({
     onToggleFavorite(item.id);
   };
 
-  const handleSelectionClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Don't allow selection if item is disabled (already selected elsewhere)
-    if (isDisabled || isAlreadySelected) {
-      return;
-    }
-
-    onSelect(item.id, !isSelected);
-  };
-
   const shouldShowSelection = isHovered || isSelected || isAlreadySelected;
 
   const hasReachedMax =
     typeof selectedCount === "number" &&
     typeof maxSelectionCount === "number" &&
     selectedCount >= maxSelectionCount;
-  const isCheckboxDisabled =
-    isDisabled || isAlreadySelected || (hasReachedMax && !isSelected);
+  const isCheckboxDisabled = isDisabled || isAlreadySelected || hasReachedMax;
 
   return (
     <>
@@ -83,17 +70,7 @@ export function MediaOverlay({
                   onSelect(item.id, checked as boolean);
                 }
               }}
-              className={`h-5 w-5 border-2 transition-all duration-200 ${
-                isCheckboxDisabled
-                  ? "border-gray-400 bg-gray-300 opacity-50 cursor-not-allowed data-[state=checked]:bg-gray-400 data-[state=checked]:border-gray-400"
-                  : "border-white bg-black/30 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-black hover:border-gray-200"
-              }`}
             />
-            {isAlreadySelected && (
-              <span className="text-xs text-white/80 bg-black/50 px-1 rounded">
-                Added
-              </span>
-            )}
           </div>
         ) : (
           // Regular Gallery Mode - Checkbox (existing behavior)
