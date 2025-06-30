@@ -31,6 +31,7 @@ import { AskKittykatReplyList } from "./AskKittykatReplyList";
 import { AskKittykatReplyInput } from "./AskKittykatReplyInput";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import AskKittykatVersions from "./AskKittykatVersions";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -72,6 +73,18 @@ export function MediaEditorDialog({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUserStore();
+
+  useEffect(() => {
+    setCurrentItem(item);
+  }, [item]);
+
+  const queryClient = useQueryClient();
+
+  const revalidateGalleryItemVersions = async (itemId: string) => {
+    return queryClient.invalidateQueries({
+      queryKey: ["versions", itemId],
+    });
+  };
 
   // Reset form states when item changes
   useEffect(() => {
@@ -168,6 +181,9 @@ export function MediaEditorDialog({
       });
       setNewComment("");
       setAttachments([]);
+      if (item?.id) {
+        revalidateGalleryItemVersions(item.id);
+      }
       toast.success("Comment added successfully");
     } catch (error) {
       toast.error("Failed to add comment");
@@ -194,6 +210,9 @@ export function MediaEditorDialog({
       setReplyText("");
       setReplyingTo(null);
       setReplyAttachments([]);
+      if (item?.id) {
+        revalidateGalleryItemVersions(item.id);
+      }
       toast.success("Reply added successfully");
     } catch (error) {
       toast.error("Failed to add reply");
@@ -210,7 +229,11 @@ export function MediaEditorDialog({
         commentId,
         updateData: { text },
       });
+      if (item?.id) {
+        revalidateGalleryItemVersions(item.id);
+      }
       setEditingComment(null);
+
       toast.success("Comment updated successfully");
     } catch (error) {
       toast.error("Failed to update comment");
@@ -230,6 +253,9 @@ export function MediaEditorDialog({
         replyId,
         updateData: { text },
       });
+      if (item?.id) {
+        revalidateGalleryItemVersions(item.id);
+      }
       setEditingReply(null);
       toast.success("Reply updated successfully");
     } catch (error) {
@@ -239,13 +265,14 @@ export function MediaEditorDialog({
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
-
     try {
       await galleryActions.deleteComment({
         itemId: currentItem.id,
         commentId,
       });
+      if (item?.id) {
+        revalidateGalleryItemVersions(item.id);
+      }
       toast.success("Comment deleted successfully");
     } catch (error) {
       toast.error("Failed to delete comment");
@@ -254,14 +281,15 @@ export function MediaEditorDialog({
   };
 
   const handleDeleteReply = async (commentId: string, replyId: string) => {
-    if (!confirm("Are you sure you want to delete this reply?")) return;
-
     try {
       galleryActions.deleteReply({
         itemId: currentItem.id,
         commentId,
         replyId,
       });
+      if (item?.id) {
+        revalidateGalleryItemVersions(item.id);
+      }
       toast.success("Reply deleted successfully");
     } catch (error) {
       toast.error("Failed to delete reply");
@@ -280,6 +308,9 @@ export function MediaEditorDialog({
         like_action: alreadyLiked ? "remove" : "add",
       },
     });
+    if (item?.id) {
+      revalidateGalleryItemVersions(item.id);
+    }
   };
 
   const handleLikeReply = (
@@ -297,6 +328,9 @@ export function MediaEditorDialog({
         like_action: alreadyLiked ? "remove" : "add",
       },
     });
+    if (item?.id) {
+      revalidateGalleryItemVersions(item.id);
+    }
   };
 
   const handleAskKittyKat = async () => {

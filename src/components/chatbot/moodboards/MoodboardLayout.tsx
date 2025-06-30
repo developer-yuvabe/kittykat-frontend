@@ -24,13 +24,13 @@ import {
   replaceMoodboardImage,
 } from "@/services/api/moodboard.service";
 import { useBrandStore } from "@/store/brand.store";
-import { useUserStore } from "@/store/user.store";
-import { useGalleryQuery } from "@/hooks/useGallery";
 import ManualMoodboardSkeleton from "./MoodboardSkeleton";
 import MoodboardSelector from "./MoodboardSelector";
 import { toast } from "sonner";
 import { AnalysisChartIcon, SaveIcon2 } from "@/components/ui/custom-icon";
 import CustomGridGallery from "@/components/gallery/CustomGridGallery";
+import { galleryService } from "@/services/api/gallery.service";
+import { useQuery } from "@tanstack/react-query";
 
 // Fixed interface to match the data structure
 export interface MoodboardAssetItem {
@@ -79,37 +79,30 @@ function MoodboardLayout({
 
   // Use refs to track the latest values without causing re-renders
   const latestMoodboardRef = useRef(moodboard);
-  const latestGalleryItemsRef = useRef<any[]>([]);
 
   const { selectedBrandId } = useBrandStore();
-  const { user } = useUserStore();
 
-  const { galleryItems, isFetching } = useGalleryQuery(
-    {
-      creator: user?.id,
-      selectedFilters: {
-        moodboards: [moodboard.id],
-        brands: [brandId],
-        campaigns: [moodboard?.campaign_id],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
-      },
-    },
-    200
-  );
+  const galleryItemIds = useMemo(() => {
+    return (
+      moodboard?.moodboard_assets?.map((asset) => asset.gallery_item_id) || []
+    );
+  }, [moodboard?.moodboard_assets]);
+
+  const {
+    data: bulkGalleryItems = [],
+    isLoading: isBulkLoading,
+    isFetching: isBulkFetching,
+  } = useQuery({
+    queryKey: ["gallery-items-bulk", galleryItemIds],
+    queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
+    enabled: galleryItemIds.length > 0,
+    staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
+  });
 
   // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
     latestMoodboardRef.current = moodboard;
   }, [moodboard]);
-
-  useEffect(() => {
-    latestGalleryItemsRef.current = galleryItems;
-  }, [galleryItems]);
 
   const handleAnalyzeMoodboard = async () => {
     setAnalyzeLoading(true);
@@ -178,7 +171,7 @@ function MoodboardLayout({
   // Fixed function to load images with proper type matching
   const loadImagesWithCurrentData = useCallback(async () => {
     const currentMoodboard = latestMoodboardRef.current;
-    const currentGalleryItems = latestGalleryItemsRef.current;
+    const currentGalleryItems = bulkGalleryItems;
 
     const hasMoodboardAssets =
       currentMoodboard.moodboard_assets &&
@@ -289,7 +282,7 @@ function MoodboardLayout({
   useEffect(() => {
     if (
       moodboardStatus.shouldShowCompletedMoodboard &&
-      galleryItems.length > 0
+      bulkGalleryItems.length > 0
     ) {
       const timeoutId = setTimeout(() => {
         loadImagesWithCurrentData();
@@ -298,7 +291,7 @@ function MoodboardLayout({
     }
   }, [
     moodboardStatus.shouldShowCompletedMoodboard,
-    galleryItems.length > 0,
+    bulkGalleryItems.length,
     moodboard.id,
   ]);
 
@@ -333,7 +326,8 @@ function MoodboardLayout({
       isGenerating ||
       (loading && photos.length === 0) ||
       moodboardStatus.isMoodboardInProgress ||
-      isFetching
+      isBulkFetching ||
+      isBulkLoading
     );
   }, [
     isGenerating,
@@ -341,7 +335,8 @@ function MoodboardLayout({
     photos.length,
     moodboardStatus.isMoodboardInProgress,
     moodboard.id,
-    isFetching,
+    isBulkFetching,
+    isBulkLoading,
   ]);
 
   const showFailedState = moodboardStatus.isMoodboardFailed;

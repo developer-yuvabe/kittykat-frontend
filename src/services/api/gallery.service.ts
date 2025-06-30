@@ -9,7 +9,9 @@ import {
   CommentReplyCreate,
   CommentUpdate,
   CommentReplyUpdate,
+  BulkGalleryItemRequest,
 } from "@/types/gallery.types";
+import { useQuery } from "@tanstack/react-query";
 
 class GalleryService {
   /**
@@ -270,6 +272,23 @@ class GalleryService {
       axiosInstance.get(`/gallery/${itemId}/versions`)
     );
   }
+
+  async getGalleryItemsBulk(
+    body: BulkGalleryItemRequest
+  ): Promise<GalleryItemResponse[]> {
+    return handleApiRequest<GalleryItemResponse[]>(
+      axiosInstance.post(`/gallery/bulk`, body)
+    );
+  }
 }
 
 export const galleryService = new GalleryService();
+
+export const useBulkGalleryItems = (ids: string[], enabled = true) => {
+  return useQuery<GalleryItemResponse[]>({
+    queryKey: ["bulk-gallery-items", ids],
+    queryFn: () => galleryService.getGalleryItemsBulk({ ids }),
+    enabled: enabled && ids.length > 0,
+    staleTime: 1000 * 60 * 5, // optional: 5 min cache
+  });
+};

@@ -1,5 +1,5 @@
 // components/AskKittykatCommentItem.tsx
-import { ThumbsUp, Reply, Edit, Trash2 } from "lucide-react";
+import { Reply, Edit, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

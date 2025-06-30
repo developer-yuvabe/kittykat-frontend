@@ -248,3 +248,7 @@ export interface CommentReplyUpdate {
   attachments?: string[];
   like_action?: "add" | "remove";
 }
+
+export interface BulkGalleryItemRequest {
+  ids: string[];
+}
