@@ -814,14 +814,15 @@ export const MoodboardSection: React.FC<{
                                 imageCount={noOfImagesForMoodboard}
                                 onRefresh={async () => {
                                   if (selectedBrandId) {
+                                    const newCount = noOfImagesForMoodboard + 1;
+
                                     toast.promise(
                                       createMoodboardForCampaign(
                                         selectedBrandId,
                                         currentMoodboard?.campaign_id,
                                         currentMoodboard.id,
                                         {
-                                          no_of_images:
-                                            noOfImagesForMoodboard + 1,
+                                          no_of_images: newCount,
                                         }
                                       ),
                                       {
@@ -831,9 +832,8 @@ export const MoodboardSection: React.FC<{
                                           "Failed to generate additional images.",
                                       }
                                     );
-                                    setNoOfImagesForMoodboard(
-                                      noOfImagesForMoodboard + 1
-                                    );
+
+                                    setNoOfImagesForMoodboard(newCount);
                                   }
                                 }}
                                 onChange={setNoOfImagesForMoodboard}

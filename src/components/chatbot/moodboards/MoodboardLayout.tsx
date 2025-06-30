@@ -508,17 +508,18 @@ function MoodboardLayout({
                           imageCount={noOfImagesForMoodboard}
                           onRefresh={async () => {
                             if (selectedBrandId) {
-                              setNoOfImagesForMoodboard(
-                                noOfImagesForMoodboard + 1
-                              );
+                              const newCount = noOfImagesForMoodboard + 1;
+
                               await createMoodboardForCampaign(
                                 selectedBrandId,
                                 moodboard?.campaign_id,
                                 moodboard.id,
                                 {
-                                  no_of_images: noOfImagesForMoodboard,
+                                  no_of_images: newCount,
                                 }
                               );
+
+                              setNoOfImagesForMoodboard(newCount);
                             }
                           }}
                           onChange={setNoOfImagesForMoodboard}
