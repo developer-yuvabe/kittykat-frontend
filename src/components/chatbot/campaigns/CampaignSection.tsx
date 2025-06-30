@@ -53,6 +53,16 @@ export const CampaignSection: React.FC<{
     [campaignInformation, selectedCampaignIndex]
   );
 
+  // Create a ref for the CampaignOverview component
+  const campaignOverviewRef = React.useRef<HTMLDivElement>(null);
+
+  // Function to scroll to CampaignOverview
+  const scrollToCampaignOverview = () => {
+    if (campaignOverviewRef.current) {
+      campaignOverviewRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   // All useEffect hooks
   useEffect(() => {
     setFadeKey((prev) => prev + 1);
@@ -145,16 +155,25 @@ export const CampaignSection: React.FC<{
                 </div>
               </div>
             ) : (
-              <div className="">
-                <InlineEditableField
-                  key={currentCampaign?.campaign?.title}
-                  label="Campaign"
-                  value={currentCampaign?.campaign?.title || "Unnamed Campaign"}
-                  onSave={handleTitleSave}
-                  textClassName="font-bold"
-                  showLabel={true}
-                  isTextarea={false}
-                />
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3 overflow-hidden">
+                  <span className="text-white font-bold">
+                    <MdOutlineCampaign size={24} />
+                  </span>
+                </div>
+                <div>
+                  <InlineEditableField
+                    key={currentCampaign?.campaign?.title}
+                    label="Campaign"
+                    value={
+                      currentCampaign?.campaign?.title || "Unnamed Campaign"
+                    }
+                    onSave={handleTitleSave}
+                    textClassName="font-bold"
+                    showLabel={true}
+                    isTextarea={false}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -195,12 +214,14 @@ export const CampaignSection: React.FC<{
               >
                 <div className="mt-1 space-y-6">
                   <>
-                    <CampaignOverview
-                      title={currentCampaign?.campaign?.title}
-                      description={currentCampaign?.campaign?.description}
-                      tone={currentCampaign?.campaign?.tone}
-                      campaignId={currentCampaign.id}
-                    />
+                    <div ref={campaignOverviewRef}>
+                      <CampaignOverview
+                        title={currentCampaign?.campaign?.title}
+                        description={currentCampaign?.campaign?.description}
+                        tone={currentCampaign?.campaign?.tone}
+                        campaignId={currentCampaign.id}
+                      />
+                    </div>
                     <CampaignColors
                       colors={currentCampaign?.colors || []}
                       campaignId={currentCampaign.id}
@@ -249,6 +270,10 @@ export const CampaignSection: React.FC<{
             <Button
               onClick={() => {
                 setShowDynamicData(!showDynamicData);
+                // Scroll to CampaignOverview when hiding dynamic data
+                if (showDynamicData) {
+                  scrollToCampaignOverview();
+                }
               }}
               className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
               variant="ghost"
