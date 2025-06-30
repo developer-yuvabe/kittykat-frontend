@@ -155,11 +155,11 @@ export const MoodboardSection: React.FC<{
   ]);
 
   // Sync selected moodboard ID when currentMoodboard changes (e.g., after creation)
-  useEffect(() => {
-    if (currentMoodboard && currentMoodboard.id !== selectedMoodboardId) {
-      setSelectedMoodboardId(currentMoodboard.id);
-    }
-  }, [currentMoodboard?.id, selectedMoodboardId]);
+  // useEffect(() => {
+  //   if (currentMoodboard && currentMoodboard.id !== selectedMoodboardId) {
+  //     setSelectedMoodboardId(currentMoodboard.id);
+  //   }
+  // }, [currentMoodboard?.id, selectedMoodboardId]);
 
   // All other state hooks
   const [expanded, setExpanded] = useState(true);
