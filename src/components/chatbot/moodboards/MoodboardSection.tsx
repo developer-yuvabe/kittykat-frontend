@@ -619,7 +619,10 @@ export const MoodboardSection: React.FC<{
                       Moodboard
                     </label>
 
-                    {isCreatingNewMoodboard ? (
+                    {isCreatingNewMoodboard ||
+                    (currentCampaign &&
+                      (!moodboardInformation ||
+                        moodboardInformation.length == 0)) ? (
                       <Input
                         value={moodboardTitle}
                         onClick={(e) => {

@@ -72,6 +72,21 @@ export async function patchMoodboard(
 }
 
 /**
+ * delete moodboard by moodboard ID.
+ *
+ * @param brandId - Brand ID
+ * @param moodboardId - Moodboard ID
+ */
+export async function deleteMoodboard(
+  brandId: string,
+  moodboardId: string
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.delete(`/brands/${brandId}/moodboard/${moodboardId}`)
+  );
+}
+
+/**
  * Schedule moodboard creation as a background task for a campaign.
  *
  * @param brandId - Brand identifier
