@@ -81,6 +81,8 @@ export const MoodboardSection: React.FC<{
     [campaignInformation, selectedCampaignIndex]
   );
 
+  console.log("current campaign", currentCampaign);
+
   const socialMediaPlatforms = brandInformation?.static?.social_media;
 
   // Get list of moodboards matching current campaign
@@ -110,6 +112,8 @@ export const MoodboardSection: React.FC<{
 
     return null;
   }, [currentCampaignMoodboards, selectedMoodboardId, isCreatingNewMoodboard]);
+
+  console.log("current moodboard", currentMoodboard);
 
   // Reset states when switching to create new moodboard mode
   const resetToNewMoodboardState = useCallback(() => {
@@ -418,7 +422,14 @@ export const MoodboardSection: React.FC<{
     );
   };
 
-  const [moodboardTitle, setMoodboardTitle] = useState("");
+  // const [moodboardTitle, setMoodboardTitle] = useState("");
+  const [moodboardTitle, setMoodboardTitle] = useState(
+    currentCampaign?.campaign?.title
+      ? `${currentCampaign.campaign.title}'s Moodboard v${
+          currentCampaignMoodboards.length + 1
+        }`
+      : "New Moodboard 123"
+  );
 
   useEffect(() => {
     if (isCreatingNewMoodboard) {
@@ -432,6 +443,16 @@ export const MoodboardSection: React.FC<{
     } else if (currentMoodboard) {
       // Use the selected moodboard's title
       setMoodboardTitle(currentMoodboard.title || "Untitled Moodboard");
+    } else {
+      // Handle case where no moodboard exists
+      setMoodboardTitle(
+        currentCampaign?.campaign?.title &&
+          currentCampaign.campaign.title !== ""
+          ? `${currentCampaign.campaign.title}'s Moodboard v${
+              currentCampaignMoodboards.length + 1
+            }`
+          : "New Moodboard"
+      );
     }
   }, [
     currentCampaign?.campaign?.title,
@@ -458,6 +479,7 @@ export const MoodboardSection: React.FC<{
       toast.promise(
         (async () => {
           // Step 1: Create the new moodboard
+          console.log("moodboardTitle in handleFindStyle :", moodboardTitle);
           const newMoodboard = await createMoodboard(
             selectedBrandId,
             currentCampaign.id,
@@ -572,7 +594,7 @@ export const MoodboardSection: React.FC<{
             )}
             {!expanded ? (
               <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
                   <span className="text-white font-bold">
                     <Presentation size={24} />
                   </span>
@@ -586,23 +608,32 @@ export const MoodboardSection: React.FC<{
               </div>
             ) : (
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">
-                  Moodboard
-                </label>
+                <div className="flex">
+                  <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
+                    <span className="text-white font-bold">
+                      <Presentation size={24} />
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-0 block">
+                      Moodboard
+                    </label>
 
-                {isCreatingNewMoodboard ? (
-                  <Input
-                    value={moodboardTitle}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onChange={(e) => setMoodboardTitle(e.target.value)}
-                    placeholder="Enter moodboard title"
-                    className="font-bold w-96"
-                  />
-                ) : (
-                  <p className="font-bold">{moodboardTitle}</p>
-                )}
+                    {isCreatingNewMoodboard ? (
+                      <Input
+                        value={moodboardTitle}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onChange={(e) => setMoodboardTitle(e.target.value)}
+                        placeholder="Enter moodboard title"
+                        className="font-bold w-96"
+                      />
+                    ) : (
+                      <p className="font-bold">{moodboardTitle}</p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -630,9 +661,9 @@ export const MoodboardSection: React.FC<{
                     handleCancelNewMoodboard();
                   }}
                 >
-                  <X className=" text-red-600" />
+                  <X className="text-red-600" />
                 </TooltipIconButton>
-              ) : (
+              ) : moodboardInformation ? (
                 <TooltipIconButton
                   tooltip="Create new moodboard"
                   onClick={(e) => {
@@ -643,7 +674,7 @@ export const MoodboardSection: React.FC<{
                 >
                   <CirclePlus />
                 </TooltipIconButton>
-              )}
+              ) : null}
             </div>
           )}
         </div>

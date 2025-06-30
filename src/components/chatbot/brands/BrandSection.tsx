@@ -81,7 +81,15 @@ export const renderBrandData = (
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
 
-  
+  // Create a ref for the BrandCasting component
+  const brandCastingRef = React.useRef<HTMLDivElement>(null);
+
+  // Function to scroll to BrandCasting
+  const scrollToBrandCasting = () => {
+    if (brandCastingRef.current) {
+      brandCastingRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -144,11 +152,17 @@ export const renderBrandData = (
               </div>
             ) : (
               <div
-                className=""
+                className="flex items-center"
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
               >
+                <Avatar className="w-10 h-10 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+                  <AvatarImage src={""} alt="@shadcn" />
+                  <AvatarFallback className="bg-blue-500">
+                    <span className="text-white font-bold">{brandInitial}</span>
+                  </AvatarFallback>
+                </Avatar>
                 <InlineEditableField
                   key={staticData?.brand?.name}
                   label="Brand"
@@ -230,7 +244,11 @@ export const renderBrandData = (
             <BrandPhotography {...staticData?.photography} />
             <BrandLighting {...staticData?.lighting} />
             <BrandStyling {...staticData?.styling} />
-            <BrandCasting {...staticData?.casting} />
+
+            <div ref={brandCastingRef}>
+              <BrandCasting {...staticData?.casting} />
+            </div>
+
             <BrandSetting {...staticData?.setting} />
 
             <BrandProducts products={staticData?.products || []} />
@@ -268,6 +286,10 @@ export const renderBrandData = (
             <Button
               onClick={() => {
                 setShowDynamicData(!showDynamicData);
+                // Scroll to BrandCasting when hiding dynamic data
+                if (showDynamicData) {
+                  scrollToBrandCasting();
+                }
               }}
               className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
               variant="ghost"
