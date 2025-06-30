@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
-import { useState, useMemo, memo } from "react";
+import { useState } from "react";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
@@ -14,17 +14,12 @@ interface A2iImagesSectionProps {
   moodboardInformation: ThreadDetails["moodboard_information"];
 }
 
-const A2iImagesSection = memo(function A2iImagesSection({
+const A2iImagesSection = function A2iImagesSection({
   a2iImageInformation,
   moodboardInformation,
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
   const form = useImageGenForm();
-
-  // Memoize the generations array to prevent unnecessary re-renders
-  const generations = useMemo(() => {
-    return a2iImageInformation?.generations || [];
-  }, [a2iImageInformation?.generations]);
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -74,6 +69,6 @@ const A2iImagesSection = memo(function A2iImagesSection({
       )}
     </Card>
   );
-});
+};
 
 export default A2iImagesSection;

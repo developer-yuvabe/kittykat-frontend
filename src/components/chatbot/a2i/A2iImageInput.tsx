@@ -161,7 +161,7 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
 
     generateImage(selectedBrandId!, data);
 
-    await delay(3000);
+    await delay(2000);
 
     form.reset();
     setImageBlocks([]);
@@ -205,7 +205,7 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
                     }
                   }}
                   className={cn(
-                    "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4  pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
+                    "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4  pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top"
                   )}
                   placeholder="Describe what you want to see ..."
                 />
