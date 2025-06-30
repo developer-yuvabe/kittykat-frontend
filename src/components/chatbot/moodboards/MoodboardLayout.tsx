@@ -49,7 +49,7 @@ interface MoodboardLayoutProps {
   isGenerating: boolean;
   moodboards: MoodboardInformation[];
   selectedMoodboard: MoodboardInformation | null;
-  setSelectedMoodboard: (mb: MoodboardInformation) => void;
+  setSelectedMoodboard: (mb: MoodboardInformation | null) => void;
   onNewMoodboard: () => void;
   isCreatingNew: boolean;
 }
