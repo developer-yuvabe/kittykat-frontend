@@ -97,10 +97,8 @@ function MoodboardLayout({
     queryKey: ["gallery-items-bulk", galleryItemIds],
     queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
     enabled: galleryItemIds.length > 0,
-    staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
   });
 
-  // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
     latestMoodboardRef.current = moodboard;
   }, [moodboard]);

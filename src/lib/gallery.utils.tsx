@@ -144,6 +144,14 @@ export const createGalleryItemFromFile = async (
     // Asset Management
     is_favourite: false,
     is_archived: false,
+    is_master: true,
+
+    ...(activeTab === "a2i-media"
+      ? {
+          sent_to_human_queue: true,
+          workflow_status: "in_review",
+        }
+      : {}),
 
     // System Metadata
     processing_status: "ready",

@@ -456,66 +456,74 @@ export function MediaEditorDialog({
                   value="ask-kittykat"
                   className="flex-1 flex flex-col"
                 >
-                  <div className="px-4 py-3 ">
+                  <div className="px-4 py-3">
                     <h2 className="font-semibold text-lg">Ask Kitty Kat</h2>
                   </div>
 
-                  {/* Comments Section - Scrollable */}
-                  <div className="flex-1 p-4 space-y-4 overflow-y-scroll max-h-[35vh] xl:max-h-[45vh]">
-                    {!hasComments ? (
-                      <AskKittykatCommentGuidelines />
-                    ) : (
-                      <div className="space-y-4  ">
-                        {currentItem.comments?.map((comment) => (
-                          <div key={comment.id} className="space-y-3">
-                            <AskKittykatCommentItem
-                              comment={comment}
-                              itemId={currentItem.id}
-                              editingCommentId={editingComment}
-                              setEditingComment={setEditingComment}
-                              setReplyingTo={setReplyingTo}
-                              onUpdateComment={handleUpdateComment}
-                              onDeleteComment={handleDeleteComment}
-                              onLikeComment={handleLikeComment}
-                            />
-
-                            <AskKittykatReplyList
-                              replies={comment.replies}
-                              commentId={comment.id}
-                              itemId={currentItem.id}
-                              editingReply={editingReply}
-                              setEditingReply={setEditingReply}
-                              onUpdateReply={handleUpdateReply}
-                              onDeleteReply={handleDeleteReply}
-                              onLikeReply={handleLikeReply}
-                            />
-
-                            {/* Reply Form */}
-                            {replyingTo === comment.id && (
-                              <AskKittykatReplyInput
-                                replyText={replyText}
-                                setReplyText={setReplyText}
-                                replyAttachments={replyAttachments}
-                                setReplyAttachments={setReplyAttachments}
-                                isSubmitting={isSubmitting}
-                                isUploading={isUploading}
-                                onSubmit={() => handleSubmitReply(comment.id)}
-                                onCancel={() => {
-                                  setReplyingTo(null);
-                                  setReplyText("");
-                                  setReplyAttachments([]);
-                                }}
-                                onFileUpload={handleFileUpload}
+                  {/* Comments Section - Responsive Scrollable Area */}
+                  <div className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
+                    <div
+                      className="space-y-4 overflow-y-auto"
+                      style={{
+                        maxHeight: "calc(100vh - 600px)", // Dynamic height calculation
+                        minHeight: "200px", // Minimum height to ensure visibility
+                      }}
+                    >
+                      {!hasComments ? (
+                        <AskKittykatCommentGuidelines />
+                      ) : (
+                        <div className="space-y-4">
+                          {currentItem.comments?.map((comment) => (
+                            <div key={comment.id} className="space-y-3">
+                              <AskKittykatCommentItem
+                                comment={comment}
+                                itemId={currentItem.id}
+                                editingCommentId={editingComment}
+                                setEditingComment={setEditingComment}
+                                setReplyingTo={setReplyingTo}
+                                onUpdateComment={handleUpdateComment}
+                                onDeleteComment={handleDeleteComment}
+                                onLikeComment={handleLikeComment}
                               />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+
+                              <AskKittykatReplyList
+                                replies={comment.replies}
+                                commentId={comment.id}
+                                itemId={currentItem.id}
+                                editingReply={editingReply}
+                                setEditingReply={setEditingReply}
+                                onUpdateReply={handleUpdateReply}
+                                onDeleteReply={handleDeleteReply}
+                                onLikeReply={handleLikeReply}
+                              />
+
+                              {/* Reply Form */}
+                              {replyingTo === comment.id && (
+                                <AskKittykatReplyInput
+                                  replyText={replyText}
+                                  setReplyText={setReplyText}
+                                  replyAttachments={replyAttachments}
+                                  setReplyAttachments={setReplyAttachments}
+                                  isSubmitting={isSubmitting}
+                                  isUploading={isUploading}
+                                  onSubmit={() => handleSubmitReply(comment.id)}
+                                  onCancel={() => {
+                                    setReplyingTo(null);
+                                    setReplyText("");
+                                    setReplyAttachments([]);
+                                  }}
+                                  onFileUpload={handleFileUpload}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Fixed Comment Input Section */}
-                  <div className="border-t bg-white p-4 space-y-3">
+                  <div className="border-t bg-white p-4 space-y-3 flex-shrink-0">
                     <div className="space-y-3">
                       <Textarea
                         value={newComment}
@@ -586,11 +594,14 @@ export function MediaEditorDialog({
                     </div>
                   </div>
 
-                  <AskKittykatReviewStatus
-                    onAskKittykat={handleAskKittyKat}
-                    galleryActions={galleryActions}
-                    item={currentItem}
-                  />
+                  {/* Review Status Section - Always Visible */}
+                  <div className="flex-shrink-0 ">
+                    <AskKittykatReviewStatus
+                      onAskKittykat={handleAskKittyKat}
+                      galleryActions={galleryActions}
+                      item={currentItem}
+                    />
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>

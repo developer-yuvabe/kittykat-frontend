@@ -3,11 +3,11 @@ import { ContentSection } from "@/components/shared/ContentSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useGalleryQuery } from "@/hooks/useGallery";
 import { generateA2iShowboard } from "@/services/api/moodboard.service";
+import { galleryService } from "@/services/api/gallery.service";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { WandSparkles } from "lucide-react";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
@@ -40,30 +40,34 @@ const ReferenceMoodboard = ({
       generateA2iShowboard(selectedBrandId!, referenceMoodboardId!, Number(n)),
   });
 
-  const { galleryItems, isFetching } = useGalleryQuery(
-    {
-      selectedFilters: {
-        brands: [selectedBrandId!],
-        campaigns: [],
-        moodboards: [referenceMoodboardId ?? ""],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
-      },
-    },
-    200
-  );
-
   const selectedMoodboard = moodboardInformation?.find(
     (mb) => mb.id === referenceMoodboardId
   );
-  // Filter and order gallery items by moodboard position
-  const filteredGalleryItems = useMemo(() => {
+
+  // Extract gallery item IDs from the moodboard assets
+  const galleryItemIds = useMemo(() => {
+    return (
+      selectedMoodboard?.moodboard_assets?.map(
+        (asset) => asset.gallery_item_id
+      ) || []
+    );
+  }, [selectedMoodboard?.moodboard_assets]);
+
+  // Fetch only the required gallery items using bulk API
+  const {
+    data: bulkGalleryItems = [],
+    isLoading: isBulkLoading,
+    isFetching: isBulkFetching,
+  } = useQuery({
+    queryKey: ["gallery-items-bulk", galleryItemIds],
+    queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
+    enabled: galleryItemIds.length > 0,
+  });
+
+  // Order gallery items by moodboard position
+  const orderedGalleryItems = useMemo(() => {
     if (
-      !galleryItems ||
+      !bulkGalleryItems ||
       !selectedMoodboard?.moodboard_assets ||
       selectedMoodboard.moodboard_assets.length === 0
     ) {
@@ -78,21 +82,18 @@ const ReferenceMoodboard = ({
       ])
     );
 
-    // Filter gallery items that exist in moodboard and add position info
-    const itemsWithPosition = galleryItems
-      .filter((item) => positionMap.has(item.id))
+    // Add position info to gallery items and sort by position
+    return bulkGalleryItems
       .map((item) => ({
         ...item,
-        position: positionMap.get(item.id)!,
-      }));
+        position: positionMap.get(item.id) || 0,
+      }))
+      .sort((a, b) => a.position - b.position);
+  }, [bulkGalleryItems, selectedMoodboard?.moodboard_assets]);
 
-    // Sort by position
-    return itemsWithPosition.sort((a, b) => a.position - b.position);
-  }, [galleryItems, selectedMoodboard?.moodboard_assets]);
-
-  // Load images with proper width/height calculation - following MoodboardLayout approach
+  // Load images with proper width/height calculation
   const loadImagesWithDimensions = useCallback(async () => {
-    if (!filteredGalleryItems || filteredGalleryItems.length === 0) {
+    if (!orderedGalleryItems || orderedGalleryItems.length === 0) {
       setPhotos([]);
       return;
     }
@@ -101,7 +102,7 @@ const ReferenceMoodboard = ({
 
     try {
       const loaded = await Promise.all(
-        filteredGalleryItems.map(
+        orderedGalleryItems.map(
           (item) =>
             new Promise<SortablePhoto<Photo>>((resolve) => {
               const img = new Image();
@@ -139,25 +140,25 @@ const ReferenceMoodboard = ({
     } finally {
       setLoading(false);
     }
-  }, [filteredGalleryItems]);
+  }, [orderedGalleryItems]);
 
-  // Load images when filtered gallery items are available
+  // Load images when ordered gallery items are available
   useEffect(() => {
-    if (filteredGalleryItems.length > 0) {
+    if (orderedGalleryItems.length > 0) {
       const timeoutId = setTimeout(() => {
         loadImagesWithDimensions();
       }, 50);
       return () => clearTimeout(timeoutId);
     } else {
-      // Clear photos if no filtered items
+      // Clear photos if no ordered items
       setPhotos([]);
     }
-  }, [filteredGalleryItems.length]);
+  }, [orderedGalleryItems.length]);
 
   // Display logic
   const showGallery = useMemo(() => {
-    return photos.length > 0 && !loading && !isFetching;
-  }, [photos.length, loading, isFetching]);
+    return photos.length > 0 && !loading && !isBulkFetching && !isBulkLoading;
+  }, [photos.length, loading, isBulkFetching, isBulkLoading]);
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
@@ -182,7 +183,10 @@ const ReferenceMoodboard = ({
           )}
 
           {photos.length == 0 && (
-            <ManualMoodboardSkeleton shimmer={isFetching} showButton={false} />
+            <ManualMoodboardSkeleton
+              shimmer={isBulkFetching || isBulkLoading}
+              showButton={false}
+            />
           )}
 
           {prompts && prompts.length > 0 && (
