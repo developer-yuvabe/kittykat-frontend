@@ -16,7 +16,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Check } from "lucide-react";
+import { Check, Pencil, Save, Trash2, X } from "lucide-react";
 import { SearchIcon } from "@/components/ui/custom-icon";
 import {
   Select,
@@ -26,7 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MoodboardInformation } from "@/types/types";
-
+import {
+  deleteMoodboard,
+  patchMoodboard,
+} from "@/services/api/moodboard.service";
+import { useBrandStore } from "@/store/brand.store";
+import { Input } from "@/components/ui/input";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 interface TransformedMoodboard {
   id: string;
   displayName: string;
@@ -38,7 +44,7 @@ interface TransformedMoodboard {
 interface MoodboardSelectorProps {
   moodboards: MoodboardInformation[];
   selectedMoodboard: MoodboardInformation | null;
-  setSelectedMoodboard: (mb: MoodboardInformation) => void;
+  setSelectedMoodboard: (mb: MoodboardInformation | null) => void;
   campaignId: string;
   onNewMoodboard: () => void;
   isCreatingNew: boolean;
@@ -52,6 +58,8 @@ export default function MoodboardSelector({
   campaignId,
   variant = "combobox",
 }: MoodboardSelectorProps) {
+  const { selectedBrandId } = useBrandStore();
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [transformedMoodboards, setTransformedMoodboards] = useState<
@@ -64,6 +72,8 @@ export default function MoodboardSelector({
   const [selectMoodboards, setSelectMoodboards] = useState<
     MoodboardInformation[]
   >([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(selectedMoodboard?.title || "");
 
   // Transform moodboards (filtered by campaignId) - for combobox variant
   useEffect(() => {
@@ -131,26 +141,144 @@ export default function MoodboardSelector({
     }
   };
 
+  // Handle deletion of a moodboard
+  const handleDelete = async (moodboardId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the CommandItem's onSelect
+    if (!selectedBrandId) {
+      toast.error("No brand selected. Please select a brand and try again.", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      await deleteMoodboard(selectedBrandId, moodboardId);
+      toast.success("Moodboard deleted successfully", {
+        position: "top-right",
+      });
+
+      // Update moodboards by filtering out the deleted one
+      const updatedMoodboards = moodboards.filter(
+        (mb) => mb.id !== moodboardId
+      );
+      setTransformedMoodboards((prev) =>
+        prev.filter((mb) => mb.id !== moodboardId)
+      );
+      setFilteredMoodboards((prev) =>
+        prev.filter((mb) => mb.id !== moodboardId)
+      );
+
+      // If the deleted moodboard was selected, clear the selection
+      if (selectedMoodboard?.id === moodboardId) {
+        setSelectedMoodboard(null);
+      }
+    } catch (error) {
+      toast.error("Failed to delete moodboard. Please try again.", {
+        position: "top-right",
+      });
+      console.error("Delete error:", error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedBrandId || !selectedMoodboard) {
+      toast.error("No brand or moodboard selected. Please try again.", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    try {
+      const updatedMoodboard = await patchMoodboard(
+        selectedBrandId,
+        selectedMoodboard.id,
+        {
+          title: editTitle,
+        }
+      );
+      setSelectedMoodboard(updatedMoodboard);
+      setIsEditing(false);
+      toast.success("Moodboard title updated successfully", {
+        position: "top-right",
+      });
+    } catch (error) {
+      toast.error("Failed to update moodboard title. Please try again.", {
+        position: "top-right",
+      });
+      console.error("Update error:", error);
+    }
+  };
+
+  // Handle cancel edit
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditTitle(selectedMoodboard?.title || "");
+  };
+
   const selectedMoodboardId = selectedMoodboard?.id;
 
   // Render select variant
   if (variant === "select") {
     return (
-      <Select
-        value={selectedMoodboard?.id || ""}
-        onValueChange={handleSelectValueChange}
-      >
-        <SelectTrigger className="w-60 py-[23px]  border-[#7F55E0] border-2">
-          <SelectValue placeholder="Select Moodboard" />
-        </SelectTrigger>
-        <SelectContent>
-          {selectMoodboards.map((mb) => (
-            <SelectItem key={mb.id} value={mb.id}>
-              {mb.title || "Unnamed Moodboard"}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        {isEditing ? (
+          <>
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-60 py-[23px] border-[#7F55E0] border-2"
+              placeholder="Enter moodboard title"
+            />
+            <TooltipIconButton
+              tooltip="save title"
+              onClick={handleSave}
+              size="icon"
+              variant="ghost"
+            >
+              <Save className="h-4 w-4" />
+            </TooltipIconButton>
+            <TooltipIconButton
+              tooltip="close edit"
+              onClick={handleCancel}
+              size="icon"
+              variant="ghost"
+            >
+              <X className="h-4 w-4" />
+            </TooltipIconButton>
+          </>
+        ) : (
+          <>
+            <Select
+              value={selectedMoodboard?.id || ""}
+              onValueChange={handleSelectValueChange}
+            >
+              <SelectTrigger className="w-60 py-[23px] border-[#7F55E0] border-2">
+                <SelectValue placeholder="Select Moodboard" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectMoodboards.map((mb) => (
+                  <SelectItem key={mb.id} value={mb.id}>
+                    {mb.title || "Unnamed Moodboard"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedMoodboard && (
+              <TooltipIconButton
+                onClick={() => setIsEditing(true)}
+                size="icon"
+                variant="ghost"
+                tooltip="Edit Title"
+              >
+                <Pencil className="h-4 w-4" />
+              </TooltipIconButton>
+            )}
+          </>
+        )}
+      </div>
     );
   }
 
@@ -200,9 +328,20 @@ export default function MoodboardSelector({
                     </Avatar>
                     <span className="truncate">{mb.displayName}</span>
                   </div>
-                  {selectedMoodboardId === mb.id && (
-                    <Check className="h-4 w-4" />
-                  )}
+                  <div className="flex items-center">
+                    {selectedMoodboardId === mb.id && (
+                      <Check className="h-4 w-4" />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDelete(mb.id, e)}
+                      disabled={loading}
+                      className="hover:bg-red-200"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
