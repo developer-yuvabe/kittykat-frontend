@@ -9,7 +9,6 @@ import React from "react";
 import { useUserStore } from "@/store/user.store";
 import { Separator } from "../ui/separator";
 import { LogoutButton } from "./LogoutButton";
-import QueueProgress from "./QueueProgress";
 
 export function UserProfileMenu() {
   const { user } = useUserStore();
@@ -25,8 +24,6 @@ export function UserProfileMenu() {
 
   return (
     <div className="flex items-center space-x-6">
-      <QueueProgress />
-
       {/* User Profile with Popover using shadcn components */}
       <Popover>
         <PopoverTrigger asChild>

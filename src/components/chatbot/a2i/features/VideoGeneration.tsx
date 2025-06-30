@@ -1,17 +1,4 @@
-import React from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -19,11 +6,23 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { Settings2, Sparkles } from "lucide-react";
-import { useBrandStore } from "@/store/brand.store";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import { delay } from "@/lib/utils";
 import { videoGenerationSchema } from "@/schema/video-gen.schema";
 import { videoGenerationService } from "@/services/api/video-gen.service";
+import { useBrandStore } from "@/store/brand.store";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BrainIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 type VideoGenerationOnProps = {
   startImage: string;
@@ -155,14 +154,6 @@ const VideoGeneration = ({
                 <FormItem>
                   <FormLabel className="flex items-center justify-between">
                     <span>Prompt</span>
-                    <div className="flex gap-2">
-                      <Button size="icon" type="button" variant="ghost">
-                        <Settings2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                      <Button size="icon" type="button" variant="ghost">
-                        <Sparkles className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
                   </FormLabel>
                   <FormControl>
                     <Textarea
@@ -194,9 +185,10 @@ const VideoGeneration = ({
             />
             <Button
               type="submit"
-              className="w-full bg-primary text-white text-md h-11"
+              className="w-full bg-primary text-white text-md h-12 "
               disabled={form.formState.isSubmitting || !form.formState.isValid}
             >
+              <BrainIcon />
               A2i Showboard Generation
             </Button>
           </form>

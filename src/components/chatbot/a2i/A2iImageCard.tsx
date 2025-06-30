@@ -4,9 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
-import { Check, CopyIcon, HeartIcon, PlayCircle, X } from "lucide-react";
+import {
+  Check,
+  CopyIcon,
+  HeartIcon,
+  PauseCircle,
+  PlayCircle,
+  X,
+} from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import A2iImageEditFeatures from "./A2iImageEditFeatures";
 import { Button } from "@/components/ui/button";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
@@ -14,7 +21,6 @@ import { toast } from "sonner";
 import { deleteA2iImage, toggleA2iImageLike } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import { CSSProperties } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   deleteA2iVideo,
   toggleA2iVideoLike,
@@ -56,6 +62,26 @@ const A2iImageCard = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { selectedBrandId } = useBrandStore();
+  const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  useEffect(() => {
+    if (videoRef && videoRef.current) {
+      const handlePlayPause = () => {
+        if (videoRef.current) {
+          setIsVideoPlaying(!videoRef.current.paused);
+        }
+      };
+
+      videoRef.current.addEventListener("play", handlePlayPause);
+      videoRef.current.addEventListener("pause", handlePlayPause);
+
+      return () => {
+        videoRef.current?.removeEventListener("play", handlePlayPause);
+        videoRef.current?.removeEventListener("pause", handlePlayPause);
+      };
+    }
+  }, [videoRef]);
 
   const handleDownload = () => {
     if (image) handleDownloadImage(image.url);
@@ -96,10 +122,10 @@ const A2iImageCard = ({
   const handleRemoveItem = async () => {
     setIsDeleting(true);
     try {
-      if (image) {
-        await deleteA2iImage(selectedBrandId!, generationId, image.id);
-      } else if (video) {
+      if (video) {
         await deleteA2iVideo(selectedBrandId!, generationId);
+      } else {
+        await deleteA2iImage(selectedBrandId!, generationId, image?.id ?? null);
       }
       setShowDeleteDialog(false);
     } catch (error) {
@@ -133,25 +159,31 @@ const A2iImageCard = ({
       {video && (
         <div className="relative w-full h-full">
           <video
+            ref={videoRef}
             src={video.url}
             className="object-contain w-full h-full"
             muted
+            autoPlay
+            loop
           />
-          <Dialog>
-            <DialogTrigger asChild>
-              <button className="absolute inset-0 flex items-center justify-center">
-                <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl w-full aspect-video p-0 shadow-md">
-              <video
-                src={video.url}
-                controls
-                autoPlay
-                className="w-full h-full object-contain"
-              />
-            </DialogContent>
-          </Dialog>
+          <button
+            className="absolute inset-0 flex items-center justify-center"
+            onClick={() => {
+              if (videoRef && videoRef.current) {
+                if (videoRef.current.paused) {
+                  videoRef.current.play();
+                } else {
+                  videoRef.current.pause();
+                }
+              }
+            }}
+          >
+            {isVideoPlaying ? (
+              <PauseCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
+            ) : (
+              <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
+            )}
+          </button>
         </div>
       )}
 
@@ -224,10 +256,12 @@ const A2iImageCard = ({
           />
         )}
 
-        {(image || video) && status !== "processing" && (
+        {status !== "processing" && (
           <TooltipIconButton
             onClick={() => setShowDeleteDialog(true)}
-            tooltip={`Delete ${image ? "image" : "video"}`}
+            tooltip={`Delete ${
+              image ? "image" : video ? "video" : "generation"
+            }`}
             variant={"ghost"}
             className="absolute top-2 left-2 text-white hover:text-black"
           >
@@ -235,9 +269,14 @@ const A2iImageCard = ({
           </TooltipIconButton>
         )}
 
-        {image && (
+        {(image || video) && (
           <Button
-            onClick={() => setShowEditFeatures((prev) => !prev)}
+            onClick={() => {
+              if (image) setShowEditFeatures((prev) => !prev);
+              if (video && videoRef && videoRef.current) {
+                videoRef.current.requestFullscreen();
+              }
+            }}
             size={"icon"}
             variant={"ghost"}
             className="absolute top-2 right-2 size-7 text-white hover:text-black"
@@ -297,10 +336,10 @@ const A2iImageCard = ({
       <ReusableAlertDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title={`Delete ${image ? "image" : "video"} generation`}
+        title={`Delete ${image ? "image" : video ? "video" : "generation"}`}
         description={`Are you sure you want to delete this ${
-          image ? "image" : "video"
-        } generation? This action cannot be undone.`}
+          image ? "image" : video ? "video" : "generation"
+        }? This action cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={handleRemoveItem}
