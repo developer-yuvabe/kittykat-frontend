@@ -180,9 +180,41 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="flex flex-col-reverse items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max max-h-60 bg-background scrollbar overflow-hidden shadow-2xl z-10"
+      className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 gap-y-4 pb-4"
     >
-      <div className="flex gap-2 justify-between items-center px-4 pb-4 pt-2">
+      <FormField
+        control={form.control}
+        name="prompt"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <div className="relative h-full">
+                <Textarea
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.shiftKey) {
+                      // Allow new line on Shift + Enter
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      form.handleSubmit(onSubmit)();
+                    }
+                  }}
+                  className={cn(
+                    "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4  pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
+                  )}
+                  placeholder="Describe what you want to see ..."
+                />
+              </div>
+            </FormControl>
+          </FormItem>
+        )}
+      />
+      <div className="flex gap-2 justify-between items-center px-4">
         <div className="flex items-center gap-2">
           <div>
             <input {...getInputProps()} ref={inputFileRef} />
@@ -278,38 +310,7 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
           </Button>
         </div>
       </div>
-      <FormField
-        control={form.control}
-        name="prompt"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <div className="relative h-full">
-                <Textarea
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.shiftKey) {
-                      // Allow new line on Shift + Enter
-                      return;
-                    }
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      form.handleSubmit(onSubmit)();
-                    }
-                  }}
-                  className={cn(
-                    "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pb-4 pt-5 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top text-justify"
-                  )}
-                  placeholder="Describe what you want to see ..."
-                />
-              </div>
-            </FormControl>
-          </FormItem>
-        )}
-      />
+
       {imageBlocks.length > 0 && (
         <div className="flex flex-wrap gap-2 px-4 pt-2">
           {imageBlocks.map((block, index) => (
