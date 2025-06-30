@@ -1,37 +1,40 @@
 "use client";
 
-import React, { useRef, useCallback } from "react";
+import RemixImage, {
+  RemixImageHandle,
+} from "@/app/(main)/_components/remix/RemixImage";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
-import { ShirtIcon, X, BrushIcon, VideoIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import VirtualTryOn from "./features/VirtualTryOn";
-import RemixControls from "./features/RemixControls";
-import { cn } from "@/lib/utils";
-import RemixImage, {
-  RemixImageHandle,
-} from "@/app/(main)/_components/remix/RemixImage";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
+import { TabsContent } from "@radix-ui/react-tabs";
+import { BrushIcon, ShirtIcon, VideoIcon, X } from "lucide-react";
+import React, { useCallback, useRef } from "react";
+import RemixControls from "./features/RemixControls";
 import VideoGeneration from "./features/VideoGeneration";
+import VirtualTryOn from "./features/VirtualTryOn";
 
-const FEATURES = [
+const IMAGE_EDIT_FEATURES = [
   {
-    name: "Virtual Try-On",
-    icon: ShirtIcon,
+    key: "virtual-tryon",
+    icon: <ShirtIcon className="w-6 h-6" />,
+    label: "Virtual Try-On",
   },
   {
-    name: "In-Paint Editing",
-    icon: BrushIcon,
+    key: "in-paint",
+    icon: <BrushIcon className="w-6 h-6" />,
+    label: "In-Paint Editing",
   },
   {
-    name: "Video Generation",
-    icon: VideoIcon,
+    key: "video-gen",
+    icon: <VideoIcon className="w-6 h-6" />,
+    label: "Video Generation",
   },
 ];
 
@@ -46,9 +49,11 @@ const A2iImageEditFeatures = ({
   parameters: A2iImageGeneration["parameters"];
   onClose: () => void;
 }) => {
-  const [currentFeature, setCurrentFeature] = React.useState(FEATURES[0]);
+  const [currentFeature, setCurrentFeature] = React.useState(
+    IMAGE_EDIT_FEATURES[0].key
+  );
   const [brushSize, setBrushSize] = React.useState(80);
-  const isRemixEnabled = currentFeature.name === "In-Paint Editing";
+  const isRemixEnabled = currentFeature === "in-paint";
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -112,30 +117,32 @@ const A2iImageEditFeatures = ({
               />
             )}
           </div>
-          <div className="w-[60%] h-full flex flex-col">
-            <div className="flex w-full h-max">
-              {FEATURES.map((feature) => (
-                <button
-                  key={feature.name}
-                  onClick={() => setCurrentFeature(feature)}
-                  className={cn(
-                    "flex flex-1 flex-col items-center gap-2 p-4 text-muted-foreground bg-muted cursor-pointer transition-colors border-b-4 hover:bg-primary/10 hover:border-primary",
-                    {
-                      "text-primary border-b-4 border-primary bg-primary/20":
-                        currentFeature.name === feature.name,
-                    }
-                  )}
+          <Tabs
+            value={currentFeature}
+            onValueChange={setCurrentFeature}
+            className="w-[60%] h-full flex flex-col"
+          >
+            <TabsList
+              className="grid grid-cols-3 w-full mb-8 bg-transparent h-20"
+              variant="icon-grid"
+            >
+              {IMAGE_EDIT_FEATURES.map((item) => (
+                <TabsTrigger
+                  key={item.key}
+                  value={item.key}
+                  variant="icon-grid"
                 >
-                  <feature.icon className="w-6 h-6" />
-                  <span className="text-lg font-semibold">{feature.name}</span>
-                </button>
+                  <div className="transition-colors">{item.icon}</div>
+                  <span className="text-xs mt-1">{item.label}</span>{" "}
+                </TabsTrigger>
               ))}
-            </div>
+            </TabsList>
             <div className="overflow-y-auto p-4 h-full">
-              {currentFeature.name === "Virtual Try-On" && (
+              <TabsContent value="virtual-tryon" className="h-full">
                 <VirtualTryOn productImage={image.url} closeDialog={onClose} />
-              )}
-              {currentFeature.name === "In-Paint Editing" && (
+              </TabsContent>
+
+              <TabsContent value="in-paint">
                 <RemixControls
                   image={{ url: image.url, size: parameters.size }}
                   closeDialog={() => onClose()}
@@ -148,12 +155,13 @@ const A2iImageEditFeatures = ({
                   brushSize={brushSize}
                   onBrushSizeChange={handleBrushSizeChange}
                 />
-              )}
-              {currentFeature.name === "Video Generation" && (
+              </TabsContent>
+
+              <TabsContent value="video-gen" className="h-full">
                 <VideoGeneration startImage={image.url} closeDialog={onClose} />
-              )}
+              </TabsContent>
             </div>
-          </div>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>

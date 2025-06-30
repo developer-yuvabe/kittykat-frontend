@@ -20,6 +20,7 @@ import { remixImageSchema } from "@/schema/remix.schema";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  BrainIcon,
   Eraser,
   Loader2,
   Plus,
@@ -498,7 +499,8 @@ const RemixControls = ({
                   }
                   loading={form.formState.isSubmitting}
                 >
-                  Remix
+                  <BrainIcon />
+                  A2i Showboard Generation
                 </Button>
               </div>
             </form>
