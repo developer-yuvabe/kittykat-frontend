@@ -79,6 +79,7 @@ function MoodboardLayout({
 
   // Use refs to track the latest values without causing re-renders
   const latestMoodboardRef = useRef(moodboard);
+  const latestGalleryItemsRef = useRef<any[]>([]);
 
   const { selectedBrandId } = useBrandStore();
 
@@ -103,6 +104,9 @@ function MoodboardLayout({
   useEffect(() => {
     latestMoodboardRef.current = moodboard;
   }, [moodboard]);
+  useEffect(() => {
+    latestGalleryItemsRef.current = bulkGalleryItems;
+  }, [bulkGalleryItems]);
 
   const handleAnalyzeMoodboard = async () => {
     setAnalyzeLoading(true);
@@ -171,7 +175,7 @@ function MoodboardLayout({
   // Fixed function to load images with proper type matching
   const loadImagesWithCurrentData = useCallback(async () => {
     const currentMoodboard = latestMoodboardRef.current;
-    const currentGalleryItems = bulkGalleryItems;
+    const currentGalleryItems = latestGalleryItemsRef.current;
 
     const hasMoodboardAssets =
       currentMoodboard.moodboard_assets &&

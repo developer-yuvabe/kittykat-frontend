@@ -842,6 +842,7 @@ export const MoodboardSection: React.FC<{
                                     : currentMoodboard.visual_style_images
                                         .length
                                 }
+                                disabled
                               />
                             </div>
                           </div>
