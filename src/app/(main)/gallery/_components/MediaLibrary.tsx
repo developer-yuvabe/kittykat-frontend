@@ -370,7 +370,6 @@ export function MediaLibrary({
                 searchQuery,
                 selectedFilters,
               }}
-              source={source}
               selectedBrand={selectedBrand}
               setSelectedBrand={setSelectedBrand}
               brands={galleryActions.brandsData?.brands || []}

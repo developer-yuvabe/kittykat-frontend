@@ -1,5 +1,4 @@
 import { useUserStore } from "@/store/user.store";
-import { Lock } from "lucide-react";
 import { UserRoleId } from "@/types/user.types";
 
 export const AskKittykatCommentGuidelines = () => {
