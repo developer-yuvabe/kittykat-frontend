@@ -72,6 +72,7 @@ export function MediaLibrary({
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId);
 
   const initialFilters = useMemo(() => {
     return (
@@ -342,7 +343,7 @@ export function MediaLibrary({
             setSelectedBrand={setSelectedBrand}
             brands={galleryActions.brandsData?.brands || []}
             brandsLoading={galleryActions.brandsLoading}
-            selectedCampaignId={campaignId}
+            selectedCampaignId={selectedCampaignId}
             selecteMoodboardId={moodboardId}
             galleryView={galleryView}
           />
@@ -374,8 +375,9 @@ export function MediaLibrary({
               setSelectedBrand={setSelectedBrand}
               brands={galleryActions.brandsData?.brands || []}
               brandsLoading={galleryActions.brandsLoading}
-              selectedCampaignId={campaignId}
+              selectedCampaignId={selectedCampaignId}
               selecteMoodboardId={moodboardId}
+              setSelectedCampaignId={setSelectedCampaignId}
             />
 
             <div className="flex flex-col md:flex-row gap-4">

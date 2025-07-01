@@ -252,3 +252,11 @@ export interface CommentReplyUpdate {
 export interface BulkGalleryItemRequest {
   ids: string[];
 }
+
+export interface MediaWithStatus extends Omit<FileWithStatus, "file"> {
+  file?: File;
+  url?: string;
+  originalUrl?: string;
+  name: string;
+  type: "file" | "url";
+}

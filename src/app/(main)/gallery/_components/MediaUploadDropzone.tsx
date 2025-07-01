@@ -1,37 +1,17 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, Dispatch, SetStateAction } from "react";
 import { useDropzone } from "react-dropzone";
-import {
-  Upload,
-  X,
-  Loader2,
-  Check,
-  ChevronUp,
-  ChevronDown,
-  Link,
-} from "lucide-react";
+import { Upload, X, Loader2, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import type {
   GalleryFilters,
-  FileWithStatus,
   BrandCampaignListResponse,
   GalleryItem,
+  MediaWithStatus,
 } from "@/types/gallery.types";
 import {
   acceptedFileTypes,
@@ -39,8 +19,6 @@ import {
   getStatusColor,
   getStatusIcon,
 } from "@/lib/gallery.utils";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -49,15 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Extended interface to handle both files and URLs
-interface MediaWithStatus extends Omit<FileWithStatus, "file"> {
-  file?: File;
-  url?: string;
-  originalUrl?: string;
-  name: string;
-  type: "file" | "url";
-}
+import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
 
 interface UploadDropzoneProps {
   activeTab: string;
@@ -73,6 +43,7 @@ interface UploadDropzoneProps {
   brandsLoading: boolean;
   selectedCampaignId: string | undefined;
   selecteMoodboardId: string | undefined;
+  setSelectedCampaignId: Dispatch<SetStateAction<string | undefined>>;
 }
 
 export function MediaUploadDropzone({
@@ -87,12 +58,12 @@ export function MediaUploadDropzone({
   brandsLoading,
   selectedCampaignId,
   selecteMoodboardId,
+  setSelectedCampaignId,
 }: UploadDropzoneProps) {
   console.log("brands", brands);
 
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [open, setOpen] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
 
@@ -105,9 +76,8 @@ export function MediaUploadDropzone({
   ] ?? {
     types: {
       "image/*": [],
-      "video/*": [],
     },
-    text: "PNG, JPEG, MP4",
+    text: "PNG, JPEG, WEBP",
     placeholder: "Drop media here to upload",
     assetType: "image",
   };
@@ -382,73 +352,14 @@ export function MediaUploadDropzone({
           <h3 className="text-xs font-semibold">Brand </h3>
         </div>
         {/* Brand Selector */}
-        <div
-          className="flex z-20 justify-start absolute top-3 left-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="w-52">
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                {brandsLoading || brands.length < 0 ? (
-                  <Skeleton className="w-full h-9 rounded-md" />
-                ) : (
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between text-xs pt-2 hover:bg-white"
-                  >
-                    {selectedBrand
-                      ? selectedBrand.brand_name
-                      : "Select brand..."}
-                    {open ? (
-                      <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    ) : (
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    )}
-                  </Button>
-                )}
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-0">
-                <Command>
-                  <CommandInput placeholder="Search brands..." />
-                  <CommandEmpty>No brand found.</CommandEmpty>
-                  <CommandGroup className="max-h-44 overflow-y-scroll">
-                    {brands.map((brand) => (
-                      <CommandItem
-                        key={brand.brand_id}
-                        value={`${brand.brand_name} - ${brand.brand_id}`}
-                        onSelect={(currentValue) => {
-                          // Extract brand name and id from the value
-                          const [name, id] = currentValue.split(" - ");
-                          const foundBrand = brands.find(
-                            (b) =>
-                              b.brand_name.toLowerCase() ===
-                                name.toLowerCase() && String(b.brand_id) === id
-                          );
-                          if (setSelectedBrand) {
-                            setSelectedBrand(foundBrand || null);
-                          }
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedBrand?.brand_id === brand.brand_id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        {brand.brand_name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
+        <MediaUploadBrandSelector
+          selectedBrand={selectedBrand}
+          setSelectedBrand={setSelectedBrand}
+          brands={brands}
+          brandsLoading={brandsLoading}
+          setSelectedCampaignId={setSelectedCampaignId}
+          selectedCampaignId={selectedCampaignId}
+        />
         <input {...getInputProps()} />
 
         <div className="flex gap-x-3">

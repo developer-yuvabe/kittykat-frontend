@@ -1,0 +1,245 @@
+"use client";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandSeparator,
+} from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Check, ChevronDown, ChevronUp, Building2, Target } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Dispatch, SetStateAction, useState, useEffect } from "react";
+import { BrandCampaignListResponse } from "@/types/gallery.types";
+
+interface BrandSelectorProps {
+  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
+  setSelectedBrand?: React.Dispatch<
+    React.SetStateAction<BrandCampaignListResponse["brands"][number] | null>
+  >;
+  brands: BrandCampaignListResponse["brands"];
+  brandsLoading: boolean;
+  setSelectedCampaignId: Dispatch<SetStateAction<string | undefined>>;
+  selectedCampaignId?: string;
+}
+
+export function MediaUploadBrandSelector({
+  selectedBrand,
+  setSelectedBrand,
+  brands,
+  brandsLoading,
+  setSelectedCampaignId,
+  selectedCampaignId,
+}: BrandSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Auto-select first brand on initial load (but not campaign)
+  useEffect(() => {
+    if (brands.length > 0 && !selectedBrand && !brandsLoading) {
+      const firstBrand = brands[0];
+      setSelectedBrand?.(firstBrand);
+      // Don't auto-select campaign - leave it undefined for optional selection
+    }
+  }, [brands, selectedBrand, brandsLoading, setSelectedBrand]);
+
+  const handleBrandSelect = (
+    brand: BrandCampaignListResponse["brands"][number]
+  ) => {
+    setSelectedBrand?.(brand);
+
+    // Clear campaign selection when selecting a brand directly
+    // This allows brand-only selection
+    setSelectedCampaignId(undefined);
+
+    setOpen(false);
+    setSearchTerm("");
+  };
+
+  const handleCampaignSelect = (
+    brand: BrandCampaignListResponse["brands"][number],
+    campaignId: string
+  ) => {
+    // Select the brand if not already selected
+    if (selectedBrand?.brand_id !== brand.brand_id) {
+      setSelectedBrand?.(brand);
+    }
+    setSelectedCampaignId(campaignId);
+    setOpen(false);
+    setSearchTerm("");
+  };
+
+  // Filter brands and campaigns based on search
+  const filteredBrands = brands.filter(
+    (brand) =>
+      brand.brand_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      brand.campaigns.some((campaign) =>
+        campaign.title.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  );
+
+  // Get selected campaign object
+  const getSelectedCampaign = () => {
+    if (!selectedBrand || !selectedCampaignId) return null;
+    return (
+      selectedBrand.campaigns.find((c) => c.id === selectedCampaignId) || null
+    );
+  };
+
+  const selectedCampaign = getSelectedCampaign();
+
+  const getDisplayText = () => {
+    if (selectedBrand && selectedCampaign) {
+      return (
+        <div className="flex gap-2 min-w-0">
+          <span className="truncate font-medium">
+            {selectedBrand.brand_name}
+          </span>
+          <span className="text-muted-foreground">•</span>
+          <span className="truncate text-muted-foreground">
+            {selectedCampaign.title}
+          </span>
+        </div>
+      );
+    }
+    if (selectedBrand) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="truncate font-medium">
+            {selectedBrand.brand_name}
+          </span>
+          <Badge variant="secondary" className="text-xs">
+            No campaign selected
+          </Badge>
+        </div>
+      );
+    }
+    return "Select brand & campaign...";
+  };
+
+  return (
+    <div
+      className="flex z-20 justify-start absolute top-3 left-2"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="w-80">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            {brandsLoading ? (
+              <Skeleton className="w-full h-10 rounded-md" />
+            ) : (
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between text-sm h-10 hover:bg-white shadow-sm"
+              >
+                <div className="flex items-center min-w-0 flex-1">
+                  {getDisplayText()}
+                </div>
+                {open ? (
+                  <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                ) : (
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                )}
+              </Button>
+            )}
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0" align="start">
+            <Command>
+              <CommandInput
+                placeholder="Search brands or campaigns..."
+                value={searchTerm}
+                onValueChange={setSearchTerm}
+              />
+              <CommandEmpty>No brands or campaigns found.</CommandEmpty>
+
+              <div className="max-h-80 overflow-y-auto">
+                {filteredBrands.map((brand) => (
+                  <div key={brand.brand_id}>
+                    <CommandGroup>
+                      {/* Brand Header */}
+                      <CommandItem
+                        value={`brand-${brand.brand_name}`}
+                        onSelect={() => handleBrandSelect(brand)}
+                        className="flex items-center gap-3 py-3 cursor-pointer"
+                      >
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {brand.brand_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {brand.campaigns.length} campaign
+                            {brand.campaigns.length !== 1 ? "s" : ""}
+                          </div>
+                        </div>
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            selectedBrand?.brand_id === brand.brand_id
+                              ? "opacity-100 text-blue-600"
+                              : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+
+                      {/* Campaigns for this brand */}
+                      {brand.campaigns.length > 0 && (
+                        <>
+                          {brand.campaigns.map((campaign) => (
+                            <CommandItem
+                              key={`${brand.brand_id}-${campaign.id}`}
+                              value={`campaign-${campaign.title}-${brand.brand_name}`}
+                              onSelect={() =>
+                                handleCampaignSelect(brand, campaign.id)
+                              }
+                              className="flex items-center gap-3 py-2 pl-10 cursor-pointer"
+                            >
+                              <Target className="h-3 w-3 text-green-600" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm truncate">
+                                  {campaign.title}
+                                </div>
+                                {selectedBrand?.brand_id !== brand.brand_id && (
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    in {brand.brand_name}
+                                  </div>
+                                )}
+                              </div>
+                              <Check
+                                className={cn(
+                                  "h-4 w-4",
+                                  selectedCampaignId === campaign.id &&
+                                    selectedBrand?.brand_id === brand.brand_id
+                                    ? "opacity-100 text-green-600"
+                                    : "opacity-0"
+                                )}
+                              />
+                            </CommandItem>
+                          ))}
+                        </>
+                      )}
+                    </CommandGroup>
+                    {/* Separator between brands */}
+                    {filteredBrands.indexOf(brand) <
+                      filteredBrands.length - 1 && <CommandSeparator />}
+                  </div>
+                ))}
+              </div>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
