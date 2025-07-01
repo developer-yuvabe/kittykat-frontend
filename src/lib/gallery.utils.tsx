@@ -239,8 +239,11 @@ export const ASPECT_RATIO_OPTIONS = [
 
 export const WORKFLOW_STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
-  { value: "in_review", label: "In Review" },
+  { value: "request_created", label: "Request Created" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "in_review", label: "Awaiting Approval" },
   { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
   { value: "ready_to_publish", label: "Ready to Publish" },
 ];
 

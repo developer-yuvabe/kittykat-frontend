@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -321,7 +322,20 @@ export function MediaLibrary({
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
       <div className="flex justify-between mb-2">
-        <h1 className="text-2xl font-bold">Media library</h1>
+        <div className="flex flex-row gap-x-4">
+          <h1 className="text-2xl font-bold">Media library</h1>
+
+          <MediaUploadBrandSelector
+            selectedBrand={selectedBrand}
+            setSelectedBrand={setSelectedBrand}
+            brands={galleryActions.brandsData?.brands || []}
+            brandsLoading={galleryActions.brandsLoading}
+            setSelectedCampaignId={setSelectedCampaignId}
+            selectedCampaignId={selectedCampaignId}
+            selectedFilters={selectedFilters}
+            setSelectedFilters={setSelectedFilters}
+          />
+        </div>
         <Select
           value={galleryView}
           onValueChange={(val) => setGalleryView(val as "grid" | "folder")}
@@ -418,6 +432,7 @@ export function MediaLibrary({
                   favorites={favorites}
                   showFilters={showFilters}
                   selectedFilters={selectedFilters}
+                  setSelectedFilters={setSelectedFilters}
                 />
 
                 <MediaDialogMultiSelectHeader

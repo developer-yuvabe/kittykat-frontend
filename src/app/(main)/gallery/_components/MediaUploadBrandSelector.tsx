@@ -16,10 +16,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Check, ChevronDown, ChevronUp, Building2, Target } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  Megaphone,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dispatch, SetStateAction, useState, useEffect } from "react";
-import { BrandCampaignListResponse } from "@/types/gallery.types";
+import {
+  BrandCampaignListResponse,
+  EnhancedSelectedFilters,
+} from "@/types/gallery.types";
 
 interface BrandSelectorProps {
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
@@ -30,6 +39,8 @@ interface BrandSelectorProps {
   brandsLoading: boolean;
   setSelectedCampaignId: Dispatch<SetStateAction<string | undefined>>;
   selectedCampaignId?: string;
+  selectedFilters: EnhancedSelectedFilters;
+  setSelectedFilters: Dispatch<SetStateAction<EnhancedSelectedFilters>>;
 }
 
 export function MediaUploadBrandSelector({
@@ -39,6 +50,7 @@ export function MediaUploadBrandSelector({
   brandsLoading,
   setSelectedCampaignId,
   selectedCampaignId,
+  setSelectedFilters,
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,9 +69,15 @@ export function MediaUploadBrandSelector({
   ) => {
     setSelectedBrand?.(brand);
 
-    // Clear campaign selection when selecting a brand directly
-    // This allows brand-only selection
+    // Clear campaign selection
     setSelectedCampaignId(undefined);
+
+    // Override filters
+    setSelectedFilters((prev) => ({
+      ...prev,
+      brands: [brand.brand_id],
+      campaigns: [], // No campaign selected yet
+    }));
 
     setOpen(false);
     setSearchTerm("");
@@ -69,11 +87,18 @@ export function MediaUploadBrandSelector({
     brand: BrandCampaignListResponse["brands"][number],
     campaignId: string
   ) => {
-    // Select the brand if not already selected
     if (selectedBrand?.brand_id !== brand.brand_id) {
       setSelectedBrand?.(brand);
     }
     setSelectedCampaignId(campaignId);
+
+    // Override filters
+    setSelectedFilters((prev) => ({
+      ...prev,
+      brands: [brand.brand_id],
+      campaigns: [campaignId],
+    }));
+
     setOpen(false);
     setSearchTerm("");
   };
@@ -127,33 +152,41 @@ export function MediaUploadBrandSelector({
   };
 
   return (
-    <div
-      className="flex z-20 justify-start absolute top-3 left-2"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="" onClick={(e) => e.stopPropagation()}>
       <div className="w-80">
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            {brandsLoading ? (
-              <Skeleton className="w-full h-10 rounded-md" />
-            ) : (
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between text-sm h-10 hover:bg-white shadow-sm"
-              >
-                <div className="flex items-center min-w-0 flex-1">
-                  {getDisplayText()}
-                </div>
-                {open ? (
-                  <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                ) : (
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                )}
-              </Button>
-            )}
-          </PopoverTrigger>
+          <div className="relative inline-block w-full">
+            {/* Label positioned above the selector */}
+            <span
+              className="absolute -top-2 left-3 bg-[#F3F4F6FF] px-1 text-xs font-medium text-gray-700 z-10"
+              style={{ lineHeight: 1 }}
+            >
+              Brand
+            </span>
+
+            <PopoverTrigger asChild>
+              {brandsLoading ? (
+                <Skeleton className="w-full h-10 rounded-md" />
+              ) : (
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between text-sm h-10 hover:bg-white bg-[#F3F4F6FF] shadow-sm"
+                >
+                  <div className="flex items-center min-w-0 flex-1">
+                    {getDisplayText()}
+                  </div>
+                  {open ? (
+                    <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  ) : (
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  )}
+                </Button>
+              )}
+            </PopoverTrigger>
+          </div>
+
           <PopoverContent className="w-80 p-0" align="start">
             <Command>
               <CommandInput
@@ -205,7 +238,7 @@ export function MediaUploadBrandSelector({
                               }
                               className="flex items-center gap-3 py-2 pl-10 cursor-pointer"
                             >
-                              <Target className="h-3 w-3 text-green-600" />
+                              <Megaphone className="h-3 w-3" />
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm truncate">
                                   {campaign.title}

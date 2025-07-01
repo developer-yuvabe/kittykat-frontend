@@ -322,19 +322,6 @@ export function MediaUploadDropzone({
         isDragReject={isDragReject}
         isUploading={isUploading}
       >
-        <div className="absolute z-30 top-1 left-4 bg-white w-min px-2">
-          <h3 className="text-xs font-semibold">Brand</h3>
-        </div>
-
-        <MediaUploadBrandSelector
-          selectedBrand={selectedBrand}
-          setSelectedBrand={setSelectedBrand}
-          brands={brands}
-          brandsLoading={brandsLoading}
-          setSelectedCampaignId={setSelectedCampaignId}
-          selectedCampaignId={selectedCampaignId}
-        />
-
         <MediaUploadActions
           isDisabled={isDisabled}
           isUploading={isUploading}
