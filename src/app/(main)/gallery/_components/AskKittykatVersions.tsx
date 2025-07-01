@@ -10,6 +10,7 @@ import AddVersion from "./AddVersion";
 import { toast } from "sonner";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
+import { useEffect } from "react";
 
 type AskKittykatVersionsProps = {
   item: GalleryItemResponse;
@@ -62,6 +63,17 @@ const AskKittykatVersions = ({
       });
     });
   };
+
+  useEffect(() => {
+    if (data) {
+      for (const version of data) {
+        if (version.id === currentVersion?.id) {
+          onVersionChange(version);
+          return;
+        }
+      }
+    }
+  }, [data]);
 
   return (
     <div className="flex-shrink-0 flex flex-col py-2">
