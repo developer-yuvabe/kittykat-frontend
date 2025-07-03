@@ -200,7 +200,7 @@ export const A2iImagesWrapper = ({
   const customActions = useMemo(() => <A2iImageModelSelector />, []);
   const contextValue = useMemo(() => ({ data: {} }), []);
 
-  const INITIAL_IMAGE_PLACEHOLDER = Math.max(0, 12 - items.length);
+  const INITIAL_IMAGE_PLACEHOLDER = 16;
 
   return (
     <ContentSection
