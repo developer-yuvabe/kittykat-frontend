@@ -279,7 +279,7 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
               if (!form.getValues("prompt")) return;
               handleEnhancePrompt(undefined, {
                 onSuccess: (data) => {
-                  form.setValue("prompt", data.prompts[0], {
+                  form.setValue("prompt", data.prompt, {
                     shouldValidate: true,
                     shouldDirty: true,
                     shouldTouch: true,
