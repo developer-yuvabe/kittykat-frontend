@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { LikeIcon } from "@/components/ui/custom-icon";
 import { Textarea } from "@/components/ui/textarea";
 import ZoomableImage from "@/components/ui/zoomable-image";
-import { formatTime } from "@/lib/gallery.utils";
+import { formatToLocalTime } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { CommentReply } from "@/types/gallery.types";
 import { UserRoleId } from "@/types/user.types";
+import { formatDistanceToNow } from "date-fns";
 import { Edit, Trash2 } from "lucide-react";
 
 import { useState } from "react";
@@ -88,7 +89,9 @@ export function AskKittykatReplyList({
                 )}
 
                 <span className="text-xs text-gray-500">
-                  {formatTime(reply.added_at)}
+                  {formatDistanceToNow(formatToLocalTime(reply.added_at), {
+                    addSuffix: true,
+                  })}
                 </span>
               </div>
 

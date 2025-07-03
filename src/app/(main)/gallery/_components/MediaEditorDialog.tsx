@@ -354,19 +354,48 @@ export function MediaEditorDialog({
 
   const handleLikeComment = (comment: Comment, itemId: string) => {
     const alreadyLiked = (comment?.likes ?? []).includes(user?.id ?? "");
-    console.log(comment);
+    const likeAction = alreadyLiked ? "remove" : "add";
 
+    // Backup current state in case rollback is needed
+    const prevComments = currentItem?.comments || [];
+
+    // Optimistically update the UI
+    const updatedComments = prevComments.map((c) => {
+      if (c.id !== comment.id) return c;
+
+      const updatedLikes = alreadyLiked
+        ? c.likes?.filter((id) => id !== user?.id)
+        : [...(c.likes || []), user?.id ?? ""];
+
+      return {
+        ...c,
+        likes: updatedLikes,
+      };
+    });
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: updatedComments } : prev
+    );
+
+    // Send the request
     galleryActions.patchComment(
       {
         itemId,
         commentId: comment.id,
         updateData: {
-          like_action: alreadyLiked ? "remove" : "add",
+          like_action: likeAction,
         },
       },
       {
         onSuccess(data) {
-          revalidateGalleryItemVersions(data);
+          revalidateGalleryItemVersions(data); // optional: may update entire item
+        },
+        onError() {
+          // Rollback to previous comments if error
+          setCurrentItem((prev) =>
+            prev ? { ...prev, comments: prevComments } : prev
+          );
+          toast.error("Failed to update like. Please try again.");
         },
       }
     );
@@ -378,19 +407,58 @@ export function MediaEditorDialog({
     commentId: string
   ) => {
     const alreadyLiked = (reply?.likes ?? []).includes(user?.id ?? "");
+    const likeAction = alreadyLiked ? "remove" : "add";
 
+    // Backup current state
+    const prevComments = currentItem?.comments || [];
+
+    // Optimistically update the UI
+    const updatedComments = prevComments.map((comment) => {
+      if (comment.id !== commentId) return comment;
+
+      const updatedReplies = (comment.replies || []).map((r) => {
+        if (r.id !== reply.id) return r;
+
+        const updatedLikes = alreadyLiked
+          ? r.likes?.filter((id) => id !== user?.id)
+          : [...(r.likes || []), user?.id ?? ""];
+
+        return {
+          ...r,
+          likes: updatedLikes,
+        };
+      });
+
+      return {
+        ...comment,
+        replies: updatedReplies,
+      };
+    });
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: updatedComments } : prev
+    );
+
+    // Send request
     galleryActions.patchReply(
       {
         itemId,
         commentId,
         replyId: reply.id,
         updateData: {
-          like_action: alreadyLiked ? "remove" : "add",
+          like_action: likeAction,
         },
       },
       {
         onSuccess(data) {
           revalidateGalleryItemVersions(data);
+        },
+        onError() {
+          // Rollback on error
+          setCurrentItem((prev) =>
+            prev ? { ...prev, comments: prevComments } : prev
+          );
+          toast.error("Failed to update reply like. Please try again.");
         },
       }
     );

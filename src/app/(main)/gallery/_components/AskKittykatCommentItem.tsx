@@ -7,11 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Comment } from "@/types/gallery.types";
 import { useState } from "react";
 import { UserRoleId } from "@/types/user.types";
-import { formatTime } from "@/lib/gallery.utils";
 import { useUserStore } from "@/store/user.store";
 import ZoomableImage from "@/components/ui/zoomable-image";
-
 import { LikeIcon } from "@/components/ui/custom-icon";
+import { formatToLocalTime } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 interface AskKittykatCommentItemProps {
   comment: Comment;
@@ -78,7 +78,9 @@ export function AskKittykatCommentItem({
           )}
 
           <span className="text-xs text-gray-500">
-            {formatTime(comment.added_at)}
+            {formatDistanceToNow(formatToLocalTime(comment.added_at), {
+              addSuffix: true,
+            })}
           </span>
         </div>
 
