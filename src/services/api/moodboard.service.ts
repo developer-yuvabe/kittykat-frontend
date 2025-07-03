@@ -230,13 +230,13 @@ export const enhancePrompt = async (
   brandId: string,
   basePrompt: string
 ): Promise<{
-  prompts: string[];
+  prompt: string;
 }> => {
   return handleApiRequest<{
-    prompts: string[];
+    prompt: string;
   }>(
     axiosInstance.post<{
-      prompts: string[];
+      prompt: string;
     }>(`/brands/${brandId}/a2i/enhance-prompt`, {
       base_prompt: basePrompt,
     })
