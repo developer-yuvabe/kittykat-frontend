@@ -132,6 +132,7 @@ export function MediaItem({
           isMultiSelectMode={isMultiSelect}
           maxSelectionCount={maxSelectionCount}
           selectedCount={selectedCount}
+          onDownload={onDownload}
         />
 
         {/* More options popover */}

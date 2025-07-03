@@ -1,6 +1,6 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { Heart } from "lucide-react";
+import { HeartIcon, DownloadIcon } from "lucide-react";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -14,6 +14,7 @@ interface MediaOverlayProps {
   isDisabled?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
+  onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
 }
 
 // Media Overlay Component
@@ -29,6 +30,7 @@ export function MediaOverlay({
   isDisabled = false,
   selectedCount,
   maxSelectionCount,
+  onDownload,
 }: MediaOverlayProps) {
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -91,18 +93,28 @@ export function MediaOverlay({
 
       {/* Favorite Button */}
       <div
-        className={`absolute bottom-2 left-2 z-10 transition-opacity duration-200 cursor-pointer ${
+        className={`absolute bottom-2 right-2 z-10 transition-opacity duration-200 cursor-pointer ${
           isHovered ? "opacity-100" : "opacity-0"
         }`}
         onClick={handleFavoriteClick}
       >
-        <Heart
-          className={`h-4 w-4 transition-all duration-300 hover:scale-110 ${
+        <HeartIcon
+          className={`h-5 w-5 transition-all duration-300 hover:scale-110 ${
             item.is_favourite
               ? "fill-red-500 text-red-500"
               : "text-white hover:text-red-300"
           }`}
         />
+      </div>
+
+      {/* Download Button */}
+      <div
+        className={`absolute bottom-2 left-2 z-10 transition-opacity duration-200 cursor-pointer ${
+          isHovered ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={(e) => onDownload(item, e)}
+      >
+        <DownloadIcon className="h-5 w-5 text-white hover:text-gray-300 transition-all duration-300 hover:scale-110" />
       </div>
 
       {/* Bottom Gradient */}
