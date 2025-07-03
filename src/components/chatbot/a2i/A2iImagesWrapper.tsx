@@ -35,8 +35,6 @@ type A2iImagesWrapperProps = {
   form: UseFormReturn<any>;
 };
 
-const INTIAL_IMAGE_PLACEHOLDER = 16;
-
 // Helper function to get existing ID only - no fallback generation
 const getExistingId = (item: A2iImageCardProps): string | null => {
   return item.image?.id || item.video?.id || null;
@@ -202,6 +200,8 @@ export const A2iImagesWrapper = ({
   const customActions = useMemo(() => <A2iImageModelSelector />, []);
   const contextValue = useMemo(() => ({ data: {} }), []);
 
+  const INITIAL_IMAGE_PLACEHOLDER = Math.max(0, 12 - items.length);
+
   return (
     <ContentSection
       title=""
@@ -246,7 +246,7 @@ export const A2iImagesWrapper = ({
                 })}
 
                 {Array.from({
-                  length: INTIAL_IMAGE_PLACEHOLDER,
+                  length: INITIAL_IMAGE_PLACEHOLDER,
                 }).map((_, index) => (
                   <A2iImagePlaceholderCard
                     key={`empty-placeholder-${items.length + index}`}

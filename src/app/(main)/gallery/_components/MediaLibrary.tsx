@@ -324,17 +324,18 @@ export function MediaLibrary({
       <div className="flex justify-between mb-2">
         <div className="flex flex-row gap-x-4">
           <h1 className="text-2xl font-bold">Media library</h1>
-
-          <MediaUploadBrandSelector
-            selectedBrand={selectedBrand}
-            setSelectedBrand={setSelectedBrand}
-            brands={galleryActions.brandsData?.brands || []}
-            brandsLoading={galleryActions.brandsLoading}
-            setSelectedCampaignId={setSelectedCampaignId}
-            selectedCampaignId={selectedCampaignId}
-            selectedFilters={selectedFilters}
-            setSelectedFilters={setSelectedFilters}
-          />
+          {galleryView === "grid" && (
+            <MediaUploadBrandSelector
+              selectedBrand={selectedBrand}
+              setSelectedBrand={setSelectedBrand}
+              brands={galleryActions.brandsData?.brands || []}
+              brandsLoading={galleryActions.brandsLoading}
+              setSelectedCampaignId={setSelectedCampaignId}
+              selectedCampaignId={selectedCampaignId}
+              selectedFilters={selectedFilters}
+              setSelectedFilters={setSelectedFilters}
+            />
+          )}
         </div>
         <Select
           value={galleryView}
