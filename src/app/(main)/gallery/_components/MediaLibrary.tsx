@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
@@ -66,8 +65,6 @@ export function MediaLibrary({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<boolean>(false);
   const [source, setSource] = useState<string>(activeTab);
   const [creator, setCreator] = useState<string>("Anyone");
@@ -188,26 +185,6 @@ export function MediaLibrary({
     setMultiSelectItems([]);
   };
 
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    try {
-      const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
-      galleryActions.bulkDelete(itemsToDelete);
-      setSelectedItems([]);
-      setMultiSelectItems([]);
-    } finally {
-      setIsDeleting(false);
-      setIsDialogOpen(false);
-    }
-  };
-
-  const handleBulkDeleteClick = () => {
-    const itemsToDelete = isMultiSelect ? multiSelectItems : selectedItems;
-    if (itemsToDelete.length > 0) {
-      setIsDialogOpen(true);
-    }
-  };
-
   const handleSearchChange = useMemo(
     () =>
       debounce((query: string) => {
@@ -234,25 +211,6 @@ export function MediaLibrary({
 
   const handleApplyFilters = (filters: EnhancedSelectedFilters) => {
     setSelectedFilters(filters);
-  };
-
-  // Bulk download selected items
-  const handleBulkDownload = async () => {
-    const itemsToDownload = isMultiSelect ? multiSelectItems : selectedItems;
-    if (itemsToDownload.length === 0) return;
-
-    const selectedItemsData = galleryItems.filter((item) =>
-      itemsToDownload.includes(item.id)
-    );
-
-    try {
-      // For each selected item, trigger a download
-      for (const item of selectedItemsData) {
-        await galleryActions.downloadItem(item);
-      }
-    } catch (error) {
-      console.error("Bulk download error:", error);
-    }
   };
 
   // 👈 Handle multi-select "Add" button
@@ -297,6 +255,11 @@ export function MediaLibrary({
     ? multiSelectItems
     : selectedItems;
   const currentSelectionCount = currentlySelectedItems.length;
+
+  // Get the actual selected items data
+  const selectedItemsData = galleryItems.filter((item) =>
+    currentlySelectedItems.includes(item.id)
+  );
 
   const [localGalleryView, setLocalGalleryView] = useLocalStorage<
     "grid" | "folder"
@@ -487,24 +450,11 @@ export function MediaLibrary({
       {currentSelectionCount > 0 &&
         (!isMediaSelectDialog || !isMultiSelect) && (
           <MediaBulkActions
-            selectedCount={currentSelectionCount}
+            selectedItems={selectedItemsData}
             onUnselectAll={handleUnselectAll}
-            onDelete={handleBulkDeleteClick}
-            onDownload={handleBulkDownload}
+            galleryActions={galleryActions}
           />
         )}
-
-      <ReusableAlertDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        title="Delete Items"
-        description={`Are you sure you want to delete ${currentSelectionCount} item(s)? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-        danger
-      />
     </div>
   );
 }

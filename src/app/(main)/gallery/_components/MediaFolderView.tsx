@@ -106,6 +106,8 @@ export function MediaFolderView({
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
+  // Determine which items are currently selected for display
+
   const handleSelect = (id: string, selected: boolean) => {
     if (selected) {
       setSelectedItems((prev) => [...prev, id]);
@@ -140,23 +142,14 @@ export function MediaFolderView({
     },
   });
 
-  const handleBulkDownload = async () => {
-    if (selectedItems.length === 0) return;
+  // Get the actual selected items data
+  const selectedItemsData = galleryActions.galleryItems.filter((item) =>
+    selectedItems.includes(item.id)
+  );
 
-    const selectedItemsData = galleryActions.galleryItems.filter((item) =>
-      selectedItems.includes(item.id)
-    );
-
-    try {
-      // For each selected item, trigger a download
-      for (const item of selectedItemsData) {
-        await galleryActions.downloadItem(item);
-      }
-    } catch (error) {
-      console.error("Bulk download error:", error);
-    }
+  const handleUnselectAll = () => {
+    setSelectedItems([]);
   };
-
   // Fetch next page when in view
   React.useEffect(() => {
     if (
@@ -346,7 +339,6 @@ export function MediaFolderView({
               detected_objects: [],
               detected_emotions: [],
               detected_colors: [],
-              intent_tags: [],
               search_keywords: [],
               custom_tags: [],
               moodboard_id: selecteMoodboardId,
@@ -699,12 +691,9 @@ export function MediaFolderView({
 
         {selectedItems.length > 0 && (
           <MediaBulkActions
-            selectedCount={selectedItems.length}
-            onUnselectAll={() => setSelectedItems([])}
-            onDelete={async () => {
-              galleryActions.bulkDelete(selectedItems);
-            }}
-            onDownload={handleBulkDownload}
+            selectedItems={selectedItemsData}
+            onUnselectAll={handleUnselectAll}
+            galleryActions={galleryActions}
           />
         )}
       </div>
@@ -1028,12 +1017,9 @@ export function MediaFolderView({
             )}
           {selectedItems.length > 0 && (
             <MediaBulkActions
-              selectedCount={selectedItems.length}
-              onUnselectAll={() => setSelectedItems([])}
-              onDelete={async () => {
-                galleryActions.bulkDelete(selectedItems);
-              }}
-              onDownload={handleBulkDownload}
+              selectedItems={selectedItemsData}
+              onUnselectAll={handleUnselectAll}
+              galleryActions={galleryActions}
             />
           )}
         </>

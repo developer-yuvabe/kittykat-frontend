@@ -509,7 +509,6 @@ export const MoodboardSection: React.FC<{
               detected_objects: [],
               detected_emotions: [],
               detected_colors: [],
-              intent_tags: [],
               search_keywords: [],
               custom_tags: [],
             };

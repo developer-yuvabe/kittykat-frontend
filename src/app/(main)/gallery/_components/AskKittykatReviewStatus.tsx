@@ -21,57 +21,33 @@ import { UserRoleId } from "@/types/user.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { GalleryActions } from "@/hooks/useGallery";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { useState, useRef } from "react";
+import { useState, useRef, SetStateAction, Dispatch } from "react";
+import { toast } from "sonner";
 
 interface AskKittykatReviewStatusProps {
   item: GalleryItemResponse;
   onAskKittykat: () => void;
   galleryActions: GalleryActions;
+  revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
+  setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
 
-const statusConfig = {
-  draft: {
-    label: "Draft",
-    dotColor: "bg-gray-500",
-    // ...
-  },
-  request_created: {
-    label: "Request Created",
-    dotColor: "bg-orange-600",
-    // ...
-  },
-  in_progress: {
-    label: "In Progress",
-    dotColor: "bg-blue-600",
-    // ...
-  },
-  in_review: {
-    label: "Awaiting Approval",
-    dotColor: "bg-purple-600",
-    // ...
-  },
-  approved: {
-    label: "Approved",
-    dotColor: "bg-green-600",
-    // ...
-  },
-  rejected: {
-    label: "Rejected",
-    dotColor: "bg-red-600",
-    // ...
-  },
-};
+import { WorkflowStatus } from "@/types/gallery.types";
+import { WORKFLOW_STATUS_MAP } from "@/lib/gallery.utils";
 
 export function AskKittykatReviewStatus({
   item,
   onAskKittykat,
   galleryActions,
+  revalidateGalleryItemVersions,
+  setCurrentItem,
 }: AskKittykatReviewStatusProps) {
   const { user } = useUserStore();
   const isAdmin = user?.role?.id === UserRoleId.ADMIN;
 
   const currentStatus = item?.workflow_status || "draft";
-  const config = statusConfig[currentStatus];
+
+  const config = WORKFLOW_STATUS_MAP[currentStatus as WorkflowStatus];
 
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -87,12 +63,20 @@ export function AskKittykatReviewStatus({
       | "in_progress"
       | "in_review"
       | "approved"
-      | "rejected"
+      | "requested_revision"
+      | "a2i_media_created"
   ) => {
-    galleryActions.patchItem({
-      itemId: item.id,
-      data: { workflow_status: newStatus },
-    });
+    galleryActions.patchItem(
+      {
+        itemId: item.id,
+        data: { workflow_status: newStatus as WorkflowStatus },
+      },
+      {
+        onSuccess(data) {
+          revalidateGalleryItemVersions(data);
+        },
+      }
+    );
     setIsEditingStatus(false);
   };
 
@@ -133,16 +117,30 @@ export function AskKittykatReviewStatus({
       }
 
       // Add comment with rejection reason
-      await galleryActions.addComment({
-        itemId: item.id,
-        commentData: {
-          text: `[Rejected - Feedback] ${rejectReason}`,
-          attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined,
+      galleryActions.addComment(
+        {
+          itemId: item.id,
+          commentData: {
+            text: `[Rejected - Feedback] ${rejectReason}`,
+            attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined,
+          },
         },
-      });
+        {
+          onSuccess(data) {
+            revalidateGalleryItemVersions(data);
+          },
+          onError() {
+            // Rollback on error
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: prev.comments } : prev
+            );
+            toast.error("Failed to update reply like. Please try again.");
+          },
+        }
+      );
 
       // Update status to rejected
-      handleStatusChange("rejected");
+      handleStatusChange("requested_revision");
 
       // Reset form
       setRejectReason("");
@@ -192,7 +190,7 @@ export function AskKittykatReviewStatus({
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(statusConfig).map(([status, config]) => {
+                {Object.entries(WORKFLOW_STATUS_MAP).map(([status, config]) => {
                   return (
                     <SelectItem key={status} value={status}>
                       <div className="flex items-center gap-2">

@@ -47,7 +47,6 @@ const AskKittykatVersions = ({
       detected_objects: [],
       detected_emotions: [],
       detected_colors: [],
-      intent_tags: [],
       search_keywords: [],
       custom_tags: [],
       parent_asset_id: item.id,

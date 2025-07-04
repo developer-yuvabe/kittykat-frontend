@@ -16,7 +16,6 @@ import {
   acceptedFileTypes,
   createGalleryItemFromFile,
 } from "@/lib/gallery.utils";
-import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
 import { MediaUploadActions } from "./MediaUploadActions";
 import { MediaUploadStatus } from "./MediaUploadStatus";
 import { MediaUploadDropzoneArea } from "./MediaUploadDropzoneArea";
@@ -210,7 +209,6 @@ export function MediaUploadDropzone({
               detected_objects: [],
               detected_emotions: [],
               detected_colors: [],
-              intent_tags: [],
               search_keywords: [],
               custom_tags: [],
               campaign_id: selectedCampaignId,
