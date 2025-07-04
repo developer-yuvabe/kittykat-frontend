@@ -395,12 +395,7 @@ export function MediaItemDetailsDialog({
                   displayItem.duration_seconds,
                   "number"
                 )}
-              {renderEditableField(
-                "Alt Text",
-                "alt_text",
-                displayItem.alt_text,
-                "textarea"
-              )}
+
               {renderEditableField(
                 "Is Favorite",
                 "is_favourite",
@@ -438,12 +433,6 @@ export function MediaItemDetailsDialog({
 
           <TabsContent value="ai" className="space-y-4 mt-4 p-10">
             <div className="grid grid-cols-1 gap-4">
-              {displayItem.generation_engine &&
-                renderEditableField(
-                  "Generation Engine",
-                  "generation_engine",
-                  displayItem.generation_engine
-                )}
               {displayItem.input_prompt &&
                 renderEditableField(
                   "Input Prompt",
@@ -654,18 +643,7 @@ export function MediaItemDetailsDialog({
                   { value: "rejected", label: "Rejected" },
                 ]
               )}
-              {renderEditableField(
-                "User Feedback",
-                "user_feedback",
-                displayItem.user_feedback,
-                "select",
-                true,
-                [
-                  { value: "liked", label: "Liked" },
-                  { value: "disliked", label: "Disliked" },
-                  { value: "neutral", label: "Neutral" },
-                ]
-              )}
+
               {renderEditableField(
                 "Campaign ID",
                 "campaign_id",
@@ -676,12 +654,6 @@ export function MediaItemDetailsDialog({
                 "usage_count",
                 displayItem.usage_count,
                 "number"
-              )}
-              {renderEditableField(
-                "Has Feedback",
-                "has_feedback",
-                displayItem.has_feedback,
-                "boolean"
               )}
             </div>
 
@@ -696,24 +668,6 @@ export function MediaItemDetailsDialog({
                 "Custom Tags",
                 "custom_tags",
                 displayItem.custom_tags,
-                "array"
-              )}
-              {renderEditableField(
-                "Approved Channels",
-                "approved_channels",
-                displayItem.approved_channels,
-                "array"
-              )}
-              {renderEditableField(
-                "Region Restrictions",
-                "region_restrictions",
-                displayItem.region_restrictions,
-                "array"
-              )}
-              {renderEditableField(
-                "Content Warnings",
-                "content_warnings",
-                displayItem.content_warnings,
                 "array"
               )}
             </div>

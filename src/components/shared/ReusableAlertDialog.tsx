@@ -11,16 +11,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 
+import { ReactNode } from "react";
+
 type ReusableAlertDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: string | ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm: () => void;
   isLoading?: boolean;
   danger?: boolean;
+  confirmDisabled?: boolean; // <-- Add this line
 };
 
 const ReusableAlertDialog: React.FC<ReusableAlertDialogProps> = ({
@@ -33,6 +36,7 @@ const ReusableAlertDialog: React.FC<ReusableAlertDialogProps> = ({
   onConfirm,
   isLoading = false,
   danger = false,
+  confirmDisabled = false,
 }) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -50,7 +54,7 @@ const ReusableAlertDialog: React.FC<ReusableAlertDialogProps> = ({
               e.preventDefault();
               onConfirm();
             }}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled} // <-- Updated line
             className={
               danger
                 ? "bg-red-600 hover:bg-red-700"

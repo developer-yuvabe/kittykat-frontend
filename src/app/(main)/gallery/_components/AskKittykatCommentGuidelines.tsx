@@ -47,6 +47,9 @@ export const AskKittykatCommentGuidelines = () => {
               Once submitted, our team will review your request and respond as
               soon as possible.
             </p>
+            <p className="text-xs text-red-600 font-semibold">
+              Note: Image edit requests are chargeable as per the scope of work.
+            </p>
           </div>
         </>
       )}

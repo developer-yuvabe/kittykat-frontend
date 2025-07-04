@@ -475,10 +475,20 @@ export function MediaEditorDialog({
 
   const handleConfirmAskKittyKat = async () => {
     try {
-      galleryActions.patchItem({
-        itemId: currentItem.id,
-        data: { sent_to_human_queue: true, workflow_status: "request_created" },
-      });
+      galleryActions.patchItem(
+        {
+          itemId: currentItem.id,
+          data: {
+            sent_to_human_queue: true,
+            workflow_status: "request_created",
+          },
+        },
+        {
+          onSuccess(data) {
+            revalidateGalleryItemVersions(data);
+          },
+        }
+      );
       setShowConfirmDialog(false);
       toast.success(
         "Request sent to KittyKat! Our team will review your request."
@@ -581,7 +591,7 @@ export function MediaEditorDialog({
                 className="flex-1 flex flex-col bg-none"
               >
                 <AskKittykatTabs />
-                <AskKittykatImageEditingTools />
+                <AskKittykatImageEditingTools item={currentItem} />
 
                 <TabsContent
                   value="ask-kittykat"
@@ -731,6 +741,10 @@ export function MediaEditorDialog({
                       onAskKittykat={handleAskKittyKat}
                       galleryActions={galleryActions}
                       item={currentItem}
+                      revalidateGalleryItemVersions={
+                        revalidateGalleryItemVersions
+                      }
+                      setCurrentItem={setCurrentItem}
                     />
                   </div>
                 </TabsContent>

@@ -11,9 +11,14 @@ import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 type VirtualTryOnProps = {
   productImage: string;
   closeDialog: () => void;
+  brandId?: string;
 };
 
-const VirtualTryOn = ({ productImage, closeDialog }: VirtualTryOnProps) => {
+const VirtualTryOn = ({
+  productImage,
+  closeDialog,
+  brandId,
+}: VirtualTryOnProps) => {
   const { selectedBrandId } = useBrandStore();
   const [garmentImage, setGarmentImage] = useState<string | null>(null);
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
@@ -25,7 +30,11 @@ const VirtualTryOn = ({ productImage, closeDialog }: VirtualTryOnProps) => {
     }
     setLoading(true);
     try {
-      createVtonImage(selectedBrandId!, productImage, garmentImage);
+      createVtonImage(
+        (brandId ?? selectedBrandId)!,
+        productImage,
+        garmentImage
+      );
 
       await delay(2000);
       closeDialog();

@@ -4,6 +4,7 @@ import {
   GalleryFilters,
   GalleryItem,
   GalleryItemResponse,
+  WorkflowStatus,
 } from "@/types/gallery.types";
 import { CheckCircle, Loader2, X, File } from "lucide-react";
 import React from "react";
@@ -137,7 +138,6 @@ export const createGalleryItemFromFile = async (
     detected_colors: [],
 
     // Tagging & Classification
-    intent_tags: [activeTab], // Use the active tab as an intent tag
     search_keywords: [file.name.toLowerCase()],
     custom_tags: [],
 
@@ -237,15 +237,43 @@ export const ASPECT_RATIO_OPTIONS = [
   { value: "21:9", label: "Ultra Wide (21:9)" },
 ];
 
-export const WORKFLOW_STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "request_created", label: "Request Created" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "in_review", label: "Awaiting Approval" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-  { value: "ready_to_publish", label: "Ready to Publish" },
+export const WORKFLOW_STATUS_OPTIONS: {
+  value: WorkflowStatus;
+  label: string;
+  dotColor: string;
+}[] = [
+  { value: "draft", label: "Draft", dotColor: "bg-gray-500" },
+  {
+    value: "request_created",
+    label: "Request Created",
+    dotColor: "bg-orange-600",
+  },
+  {
+    value: "in_progress",
+    label: "Editing in progress",
+    dotColor: "bg-blue-600",
+  },
+  { value: "in_review", label: "Awaiting Approval", dotColor: "bg-purple-600" },
+  { value: "approved", label: "Approved", dotColor: "bg-green-600" },
+  {
+    value: "requested_revision",
+    label: "Requested Revision",
+    dotColor: "bg-red-600",
+  },
+  {
+    value: "a2i_media_created",
+    label: "A2I Media Created",
+    dotColor: "bg-yellow-600",
+  },
 ];
+
+export const WORKFLOW_STATUS_MAP = WORKFLOW_STATUS_OPTIONS.reduce(
+  (acc, curr) => {
+    acc[curr.value] = curr;
+    return acc;
+  },
+  {} as Record<WorkflowStatus, { label: string; dotColor: string }>
+);
 
 // Calculate active filters count
 export const getActiveFiltersCount = (filters: EnhancedSelectedFilters) => {
@@ -442,3 +470,37 @@ export const formatTime = (dateString: string) => {
     hour12: true,
   });
 };
+
+export async function batchExecute<T>(
+  items: T[],
+  handler: (item: T) => Promise<any>,
+  options?: {
+    parallel?: boolean;
+    onProgress?: (completed: number, total: number) => void;
+  }
+) {
+  const { parallel = false, onProgress } = options || {};
+  const total = items.length;
+  let completed = 0;
+
+  if (parallel) {
+    const results = await Promise.all(
+      items.map(async (item) => {
+        const res = await handler(item);
+        completed++;
+        onProgress?.(completed, total);
+        return res;
+      })
+    );
+    return results;
+  } else {
+    const results: any[] = [];
+    for (const item of items) {
+      const res = await handler(item);
+      results.push(res);
+      completed++;
+      onProgress?.(completed, total);
+    }
+    return results;
+  }
+}

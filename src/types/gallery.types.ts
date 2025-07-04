@@ -23,6 +23,15 @@ export type CommentReply = {
   likes?: string[];
 };
 
+export type WorkflowStatus =
+  | "draft"
+  | "request_created"
+  | "in_progress"
+  | "in_review"
+  | "approved"
+  | "requested_revision"
+  | "a2i_media_created";
+
 export type GalleryItem = {
   // 🧱 Basic Asset Info
   brand_id: string;
@@ -47,7 +56,6 @@ export type GalleryItem = {
   related_asset_ids: string[];
 
   // 🔮 AI & Generation Info
-  generation_engine?: string;
   input_prompt?: string;
   prompt_modifiers: string[];
   metadata_raw?: Record<string, any>;
@@ -100,30 +108,12 @@ export type GalleryItem = {
   performance_score?: number;
 
   // 🏷️ Tagging & Classification
-  intent_tags: string[];
   search_keywords: string[];
   custom_tags: string[];
-  alt_text?: string;
-  multilingual_data?: Record<
-    string,
-    {
-      alt_text: string;
-      tags: string[];
-    }
-  >;
 
   // 🔁 Workflow & Collaboration
-  workflow_status?:
-    | "draft"
-    | "request_created"
-    | "in_progress"
-    | "in_review"
-    | "approved"
-    | "rejected";
-  user_feedback?: "liked" | "disliked" | "neutral";
-  feedback_thread_id?: string;
-  stakeholder_approvals?: Record<string, "approved" | "rejected" | "pending">;
-  has_feedback?: boolean;
+  workflow_status?: WorkflowStatus;
+
   comments?: Comment[];
   last_commented_at?: string;
 
@@ -135,14 +125,10 @@ export type GalleryItem = {
   human_edit_completed_at?: string;
 
   // 📁 Asset Management
+
   is_favourite?: boolean;
   is_archived?: boolean;
   quality_flag?: string;
-
-  // 📤 Publishing & Compliance
-  approved_channels?: ("social" | "print" | "web" | "paid_ads")[];
-  region_restrictions?: string[];
-  content_warnings?: string[];
 
   // 📆 Usage Tracking
   last_accessed_at?: string;
