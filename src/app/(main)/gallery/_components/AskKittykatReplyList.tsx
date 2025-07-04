@@ -129,7 +129,7 @@ export function AskKittykatReplyList({
                   <p className="text-xs text-gray-700 mb-1">{reply.text}</p>
 
                   {reply.attachments && reply.attachments?.length > 0 && (
-                    <div className="grid grid-cols-2 gap-1 mb-1">
+                    <div className="flex gap-1 mb-1">
                       {reply.attachments.map((attachment, idx) => (
                         <ZoomableImage
                           src={attachment}
@@ -155,28 +155,36 @@ export function AskKittykatReplyList({
                         {reply.likes?.length}
                       </span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0"
-                      onClick={() => {
-                        setEditingReply({
-                          commentId,
-                          replyId: reply.id,
-                        });
-                        setEditText(reply.text);
-                      }}
-                    >
-                      <Edit className="w-3 h-3 mr-1" /> Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 text-red-600 hover:text-red-700"
-                      onClick={() => onDeleteReply(commentId, reply.id)}
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" /> Delete
-                    </Button>
+
+                    {(user &&
+                      (user?.role as unknown as UserRoleId) ===
+                        UserRoleId.ADMIN) ||
+                      (reply.added_by === user?.id && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0"
+                            onClick={() => {
+                              setEditingReply({
+                                commentId,
+                                replyId: reply.id,
+                              });
+                              setEditText(reply.text);
+                            }}
+                          >
+                            <Edit className="w-3 h-3 mr-1" /> Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 text-red-600 hover:text-red-700"
+                            onClick={() => onDeleteReply(commentId, reply.id)}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      ))}
                   </div>
                 </>
               )}
