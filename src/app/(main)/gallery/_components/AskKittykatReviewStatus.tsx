@@ -55,6 +55,8 @@ export function AskKittykatReviewStatus({
   const [isSubmittingReject, setIsSubmittingReject] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+  const [isSubmittingAccept, setIsSubmittingAccept] = useState(false);
 
   const handleStatusChange = (
     newStatus:
@@ -226,8 +228,17 @@ export function AskKittykatReviewStatus({
       {/* User Review Buttons (when status is in_review and user is not admin) */}
       {!isAdmin && currentStatus === "in_review" && (
         <div className="flex gap-2">
-          <Button
+          {/* <Button
             onClick={handleAccept}
+            className="flex-1"
+            size="lg"
+            variant="default"
+          >
+            <CheckCircle2 className="w-5 h-5 mr-2" />
+            Accept
+          </Button> */}
+          <Button
+            onClick={() => setShowAcceptDialog(true)}
             className="flex-1"
             size="lg"
             variant="default"
@@ -258,6 +269,46 @@ export function AskKittykatReviewStatus({
           Accept and Start
         </Button>
       )}
+
+      {/* Accept Dialog */}
+      <Dialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve this image?</DialogTitle>
+            <DialogDescription>
+              By accepting, you give final approval for the image(s).
+              <br />
+              <strong>This action cannot be undone</strong>, and any changes
+              requested afterwards may incur additional charges.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAcceptDialog(false)}
+              disabled={isSubmittingAccept}
+            >
+              Back to Review
+            </Button>
+            <Button
+              onClick={async () => {
+                setIsSubmittingAccept(true);
+                try {
+                  handleAccept();
+                  setShowAcceptDialog(false);
+                } finally {
+                  setIsSubmittingAccept(false);
+                }
+              }}
+              disabled={isSubmittingAccept}
+              variant="default"
+            >
+              {isSubmittingAccept ? "Approving..." : "Approve"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reject Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>

@@ -6,12 +6,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import React from "react";
+import { DownloadIcon } from "../ui/custom-icon";
+import { HeartIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ImageModalProps {
   imageUrl: string;
   onClose: () => void;
   alt?: string;
   isOpen: boolean;
+  onDownload?: () => void;
+  onLike?: () => void;
+  isLiked?: boolean;
 }
 
 export const ImageModal: React.FC<ImageModalProps> = ({
@@ -19,6 +25,9 @@ export const ImageModal: React.FC<ImageModalProps> = ({
   onClose,
   alt = "Expanded image",
   isOpen,
+  onDownload,
+  onLike,
+  isLiked,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -38,6 +47,36 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             className="object-contain rounded-lg max-h-[90vh] max-w-[90vw] w-auto h-auto "
             onClick={onClose}
           />
+          {/* Bottom left - Download */}
+
+          {onDownload && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDownload();
+              }}
+              className="absolute bottom-2 left-2 bg-white/80 hover:bg-white text-black p-2 rounded-full shadow"
+            >
+              <DownloadIcon className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Bottom right - Like */}
+          {onLike && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike();
+              }}
+              className="absolute bottom-2 right-2 bg-white/80 hover:bg-white text-red-500 p-2 rounded-full shadow"
+            >
+              <HeartIcon
+                className={cn("w-5 h-5", {
+                  "fill-red-500": isLiked,
+                })}
+              />
+            </button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

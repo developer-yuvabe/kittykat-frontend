@@ -174,6 +174,9 @@ export default function ZoomableImage({
         alt={alt}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
+        onDownload={handleDownload}
+        onLike={handleLikeToggle}
+        isLiked={isLiked}
       />
     </>
   );

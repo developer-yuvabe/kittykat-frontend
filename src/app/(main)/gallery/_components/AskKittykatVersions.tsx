@@ -51,6 +51,7 @@ const AskKittykatVersions = ({
       custom_tags: [],
       parent_asset_id: item.id,
       is_master: false,
+      workflow_status: "in_review",
     };
 
     addToGallery(galleryItem).then((item) => {
