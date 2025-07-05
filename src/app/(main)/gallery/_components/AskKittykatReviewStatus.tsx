@@ -121,7 +121,7 @@ export function AskKittykatReviewStatus({
         {
           itemId: item.id,
           commentData: {
-            text: `[Rejected - Feedback] ${rejectReason}`,
+            text: `[Revision Request - Feedback] ${rejectReason}`,
             attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined,
           },
         },

@@ -206,7 +206,6 @@ export const useGalleryQuery = (
         queryKey,
       });
 
-      // Cancel any outgoing refetches to avoid overwriting optimistic update
       await queryClient.cancelQueries({ queryKey });
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
@@ -612,6 +611,7 @@ export const useGalleryQuery = (
     hasNextPage: galleryQuery.hasNextPage,
     fetchNextPage: galleryQuery.fetchNextPage,
     isFetching: galleryQuery.isFetching,
+    refetchGalleryItems: galleryQuery.refetch,
 
     // Single item query hook
     useGalleryItem,
