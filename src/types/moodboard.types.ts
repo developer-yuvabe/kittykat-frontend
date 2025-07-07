@@ -42,6 +42,7 @@ export interface MoodboardPatchRequest {
   aggregated_tags?: Record<string, AggregatedTagItem[]>;
   moodboard_assets?: MoodboardAsset[]; // Define `MoodboardAsset[]` type if available
   visual_sources?: SourceHandle[]; // Define `SourceHandle[]` type if available
+  delete_moodboard_assets?: string[];
 }
 
 export interface CreateMoodboardRequest {

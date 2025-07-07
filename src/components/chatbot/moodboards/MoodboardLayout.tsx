@@ -70,6 +70,7 @@ function MoodboardLayout({
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
     []
   );
+  const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -358,6 +359,7 @@ function MoodboardLayout({
   const removedPhoto = (id: string) => {
     const newPhotos = photos.filter((photo) => photo.id !== id);
     setPhotos(newPhotos);
+    setRemovedPhotoIds((prev) => [...prev, id]);
     setNoOfImagesForMoodboard(newPhotos.length);
   };
 
@@ -427,10 +429,12 @@ function MoodboardLayout({
 
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
+        delete_moodboard_assets: removedPhotoIds,
       });
 
       // Update original state to match current state (but preserve like status)
       setOriginalPhotos([...photos]);
+      setRemovedPhotoIds([]);
 
       console.log("Position changes saved successfully");
     } catch (error) {
@@ -450,6 +454,7 @@ function MoodboardLayout({
     });
 
     setPhotos(revertedPhotos);
+    setRemovedPhotoIds([]);
     setNoOfImagesForMoodboard(revertedPhotos.length);
   };
 
