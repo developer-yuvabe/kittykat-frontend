@@ -51,35 +51,6 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             className="object-contain rounded-lg max-h-[90vh] max-w-[90vw] w-auto h-auto"
           />
 
-          {/* {onDownload && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDownload();
-              }}
-              className="absolute bottom-2 left-2 bg-white/80 hover:bg-white text-black p-2 rounded-full shadow"
-            >
-              <DownloadIcon className="w-5 h-5" />
-            </button>
-          )}
-
-      
-          {onLike && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onLike();
-              }}
-              className="absolute bottom-2 right-2 bg-white/80 hover:bg-white text-red-500 p-2 rounded-full shadow"
-            >
-              <HeartIcon
-                className={cn("w-5 h-5", {
-                  "fill-red-500": isLiked,
-                })}
-              />
-            </button>
-          )} */}
-
           {/* Hover Overlay */}
           <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
             {(onDownload || onLike) && (
@@ -88,33 +59,33 @@ export const ImageModal: React.FC<ImageModalProps> = ({
 
             {/* Bottom Left - Download Button with Tooltip */}
             {onDownload && (
-              <div className="absolute bottom-2 left-2">
+              <div className="absolute bottom-2 left-3">
                 <TooltipIconButton
                   tooltip="Download"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDownload();
                   }}
-                  className="bg-white/80 hover:bg-white text-black p-2 rounded-full shadow size-7"
+                  className="text-white hover:text-black"
                 >
-                  <DownloadIcon />
+                  <DownloadIcon className="!w-5 !h-5" />
                 </TooltipIconButton>
               </div>
             )}
 
             {/* Bottom Right - Like Button with Tooltip */}
             {onLike && (
-              <div className="absolute bottom-2 right-2">
+              <div className="absolute bottom-2 right-3">
                 <TooltipIconButton
                   tooltip="Like"
                   onClick={(e) => {
                     e.stopPropagation();
                     onLike();
                   }}
-                  className="bg-white/80 hover:bg-white text-red-500 p-2 rounded-full shadow size-7"
+                  className="text-white hover:text-red-500"
                 >
                   <HeartIcon
-                    className={cn({
+                    className={cn("!w-5 !h-5", {
                       "text-red-500 fill-red-500": isLiked,
                     })}
                   />

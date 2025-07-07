@@ -838,11 +838,13 @@ export const MoodboardSection: React.FC<{
                                 onChange={setNoOfImagesForMoodboard}
                                 hideRefresh
                                 maxCount={
-                                  currentMoodboard.visual_style_images.length >
-                                  16
+                                  currentMoodboard.visual_style_images.filter(
+                                    (img) => img.is_deleted !== true
+                                  ).length > 16
                                     ? 16
-                                    : currentMoodboard.visual_style_images
-                                        .length
+                                    : currentMoodboard.visual_style_images.filter(
+                                        (img) => img.is_deleted !== true
+                                      ).length
                                 }
                                 disabled
                               />
