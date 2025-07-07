@@ -32,7 +32,6 @@ export function MediaGrid({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedItemForDetails, setSelectedItemForDetails] =
     useState<GalleryItemResponse | null>(null);
@@ -95,6 +94,8 @@ export function MediaGrid({
   const currentEditorItem =
     galleryActions.galleryItems[currentEditorIndex] || null;
 
+  console.log(galleryActions.galleryItems, "aa");
+
   return (
     <>
       <Masonry
@@ -153,7 +154,6 @@ export function MediaGrid({
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={handleDelete}
-        isLoading={isDeleting}
         danger={true}
       />
     </>

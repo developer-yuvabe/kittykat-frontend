@@ -1,10 +1,14 @@
 "use client";
 
+import RemixControls, {
+  RemixControlsProps,
+} from "@/components/chatbot/a2i/features/RemixControls";
+import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import VirtualTryOn from "@/components/chatbot/a2i/features/VirtualTryOn";
 import { TabsContent } from "@/components/ui/tabs";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Shirt, Paintbrush, Video, ArrowUp } from "lucide-react";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 
 interface ToolTab {
   value: string;
@@ -30,11 +34,11 @@ function FeatureComingSoon({
 
 export function AskKittykatImageEditingTools({
   item,
+  remixControls,
 }: {
   item: GalleryItemResponse;
+  remixControls: RemixControlsProps;
 }) {
-  const [isTryOnOpen, setIsTryOnOpen] = useState(true);
-
   const tools: ToolTab[] = [
     {
       value: "virtual-tryon",
@@ -43,7 +47,7 @@ export function AskKittykatImageEditingTools({
       customComponent: (
         <VirtualTryOn
           productImage={item.asset_url}
-          closeDialog={() => setIsTryOnOpen(false)}
+          closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
         />
       ),
@@ -52,11 +56,32 @@ export function AskKittykatImageEditingTools({
       value: "in-paint",
       icon: <Paintbrush className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "In-Paint Editing feature coming soon",
+      customComponent: (
+        <RemixControls
+          image={remixControls.image}
+          brushSize={remixControls.brushSize}
+          canRedo={remixControls.canRedo}
+          canUndo={remixControls.canUndo}
+          offScreenCanvasRef={remixControls.offScreenCanvasRef}
+          onBrushSizeChange={remixControls.onBrushSizeChange}
+          onClear={remixControls.onClear}
+          onRedo={remixControls.onRedo}
+          onUndo={remixControls.onUndo}
+          closeDialog={remixControls.closeDialog}
+          brandId={item.brand_id}
+        />
+      ),
     },
     {
       value: "video-gen",
       icon: <Video className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Video Generation feature coming soon",
+      customComponent: (
+        <VideoGeneration
+          closeDialog={remixControls.closeDialog}
+          startImage={item.asset_url}
+        />
+      ),
     },
     {
       value: "upscaler",
@@ -69,13 +94,19 @@ export function AskKittykatImageEditingTools({
     <>
       {tools.map((tool) => (
         <TabsContent key={tool.value} value={tool.value} className="flex-1 p-2">
-          {tool.value === "virtual-tryon" &&
-          isTryOnOpen &&
-          tool.customComponent ? (
-            tool.customComponent
-          ) : (
-            <FeatureComingSoon icon={tool.icon} message={tool.message} />
-          )}
+          {tools.map((tool) => (
+            <TabsContent
+              key={tool.value}
+              value={tool.value}
+              className="flex-1 p-2"
+            >
+              {tool.customComponent ? (
+                tool.customComponent
+              ) : (
+                <FeatureComingSoon icon={tool.icon} message={tool.message} />
+              )}
+            </TabsContent>
+          ))}
         </TabsContent>
       ))}
     </>

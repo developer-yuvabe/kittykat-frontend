@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,8 @@ import { AskKittykatReplyInput } from "./AskKittykatReplyInput";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import AskKittykatVersions from "./AskKittykatVersions";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import { RemixImageHandle } from "../../_components/remix/RemixImage";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -519,6 +521,25 @@ export function MediaEditorDialog({
     galleryActions.isFetchingNextPage,
   ]);
 
+  const [brushSize, setBrushSize] = useState(80);
+  const isRemixEnabled = activeTab === "in-paint";
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const remixImageRef = useRef<RemixImageHandle>(null);
+  const remixHistory = useUndoRedoRemix();
+
+  const handleBrushSizeChange = useCallback(
+    (size: number) => {
+      setBrushSize(size);
+      if (remixImageRef.current && isRemixEnabled) {
+        remixImageRef.current.setBrushSize?.(size); // Update canvas without callback loop
+      }
+    },
+    [isRemixEnabled]
+  );
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -573,6 +594,12 @@ export function MediaEditorDialog({
               <AskKittykatImageSection
                 item={currentItem}
                 galleryActions={galleryActions}
+                isRemixEnabled={isRemixEnabled}
+                imageRef={imageRef}
+                canvasRef={canvasRef}
+                offScreenCanvasRef={offScreenCanvasRef}
+                remixHistory={remixHistory}
+                brushSize={brushSize}
               />
               <AskKittykatVersions
                 item={item!}
@@ -590,9 +617,29 @@ export function MediaEditorDialog({
                 onValueChange={setActiveTab}
                 className="flex-1 flex flex-col bg-none"
               >
-                <AskKittykatTabs />
-                <AskKittykatImageEditingTools item={currentItem} />
-
+                {currentItem.asset_type !== "video" && (
+                  <>
+                    <AskKittykatTabs />
+                    <AskKittykatImageEditingTools
+                      item={currentItem}
+                      remixControls={{
+                        image: {
+                          url: currentItem.asset_url,
+                          size: currentItem.size || "original",
+                        },
+                        canUndo: remixHistory.canUndo,
+                        canRedo: remixHistory.canRedo,
+                        onUndo: () => remixImageRef.current?.undo?.(),
+                        onRedo: () => remixImageRef.current?.redo?.(),
+                        onClear: () => remixImageRef.current?.clearCanvas?.(),
+                        offScreenCanvasRef,
+                        brushSize,
+                        onBrushSizeChange: handleBrushSizeChange,
+                        closeDialog: () => onOpenChange(false),
+                      }}
+                    />
+                  </>
+                )}
                 <TabsContent
                   value="ask-kittykat"
                   className="flex-1 flex flex-col"

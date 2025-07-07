@@ -44,8 +44,6 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       undo: undoState,
       redo: redoState,
       clear: clearHistory,
-      canUndo,
-      canRedo,
     } = remixHistory;
 
     const updateMainCanvas = useCallback(
