@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import A2iImageEditFeatures from "./A2iImageEditFeatures";
 import { Button } from "@/components/ui/button";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
@@ -25,6 +24,8 @@ import {
   deleteA2iVideo,
   toggleA2iVideoLike,
 } from "@/services/api/video-gen.service";
+import { useGalleryQuery } from "@/hooks/useGallery";
+import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -64,6 +65,23 @@ const A2iImageCard = ({
   const { selectedBrandId } = useBrandStore();
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  const galleryActions = useGalleryQuery({
+    selectedFilters: {
+      brands: [selectedBrandId!],
+      campaigns: [],
+      moodboards: [],
+      product_categories: [],
+      asset_types: [],
+      asset_sources: [],
+      media_format: [],
+      aspect_ratio: [],
+      workflow_status: [],
+    },
+  });
+
+  const id = video?.id ?? image?.id;
+  const galleryItem = id ? galleryActions.useGalleryItem(id) : undefined;
 
   useEffect(() => {
     if (videoRef && videoRef.current) {
@@ -272,10 +290,7 @@ const A2iImageCard = ({
         {(image || video) && (
           <Button
             onClick={() => {
-              if (image) setShowEditFeatures((prev) => !prev);
-              if (video && videoRef && videoRef.current) {
-                videoRef.current.requestFullscreen();
-              }
+              setShowEditFeatures((prev) => !prev);
             }}
             size={"icon"}
             variant={"ghost"}
@@ -324,12 +339,12 @@ const A2iImageCard = ({
         )}
       </div>
 
-      {image && (
-        <A2iImageEditFeatures
-          image={image}
+      {galleryItem?.data && !galleryItem.isFetching && (
+        <MediaEditorDialog
+          galleryActions={galleryActions}
+          item={galleryItem.data}
           open={showEditFeatures}
-          onClose={() => setShowEditFeatures(false)}
-          parameters={parameters}
+          onOpenChange={setShowEditFeatures}
         />
       )}
 

@@ -617,26 +617,29 @@ export function MediaEditorDialog({
                 onValueChange={setActiveTab}
                 className="flex-1 flex flex-col bg-none"
               >
-                <AskKittykatTabs />
-                <AskKittykatImageEditingTools
-                  item={currentItem}
-                  remixControls={{
-                    image: {
-                      url: currentItem.asset_url,
-                      size: currentItem.size || "original",
-                    },
-                    canUndo: remixHistory.canUndo,
-                    canRedo: remixHistory.canRedo,
-                    onUndo: () => remixImageRef.current?.undo?.(),
-                    onRedo: () => remixImageRef.current?.redo?.(),
-                    onClear: () => remixImageRef.current?.clearCanvas?.(),
-                    offScreenCanvasRef,
-                    brushSize,
-                    onBrushSizeChange: handleBrushSizeChange,
-                    closeDialog: () => onOpenChange(false),
-                  }}
-                />
-
+                {currentItem.asset_type !== "video" && (
+                  <>
+                    <AskKittykatTabs />
+                    <AskKittykatImageEditingTools
+                      item={currentItem}
+                      remixControls={{
+                        image: {
+                          url: currentItem.asset_url,
+                          size: currentItem.size || "original",
+                        },
+                        canUndo: remixHistory.canUndo,
+                        canRedo: remixHistory.canRedo,
+                        onUndo: () => remixImageRef.current?.undo?.(),
+                        onRedo: () => remixImageRef.current?.redo?.(),
+                        onClear: () => remixImageRef.current?.clearCanvas?.(),
+                        offScreenCanvasRef,
+                        brushSize,
+                        onBrushSizeChange: handleBrushSizeChange,
+                        closeDialog: () => onOpenChange(false),
+                      }}
+                    />
+                  </>
+                )}
                 <TabsContent
                   value="ask-kittykat"
                   className="flex-1 flex flex-col"
