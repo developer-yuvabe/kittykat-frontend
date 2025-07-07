@@ -504,9 +504,13 @@ function MoodboardLayout({
                         <ImageCountCard
                           disabled
                           maxCount={
-                            moodboard.visual_style_images.length > 16
+                            moodboard.visual_style_images.filter(
+                              (img) => img.is_deleted !== true
+                            ).length > 16
                               ? 16
-                              : moodboard.visual_style_images.length
+                              : moodboard.visual_style_images.filter(
+                                  (img) => img.is_deleted !== true
+                                ).length
                           }
                           imageCount={noOfImagesForMoodboard}
                           onRefresh={async () => {

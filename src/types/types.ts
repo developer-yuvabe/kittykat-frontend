@@ -231,6 +231,7 @@ export interface VisualImage {
   is_liked: boolean;
   to_ignore: boolean;
   tags: Record<string, TagItem[]>;
+  is_deleted?: boolean;
 }
 
 export interface TagItem {
