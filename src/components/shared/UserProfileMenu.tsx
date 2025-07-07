@@ -9,8 +9,9 @@ import React from "react";
 import { useUserStore } from "@/store/user.store";
 import { Separator } from "../ui/separator";
 import { LogoutButton } from "./LogoutButton";
+import QueueProgress from "./QueueProgress";
 
-export function UserProfileMenu() {
+export function UserProfileMenu({}) {
   const { user } = useUserStore();
 
   const getUserInitials = () => {
@@ -23,8 +24,12 @@ export function UserProfileMenu() {
   };
 
   return (
-    <div className="flex items-center space-x-6">
-      {/* User Profile with Popover using shadcn components */}
+    <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
+      <div className="hidden sm:block">
+        <QueueProgress />
+      </div>
+
+      {/* User Profile with Popover */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -60,7 +65,12 @@ export function UserProfileMenu() {
 
           <Separator />
 
-          <Separator />
+          {/* Mobile Queue Progress - Only visible on mobile */}
+          <div className="sm:hidden p-4">
+            <QueueProgress />
+          </div>
+
+          <Separator className="sm:hidden" />
 
           <LogoutButton />
         </PopoverContent>

@@ -74,7 +74,7 @@ const IMAGE_VARIATIONS = {
   },
 };
 
-type RemixControlsProps = {
+export type RemixControlsProps = {
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -89,6 +89,7 @@ type RemixControlsProps = {
   // Add brush size props
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
+  brandId?: string;
 };
 
 const RemixControls = ({
@@ -102,6 +103,7 @@ const RemixControls = ({
   closeDialog,
   brushSize,
   onBrushSizeChange,
+  brandId,
 }: RemixControlsProps) => {
   const { selectedBrandId } = useBrandStore();
   const inputFileRef = React.useRef<HTMLInputElement | null>(null);
@@ -235,7 +237,7 @@ const RemixControls = ({
         file
       );
 
-      remixImageService(selectedBrandId!, data, maskUrl);
+      remixImageService(brandId ?? selectedBrandId!, data, maskUrl);
 
       await delay(2000);
 
