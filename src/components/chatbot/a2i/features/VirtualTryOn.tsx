@@ -71,7 +71,7 @@ const VirtualTryOn = ({
             <img
               src={garmentImage}
               alt="Garment"
-              className="object-contain w-[70%] h-[400px] lg:h-[450px] xl:h-[600px]"
+              className="object-contain w-[70%] h-[400px] lg:h-[450px] 2xl:h-[600px]"
               onLoad={() => console.log("Garment image loaded")}
               onError={() =>
                 console.error("Failed to load garment image:", garmentImage)
