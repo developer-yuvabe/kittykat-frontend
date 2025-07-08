@@ -787,6 +787,7 @@ export function MediaEditorDialog({
                     <AskKittykatReviewStatus
                       onAskKittykat={handleAskKittyKat}
                       galleryActions={galleryActions}
+                      // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
                       item={currentItem}
                       revalidateGalleryItemVersions={
                         revalidateGalleryItemVersions

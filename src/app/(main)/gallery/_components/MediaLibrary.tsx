@@ -71,6 +71,18 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId);
+  const [initialWorkflowStatus] = useQueryState<string[]>("status", {
+    defaultValue: [],
+    parse: (value) => (value ? value.split(",") : []),
+    serialize: (value) => value.join(","),
+    history: "push",
+  });
+  const [initialBrandId] = useQueryState<string | undefined>("brandId", {
+    defaultValue: undefined,
+    parse: (value) => (value ? value : undefined),
+    serialize: (value) => value || "",
+    history: "push",
+  });
 
   const initialFilters = useMemo(() => {
     return (
@@ -137,6 +149,16 @@ export function MediaLibrary({
     brandId,
     selectedBrand,
   ]);
+
+  useEffect(() => {
+    if (initialBrandId && initialWorkflowStatus) {
+      setSelectedFilters((p) => ({
+        ...p,
+        workflow_status: initialWorkflowStatus,
+        brand_id: initialBrandId,
+      }));
+    }
+  }, [initialWorkflowStatus, initialBrandId]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
