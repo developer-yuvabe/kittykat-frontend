@@ -45,13 +45,16 @@ const NotificationHoverCard = () => {
               <Loader2 className="text-primary animate-spin w-4 h-4 " />
             </div>
           )}
-          {notifications && notifications.length > 0 && totalUnreadCount && (
-            <div className="bg-red-500  absolute right-4 z-10 bottom-4 rounded-full w-5 h-5 flex items-center justify-center">
-              <span className="text-white text-xs ">
-                {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-              </span>
-            </div>
-          )}
+          {notifications &&
+            notifications.length > 0 &&
+            totalUnreadCount &&
+            totalUnreadCount > 0 && (
+              <div className="bg-red-500  absolute right-4 z-10 bottom-4 rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="text-white text-xs ">
+                  {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+                </span>
+              </div>
+            )}
         </div>
       </HoverCardTrigger>
       <HoverCardContent className="min-w-2xl p-0 overflow-y-auto scrollbar max-h-[400px]">
