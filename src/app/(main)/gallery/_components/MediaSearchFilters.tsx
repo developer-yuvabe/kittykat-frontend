@@ -4,7 +4,7 @@ import { Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
@@ -31,7 +31,7 @@ interface MediaSearchFiltersProps {
   favorites: boolean;
   showFilters: boolean;
   selectedFilters: EnhancedSelectedFilters;
-  setSelectedFilters: Dispatch<SetStateAction<EnhancedSelectedFilters>>;
+  setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
 }
 
 export function MediaSearchFilters({
@@ -45,9 +45,9 @@ export function MediaSearchFilters({
 }: MediaSearchFiltersProps) {
   const handleWorkflowStatusChange = (values: string[]) => {
     if (values[0] === "__all__") {
-      setSelectedFilters((prev) => ({ ...prev, workflow_status: [] }));
+      setSelectedFilters({ ...selectedFilters, workflow_status: [] });
     } else {
-      setSelectedFilters((prev) => ({ ...prev, workflow_status: values }));
+      setSelectedFilters({ ...selectedFilters, workflow_status: values });
     }
   };
 

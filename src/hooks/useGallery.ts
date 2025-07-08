@@ -77,9 +77,10 @@ export const useGalleryQuery = (
           moodboard_ids: filters?.selectedFilters?.moodboards?.length
             ? filters?.selectedFilters?.moodboards
             : undefined,
-          has_product: filters.selectedFilters?.has_product,
-          has_people: filters.selectedFilters?.has_people,
-          has_lifestyle_context: filters.selectedFilters?.has_lifestyle_context,
+          has_product: filters.selectedFilters?.has_product ?? undefined,
+          has_people: filters.selectedFilters?.has_people ?? undefined,
+          has_lifestyle_context:
+            filters.selectedFilters?.has_lifestyle_context ?? undefined,
           asset_types: filters.selectedFilters?.asset_types.length
             ? filters.selectedFilters.asset_types
             : undefined,
@@ -92,7 +93,7 @@ export const useGalleryQuery = (
           workflow_status: filters.selectedFilters?.workflow_status.length
             ? filters.selectedFilters.workflow_status
             : undefined,
-          is_archived: filters.selectedFilters?.is_archived,
+          is_archived: filters.selectedFilters?.is_archived ?? undefined,
           product_categories: filters.selectedFilters?.product_categories.length
             ? filters.selectedFilters.product_categories
             : undefined,
@@ -597,6 +598,25 @@ export const useGalleryQuery = (
     },
   });
 
+  const refetchAllGalleryQueries = async () => {
+    const matchingQueries = queryClient.getQueriesData<GalleryItemResponse[]>({
+      queryKey: ["gallery-items"],
+      exact: false,
+    });
+
+    for (const [queryKey, oldData] of matchingQueries) {
+      if (oldData) {
+        queryClient.setQueryData(queryKey, oldData);
+      }
+    }
+
+    await Promise.all(
+      matchingQueries.map(([queryKey]) =>
+        queryClient.invalidateQueries({ queryKey, refetchType: "active" })
+      )
+    );
+  };
+
   const totalItems = galleryQuery.data?.pages[0]?.pagination.total ?? 0;
 
   return {
@@ -660,6 +680,8 @@ export const useGalleryQuery = (
     downloadItem,
 
     totalItems,
+
+    refetchAllGalleryQueries,
   };
 };
 

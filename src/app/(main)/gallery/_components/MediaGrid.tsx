@@ -94,8 +94,6 @@ export function MediaGrid({
   const currentEditorItem =
     galleryActions.galleryItems[currentEditorIndex] || null;
 
-  console.log(galleryActions.galleryItems, "aa");
-
   return (
     <>
       <Masonry

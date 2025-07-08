@@ -4,10 +4,11 @@ import React, { useRef, useState, useEffect } from "react";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { GalleryActions } from "@/hooks/useGallery";
-import { PlayCircle, PauseCircle } from "lucide-react";
+import { PlayCircle, PauseCircle, Heart, Copy, Expand } from "lucide-react";
 
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix"; // Assuming used in parent
 import RemixImage from "../../_components/remix/RemixImage";
+import { toast } from "sonner";
 
 interface AskKittykatImageSectionProps {
   item: GalleryItemResponse;
@@ -44,40 +45,85 @@ const VideoPlayer: React.FC<{
     };
   }, []);
 
-  const togglePlayPause = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
+  const togglePlayPause = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      if (video.paused) {
+        await video.play();
       } else {
-        videoRef.current.pause();
+        video.pause();
       }
+    } catch (err) {
+      console.error("Playback failed:", err);
     }
   };
 
+  const handleFullscreen = () => {
+    const video = videoRef.current;
+    video?.requestFullscreen?.();
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(src);
+    toast.success("Video Prompt copied!");
+  };
+
   return (
-    <div className="relative w-full h-full group">
-      <video
-        ref={videoRef}
-        src={src}
-        className="object-contain w-full h-full cursor-pointer rounded-lg"
-        style={{ maxHeight: "80vh" }}
-        muted
-        autoPlay
-        loop
-        playsInline
-        onClick={togglePlayPause}
-      />
-      <button
-        className="absolute inset-0 flex items-center justify-center"
-        onClick={togglePlayPause}
-        aria-label={isPlaying ? "Pause video" : "Play video"}
-      >
-        {isPlaying ? (
-          <PauseCircle className="w-16 h-16 text-white hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
-        ) : (
-          <PlayCircle className="w-16 h-16 text-white hover:scale-105 transition-transform" />
-        )}
-      </button>
+    <div className="relative w-full h-full group overflow-hidden rounded-lg flex items-center justify-center">
+      <div className="relative">
+        <video
+          ref={videoRef}
+          src={src}
+          className="object-contain w-full h-full cursor-pointer rounded-lg"
+          style={{ maxHeight: "80vh" }}
+          muted
+          autoPlay
+          loop
+          playsInline
+          onClick={togglePlayPause}
+        />
+
+        {/* Hover Overlay - now positioned relative to video */}
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-lg" />
+        </div>
+
+        {/* Center Play/Pause Icon - positioned relative to video */}
+        <div
+          className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg"
+          onClick={togglePlayPause}
+        >
+          {isPlaying ? (
+            <PauseCircle className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          ) : (
+            <PlayCircle className="w-16 h-16 text-white opacity-100" />
+          )}
+        </div>
+
+        {/* Top Right: Fullscreen - positioned relative to video */}
+        <Expand
+          onClick={handleFullscreen}
+          className="absolute top-2 right-2 w-6 h-6 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+        />
+
+        {/* Bottom Right: Like - positioned relative to video */}
+        <Heart
+          onClick={onLike}
+          className={`absolute bottom-2 right-2 w-6 h-6 cursor-pointer transition-opacity opacity-0 group-hover:opacity-100 ${
+            isLiked ? "text-red-500 fill-red-500" : "text-white"
+          }`}
+          fill={isLiked ? "red" : "none"}
+          stroke={isLiked ? "red" : "white"}
+        />
+
+        {/* Bottom Left: Copy - positioned relative to video */}
+        <Copy
+          onClick={handleCopy}
+          className="absolute bottom-2 left-2 w-6 h-6 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+        />
+      </div>
     </div>
   );
 };

@@ -278,20 +278,20 @@ export const WORKFLOW_STATUS_MAP = WORKFLOW_STATUS_OPTIONS.reduce(
 // Calculate active filters count
 export const getActiveFiltersCount = (filters: EnhancedSelectedFilters) => {
   let count = 0;
-  if (filters.brands.length > 0) count += filters.brands.length;
-  if (filters.campaigns.length > 0) count += filters.campaigns.length;
-  if (filters.product_categories.length > 0)
+  if (filters?.brands?.length > 0) count += filters.brands.length;
+  if (filters?.campaigns?.length > 0) count += filters.campaigns.length;
+  if (filters?.product_categories?.length > 0)
     count += filters.product_categories.length;
-  if (filters.asset_types.length > 0) count += filters.asset_types.length;
-  if (filters.media_format.length > 0) count += filters.media_format.length;
-  if (filters.aspect_ratio.length > 0) count += filters.aspect_ratio.length;
-  if (filters.workflow_status.length > 0)
+  if (filters?.asset_types?.length > 0) count += filters.asset_types.length;
+  if (filters?.media_format?.length > 0) count += filters.media_format.length;
+  if (filters?.aspect_ratio?.length > 0) count += filters.aspect_ratio.length;
+  if (filters?.workflow_status.length > 0)
     count += filters.workflow_status.length;
-  if (filters.has_product === true) count++;
-  if (filters.has_people === true) count++;
-  if (filters.has_lifestyle_context === true) count++;
-  if (filters.is_favourite === true) count++;
-  if (filters.is_archived === true) count++;
+  if (filters?.has_product === true) count++;
+  if (filters?.has_people === true) count++;
+  if (filters?.has_lifestyle_context === true) count++;
+  if (filters?.is_favourite === true) count++;
+  if (filters?.is_archived === true) count++;
   return count;
 };
 

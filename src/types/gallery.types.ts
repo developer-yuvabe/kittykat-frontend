@@ -200,9 +200,9 @@ export interface EnhancedSelectedFilters {
   product_categories: string[];
 
   // New content-based filters
-  has_product?: boolean;
-  has_people?: boolean;
-  has_lifestyle_context?: boolean;
+  has_product?: boolean | null;
+  has_people?: boolean | null;
+  has_lifestyle_context?: boolean | null;
 
   // Asset property filters
   asset_types: string[];
@@ -214,8 +214,8 @@ export interface EnhancedSelectedFilters {
   workflow_status: string[];
 
   // User preference filters
-  is_favourite?: boolean;
-  is_archived?: boolean;
+  is_favourite?: boolean | null;
+  is_archived?: boolean | null;
 }
 
 export interface CommentReplyCreate {

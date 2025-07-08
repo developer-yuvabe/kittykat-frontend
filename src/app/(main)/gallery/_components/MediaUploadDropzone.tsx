@@ -33,9 +33,6 @@ interface MediaUploadDropzoneProps {
   brandsLoading: boolean;
   selectedCampaignId: string | undefined;
   selecteMoodboardId: string | undefined;
-  setSelectedCampaignId: React.Dispatch<
-    React.SetStateAction<string | undefined>
-  >;
 }
 
 export function MediaUploadDropzone({
@@ -44,12 +41,11 @@ export function MediaUploadDropzone({
   addToGallery = true,
   galleryFilters = {},
   selectedBrand,
-  setSelectedBrand,
+
   brands,
   brandsLoading,
   selectedCampaignId,
   selecteMoodboardId,
-  setSelectedCampaignId,
 }: MediaUploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
