@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
+import { useRouter } from "next/navigation";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -62,6 +63,7 @@ export function MediaLibrary({
   isMultiSelect = false,
   maxSelectionCount,
 }: MediaLibraryProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
@@ -182,6 +184,10 @@ export function MediaLibrary({
     setActiveTab(value);
     setSelectedItems([]);
     setMultiSelectItems([]);
+
+    // Reset filters from notification when switching tabs
+    const basePath = window.location.pathname;
+    router.replace(basePath);
   };
 
   const handleSelect = (id: string, selected: boolean) => {
