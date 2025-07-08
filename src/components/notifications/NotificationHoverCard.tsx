@@ -28,7 +28,7 @@ const NotificationHoverCard = () => {
   }, [notifications]);
 
   return (
-    <HoverCard openDelay={0} open>
+    <HoverCard openDelay={0}>
       <HoverCardTrigger>
         <div
           className={cn(
