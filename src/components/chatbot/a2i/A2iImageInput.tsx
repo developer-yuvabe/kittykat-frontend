@@ -284,6 +284,8 @@ const A2iImageInput = ({ form }: { form: UseFormReturn<any> }) => {
                     shouldDirty: true,
                     shouldTouch: true,
                   });
+
+                  toast.success("Prompt enhanced successfully!");
                 },
                 onError: () => {
                   toast.error("Failed to enhance prompt. Please try again.");

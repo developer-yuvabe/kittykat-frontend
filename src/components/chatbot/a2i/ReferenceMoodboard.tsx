@@ -221,9 +221,14 @@ const ReferenceMoodboard = ({
                     disabled={isPending}
                     onClick={() =>
                       generateShowboard(undefined, {
+                        onSuccess: () => {
+                          toast.success(
+                            "Showboard prompts generated successfully!"
+                          );
+                        },
                         onError: () => {
                           toast.error(
-                            `Failed to generate showboard. Please try again.`
+                            "Failed to generate showboard prompts. Please try again."
                           );
                         },
                       })
