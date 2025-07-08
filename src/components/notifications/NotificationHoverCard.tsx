@@ -22,9 +22,11 @@ const NotificationHoverCard = () => {
   });
 
   const totalUnreadCount = useMemo(() => {
-    return notifications?.reduce((acc, group) => {
-      return acc + (group.unread_count || 0);
-    }, 0);
+    return (
+      notifications?.reduce((acc, group) => {
+        return acc + (group.unread_count || 0);
+      }, 0) || 0
+    );
   }, [notifications]);
 
   return (
@@ -47,7 +49,6 @@ const NotificationHoverCard = () => {
           )}
           {notifications &&
             notifications.length > 0 &&
-            totalUnreadCount &&
             totalUnreadCount > 0 && (
               <div className="bg-red-500  absolute right-4 z-10 bottom-4 rounded-full w-5 h-5 flex items-center justify-center">
                 <span className="text-white text-xs ">
