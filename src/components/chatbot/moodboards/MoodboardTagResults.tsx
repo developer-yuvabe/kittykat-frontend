@@ -49,8 +49,14 @@ function MoodboardTagResults({
         className="w-full"
         onClick={() =>
           generateShowboard(undefined, {
+            onSuccess: () => {
+              toast.success("Showboard prompts generated successfully!");
+            },
+
             onError: () => {
-              toast.error(`Failed to generate showboard. Please try again.`);
+              toast.error(
+                "Failed to generate showboard prompts. Please try again."
+              );
             },
           })
         }
