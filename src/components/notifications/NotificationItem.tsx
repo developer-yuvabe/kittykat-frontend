@@ -12,8 +12,10 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const NotificationItem = ({
   notification,
+  setOpen,
 }: {
   notification: BrandNotificationGroup;
+  setOpen: () => void;
 }) => {
   const router = useRouter();
   const [showAssets, setShowAssets] = React.useState(false);
@@ -54,6 +56,7 @@ const NotificationItem = ({
                       `/gallery?brandId=${notification.brand_id}&status=${status}`
                     );
 
+                    setOpen();
                     await markNotificationsAsRead(notification.brand_id);
                     queryClient.invalidateQueries({
                       queryKey: ["user-notifications"],

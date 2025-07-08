@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react";
 import NotificationItem from "./NotificationItem";
 
 const NotificationHoverCard = () => {
+  const [open, setOpen] = React.useState(false);
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["user-notifications"],
     queryFn: getUserNotifications,
@@ -30,8 +31,13 @@ const NotificationHoverCard = () => {
   }, [notifications]);
 
   return (
-    <HoverCard openDelay={0}>
-      <HoverCardTrigger>
+    <HoverCard openDelay={0} open={open} onOpenChange={setOpen}>
+      <HoverCardTrigger
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+      >
         <div
           className={cn(
             `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787] hover:text-primary relative`
@@ -66,7 +72,11 @@ const NotificationHoverCard = () => {
         ) : notifications && notifications.length != 0 ? (
           <div>
             {notifications.map((group) => (
-              <NotificationItem key={group.brand_id} notification={group} />
+              <NotificationItem
+                key={group.brand_id}
+                notification={group}
+                setOpen={() => setOpen(false)}
+              />
             ))}
           </div>
         ) : (
