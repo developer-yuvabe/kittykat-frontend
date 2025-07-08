@@ -188,6 +188,8 @@ export function MediaLibrary({
     // Reset filters from notification when switching tabs
     const basePath = window.location.pathname;
     router.replace(basePath);
+
+    setSelectedFilters(initialFilters);
   };
 
   const handleSelect = (id: string, selected: boolean) => {
