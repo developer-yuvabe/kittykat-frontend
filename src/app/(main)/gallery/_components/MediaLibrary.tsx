@@ -384,7 +384,6 @@ export function MediaLibrary({
               brandsLoading={galleryActions.brandsLoading}
               selectedCampaignId={selectedCampaignId}
               selecteMoodboardId={moodboardId}
-              setSelectedCampaignId={setSelectedCampaignId}
             />
 
             <div className="flex flex-col md:flex-row gap-4">

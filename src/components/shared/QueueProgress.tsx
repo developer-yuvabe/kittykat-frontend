@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import QueueItemView from "./QueueItemView";
+import { useEnhancedFilters } from "@/hooks/useEnhancedFilters";
+import { useGalleryQuery } from "@/hooks/useGallery";
 
 const QueueProgress = () => {
   const { user } = useUserStore();
@@ -33,6 +35,28 @@ const QueueProgress = () => {
 
   useEffect(() => {
     setOpen(runningQueueItems.length > 0);
+  }, [runningQueueItems.length]);
+
+  const {
+    preselectedFilters,
+    source,
+    creator,
+    activeTab,
+    searchQuery,
+    favorites,
+  } = useEnhancedFilters({});
+
+  const { refetchAllGalleryQueries } = useGalleryQuery({
+    selectedFilters: preselectedFilters,
+    source: source,
+    creator: creator,
+    assetType: activeTab,
+    favorites: favorites,
+    searchQuery: searchQuery,
+  });
+
+  useEffect(() => {
+    refetchAllGalleryQueries();
   }, [runningQueueItems.length]);
 
   return (
