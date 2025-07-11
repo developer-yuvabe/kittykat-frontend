@@ -13,6 +13,7 @@ export const useUserBrands = (userId?: string) => {
     removeBrand,
     setIsBrandsFetched,
     setSelectedBrandId,
+    setIsCreatingBrand,
   } = useBrandStore();
   const { user } = useUserStore();
   const { data, error } = useQuery({
@@ -44,6 +45,8 @@ export const useUserBrands = (userId?: string) => {
         setSelectedBrandId(brand.id);
       }
       addBrand(brand);
+      // Set isCreatingBrand to false when a new brand is successfully created
+      setIsCreatingBrand(false);
     });
 
     eventSource.addEventListener("brand_delete", (event) => {

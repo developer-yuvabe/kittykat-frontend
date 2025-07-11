@@ -43,8 +43,9 @@ export const BrandSection: React.FC<{
   setExpandedSections,
   clearPinnedItems,
 }) => {
-  if (!brandingInformation) return <InitialPlaceHolder />;
-
+  if (!brandingInformation) {
+    return <InitialPlaceHolder />;
+  }
   return (
     <div className="flex flex-col gap-4">
       <div key={`brand-message-${brandingInformation?.static?.name}`}>
@@ -79,7 +80,7 @@ export const renderBrandData = (
   const [showDynamicData, setShowDynamicData] = React.useState(false);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, setIsCreatingBrand } = useBrandStore();
 
   // Create a ref for the BrandCasting component
   const brandCastingRef = React.useRef<HTMLDivElement>(null);
@@ -201,6 +202,7 @@ export const renderBrandData = (
                       tooltip="New Brand"
                       variant="ghost"
                       onClick={() => {
+                        setIsCreatingBrand(true);
                         submitOptimisticMessage({
                           stream,
                           text: "Let's create a new brand.",
