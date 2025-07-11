@@ -46,5 +46,9 @@ export enum UserStatus {
 export type UserBrand = {
   id: string;
   name: string;
-  created_by: string;
+  created_by: {
+    id: string;
+    name: string;
+    email: string;
+  };
 };

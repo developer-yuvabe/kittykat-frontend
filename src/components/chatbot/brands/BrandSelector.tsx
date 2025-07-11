@@ -58,7 +58,7 @@ export default function BrandSelector() {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[300px] relative  p-0" align="start">
-          <Command shouldFilter={false}>
+          <Command>
             <div className="flex items-center border-b w-full">
               <CommandInput
                 placeholder="Search brands..."
@@ -80,22 +80,31 @@ export default function BrandSelector() {
                 {brands.map((brand) => (
                   <CommandItem
                     key={brand.id}
-                    value={brand.id}
-                    onSelect={handleBrandSelect}
-                    className="flex items-center  justify-between group"
+                    onSelect={() => handleBrandSelect(brand.id)}
+                    className="flex items-center justify-between group gap-0"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
                   >
-                    <div className="flex w-[230px] items-center">
+                    <div className="flex items-start flex-1">
                       <Avatar className="h-6 w-6 mr-2">
                         <AvatarFallback className="bg-blue-500 text-white">
                           {brand.name?.charAt(0).toUpperCase() || "B"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate">{brand.name}</span>
+                      <div className="flex flex-col space-y-1">
+                        <span className="line-clamp- break-words">
+                          {brand.name}
+                        </span>
+                        <span className="italic text-xs">
+                          Created by{" "}
+                          {brand.created_by.id === user?.id
+                            ? "You"
+                            : brand.created_by.name}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-1 flex-shrink-0">
                       {selectedBrandId === brand.id && (
                         <Check className="h-4 w-4" />
                       )}
