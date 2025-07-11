@@ -97,7 +97,7 @@ const A2iImageEditFeatures = ({
           </div>
         </DialogHeader>
 
-        <div className="w-full h-full flex gap-x-4">
+        <div className="w-full h-full flex gap-x-4 overflow-hidden">
           <div className="w-[40%] h-full flex items-center justify-center">
             {isRemixEnabled ? (
               <RemixImage
@@ -123,7 +123,7 @@ const A2iImageEditFeatures = ({
             className="w-[60%] h-full flex flex-col"
           >
             <TabsList
-              className="grid grid-cols-3 w-full mb-8 bg-transparent h-20"
+              className="grid grid-cols-3 w-full mb-8 bg-transparent h-20 flex-shrink-0"
               variant="icon-grid"
             >
               {IMAGE_EDIT_FEATURES.map((item) => (
@@ -137,12 +137,12 @@ const A2iImageEditFeatures = ({
                 </TabsTrigger>
               ))}
             </TabsList>
-            <div className="overflow-y-auto p-4 h-full">
-              <TabsContent value="virtual-tryon" className="h-full">
+            <div className="flex-1 overflow-hidden min-h-0">
+              <TabsContent value="virtual-tryon" className="h-full m-0 data-[state=active]:h-full">
                 <VirtualTryOn productImage={image.url} closeDialog={onClose} />
               </TabsContent>
 
-              <TabsContent value="in-paint">
+              <TabsContent value="in-paint" className="h-full m-0 data-[state=active]:h-full">
                 <RemixControls
                   image={{ url: image.url, size: parameters.size }}
                   closeDialog={() => onClose()}
@@ -157,7 +157,7 @@ const A2iImageEditFeatures = ({
                 />
               </TabsContent>
 
-              <TabsContent value="video-gen" className="h-full">
+              <TabsContent value="video-gen" className="h-full m-0 data-[state=active]:h-full">
                 <VideoGeneration startImage={image.url} closeDialog={onClose} />
               </TabsContent>
             </div>
