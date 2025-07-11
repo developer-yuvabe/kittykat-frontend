@@ -78,6 +78,7 @@ interface PlaceholderSectionProps {
   onToggleExpanded?: () => void;
   isLoading?: boolean;
   isCreatingNewBrand?: boolean;
+  isCreatingNewCampaign?: boolean;
 }
 
 export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
@@ -95,18 +96,25 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
   onToggleExpanded,
   isLoading = false,
   isCreatingNewBrand = false,
+  isCreatingNewCampaign = false,
 }) => {
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { setIsCreatingBrand } = useBrandStore();
+  const { setIsCreatingBrand, setIsCampaignCreating } = useBrandStore();
 
   return (
     <>
       <style>{skeletonStyles}</style>
-      <div className="bg-white rounded-2xl relative shadow-sm mb-4">
+      <div
+        className="bg-white rounded-2xl relative shadow-sm mb-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Card className="p-5" onClick={onToggleExpanded}>
           {/* Header Section */}
-          <div className="flex items-center justify-between my-4">
+          <div
+            className="flex items-center justify-between my-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-1">
               {onToggleExpanded && !isLoading && (
                 <Button variant="ghost" size="sm" className="ml-2 p-1">
@@ -156,6 +164,7 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                           variant="outline"
                           role="combobox"
                           className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <Search size={10} className="text-black" />
                           {searchPlaceholder || `Load existing ${title}`}
@@ -178,8 +187,22 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                   className="p-4"
                   tooltip="Cancel creating brand"
                   variant="ghost"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setIsCreatingBrand(false);
+                  }}
+                >
+                  <X className="size-5" />
+                </TooltipIconButton>
+              ) : isCreatingNewCampaign ? (
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="Cancel creating campaign"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCampaignCreating(false);
                   }}
                 >
                   <X className="size-5" />

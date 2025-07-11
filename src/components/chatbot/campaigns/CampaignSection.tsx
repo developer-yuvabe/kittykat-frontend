@@ -26,23 +26,34 @@ export const CampaignSection: React.FC<{
   latestCampaignIndex: number;
   selectedCampaignIndex: number;
   setSelectedCampaignIndex: React.Dispatch<React.SetStateAction<number>>;
+  expandedSections: { [key: string]: boolean };
+  setExpandedSections: React.Dispatch<
+    React.SetStateAction<{ [key: string]: boolean }>
+  >;
 }> = ({
   campaignInformation,
   latestCampaignIndex,
   selectedCampaignIndex,
   setSelectedCampaignIndex,
+  expandedSections,
+  setExpandedSections,
 }) => {
   const [showDynamicData, setShowDynamicData] = React.useState(false);
 
+  const isCampaignExpanded = expandedSections["campaignInformation"] ?? true;
+
   const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
-  const { selectedBrandId, isCreatingBrand } = useBrandStore();
+  const {
+    selectedBrandId,
+    isCreatingBrand,
+    isCampaignCreating,
+    setIsCampaignCreating,
+  } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
   console.log(campaignInformation);
 
-  // All other state hooks
-  const [expanded, setExpanded] = useState(true);
   const [fadeKey, setFadeKey] = useState(0);
 
   const currentCampaign = useMemo(
@@ -67,9 +78,16 @@ export const CampaignSection: React.FC<{
   useEffect(() => {
     setFadeKey((prev) => prev + 1);
     setSelectedCampaignIndex(latestCampaignIndex);
-  }, [latestCampaignIndex]);
+
+    // Ensure the campaign section stays expanded when new campaign is created
+    setExpandedSections((prev) => ({
+      ...prev,
+      campaignInformation: true,
+    }));
+  }, [latestCampaignIndex, setExpandedSections]);
 
   const handleViaAgent = useCallback(() => {
+    setIsCampaignCreating(true);
     if (user) {
       submitOptimisticMessage({
         stream,
@@ -107,16 +125,22 @@ export const CampaignSection: React.FC<{
     [currentCampaign, user, selectedBrandId]
   );
 
-  const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
+  const toggleExpanded = useCallback(() => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      campaignInformation: !prev.campaignInformation,
+    }));
+  }, []);
 
   if (
     !campaignInformation ||
     campaignInformation.length === 0 ||
-    isCreatingBrand
+    isCreatingBrand ||
+    isCampaignCreating
   ) {
     return (
       <PlaceholderSection
-        title="Campaign"
+        title={isCampaignCreating ? "Creating Campaign..." : "Campaign"}
         avatarFallback="C"
         avatarBgColor="bg-green-500"
         fields={campaignFields}
@@ -127,6 +151,7 @@ export const CampaignSection: React.FC<{
           setIsPlaceholderExpanded((prev: boolean) => !prev)
         }
         onNewClick={handleViaAgent}
+        isCreatingNewCampaign={isCampaignCreating}
       />
     );
   }
@@ -139,12 +164,12 @@ export const CampaignSection: React.FC<{
           onClick={toggleExpanded}
         >
           <div className="flex items-center">
-            {expanded ? (
+            {isCampaignExpanded ? (
               <ChevronDown className="text-[#6e7787] mr-2" size={20} />
             ) : (
               <ChevronRight className="text-[#6e7787] mr-2" size={20} />
             )}
-            {!expanded ? (
+            {!isCampaignExpanded ? (
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3 overflow-hidden">
                   <span className="text-white font-bold">
@@ -181,7 +206,7 @@ export const CampaignSection: React.FC<{
               </div>
             )}
           </div>
-          {expanded && (
+          {isCampaignExpanded && (
             <div className="absolute right-3 top-6 flex gap-x-2">
               {campaignInformation && (
                 <CampaignSelector
@@ -204,7 +229,7 @@ export const CampaignSection: React.FC<{
         </div>
       </CardHeader>
 
-      {expanded && (
+      {isCampaignExpanded && (
         <div>
           <CardContent>
             {/* Existing campaign content */}
