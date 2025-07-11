@@ -177,7 +177,31 @@ export const CampaignSection: React.FC<{
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <div className="text-sm font-medium">Campaigns</div>
+                  <div>
+                    <div className="text-sm font-medium">
+                      {currentCampaign?.campaign?.title}
+                    </div>
+                    <div>
+                      <div className="absolute right-1 top-6 flex ">
+                        {campaignInformation && (
+                          <CampaignSelector
+                            campaigns={campaignInformation}
+                            selectedCampaignIndex={selectedCampaignIndex}
+                            setSelectedCampaignIndex={handleCampaignIndexChange}
+                          />
+                        )}
+
+                        <Button
+                          size="lg"
+                          className="p-4"
+                          variant="ghost"
+                          onClick={handleViaAgent}
+                        >
+                          <CirclePlus className="size-5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                   <div className="text-xs text-[#6e7787]">
                     Set-up and work on your brand campaigns
                   </div>
@@ -207,7 +231,7 @@ export const CampaignSection: React.FC<{
             )}
           </div>
           {isCampaignExpanded && (
-            <div className="absolute right-3 top-6 flex gap-x-2">
+            <div className="absolute right-1 top-6 flex">
               {campaignInformation && (
                 <CampaignSelector
                   campaigns={campaignInformation}
