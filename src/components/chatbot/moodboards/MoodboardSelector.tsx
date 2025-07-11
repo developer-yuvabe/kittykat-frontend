@@ -59,7 +59,7 @@ export default function MoodboardSelector({
   variant = "combobox",
 }: MoodboardSelectorProps) {
   const { selectedBrandId } = useBrandStore();
-  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [transformedMoodboards, setTransformedMoodboards] = useState<
@@ -151,7 +151,6 @@ export default function MoodboardSelector({
       return;
     }
 
-    setDeleteLoading(true);
     try {
       await deleteMoodboard(selectedBrandId, moodboardId);
       toast.success("Moodboard deleted successfully", {
@@ -159,9 +158,7 @@ export default function MoodboardSelector({
       });
 
       // Update moodboards by filtering out the deleted one
-      const updatedMoodboards = moodboards.filter(
-        (mb) => mb.id !== moodboardId
-      );
+
       setTransformedMoodboards((prev) =>
         prev.filter((mb) => mb.id !== moodboardId)
       );
@@ -179,7 +176,6 @@ export default function MoodboardSelector({
       });
       console.error("Delete error:", error);
     } finally {
-      setDeleteLoading(false);
     }
   };
 

@@ -86,7 +86,8 @@ export default function BrandSelector() {
                       e.stopPropagation();
                     }}
                   >
-                    <div className="flex items-start flex-1">
+
+                    <div className="flex items-center min-w-0 w-full">
                       <Avatar className="h-6 w-6 mr-2">
                         <AvatarFallback className="bg-blue-500 text-white">
                           {brand.name?.charAt(0).toUpperCase() || "B"}

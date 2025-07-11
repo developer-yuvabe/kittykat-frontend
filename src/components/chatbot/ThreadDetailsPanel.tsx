@@ -20,10 +20,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 }) => {
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
-  }>({ brandOverview: true });
+  }>({ brandOverview: true, campaignInformation: true });
   const { threadsLoading } = useThreads();
   const { removePinnedItem } = usePinnedContextStore();
-  const { selectedBrandId, isBrandsFetched } = useBrandStore();
+  const { selectedBrandId, isBrandsFetched, isCreatingBrand } = useBrandStore();
   const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
 
   const brandingInformation = data?.brand_information;
@@ -48,8 +48,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
-      {threadsLoading || isFetchingBrandInfo || !isBrandsFetched ? (
-        <InitialPlaceHolder isLoading />
+      {threadsLoading ||
+      isFetchingBrandInfo ||
+      !isBrandsFetched ||
+      isCreatingBrand ? (
+        <InitialPlaceHolder
+          isLoading={threadsLoading || isFetchingBrandInfo || !isBrandsFetched}
+          isCreatingNewBrand={isCreatingBrand}
+        />
       ) : (
         <div className="relative">
           <BrandSection
@@ -65,18 +71,22 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             latestCampaignIndex={latestCampaignIndex}
             selectedCampaignIndex={selectedCampaignIndex}
             setSelectedCampaignIndex={setSelectedCampaignIndex}
+            expandedSections={expandedSections}
+            setExpandedSections={setExpandedSections}
           />
 
-          <MoodboardSection
-            brandInformation={brandingInformation}
-            campaignInformation={campaignInformation}
-            setSelectedCampaignIndex={setSelectedCampaignIndex}
-            selectedCampaignIndex={selectedCampaignIndex}
-            moodboardInformation={moodboardInformation}
-          />
+          {!isCreatingBrand && (
+            <MoodboardSection
+              brandInformation={brandingInformation}
+              campaignInformation={campaignInformation}
+              setSelectedCampaignIndex={setSelectedCampaignIndex}
+              selectedCampaignIndex={selectedCampaignIndex}
+              moodboardInformation={moodboardInformation}
+            />
+          )}
         </div>
       )}
-      {brandingInformation && (
+      {brandingInformation && !isCreatingBrand && (
         <A2iImagesSection
           a2iImageInformation={a2iImageInformation}
           moodboardInformation={moodboardInformation}

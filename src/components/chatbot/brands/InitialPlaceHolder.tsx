@@ -10,10 +10,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Command, CommandEmpty } from "@/components/ui/command";
-import { Search, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, CirclePlus, ChevronDown, ChevronUp, X } from "lucide-react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import BrandSelector from "./BrandSelector";
 import { SubSectionCard } from "./SubSectionCard";
+import { useBrandStore } from "@/store/brand.store";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -76,6 +77,8 @@ interface PlaceholderSectionProps {
   isExpanded?: boolean;
   onToggleExpanded?: () => void;
   isLoading?: boolean;
+  isCreatingNewBrand?: boolean;
+  isCreatingNewCampaign?: boolean;
 }
 
 export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
@@ -92,16 +95,26 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
   isExpanded = true,
   onToggleExpanded,
   isLoading = false,
+  isCreatingNewBrand = false,
+  isCreatingNewCampaign = false,
 }) => {
   const [openPopover, setOpenPopover] = useState(false);
+
+  const { setIsCreatingBrand, setIsCampaignCreating } = useBrandStore();
 
   return (
     <>
       <style>{skeletonStyles}</style>
-      <div className="bg-white rounded-2xl relative shadow-sm mb-4">
+      <div
+        className="bg-white rounded-2xl relative shadow-sm mb-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Card className="p-5" onClick={onToggleExpanded}>
           {/* Header Section */}
-          <div className="flex items-center justify-between my-4">
+          <div
+            className="flex items-center justify-between my-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-1">
               {onToggleExpanded && !isLoading && (
                 <Button variant="ghost" size="sm" className="ml-2 p-1">
@@ -112,29 +125,31 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                   )}
                 </Button>
               )}
-              {isLoading && (
-                <div className="ml-2 p-1 w-8 h-8">
-                  <div className="skeleton w-4 h-4 rounded"></div>
-                </div>
-              )}
-              <Avatar className="w-10 h-10 mr-2 overflow-hidden">
-                {isLoading ? (
+              {isLoading || isCreatingNewBrand ? (
+                <Avatar className="w-10 h-10 mr-2 overflow-hidden">
                   <div className="skeleton w-full h-full rounded-full"></div>
-                ) : (
-                  <>
-                    <AvatarImage src={avatarSrc} />
-                    <AvatarFallback className={avatarBgColor}>
-                      <span className="text-white font-bold">
-                        {avatarFallback}
-                      </span>
-                    </AvatarFallback>
-                  </>
-                )}
-              </Avatar>
+                </Avatar>
+              ) : (
+                <Avatar className="w-10 h-10 mr-2 overflow-hidden">
+                  <AvatarImage src={avatarSrc} />
+                  <AvatarFallback className={avatarBgColor}>
+                    <span className="text-white font-bold">
+                      {avatarFallback}
+                    </span>
+                  </AvatarFallback>
+                </Avatar>
+              )}
+
               {isLoading ? (
                 <div className="skeleton-text w-32 h-6"></div>
+              ) : isCreatingNewBrand ? (
+                <span className="text-lg font-semibold">
+                  Creating new brand...
+                </span>
               ) : (
-                <span className="text-lg font-semibold">{title}</span>
+                <span className="text-lg font-semibold">
+                  {title || "No brand selected"}
+                </span>
               )}
             </div>
             <div className="flex justify-between gap-x-2">
@@ -149,6 +164,7 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                           variant="outline"
                           role="combobox"
                           className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <Search size={10} className="text-black" />
                           {searchPlaceholder || `Load existing ${title}`}
@@ -165,6 +181,32 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
               </div>
               {isLoading ? (
                 <div className="skeleton w-12 h-12 rounded-md"></div>
+              ) : isCreatingNewBrand ? (
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="Cancel creating brand"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCreatingBrand(false);
+                  }}
+                >
+                  <X className="size-5" />
+                </TooltipIconButton>
+              ) : isCreatingNewCampaign ? (
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="Cancel creating campaign"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCampaignCreating(false);
+                  }}
+                >
+                  <X className="size-5" />
+                </TooltipIconButton>
               ) : (
                 <TooltipIconButton
                   size="lg"
@@ -228,9 +270,10 @@ const MediaPlatformTags: React.FC<{ isLoading?: boolean }> = ({
 };
 
 // Main Exported Component
-export const InitialPlaceHolder: React.FC<{ isLoading?: boolean }> = ({
-  isLoading = false,
-}) => {
+export const InitialPlaceHolder: React.FC<{
+  isLoading?: boolean;
+  isCreatingNewBrand?: boolean;
+}> = ({ isLoading = false, isCreatingNewBrand = false }) => {
   const [brandExpanded, setBrandExpanded] = useState(true);
 
   const renderBrandFieldContent = (field: string) => {
@@ -244,6 +287,7 @@ export const InitialPlaceHolder: React.FC<{ isLoading?: boolean }> = ({
     <div>
       <PlaceholderSection
         title={isLoading ? "Loading..." : "Your Brand Name"}
+        isCreatingNewBrand={isCreatingNewBrand}
         avatarFallback="B"
         avatarBgColor="bg-blue-500"
         fields={brandFields}

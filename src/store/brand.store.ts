@@ -12,12 +12,19 @@ type Store = {
 
   selectedBrandId: string | null;
   setSelectedBrandId: (brand: string | null) => void;
+
+  isCreatingBrand: boolean;
+  setIsCreatingBrand: (isCreating: boolean) => void;
+
+  isCampaignCreating: boolean;
+  setIsCampaignCreating: (isCreating: boolean) => void;
 };
 
 export const useBrandStore = create<Store>((set) => ({
   isBrandsFetched: false,
   setIsBrandsFetched: (isFetched: boolean) =>
     set({ isBrandsFetched: isFetched }),
+
   brands: [],
   setBrands: (brands: UserBrand[]) => set({ brands }),
   addBrand: (brand: UserBrand) =>
@@ -29,4 +36,12 @@ export const useBrandStore = create<Store>((set) => ({
 
   selectedBrandId: null,
   setSelectedBrandId: (brand: string | null) => set({ selectedBrandId: brand }),
+
+  isCreatingBrand: false,
+  setIsCreatingBrand: (isCreating: boolean) =>
+    set({ isCreatingBrand: isCreating }),
+
+  isCampaignCreating: false,
+  setIsCampaignCreating: (isCreating: boolean) =>
+    set({ isCampaignCreating: isCreating }),
 }));
