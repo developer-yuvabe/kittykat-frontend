@@ -99,7 +99,7 @@ export default function CampaignSelector({
   const selectedCampaignId = campaigns[selectedCampaignIndex]?.id;
 
   return (
-    <div className="">
+    <div className="" onClick={(e) => e.stopPropagation()}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

@@ -20,7 +20,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 }) => {
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
-  }>({ brandOverview: true });
+  }>({ brandOverview: true, campaignInformation: true });
   const { threadsLoading } = useThreads();
   const { removePinnedItem } = usePinnedContextStore();
   const { selectedBrandId, isBrandsFetched, isCreatingBrand } = useBrandStore();
@@ -71,6 +71,8 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             latestCampaignIndex={latestCampaignIndex}
             selectedCampaignIndex={selectedCampaignIndex}
             setSelectedCampaignIndex={setSelectedCampaignIndex}
+            expandedSections={expandedSections}
+            setExpandedSections={setExpandedSections}
           />
 
           {!isCreatingBrand && (
