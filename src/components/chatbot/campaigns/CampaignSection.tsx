@@ -35,7 +35,7 @@ export const CampaignSection: React.FC<{
   const [showDynamicData, setShowDynamicData] = React.useState(false);
 
   const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, isCreatingBrand } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
@@ -109,7 +109,11 @@ export const CampaignSection: React.FC<{
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
-  if (!campaignInformation || campaignInformation.length === 0) {
+  if (
+    !campaignInformation ||
+    campaignInformation.length === 0 ||
+    isCreatingBrand
+  ) {
     return (
       <PlaceholderSection
         title="Campaign"
