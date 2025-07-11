@@ -124,8 +124,10 @@ export const handleDownloadImage = async (
     };
   }
 ) => {
+  const filetype = getExtensionFromUrl(url);
+
   const {
-    filename = `image_${new Date().getTime()}.jpg`,
+    filename = `image_${new Date().getTime()}.${filetype}`,
     toastMessages = {
       loading: "Downloading image...",
       success: "Image downloaded successfully!",
