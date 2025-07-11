@@ -596,7 +596,9 @@ export const MoodboardSection: React.FC<{
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <div className="text-sm font-medium">Moodboards</div>
+                  <div className="flex justify-between">
+                    <div className="text-sm font-medium">{moodboardTitle}</div>
+                  </div>
                   <div className="text-xs text-[#6e7787]">
                     Set-up and work on your Campaign Moodboards
                   </div>
@@ -636,46 +638,44 @@ export const MoodboardSection: React.FC<{
               </div>
             )}
           </div>
-          {expanded && (
-            <div className="absolute right-3 top-6 flex gap-x-2">
-              {campaignInformation &&
-                currentCampaign &&
-                moodboardInformation && (
-                  <MoodboardSelector
-                    campaignId={currentCampaign?.id}
-                    moodboards={moodboardInformation}
-                    selectedMoodboard={currentMoodboard}
-                    setSelectedMoodboard={handleMoodboardSelect}
-                    onNewMoodboard={handleCreateNewMoodboard}
-                    isCreatingNew={isCreatingNewMoodboard}
-                  />
-                )}
 
-              {isCreatingNewMoodboard ? (
-                <TooltipIconButton
-                  tooltip="Cancel"
-                  className="mt-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCancelNewMoodboard();
-                  }}
-                >
-                  <X className="text-red-600" />
-                </TooltipIconButton>
-              ) : moodboardInformation ? (
-                <TooltipIconButton
-                  tooltip="Create new moodboard"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCreateNewMoodboard();
-                  }}
-                  className="mt-2"
-                >
-                  <CirclePlus />
-                </TooltipIconButton>
-              ) : null}
-            </div>
-          )}
+          <div className="absolute right-3 top-6 flex gap-x-2">
+            {campaignInformation && currentCampaign && (
+              <MoodboardSelector
+                campaignId={currentCampaign?.id}
+                moodboards={moodboardInformation || []}
+                selectedMoodboard={currentMoodboard}
+                setSelectedMoodboard={handleMoodboardSelect}
+                onNewMoodboard={handleCreateNewMoodboard}
+                isCreatingNew={isCreatingNewMoodboard}
+              />
+            )}
+
+            {isCreatingNewMoodboard ? (
+              <TooltipIconButton
+                tooltip="Cancel"
+                className="mt-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancelNewMoodboard();
+                }}
+              >
+                <X className="text-red-600" />
+              </TooltipIconButton>
+            ) : (
+              <TooltipIconButton
+                tooltip="Create new moodboard"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCreateNewMoodboard();
+                }}
+                className="mt-2"
+                size={"lg"}
+              >
+                <CirclePlus className="size-5" />
+              </TooltipIconButton>
+            )}
+          </div>
         </div>
       </CardHeader>
 
