@@ -41,7 +41,7 @@ export const useUserBrands = (userId?: string) => {
 
     eventSource.addEventListener("brand_insert", (event) => {
       const brand = JSON.parse(event.data) as UserBrand;
-      if (brand.created_by === userId) {
+      if (brand.created_by.id === userId) {
         setSelectedBrandId(brand.id);
       }
       addBrand(brand);
