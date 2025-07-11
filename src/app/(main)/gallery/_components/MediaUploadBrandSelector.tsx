@@ -41,6 +41,7 @@ interface BrandSelectorProps {
   selectedCampaignId?: string;
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: Dispatch<SetStateAction<EnhancedSelectedFilters>>;
+  preSelectedBrandId: string | null;
 }
 
 export function MediaUploadBrandSelector({
@@ -51,33 +52,53 @@ export function MediaUploadBrandSelector({
   setSelectedCampaignId,
   selectedCampaignId,
   setSelectedFilters,
+  preSelectedBrandId,
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Auto-select first brand on initial load (but not campaign)
   useEffect(() => {
-    if (brands.length > 0 && !selectedBrand && !brandsLoading) {
-      const firstBrand = brands[0];
-      setSelectedBrand?.(firstBrand);
-      // Don't auto-select campaign - leave it undefined for optional selection
+    if (brandsLoading || brands.length === 0) return;
+
+    // Only auto-select if no brand is currently selected
+    if (selectedBrand) return;
+
+    const brandToSelect = preSelectedBrandId
+      ? brands.find((brand) => brand.brand_id === preSelectedBrandId)
+      : brands[0];
+
+    if (brandToSelect) {
+      setSelectedBrand?.(brandToSelect);
+      // Apply the brand filter immediately
+      setSelectedFilters((prev) => ({
+        ...prev,
+        brands: [brandToSelect.brand_id],
+        campaigns: [],
+      }));
+      setSelectedCampaignId(undefined);
     }
-  }, [brands, selectedBrand, brandsLoading, setSelectedBrand]);
+  }, [brands, brandsLoading, preSelectedBrandId]);
 
   const handleBrandSelect = (
     brand: BrandCampaignListResponse["brands"][number]
   ) => {
+    console.log("Brand selected:", brand.brand_name, "ID:", brand.brand_id);
+
+    // Set the selected brand
     setSelectedBrand?.(brand);
 
     // Clear campaign selection
     setSelectedCampaignId(undefined);
 
-    // Override filters
-    setSelectedFilters((prev) => ({
-      ...prev,
-      brands: [brand.brand_id],
-      campaigns: [], // No campaign selected yet
-    }));
+    setSelectedFilters((prev) => {
+      const newFilters = {
+        ...prev,
+        brands: [brand.brand_id],
+        campaigns: [],
+      };
+      console.log("Applying brand filters:", newFilters);
+      return newFilters;
+    });
 
     setOpen(false);
     setSearchTerm("");
@@ -87,17 +108,31 @@ export function MediaUploadBrandSelector({
     brand: BrandCampaignListResponse["brands"][number],
     campaignId: string
   ) => {
+    console.log(
+      "Campaign selected:",
+      campaignId,
+      "for brand:",
+      brand.brand_name
+    );
+
+    // Ensure the correct brand is selected
     if (selectedBrand?.brand_id !== brand.brand_id) {
       setSelectedBrand?.(brand);
     }
+
+    // Set the selected campaign
     setSelectedCampaignId(campaignId);
 
-    // Override filters
-    setSelectedFilters((prev) => ({
-      ...prev,
-      brands: [brand.brand_id],
-      campaigns: [campaignId],
-    }));
+    // Apply filters - ensure both brand and campaign are selected
+    setSelectedFilters((prev) => {
+      const newFilters = {
+        ...prev,
+        brands: [brand.brand_id],
+        campaigns: [campaignId],
+      };
+      console.log("Applying campaign filters:", newFilters);
+      return newFilters;
+    });
 
     setOpen(false);
     setSearchTerm("");

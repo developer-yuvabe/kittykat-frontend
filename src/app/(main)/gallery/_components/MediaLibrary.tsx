@@ -127,32 +127,6 @@ export function MediaLibrary({
   const galleryItems = galleryActions.galleryItems;
 
   useEffect(() => {
-    if (
-      !galleryActions.brandsLoading &&
-      galleryActions.brandsData?.brands?.length &&
-      !selectedBrand
-    ) {
-      if (brandId) {
-        const matchedBrand = galleryActions.brandsData.brands.find(
-          (brand) => brand.brand_id === brandId
-        );
-        if (matchedBrand) {
-          setSelectedBrand(matchedBrand);
-          return;
-        }
-      }
-
-      // Fallback: Select first brand
-      setSelectedBrand(galleryActions.brandsData.brands[0]);
-    }
-  }, [
-    galleryActions.brandsLoading,
-    galleryActions.brandsData,
-    brandId,
-    selectedBrand,
-  ]);
-
-  useEffect(() => {
     if (initialBrandId && initialWorkflowStatus) {
       setSelectedFilters((p) => ({
         ...p,
@@ -243,7 +217,7 @@ export function MediaLibrary({
     setSelectedFilters(filters);
   };
 
-  // 👈 Handle multi-select "Add" button
+  // Handle multi-select "Add" button
   const handleAddSelectedItems = () => {
     if (isMultiSelect && multiSelectItems.length > 0) {
       const selectedItemsData = galleryItems.filter((item) =>
@@ -312,12 +286,20 @@ export function MediaLibrary({
     setGalleryViewRaw(value);
   };
 
+  // Handle navigation to brand onboarding
+  const handleOnboardBrand = () => {
+    router.push("/");
+  };
+
+  // Check if there are no brands available
+  const hasNoBrands = (galleryActions.brandsData?.brands?.length ?? 0) === 0;
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
       <div className="flex justify-between mb-2">
         <div className="flex flex-row gap-x-4">
           <h1 className="text-2xl font-bold">Media library</h1>
-          {galleryView === "grid" && (
+          {!hasNoBrands && galleryView === "grid" && (
             <MediaUploadBrandSelector
               selectedBrand={selectedBrand}
               setSelectedBrand={setSelectedBrand}
@@ -327,6 +309,7 @@ export function MediaLibrary({
               selectedCampaignId={selectedCampaignId}
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
+              preSelectedBrandId={brandId || initialBrandId}
             />
           )}
         </div>
@@ -343,138 +326,161 @@ export function MediaLibrary({
           </SelectContent>
         </Select>
       </div>
-      {galleryView === "folder" && (
-        <div>
-          <MediaFolderView
-            activeTab={activeTab}
-            selectedBrand={selectedBrand}
-            setSelectedBrand={setSelectedBrand}
-            brands={galleryActions.brandsData?.brands || []}
-            brandsLoading={galleryActions.brandsLoading}
-            selectedCampaignId={selectedCampaignId}
-            selecteMoodboardId={moodboardId}
-            galleryView={galleryView}
-          />
+
+      {/* Show no brands message */}
+      {hasNoBrands ? (
+        <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            No brand access or onboarded brands
+          </h2>
+          <p className="text-gray-600 max-w-md">
+            You haven&apos;t been given access to any brands or haven&apos;t
+            onboarded a brand yet. Please onboard a brand to get started and
+            begin uploading your media.
+          </p>
+          <Button onClick={handleOnboardBrand}>Onboard Brand</Button>
         </div>
-      )}
-      {galleryView === "grid" && (
-        <Tabs
-          defaultValue="all-media"
-          value={activeTab}
-          onValueChange={handleTabChange}
-        >
-          <MediaLibraryTabs />
-          <TabsContent
-            value={activeTab}
-            className="p-3 rounded-3xl bg-white mt-0"
-          >
-            <MediaUploadDropzone
-              activeTab={activeTab}
-              galleryFilters={{
-                assetType: activeTab,
-                favorites,
-                source,
-                creator,
-                searchQuery,
-                selectedFilters,
-              }}
-              selectedBrand={selectedBrand}
-              setSelectedBrand={setSelectedBrand}
-              brands={galleryActions.brandsData?.brands || []}
-              brandsLoading={galleryActions.brandsLoading}
-              selectedCampaignId={selectedCampaignId}
-              selecteMoodboardId={moodboardId}
-            />
-
-            <div className="flex flex-col md:flex-row gap-4">
-              <div
-                className={`${
-                  showFilters ? "w-full md:w-1/4" : "hidden"
-                } transition-all duration-300 ease-in-out`}
+      ) : (
+        <>
+          {galleryView === "folder" && (
+            <div>
+              <MediaFolderView
+                activeTab={activeTab}
+                selectedBrand={selectedBrand}
+                setSelectedBrand={setSelectedBrand}
+                brands={galleryActions.brandsData?.brands || []}
+                brandsLoading={galleryActions.brandsLoading}
+                selectedCampaignId={selectedCampaignId}
+                selecteMoodboardId={moodboardId}
+                galleryView={galleryView}
+              />
+            </div>
+          )}
+          {galleryView === "grid" && (
+            <Tabs
+              defaultValue="all-media"
+              value={activeTab}
+              onValueChange={handleTabChange}
+            >
+              <MediaLibraryTabs />
+              <TabsContent
+                value={activeTab}
+                className="p-3 rounded-3xl bg-white mt-0"
               >
-                <div className="md:hidden flex justify-between items-center mb-2">
-                  <h3 className="font-medium">Filters</h3>
-                  <Button variant="ghost" size="sm" onClick={toggleFilters}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <MediaFilterSidebar
-                  selectedFilters={selectedFilters}
-                  onApply={handleApplyFilters}
-                  brandsWithCampaigns={galleryActions.brandsData?.brands || []}
-                  product_categories={
-                    galleryActions.brandsData?.product_categories || []
-                  }
-                  setShowFilter={setShowFilters}
-                />
-              </div>
-
-              <div
-                className={`${
-                  showFilters ? "w-full md:w-3/4" : "w-full"
-                } transition-all duration-300 ease-in-out`}
-              >
-                <MediaSearchFilters
-                  onSearchChange={handleSearchChange}
-                  onSourceChange={handleSourceChange}
-                  onCreatorChange={handleCreatorChange}
-                  onFavoritesChange={handleFavoritesChange}
-                  onToggleFilters={toggleFilters}
-                  source={source}
-                  creator={creator}
-                  favorites={favorites}
-                  showFilters={showFilters}
-                  selectedFilters={selectedFilters}
-                  setSelectedFilters={setSelectedFilters}
+                <MediaUploadDropzone
+                  activeTab={activeTab}
+                  galleryFilters={{
+                    assetType: activeTab,
+                    favorites,
+                    source,
+                    creator,
+                    searchQuery,
+                    selectedFilters,
+                  }}
+                  selectedBrand={selectedBrand}
+                  setSelectedBrand={setSelectedBrand}
+                  brands={galleryActions.brandsData?.brands || []}
+                  brandsLoading={galleryActions.brandsLoading}
+                  selectedCampaignId={selectedCampaignId}
+                  selecteMoodboardId={moodboardId}
                 />
 
-                <MediaDialogMultiSelectHeader
-                  isActive={isMultiSelect && isMediaSelectDialog}
-                  currentSelectionCount={currentSelectionCount}
-                  onClearSelection={handleUnselectAll}
-                  onAddSelectedItems={handleAddSelectedItems}
-                  totalAssets={
-                    inSelectionGalleryIds.length + currentSelectionCount
-                  }
-                />
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div
+                    className={`${
+                      showFilters ? "w-full md:w-1/4" : "hidden"
+                    } transition-all duration-300 ease-in-out`}
+                  >
+                    <div className="md:hidden flex justify-between items-center mb-2">
+                      <h3 className="font-medium">Filters</h3>
+                      <Button variant="ghost" size="sm" onClick={toggleFilters}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <MediaFilterSidebar
+                      selectedFilters={selectedFilters}
+                      onApply={handleApplyFilters}
+                      brandsWithCampaigns={
+                        galleryActions.brandsData?.brands || []
+                      }
+                      product_categories={
+                        galleryActions.brandsData?.product_categories || []
+                      }
+                      setShowFilter={setShowFilters}
+                    />
+                  </div>
 
-                <MediaGalleryStatusDisplay
-                  galleryStatus={galleryActions.galleryStatus}
-                  galleryItemsLength={galleryItems.length}
-                />
+                  <div
+                    className={`${
+                      showFilters ? "w-full md:w-3/4" : "w-full"
+                    } transition-all duration-300 ease-in-out`}
+                  >
+                    <MediaSearchFilters
+                      onSearchChange={handleSearchChange}
+                      onSourceChange={handleSourceChange}
+                      onCreatorChange={handleCreatorChange}
+                      onFavoritesChange={handleFavoritesChange}
+                      onToggleFilters={toggleFilters}
+                      source={source}
+                      creator={creator}
+                      favorites={favorites}
+                      showFilters={showFilters}
+                      selectedFilters={selectedFilters}
+                      setSelectedFilters={setSelectedFilters}
+                    />
 
-                {galleryActions.galleryStatus === "success" &&
-                  galleryItems.length > 0 && (
-                    <div>
-                      <MediaGrid
-                        galleryActions={galleryActions}
-                        selectedItems={currentlySelectedItems}
-                        onSelect={handleSelect}
-                        isMultiSelect={isMultiSelect}
-                        inSelectionGalleryIds={inSelectionGalleryIds}
-                        maxSelectionCount={maxSelectionCount}
-                      />
+                    <MediaDialogMultiSelectHeader
+                      isActive={isMultiSelect && isMediaSelectDialog}
+                      currentSelectionCount={currentSelectionCount}
+                      onClearSelection={handleUnselectAll}
+                      onAddSelectedItems={handleAddSelectedItems}
+                      totalAssets={
+                        inSelectionGalleryIds.length + currentSelectionCount
+                      }
+                    />
 
-                      {/* Infinite scroll loading indicator */}
-                      {galleryActions.hasNextPage && (
-                        <div
-                          ref={ref}
-                          className="flex justify-center items-center py-8"
-                        >
-                          {galleryActions.isFetchingNextPage ? (
-                            <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                          ) : (
-                            <p className="text-sm text-gray-500">Load more</p>
+                    <MediaGalleryStatusDisplay
+                      galleryStatus={galleryActions.galleryStatus}
+                      galleryItemsLength={galleryItems.length}
+                    />
+
+                    {galleryActions.galleryStatus === "success" &&
+                      galleryItems.length > 0 && (
+                        <div>
+                          <MediaGrid
+                            galleryActions={galleryActions}
+                            selectedItems={currentlySelectedItems}
+                            onSelect={handleSelect}
+                            isMultiSelect={isMultiSelect}
+                            inSelectionGalleryIds={inSelectionGalleryIds}
+                            maxSelectionCount={maxSelectionCount}
+                          />
+
+                          {/* Infinite scroll loading indicator */}
+                          {galleryActions.hasNextPage && (
+                            <div
+                              ref={ref}
+                              className="flex justify-center items-center py-8"
+                            >
+                              {galleryActions.isFetchingNextPage ? (
+                                <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                              ) : (
+                                <p className="text-sm text-gray-500">
+                                  Load more
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
-                    </div>
-                  )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </>
       )}
+
       {/* Bulk actions - show for non-dialog mode or single-select dialog mode */}
       {currentSelectionCount > 0 &&
         (!isMediaSelectDialog || !isMultiSelect) && (
