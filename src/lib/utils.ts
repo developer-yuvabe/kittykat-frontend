@@ -124,10 +124,8 @@ export const handleDownloadImage = async (
     };
   }
 ) => {
-  const filetype = getExtensionFromUrl(url);
-
   const {
-    filename = `image_${new Date().getTime()}.${filetype}`,
+    filename = getFilenameFromUrl(url),
     toastMessages = {
       loading: "Downloading image...",
       success: "Image downloaded successfully!",
@@ -173,7 +171,7 @@ export const handleDownloadVideo = async (
   }
 ) => {
   const {
-    filename = `video_${new Date().getTime()}.mp4`,
+    filename = getFilenameFromUrl(url),
     toastMessages = {
       loading: "Downloading video...",
       success: "Video downloaded successfully!",
@@ -291,5 +289,34 @@ export const getExtensionFromUrl = (url: string): string => {
     return ext?.toLowerCase() || "png";
   } catch {
     return "png";
+  }
+};
+
+/**
+ * Generates a filename from a given URL.
+ * - If the URL is valid, it extracts the last segment of the path (the filename).
+ * - If `haveExtension` is false, it removes the file extension from the extracted filename.
+ * - If the URL is invalid or parsing fails, it returns a timestamp-based fallback.
+ *
+ * @param url - The input URL from which to extract the filename.
+ * @param haveExtension - Whether to include the file extension in the result (default: true).
+ * @returns The extracted filename (with or without extension), or a timestamp if parsing fails.
+ */
+export const getFilenameFromUrl = (
+  url: string,
+  haveExtension: boolean = true
+): string => {
+  try {
+    const pathname = new URL(url).pathname;
+    const filename = pathname.split("/").pop() || "";
+
+    if (!haveExtension) {
+      const dotIndex = filename.lastIndexOf(".");
+      return dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+    }
+
+    return filename || `${Date.now()}`;
+  } catch {
+    return `${Date.now()}`;
   }
 };
