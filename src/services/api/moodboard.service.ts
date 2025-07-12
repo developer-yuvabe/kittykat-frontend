@@ -228,7 +228,8 @@ export const generateA2iShowboard = async (
 
 export const enhancePrompt = async (
   brandId: string,
-  basePrompt: string
+  basePrompt: string,
+  referenceMoodboardId?: string
 ): Promise<{
   prompt: string;
 }> => {
@@ -239,6 +240,7 @@ export const enhancePrompt = async (
       prompt: string;
     }>(`/brands/${brandId}/a2i/enhance-prompt`, {
       base_prompt: basePrompt,
+      moodboard_id: referenceMoodboardId ?? null,
     })
   );
 };

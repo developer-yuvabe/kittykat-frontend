@@ -1,7 +1,7 @@
 "use client";
 
 import { ContentSection } from "@/components/shared/ContentSection";
-import type { A2iImageGeneration } from "@/types/types";
+import type { A2iImageGeneration, ThreadA2iImage } from "@/types/types";
 import {
   A2iImageCard,
   type A2iImageCardProps,
@@ -41,6 +41,7 @@ type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
   form: UseFormReturn<any>;
   formRef: RefObject<HTMLFormElement | null>;
+  referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 };
 
 // Helper function to get existing ID only - no fallback generation
@@ -57,6 +58,7 @@ export const A2iImagesWrapper = ({
   generations,
   form,
   formRef,
+  referenceMoodboardId,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
@@ -264,7 +266,11 @@ export const A2iImagesWrapper = ({
               </div>
             </SortableContext>
           </DndContext>
-          <A2iImageInput form={form} formRef={formRef} />
+          <A2iImageInput
+            form={form}
+            formRef={formRef}
+            referenceMoodboardId={referenceMoodboardId}
+          />
         </div>
       }
     />
