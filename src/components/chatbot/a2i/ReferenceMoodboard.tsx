@@ -30,7 +30,7 @@ const ReferenceMoodboard = ({
   moodboardInformation,
   form,
 }: ReferenceMoodboardProps) => {
-  const [n, setN] = React.useState(`${prompts?.length || 0}`);
+  const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -142,6 +142,21 @@ const ReferenceMoodboard = ({
     }
   }, [orderedGalleryItems]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+
+    if (val === "") {
+      setN("");
+      return;
+    }
+
+    const num = parseInt(val, 10);
+
+    if (!isNaN(num) && num >= 1 && num <= 3) {
+      setN(num);
+    }
+  };
+
   // Load images when ordered gallery items are available
   useEffect(() => {
     if (orderedGalleryItems.length > 0) {
@@ -162,7 +177,7 @@ const ReferenceMoodboard = ({
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
-      setN(`${prompts.length}`);
+      setN(prompts.length);
     }
   }, [prompts]);
 
@@ -197,21 +212,12 @@ const ReferenceMoodboard = ({
                   <Input
                     type="number"
                     value={n}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "") {
-                        setN("");
-                        return;
-                      }
-
-                      const parsed = parseInt(value, 10);
-
-                      if (!isNaN(parsed) && parsed >= 1 && parsed <= 10) {
-                        setN(value);
-                      }
-                    }}
+                    onChange={handleChange}
+                    onPaste={(e) => e.preventDefault()} // Disable paste
                     min={1}
                     max={3}
+                    inputMode="numeric"
+                    pattern="[0-9]*" // Hint for mobile keyboards
                   />
                 </div>
                 {referenceMoodboardId && (
