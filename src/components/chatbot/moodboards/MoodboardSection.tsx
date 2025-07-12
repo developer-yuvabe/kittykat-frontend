@@ -52,6 +52,11 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
 import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -447,7 +452,7 @@ export const MoodboardSection: React.FC<{
     currentCampaign?.campaign?.title,
     isCreatingNewMoodboard,
     currentCampaignMoodboards.length,
-    currentMoodboard?.title, // Add this dependency to react to title changes
+    currentMoodboard?.title,
   ]);
 
   async function handleFindStyle() {
@@ -574,6 +579,38 @@ export const MoodboardSection: React.FC<{
       setIsMoodboardGenerating(false);
     }
   }, [currentMoodboard?.moodboard_generation_status]);
+
+  const handleGenerateMoodboard = async () => {
+    if (!currentMoodboard || currentMoodboard.visual_style_images.length < 10) {
+      toast.warning(
+        "Please add at least 10 visual style images to generate a moodboard."
+      );
+      return;
+    }
+
+    if (
+      !selectedBrandId ||
+      !currentMoodboard?.id ||
+      !currentMoodboard?.campaign_id
+    )
+      return;
+
+    setIsMoodboardGenerating(true);
+
+    toast.promise(
+      createMoodboardForCampaign(
+        selectedBrandId,
+        currentMoodboard.campaign_id,
+        currentMoodboard.id,
+        { no_of_images: noOfImagesForMoodboard }
+      ),
+      {
+        loading: "Generating moodboard...",
+        success: "Moodboard generated successfully!",
+        error: "Failed to generate moodboard. Please try again.",
+      }
+    );
+  };
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -764,46 +801,41 @@ export const MoodboardSection: React.FC<{
                           <MoodboardTagsSelector moodboard={currentMoodboard} />
 
                           <div className="mt-8 w-full mb-5 ">
-                            <Button
-                              onClick={async () => {
-                                if (selectedBrandId) {
-                                  setIsMoodboardGenerating(true);
-                                  toast.promise(
-                                    createMoodboardForCampaign(
-                                      selectedBrandId,
-                                      currentMoodboard?.campaign_id,
-                                      currentMoodboard.id,
-                                      { no_of_images: noOfImagesForMoodboard }
-                                    ),
-                                    {
-                                      loading: "Generating moodboard...",
-                                      success:
-                                        "Moodboard generated successfully!",
-                                      error:
-                                        "Failed to generate moodboard. Please try again.",
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="w-full mt-8 mb-5">
+                                  <Button
+                                    onClick={handleGenerateMoodboard}
+                                    className="w-full"
+                                    disabled={
+                                      currentMoodboard.moodboard_generation_status ===
+                                        "in_progress" || isMoodboardGenerating
                                     }
-                                  );
-                                }
-                              }}
-                              className="w-full "
-                              disabled={
-                                currentMoodboard.moodboard_generation_status ===
-                                  "in_progress" || isMoodboardGenerating
-                              }
-                            >
-                              {currentMoodboard.moodboard_generation_status ===
-                                "in_progress" || isMoodboardGenerating ? (
-                                <span className="flex items-center gap-2">
-                                  <Loader className="animate-spin  text-white" />
-                                  Generating...
-                                </span>
-                              ) : (
-                                <>
-                                  <MoodboardIcon />
-                                  Generate Moodboard
-                                </>
+                                  >
+                                    {currentMoodboard.moodboard_generation_status ===
+                                      "in_progress" || isMoodboardGenerating ? (
+                                      <span className="flex items-center gap-2">
+                                        <Loader className="animate-spin text-white" />
+                                        Generating...
+                                      </span>
+                                    ) : (
+                                      <>
+                                        <MoodboardIcon />
+                                        Generate Moodboard
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </TooltipTrigger>
+
+                              {currentMoodboard.visual_style_images.length <
+                                10 && (
+                                <TooltipContent>
+                                  Add at least 10 visual style images to
+                                  generate a moodboard
+                                </TooltipContent>
                               )}
-                            </Button>
+                            </Tooltip>
                           </div>
                         </div>
                       )}
@@ -827,6 +859,7 @@ export const MoodboardSection: React.FC<{
                           onNewMoodboard={handleCreateNewMoodboard}
                           selectedMoodboard={currentMoodboard}
                           setSelectedMoodboard={handleMoodboardSelect}
+                          handleGenerateMoodboard={handleGenerateMoodboard}
                         />
                       )}
                   </div>
