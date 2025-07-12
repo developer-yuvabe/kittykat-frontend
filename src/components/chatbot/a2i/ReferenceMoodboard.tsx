@@ -9,7 +9,13 @@ import { useBrandStore } from "@/store/brand.store";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { WandSparkles } from "lucide-react";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  RefObject,
+} from "react";
 import { toast } from "sonner";
 import { SortablePhoto } from "@/components/gallery/SortableGallery";
 import { Photo } from "react-photo-album";
@@ -22,6 +28,7 @@ type ReferenceMoodboardProps = {
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
   form: UseFormReturn<any>;
+  formRef: RefObject<HTMLFormElement | null>;
 };
 
 const ReferenceMoodboard = ({
@@ -29,6 +36,7 @@ const ReferenceMoodboard = ({
   prompts,
   moodboardInformation,
   form,
+  formRef,
 }: ReferenceMoodboardProps) => {
   const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
@@ -263,6 +271,14 @@ const ReferenceMoodboard = ({
                           shouldDirty: true,
                           shouldTouch: true,
                         });
+
+                        if (formRef.current) {
+                          formRef.current.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                            inline: "end",
+                          });
+                        }
                       }}
                     >
                       <EditIcon />
