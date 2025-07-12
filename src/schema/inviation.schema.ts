@@ -1,20 +1,10 @@
 import { FORM_MESSAGES } from "@/lib/constants";
 import { z } from "zod";
 import { UserRoleId } from "@/types/user.types";
-import { checkIfEmailExists } from "@/services/api/user.service";
 
 export const inviationSchema = z.object({
-  email: z
-    .string()
-    .email({ message: FORM_MESSAGES.INVALID_EMAIL })
-    .refine(
-      async (email) => {
-        return !(await checkIfEmailExists(email));
-      },
-      {
-        message: "Email is already invited.",
-      }
-    ),
+  email: z.string().email({ message: FORM_MESSAGES.INVALID_EMAIL }),
+
   role: z.enum([UserRoleId.ADMIN, UserRoleId.USER], {
     errorMap: () => ({ message: "Please select a role" }),
   }),

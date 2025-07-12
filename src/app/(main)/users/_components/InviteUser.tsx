@@ -46,13 +46,17 @@ import {
   MultiSelectEmpty,
 } from "@/components/ui/multi-select";
 import { toast } from "sonner";
-import { inviteUser } from "@/services/api/user.service";
+import { checkIfEmailExists, inviteUser } from "@/services/api/user.service";
 import { useQueryClient } from "@tanstack/react-query";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useUserStore } from "@/store/user.store";
+
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
 export function InviteUser() {
   const [open, setOpen] = React.useState(false);
   const { brands } = useBrandStore();
+  const { user } = useUserStore();
   const queryClient = useQueryClient();
   const form = useForm<InviteUserFormData>({
     resolver: zodResolver(inviationSchema),
@@ -65,6 +69,15 @@ export function InviteUser() {
   });
 
   const onSubmit = async (data: InviteUserFormData) => {
+    const emailExists = await checkIfEmailExists(data.email);
+
+    if (emailExists) {
+      form.setError("email", {
+        type: "manual",
+        message: "Email already invited. Please use a different email.",
+      });
+      return;
+    }
     setOpen(false);
     form.reset();
 
@@ -195,10 +208,29 @@ export function InviteUser() {
                         {brands.map((brand) => (
                           <MultiSelectItem
                             key={brand.id}
-                            value={brand.id}
+                            value={brand.name}
                             label={brand.name}
                           >
-                            {brand.name}
+                            <div className="flex items-start justify-between group gap-0">
+                              <div className="flex items-start min-w-0 w-full">
+                                <Avatar className="h-6 w-6 mr-2">
+                                  <AvatarFallback className="bg-blue-500 text-white">
+                                    {brand.name?.charAt(0).toUpperCase() || "B"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col space-y-1">
+                                  <span className="line-clamp- break-words">
+                                    {brand.name}
+                                  </span>
+                                  <span className="italic text-xs">
+                                    Created by{" "}
+                                    {brand.created_by.id === user?.id
+                                      ? "You"
+                                      : brand.created_by.name}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </MultiSelectItem>
                         ))}
                       </MultiSelectList>
@@ -220,7 +252,14 @@ export function InviteUser() {
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit">Send Invite</Button>
+              <Button
+                type="submit"
+                loading={
+                  form.formState.isValidating || form.formState.isSubmitting
+                }
+              >
+                Send Invite
+              </Button>
             </DialogFooter>
           </form>
         </Form>
