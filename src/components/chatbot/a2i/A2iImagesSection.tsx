@@ -66,6 +66,7 @@ const A2iImagesSection = function A2iImagesSection({
               form={form}
               formRef={formRef}
               generations={[...(a2iImageInformation?.generations || [])]}
+              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
             />
           </CardContent>
         </Form>

@@ -34,18 +34,26 @@ import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import { UseFormReturn } from "react-hook-form";
+import { ThreadA2iImage } from "@/types/types";
 
 const A2iImageInput = ({
   form,
   formRef,
+  referenceMoodboardId,
 }: {
   form: UseFormReturn<any>;
   formRef: RefObject<HTMLFormElement | null>;
+  referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 }) => {
   const { selectedBrandId } = useBrandStore();
   const { selectedModel } = useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
-    mutationFn: () => enhancePrompt(selectedBrandId!, form.getValues("prompt")),
+    mutationFn: () =>
+      enhancePrompt(
+        selectedBrandId!,
+        form.getValues("prompt"),
+        referenceMoodboardId
+      ),
   });
 
   // Reference to the file input element
