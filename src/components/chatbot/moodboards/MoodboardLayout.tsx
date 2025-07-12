@@ -52,6 +52,7 @@ interface MoodboardLayoutProps {
   setSelectedMoodboard: (mb: MoodboardInformation | null) => void;
   onNewMoodboard: () => void;
   isCreatingNew: boolean;
+  handleGenerateMoodboard: () => Promise<void>;
 }
 
 function MoodboardLayout({
@@ -65,6 +66,7 @@ function MoodboardLayout({
   setSelectedMoodboard,
   onNewMoodboard,
   isCreatingNew,
+  handleGenerateMoodboard,
 }: MoodboardLayoutProps) {
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
@@ -98,8 +100,10 @@ function MoodboardLayout({
     queryKey: ["gallery-items-bulk", galleryItemIds],
     queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
     enabled: galleryItemIds.length > 0,
+    staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
   });
 
+  // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
     latestMoodboardRef.current = moodboard;
   }, [moodboard]);
@@ -109,7 +113,7 @@ function MoodboardLayout({
 
   const handleAnalyzeMoodboard = async () => {
     setAnalyzeLoading(true);
-
+    handleSaveChanges();
     try {
       toast.promise(
         analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
@@ -154,10 +158,7 @@ function MoodboardLayout({
 
     return photos.some((photo, index) => {
       const originalPhoto = originalPhotos[index];
-      return (
-        !originalPhoto || photo.id !== originalPhoto.id
-        // Removed liked comparison since likes are handled directly
-      );
+      return !originalPhoto || photo.id !== originalPhoto.id;
     });
   }, [photos, originalPhotos]);
 
@@ -344,12 +345,6 @@ function MoodboardLayout({
 
   const showFailedState = moodboardStatus.isMoodboardFailed;
 
-  async function handleGenerateMoodboard(): Promise<void> {
-    if (selectedBrandId) {
-      console.log("Generate moodboard for:", moodboard.id);
-    }
-  }
-
   // Local move photo function (no API call)
   const movePhoto = (oldIndex: number, newIndex: number) => {
     const newPhotos = arrayMove(photos, oldIndex, newIndex);
@@ -427,14 +422,21 @@ function MoodboardLayout({
         position: index,
       }));
 
+      // Update visual style images by marking to_ignore based on presence in photos
+      const updatedVisualImages = moodboard.visual_style_images.map((img) => ({
+        ...img,
+        to_ignore: removedPhotoIds.includes(img.gallery_item_id)
+          ? true
+          : img.to_ignore,
+      }));
+
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
-        delete_moodboard_assets: removedPhotoIds,
+        visual_style_images: updatedVisualImages,
       });
 
       // Update original state to match current state (but preserve like status)
       setOriginalPhotos([...photos]);
-      setRemovedPhotoIds([]);
 
       console.log("Position changes saved successfully");
     } catch (error) {
@@ -504,13 +506,9 @@ function MoodboardLayout({
                         <ImageCountCard
                           disabled
                           maxCount={
-                            moodboard.visual_style_images.filter(
-                              (img) => img.is_deleted !== true
-                            ).length > 16
+                            moodboard.visual_style_images.length > 16
                               ? 16
-                              : moodboard.visual_style_images.filter(
-                                  (img) => img.is_deleted !== true
-                                ).length
+                              : moodboard.visual_style_images.length
                           }
                           imageCount={noOfImagesForMoodboard}
                           onRefresh={async () => {
@@ -566,7 +564,7 @@ function MoodboardLayout({
                             className="flex items-center gap-x-1"
                           >
                             <SaveIcon2 size={16} />
-                            {isSaving ? "Saving..." : "Save"}
+                            {isSaving ? "Saving..." : "Save Changes"}
                           </Button>
                         </div>
                       )}
