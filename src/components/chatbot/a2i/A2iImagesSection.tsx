@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
@@ -20,6 +20,7 @@ const A2iImagesSection = function A2iImagesSection({
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
   const form = useImageGenForm();
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -59,9 +60,11 @@ const A2iImagesSection = function A2iImagesSection({
               prompts={a2iImageInformation?.prompts}
               moodboardInformation={moodboardInformation}
               form={form}
+              formRef={formRef}
             />
             <A2iImagesWrapper
               form={form}
+              formRef={formRef}
               generations={[...(a2iImageInformation?.generations || [])]}
             />
           </CardContent>

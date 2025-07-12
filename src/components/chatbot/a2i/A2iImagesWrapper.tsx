@@ -9,7 +9,14 @@ import {
 } from "./A2iImageCard";
 import A2iImageInput from "./A2iImageInput";
 import A2iImageModelSelector from "./A2iImageModelSelector";
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  RefObject,
+} from "react";
 import {
   DndContext,
   closestCenter,
@@ -33,6 +40,7 @@ import { UseFormReturn } from "react-hook-form";
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
   form: UseFormReturn<any>;
+  formRef: RefObject<HTMLFormElement | null>;
 };
 
 // Helper function to get existing ID only - no fallback generation
@@ -48,6 +56,7 @@ const getItemTrackingId = (item: A2iImageCardProps): string => {
 export const A2iImagesWrapper = ({
   generations,
   form,
+  formRef,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
@@ -255,7 +264,7 @@ export const A2iImagesWrapper = ({
               </div>
             </SortableContext>
           </DndContext>
-          <A2iImageInput form={form} />
+          <A2iImageInput form={form} formRef={formRef} />
         </div>
       }
     />

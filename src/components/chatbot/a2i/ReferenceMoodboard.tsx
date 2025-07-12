@@ -9,7 +9,13 @@ import { useBrandStore } from "@/store/brand.store";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { WandSparkles } from "lucide-react";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  RefObject,
+} from "react";
 import { toast } from "sonner";
 import { SortablePhoto } from "@/components/gallery/SortableGallery";
 import { Photo } from "react-photo-album";
@@ -22,6 +28,7 @@ type ReferenceMoodboardProps = {
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
   form: UseFormReturn<any>;
+  formRef: RefObject<HTMLFormElement | null>;
 };
 
 const ReferenceMoodboard = ({
@@ -29,8 +36,9 @@ const ReferenceMoodboard = ({
   prompts,
   moodboardInformation,
   form,
+  formRef,
 }: ReferenceMoodboardProps) => {
-  const [n, setN] = React.useState(`${prompts?.length || 0}`);
+  const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -142,6 +150,21 @@ const ReferenceMoodboard = ({
     }
   }, [orderedGalleryItems]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+
+    if (val === "") {
+      setN("");
+      return;
+    }
+
+    const num = parseInt(val, 10);
+
+    if (!isNaN(num) && num >= 1 && num <= 3) {
+      setN(num);
+    }
+  };
+
   // Load images when ordered gallery items are available
   useEffect(() => {
     if (orderedGalleryItems.length > 0) {
@@ -162,7 +185,7 @@ const ReferenceMoodboard = ({
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
-      setN(`${prompts.length}`);
+      setN(prompts.length);
     }
   }, [prompts]);
 
@@ -197,21 +220,12 @@ const ReferenceMoodboard = ({
                   <Input
                     type="number"
                     value={n}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "") {
-                        setN("");
-                        return;
-                      }
-
-                      const parsed = parseInt(value, 10);
-
-                      if (!isNaN(parsed) && parsed >= 1 && parsed <= 10) {
-                        setN(value);
-                      }
-                    }}
+                    onChange={handleChange}
+                    onPaste={(e) => e.preventDefault()} // Disable paste
                     min={1}
                     max={3}
+                    inputMode="numeric"
+                    pattern="[0-9]*" // Hint for mobile keyboards
                   />
                 </div>
                 {referenceMoodboardId && (
@@ -257,6 +271,14 @@ const ReferenceMoodboard = ({
                           shouldDirty: true,
                           shouldTouch: true,
                         });
+
+                        if (formRef.current) {
+                          formRef.current.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                            inline: "end",
+                          });
+                        }
                       }}
                     >
                       <EditIcon />
