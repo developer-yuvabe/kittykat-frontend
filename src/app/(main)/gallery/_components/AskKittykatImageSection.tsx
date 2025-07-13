@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import type React from "react";
+import { useRef, useState, useEffect } from "react";
 import ZoomableImage from "@/components/ui/zoomable-image";
-import { GalleryItemResponse } from "@/types/gallery.types";
-import { GalleryActions } from "@/hooks/useGallery";
+import type { GalleryItemResponse } from "@/types/gallery.types";
+import type { GalleryActions } from "@/hooks/useGallery";
 import { PlayCircle, PauseCircle, Heart, Copy, Expand } from "lucide-react";
-
-import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix"; // Assuming used in parent
-import RemixImage from "../../_components/remix/RemixImage";
+import type { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import RemixImage, {
+  type RemixImageHandle,
+} from "../../_components/remix/RemixImage";
 import { toast } from "sonner";
 
 interface AskKittykatImageSectionProps {
@@ -19,6 +21,7 @@ interface AskKittykatImageSectionProps {
   offScreenCanvasRef?: React.RefObject<HTMLCanvasElement | null>;
   remixHistory?: ReturnType<typeof useUndoRedoRemix>;
   brushSize?: number;
+  remixImageRef?: React.RefObject<RemixImageHandle | null>;
 }
 
 const VideoPlayer: React.FC<{
@@ -84,13 +87,9 @@ const VideoPlayer: React.FC<{
           playsInline
           onClick={togglePlayPause}
         />
-
-        {/* Hover Overlay - now positioned relative to video */}
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg">
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-lg" />
         </div>
-
-        {/* Center Play/Pause Icon - positioned relative to video */}
         <div
           className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg"
           onClick={togglePlayPause}
@@ -101,14 +100,10 @@ const VideoPlayer: React.FC<{
             <PlayCircle className="w-16 h-16 text-white opacity-100" />
           )}
         </div>
-
-        {/* Top Right: Fullscreen - positioned relative to video */}
         <Expand
           onClick={handleFullscreen}
           className="absolute top-2 right-2 w-6 h-6 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
         />
-
-        {/* Bottom Right: Like - positioned relative to video */}
         <Heart
           onClick={onLike}
           className={`absolute bottom-2 right-2 w-6 h-6 cursor-pointer transition-opacity opacity-0 group-hover:opacity-100 ${
@@ -117,8 +112,6 @@ const VideoPlayer: React.FC<{
           fill={isLiked ? "red" : "none"}
           stroke={isLiked ? "red" : "white"}
         />
-
-        {/* Bottom Left: Copy - positioned relative to video */}
         <Copy
           onClick={handleCopy}
           className="absolute bottom-2 left-2 w-6 h-6 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
@@ -139,6 +132,7 @@ export const AskKittykatImageSection: React.FC<
   offScreenCanvasRef,
   remixHistory,
   brushSize = 20,
+  remixImageRef,
 }) => {
   const isVideo = item.asset_type === "video";
 
@@ -163,6 +157,7 @@ export const AskKittykatImageSection: React.FC<
     ) {
       return (
         <RemixImage
+          ref={remixImageRef}
           imageRef={imageRef}
           canvasRef={canvasRef}
           offScreenCanvasRef={offScreenCanvasRef}
