@@ -30,6 +30,7 @@ interface ContentSectionProps {
   showCopy?: boolean;
   showPin?: boolean;
   customActions?: React.ReactNode;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 export function ContentSection({
@@ -46,7 +47,7 @@ export function ContentSection({
   contentClassName = "",
   showCopy = true,
   showPin = true,
-
+  ref,
   customActions,
 }: ContentSectionProps) {
   const [copied, setCopied] = useState(false);
@@ -180,7 +181,10 @@ export function ContentSection({
 
   // If not collapsible, fall back to static section
   return (
-    <div className="border border-gray-400 rounded-2xl overflow-hidden">
+    <div
+      ref={ref}
+      className="border border-gray-400 rounded-2xl overflow-hidden"
+    >
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-[#171a1f]">{title}</h3>

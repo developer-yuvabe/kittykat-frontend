@@ -20,7 +20,7 @@ const A2iImagesSection = function A2iImagesSection({
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
   const form = useImageGenForm();
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">

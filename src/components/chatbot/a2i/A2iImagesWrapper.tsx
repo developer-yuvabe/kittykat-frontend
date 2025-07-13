@@ -40,7 +40,7 @@ import { UseFormReturn } from "react-hook-form";
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
   form: UseFormReturn<any>;
-  formRef: RefObject<HTMLFormElement | null>;
+  formRef: RefObject<HTMLDivElement | null>;
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 };
 
@@ -222,6 +222,7 @@ export const A2iImagesWrapper = ({
       showCopy={false}
       showPin={false}
       context={contextValue}
+      ref={formRef}
       content={
         <div className="relative h-[50vh] bg-muted rounded-md">
           <DndContext
@@ -270,7 +271,6 @@ export const A2iImagesWrapper = ({
           </DndContext>
           <A2iImageInput
             form={form}
-            formRef={formRef}
             referenceMoodboardId={referenceMoodboardId}
           />
         </div>

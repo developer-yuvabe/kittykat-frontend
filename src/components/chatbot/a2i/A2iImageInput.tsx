@@ -18,14 +18,7 @@ import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useA2iStore } from "@/store/a2i.store";
 import { useBrandStore } from "@/store/brand.store";
 import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
-import {
-  RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
@@ -38,11 +31,9 @@ import { ThreadA2iImage } from "@/types/types";
 
 const A2iImageInput = ({
   form,
-  formRef,
   referenceMoodboardId,
 }: {
   form: UseFormReturn<any>;
-  formRef: RefObject<HTMLFormElement | null>;
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 }) => {
   const { selectedBrandId } = useBrandStore();
@@ -200,7 +191,6 @@ const A2iImageInput = ({
 
   return (
     <form
-      ref={formRef}
       onSubmit={form.handleSubmit(onSubmit)}
       className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 gap-y-4 pb-4"
     >
