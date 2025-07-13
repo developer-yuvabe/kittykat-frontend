@@ -1,13 +1,14 @@
 "use client";
 
-import React, {
+import type React from "react";
+import {
   useCallback,
   useEffect,
   useState,
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import type { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 
 type RemixImageProps = {
   imageRef: React.RefObject<HTMLImageElement | null>;
@@ -49,8 +50,8 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
     const updateMainCanvas = useCallback(
       (showPreview = false, previewX?: number, previewY?: number) => {
         if (!ctx || !offScreenCanvasRef.current || !canvasRef.current) return;
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         ctx.globalAlpha = 0.2;
         ctx.drawImage(offScreenCanvasRef.current!, 0, 0);
         ctx.globalAlpha = 1.0;
@@ -86,16 +87,17 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
 
       const canvas = offScreenCanvasRef.current;
       const scaleFactor = brushSize / lastBrushSize;
-
       const currentImageData = offScreenCtx.getImageData(
         0,
         0,
         canvas.width,
         canvas.height
       );
+
       const hasAlpha = currentImageData.data.some(
         (_, i) => i % 4 === 3 && currentImageData.data[i] > 0
       );
+
       if (!hasAlpha) return;
 
       const tempCanvas = document.createElement("canvas");
@@ -119,7 +121,6 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         for (let y = 1; y < canvas.height - 1; y++) {
           for (let x = 1; x < canvas.width - 1; x++) {
             const idx = (y * canvas.width + x) * 4;
-
             if (scaleFactor > 1 && imageData.data[idx + 3] > 0) {
               for (let dy = -1; dy <= 1; dy++) {
                 for (let dx = -1; dx <= 1; dx++) {
@@ -131,7 +132,6 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
                 }
               }
             }
-
             if (scaleFactor < 1 && imageData.data[idx + 3] > 0) {
               let shouldKeep = true;
               for (let dy = -1; dy <= 1 && shouldKeep; dy++) {
@@ -161,13 +161,13 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       );
       offScreenCtx.clearRect(0, 0, canvas.width, canvas.height);
       offScreenCtx.putImageData(finalImageData, 0, 0);
-      saveState(finalImageData);
-    }, [offScreenCtx, brushSize, lastBrushSize, saveState]);
+    }, [offScreenCtx, brushSize, lastBrushSize]);
 
     useEffect(() => {
       const image = new Image();
       image.crossOrigin = "anonymous";
       image.src = url;
+
       image.onload = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -191,8 +191,8 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
           offScreenContext.lineWidth = brushSize;
           offScreenContext.strokeStyle = "rgba(255, 255, 255, 1)";
           offScreenContext.clearRect(0, 0, canvas.width, canvas.height);
-          setOffScreenCtx(offScreenContext);
 
+          setOffScreenCtx(offScreenContext);
           context.clearRect(0, 0, canvas.width, canvas.height);
           setCtx(context);
 
@@ -219,6 +219,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
+
         return {
           x: (e.clientX - rect.left) * scaleX,
           y: (e.clientY - rect.top) * scaleY,
@@ -231,6 +232,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       (e: React.MouseEvent<HTMLCanvasElement>) => {
         const { x, y } = getPointerCoords(e);
         setMousePos({ x, y });
+
         if (isDrawing && offScreenCtx) {
           offScreenCtx.lineWidth = brushSize;
           offScreenCtx.lineTo(x, y);
@@ -246,8 +248,10 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
     const startDrawing = useCallback(
       (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!offScreenCtx) return;
+
         setIsDrawing(true);
         const { x, y } = getPointerCoords(e);
+
         offScreenCtx.beginPath();
         offScreenCtx.moveTo(x, y);
         offScreenCtx.lineWidth = brushSize;
@@ -258,6 +262,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
 
     const stopDrawing = useCallback(() => {
       if (!isDrawing || !offScreenCtx || !offScreenCanvasRef.current) return;
+
       setIsDrawing(false);
       const mask = offScreenCtx.getImageData(
         0,
@@ -266,6 +271,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         offScreenCanvasRef.current.height
       );
       saveState(mask);
+
       if (mousePos) updateMainCanvas(true, mousePos.x, mousePos.y);
     }, [isDrawing, offScreenCtx, mousePos, saveState, updateMainCanvas]);
 
@@ -294,16 +300,20 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
     }, [isDrawing, offScreenCtx, updateMainCanvas, saveState]);
 
     const undo = useCallback(() => {
+      if (!offScreenCtx || !offScreenCanvasRef.current) return;
+
       const prev = undoState();
-      if (prev && offScreenCtx) {
+      if (prev) {
         offScreenCtx.putImageData(prev, 0, 0);
         updateMainCanvas(mousePos !== null, mousePos?.x, mousePos?.y);
       }
     }, [offScreenCtx, undoState, updateMainCanvas, mousePos]);
 
     const redo = useCallback(() => {
+      if (!offScreenCtx || !offScreenCanvasRef.current) return;
+
       const next = redoState();
-      if (next && offScreenCtx) {
+      if (next) {
         offScreenCtx.putImageData(next, 0, 0);
         updateMainCanvas(mousePos !== null, mousePos?.x, mousePos?.y);
       }
@@ -311,6 +321,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
 
     const clearCanvas = useCallback(() => {
       if (!ctx || !offScreenCtx || !canvasRef.current) return;
+
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       offScreenCtx.clearRect(
         0,
@@ -318,6 +329,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         canvasRef.current.width,
         canvasRef.current.height
       );
+
       const blank = offScreenCtx.getImageData(
         0,
         0,
@@ -325,6 +337,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         canvasRef.current.height
       );
       clearHistory(blank);
+
       if (mousePos) updateMainCanvas(true, mousePos.x, mousePos.y);
     }, [
       ctx,
