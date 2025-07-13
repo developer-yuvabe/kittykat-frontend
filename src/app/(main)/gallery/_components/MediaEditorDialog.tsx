@@ -550,6 +550,7 @@ export function MediaEditorDialog({
           onPointerDownOutside={(e) => {
             if (showConfirmDialog) e.preventDefault();
           }}
+          onOpenAutoFocus={(e) => e.preventDefault()}
           className="p-4 h-[100dvh] w-[100dvw] max-w-[100dvw]! min-w-full rounded-none shadow-xl overflow-hidden flex flex-col justify-between"
         >
           <DialogHeader className="px-6 py-4 mb-0 pb-0">
