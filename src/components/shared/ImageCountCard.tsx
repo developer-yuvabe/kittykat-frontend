@@ -136,11 +136,11 @@ export function ImageCountCard({
               )}
             </div>
           </TooltipTrigger>
-          {hasUnsavedChanges && (
-            <TooltipContent side="top">
-              You have unsaved changes. Save them before refreshing.
-            </TooltipContent>
-          )}
+          <TooltipContent side="top">
+            {hasUnsavedChanges
+              ? "You have unsaved changes. Save them before refreshing."
+              : "Add 1 more image to the moodboard layout"}
+          </TooltipContent>
         </Tooltip>
       )}
     </div>

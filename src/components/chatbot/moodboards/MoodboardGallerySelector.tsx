@@ -29,6 +29,7 @@ export function MoodboardGallerySelector({
   setNoOfImagesForMoodboard: (count: number) => void;
   noOfImagesForMoodboard: number;
   assetsLength: number;
+  handleSaveChanges: () => Promise<void>;
 }) {
   const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
     null | "model" | "product" | "all-media"
@@ -52,7 +53,9 @@ export function MoodboardGallerySelector({
 
             <button
               type="button"
-              onClick={() => setMediaLibraryOpen("all-media")}
+              onClick={() => {
+                setMediaLibraryOpen("all-media");
+              }}
               className="inline-flex items-center space-x-12 border-2 text-gray-700 rounded-md px-3 py-3 text-sm font-medium disabled:opacity-50"
               style={{ borderColor: "#7F55E0" }}
               disabled={isDisabled}

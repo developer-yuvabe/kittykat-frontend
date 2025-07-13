@@ -512,6 +512,7 @@ function MoodboardLayout({
                           }
                           imageCount={noOfImagesForMoodboard}
                           onRefresh={async () => {
+                            handleSaveChanges();
                             if (selectedBrandId) {
                               const newCount = noOfImagesForMoodboard + 1;
 
@@ -528,7 +529,7 @@ function MoodboardLayout({
                             }
                           }}
                           onChange={setNoOfImagesForMoodboard}
-                          hasUnsavedChanges={hasUnsavedChanges}
+                          hasUnsavedChanges={false}
                         />
                         <MoodboardGallerySelector
                           brandId={brandId}
@@ -541,6 +542,7 @@ function MoodboardLayout({
                           setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                           noOfImagesForMoodboard={noOfImagesForMoodboard}
                           assetsLength={moodboard.moodboard_assets.length}
+                          handleSaveChanges={handleSaveChanges}
                         />
                       </div>
 
