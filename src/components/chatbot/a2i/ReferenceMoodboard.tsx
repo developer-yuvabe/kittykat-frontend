@@ -28,7 +28,7 @@ type ReferenceMoodboardProps = {
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
   form: UseFormReturn<any>;
-  formRef: RefObject<HTMLFormElement | null>;
+  formRef: RefObject<HTMLDivElement | null>;
 };
 
 const ReferenceMoodboard = ({
@@ -275,8 +275,6 @@ const ReferenceMoodboard = ({
                         if (formRef.current) {
                           formRef.current.scrollIntoView({
                             behavior: "smooth",
-                            block: "start",
-                            inline: "end",
                           });
                         }
                       }}
