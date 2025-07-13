@@ -84,6 +84,7 @@ export const A2iImagesWrapper = ({
               vtonParameters: generation.vton_parameters,
               remixParameters: generation.remix_parameters,
               video: generation.video,
+              isNSFW: generation.is_nsfw_detected || false,
             },
           ];
         }
@@ -97,6 +98,7 @@ export const A2iImagesWrapper = ({
           vtonParameters: generation.vton_parameters,
           remixParameters: generation.remix_parameters,
           video: generation.video,
+          isNSFW: generation.is_nsfw_detected || false,
         }));
       }
     );
