@@ -328,7 +328,7 @@ export function MediaLibrary({
       </div>
 
       {/* Show no brands message */}
-      {hasNoBrands ? (
+      {hasNoBrands && !galleryActions.brandsLoading ? (
         <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
           <h2 className="text-xl font-semibold text-gray-800">
             No brand access or onboarded brands
@@ -447,15 +447,16 @@ export function MediaLibrary({
                     {galleryActions.galleryStatus === "success" &&
                       galleryItems.length > 0 && (
                         <div>
-                          <MediaGrid
-                            galleryActions={galleryActions}
-                            selectedItems={currentlySelectedItems}
-                            onSelect={handleSelect}
-                            isMultiSelect={isMultiSelect}
-                            inSelectionGalleryIds={inSelectionGalleryIds}
-                            maxSelectionCount={maxSelectionCount}
-                          />
-
+                          {selectedBrand && (
+                            <MediaGrid
+                              galleryActions={galleryActions}
+                              selectedItems={currentlySelectedItems}
+                              onSelect={handleSelect}
+                              isMultiSelect={isMultiSelect}
+                              inSelectionGalleryIds={inSelectionGalleryIds}
+                              maxSelectionCount={maxSelectionCount}
+                            />
+                          )}
                           {/* Infinite scroll loading indicator */}
                           {galleryActions.hasNextPage && (
                             <div
