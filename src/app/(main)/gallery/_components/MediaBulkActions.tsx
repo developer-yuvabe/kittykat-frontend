@@ -110,6 +110,12 @@ export function MediaBulkActions({
     !hasMultipleStatuses &&
     currentStatus === "in_review";
 
+  // Status restrictions for client users
+  const canClientRequest =
+    user?.role?.id === UserRoleId.USER &&
+    !hasMultipleStatuses &&
+    currentStatus === "draft";
+
   const handleBulkDeleteClick = () => {
     if (selectedItems.length > 0) {
       setIsDialogOpen(true);
@@ -223,6 +229,16 @@ export function MediaBulkActions({
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const getBatchRequestTooltip = () => {
+    if (hasMultipleStatuses) {
+      return "Cannot create batch request: selected items have different statuses";
+    }
+    if (currentStatus !== "draft") {
+      return "Batch request can only be created for items with 'draft' status";
+    }
+    return "";
   };
 
   const resetCommentDialog = () => {
@@ -639,13 +655,31 @@ export function MediaBulkActions({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-2 m-0 w-40">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-sm"
-                  onClick={() => setIsCommentDialogOpen(true)}
-                >
-                  Batch Request
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-full">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-sm"
+                          disabled={!canClientRequest}
+                          onClick={() =>
+                            canClientRequest
+                              ? setIsCommentDialogOpen(true)
+                              : null
+                          }
+                        >
+                          Batch Request
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {!canClientRequest && (
+                      <TooltipContent side="left">
+                        <p>{getBatchRequestTooltip()}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
 
                 <TooltipProvider>
                   <Tooltip>
@@ -661,12 +695,12 @@ export function MediaBulkActions({
                               : handleStatusChange("approved")
                           }
                         >
-                          Change Status
+                          Batch Approve
                         </Button>
                       </div>
                     </TooltipTrigger>
                     {!canClientChangeStatus && (
-                      <TooltipContent>
+                      <TooltipContent side="left">
                         <p>
                           {hasMultipleStatuses
                             ? "Cannot change status: selected items have different statuses"
