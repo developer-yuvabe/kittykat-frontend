@@ -60,7 +60,7 @@ export function ImageCountCard({
   };
 
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row ">
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="relative">
