@@ -257,6 +257,7 @@ const A2iImageInput = ({
                 param={param}
                 form={form}
                 type="initial"
+                rules={selectedModel.rules}
               />
             );
           })}
@@ -284,6 +285,7 @@ const A2iImageInput = ({
                       param={advParam}
                       form={form}
                       type="advanced"
+                      rules={selectedModel.rules}
                     />
                   );
                 })}

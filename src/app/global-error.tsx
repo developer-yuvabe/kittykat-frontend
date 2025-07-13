@@ -27,7 +27,7 @@ export default function Error({
         <img
           src={errorGif.src}
           alt="Error Animation"
-          className="w-[600px] max-w-full object-contain"
+          className="w-64 h-64 object-contain scale-105"
         />
       </motion.div>
 
@@ -44,7 +44,8 @@ export default function Error({
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        Oops! Something broke. We couldn't load the necessary resources. Please try again later 🐾.
+        Oops! Something broke. We couldn&apos;t load the necessary resources.
+        Please try again later 🐾.
       </motion.h1>
 
       {/* Reset Button */}

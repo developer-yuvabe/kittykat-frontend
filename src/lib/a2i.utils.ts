@@ -97,6 +97,30 @@ export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
     background: "auto",
     moderation: "auto",
   },
+  rules: [
+    {
+      name: "background",
+      value: "transparency",
+      hintText: "Transparency is not supported for JPEG format",
+      disableIf: [
+        {
+          name: "output_format",
+          value: "jpeg",
+        },
+      ],
+    },
+    {
+      name: "output_format",
+      value: "jpeg",
+      hintText: "Transparenct background is not supported for JPEG format",
+      disableIf: [
+        {
+          name: "background",
+          value: "transparency",
+        },
+      ],
+    },
+  ],
 };
 
 export const fluxDevModel: ModelInformation<typeof fluxDevSchema> = {

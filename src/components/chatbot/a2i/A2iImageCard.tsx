@@ -41,6 +41,7 @@ export type A2iImageCardProps = {
   isDragging?: boolean;
   style?: CSSProperties;
   disableDrag?: boolean;
+  isNSFW: boolean;
 };
 
 const A2iImageCard = ({
@@ -56,6 +57,7 @@ const A2iImageCard = ({
   style,
   disableDrag,
   video,
+  isNSFW,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(image?.is_liked || false);
@@ -254,6 +256,11 @@ const A2iImageCard = ({
             {status === "failed" && (
               <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
                 Failed
+              </Badge>
+            )}
+            {status === "failed" && isNSFW && (
+              <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground absolute bottom-4">
+                NSFW detected
               </Badge>
             )}
           </div>

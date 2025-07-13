@@ -20,14 +20,26 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { AdvancedParameter, InitialParameter } from "@/types/a2i-media.types";
-import { FieldValues, UseFormReturn } from "react-hook-form";
+import {
+  AdvancedParameter,
+  FieldRule,
+  InitialParameter,
+} from "@/types/a2i-media.types";
+import { InfoIcon } from "lucide-react";
+import { FieldValues, UseFormReturn, useWatch } from "react-hook-form";
 
 type FieldParam = InitialParameter | AdvancedParameter;
 
 type DynamicFormFieldProps<T extends FieldValues> = {
   param: FieldParam;
+  rules?: FieldRule[];
   form: UseFormReturn<T>;
   type: "initial" | "advanced";
 };
@@ -48,7 +60,33 @@ export function DynamicFormField<T extends FieldValues>({
   param,
   form,
   type = "initial",
+  rules,
 }: DynamicFormFieldProps<T>) {
+  const watchedValues = useWatch({
+    control: form.control,
+  });
+
+  const getShouldDisableOption = (
+    formName: string,
+    value: string
+  ): { disabled: boolean; hintText?: string } => {
+    if (!rules) return { disabled: false };
+
+    const matchingRule = rules.find(
+      (r) => r.name === formName && r.value === value
+    );
+    if (!matchingRule) return { disabled: false };
+
+    const shouldDisable = matchingRule.disableIf.some((cond) => {
+      return watchedValues?.[cond.name] === cond.value;
+    });
+
+    return {
+      disabled: shouldDisable,
+      hintText: shouldDisable ? matchingRule.hintText : undefined,
+    };
+  };
+
   if (param.disabled) {
     return <></>;
   }
@@ -166,15 +204,47 @@ export function DynamicFormField<T extends FieldValues>({
                       "w-max": type === "initial",
                     })}
                   >
-                    {param.options?.map(({ value, label }) => (
-                      <SelectItem
-                        key={value.toString()}
-                        value={value.toString()}
-                        className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
-                      >
-                        <FormLabel className="font-normal">{label}</FormLabel>
-                      </SelectItem>
-                    ))}
+                    {param.options?.map(({ value, label }) => {
+                      const { disabled, hintText } = getShouldDisableOption(
+                        param.formName,
+                        value.toString()
+                      );
+
+                      if (disabled) {
+                        return (
+                          <div
+                            key={value.toString()}
+                            className="focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none pointer-events-auto opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+                          >
+                            <FormLabel className="font-normal">
+                              {label}
+
+                              {hintText && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger className="cursor-not-allowed self-end">
+                                      <InfoIcon className="w-3 h-3" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>{hintText}</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </FormLabel>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <SelectItem
+                          key={value.toString()}
+                          value={value.toString()}
+                          className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
+                          title={hintText}
+                        >
+                          <FormLabel className="font-normal">{label}</FormLabel>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </FormItem>

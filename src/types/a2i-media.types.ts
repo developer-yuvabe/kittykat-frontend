@@ -67,6 +67,18 @@ export type AdvancedParameter =
 // For array usage:
 export type InitialParameters = InitialParameter[];
 
+type DisableCondition = {
+  name: string;
+  value: string;
+};
+
+export type FieldRule = {
+  name: string;
+  value: string;
+  hintText?: string;
+  disableIf: DisableCondition[];
+};
+
 export type ModelInformation<TSchema extends ZodTypeAny> = {
   id: string;
   name: string;
@@ -77,4 +89,5 @@ export type ModelInformation<TSchema extends ZodTypeAny> = {
   zodSchema: TSchema;
   defaultValues: z.infer<TSchema>;
   prefix?: string;
+  rules?: FieldRule[];
 };

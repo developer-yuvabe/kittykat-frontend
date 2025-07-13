@@ -84,6 +84,7 @@ export const A2iImagesWrapper = ({
               vtonParameters: generation.vton_parameters,
               remixParameters: generation.remix_parameters,
               video: generation.video,
+              isNSFW: generation.is_nsfw_detected || false,
             },
           ];
         }
@@ -97,6 +98,7 @@ export const A2iImagesWrapper = ({
           vtonParameters: generation.vton_parameters,
           remixParameters: generation.remix_parameters,
           video: generation.video,
+          isNSFW: generation.is_nsfw_detected || false,
         }));
       }
     );
@@ -211,7 +213,7 @@ export const A2iImagesWrapper = ({
   const customActions = useMemo(() => <A2iImageModelSelector />, []);
   const contextValue = useMemo(() => ({ data: {} }), []);
 
-  const INITIAL_IMAGE_PLACEHOLDER = 16;
+  const INITIAL_IMAGE_PLACEHOLDER = 12;
 
   return (
     <ContentSection
@@ -221,7 +223,7 @@ export const A2iImagesWrapper = ({
       showPin={false}
       context={contextValue}
       content={
-        <div className="relative h-[48rem] bg-muted rounded-md">
+        <div className="relative h-[50vh] bg-muted rounded-md">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

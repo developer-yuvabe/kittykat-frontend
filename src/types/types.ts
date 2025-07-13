@@ -149,6 +149,7 @@ export type A2iImageGeneration = {
     reference_images: string[];
   };
   video?: A2iVideoDetail;
+  is_nsfw_detected?: boolean;
 };
 
 export type ThreadA2iImage = {
