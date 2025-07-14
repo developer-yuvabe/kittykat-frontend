@@ -153,7 +153,9 @@ export function MediaEditorDialog({
           fileName,
           file.type,
           "ask-kittykat",
-          file
+          file,
+          item?.brand_id || null,
+          item?.campaign_id || null
         );
       });
 

@@ -245,6 +245,20 @@ export function MediaBulkActions({
         )
       );
 
+      // const uploadedUrls = await Promise.all(
+      //   attachments.map((file, index) => {
+      //     const item = selectedItems[index];
+      //     return uploadFileAndReturnUrl(
+      //       file.name,
+      //       file.type,
+      //       "ask-kittykat",
+      //       file,
+      //       item.brand_id,
+      //       item.campaign_id ?? undefined
+      //     );
+      //   })
+      // );
+
       const commentPayload = {
         text: `[batch-comment] ${comment.trim()}`,
         id: v4(),

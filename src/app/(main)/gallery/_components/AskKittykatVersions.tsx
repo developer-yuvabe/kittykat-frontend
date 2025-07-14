@@ -34,6 +34,7 @@ const AskKittykatVersions = ({
   const addVersion = async (uploadedUrl: string) => {
     const galleryItem: GalleryItem = {
       brand_id: item.brand_id,
+      campaign_id: item.campaign_id,
       asset_url: uploadedUrl,
       asset_source: item.asset_source,
       asset_type: "image",
@@ -119,7 +120,11 @@ const AskKittykatVersions = ({
             </Button>
           ))}
           {user?.role.id === UserRoleId.ADMIN && (
-            <AddVersion addVersion={addVersion}>
+            <AddVersion
+              addVersion={addVersion}
+              brandId={item.brand_id}
+              campaignId={item.campaign_id}
+            >
               <Button size="sm" variant={"ghost"} className="flex-1">
                 <Plus className="w-6 h-6" />
               </Button>
