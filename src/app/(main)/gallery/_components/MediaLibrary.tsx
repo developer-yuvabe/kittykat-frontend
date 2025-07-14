@@ -184,10 +184,12 @@ export function MediaLibrary({
       brands: currentFilters.brands,
       campaigns: currentFilters.campaigns,
       // Also preserve workflow_status if it came from URL params
-      workflow_status:
-        initialWorkflowStatus.length > 0
-          ? initialWorkflowStatus
-          : initialFilters.workflow_status,
+      //(If needed)
+
+      // workflow_status:
+      //   initialWorkflowStatus.length > 0
+      //     ? initialWorkflowStatus
+      //     : initialFilters.workflow_status,
     }));
   };
 
