@@ -25,7 +25,7 @@ const axiosInstance = axios.create({
   baseURL: `${
     AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT] ||
     env.NEXT_PUBLIC_API_BASE_URL_DEV
-  }/api/v1/kittykat-agent`,
+  }/api/v1`,
 });
 
 axiosInstance.interceptors.request.use(
