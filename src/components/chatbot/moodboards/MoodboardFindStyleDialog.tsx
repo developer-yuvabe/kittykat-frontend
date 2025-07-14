@@ -109,13 +109,14 @@ export function MoodboardFindStyleDialog({
                       .filter((opt) => selectedOptions.includes(opt.id))
                       .map((opt) => (
                         <li key={opt.id}>
+                          Check{" "}
                           <a
                             href={opt.editValue || opt.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 underline hover:text-blue-800"
                           >
-                            {opt.name}
+                            {opt.id.charAt(0).toUpperCase() + opt.id.slice(1)}
                           </a>
                         </li>
                       ))}

@@ -1,14 +1,18 @@
 // components/MoodboardVisualSection.tsx
 
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, Globe } from "lucide-react";
 import { MoodboardVisualImages } from "./MoodboardVisualImages";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 
 import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { MoodboardInformation, ThreadCampaign } from "@/types/types";
-import { PinterestIcon, InstagramIcon } from "@/components/ui/custom-icon";
+import {
+  PinterestIcon,
+  InstagramIcon,
+  FacebookIcon,
+} from "@/components/ui/custom-icon";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import {
@@ -191,8 +195,20 @@ export const MoodboardVisualSectionHeader = ({
       <div className="flex justify-between">
         <div className="font-semibold flex flex-row gap-x-2">
           {`${currentMoodboard.visual_style_images.length} images of ${brandName} found...`}
-          <PinterestIcon />
-          <InstagramIcon />
+          {currentMoodboard.visual_sources
+            ?.filter((src) => src.selected)
+            .map((src) => {
+              switch (src.platform.toLowerCase()) {
+                case "pinterest":
+                  return <PinterestIcon key="pinterest" />;
+                case "instagram":
+                  return <InstagramIcon key="instagram" />;
+                case "facebook":
+                  return <FacebookIcon key="facebook" />;
+                default:
+                  return <Globe key={src.platform} />;
+              }
+            })}
         </div>
 
         <Button
