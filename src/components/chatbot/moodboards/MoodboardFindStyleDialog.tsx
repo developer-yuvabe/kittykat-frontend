@@ -14,6 +14,12 @@ import {
 import { Loader } from "lucide-react";
 import { MoodboardInformation, ThreadCampaign } from "@/types/types";
 import { UploadedImage } from "@/types/moodboard.types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SocialOption {
   id: string;
@@ -30,6 +36,7 @@ interface MoodboardFindStyleDialogProps {
   socialOptions: SocialOption[];
   isAnalysisInProgress: () => boolean;
   handleFindStyle: () => void;
+  imageCount: number;
 }
 
 export function MoodboardFindStyleDialog({
@@ -40,6 +47,7 @@ export function MoodboardFindStyleDialog({
   socialOptions,
   isAnalysisInProgress,
   handleFindStyle,
+  imageCount,
 }: MoodboardFindStyleDialogProps) {
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
 
@@ -57,22 +65,36 @@ export function MoodboardFindStyleDialog({
   return (
     <div className="mt-2">
       <AlertDialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <AlertDialogTrigger asChild>
-          <Button
-            className="w-full"
-            onClick={() => setShowVerifyDialog(true)}
-            disabled={isButtonDisabled}
-          >
-            {isAnalysisInProgress() ? (
-              <span className="flex items-center gap-2">
-                <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
-                Analyzing...
-              </span>
-            ) : (
-              "Find your style!"
+        <TooltipProvider>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <div className="w-full">
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className="w-full"
+                    onClick={() => setShowVerifyDialog(true)}
+                    disabled={isButtonDisabled || imageCount < 10}
+                  >
+                    {isAnalysisInProgress() ? (
+                      <span className="flex items-center gap-2">
+                        <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                        Analyzing...
+                      </span>
+                    ) : (
+                      "Find your style!"
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+              </div>
+            </TooltipTrigger>
+            {imageCount < 10 && (
+              <TooltipContent side="top">
+                At least 10 images are required for analysis and moodboard
+                creation
+              </TooltipContent>
             )}
-          </Button>
-        </AlertDialogTrigger>
+          </Tooltip>
+        </TooltipProvider>
 
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -455,9 +455,23 @@ export const MoodboardSection: React.FC<{
     currentMoodboard?.title,
   ]);
 
+  const totalImageCount =
+    uploadedImages.length +
+    selectedOptions.reduce((sum, id) => {
+      const key = `${id}_limit` as keyof LimitsState;
+      return sum + (limits[key] ?? 0);
+    }, 0);
+
   async function handleFindStyle() {
     if (!selectedBrandId || !currentCampaign?.id) {
       toast.error("Missing brand or campaign information");
+      return;
+    }
+
+    if (totalImageCount < 10) {
+      toast.error(
+        "At least 10 images are required for analysis and moodboard creation."
+      );
       return;
     }
 
@@ -871,6 +885,7 @@ export const MoodboardSection: React.FC<{
                     socialOptions={socialOptions}
                     isAnalysisInProgress={isAnalysisInProgress}
                     handleFindStyle={handleFindStyle}
+                    imageCount={totalImageCount}
                   />
                 </div>
               }
