@@ -33,6 +33,8 @@ import {
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/user.store";
+import { UserRoleId } from "@/types/user.types";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -321,6 +323,8 @@ export function MediaLibrary({
   // Check if there are no brands available
   const hasNoBrands = (galleryActions.brandsData?.brands?.length ?? 0) === 0;
 
+  const { user } = useUserStore();
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
       <div className="flex justify-between mb-2">
@@ -394,23 +398,26 @@ export function MediaLibrary({
                 value={activeTab}
                 className="p-3 rounded-3xl bg-white mt-0"
               >
-                <MediaUploadDropzone
-                  activeTab={activeTab}
-                  galleryFilters={{
-                    assetType: activeTab,
-                    favorites,
-                    source,
-                    creator,
-                    searchQuery,
-                    selectedFilters,
-                  }}
-                  selectedBrand={selectedBrand}
-                  setSelectedBrand={setSelectedBrand}
-                  brands={galleryActions.brandsData?.brands || []}
-                  brandsLoading={galleryActions.brandsLoading}
-                  selectedCampaignId={selectedCampaignId}
-                  selecteMoodboardId={moodboardId}
-                />
+                {(activeTab !== "a2i-media" ||
+                  user?.role.id === UserRoleId.ADMIN) && (
+                  <MediaUploadDropzone
+                    activeTab={activeTab}
+                    galleryFilters={{
+                      assetType: activeTab,
+                      favorites,
+                      source,
+                      creator,
+                      searchQuery,
+                      selectedFilters,
+                    }}
+                    selectedBrand={selectedBrand}
+                    setSelectedBrand={setSelectedBrand}
+                    brands={galleryActions.brandsData?.brands || []}
+                    brandsLoading={galleryActions.brandsLoading}
+                    selectedCampaignId={selectedCampaignId}
+                    selecteMoodboardId={moodboardId}
+                  />
+                )}
 
                 <div className="flex flex-col md:flex-row gap-4">
                   <div
