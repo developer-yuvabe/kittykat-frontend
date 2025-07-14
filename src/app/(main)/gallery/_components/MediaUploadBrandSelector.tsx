@@ -237,7 +237,7 @@ export function MediaUploadBrandSelector({
                     <CommandGroup>
                       {/* Brand Header */}
                       <CommandItem
-                        value={`brand-${brand.brand_id}-${brandIndex}`} // Unique value for brand
+                        value={`${brand.brand_name}-${brandIndex}`}
                         onSelect={() => handleBrandSelect(brand)}
                         className="flex items-center gap-3 py-3 cursor-pointer"
                       >

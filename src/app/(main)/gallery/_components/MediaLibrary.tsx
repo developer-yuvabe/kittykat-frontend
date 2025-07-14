@@ -127,14 +127,28 @@ export function MediaLibrary({
   const galleryItems = galleryActions.galleryItems;
 
   useEffect(() => {
-    if (initialBrandId && initialWorkflowStatus) {
-      setSelectedFilters((p) => ({
-        ...p,
-        workflow_status: initialWorkflowStatus,
-        brand_id: initialBrandId,
+    if (initialBrandId || initialWorkflowStatus.length > 0) {
+      // Find the brand from the brands data
+      const brandToSelect = galleryActions.brandsData?.brands.find(
+        (b) => b.brand_id === initialBrandId
+      );
+
+      if (brandToSelect) {
+        setSelectedBrand(brandToSelect);
+      }
+
+      setSelectedFilters((prev) => ({
+        ...prev,
+        workflow_status:
+          initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
+        brands: initialBrandId ? [initialBrandId] : prev.brands,
       }));
     }
-  }, [initialWorkflowStatus, initialBrandId]);
+  }, [
+    initialWorkflowStatus,
+    initialBrandId,
+    galleryActions.brandsData?.brands,
+  ]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();

@@ -88,8 +88,8 @@ export default function BrandSelector() {
               <CommandGroup>
                 {sortedBrands.map((brand, index) => (
                   <CommandItem
-                    key={`${brand.id}-${index}`} // Unique key for React rendering
-                    value={`${brand.id}-${index}`} // Unique value for Command hover/selection
+                    key={`${brand.id}-${index}`}
+                    value={`${brand.name}-${index}`}
                     onSelect={() => handleBrandSelect(brand.id)}
                     className="flex items-center justify-between group gap-0"
                     onClick={(e) => {
