@@ -4,7 +4,6 @@ import { ERROR_MESSAGES } from "./constants";
 import { FirebaseError } from "firebase/app";
 import { AxiosResponse } from "axios";
 import { AppConfig } from "@/config/app.config";
-import { env } from "@/config/env";
 import { toast } from "sonner";
 
 export function cn(...inputs: ClassValue[]) {
@@ -108,9 +107,7 @@ export function isValidUrl(url: string): boolean {
 }
 
 export function getSSEBaseUrl(): string {
-  return `${
-    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT]
-  }/api/v1/kittykat-agent/sse`;
+  return `${AppConfig.API_BASE_URL}/api/v1/sse`;
 }
 
 export const handleDownloadImage = async (

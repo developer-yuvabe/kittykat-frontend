@@ -92,6 +92,7 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
         email: data.email,
         role: data.role,
         brand_access: data.brandAccess,
+        base_url: window.location.origin,
       })
     );
     return response;

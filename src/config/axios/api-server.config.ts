@@ -2,7 +2,6 @@ import axios, { AxiosHeaders, InternalAxiosRequestConfig } from "axios";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { clientConfig, serverConfig } from "../firebase.config";
-import { env } from "../env";
 import { AppConfig } from "../app.config";
 
 const getServerSideToken = async () => {
@@ -22,10 +21,7 @@ const getServerSideToken = async () => {
 };
 
 const axiosInstance = axios.create({
-  baseURL: `${
-    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT] ||
-    env.NEXT_PUBLIC_API_BASE_URL_DEV
-  }/api/v1/kittykat-agent`,
+  baseURL: `${AppConfig.API_BASE_URL}/api/v1`,
 });
 
 axiosInstance.interceptors.request.use(

@@ -20,6 +20,7 @@ import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
 import { Loader2 } from "lucide-react";
 import { client } from "./langgraph.client";
+import { AppConfig } from "@/config/app.config";
 
 export type StateType = {
   messages: Message[];
@@ -145,7 +146,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <StreamSession
       apiKey={env.NEXT_PUBLIC_LANGSMITH_API_KEY}
-      apiUrl={env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER}
+      apiUrl={AppConfig.KITTYKAT_AGENT_SERVER}
       assistantId={KITTYKAT_AGENT_ID}
     >
       {children}

@@ -22,8 +22,6 @@ const page = () => {
     const logout = async () => {
       await signOut(auth);
       fetch("/api/logout");
-      // reload the page to ensure the user is logged out
-      window.location.reload();
     };
 
     logout();
@@ -50,6 +48,9 @@ const page = () => {
           </CardHeader>
           <CardFooter>
             <Link
+              onClick={() => {
+                window.location.reload();
+              }}
               href={"/login"}
               className={cn(
                 buttonVariants({
