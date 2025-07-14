@@ -11,7 +11,7 @@ export const gptImage1Schema = z
     output_format: z.enum(["png", "webp", "jpeg"]),
     quality: z.enum(["low", "medium", "high"]),
     output_compression: z.number().min(0).max(100),
-    background: z.enum(["auto", "transparency", "opaque"]),
+    background: z.enum(["auto", "transparent", "opaque"]),
     moderation: z.enum(["auto", "low"]),
   })
   .superRefine((data, ctx) => {
@@ -22,7 +22,7 @@ export const gptImage1Schema = z
         message: "PNG must have output_compression set to 100%",
       });
     }
-    if (data.output_format === "jpeg" && data.background === "transparency") {
+    if (data.output_format === "jpeg" && data.background === "transparent") {
       ctx.addIssue({
         path: ["background"],
         code: z.ZodIssueCode.custom,

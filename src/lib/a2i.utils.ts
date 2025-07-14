@@ -70,7 +70,7 @@ export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
       type: "select",
       options: [
         { label: "Auto", value: "auto" },
-        { label: "Transparency", value: "transparency" },
+        { label: "Transparent", value: "transparent" },
         { label: "Opaque", value: "opaque" },
       ],
     },
@@ -100,7 +100,7 @@ export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
   rules: [
     {
       name: "background",
-      value: "transparency",
+      value: "transparent",
       hintText: "Transparency is not supported for JPEG format",
       disableIf: [
         {
@@ -112,11 +112,11 @@ export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
     {
       name: "output_format",
       value: "jpeg",
-      hintText: "Transparenct background is not supported for JPEG format",
+      hintText: "Transparency is not supported for JPEG format",
       disableIf: [
         {
           name: "background",
-          value: "transparency",
+          value: "transparent",
         },
       ],
     },
