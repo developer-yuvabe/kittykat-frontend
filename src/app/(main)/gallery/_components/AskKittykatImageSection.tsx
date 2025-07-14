@@ -22,6 +22,7 @@ interface AskKittykatImageSectionProps {
   remixHistory?: ReturnType<typeof useUndoRedoRemix>;
   brushSize?: number;
   remixImageRef?: React.RefObject<RemixImageHandle | null>;
+  revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
 }
 
 const VideoPlayer: React.FC<{
@@ -133,6 +134,7 @@ export const AskKittykatImageSection: React.FC<
   remixHistory,
   brushSize = 20,
   remixImageRef,
+  revalidateGalleryItemVersions,
 }) => {
   const isVideo = item.asset_type === "video";
 
@@ -142,7 +144,13 @@ export const AskKittykatImageSection: React.FC<
         <VideoPlayer
           src={item.asset_url}
           isLiked={item.is_favourite ?? false}
-          onLike={() => galleryActions.toggleFavorite(item.id)}
+          onLike={() => {
+            galleryActions.toggleFavorite(item.id, {
+              onSuccess: (updatedItem) => {
+                revalidateGalleryItemVersions(updatedItem);
+              },
+            });
+          }}
         />
       );
     }
@@ -176,7 +184,13 @@ export const AskKittykatImageSection: React.FC<
         className="object-contain rounded-lg max-h-[80vh]"
         variant="overlay"
         isLiked={item.is_favourite}
-        onLike={() => galleryActions.toggleFavorite(item.id)}
+        onLike={() => {
+          galleryActions.toggleFavorite(item.id, {
+            onSuccess: (updatedItem) => {
+              revalidateGalleryItemVersions(updatedItem);
+            },
+          });
+        }}
       />
     );
   };

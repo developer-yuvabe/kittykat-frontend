@@ -580,6 +580,7 @@ export function MediaEditorDialog({
                   remixHistory={remixHistory}
                   brushSize={brushSize}
                   remixImageRef={remixImageRef}
+                  revalidateGalleryItemVersions={revalidateGalleryItemVersions}
                 />
               )}
               {currentItem && (
@@ -768,7 +769,7 @@ export function MediaEditorDialog({
                         onAskKittykat={handleAskKittyKat}
                         galleryActions={galleryActions}
                         // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
-                        item={currentItem}
+                        item={item!}
                         revalidateGalleryItemVersions={
                           revalidateGalleryItemVersions
                         }
