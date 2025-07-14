@@ -232,12 +232,12 @@ export function MediaUploadBrandSelector({
               <CommandEmpty>No brands or campaigns found.</CommandEmpty>
 
               <div className="max-h-80 overflow-y-auto">
-                {filteredBrands.map((brand) => (
-                  <div key={brand.brand_id}>
+                {filteredBrands.map((brand, brandIndex) => (
+                  <div key={`${brand.brand_id}-${brandIndex}`}>
                     <CommandGroup>
                       {/* Brand Header */}
                       <CommandItem
-                        value={`brand-${brand.brand_name}`}
+                        value={`brand-${brand.brand_id}-${brandIndex}`} // Unique value for brand
                         onSelect={() => handleBrandSelect(brand)}
                         className="flex items-center gap-3 py-3 cursor-pointer"
                       >

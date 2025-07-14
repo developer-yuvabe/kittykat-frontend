@@ -19,7 +19,7 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function BrandSelector() {
   const { user } = useUserStore();
@@ -41,6 +41,15 @@ export default function BrandSelector() {
       });
     }
   };
+
+  // Memoize the sorted brands array to avoid re-sorting on every render
+  const sortedBrands = useMemo(() => {
+    return [...brands].sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      })
+    );
+  }, [brands]);
 
   return (
     <div className="">
@@ -77,9 +86,10 @@ export default function BrandSelector() {
                 )}
               </CommandEmpty>
               <CommandGroup>
-                {brands.map((brand) => (
+                {sortedBrands.map((brand, index) => (
                   <CommandItem
-                    key={brand.id}
+                    key={`${brand.id}-${index}`} // Unique key for React rendering
+                    value={`${brand.id}-${index}`} // Unique value for Command hover/selection
                     onSelect={() => handleBrandSelect(brand.id)}
                     className="flex items-center justify-between group gap-0"
                     onClick={(e) => {
