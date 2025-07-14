@@ -5,6 +5,7 @@ import { useUserStore } from "@/store/user.store";
 import { UserBrand } from "@/types/user.types";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useGalleryQuery } from "../useGallery";
 
 export const useUserBrands = (userId?: string) => {
   const {
@@ -20,6 +21,8 @@ export const useUserBrands = (userId?: string) => {
     queryKey: ["brands"],
     queryFn: () => fetchUserBrands(user!.id),
   });
+
+  const { brandsRefetch } = useGalleryQuery({});
 
   useEffect(() => {
     if (data) {
@@ -45,6 +48,8 @@ export const useUserBrands = (userId?: string) => {
         setSelectedBrandId(brand.id);
       }
       addBrand(brand);
+
+      brandsRefetch();
       // Set isCreatingBrand to false when a new brand is successfully created
       setIsCreatingBrand(false);
     });

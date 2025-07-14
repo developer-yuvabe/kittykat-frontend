@@ -658,6 +658,7 @@ export const useGalleryQuery = (
     // Queries
     brandsData: brandsQuery.data,
     brandsLoading: brandsQuery.isLoading,
+    brandsRefetch: brandsQuery.refetch,
 
     // Gallery items
     galleryItems,
