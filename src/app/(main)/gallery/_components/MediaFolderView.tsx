@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import type React from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Upload,
@@ -20,6 +21,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -44,7 +46,6 @@ import {
   getStatusIcon,
 } from "@/lib/gallery.utils";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -96,28 +97,12 @@ export function MediaFolderView({
   selecteMoodboardId,
   galleryView = "grid",
 }: UploadDropzoneProps) {
-  console.log("brands", brands);
-
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
-  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-
-  // Determine which items are currently selected for display
-
-  const handleSelect = (id: string, selected: boolean) => {
-    if (selected) {
-      setSelectedItems((prev) => [...prev, id]);
-    } else {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
-    }
-  };
-
-  // Intersection observer for infinite scroll
-  const { ref, inView } = useInView();
 
   // URL state management for campaign selection
   const [selectedCampaignFromUrl, setSelectedCampaignFromUrl] = useQueryState(
@@ -127,11 +112,44 @@ export function MediaFolderView({
     }
   );
 
-  // Use gallery hook to get addToGallery mutation and gallery items
+  // Derive current campaigns from selected brand - this ensures clean state
+  const currentBrandCampaigns = useMemo(() => {
+    return selectedBrand?.campaigns || [];
+  }, [selectedBrand]);
+
+  // Find current campaign from the current brand's campaigns
+  const currentCampaign = useMemo(() => {
+    return currentBrandCampaigns.find((c) => c.id === selectedCampaignFromUrl);
+  }, [currentBrandCampaigns, selectedCampaignFromUrl]);
+
+  // Reset campaign selection when brand changes
+  useEffect(() => {
+    if (selectedBrand) {
+      // Check if current campaign exists in new brand
+      const campaignExists = selectedBrand.campaigns.some(
+        (c) => c.id === selectedCampaignFromUrl
+      );
+
+      if (!campaignExists && selectedCampaignFromUrl) {
+        // Clear campaign selection if it doesn't exist in the new brand
+        setSelectedCampaignFromUrl("");
+      }
+    } else {
+      // Clear campaign selection if no brand is selected
+      setSelectedCampaignFromUrl("");
+    }
+  }, [selectedBrand, selectedCampaignFromUrl, setSelectedCampaignFromUrl]);
+
+  // Clear selected items when brand or campaign changes
+  useEffect(() => {
+    setSelectedItems([]);
+  }, [selectedBrand, selectedCampaignFromUrl]);
+
+  // Use gallery hook with proper filters
   const galleryActions = useGalleryQuery({
     selectedFilters: {
       brands: selectedBrand ? [selectedBrand.brand_id] : [],
-      campaigns: selectedCampaign ? [selectedCampaign] : [],
+      campaigns: selectedCampaignFromUrl ? [selectedCampaignFromUrl] : [],
       moodboards: [],
       product_categories: [],
       asset_types: [],
@@ -142,16 +160,28 @@ export function MediaFolderView({
     },
   });
 
+  // Intersection observer for infinite scroll
+  const { ref, inView } = useInView();
+
   // Get the actual selected items data
   const selectedItemsData = galleryActions.galleryItems.filter((item) =>
     selectedItems.includes(item.id)
   );
 
+  const handleSelect = (id: string, selected: boolean) => {
+    if (selected) {
+      setSelectedItems((prev) => [...prev, id]);
+    } else {
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+    }
+  };
+
   const handleUnselectAll = () => {
     setSelectedItems([]);
   };
+
   // Fetch next page when in view
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       inView &&
       galleryActions.hasNextPage &&
@@ -178,17 +208,39 @@ export function MediaFolderView({
     assetType: "image",
   };
 
-  const handleCampaignSelect = (campaignId: string) => {
-    setSelectedCampaignFromUrl(campaignId);
-    setSelectedCampaign(campaignId);
-  };
+  const handleCampaignSelect = useCallback(
+    (campaignId: string) => {
+      setSelectedCampaignFromUrl(campaignId);
+    },
+    [setSelectedCampaignFromUrl]
+  );
 
   const handleBackToCampaigns = () => {
-    setSelectedCampaign(null);
     setSelectedCampaignFromUrl("");
   };
 
+  const handleBrandChange = (
+    brand: BrandCampaignListResponse["brands"][number] | null
+  ) => {
+    if (setSelectedBrand) {
+      setSelectedBrand(brand);
+    }
+    // Clear all related state when brand changes
+    setSelectedCampaignFromUrl("");
+    setSelectedItems([]);
+    setMediaWithStatus([]);
+  };
+
   const uploadFiles = async (files: File[]) => {
+    // Guard: Don't upload without a selected brand
+    if (!selectedBrand) {
+      toast.error("Please select a brand before uploading", {
+        description: "Choose a brand to organize your media",
+        duration: 3000,
+      });
+      return;
+    }
+
     setIsUploading(true);
     const newItemsWithStatus: MediaWithStatus[] = files.map((file) => ({
       name: file.name,
@@ -196,12 +248,10 @@ export function MediaFolderView({
       status: "pending",
       type: "file",
     }));
-
     setMediaWithStatus((prev) => [...prev, ...newItemsWithStatus]);
 
     const uploadPromises = files.map(async (file, index) => {
       const itemIndex = mediaWithStatus.length + index;
-
       try {
         // Update status to uploading
         setMediaWithStatus((prev) =>
@@ -232,7 +282,6 @@ export function MediaFolderView({
             galleryActions.addToGallery(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);
-            // Don't fail the upload if gallery addition fails
           }
         }
 
@@ -242,12 +291,10 @@ export function MediaFolderView({
             idx === itemIndex ? { ...item, status: "success", url } : item
           )
         );
-
         return url;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Upload failed";
-
         // Update status to error
         setMediaWithStatus((prev) =>
           prev.map((item, idx) =>
@@ -256,7 +303,6 @@ export function MediaFolderView({
               : item
           )
         );
-
         throw error;
       }
     });
@@ -269,11 +315,9 @@ export function MediaFolderView({
             result.status === "fulfilled"
         )
         .map((result) => result.value);
-
       const failedCount = urls.length - successfulUrls.length;
 
       if (successfulUrls.length > 0) {
-        // Call the callback with successful URLs
         onUploadComplete?.(successfulUrls);
       }
 
@@ -298,6 +342,15 @@ export function MediaFolderView({
   };
 
   const uploadUrls = async (urls: string[]) => {
+    // Guard: Don't upload without a selected brand
+    if (!selectedBrand) {
+      toast.error("Please select a brand before uploading", {
+        description: "Choose a brand to organize your media",
+        duration: 3000,
+      });
+      return;
+    }
+
     setIsUploading(true);
     const newItemsWithStatus: MediaWithStatus[] = urls.map((url) => ({
       name: url.split("/").pop() || url,
@@ -305,12 +358,10 @@ export function MediaFolderView({
       status: "pending",
       type: "url",
     }));
-
     setMediaWithStatus((prev) => [...prev, ...newItemsWithStatus]);
 
     const uploadPromises = urls.map(async (url, index) => {
       const itemIndex = mediaWithStatus.length + index;
-
       try {
         // Update status to uploading
         setMediaWithStatus((prev) =>
@@ -322,9 +373,8 @@ export function MediaFolderView({
         // Add to gallery if enabled
         if (addToGallery && selectedBrand) {
           try {
-            // Get extension from URL
             const extension =
-              url.split(".").pop()?.split(/\#|\?/)[0]?.toLowerCase() || "";
+              url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase() || "";
             const galleryItem: GalleryItem = {
               brand_id: selectedBrand.brand_id,
               asset_url: url,
@@ -347,7 +397,6 @@ export function MediaFolderView({
             galleryActions.addToGallery(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);
-            // Don't fail the upload if gallery addition fails
           }
         }
 
@@ -360,7 +409,6 @@ export function MediaFolderView({
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "URL upload failed";
-
         // Update status to error
         setMediaWithStatus((prev) =>
           prev.map((item, idx) =>
@@ -369,21 +417,13 @@ export function MediaFolderView({
               : item
           )
         );
-
         throw error;
       }
     });
 
     try {
       const results = await Promise.allSettled(uploadPromises);
-      const successfulUrls = results
-        .filter(
-          (result): result is PromiseFulfilledResult<void> =>
-            result.status === "fulfilled"
-        )
-        .map((result) => result.value);
-
-      const failedCount = results.length - successfulUrls.length;
+      const failedCount = results.filter((r) => r.status === "rejected").length;
 
       if (failedCount > 0) {
         toast.error(
@@ -407,12 +447,10 @@ export function MediaFolderView({
 
   const handleUrlSubmit = () => {
     if (!urlInput.trim()) return;
-
     const urls = urlInput
       .split("\n")
       .map((url) => url.trim())
       .filter((url) => url.length > 0);
-
     if (urls.length > 0) {
       uploadUrls(urls);
       setUrlInput("");
@@ -426,7 +464,7 @@ export function MediaFolderView({
         uploadFiles(acceptedFiles);
       }
     },
-    [uploadFiles, activeTab]
+    [activeTab]
   );
 
   const removeItem = (index: number) => {
@@ -451,21 +489,22 @@ export function MediaFolderView({
   if (isDragAccept) borderColor = "border-green-500";
   if (isDragReject) borderColor = "border-red-500";
 
-  // Get campaigns for the selected brand
-  const selectedBrandCampaigns = selectedBrand?.campaigns || [];
-  const currentCampaign = selectedBrandCampaigns.find(
-    (c) => c.id === selectedCampaign
-  );
+  // Auto-select first brand when brands are loaded
+  useEffect(() => {
+    if (!brandsLoading && brands.length > 0 && !selectedBrand) {
+      handleBrandChange(brands[0]);
+    }
+  }, [brands, brandsLoading, selectedBrand]);
 
-  // If a campaign is selected and we're in folder view, show the gallery
+  // Render campaign view when in folder mode with selected brand and campaign
   if (
     galleryView === "folder" &&
     selectedBrand &&
-    selectedCampaign &&
+    selectedCampaignFromUrl &&
     currentCampaign
   ) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Campaign Header */}
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
           <div className="flex items-center space-x-3">
@@ -518,14 +557,13 @@ export function MediaFolderView({
                 <Button
                   variant="outline"
                   disabled={isUploading}
-                  className="mb-2 border-[#636AE8] text-[#636AE8] hover:bg-[#636AE8] hover:text-white"
+                  className="mb-2 border-[#636AE8] text-[#636AE8] hover:bg-[#636AE8] hover:text-white bg-transparent"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Link className="mr-2 h-4 w-4" />
                   Add URLs
                 </Button>
               </DialogTrigger>
-
               <DialogContent
                 onPointerDownOutside={(e) => e.preventDefault()}
                 className="sm:max-w-md"
@@ -569,7 +607,6 @@ export function MediaFolderView({
               </DialogContent>
             </Dialog>
           </div>
-
           <p className="text-sm text-gray-500">
             {isDragActive
               ? "Drop media here to upload"
@@ -580,6 +617,7 @@ export function MediaFolderView({
             </span>
           </p>
 
+          {/* Upload Status Display */}
           {mediaWithStatus.length > 0 && (
             <div className="mt-4 w-full max-w-md">
               <p className="text-xs font-medium text-gray-700 mb-1">Media:</p>
@@ -672,7 +710,6 @@ export function MediaFolderView({
                 onSelect={handleSelect}
                 galleryActions={galleryActions}
               />
-
               {/* Infinite scroll loading indicator */}
               {galleryActions.hasNextPage && (
                 <div
@@ -701,33 +738,30 @@ export function MediaFolderView({
   }
 
   return (
-    <div className="space-y-4 relative">
-      {/* Upload Dropzone */}
-      <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors duration-200 ease-in-out cursor-pointer ${borderColor} ${
-          isDragActive ? "bg-purple-50" : "bg-white"
-        } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
-      >
-        <div className="absolute z-30 top-1 left-4 bg-white w-min px-2">
-          <h3 className="text-xs font-semibold">Brand </h3>
-        </div>
-        {/* Brand Selector */}
-        <div
-          className="flex z-20 justify-start absolute top-3 left-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="w-52">
+    <div className="w-full max-w-full overflow-hidden">
+      {/* Brand Selector - Separate from dropzone */}
+      <div className="mb-6">
+        <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            Select Brand
+          </h3>
+          <div className="w-full max-w-xs">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                {brandsLoading || brands.length < 0 ? (
-                  <Skeleton className="w-full h-9 rounded-md" />
+                {brandsLoading ? (
+                  <div className="flex items-center space-x-2 p-2 border rounded-md">
+                    <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                    <span className="text-sm text-gray-500">
+                      Loading brands...
+                    </span>
+                  </div>
                 ) : (
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between text-xs pt-2 hover:bg-white"
+                    className="w-full justify-between text-sm bg-transparent"
+                    disabled={!selectedBrand}
                   >
                     {selectedBrand
                       ? selectedBrand.brand_name
@@ -740,257 +774,281 @@ export function MediaFolderView({
                   </Button>
                 )}
               </PopoverTrigger>
-              <PopoverContent className="w-64 p-0">
+              <PopoverContent className="w-80 p-0">
                 <Command>
                   <CommandInput placeholder="Search brands..." />
-                  <CommandEmpty>No brand found.</CommandEmpty>
-                  <CommandGroup className="max-h-44 overflow-y-scroll">
-                    {brands.map((brand) => (
-                      <CommandItem
-                        key={brand.brand_id}
-                        value={`${brand.brand_name} - ${brand.brand_id}`}
-                        onSelect={(currentValue) => {
-                          // Extract brand name and id from the value
-                          const [name, id] = currentValue.split(" - ");
-                          const foundBrand = brands.find(
-                            (b) =>
-                              b.brand_name.toLowerCase() ===
-                                name.toLowerCase() && String(b.brand_id) === id
-                          );
-                          if (setSelectedBrand) {
-                            setSelectedBrand(foundBrand || null);
-                          }
-                          // Reset campaign selection when brand changes
-                          setSelectedCampaignFromUrl("");
-                          setSelectedCampaign(null);
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedBrand?.brand_id === brand.brand_id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        {brand.brand_name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  <CommandList>
+                    <CommandEmpty>No brand found.</CommandEmpty>
+                    <CommandGroup className="max-h-44 overflow-y-scroll">
+                      {brands.map((brand) => (
+                        <CommandItem
+                          key={brand.brand_id}
+                          value={`${brand.brand_name} - ${brand.brand_id}`}
+                          onSelect={(currentValue) => {
+                            const [name, id] = currentValue.split(" - ");
+                            const foundBrand = brands.find(
+                              (b) =>
+                                b.brand_name.toLowerCase() ===
+                                  name.toLowerCase() &&
+                                String(b.brand_id) === id
+                            );
+                            handleBrandChange(foundBrand || null);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedBrand?.brand_id === brand.brand_id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {brand.brand_name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </PopoverContent>
             </Popover>
           </div>
         </div>
-        <input {...getInputProps()} />
+      </div>
 
-        <div className="flex gap-x-3">
-          <Button
-            variant="outline"
-            className="bg-[#636AE8] hover:bg-[#636AE8] hover:text-white text-white mb-2"
-            disabled={isUploading || brands.length === 0 || brandsLoading}
+      {/* Upload Dropzone - Completely separate container */}
+      <div className="mb-6">
+        {brandsLoading ? (
+          <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center bg-gray-50">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-600 mb-4" />
+            <p className="text-sm text-gray-500">Loading brands...</p>
+          </div>
+        ) : (
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors duration-200 ease-in-out cursor-pointer ${borderColor} ${
+              isDragActive ? "bg-purple-50" : "bg-white"
+            } ${
+              isUploading || !selectedBrand
+                ? "opacity-50 pointer-events-none"
+                : ""
+            }`}
           >
-            {isUploading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="mr-2 h-4 w-4" />
-            )}
-            {isUploading ? "Uploading..." : "Upload Files"}
-          </Button>
-          <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
-            <DialogTrigger asChild>
+            <input {...getInputProps()} />
+            <div className="flex gap-x-3 mb-4">
               <Button
                 variant="outline"
-                disabled={isUploading || brands.length === 0 || brandsLoading}
-                className="mb-2 border-[#636AE8] text-[#636AE8] hover:bg-[#636AE8] hover:text-white"
-                onClick={(e) => e.stopPropagation()}
+                className="bg-[#636AE8] hover:bg-[#636AE8] hover:text-white text-white"
+                disabled={isUploading || !selectedBrand || brandsLoading}
               >
-                <Link className="mr-2 h-4 w-4" />
-                Add URLs
+                {isUploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {isUploading ? "Uploading..." : "Upload Files"}
               </Button>
-            </DialogTrigger>
-
-            <DialogContent
-              onPointerDownOutside={(e) => e.preventDefault()}
-              className="sm:max-w-md"
-            >
-              <DialogHeader>
-                <DialogTitle>Add Media URLs</DialogTitle>
-              </DialogHeader>
-              <textarea
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder={`Enter media URLs (one per line)\nhttps://example.com/image1.jpg\nhttps://example.com/video1.mp4`}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm resize-none"
-                rows={3}
-                disabled={isUploading}
-              />
-              <DialogFooter className="mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowUrlInput(false);
-                    setUrlInput("");
-                  }}
-                  disabled={isUploading}
+              <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isUploading || !selectedBrand || brandsLoading}
+                    className="border-[#636AE8] text-[#636AE8] hover:bg-[#636AE8] hover:text-white bg-transparent"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link className="mr-2 h-4 w-4" />
+                    Add URLs
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                  className="sm:max-w-md"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUrlSubmit();
-                  }}
-                  disabled={!urlInput.trim() || isUploading}
-                  className="bg-[#636AE8] hover:bg-[#5A61D9] text-white"
-                >
-                  Add URLs
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {brands.length === 0 && !brandsLoading ? (
-          <p className="text-sm text-gray-500">Set up a brand to get started</p>
-        ) : (
-          <p className="text-sm text-gray-500">
-            {isDragActive
-              ? "Drop media here to upload"
-              : `${currentConfig.placeholder} or add URLs`}{" "}
-            ({currentConfig.text})
-            {selectedBrand && (
-              <span className="block text-xs text-purple-600 mt-1">
-                Files will be added to {selectedBrand.brand_name}
-              </span>
-            )}
-          </p>
-        )}
-
-        {mediaWithStatus.length > 0 && (
-          <div className="mt-4 w-full max-w-md">
-            <p className="text-xs font-medium text-gray-700 mb-1">Media:</p>
-            <div className="max-h-32 overflow-y-auto space-y-1">
-              {mediaWithStatus.map((mediaItem, index) => (
-                <div
-                  key={index}
-                  className={`flex items-center justify-between text-xs py-2 px-3 rounded-md border ${
-                    mediaItem.status === "error"
-                      ? "bg-red-50 border-red-200"
-                      : mediaItem.status === "success"
-                      ? "bg-green-50 border-green-200"
-                      : mediaItem.status === "uploading"
-                      ? "bg-blue-50 border-blue-200"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center min-w-0 flex-1">
-                    {getStatusIcon(mediaItem.status)}
-                    <span
-                      className={`ml-2 truncate ${getStatusColor(
-                        mediaItem.status
-                      )}`}
-                      title={
-                        mediaItem.type === "url"
-                          ? mediaItem.originalUrl
-                          : mediaItem.name
-                      }
-                    >
-                      {mediaItem.type === "url" && (
-                        <Link className="inline w-3 h-3 mr-1" />
-                      )}
-                      {mediaItem.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center ml-2">
-                    {mediaItem.status === "error" && (
-                      <span
-                        className="text-xs text-red-500 mr-2"
-                        title={mediaItem.error}
-                      >
-                        Failed
-                      </span>
-                    )}
-                    {mediaItem.status === "success" && mediaItem.url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-1 h-auto text-xs text-blue-500 hover:text-blue-700"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(mediaItem.url!);
-                          toast.success("URL copied to clipboard");
-                        }}
-                      >
-                        Copy URL
-                      </Button>
-                    )}
+                  <DialogHeader>
+                    <DialogTitle>Add Media URLs</DialogTitle>
+                  </DialogHeader>
+                  <textarea
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder={`Enter media URLs (one per line)\nhttps://example.com/image1.jpg\nhttps://example.com/video1.mp4`}
+                    className="w-full p-3 border border-gray-300 rounded-md text-sm resize-none"
+                    rows={3}
+                    disabled={isUploading}
+                  />
+                  <DialogFooter className="mt-2">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="p-1 h-auto ml-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeItem(index);
+                        setShowUrlInput(false);
+                        setUrlInput("");
                       }}
+                      disabled={isUploading}
                     >
-                      <X className="h-3 w-3" />
+                      Cancel
                     </Button>
-                  </div>
-                </div>
-              ))}
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUrlSubmit();
+                      }}
+                      disabled={!urlInput.trim() || isUploading}
+                      className="bg-[#636AE8] hover:bg-[#5A61D9] text-white"
+                    >
+                      Add URLs
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            {!selectedBrand && !brandsLoading ? (
+              <p className="text-sm text-red-500">
+                Please select a brand to upload media
+              </p>
+            ) : brandsLoading ? (
+              <p className="text-sm text-gray-500">Loading brands...</p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                {isDragActive
+                  ? "Drop media here to upload"
+                  : `${currentConfig.placeholder} or add URLs`}{" "}
+                ({currentConfig.text})
+                {selectedBrand && (
+                  <span className="block text-xs text-purple-600 mt-1">
+                    Files will be added to {selectedBrand.brand_name}
+                  </span>
+                )}
+              </p>
+            )}
+
+            {/* Upload Status Display */}
+            {mediaWithStatus.length > 0 && (
+              <div className="mt-4 w-full max-w-md">
+                <p className="text-xs font-medium text-gray-700 mb-1">Media:</p>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {mediaWithStatus.map((mediaItem, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between text-xs py-2 px-3 rounded-md border ${
+                        mediaItem.status === "error"
+                          ? "bg-red-50 border-red-200"
+                          : mediaItem.status === "success"
+                          ? "bg-green-50 border-green-200"
+                          : mediaItem.status === "uploading"
+                          ? "bg-blue-50 border-blue-200"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center min-w-0 flex-1">
+                        {getStatusIcon(mediaItem.status)}
+                        <span
+                          className={`ml-2 truncate ${getStatusColor(
+                            mediaItem.status
+                          )}`}
+                          title={
+                            mediaItem.type === "url"
+                              ? mediaItem.originalUrl
+                              : mediaItem.name
+                          }
+                        >
+                          {mediaItem.type === "url" && (
+                            <Link className="inline w-3 h-3 mr-1" />
+                          )}
+                          {mediaItem.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center ml-2">
+                        {mediaItem.status === "error" && (
+                          <span
+                            className="text-xs text-red-500 mr-2"
+                            title={mediaItem.error}
+                          >
+                            Failed
+                          </span>
+                        )}
+                        {mediaItem.status === "success" && mediaItem.url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-auto text-xs text-blue-500 hover:text-blue-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(mediaItem.url!);
+                              toast.success("URL copied to clipboard");
+                            }}
+                          >
+                            Copy URL
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-auto ml-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeItem(index);
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Campaigns List - Show when brand is selected but no campaign is selected and in folder view */}
-      {galleryView === "folder" && selectedBrand && !selectedCampaign && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">
-              {selectedBrand.brand_name} Campaigns
-            </h3>
-            <p className="text-sm text-gray-500">
-              {selectedBrandCampaigns.length} campaigns
-            </p>
+      {/* Campaigns List - Completely separate container with proper spacing */}
+      {galleryView === "folder" &&
+        selectedBrand &&
+        !selectedCampaignFromUrl && (
+          <div className="mb-6">
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {selectedBrand.brand_name} Campaigns
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {currentBrandCampaigns.length} campaigns
+                </p>
+              </div>
+              {currentBrandCampaigns.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {currentBrandCampaigns.map((campaign) => (
+                    <CampaignCard
+                      key={`campaign-${campaign.id}`}
+                      campaign={campaign}
+                      onSelect={handleCampaignSelect}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">
+                    No campaigns found for this brand
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
+        )}
 
-          {selectedBrandCampaigns.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedBrandCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  onSelect={(campaignId: string) =>
-                    handleCampaignSelect(campaignId)
-                  }
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No campaigns found for this brand</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Gallery Grid View - Show when not in folder view or when no brand/campaign is selected */}
+      {/* Gallery Grid View - Separate container */}
       {(galleryView === "grid" ||
         !selectedBrand ||
-        (galleryView === "folder" && !selectedCampaign)) && (
-        <>
+        (galleryView === "folder" && !selectedCampaignFromUrl)) && (
+        <div className="space-y-6">
           <MediaGalleryStatusDisplay
             galleryStatus={galleryActions.galleryStatus}
             galleryItemsLength={galleryActions.galleryItems.length}
           />
-
           {galleryActions.galleryStatus === "success" &&
             galleryActions.galleryItems.length > 0 && (
               <div>
@@ -999,7 +1057,6 @@ export function MediaFolderView({
                   onSelect={handleSelect}
                   galleryActions={galleryActions}
                 />
-
                 {/* Infinite scroll loading indicator */}
                 {galleryActions.hasNextPage && (
                   <div
@@ -1022,7 +1079,7 @@ export function MediaFolderView({
               galleryActions={galleryActions}
             />
           )}
-        </>
+        </div>
       )}
     </div>
   );

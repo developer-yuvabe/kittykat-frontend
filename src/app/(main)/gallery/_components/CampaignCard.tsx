@@ -1,5 +1,10 @@
-import { Campaign } from "@/types/gallery.types";
-import { Calendar, ChevronDown, Folder } from "lucide-react";
+"use client";
+
+import type React from "react";
+
+import type { Campaign } from "@/types/gallery.types";
+import { ChevronDown, Folder } from "lucide-react";
+import { useCallback } from "react";
 
 // Campaign Card Component
 export const CampaignCard = ({
@@ -9,10 +14,30 @@ export const CampaignCard = ({
   campaign: Campaign;
   onSelect: (campaignId: string) => void;
 }) => {
+  // Memoize the click handler to prevent closure issues
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("Campaign card clicked:", campaign.id, campaign.title); // Debug log
+      onSelect(campaign.id);
+    },
+    [campaign.id, onSelect]
+  );
+
   return (
     <div
-      onClick={() => onSelect(campaign.id)}
+      onClick={handleClick}
       className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition-all duration-200 cursor-pointer group"
+      data-campaign-id={campaign.id}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick(e as any);
+        }
+      }}
     >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
@@ -20,14 +45,11 @@ export const CampaignCard = ({
             <Folder className="w-5 h-5 text-purple-600" />
           </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 truncate group-hover:text-purple-700">
+        <div className="flex-1 min-w-0 flex flex-col justify-end">
+          <div className="flex-1" />
+          <h3 className="text-sm font-medium text-gray-900 truncate group-hover:text-purple-700 mt-2">
             {campaign.title}
           </h3>
-          <div className="flex items-center mt-1 text-xs text-gray-500">
-            <Calendar className="w-3 h-3 mr-1" />
-            <span>Campaign</span>
-          </div>
         </div>
         <div className="flex-shrink-0">
           <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition-colors rotate-[-90deg]" />
