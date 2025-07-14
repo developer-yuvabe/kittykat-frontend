@@ -89,7 +89,9 @@ export const MoodboardVisualSectionHeader = ({
               file.name,
               file.type,
               "threads",
-              file
+              file,
+              selectedBrandId,
+              currentCampaign.id
             );
 
             // Create gallery item
