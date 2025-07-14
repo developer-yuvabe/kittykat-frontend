@@ -821,7 +821,6 @@ export function MediaFolderView({
         {brandsLoading ? (
           <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center bg-gray-50">
             <Loader2 className="h-8 w-8 animate-spin text-purple-600 mb-4" />
-            <p className="text-sm text-gray-500">Loading brands...</p>
           </div>
         ) : (
           <div
@@ -1043,44 +1042,45 @@ export function MediaFolderView({
       {/* Gallery Grid View - Separate container */}
       {(galleryView === "grid" ||
         !selectedBrand ||
-        (galleryView === "folder" && !selectedCampaignFromUrl)) && (
-        <div className="space-y-6">
-          <MediaGalleryStatusDisplay
-            galleryStatus={galleryActions.galleryStatus}
-            galleryItemsLength={galleryActions.galleryItems.length}
-          />
-          {galleryActions.galleryStatus === "success" &&
-            galleryActions.galleryItems.length > 0 && (
-              <div>
-                <MediaGrid
-                  selectedItems={selectedItems}
-                  onSelect={handleSelect}
-                  galleryActions={galleryActions}
-                />
-                {/* Infinite scroll loading indicator */}
-                {galleryActions.hasNextPage && (
-                  <div
-                    ref={ref}
-                    className="flex justify-center items-center py-8"
-                  >
-                    {galleryActions.isFetchingNextPage ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                    ) : (
-                      <p className="text-sm text-gray-500">Load more</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          {selectedItems.length > 0 && (
-            <MediaBulkActions
-              selectedItems={selectedItemsData}
-              onUnselectAll={handleUnselectAll}
-              galleryActions={galleryActions}
+        (galleryView === "folder" && !selectedCampaignFromUrl)) &&
+        !brandsLoading && (
+          <div className="space-y-6">
+            <MediaGalleryStatusDisplay
+              galleryStatus={galleryActions.galleryStatus}
+              galleryItemsLength={galleryActions.galleryItems.length}
             />
-          )}
-        </div>
-      )}
+            {galleryActions.galleryStatus === "success" &&
+              galleryActions.galleryItems.length > 0 && (
+                <div>
+                  <MediaGrid
+                    selectedItems={selectedItems}
+                    onSelect={handleSelect}
+                    galleryActions={galleryActions}
+                  />
+                  {/* Infinite scroll loading indicator */}
+                  {galleryActions.hasNextPage && (
+                    <div
+                      ref={ref}
+                      className="flex justify-center items-center py-8"
+                    >
+                      {galleryActions.isFetchingNextPage ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                      ) : (
+                        <p className="text-sm text-gray-500">Load more</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            {selectedItems.length > 0 && (
+              <MediaBulkActions
+                selectedItems={selectedItemsData}
+                onUnselectAll={handleUnselectAll}
+                galleryActions={galleryActions}
+              />
+            )}
+          </div>
+        )}
     </div>
   );
 }
