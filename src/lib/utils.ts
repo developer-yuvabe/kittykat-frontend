@@ -108,9 +108,7 @@ export function isValidUrl(url: string): boolean {
 }
 
 export function getSSEBaseUrl(): string {
-  return `${
-    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT]
-  }/api/v1/kittykat-agent/sse`;
+  return `${AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT]}/api/v1/sse`;
 }
 
 export const handleDownloadImage = async (
