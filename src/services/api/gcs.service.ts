@@ -5,7 +5,9 @@ export async function uploadFileAndReturnUrl(
   fileName: string,
   fileType: string,
   contentSource: string,
-  file: File
+  file: File,
+  brandId?: string | null,
+  campaignId?: string | null
 ): Promise<string> {
   try {
     // Clean the file name: trim spaces and remove extension
@@ -19,6 +21,8 @@ export async function uploadFileAndReturnUrl(
       file_name: cleanedFileName,
       content_type: fileType,
       content_source: contentSource,
+      brand_id: brandId || null, // Use brandId if provided, otherwise null
+      campaign_id: campaignId || null, // Use campaignId if provided, otherwise null
     });
 
     console.log(response.data.data);

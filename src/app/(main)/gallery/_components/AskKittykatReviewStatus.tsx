@@ -113,7 +113,14 @@ export function AskKittykatReviewStatus({
       let attachmentUrls: string[] = [];
       if (attachedFiles.length > 0) {
         const uploadPromises = attachedFiles.map((file) =>
-          uploadFileAndReturnUrl(file.name, file.type, "ask-kittykat", file)
+          uploadFileAndReturnUrl(
+            file.name,
+            file.type,
+            "ask-kittykat",
+            file,
+            item.brand_id,
+            item.campaign_id
+          )
         );
         attachmentUrls = await Promise.all(uploadPromises);
       }

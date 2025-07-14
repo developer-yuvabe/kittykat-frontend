@@ -1,3 +1,4 @@
+import { campaignFields } from "@/components/chatbot/brands/InitialPlaceHolder";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,16 @@ import { toast } from "sonner";
 type AddVersionProps = {
   children?: React.ReactNode;
   addVersion: (uploadedUrl: string) => void;
+  brandId: string;
+  campaignId?: string;
 };
 
-const AddVersion = ({ children, addVersion }: AddVersionProps) => {
+const AddVersion = ({
+  children,
+  addVersion,
+  brandId,
+  campaignId,
+}: AddVersionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [url, setUrl] = useState("");
@@ -33,12 +41,15 @@ const AddVersion = ({ children, addVersion }: AddVersionProps) => {
       try {
         setIsUploading(true);
         const file = acceptedFiles[0];
-
+        console.log("brandId in add version", brandId);
+        console.log("campaignId in add version", campaignId);
         const url = await uploadFileAndReturnUrl(
           file.name,
           file.type,
           "brands",
-          file
+          file,
+          brandId,
+          campaignId
         );
 
         addVersion(url);
