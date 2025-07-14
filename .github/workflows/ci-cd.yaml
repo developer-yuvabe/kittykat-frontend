@@ -2,7 +2,6 @@ name: CI/CD for NextJS Deployment on Google Cloud Run
 
 env:
   DOCKER_IMAGE_URL: ${{ secrets.DOCKER_IMAGE_URL }}
-  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
   NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
@@ -16,13 +15,16 @@ env:
   AUTH_COOKIE_SIGNATURE_KEY_CURRENT: ${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}
   AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS: ${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}
   USE_SECURE_COOKIES: ${{ secrets.USE_SECURE_COOKIES }}
-  NEXT_PUBLIC_ENVIRONMENT: ${{ secrets.NEXT_PUBLIC_ENVIRONMENT }}
-  NEXT_PUBLIC_KITTYKAT_AGENT_SERVER: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}
+  NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}
+  NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}
+  NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}
   NEXT_PUBLIC_LANGSMITH_API_KEY: ${{ secrets.NEXT_PUBLIC_LANGSMITH_API_KEY }}
 on:
   push:
     branches:
       - main
+      - development
+      - staging
 
 jobs:
   Deploy:
@@ -45,9 +47,38 @@ jobs:
         run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev
 
+      - name: Set environment based on branch
+        run: |
+          case "${GITHUB_REF_NAME}" in
+              main) 
+                  STAGE_TYPE="prod"
+                  ;;
+              staging) 
+                  STAGE_TYPE="stg"
+                  ;;
+              development ) 
+                  STAGE_TYPE="dev"
+                  ;;
+              *) 
+                  echo "Unknown branch"; 
+                  exit 1 
+                  ;;
+          esac
+
+          echo "STAGE_TYPE=$STAGE_TYPE" >> $GITHUB_ENV
+
+          if [ "$STAGE_TYPE" = "prod" ]; then
+            COMPUTED_SERVICE_NAME="${{ secrets.SERVICE_NAME }}"
+          else
+            COMPUTED_SERVICE_NAME="${{ secrets.SERVICE_NAME }}-$STAGE_TYPE"
+          fi
+
+          echo "SERVICE_NAME=$COMPUTED_SERVICE_NAME" >> $GITHUB_ENV
+
       - name: Build and tag the docker image
         run: |-
-          docker build -f "./Dockerfile" . --tag '${{ env.DOCKER_IMAGE_URL }}/${{env.SERVICE_NAME}}:latest' \
+          docker build -f "./Dockerfile" . --tag "$DOCKER_IMAGE_URL/$SERVICE_NAME:latest" \
+            --build-arg NEXT_PUBLIC_ENVIRONMENT=$STAGE_TYPE \
             --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
             --build-arg NEXT_PUBLIC_FIREBASE_API_KEY='${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
             --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
@@ -61,22 +92,31 @@ jobs:
             --build-arg AUTH_COOKIE_SIGNATURE_KEY_CURRENT='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}' \
             --build-arg AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
             --build-arg USE_SECURE_COOKIES='${{ secrets.USE_SECURE_COOKIES }}' \
-            --build-arg NEXT_PUBLIC_ENVIRONMENT='${{ secrets.NEXT_PUBLIC_ENVIRONMENT }}' \
-            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
             --build-arg NEXT_PUBLIC_LANGSMITH_API_KEY='${{ secrets.NEXT_PUBLIC_LANGSMITH_API_KEY }}'
+        env:
+          DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          STAGE_TYPE: ${{ env.STAGE_TYPE }}
 
       - name: Push the image to the Google Artifact Registry
-        run: |-
-          docker push ${{ env.DOCKER_IMAGE_URL }}/${{env.SERVICE_NAME}}:latest
+        run: |
+          docker push "$DOCKER_IMAGE_URL/$SERVICE_NAME:latest"
+        env:
+          DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
 
       - name: Deploy to Cloud Run
         run: |
           echo SERVICE_NAME $SERVICE_NAME
           gcloud run deploy $SERVICE_NAME \
-            --image ${{ env.DOCKER_IMAGE_URL }}/${{env.SERVICE_NAME}}:latest \
+            --image "$DOCKER_IMAGE_URL/$SERVICE_NAME:latest" \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
+            --set-env-vars=NEXT_PUBLIC_ENVIRONMENT=$STAGE_TYPE \
             --set-env-vars=NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
             --set-env-vars=NEXT_PUBLIC_FIREBASE_API_KEY='${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
             --set-env-vars=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
@@ -90,6 +130,11 @@ jobs:
             --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_CURRENT='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}' \
             --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
             --set-env-vars=USE_SECURE_COOKIES='${{ secrets.USE_SECURE_COOKIES }}' \
-            --set-env-vars=NEXT_PUBLIC_ENVIRONMENT='${{ secrets.NEXT_PUBLIC_ENVIRONMENT }}' \
-            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
             --set-env-vars=NEXT_PUBLIC_LANGSMITH_API_KEY='${{ secrets.NEXT_PUBLIC_LANGSMITH_API_KEY }}'
+        env:
+          DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          STAGE_TYPE: ${{ env.STAGE_TYPE }}

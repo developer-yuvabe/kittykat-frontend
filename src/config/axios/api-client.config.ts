@@ -1,5 +1,4 @@
 import axios from "axios";
-import { env } from "../env";
 import { auth } from "../firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { AppConfig } from "../app.config";
@@ -26,10 +25,7 @@ const getClientSideToken = () => {
 };
 
 const axiosInstance = axios.create({
-  baseURL: `${
-    AppConfig.BASE_URLS[env.NEXT_PUBLIC_ENVIRONMENT] ||
-    env.NEXT_PUBLIC_API_BASE_URL_DEV
-  }/api/v1`,
+  baseURL: `${AppConfig.API_BASE_URL}/api/v1`,
 });
 
 // Request interceptor: Attach token to Authorization header
