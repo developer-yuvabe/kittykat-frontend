@@ -19,7 +19,7 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function BrandSelector() {
   const { user } = useUserStore();
@@ -42,10 +42,14 @@ export default function BrandSelector() {
     }
   };
 
-  // Sort brands alphabetically by brand.name
-  const sortedBrands = [...brands].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-  );
+  // Memoize the sorted brands array to avoid re-sorting on every render
+  const sortedBrands = useMemo(() => {
+    return [...brands].sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      })
+    );
+  }, [brands]);
 
   return (
     <div className="">
