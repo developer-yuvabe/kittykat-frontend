@@ -13,6 +13,7 @@ import type {
   GalleryItemResponse,
 } from "@/types/gallery.types";
 import { toast } from "sonner";
+import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -510,17 +511,9 @@ export const useGalleryQuery = (
   // Download helpers
   const downloadItem = async (item: GalleryItemResponse) => {
     try {
-      const response = await fetch(item.asset_url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${item.asset_title}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success(`Downloaded ${item.asset_title}`);
+      if (item.asset_type === "video")
+        await handleDownloadVideo(item.asset_url);
+      else await handleDownloadImage(item.asset_url);
       return true;
     } catch (error) {
       toast.error("Failed to download file");
