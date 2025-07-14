@@ -209,9 +209,7 @@ export function MediaEditorDialog({
       );
       setNewComment("");
       setAttachments([]);
-      toast.success("Comment added successfully");
     } catch (error) {
-      toast.error("Failed to add comment");
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -246,9 +244,7 @@ export function MediaEditorDialog({
       setReplyText("");
       setReplyingTo(null);
       setReplyAttachments([]);
-      toast.success("Reply added successfully");
     } catch (error) {
-      toast.error("Failed to add reply");
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -274,9 +270,7 @@ export function MediaEditorDialog({
         }
       );
       setEditingComment(null);
-      toast.success("Comment updated successfully");
     } catch (error) {
-      toast.error("Failed to update comment");
       console.error(error);
     }
   };
@@ -305,9 +299,7 @@ export function MediaEditorDialog({
         }
       );
       setEditingReply(null);
-      toast.success("Reply updated successfully");
     } catch (error) {
-      toast.error("Failed to update reply");
       console.error(error);
     }
   };
@@ -346,9 +338,7 @@ export function MediaEditorDialog({
           },
         }
       );
-      toast.success("Comment deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete comment");
       console.error(error);
     }
   };
@@ -371,9 +361,7 @@ export function MediaEditorDialog({
           },
         }
       );
-      toast.success("Reply deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete reply");
       console.error(error);
     }
   };
@@ -414,7 +402,6 @@ export function MediaEditorDialog({
           setCurrentItem((prev) =>
             prev ? { ...prev, comments: prevComments } : prev
           );
-          toast.error("Failed to update like. Please try again.");
         },
       }
     );
@@ -468,7 +455,6 @@ export function MediaEditorDialog({
           setCurrentItem((prev) =>
             prev ? { ...prev, comments: prevComments } : prev
           );
-          toast.error("Failed to update reply like. Please try again.");
         },
       }
     );

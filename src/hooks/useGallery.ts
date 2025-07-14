@@ -540,13 +540,30 @@ export const useGalleryQuery = (
       updateData: CommentUpdate;
     }) => galleryService.patchComment(itemId, commentId, updateData),
 
-    onSuccess: (updatedItem) => {
+    onSuccess: (updatedItem, variables) => {
       updateGalleryItemInCache(updatedItem);
-      toast.success("Comment updated successfully");
+
+      const updateData = variables.updateData;
+
+      if ("like_action" in updateData) {
+        toast.success(
+          updateData.like_action === "add"
+            ? "You liked the comment"
+            : "You unliked the comment"
+        );
+      } else {
+        toast.success("Comment updated successfully");
+      }
     },
 
-    onError: () => {
-      toast.error("Failed to update comment");
+    onError: (error, variables) => {
+      const updateData = variables.updateData;
+
+      if ("like_action" in updateData) {
+        toast.error("Failed to update like. Please try again.");
+      } else {
+        toast.error("Failed to update comment");
+      }
     },
   });
 
@@ -588,13 +605,31 @@ export const useGalleryQuery = (
         replyId,
         updateData
       ),
-    onSuccess: (updatedItem) => {
+    onSuccess: (updatedItem, variables) => {
       queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
       queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
-      toast.success("Reply updated successfully");
+
+      const updateData = variables.updateData;
+
+      if ("like_action" in updateData) {
+        toast.success(
+          updateData.like_action === "add"
+            ? "You liked the reply"
+            : "You unliked the reply"
+        );
+      } else {
+        toast.success("Reply updated successfully");
+      }
     },
-    onError: () => {
-      toast.error("Failed to update reply");
+
+    onError: (error, variables) => {
+      const updateData = variables.updateData;
+
+      if ("like_action" in updateData) {
+        toast.error("Failed to update like on reply. Please try again.");
+      } else {
+        toast.error("Failed to update reply");
+      }
     },
   });
 
