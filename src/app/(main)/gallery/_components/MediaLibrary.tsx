@@ -163,7 +163,18 @@ export function MediaLibrary({
     const basePath = window.location.pathname;
     router.replace(basePath);
 
-    setSelectedFilters(initialFilters);
+    // Preserve brand-related filters when switching tabs
+    setSelectedFilters((currentFilters) => ({
+      ...initialFilters,
+      // Preserve brand-related filters
+      brands: currentFilters.brands,
+      campaigns: currentFilters.campaigns,
+      // Also preserve workflow_status if it came from URL params
+      workflow_status:
+        initialWorkflowStatus.length > 0
+          ? initialWorkflowStatus
+          : initialFilters.workflow_status,
+    }));
   };
 
   const handleSelect = (id: string, selected: boolean) => {
