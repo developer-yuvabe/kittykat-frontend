@@ -42,6 +42,11 @@ export default function BrandSelector() {
     }
   };
 
+  // Sort brands alphabetically by brand.name
+  const sortedBrands = [...brands].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+  );
+
   return (
     <div className="">
       <Popover open={open} onOpenChange={setOpen}>
@@ -77,9 +82,10 @@ export default function BrandSelector() {
                 )}
               </CommandEmpty>
               <CommandGroup>
-                {brands.map((brand) => (
+                {sortedBrands.map((brand, index) => (
                   <CommandItem
-                    key={brand.id}
+                    key={`${brand.id}-${index}`} // Unique key for React rendering
+                    value={`${brand.id}-${index}`} // Unique value for Command hover/selection
                     onSelect={() => handleBrandSelect(brand.id)}
                     className="flex items-center justify-between group gap-0"
                     onClick={(e) => {
