@@ -57,6 +57,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { updateBrandSocialMediaField } from "@/services/api/brand.service";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -420,16 +421,31 @@ export const MoodboardSection: React.FC<{
     const option = socialOptions.find((opt) => opt.id === optionId);
     if (!option) return;
 
-    // Update local state
-    setSocialOptions((prev) =>
-      prev.map((opt) =>
-        opt.id === optionId
-          ? { ...opt, url: opt.editValue, isEditing: false }
-          : opt
-      )
-    );
+    try {
+      // 1. Update backend
 
-    toast.success("Social media URL updated successfully!");
+      // 2. Update local state
+      setSocialOptions((prev) =>
+        prev.map((opt) =>
+          opt.id === optionId
+            ? { ...opt, url: opt.editValue, isEditing: false }
+            : opt
+        )
+      );
+
+      await updateBrandSocialMediaField(
+        selectedBrandId!,
+        optionId as keyof NonNullable<
+          NonNullable<ThreadDetails["brand_information"]>["static"]
+        >["social_media"],
+        option.editValue
+      );
+
+      toast.success("Social media URL updated successfully!");
+    } catch (error) {
+      console.error("Failed to update social media URL", error);
+      toast.error("Failed to update social media URL.");
+    }
   };
 
   const updateEditValue = (optionId: SocialOptionId, value: string) => {
