@@ -237,12 +237,12 @@ const ReferenceMoodboard = ({
                       generateShowboard(undefined, {
                         onSuccess: () => {
                           toast.success(
-                            "Showboard prompts generated successfully!"
+                            "Concept Visual prompts generated successfully!"
                           );
                         },
                         onError: () => {
                           toast.error(
-                            "Failed to generate showboard prompts. Please try again."
+                            "Failed to generate concept Visual prompts. Please try again."
                           );
                         },
                       })

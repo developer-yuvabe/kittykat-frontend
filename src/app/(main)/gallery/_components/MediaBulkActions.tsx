@@ -506,7 +506,7 @@ export function MediaBulkActions({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="brand-uploads">Brand Uploads</SelectItem>
-                <SelectItem value="showboard-media">Showboard Media</SelectItem>
+                <SelectItem value="showboard-media">Concept Visuals</SelectItem>
                 <SelectItem value="a2i-media">A2I Media</SelectItem>
               </SelectContent>
             </Select>

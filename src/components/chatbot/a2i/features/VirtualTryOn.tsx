@@ -23,14 +23,14 @@ const VirtualTryOn = ({
   const [garmentImage, setGarmentImage] = useState<string | null>(null);
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   console.log("render");
   console.log("vton", productImage);
-  
+
   useEffect(() => {
     console.log("viton", garmentImage);
   }, [garmentImage]);
-  
+
   const handelVtonGeneration = async () => {
     if (!garmentImage) {
       return;
@@ -50,7 +50,7 @@ const VirtualTryOn = ({
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto">
@@ -97,7 +97,7 @@ const VirtualTryOn = ({
               </div>
             )}
           </div>
-          
+
           <div className="flex-shrink-0">
             <Button
               disabled={!garmentImage || loading}
@@ -106,12 +106,12 @@ const VirtualTryOn = ({
               className="w-full text-lg h-12"
             >
               <BrainIcon />
-              A2i Showboard Generation
+              A2i Concept Visual Generation
             </Button>
           </div>
         </div>
       </div>
-      
+
       <MediaLibraryDialog
         open={showMediaLibrary}
         onOpenChange={(open) => {

@@ -35,12 +35,12 @@ export function AskKittyKatConfirmationDialog({
       >
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold">
-            Ready to Ask KittyKat?
+            Ready to Ask KittyKat Experts?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-gray-600 space-y-3">
             <p>
-              Clicking Ask KittyKat will formally trigger the creative team to
-              start work.
+              Clicking KittyKat Experts will formally trigger the creative team
+              to start work.
             </p>
             <p>
               Make sure your request is finalized in the comments and all

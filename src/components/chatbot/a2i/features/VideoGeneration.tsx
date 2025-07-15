@@ -189,7 +189,7 @@ const VideoGeneration = ({
               disabled={form.formState.isSubmitting || !form.formState.isValid}
             >
               <BrainIcon />
-              A2i Showboard Generation
+              A2i Concept Visual Generation
             </Button>
           </form>
         </Form>
