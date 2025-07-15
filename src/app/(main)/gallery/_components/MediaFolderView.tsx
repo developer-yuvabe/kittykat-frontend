@@ -82,6 +82,7 @@ interface UploadDropzoneProps {
   selectedCampaignId: string | undefined;
   selecteMoodboardId: string | undefined;
   galleryView: "folder" | "grid";
+  brandName: string;
 }
 
 export function MediaFolderView({
@@ -96,6 +97,7 @@ export function MediaFolderView({
   selectedCampaignId,
   selecteMoodboardId,
   galleryView = "grid",
+  brandName,
 }: UploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -731,6 +733,7 @@ export function MediaFolderView({
             selectedItems={selectedItemsData}
             onUnselectAll={handleUnselectAll}
             galleryActions={galleryActions}
+            brandName={brandName}
           />
         )}
       </div>
@@ -1077,6 +1080,7 @@ export function MediaFolderView({
                 selectedItems={selectedItemsData}
                 onUnselectAll={handleUnselectAll}
                 galleryActions={galleryActions}
+                brandName={brandName}
               />
             )}
           </div>
