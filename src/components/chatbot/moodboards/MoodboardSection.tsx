@@ -78,6 +78,7 @@ export const MoodboardSection: React.FC<{
   );
 
   const [isMoodboardGenerating, setIsMoodboardGenerating] = useState(false);
+  const [isAddingToGallery, setIsAddingToGallery] = useState(false);
 
   const currentCampaign = useMemo(
     () =>
@@ -498,6 +499,7 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
+    setIsAnalysisInProgress(true);
     const visualSources: SourceHandle[] = socialOptions
       .filter((opt) => selectedOptions.includes(opt.id))
       .map((opt) => ({
@@ -507,79 +509,107 @@ export const MoodboardSection: React.FC<{
       }));
 
     try {
-      toast.promise(
-        (async () => {
-          // Step 1: Create the new moodboard
-          console.log("moodboardTitle in handleFindStyle :", moodboardTitle);
-          const newMoodboard = await createMoodboard(
-            selectedBrandId,
-            currentCampaign.id,
-            {
-              campaign_id: currentCampaign.id,
-              title: moodboardTitle,
-              visual_sources: visualSources,
-            }
-          );
+      const toastId = toast.loading("Creating moodboard...");
 
-          // Step 2: Upload selected images to gallery and add to moodboard
-          const uploadPromises = uploadedImages.map(async (file) => {
-            const galleryItem: GalleryItem = {
-              brand_id: selectedBrandId,
-              campaign_id: currentCampaign.id,
-              moodboard_id: newMoodboard.id,
-              asset_title: file.name,
-              asset_url: file.url,
-              asset_type: "image",
-              asset_source: "upload",
-              size: "unknown",
-              media_format: "jpg",
-              related_asset_ids: [],
-              prompt_modifiers: [],
-              ai_tags: [],
-              visual_style_tags: [],
-              detected_objects: [],
-              detected_emotions: [],
-              detected_colors: [],
-              search_keywords: [],
-              custom_tags: [],
-            };
+      try {
+        // Step 1: Create the new moodboard
+        console.log("moodboardTitle in handleFindStyle :", moodboardTitle);
+        const newMoodboard = await createMoodboard(
+          selectedBrandId,
+          currentCampaign.id,
+          {
+            campaign_id: currentCampaign.id,
+            title: moodboardTitle,
+            visual_sources: visualSources,
+          }
+        );
 
-            const galleryResponse = await addToGallery(galleryItem);
+        toast.loading("Adding images to gallery...", { id: toastId });
+        setIsAddingToGallery(true);
 
-            await addGalleryItemToMoodboard(selectedBrandId, newMoodboard?.id, {
-              gallery_item_id: galleryResponse.id,
-            });
+        // Step 2: Upload selected images to gallery and add to moodboard
+        const uploadPromises = uploadedImages.map(async (file) => {
+          const galleryItem: GalleryItem = {
+            brand_id: selectedBrandId,
+            campaign_id: currentCampaign.id,
+            moodboard_id: newMoodboard.id,
+            asset_title: file.name,
+            asset_url: file.url,
+            asset_type: "image",
+            asset_source: "upload",
+            size: "unknown",
+            media_format: "jpg",
+            related_asset_ids: [],
+            prompt_modifiers: [],
+            ai_tags: [],
+            visual_style_tags: [],
+            detected_objects: [],
+            detected_emotions: [],
+            detected_colors: [],
+            search_keywords: [],
+            custom_tags: [],
+          };
+
+          const galleryResponse = await addToGallery(galleryItem);
+
+          await addGalleryItemToMoodboard(selectedBrandId, newMoodboard?.id, {
+            gallery_item_id: galleryResponse.id,
           });
+        });
 
-          await Promise.all(uploadPromises);
+        await Promise.all(uploadPromises);
 
-          setUploadedImages([]);
-          setIsCreatingNewMoodboard(false);
-          setSelectedMoodboardId(newMoodboard.id);
+        setUploadedImages([]);
+        setIsCreatingNewMoodboard(false);
+        setSelectedMoodboardId(newMoodboard.id);
+        setIsAddingToGallery(false);
 
-          // Step 3: Analyze the newly created moodboard
-          await analyzeMoodboardImages(
-            selectedBrandId,
-            currentCampaign.id,
-            newMoodboard.id,
-            limits
-          );
-        })(),
-        {
-          loading: "Creating moodboard and analyzing images...",
-          success:
-            "Moodboard created successfully! Style analysis in progress.",
-          error: "Failed to create moodboard. Please try again.",
-        }
-      );
+        toast.loading("Analyzing visual style...", { id: toastId });
+
+        // Step 3: Analyze the newly created moodboard
+        await analyzeMoodboardImages(
+          selectedBrandId,
+          currentCampaign.id,
+          newMoodboard.id,
+          limits
+        );
+
+        toast.success(
+          "Moodboard created successfully! Style analysis complete.",
+          { id: toastId }
+        );
+      } catch (error) {
+        toast.error("Failed to create moodboard. Please try again.", {
+          id: toastId,
+        });
+        throw error;
+      }
     } catch (error) {
       console.error("Failed to create moodboard and upload images:", error);
+    } finally {
+      setIsAnalysisInProgress(false);
+      setIsAddingToGallery(false);
     }
   }
 
-  const isAnalysisInProgress = () => {
-    return currentMoodboard?.style_analysis_status === "in_progress";
-  };
+  const [isAnalysisInProgress, setIsAnalysisInProgress] = useState(false);
+
+  useEffect(() => {
+    const status = currentMoodboard?.style_analysis_status;
+
+    switch (status) {
+      case "in_progress":
+        setIsAnalysisInProgress(true);
+        break;
+      case "not_started":
+      case "completed":
+      case "failed":
+      case "partially_completed":
+      default:
+        setIsAnalysisInProgress(false);
+        break;
+    }
+  }, [currentMoodboard?.style_analysis_status]);
 
   const shouldShowCreationInterface = () => {
     return (
@@ -648,6 +678,9 @@ export const MoodboardSection: React.FC<{
       }
     );
   };
+
+  // Calculate if we should show any loading state
+  const isProcessing = isAnalysisInProgress || isAddingToGallery;
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -827,6 +860,7 @@ export const MoodboardSection: React.FC<{
                           currentMoodboard?.style_analysis_progress_messages
                         }
                         retryAnalysis={handleFindStyle}
+                        isAnalysisInProgress={isAnalysisInProgress}
                       />
                     )}
 
@@ -906,7 +940,8 @@ export const MoodboardSection: React.FC<{
                     uploadedImages={uploadedImages}
                     selectedOptions={selectedOptions}
                     socialOptions={socialOptions}
-                    isAnalysisInProgress={isAnalysisInProgress}
+                    isAnalysisInProgress={isProcessing}
+                    setIsAnalysisInProgress={setIsAnalysisInProgress}
                     handleFindStyle={handleFindStyle}
                     imageCount={totalImageCount}
                   />
