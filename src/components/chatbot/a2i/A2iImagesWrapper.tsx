@@ -224,7 +224,7 @@ export const A2iImagesWrapper = ({
       context={contextValue}
       ref={formRef}
       content={
-        <div className="relative h-[50vh] bg-muted rounded-md">
+        <div className="relative h-[80vh] bg-muted rounded-md">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
