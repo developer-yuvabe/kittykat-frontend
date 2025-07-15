@@ -92,7 +92,7 @@ export function MediaSearchFilters({
             htmlFor="workflow-status-select"
             className="flex items-center mb-1 justify-center "
           >
-            Ask Kittykat Status
+            Kittykat Expert Status
           </Label>
           <MultiSelect
             value={selectedFilters.workflow_status ?? []}
