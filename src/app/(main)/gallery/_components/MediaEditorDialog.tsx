@@ -701,7 +701,7 @@ export function MediaEditorDialog({
                         <Textarea
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Ask KittyKat for help with editing this image..."
+                          placeholder="Ask KittyKat Experts for help with editing this image..."
                           className="min-h-[80px] resize-none"
                         />
                         {attachments.length > 0 && (
@@ -769,7 +769,7 @@ export function MediaEditorDialog({
                         onAskKittykat={handleAskKittyKat}
                         galleryActions={galleryActions}
                         // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
-                        item={item!}
+                        item={currentItem}
                         revalidateGalleryItemVersions={
                           revalidateGalleryItemVersions
                         }

@@ -50,12 +50,12 @@ function MoodboardTagResults({
         onClick={() =>
           generateShowboard(undefined, {
             onSuccess: () => {
-              toast.success("Showboard prompts generated successfully!");
+              toast.success("Concept Visual prompts generated successfully!");
             },
 
             onError: () => {
               toast.error(
-                "Failed to generate showboard prompts. Please try again."
+                "Failed to generate Concept Visual prompts. Please try again."
               );
             },
           })
@@ -66,7 +66,7 @@ function MoodboardTagResults({
           <Loader />
         ) : (
           <>
-            <Brain /> A2i Showboard Generation
+            <Brain /> A2i Concept Visual Generation
           </>
         )}
       </Button>

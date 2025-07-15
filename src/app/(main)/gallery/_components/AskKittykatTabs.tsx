@@ -32,7 +32,7 @@ const tabItems = [
   {
     key: "ask-kittykat",
     icon: <CatIcon className="w-6 h-6" />,
-    label: "Ask KittyKat",
+    label: "Kittykat Experts",
   },
 ];
 
