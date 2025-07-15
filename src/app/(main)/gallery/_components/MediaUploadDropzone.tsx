@@ -87,7 +87,9 @@ export function MediaUploadDropzone({
           file.name,
           file.type,
           "brands",
-          file
+          file,
+          selectedBrand?.brand_id || null,
+          selectedCampaignId || null
         );
 
         if (addToGallery && selectedBrand) {

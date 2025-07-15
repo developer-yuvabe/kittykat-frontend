@@ -196,20 +196,6 @@ export const MoodboardSection: React.FC<{
 
       const options: SocialOption[] = [
         {
-          id: SocialOptionId.Facebook,
-          name: "Use Facebook Images",
-          url:
-            existingSourcesMap.facebook?.url ||
-            socialMediaPlatforms?.facebook ||
-            "https://www.facebook.com/",
-          icon: <FacebookIcon size={44} />,
-          isEditing: false,
-          editValue:
-            existingSourcesMap.facebook?.url ||
-            socialMediaPlatforms?.facebook ||
-            "https://www.facebook.com/",
-        },
-        {
           id: SocialOptionId.Instagram,
           name: "Use Instagram Images",
           url:
@@ -222,6 +208,34 @@ export const MoodboardSection: React.FC<{
             existingSourcesMap.instagram?.url ||
             socialMediaPlatforms?.instagram ||
             "https://instagram.com/",
+        },
+        {
+          id: SocialOptionId.Pinterest,
+          name: "Use Pinterest Images",
+          url:
+            existingSourcesMap.pinterest?.url ||
+            socialMediaPlatforms?.pinterest ||
+            "https://",
+          icon: <PinterestIcon size={44} />,
+          isEditing: false,
+          editValue:
+            existingSourcesMap.pinterest?.url ||
+            socialMediaPlatforms?.pinterest ||
+            "https://",
+        },
+        {
+          id: SocialOptionId.Facebook,
+          name: "Use Facebook Images",
+          url:
+            existingSourcesMap.facebook?.url ||
+            socialMediaPlatforms?.facebook ||
+            "https://www.facebook.com/",
+          icon: <FacebookIcon size={44} />,
+          isEditing: false,
+          editValue:
+            existingSourcesMap.facebook?.url ||
+            socialMediaPlatforms?.facebook ||
+            "https://www.facebook.com/",
         },
         {
           id: SocialOptionId.Website,
@@ -239,20 +253,20 @@ export const MoodboardSection: React.FC<{
         },
       ];
 
-      options.push({
-        id: SocialOptionId.Pinterest,
-        name: "Use Pinterest Images",
-        url:
-          existingSourcesMap.pinterest?.url ||
-          socialMediaPlatforms?.pinterest ||
-          "https://",
-        icon: <PinterestIcon size={44} />,
-        isEditing: false,
-        editValue:
-          existingSourcesMap.pinterest?.url ||
-          socialMediaPlatforms?.pinterest ||
-          "https://",
-      });
+      // options.push({
+      //   id: SocialOptionId.Pinterest,
+      //   name: "Use Pinterest Images",
+      //   url:
+      //     existingSourcesMap.pinterest?.url ||
+      //     socialMediaPlatforms?.pinterest ||
+      //     "https://",
+      //   icon: <PinterestIcon size={44} />,
+      //   isEditing: false,
+      //   editValue:
+      //     existingSourcesMap.pinterest?.url ||
+      //     socialMediaPlatforms?.pinterest ||
+      //     "https://",
+      // });
 
       setSocialOptions(options);
 
