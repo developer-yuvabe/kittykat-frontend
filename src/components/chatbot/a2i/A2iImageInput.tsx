@@ -88,7 +88,8 @@ const A2iImageInput = ({
                 file.name,
                 file.type,
                 "brands",
-                file
+                file,
+                selectedBrandId || null
               );
 
               setImageBlocks((prev) => {

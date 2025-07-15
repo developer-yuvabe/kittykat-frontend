@@ -502,7 +502,7 @@ const RemixControls = ({
                   loading={form.formState.isSubmitting}
                 >
                   <BrainIcon />
-                  A2i Showboard Generation
+                  A2i Concept Visual Generation
                 </Button>
               </div>
             </form>

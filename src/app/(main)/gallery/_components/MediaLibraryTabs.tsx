@@ -10,7 +10,7 @@ function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
     { value: "brand-uploads", label: "Brand Uploads" },
     { value: "moodboard", label: "Moodboards" },
 
-    { value: "showboard-media", label: "Showboard Media" },
+    { value: "showboard-media", label: "Concept Visuals" },
     { value: "a2i-media", label: "A2i Media" },
   ];
 
