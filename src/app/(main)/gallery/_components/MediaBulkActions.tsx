@@ -46,11 +46,14 @@ import { v4 } from "uuid";
 import { CatIcon, LibraryIcon } from "@/components/ui/custom-icon";
 import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { toast } from "sonner";
+import JSZip from "jszip";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
   onUnselectAll: () => void;
   galleryActions: GalleryActions;
+  brandName: string;
 }
 
 type MoveAction = "brand" | "campaign" | "source";
@@ -59,6 +62,7 @@ export function MediaBulkActions({
   selectedItems,
   onUnselectAll,
   galleryActions,
+  brandName,
 }: MediaBulkActionsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -134,16 +138,117 @@ export function MediaBulkActions({
     }
   };
 
+  // const handleBulkDownload = async () => {
+  //   if (selectedItems.length === 0) return;
+
+  //   setIsDownloading(true);
+  //   try {
+  //     for (const item of selectedItems) {
+  //       await galleryActions.downloadItem(item);
+  //     }
+  //   } catch (error) {
+  //     console.error("Bulk download error:", error);
+  //   } finally {
+  //     setIsDownloading(false);
+  //   }
+  // };
+
+  const getFileExtensionFromUrl = (url: string): string => {
+    const fileName = url.split("/").pop()?.split("?")[0] || "";
+    const ext = fileName.split(".").pop();
+    return ext && ext.length < 6 ? ext : "jpg"; // fallback if no or invalid extension
+  };
+
+  const slugify = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gi, "_") // Replace non-alphanumeric with _
+      .replace(/_+/g, "_") // Collapse multiple _ into one
+      .replace(/^_+|_+$/g, ""); // Trim leading/trailing _
+
   const handleBulkDownload = async () => {
     if (selectedItems.length === 0) return;
 
+    const toastId = "bulk-download";
+    let downloadedCount = 0;
+    const totalItems = selectedItems.length;
+
     setIsDownloading(true);
+    toast.loading("Preparing download...", { id: toastId });
+
     try {
-      for (const item of selectedItems) {
-        await galleryActions.downloadItem(item);
+      // Initialize ZIP
+      const zip = new JSZip();
+
+      // Create batches to manage memory
+      const batchSize = 10;
+      const urlBatches = [];
+      const validItems = selectedItems.filter((item) => !!item.asset_url);
+
+      for (let i = 0; i < validItems.length; i += batchSize) {
+        urlBatches.push(validItems.slice(i, i + batchSize));
       }
-    } catch (error) {
-      console.error("Bulk download error:", error);
+
+      // Download images batch-wise
+      for (let i = 0; i < urlBatches.length; i++) {
+        const batch = urlBatches[i];
+
+        await Promise.all(
+          batch.map(async (item) => {
+            try {
+              const response = await fetch(item.asset_url);
+              const blob = await response.blob();
+
+              const fileName =
+                item.asset_url.split("/").pop()?.split("?")[0] ||
+                `file-${Date.now()}.jpg`;
+              const extension = getFileExtensionFromUrl(item.asset_url);
+              const cleanFileName = fileName.endsWith(`.${extension}`)
+                ? fileName
+                : `${fileName}.${extension}`;
+
+              zip.file(cleanFileName, blob);
+
+              downloadedCount++;
+              const percentage = Math.round(
+                (downloadedCount / totalItems) * 100
+              );
+              toast.loading(
+                `Downloading: ${downloadedCount}/${totalItems} (${percentage}%)`,
+                {
+                  id: toastId,
+                }
+              );
+            } catch (err) {
+              console.error("Download failed:", item.asset_url, err);
+            }
+          })
+        );
+      }
+
+      // Create the ZIP file
+      toast.loading("Creating ZIP file...", { id: toastId });
+
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      });
+
+      // Trigger download
+      const zipUrl = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = zipUrl;
+      a.download = `${slugify(brandName)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(zipUrl);
+
+      toast.success("Download complete!", { id: toastId });
+    } catch (error: any) {
+      console.error("ZIP download failed:", error);
+      toast.error("Download failed.", { id: toastId });
     } finally {
       setIsDownloading(false);
     }
@@ -260,20 +365,6 @@ export function MediaBulkActions({
           uploadFileAndReturnUrl(file.name, file.type, "ask-kittykat", file)
         )
       );
-
-      // const uploadedUrls = await Promise.all(
-      //   attachments.map((file, index) => {
-      //     const item = selectedItems[index];
-      //     return uploadFileAndReturnUrl(
-      //       file.name,
-      //       file.type,
-      //       "ask-kittykat",
-      //       file,
-      //       item.brand_id,
-      //       item.campaign_id ?? undefined
-      //     );
-      //   })
-      // );
 
       const commentPayload = {
         text: `[batch-comment] ${comment.trim()}`,

@@ -152,6 +152,8 @@ export function MediaLibrary({
     galleryActions.brandsData?.brands,
   ]);
 
+  const selectedBrandName = selectedBrand?.brand_name || "brand";
+
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
 
@@ -384,6 +386,7 @@ export function MediaLibrary({
                 selectedCampaignId={selectedCampaignId}
                 selecteMoodboardId={moodboardId}
                 galleryView={galleryView}
+                brandName={selectedBrandName}
               />
             </div>
           )}
@@ -523,6 +526,7 @@ export function MediaLibrary({
             selectedItems={selectedItemsData}
             onUnselectAll={handleUnselectAll}
             galleryActions={galleryActions}
+            brandName={selectedBrandName}
           />
         )}
     </div>
