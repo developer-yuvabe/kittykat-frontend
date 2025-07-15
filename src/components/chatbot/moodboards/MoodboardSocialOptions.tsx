@@ -67,7 +67,12 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
         const currentLimit = limitKey ? limits[limitKey] : null;
 
         return (
-          <Card key={option.id} className=" py-2 rounded-sm">
+          <Card
+            key={option.id}
+            className={`py-2 rounded-sm ${
+              ["facebook", "website"].includes(option.id) ? "bg-gray-50" : ""
+            }`}
+          >
             <CardContent className="px-2 m-0 ">
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
                 <div className="flex-shrink-0">{option.icon}</div>
@@ -143,6 +148,9 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
                       checked={selectedOptions.includes(option.id)}
                       onCheckedChange={() => toggleOption(option.id)}
                       className="w-5 h-5"
+                      disabled={
+                        option.id === "facebook" || option.id === "website"
+                      }
                     />
                   </div>
                 </div>
