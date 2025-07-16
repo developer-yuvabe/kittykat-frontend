@@ -663,7 +663,7 @@ export function MediaBulkActions({
             <Popover>
               <PopoverTrigger asChild>
                 <Button className="bg-[#636AE8] hover:bg-[#636AE8] flex items-center gap-2">
-                  Ask Kitty
+                  Kittykat Expert
                   <CatIcon />
                   <ChevronDown className="h-4 w-4" />
                 </Button>
