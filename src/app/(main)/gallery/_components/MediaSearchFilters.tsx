@@ -2,7 +2,6 @@
 
 import { Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
@@ -62,13 +61,6 @@ export function MediaSearchFilters({
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
-
-        <Button
-          variant="link"
-          className="text-[#379AE6] underline underline-offset-2 whitespace-nowrap"
-        >
-          Image Search
-        </Button>
 
         <div className="flex items-center gap-2">
           <Checkbox

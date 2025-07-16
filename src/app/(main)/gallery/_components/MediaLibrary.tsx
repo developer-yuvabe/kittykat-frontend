@@ -228,6 +228,14 @@ export function MediaLibrary({
     []
   );
 
+  useEffect(() => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      brands: prev.brands.slice(0, 1),
+      campaigns: prev.campaigns.slice(0, 1),
+    }));
+  }, [searchQuery]);
+
   const handleSourceChange = (value: string) => {
     setSource(value);
   };

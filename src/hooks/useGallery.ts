@@ -57,7 +57,11 @@ export const useGalleryQuery = (
           return await galleryService.searchGalleryItems(
             filters.searchQuery,
             pageParam,
-            items_per_page
+            items_per_page,
+            "vector_text_search",
+            undefined,
+            filters.selectedFilters?.brands[0],
+            filters.selectedFilters?.campaigns[0]
           );
         }
 
