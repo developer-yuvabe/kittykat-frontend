@@ -462,169 +462,166 @@ function MoodboardLayout({
 
   return (
     <div>
-      {moodboard.moodboard_assets.length > 0 &&
-        moodboard.style_analysis_status === "completed" && (
-          <ContentSection
-            title="Moodboard"
-            context={undefined}
-            content={
-              <div>
-                {/* Loading State - for generation, loading, or in_progress */}
-                {showLoadingState && (
-                  <ManualMoodboardSkeleton shimmer showButton={false} />
-                )}
+      {moodboard.moodboard_assets.length > 0 && (
+        <ContentSection
+          title="Moodboard"
+          context={undefined}
+          content={
+            <div>
+              {/* Loading State - for generation, loading, or in_progress */}
+              {showLoadingState && (
+                <ManualMoodboardSkeleton shimmer showButton={false} />
+              )}
 
-                {/* Failed State */}
-                {showFailedState && (
-                  <div className="w-full flex flex-col items-center justify-center py-8 gap-4">
-                    <div className="text-center">
-                      <p className="text-red-600 font-medium">
-                        Moodboard generation failed
-                      </p>
-                      <p className="text-gray-600 text-sm">Please try again</p>
-                    </div>
-                    <Button onClick={handleGenerateMoodboard} variant="outline">
-                      Try Again
-                    </Button>
+              {/* Failed State */}
+              {showFailedState && (
+                <div className="w-full flex flex-col items-center justify-center py-8 gap-4">
+                  <div className="text-center">
+                    <p className="text-red-600 font-medium">
+                      Moodboard generation failed
+                    </p>
+                    <p className="text-gray-600 text-sm">Please try again</p>
                   </div>
-                )}
+                  <Button onClick={handleGenerateMoodboard} variant="outline">
+                    Try Again
+                  </Button>
+                </div>
+              )}
 
-                {/* Completed Gallery State */}
-                {showGallery && (
-                  <div className="w-full flex flex-col gap-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex gap-x-3">
-                        <MoodboardSelector
-                          campaignId={moodboard.campaign_id}
-                          isCreatingNew={isCreatingNew}
-                          moodboards={moodboards}
-                          onNewMoodboard={onNewMoodboard}
-                          selectedMoodboard={selectedMoodboard}
-                          setSelectedMoodboard={setSelectedMoodboard}
-                          variant="select"
-                        />
-                        <ImageCountCard
-                          disabled
-                          maxCount={
-                            moodboard.visual_style_images.length > 16
-                              ? 16
-                              : moodboard.visual_style_images.length
-                          }
-                          imageCount={noOfImagesForMoodboard}
-                          onRefresh={async () => {
-                            handleSaveChanges();
-                            if (selectedBrandId) {
-                              const newCount = noOfImagesForMoodboard + 1;
+              {/* Completed Gallery State */}
+              {showGallery && (
+                <div className="w-full flex flex-col gap-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-x-3">
+                      <MoodboardSelector
+                        campaignId={moodboard.campaign_id}
+                        isCreatingNew={isCreatingNew}
+                        moodboards={moodboards}
+                        onNewMoodboard={onNewMoodboard}
+                        selectedMoodboard={selectedMoodboard}
+                        setSelectedMoodboard={setSelectedMoodboard}
+                        variant="select"
+                      />
+                      <ImageCountCard
+                        disabled
+                        maxCount={
+                          moodboard.visual_style_images.length > 16
+                            ? 16
+                            : moodboard.visual_style_images.length
+                        }
+                        imageCount={noOfImagesForMoodboard}
+                        onRefresh={async () => {
+                          handleSaveChanges();
+                          if (selectedBrandId) {
+                            const newCount = noOfImagesForMoodboard + 1;
 
-                              await createMoodboardForCampaign(
-                                selectedBrandId,
-                                moodboard?.campaign_id,
-                                moodboard.id,
-                                {
-                                  no_of_images: newCount,
-                                }
-                              );
-
-                              setNoOfImagesForMoodboard(newCount);
-                            }
-                          }}
-                          onChange={setNoOfImagesForMoodboard}
-                          hasUnsavedChanges={false}
-                        />
-                        <MoodboardGallerySelector
-                          brandId={brandId}
-                          campaignId={moodboard.campaign_id}
-                          moodboardId={moodboard.id}
-                          hasUnsavedChanges={hasUnsavedChanges}
-                          inSelectionGalleryIds={photos.map(
-                            (photo) => photo.id
-                          )}
-                          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-                          noOfImagesForMoodboard={noOfImagesForMoodboard}
-                          assetsLength={moodboard.moodboard_assets.length}
-                          handleSaveChanges={handleSaveChanges}
-                        />
-                      </div>
-
-                      {/* Save/Cancel Controls - now only for position changes */}
-                      {hasUnsavedChanges && (
-                        <div className="flex gap-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleCancelChanges}
-                            disabled={isSaving}
-                            className="flex items-center gap-x-1"
-                          >
-                            <X size={16} />
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={handleSaveChanges}
-                            disabled={isSaving}
-                            className="flex items-center gap-x-1"
-                          >
-                            <SaveIcon2 size={16} />
-                            {isSaving ? "Saving..." : "Save Changes"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mx-auto max-w-7xl  w-full px-2">
-                      <CustomGridGallery
-                        photos={photos}
-                        movePhoto={movePhoto}
-                        onPhotoLike={onPhotoLike}
-                        removedPhoto={removedPhoto}
-                        onReplaceImage={async ({
-                          imageToReplaceId,
-                          replacementImageUrl,
-                        }) => {
-                          try {
-                            await replaceMoodboardImage(
-                              brandId,
-                              moodboard.campaign_id,
+                            await createMoodboardForCampaign(
+                              selectedBrandId,
+                              moodboard?.campaign_id,
                               moodboard.id,
                               {
-                                image_to_replace_id: imageToReplaceId,
-                                replacement_image_url: replacementImageUrl,
+                                no_of_images: newCount,
                               }
                             );
-                          } catch (error) {
-                            console.error(
-                              "Failed to replace moodboard image:",
-                              error
-                            );
+
+                            setNoOfImagesForMoodboard(newCount);
                           }
                         }}
+                        onChange={setNoOfImagesForMoodboard}
+                        hasUnsavedChanges={false}
+                      />
+                      <MoodboardGallerySelector
+                        brandId={brandId}
+                        campaignId={moodboard.campaign_id}
+                        moodboardId={moodboard.id}
                         hasUnsavedChanges={hasUnsavedChanges}
+                        inSelectionGalleryIds={photos.map((photo) => photo.id)}
+                        setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+                        noOfImagesForMoodboard={noOfImagesForMoodboard}
+                        assetsLength={moodboard.moodboard_assets.length}
+                        handleSaveChanges={handleSaveChanges}
                       />
                     </div>
 
-                    <Button
-                      className="w-full"
-                      disabled={analyzeLoading}
-                      onClick={handleAnalyzeMoodboard}
-                    >
-                      {analyzeLoading ? (
-                        "Analyzing..."
-                      ) : (
-                        <>
-                          <AnalysisChartIcon /> Moodboard Analysis
-                        </>
-                      )}
-                    </Button>
+                    {/* Save/Cancel Controls - now only for position changes */}
+                    {hasUnsavedChanges && (
+                      <div className="flex gap-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCancelChanges}
+                          disabled={isSaving}
+                          className="flex items-center gap-x-1"
+                        >
+                          <X size={16} />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSaveChanges}
+                          disabled={isSaving}
+                          className="flex items-center gap-x-1"
+                        >
+                          <SaveIcon2 size={16} />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            }
-          />
-        )}
+
+                  <div className="mx-auto max-w-7xl  w-full px-2">
+                    <CustomGridGallery
+                      photos={photos}
+                      movePhoto={movePhoto}
+                      onPhotoLike={onPhotoLike}
+                      removedPhoto={removedPhoto}
+                      onReplaceImage={async ({
+                        imageToReplaceId,
+                        replacementImageUrl,
+                      }) => {
+                        try {
+                          await replaceMoodboardImage(
+                            brandId,
+                            moodboard.campaign_id,
+                            moodboard.id,
+                            {
+                              image_to_replace_id: imageToReplaceId,
+                              replacement_image_url: replacementImageUrl,
+                            }
+                          );
+                        } catch (error) {
+                          console.error(
+                            "Failed to replace moodboard image:",
+                            error
+                          );
+                        }
+                      }}
+                      hasUnsavedChanges={hasUnsavedChanges}
+                    />
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    disabled={analyzeLoading}
+                    onClick={handleAnalyzeMoodboard}
+                  >
+                    {analyzeLoading ? (
+                      "Analyzing..."
+                    ) : (
+                      <>
+                        <AnalysisChartIcon /> Moodboard Analysis
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          }
+        />
+      )}
 
       {/* Empty State */}
-      {!showLoadingState && !showFailedState && !showGallery && (
+      {moodboard.moodboard_assets.length === 0 && (
         <div className="w-full flex flex-col gap-y-4 mt-6">
           <ManualMoodboardSkeleton />
 
