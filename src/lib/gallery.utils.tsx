@@ -15,20 +15,26 @@ export const acceptedFileTypes = {
       "image/png": [".png"],
       "image/jpeg": [".jpg", ".jpeg"],
       "image/svg+xml": [".svg"],
-    },
-    text: "PNG, JPEG, JPG, SVG",
-    placeholder: "Drop images here to upload",
-    assetType: "image",
-  },
-  videos: {
-    types: {
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
       "video/x-msvideo": [".avi"],
     },
-    text: "MP4, MOV, AVI",
-    placeholder: "Drop videos here to upload",
-    assetType: "video",
+    text: "PNG, JPEG, JPG, SVG, MP4, MOV, AVI",
+    placeholder: "Drop images or videos here to upload",
+    assetType: "image", // Default, overridden by getAssetTypeFromFile
+  },
+  videos: {
+    types: {
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/svg+xml": [".svg"],
+      "video/mp4": [".mp4"],
+      "video/quicktime": [".mov"],
+      "video/x-msvideo": [".avi"],
+    },
+    text: "PNG, JPEG, JPG, SVG, MP4, MOV, AVI",
+    placeholder: "Drop images or videos here to upload",
+    assetType: "video", // Default, overridden by getAssetTypeFromFile
   },
   models: {
     types: {
@@ -66,6 +72,15 @@ export const acceptedFileTypes = {
 export const getAssetTypeFromFile = (file: File): string => {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
+  return "image"; // fallback
+};
+
+// Helper function to determine asset type from URL
+export const getAssetTypeFromUrl = (url: string): string => {
+  const extension = url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase();
+  if (["mp4", "mov", "avi", "webm"].includes(extension || "")) return "video";
+  if (["png", "jpg", "jpeg", "svg", "gif", "webp"].includes(extension || ""))
+    return "image";
   return "image"; // fallback
 };
 
@@ -107,6 +122,7 @@ export const createGalleryItemFromFile = async (
   moodboardId?: string
 ): Promise<GalleryItem> => {
   const dimensions = await getImageDimensions(file);
+  const assetType = getAssetTypeFromFile(file);
 
   // Calculate aspect ratio if dimensions are available
   const aspectRatio = dimensions
@@ -115,12 +131,12 @@ export const createGalleryItemFromFile = async (
 
   const galleryItem: GalleryItem = {
     // Basic Asset Info
-    asset_type: "uploaded",
+    asset_type: "image" === assetType ? "image" : "video",
     asset_source: activeTab,
     asset_title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
     asset_url: url,
     size: formatBytes(file.size),
-    aspect_ratio: aspectRatio,
+    aspect_ratio: assetType === "image" ? aspectRatio : undefined,
     media_format: getSafeMediaFormat(file),
     brand_id: brandId,
     // Versioning
@@ -215,6 +231,8 @@ export const ASSET_TYPE_OPTIONS = [
   { value: "generated", label: "Generated" },
   { value: "uploaded", label: "Uploaded" },
   { value: "edited", label: "Edited" },
+  { value: "video", label: "Video" },
+  { value: "image", label: "Image" },
 ];
 
 export const MEDIA_FORMAT_OPTIONS = [
@@ -226,6 +244,7 @@ export const MEDIA_FORMAT_OPTIONS = [
   { value: "mp4", label: "MP4" },
   { value: "mov", label: "MOV" },
   { value: "webm", label: "WebM" },
+  { value: "avi", label: "AVI" },
 ];
 
 export const ASPECT_RATIO_OPTIONS = [
