@@ -70,7 +70,7 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
           <Card
             key={option.id}
             className={`py-2 rounded-sm ${
-              ["facebook", "website"].includes(option.id) ? "bg-gray-50" : ""
+              ["facebook", "website"].includes(option.id) ? "opacity-50" : ""
             }`}
           >
             <CardContent className="px-2 m-0 ">
