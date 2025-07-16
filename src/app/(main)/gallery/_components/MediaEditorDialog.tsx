@@ -530,255 +530,264 @@ export function MediaEditorDialog({
             if (showConfirmDialog) e.preventDefault();
           }}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="p-4 h-[100dvh] w-[100dvw] max-w-[100dvw]! min-w-full rounded-none shadow-xl overflow-hidden flex flex-col justify-between"
+          className="p-0 h-[100dvh] w-[100dvw] max-w-[100dvw]! min-w-full rounded-none shadow-xl overflow-hidden flex flex-col"
         >
-          <DialogHeader className="px-6 py-4 mb-0 pb-0">
+          {/* Fixed Header */}
+          <DialogHeader className="px-6 py-4 bg-white border-b flex-shrink-0 z-10">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl font-semibold">
-                A2i Image Editor
+                Concept Visual Editor
               </DialogTitle>
-              {onNavigate && totalItems > 1 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    {currentIndex + 1} of {galleryActions.totalItems}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleNavigate("prev")}
-                      disabled={!canNavigatePrev}
-                      className="p-2 h-8 w-8"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleNavigate("next")}
-                      disabled={!canNavigateNext}
-                      className="p-2 h-8 w-8"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+              <div className="flex items-center gap-4">
+                {onNavigate && totalItems > 1 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      {currentIndex + 1} of {galleryActions.totalItems}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleNavigate("prev")}
+                        disabled={!canNavigatePrev}
+                        className="p-2 h-8 w-8"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleNavigate("next")}
+                        disabled={!canNavigateNext}
+                        className="p-2 h-8 w-8"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="p-2 h-8 w-8"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </DialogHeader>
 
-          <div className="flex flex-1 overflow-hidden gap-x-3">
-            <div className="w-[35%] min-w-[280px] flex flex-col justify-between gap-y-4">
-              {currentItem && (
-                <AskKittykatImageSection
-                  item={currentItem}
-                  galleryActions={galleryActions}
-                  isRemixEnabled={isRemixEnabled}
-                  imageRef={imageRef}
-                  canvasRef={canvasRef}
-                  offScreenCanvasRef={offScreenCanvasRef}
-                  remixHistory={remixHistory}
-                  brushSize={brushSize}
-                  remixImageRef={remixImageRef}
-                  revalidateGalleryItemVersions={revalidateGalleryItemVersions}
-                />
-              )}
-              {currentItem && (
-                <AskKittykatVersions
-                  item={item!}
-                  currentVersion={currentItem}
-                  onVersionChange={(updatedItem) => {
-                    setCurrentItem(updatedItem);
-                  }}
-                />
-              )}
-            </div>
+          {/* Content Area */}
+          <div className="flex-1 min-h-0">
+            <div className="flex h-full gap-x-3 p-4">
+              {/* Left Panel - Static */}
+              <div className="w-[35%] min-w-[280px] flex flex-col gap-y-4">
+                {currentItem && (
+                  <AskKittykatImageSection
+                    item={currentItem}
+                    galleryActions={galleryActions}
+                    isRemixEnabled={isRemixEnabled}
+                    imageRef={imageRef}
+                    canvasRef={canvasRef}
+                    offScreenCanvasRef={offScreenCanvasRef}
+                    remixHistory={remixHistory}
+                    brushSize={brushSize}
+                    remixImageRef={remixImageRef}
+                    revalidateGalleryItemVersions={
+                      revalidateGalleryItemVersions
+                    }
+                  />
+                )}
+                {currentItem && (
+                  <AskKittykatVersions
+                    item={item!}
+                    currentVersion={currentItem}
+                    onVersionChange={(updatedItem) => {
+                      setCurrentItem(updatedItem);
+                    }}
+                  />
+                )}
+              </div>
 
-            {/* Right Panel */}
-            <div className="flex-1 w-[65%] flex flex-col">
-              {currentItem && (
-                <Tabs
-                  value={activeTab}
-                  onValueChange={setActiveTab}
-                  className="flex-1 flex flex-col bg-none"
-                >
-                  {currentItem.asset_type !== "video" && (
-                    <>
-                      <AskKittykatTabs />
-                      <AskKittykatImageEditingTools
-                        item={currentItem}
-                        remixControls={{
-                          image: {
-                            url: currentItem.asset_url,
-                            size: currentItem.size || "original",
-                          },
-                          canUndo: remixHistory.canUndo,
-                          canRedo: remixHistory.canRedo,
-                          onUndo: handleUndo,
-                          onRedo: handleRedo,
-                          onClear: handleClear,
-                          offScreenCanvasRef,
-                          brushSize,
-                          onBrushSizeChange: handleBrushSizeChange,
-                          closeDialog: () => onOpenChange(false),
-                        }}
-                      />
-                    </>
-                  )}
-
-                  <TabsContent
-                    value="ask-kittykat"
-                    className="flex-1 flex flex-col"
+              {/* Right Panel - Scrollable */}
+              <div className="flex-1 w-[65%] flex flex-col min-h-0 overflow-y-auto">
+                {currentItem && (
+                  <Tabs
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                    className="flex-1 flex flex-col bg-none"
                   >
-                    <div className="px-4 py-3">
-                      <h2 className="font-semibold text-lg">Ask Kitty Kat</h2>
-                    </div>
-
-                    {/* Comments Section */}
-                    <div className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
-                      <div
-                        className="space-y-4 overflow-y-auto"
-                        style={{
-                          maxHeight: "calc(100vh - 600px)",
-                          minHeight: "200px",
-                        }}
-                      >
-                        {!hasComments ? (
-                          <AskKittykatCommentGuidelines />
-                        ) : (
-                          <div className="space-y-4">
-                            {currentItem.comments?.map((comment) => (
-                              <div key={comment.id} className="space-y-3">
-                                <AskKittykatCommentItem
-                                  comment={comment}
-                                  itemId={currentItem.id}
-                                  editingCommentId={editingComment}
-                                  setEditingComment={setEditingComment}
-                                  setReplyingTo={setReplyingTo}
-                                  onUpdateComment={handleUpdateComment}
-                                  onDeleteComment={handleDeleteComment}
-                                  onLikeComment={handleLikeComment}
-                                />
-                                <AskKittykatReplyList
-                                  replies={comment.replies}
-                                  commentId={comment.id}
-                                  itemId={currentItem.id}
-                                  editingReply={editingReply}
-                                  setEditingReply={setEditingReply}
-                                  onUpdateReply={handleUpdateReply}
-                                  onDeleteReply={handleDeleteReply}
-                                  onLikeReply={handleLikeReply}
-                                />
-                                {replyingTo === comment.id && (
-                                  <AskKittykatReplyInput
-                                    replyText={replyText}
-                                    setReplyText={setReplyText}
-                                    replyAttachments={replyAttachments}
-                                    setReplyAttachments={setReplyAttachments}
-                                    isSubmitting={isSubmitting}
-                                    isUploading={isUploading}
-                                    onSubmit={() =>
-                                      handleSubmitReply(comment.id)
-                                    }
-                                    onCancel={() => {
-                                      setReplyingTo(null);
-                                      setReplyText("");
-                                      setReplyAttachments([]);
-                                    }}
-                                    onFileUpload={handleFileUpload}
-                                  />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Fixed Comment Input Section */}
-                    <div className="border-t bg-white p-4 space-y-3 flex-shrink-0">
-                      <div className="space-y-3">
-                        <Textarea
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Ask KittyKat Experts for help with editing this image..."
-                          className="min-h-[80px] resize-none"
+                    {currentItem.asset_type !== "video" && (
+                      <>
+                        <AskKittykatTabs />
+                        <AskKittykatImageEditingTools
+                          item={currentItem}
+                          remixControls={{
+                            image: {
+                              url: currentItem.asset_url,
+                              size: currentItem.size || "original",
+                            },
+                            canUndo: remixHistory.canUndo,
+                            canRedo: remixHistory.canRedo,
+                            onUndo: handleUndo,
+                            onRedo: handleRedo,
+                            onClear: handleClear,
+                            offScreenCanvasRef,
+                            brushSize,
+                            onBrushSizeChange: handleBrushSizeChange,
+                            closeDialog: () => onOpenChange(false),
+                          }}
                         />
-                        {attachments.length > 0 && (
-                          <div className="flex flex-row gap-x-2">
-                            {attachments.map((url, idx) => (
-                              <div key={idx} className="relative">
-                                <ZoomableImage
-                                  src={url}
-                                  key={idx}
-                                  className="w-16 h-16 object-cover rounded border cursor-pointer"
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="absolute -top-2 -right-2 w-5 h-5 p-0"
-                                  onClick={() =>
-                                    setAttachments((prev) =>
-                                      prev.filter((_, i) => i !== idx)
-                                    )
-                                  }
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e.target.files)}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={isUploading}
-                            >
-                              <Paperclip className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <Button
-                            onClick={handleSubmitComment}
-                            disabled={
-                              isSubmitting ||
-                              (!newComment.trim() && attachments.length === 0)
-                            }
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            <Send className="w-4 h-4 mr-2" />
-                            Add comment
-                          </Button>
+                      </>
+                    )}
+
+                    <TabsContent
+                      value="ask-kittykat"
+                      className="flex-1 flex flex-col min-h-0"
+                    >
+                      {/* Comments Section */}
+                      <div className="flex-1 p-4 space-y-4 min-h-0">
+                        <div className="space-y-4">
+                          {!hasComments ? (
+                            <AskKittykatCommentGuidelines />
+                          ) : (
+                            <div className="space-y-4">
+                              {currentItem.comments?.map((comment) => (
+                                <div key={comment.id} className="space-y-3">
+                                  <AskKittykatCommentItem
+                                    comment={comment}
+                                    itemId={currentItem.id}
+                                    editingCommentId={editingComment}
+                                    setEditingComment={setEditingComment}
+                                    setReplyingTo={setReplyingTo}
+                                    onUpdateComment={handleUpdateComment}
+                                    onDeleteComment={handleDeleteComment}
+                                    onLikeComment={handleLikeComment}
+                                  />
+                                  <AskKittykatReplyList
+                                    replies={comment.replies}
+                                    commentId={comment.id}
+                                    itemId={currentItem.id}
+                                    editingReply={editingReply}
+                                    setEditingReply={setEditingReply}
+                                    onUpdateReply={handleUpdateReply}
+                                    onDeleteReply={handleDeleteReply}
+                                    onLikeReply={handleLikeReply}
+                                  />
+                                  {replyingTo === comment.id && (
+                                    <AskKittykatReplyInput
+                                      replyText={replyText}
+                                      setReplyText={setReplyText}
+                                      replyAttachments={replyAttachments}
+                                      setReplyAttachments={setReplyAttachments}
+                                      isSubmitting={isSubmitting}
+                                      isUploading={isUploading}
+                                      onSubmit={() =>
+                                        handleSubmitReply(comment.id)
+                                      }
+                                      onCancel={() => {
+                                        setReplyingTo(null);
+                                        setReplyText("");
+                                        setReplyAttachments([]);
+                                      }}
+                                      onFileUpload={handleFileUpload}
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Review Status Section - Always Visible */}
-                    <div className="flex-shrink-0 ">
-                      <AskKittykatReviewStatus
-                        onAskKittykat={handleAskKittyKat}
-                        galleryActions={galleryActions}
-                        // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
-                        item={currentItem}
-                        revalidateGalleryItemVersions={
-                          revalidateGalleryItemVersions
-                        }
-                        setCurrentItem={setCurrentItem}
-                      />
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              )}
+                      {/* Comment Input Section */}
+                      <div className="border-t bg-white p-4 space-y-3">
+                        <div className="space-y-3">
+                          <Textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            placeholder="Ask KittyKat Experts for help with editing this image..."
+                            className="min-h-[80px] resize-none"
+                          />
+                          {attachments.length > 0 && (
+                            <div className="flex flex-row gap-x-2">
+                              {attachments.map((url, idx) => (
+                                <div key={idx} className="relative">
+                                  <ZoomableImage
+                                    src={url}
+                                    key={idx}
+                                    className="w-16 h-16 object-cover rounded border cursor-pointer"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="absolute -top-2 -right-2 w-5 h-5 p-0"
+                                    onClick={() =>
+                                      setAttachments((prev) =>
+                                        prev.filter((_, i) => i !== idx)
+                                      )
+                                    }
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) =>
+                                  handleFileUpload(e.target.files)
+                                }
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                              >
+                                <Paperclip className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <Button
+                              onClick={handleSubmitComment}
+                              disabled={
+                                isSubmitting ||
+                                (!newComment.trim() && attachments.length === 0)
+                              }
+                              className="bg-purple-600 hover:bg-purple-700"
+                            >
+                              <Send className="w-4 h-4 mr-2" />
+                              Add comment
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Review Status Section */}
+                      <div className="bg-gray-50 border-t">
+                        <AskKittykatReviewStatus
+                          onAskKittykat={handleAskKittyKat}
+                          galleryActions={galleryActions}
+                          // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
+                          item={currentItem}
+                          revalidateGalleryItemVersions={
+                            revalidateGalleryItemVersions
+                          }
+                          setCurrentItem={setCurrentItem}
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                )}
+              </div>
             </div>
           </div>
         </DialogContent>

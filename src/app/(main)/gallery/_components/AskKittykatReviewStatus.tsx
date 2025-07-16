@@ -228,7 +228,7 @@ export function AskKittykatReviewStatus({
             variant="default"
           >
             <Lock className="w-5 h-5 mr-2" />
-            KittyKat Experts
+            Ask KittyKat Expert
           </Button>
         )}
 
