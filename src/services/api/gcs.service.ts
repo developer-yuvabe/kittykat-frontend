@@ -17,8 +17,6 @@ export async function uploadFileAndReturnUrl(
       .replace(/\.[^/.]+$/, ""); // remove file extension
 
     // Get the presigned URL
-    console.log("brandId in uploadFileAndReturnUrl", brandId);
-    console.log("campaignId in uploadFileAndReturnUrl", campaignId);
 
     const response = await axiosInstance.post(`/users/file/upload`, {
       file_name: cleanedFileName,
@@ -28,7 +26,6 @@ export async function uploadFileAndReturnUrl(
       campaign_id: campaignId || null, // Use campaignId if provided, otherwise null
     });
 
-    console.log(response.data.data);
     const { upload_url, download_url } = response.data.data;
 
     // Upload the file to the presigned URL

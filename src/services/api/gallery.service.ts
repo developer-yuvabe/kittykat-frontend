@@ -20,7 +20,6 @@ class GalleryService {
   async createGalleryItem(
     galleryItem: GalleryItem
   ): Promise<GalleryItemResponse> {
-    console.log("new item", galleryItem);
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.post("/gallery", galleryItem)
     );

@@ -24,12 +24,7 @@ const VirtualTryOn = ({
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  console.log("render");
-  console.log("vton", productImage);
-
-  useEffect(() => {
-    console.log("viton", garmentImage);
-  }, [garmentImage]);
+  useEffect(() => {}, [garmentImage]);
 
   const handelVtonGeneration = async () => {
     if (!garmentImage) {
@@ -120,7 +115,6 @@ const VirtualTryOn = ({
           }
         }}
         onMediaItemSelected={(mediaItem) => {
-          console.log("selected mediaItem:", mediaItem);
           setGarmentImage(mediaItem); // should be a valid URL string
           setShowMediaLibrary(false);
         }}

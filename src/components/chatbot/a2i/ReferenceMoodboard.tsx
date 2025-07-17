@@ -140,7 +140,6 @@ const ReferenceMoodboard = ({
         )
       );
 
-      console.log("Loaded reference photos:", loaded);
       setPhotos(loaded);
     } catch (error) {
       console.error("Failed to load reference images:", error);
