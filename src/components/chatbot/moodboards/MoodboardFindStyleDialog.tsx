@@ -34,9 +34,10 @@ interface MoodboardFindStyleDialogProps {
   uploadedImages: UploadedImage[];
   selectedOptions: string[];
   socialOptions: SocialOption[];
-  isAnalysisInProgress: () => boolean;
+  isAnalysisInProgress: boolean;
   handleFindStyle: () => void;
   imageCount: number;
+  setIsAnalysisInProgress: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function MoodboardFindStyleDialog({
@@ -48,6 +49,7 @@ export function MoodboardFindStyleDialog({
   isAnalysisInProgress,
   handleFindStyle,
   imageCount,
+  setIsAnalysisInProgress,
 }: MoodboardFindStyleDialogProps) {
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
 
@@ -60,7 +62,7 @@ export function MoodboardFindStyleDialog({
 
   const isButtonDisabled =
     (uploadedImages.length === 0 && selectedOptions.length === 0) ||
-    isAnalysisInProgress();
+    isAnalysisInProgress;
 
   return (
     <div className="mt-2">
@@ -73,9 +75,9 @@ export function MoodboardFindStyleDialog({
                   <Button
                     className="w-full"
                     onClick={() => setShowVerifyDialog(true)}
-                    disabled={isButtonDisabled || imageCount < 10}
+                    disabled={isButtonDisabled}
                   >
-                    {isAnalysisInProgress() ? (
+                    {isAnalysisInProgress ? (
                       <span className="flex items-center gap-2">
                         <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
                         Analyzing...
@@ -137,6 +139,7 @@ export function MoodboardFindStyleDialog({
             <AlertDialogAction
               onClick={() => {
                 setShowVerifyDialog(false);
+                setIsAnalysisInProgress(true);
                 handleFindStyle();
               }}
             >

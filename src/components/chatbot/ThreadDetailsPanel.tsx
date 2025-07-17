@@ -46,7 +46,8 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
-      {isFetchingBrandInfo || !isBrandsFetched || isCreatingBrand ? (
+
+      {isFetchingBrandInfo || isCreatingBrand ? (
         <InitialPlaceHolder
           isLoading={isFetchingBrandInfo || !isBrandsFetched}
           isCreatingNewBrand={isCreatingBrand}

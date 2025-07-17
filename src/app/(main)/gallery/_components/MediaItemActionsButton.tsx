@@ -21,14 +21,14 @@ export function MediaItemActionsButton({
   return (
     <>
       {/* Details button */}
-      <Button
+      {/* <Button
         variant="ghost"
         onClick={() => onDetailsClick(item)}
         className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left p-2 rounded-md hover:text-foreground"
       >
         <Info size={20} />
         <span className="ml-2">View Details</span>
-      </Button>
+      </Button> */}
 
       {/* Download button */}
       <Button

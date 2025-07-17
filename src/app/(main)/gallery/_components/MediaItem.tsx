@@ -153,19 +153,7 @@ export function MediaItem({
                   side="right"
                 >
                   <div className="space-y-2">
-                    <MediaItemEditableTitle
-                      item={item}
-                      onUpdateTitle={mediaHelper.editTitle}
-                    />
-
-                    <MediaImageDetails item={item} />
-
-                    <MediaItemCommentSection
-                      item={item}
-                      onUpdateComment={mediaHelper.updateComment}
-                      onDeleteComment={mediaHelper.deleteComment}
-                      onAddComment={mediaHelper.addComment}
-                    />
+                    {/* <MediaImageDetails item={item} /> */}
 
                     <MediaItemActionsButton
                       item={item}

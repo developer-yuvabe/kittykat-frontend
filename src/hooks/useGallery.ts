@@ -15,13 +15,17 @@ import type {
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 
-const ITEMS_PER_PAGE = 20;
+export const ITEMS_PER_PAGE = 20;
 
 export const useGalleryQuery = (
   filters: GalleryFilters,
-  items_per_page: number = ITEMS_PER_PAGE
+  items_per_page: number = ITEMS_PER_PAGE,
+  enabled: boolean = true,
+  compUsed: string = "unknown"
 ) => {
   const queryClient = useQueryClient();
+
+  console.log("used this hook", compUsed);
 
   // Fetch brands and campaigns for filters
   const brandsQuery = useQuery({
@@ -51,13 +55,18 @@ export const useGalleryQuery = (
   // Infinite query for gallery items with filters
   const galleryQuery = useInfiniteQuery({
     queryKey: getGalleryQueryKey(),
+    enabled: enabled && brandsQuery.isSuccess,
     queryFn: async ({ pageParam = 0 }) => {
       try {
         if (filters.searchQuery) {
           return await galleryService.searchGalleryItems(
             filters.searchQuery,
             pageParam,
-            items_per_page
+            items_per_page,
+            "vector_text_search",
+            undefined,
+            filters.selectedFilters?.brands[0],
+            filters.selectedFilters?.campaigns[0]
           );
         }
 
@@ -114,8 +123,9 @@ export const useGalleryQuery = (
   });
 
   // Flatten all pages of gallery items
-  const galleryItems =
-    galleryQuery.data?.pages.flatMap((page) => page.gallery_items) || [];
+  function getGalleryItems() {
+    return galleryQuery.data?.pages.flatMap((page) => page.gallery_items) || [];
+  }
 
   // Get single gallery item by ID
   const useGalleryItem = (itemId: string) => {
@@ -398,7 +408,6 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-      toast.success("Comment added successfully");
     },
 
     onError: () => {
@@ -420,7 +429,6 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-      toast.success("Comment updated successfully");
     },
 
     onError: () => {
@@ -469,8 +477,6 @@ export const useGalleryQuery = (
           comments: old.comments?.filter((c: any) => c.id !== commentId),
         };
       });
-
-      toast.success("Comment deleted successfully");
     },
 
     onError: () => {
@@ -491,8 +497,6 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-
-      toast.success("Reply added successfully");
     },
 
     onError: () => {
@@ -527,20 +531,8 @@ export const useGalleryQuery = (
       updateData: CommentUpdate;
     }) => galleryService.patchComment(itemId, commentId, updateData),
 
-    onSuccess: (updatedItem, variables) => {
+    onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-
-      const updateData = variables.updateData;
-
-      if ("like_action" in updateData) {
-        toast.success(
-          updateData.like_action === "add"
-            ? "You liked the comment"
-            : "You unliked the comment"
-        );
-      } else {
-        toast.success("Comment updated successfully");
-      }
     },
 
     onError: (error, variables) => {
@@ -567,7 +559,6 @@ export const useGalleryQuery = (
     onSuccess: (updatedItem) => {
       queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
       queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
-      toast.success("Reply deleted successfully");
     },
     onError: () => {
       toast.error("Failed to delete reply");
@@ -592,21 +583,9 @@ export const useGalleryQuery = (
         replyId,
         updateData
       ),
-    onSuccess: (updatedItem, variables) => {
+    onSuccess: (updatedItem) => {
       queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
       queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
-
-      const updateData = variables.updateData;
-
-      if ("like_action" in updateData) {
-        toast.success(
-          updateData.like_action === "add"
-            ? "You liked the reply"
-            : "You unliked the reply"
-        );
-      } else {
-        toast.success("Reply updated successfully");
-      }
     },
 
     onError: (error, variables) => {
@@ -648,7 +627,7 @@ export const useGalleryQuery = (
     brandsRefetch: brandsQuery.refetch,
 
     // Gallery items
-    galleryItems,
+    getGalleryItems,
     galleryStatus: galleryQuery.status,
     isFetchingNextPage: galleryQuery.isFetchingNextPage,
     hasNextPage: galleryQuery.hasNextPage,

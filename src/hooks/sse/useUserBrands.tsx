@@ -5,7 +5,7 @@ import { useUserStore } from "@/store/user.store";
 import { UserBrand } from "@/types/user.types";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useGalleryQuery } from "../useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 
 export const useUserBrands = (userId?: string) => {
   const {
@@ -22,7 +22,12 @@ export const useUserBrands = (userId?: string) => {
     queryFn: () => fetchUserBrands(user!.id),
   });
 
-  const { brandsRefetch } = useGalleryQuery({});
+  const { brandsRefetch } = useGalleryQuery(
+    {},
+    ITEMS_PER_PAGE,
+    false,
+    "useUserBrands"
+  );
 
   useEffect(() => {
     if (data) {

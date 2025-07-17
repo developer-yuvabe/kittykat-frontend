@@ -35,6 +35,7 @@ import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
+import { useBrandStore } from "@/store/brand.store";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -88,6 +89,13 @@ export function MediaLibrary({
     history: "push",
   });
 
+  const { selectedBrandId } = useBrandStore();
+
+  // Priority logic: initialBrandId takes precedence over selectedBrandId
+  const effectiveBrandId = useMemo(() => {
+    return initialBrandId || selectedBrandId;
+  }, [initialBrandId, selectedBrandId]);
+
   const initialFilters = useMemo(() => {
     return (
       filters ?? {
@@ -126,31 +134,42 @@ export function MediaLibrary({
     selectedFilters,
   });
 
-  const galleryItems = galleryActions.galleryItems;
+  const galleryItems = galleryActions.getGalleryItems();
 
   useEffect(() => {
-    if (initialBrandId || initialWorkflowStatus.length > 0) {
-      // Find the brand from the brands data
+    if (effectiveBrandId || initialWorkflowStatus.length > 0) {
+      // Find the brand from the brands data using the effective brand ID
       const brandToSelect = galleryActions.brandsData?.brands.find(
-        (b) => b.brand_id === initialBrandId
+        (b) => b.brand_id === effectiveBrandId
       );
 
-      if (brandToSelect) {
+      if (brandToSelect && brandToSelect.brand_id !== selectedBrand?.brand_id) {
         setSelectedBrand(brandToSelect);
       }
 
-      setSelectedFilters((prev) => ({
-        ...prev,
-        workflow_status:
-          initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
-        brands: initialBrandId ? [initialBrandId] : prev.brands,
-      }));
+      setSelectedFilters((prev) => {
+        const newFilters = {
+          ...prev,
+          workflow_status:
+            initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
+          brands: effectiveBrandId ? [effectiveBrandId] : prev.brands,
+        };
+
+        // Only update if something actually changed
+        if (JSON.stringify(newFilters) !== JSON.stringify(prev)) {
+          return newFilters;
+        }
+        return prev;
+      });
     }
   }, [
     initialWorkflowStatus,
-    initialBrandId,
+    effectiveBrandId,
     galleryActions.brandsData?.brands,
+    selectedBrand?.brand_id, // Add this dependency
   ]);
+
+  const selectedBrandName = selectedBrand?.brand_name || "brand";
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -225,6 +244,14 @@ export function MediaLibrary({
       }, 500),
     []
   );
+
+  useEffect(() => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      brands: prev.brands.slice(0, 1),
+      campaigns: prev.campaigns.slice(0, 1),
+    }));
+  }, [searchQuery]);
 
   const handleSourceChange = (value: string) => {
     setSource(value);
@@ -340,7 +367,7 @@ export function MediaLibrary({
               selectedCampaignId={selectedCampaignId}
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
-              preSelectedBrandId={brandId || initialBrandId}
+              preSelectedBrandId={brandId || effectiveBrandId}
             />
           )}
         </div>
@@ -384,6 +411,7 @@ export function MediaLibrary({
                 selectedCampaignId={selectedCampaignId}
                 selecteMoodboardId={moodboardId}
                 galleryView={galleryView}
+                brandName={selectedBrandName}
               />
             </div>
           )}
@@ -523,6 +551,7 @@ export function MediaLibrary({
             selectedItems={selectedItemsData}
             onUnselectAll={handleUnselectAll}
             galleryActions={galleryActions}
+            brandName={selectedBrandName}
           />
         )}
     </div>

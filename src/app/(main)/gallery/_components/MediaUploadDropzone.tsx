@@ -1,11 +1,10 @@
-// 1. Main MediaUploadDropzone (orchestrator)
 "use client";
 
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import type {
   GalleryFilters,
   BrandCampaignListResponse,
@@ -15,6 +14,7 @@ import type {
 import {
   acceptedFileTypes,
   createGalleryItemFromFile,
+  getAssetTypeFromUrl,
 } from "@/lib/gallery.utils";
 import { MediaUploadActions } from "./MediaUploadActions";
 import { MediaUploadStatus } from "./MediaUploadStatus";
@@ -50,16 +50,27 @@ export function MediaUploadDropzone({
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { addToGallery: addToGalleryMutation } =
-    useGalleryQuery(galleryFilters);
+  const { addToGallery: addToGalleryMutation } = useGalleryQuery(
+    galleryFilters,
+    ITEMS_PER_PAGE,
+    false,
+    "MediaUploadDropzone"
+  );
 
   const currentConfig = acceptedFileTypes[
     activeTab as keyof typeof acceptedFileTypes
   ] ?? {
-    types: { "image/*": [] },
-    text: "PNG, JPEG, WEBP",
+    types: {
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/svg+xml": [".svg"],
+      "video/mp4": [".mp4"],
+      "video/quicktime": [".mov"],
+      "video/x-msvideo": [".avi"],
+    },
+    text: "PNG, JPEG, MP4",
     placeholder: "Drop media here to upload",
-    assetType: "image",
+    assetType: "image", // Default, overridden by getAssetTypeFromFile
   };
 
   const uploadFiles = async (files: File[]) => {
@@ -191,14 +202,15 @@ export function MediaUploadDropzone({
           try {
             // Get extension from URL
             const extension =
-              url.split(".").pop()?.split(/\#|\?/)[0]?.toLowerCase() || "";
+              url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase() || "";
+            const assetType = getAssetTypeFromUrl(url);
             const galleryItem: GalleryItem = {
               brand_id: selectedBrand.brand_id,
               asset_url: url,
               asset_source: activeTab,
-              asset_type: "image",
+              asset_type: "image" === assetType ? "image" : "video",
               media_format: extension,
-              asset_title: url,
+              asset_title: url.split("/").pop() || url,
               size: "",
               related_asset_ids: [],
               prompt_modifiers: [],
@@ -213,6 +225,7 @@ export function MediaUploadDropzone({
               moodboard_id: selecteMoodboardId,
               is_master: true,
             };
+            console.log("Adding to gallery:", galleryItem);
             addToGalleryMutation(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);

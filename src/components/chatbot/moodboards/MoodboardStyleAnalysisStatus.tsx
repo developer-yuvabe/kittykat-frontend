@@ -13,6 +13,7 @@ type StyleAnalysisStatusProps = {
   progress: number | null | undefined;
   progressMessages?: string[] | null | undefined;
   retryAnalysis: () => Promise<void>;
+  isAnalysisInProgress: boolean;
 };
 
 const getAnalysisStatusMessage = (status: string | undefined): string => {
@@ -33,12 +34,22 @@ const getAnalysisStatusMessage = (status: string | undefined): string => {
 };
 export const MoodboardStyleAnalysisStatus: React.FC<
   StyleAnalysisStatusProps
-> = ({ status, progress, progressMessages = [], retryAnalysis }) => {
+> = ({
+  status,
+  progress,
+  progressMessages = [],
+  retryAnalysis,
+  isAnalysisInProgress,
+}) => {
   if (!status || status === "not_started") return null;
 
   const statusMessage = getAnalysisStatusMessage(status);
 
   const showRetryMessage = status === "failed";
+
+  const computedProgress = isAnalysisInProgress
+    ? Math.max(progress ?? 0, 2)
+    : progress ?? 0;
 
   return (
     <div className="mt-6 space-y-3">
@@ -71,12 +82,12 @@ export const MoodboardStyleAnalysisStatus: React.FC<
           )}
         </div>
         <span className="text-sm font-medium text-gray-700">
-          {progress ?? 0}%
+          {computedProgress}%
         </span>
       </div>
 
       <Progress
-        value={progress ?? 0}
+        value={computedProgress}
         className="h-2 transition-all duration-300"
       />
 
