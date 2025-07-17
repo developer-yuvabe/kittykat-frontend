@@ -13,7 +13,7 @@ import {
   InstagramIcon,
   FacebookIcon,
 } from "@/components/ui/custom-icon";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import {
   addGalleryItemToMoodboard,
@@ -41,19 +41,24 @@ export const MoodboardVisualSectionHeader = ({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { selectedBrandId } = useBrandStore();
-  const { addToGallery } = useGalleryQuery({
-    selectedFilters: {
-      campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
-      moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
-      brands: selectedBrandId ? [selectedBrandId] : [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
+  const { addToGallery } = useGalleryQuery(
+    {
+      selectedFilters: {
+        campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
+        moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
+        brands: selectedBrandId ? [selectedBrandId] : [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+      },
     },
-  });
+    ITEMS_PER_PAGE,
+    true,
+    "MoodboardVisualSectionHeader"
+  );
 
   if (!currentMoodboard || isCreatingNewMoodboard) return null;
 

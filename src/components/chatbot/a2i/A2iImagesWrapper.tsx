@@ -190,7 +190,6 @@ export const A2iImagesWrapper = ({
       isUpdatingServer.current = true;
       try {
         await updateA2iImagePositions(selectedBrandId!, updates);
-        console.log("Successfully updated image positions");
       } catch (error) {
         console.error("Failed to update image positions:", error);
         // Revert to previous state on error

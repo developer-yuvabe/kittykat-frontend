@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, getExtensionFromUrl } from "@/lib/utils";
 import { galleryService } from "@/services/api/gallery.service";
 import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
@@ -24,7 +24,12 @@ const AskKittykatVersions = ({
   onVersionChange,
 }: AskKittykatVersionsProps) => {
   const { user } = useUserStore();
-  const { addToGallery } = useGalleryQuery({});
+  const { addToGallery } = useGalleryQuery(
+    {},
+    ITEMS_PER_PAGE,
+    true,
+    "AskKittykatVersions"
+  );
   const { isFetching, data, refetch } = useQuery({
     queryKey: ["versions", item.id],
     queryFn: () => galleryService.getGalleryItemVersions(item.id),

@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { useQueryState } from "nuqs";
 import { useInView } from "react-intersection-observer";
 import type {
@@ -82,6 +82,7 @@ interface UploadDropzoneProps {
   selectedCampaignId: string | undefined;
   selecteMoodboardId: string | undefined;
   galleryView: "folder" | "grid";
+  brandName: string;
 }
 
 export function MediaFolderView({
@@ -96,6 +97,7 @@ export function MediaFolderView({
   selectedCampaignId,
   selecteMoodboardId,
   galleryView = "grid",
+  brandName,
 }: UploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -146,27 +148,32 @@ export function MediaFolderView({
   }, [selectedBrand, selectedCampaignFromUrl]);
 
   // Use gallery hook with proper filters
-  const galleryActions = useGalleryQuery({
-    selectedFilters: {
-      brands: selectedBrand ? [selectedBrand.brand_id] : [],
-      campaigns: selectedCampaignFromUrl ? [selectedCampaignFromUrl] : [],
-      moodboards: [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
+  const galleryActions = useGalleryQuery(
+    {
+      selectedFilters: {
+        brands: selectedBrand ? [selectedBrand.brand_id] : [],
+        campaigns: selectedCampaignFromUrl ? [selectedCampaignFromUrl] : [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+      },
     },
-  });
+    ITEMS_PER_PAGE,
+    true,
+    "MediaFolderView"
+  );
 
   // Intersection observer for infinite scroll
   const { ref, inView } = useInView();
 
   // Get the actual selected items data
-  const selectedItemsData = galleryActions.galleryItems.filter((item) =>
-    selectedItems.includes(item.id)
-  );
+  const selectedItemsData = galleryActions
+    .getGalleryItems()
+    .filter((item) => selectedItems.includes(item.id));
 
   const handleSelect = (id: string, selected: boolean) => {
     if (selected) {
@@ -331,7 +338,6 @@ export function MediaFolderView({
         );
       }
     } catch (error) {
-      console.log(error);
       toast.error("Upload failed", {
         description: "Please try again",
         duration: 3000,
@@ -435,7 +441,6 @@ export function MediaFolderView({
         );
       }
     } catch (error) {
-      console.log(error);
       toast.error("URL upload failed", {
         description: "Please try again",
         duration: 3000,
@@ -525,7 +530,7 @@ export function MediaFolderView({
               </h2>
               <p className="text-xs text-gray-500">
                 {selectedBrand.brand_name} •{" "}
-                {galleryActions.galleryItems.length} media items
+                {galleryActions.getGalleryItems().length} media items
               </p>
             </div>
           </div>
@@ -698,12 +703,12 @@ export function MediaFolderView({
         {/* Gallery Status Display */}
         <MediaGalleryStatusDisplay
           galleryStatus={galleryActions.galleryStatus}
-          galleryItemsLength={galleryActions.galleryItems.length}
+          galleryItemsLength={galleryActions.getGalleryItems().length}
         />
 
         {/* Gallery Items */}
         {galleryActions.galleryStatus === "success" &&
-          galleryActions.galleryItems.length > 0 && (
+          galleryActions.getGalleryItems().length > 0 && (
             <div>
               <MediaGrid
                 selectedItems={selectedItems}
@@ -731,6 +736,7 @@ export function MediaFolderView({
             selectedItems={selectedItemsData}
             onUnselectAll={handleUnselectAll}
             galleryActions={galleryActions}
+            brandName={brandName}
           />
         )}
       </div>
@@ -1047,10 +1053,10 @@ export function MediaFolderView({
           <div className="space-y-6">
             <MediaGalleryStatusDisplay
               galleryStatus={galleryActions.galleryStatus}
-              galleryItemsLength={galleryActions.galleryItems.length}
+              galleryItemsLength={galleryActions.getGalleryItems().length}
             />
             {galleryActions.galleryStatus === "success" &&
-              galleryActions.galleryItems.length > 0 && (
+              galleryActions.getGalleryItems().length > 0 && (
                 <div>
                   <MediaGrid
                     selectedItems={selectedItems}
@@ -1077,6 +1083,7 @@ export function MediaFolderView({
                 selectedItems={selectedItemsData}
                 onUnselectAll={handleUnselectAll}
                 galleryActions={galleryActions}
+                brandName={brandName}
               />
             )}
           </div>

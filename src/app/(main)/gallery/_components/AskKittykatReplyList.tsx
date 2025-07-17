@@ -46,6 +46,22 @@ export function AskKittykatReplyList({
 
   if (!replies || replies.length === 0) return null;
 
+  const roleToBadge: Record<
+    string,
+    { variant: "admin" | "client" | "secondary"; label: string }
+  > = {
+    [UserRoleId.ADMIN]: { variant: "admin", label: "Kittykat" },
+    [UserRoleId.USER]: { variant: "client", label: "Client" },
+  };
+
+  const getBadgeInfo = (role: string | undefined) =>
+    roleToBadge[role ?? ""] ??
+    (user?.role.name === "admin"
+      ? { variant: "admin", label: "Kittykat" }
+      : user?.role.name === "user"
+      ? { variant: "client", label: "Client" }
+      : { variant: "secondary", label: user?.role.name ?? "Unknown" });
+
   return (
     <div className="ml-11 space-y-3">
       {replies.map((reply) => {
@@ -54,6 +70,8 @@ export function AskKittykatReplyList({
           editingReply?.replyId === reply.id;
 
         const isLiked = (reply.likes ?? []).includes(user?.id ?? "");
+
+        const badgeInfo = getBadgeInfo(reply.added_by_role);
 
         return (
           <div key={reply.id} className="flex gap-3">
@@ -69,22 +87,10 @@ export function AskKittykatReplyList({
                 <span className="font-medium text-xs">
                   {reply.added_by_name || reply.added_by}
                 </span>
+
                 {reply.added_by_role && (
-                  <Badge
-                    variant={
-                      (
-                        {
-                          [UserRoleId.ADMIN]: "admin",
-                          [UserRoleId.USER]: "client",
-                        } as Record<UserRoleId, "admin" | "client">
-                      )[reply.added_by_role as UserRoleId] ?? "secondary"
-                    }
-                    className="text-xs"
-                  >
-                    {{
-                      [UserRoleId.ADMIN]: "Kittykat",
-                      [UserRoleId.USER]: "Client",
-                    }[reply.added_by_role] ?? "Unknown"}
+                  <Badge variant={badgeInfo.variant} className="text-xs">
+                    {badgeInfo.label}
                   </Badge>
                 )}
 

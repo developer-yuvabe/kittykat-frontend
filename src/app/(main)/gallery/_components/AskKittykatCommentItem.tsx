@@ -26,7 +26,6 @@ interface AskKittykatCommentItemProps {
 
 export function AskKittykatCommentItem({
   comment,
-
   itemId,
   editingCommentId,
   setEditingComment,
@@ -43,6 +42,22 @@ export function AskKittykatCommentItem({
   const isLiked = (comment?.likes ?? []).includes(user?.id ?? "");
   const likeCount = comment?.likes?.length || 0;
 
+  const roleToBadge: Record<
+    string,
+    { variant: "admin" | "client" | "secondary"; label: string }
+  > = {
+    [UserRoleId.ADMIN]: { variant: "admin", label: "Kittykat" },
+    [UserRoleId.USER]: { variant: "client", label: "Client" },
+  };
+
+  const badgeInfo =
+    roleToBadge[comment.added_by_role ?? ""] ??
+    (user?.role.name === "admin"
+      ? { variant: "admin", label: "Kittykat" }
+      : user?.role.name === "user"
+      ? { variant: "client", label: "Client" }
+      : { variant: "secondary", label: user?.role.name ?? "Unknown" });
+
   return (
     <div className="flex gap-3">
       <Avatar className="w-8 h-8">
@@ -58,22 +73,10 @@ export function AskKittykatCommentItem({
           <span className="font-medium text-sm">
             {comment.added_by_name || comment.added_by}
           </span>
+
           {comment.added_by_role && (
-            <Badge
-              variant={
-                (
-                  {
-                    [UserRoleId.ADMIN]: "admin",
-                    [UserRoleId.USER]: "client",
-                  } as Record<UserRoleId, "admin" | "client">
-                )[comment.added_by_role as UserRoleId] ?? "secondary"
-              }
-              className="text-xs"
-            >
-              {{
-                [UserRoleId.ADMIN]: "Kittykat",
-                [UserRoleId.USER]: "Client",
-              }[comment.added_by_role] ?? "Unknown"}
+            <Badge variant={badgeInfo.variant} className="text-xs">
+              {badgeInfo.label}
             </Badge>
           )}
 
