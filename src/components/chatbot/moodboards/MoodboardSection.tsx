@@ -80,6 +80,7 @@ export const MoodboardSection: React.FC<{
 
   const [isMoodboardGenerating, setIsMoodboardGenerating] = useState(false);
   const [isAddingToGallery, setIsAddingToGallery] = useState(false);
+  const [hasUnsavedTagChanges, setHasUnsavedTagChanges] = useState(false);
 
   const currentCampaign = useMemo(
     () =>
@@ -885,7 +886,10 @@ export const MoodboardSection: React.FC<{
                         0 &&
                       !isCreatingNewMoodboard && (
                         <div className="mt-8">
-                          <MoodboardTagsSelector moodboard={currentMoodboard} />
+                          <MoodboardTagsSelector
+                            moodboard={currentMoodboard}
+                            onHasChanges={setHasUnsavedTagChanges}
+                          />
 
                           <div className="mt-8 w-full mb-5 ">
                             <Tooltip>
@@ -896,7 +900,9 @@ export const MoodboardSection: React.FC<{
                                     className="w-full"
                                     disabled={
                                       currentMoodboard.moodboard_generation_status ===
-                                        "in_progress" || isMoodboardGenerating
+                                        "in_progress" ||
+                                      isMoodboardGenerating ||
+                                      hasUnsavedTagChanges
                                     }
                                   >
                                     {currentMoodboard.moodboard_generation_status ===
