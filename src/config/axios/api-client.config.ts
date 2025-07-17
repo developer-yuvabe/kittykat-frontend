@@ -17,7 +17,6 @@ const getClientSideToken = () => {
           resolve(null);
         }
       } else {
-        console.log("debyg");
         resolve(null);
       }
     });

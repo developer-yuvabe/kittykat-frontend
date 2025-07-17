@@ -331,7 +331,6 @@ export function MediaFolderView({
         );
       }
     } catch (error) {
-      console.log(error);
       toast.error("Upload failed", {
         description: "Please try again",
         duration: 3000,
@@ -435,7 +434,6 @@ export function MediaFolderView({
         );
       }
     } catch (error) {
-      console.log(error);
       toast.error("URL upload failed", {
         description: "Please try again",
         duration: 3000,

@@ -87,8 +87,6 @@ export const MoodboardSection: React.FC<{
     [campaignInformation, selectedCampaignIndex]
   );
 
-  console.log("currentCampaign in MoodboardSection:", currentCampaign);
-
   const socialMediaPlatforms = brandInformation?.static?.social_media;
 
   // Get list of moodboards matching current campaign
@@ -336,9 +334,6 @@ export const MoodboardSection: React.FC<{
         toast.promise(
           (async () => {
             const uploadPromises = acceptedFiles.map(async (file) => {
-              console.log("selectedBrandId:", selectedBrandId);
-              console.log("currentCampaign?.id:", currentCampaign?.id);
-
               const downloadUrl = await uploadFileAndReturnUrl(
                 file.name,
                 file.type,
@@ -347,8 +342,6 @@ export const MoodboardSection: React.FC<{
                 selectedBrandId,
                 currentCampaign?.id || null
               );
-
-              console.log("downloadUrl:", downloadUrl);
 
               const uploadedImagePayload = {
                 id: crypto.randomUUID(),
@@ -510,7 +503,7 @@ export const MoodboardSection: React.FC<{
       toast.promise(
         (async () => {
           // Step 1: Create the new moodboard
-          console.log("moodboardTitle in handleFindStyle :", moodboardTitle);
+
           const newMoodboard = await createMoodboard(
             selectedBrandId,
             currentCampaign.id,

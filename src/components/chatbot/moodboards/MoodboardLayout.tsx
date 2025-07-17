@@ -216,10 +216,7 @@ function MoodboardLayout({
         })
         .filter((item): item is NonNullable<typeof item> => item !== null); // Type-safe filter
 
-      console.log("Images to load:", imagesToLoad);
-
       if (imagesToLoad.length === 0) {
-        console.log("No images to load - check if galleryItems are loaded");
         setPhotos([]);
         setOriginalPhotos([]);
         return;
@@ -391,8 +388,6 @@ function MoodboardLayout({
         await patchMoodboard(brandId, moodboard.id, {
           visual_style_images: updatedVisualImages,
         });
-
-        console.log(`Photo ${photo.id} like status updated to: ${liked}`);
       }
     } catch (error) {
       console.error("Failed to update photo like status:", error);
@@ -437,8 +432,6 @@ function MoodboardLayout({
 
       // Update original state to match current state (but preserve like status)
       setOriginalPhotos([...photos]);
-
-      console.log("Position changes saved successfully");
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {
