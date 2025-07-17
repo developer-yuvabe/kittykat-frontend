@@ -187,15 +187,46 @@ export function MediaEditorDialog({
   };
 
   const handleSubmitComment = async () => {
+    console.log("user name", user?.role.name);
     if (!newComment.trim() && attachments.length === 0) return;
+    if (!currentItem?.id || !user?.id) {
+      toast.error("Please log in to add a comment");
+      return;
+    }
+
     setIsSubmitting(true);
 
+    // Create a temporary comment for optimistic update
+    const tempCommentId = `temp-${Date.now()}`;
+    const optimisticComment: Comment = {
+      id: tempCommentId,
+      text: newComment,
+      added_by: user.id,
+      added_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      attachments: attachments.length > 0 ? attachments : undefined,
+      replies: [],
+      likes: [],
+      added_by_name: user.name,
+      added_by_role: user.role.name, // From UserRole.name
+    };
+
+    // Optimistically update the UI
+    setCurrentItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            comments: [...(prev.comments || []), optimisticComment],
+          }
+        : prev
+    );
+
+    // Clear input fields immediately
+    setNewComment("");
+    setAttachments([]);
+
     try {
-      if (!currentItem?.id) {
-        setIsSubmitting(false);
-        return;
-      }
-      galleryActions.addComment(
+      await galleryActions.addComment(
         {
           itemId: currentItem.id,
           commentData: {
@@ -205,32 +236,98 @@ export function MediaEditorDialog({
         },
         {
           onSuccess(data) {
+            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
+            // Replace temporary comment with real comment from server
+            setCurrentItem((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    comments: prev.comments?.map((comment) =>
+                      comment.id === tempCommentId
+                        ? data.comments?.find(
+                            (c: Comment) =>
+                              c.text === newComment &&
+                              c.added_by_role === user.role.name
+                          ) || comment
+                        : comment
+                    ),
+                  }
+                : prev
+            );
           },
         }
       );
-      setNewComment("");
-      setAttachments([]);
     } catch (error) {
-      console.error(error);
+      // Rollback optimistic update on error
+      setCurrentItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: prev.comments?.filter(
+                (comment) => comment.id !== tempCommentId
+              ),
+            }
+          : prev
+      );
+      toast.error("Failed to add comment");
+      console.error("Add comment error:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSubmitReply = async (commentId: string) => {
+    console.log("user name", user?.role.name);
     if (!replyText.trim() && replyAttachments.length === 0) return;
+    if (!currentItem?.id || !user?.id) {
+      toast.error("Please log in to add a reply");
+      return;
+    }
+
     setIsSubmitting(true);
 
+    // Create a temporary reply for optimistic update
+    const tempReplyId = `temp-${Date.now()}`;
+    const optimisticReply: CommentReply = {
+      id: tempReplyId,
+      text: replyText,
+      added_by: user.id,
+      added_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      attachments: replyAttachments.length > 0 ? replyAttachments : undefined,
+      likes: [],
+      added_by_name: user.name,
+      added_by_role: user.role.name,
+    };
+
+    // Optimistically update the UI
+    setCurrentItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            comments: prev.comments?.map((comment) =>
+              comment.id === commentId
+                ? {
+                    ...comment,
+                    replies: [...(comment.replies || []), optimisticReply],
+                  }
+                : comment
+            ),
+          }
+        : prev
+    );
+
+    // Clear input fields immediately
+    setReplyText("");
+    setReplyingTo(null);
+    setReplyAttachments([]);
+
     try {
-      if (!currentItem?.id) {
-        setIsSubmitting(false);
-        return;
-      }
-      galleryActions.addReply(
+      await galleryActions.addReply(
         {
-          itemId: currentItem?.id,
-          commentId: commentId,
+          itemId: currentItem.id,
+          commentId,
           replyData: {
             text: replyText,
             attachments:
@@ -239,41 +336,138 @@ export function MediaEditorDialog({
         },
         {
           onSuccess(data) {
+            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
+            // Replace temporary reply with real reply from server
+            setCurrentItem((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    comments: prev.comments?.map((comment) =>
+                      comment.id === commentId
+                        ? {
+                            ...comment,
+                            replies: comment.replies?.map((reply) =>
+                              reply.id === tempReplyId
+                                ? data.comments
+                                    ?.find((c) => c.id === commentId)
+                                    ?.replies?.find(
+                                      (r: CommentReply) =>
+                                        r.text === replyText &&
+                                        r.added_by_role === user.role.name
+                                    ) || reply
+                                : reply
+                            ),
+                          }
+                        : comment
+                    ),
+                  }
+                : prev
+            );
           },
         }
       );
-      setReplyText("");
-      setReplyingTo(null);
-      setReplyAttachments([]);
     } catch (error) {
-      console.error(error);
+      // Rollback optimistic update on error
+      setCurrentItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: prev.comments?.map((comment) =>
+                comment.id === commentId
+                  ? {
+                      ...comment,
+                      replies: comment.replies?.filter(
+                        (reply) => reply.id !== tempReplyId
+                      ),
+                    }
+                  : comment
+              ),
+            }
+          : prev
+      );
+      toast.error("Failed to add reply");
+      console.error("Add reply error:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleUpdateComment = async (commentId: string, text: string) => {
+    if (!currentItem?.id || !user?.id) {
+      toast.error("Please log in to update a comment");
+      return;
+    }
+
+    // Store the original comment for rollback in case of error
+    const originalComment = currentItem.comments?.find(
+      (c) => c.id === commentId
+    );
+    if (!originalComment) return;
+
+    // Optimistically update the UI
+    setCurrentItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            comments: prev.comments?.map((comment) =>
+              comment.id === commentId
+                ? {
+                    ...comment,
+                    text,
+                    updated_at: new Date().toISOString(), // Update timestamp
+                  }
+                : comment
+            ),
+          }
+        : prev
+    );
+
+    // Clear editing state immediately
+    setEditingComment(null);
+
     try {
-      if (!currentItem?.id) {
-        setIsSubmitting(false);
-        return;
-      }
-      galleryActions.patchComment(
+      await galleryActions.patchComment(
         {
-          itemId: currentItem?.id,
+          itemId: currentItem.id,
           commentId,
           updateData: { text },
         },
         {
           onSuccess(data) {
+            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
+          },
+          onError: () => {
+            // Rollback optimistic update on error
+            setCurrentItem((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    comments: prev.comments?.map((comment) =>
+                      comment.id === commentId ? originalComment : comment
+                    ),
+                  }
+                : prev
+            );
+            toast.error("Failed to update comment");
           },
         }
       );
-      setEditingComment(null);
     } catch (error) {
-      console.error(error);
+      // Rollback optimistic update
+      setCurrentItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: prev.comments?.map((comment) =>
+                comment.id === commentId ? originalComment : comment
+              ),
+            }
+          : prev
+      );
+      toast.error("Failed to update comment");
+      console.error("Update comment error:", error);
     }
   };
 
@@ -282,89 +476,262 @@ export function MediaEditorDialog({
     replyId: string,
     text: string
   ) => {
+    console.log("user name", user?.role.name);
+    if (!text.trim()) return;
+    if (!currentItem?.id || !user?.id) {
+      toast.error("Please log in to update a reply");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Store the original reply for rollback
+    const originalReply = currentItem.comments
+      ?.find((c) => c.id === commentId)
+      ?.replies?.find((r) => r.id === replyId);
+    if (!originalReply) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Optimistically update the UI
+    setCurrentItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            comments: prev.comments?.map((comment) =>
+              comment.id === commentId
+                ? {
+                    ...comment,
+                    replies: comment.replies?.map((reply) =>
+                      reply.id === replyId
+                        ? {
+                            ...reply,
+                            text,
+                            updated_at: new Date().toISOString(),
+                          }
+                        : reply
+                    ),
+                  }
+                : comment
+            ),
+          }
+        : prev
+    );
+
+    // Clear editing state immediately
+    setEditingReply(null);
+
     try {
-      if (!currentItem?.id) {
-        setIsSubmitting(false);
-        return;
-      }
-      galleryActions.patchReply(
+      await galleryActions.patchReply(
         {
-          itemId: currentItem?.id,
+          itemId: currentItem.id,
           commentId,
           replyId,
           updateData: { text },
         },
         {
           onSuccess(data) {
+            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
+            // Replace updated reply with server data
+            setCurrentItem((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    comments: prev.comments?.map((comment) =>
+                      comment.id === commentId
+                        ? {
+                            ...comment,
+                            replies: comment.replies?.map((reply) =>
+                              reply.id === replyId
+                                ? data.comments
+                                    ?.find((c) => c.id === commentId)
+                                    ?.replies?.find(
+                                      (r: CommentReply) =>
+                                        r.text === text &&
+                                        r.added_by_role === user.role.name
+                                    ) || reply
+                                : reply
+                            ),
+                          }
+                        : comment
+                    ),
+                  }
+                : prev
+            );
           },
         }
       );
-      setEditingReply(null);
     } catch (error) {
-      console.error(error);
+      // Rollback optimistic update on error
+      setCurrentItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: prev.comments?.map((comment) =>
+                comment.id === commentId
+                  ? {
+                      ...comment,
+                      replies: comment.replies?.map((reply) =>
+                        reply.id === replyId ? originalReply : reply
+                      ),
+                    }
+                  : comment
+              ),
+            }
+          : prev
+      );
+      toast.error("Failed to update reply");
+      console.error("Update reply error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    console.log("user name", user?.role.name);
+    if (!currentItem?.id || !user?.id) {
+      toast.error("Please log in to delete a comment");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Store the original comments for rollback
+    const originalComments = currentItem.comments || [];
+
+    // Optimistically update the UI by removing the comment
+    setCurrentItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            comments: prev.comments?.filter(
+              (comment) => comment.id !== commentId
+            ),
+          }
+        : prev
+    );
+
     try {
-      if (!currentItem?.id) {
-        setIsSubmitting(false);
-        return;
-      }
       await galleryActions.deleteComment(
         {
-          itemId: currentItem?.id,
+          itemId: currentItem.id,
           commentId,
         },
         {
           onSuccess(data) {
-            if (item?.id) {
+            // Validate that data is a complete GalleryItemResponse
+            if (data && "comments" in data && data.id === currentItem.id) {
+              // Update cache with actual server data
+              revalidateGalleryItemVersions(data as GalleryItemResponse);
+            } else {
+              // Fallback: Manually update the cache if data is incomplete
               queryClient.setQueryData(
-                ["versions", item.id],
+                ["versions", item?.id || currentItem.id],
                 (oldData: any) => {
                   if (!oldData) return oldData;
-                  return oldData.map((version: GalleryItemResponse) => {
-                    if (version.id === currentItem?.id)
-                      return {
-                        ...version,
-                        comments: version.comments?.filter(
-                          (c: Comment) => c.id !== data.id
-                        ),
-                      };
-                    return version;
-                  });
+                  return oldData.map((version: GalleryItemResponse) =>
+                    version.id === currentItem.id
+                      ? {
+                          ...version,
+                          comments: version.comments?.filter(
+                            (c: Comment) => c.id !== commentId
+                          ),
+                        }
+                      : version
+                  );
                 }
+              );
+              console.warn(
+                "Received incomplete data from deleteComment:",
+                data
               );
             }
           },
         }
       );
     } catch (error) {
-      console.error(error);
+      // Rollback optimistic update on error
+      setCurrentItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: originalComments,
+            }
+          : prev
+      );
+      toast.error("Failed to delete comment");
+      console.error("Delete comment error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteReply = async (commentId: string, replyId: string) => {
+    console.log("user name", user?.role.name);
+    if (!currentItem?.id || !user?.id) {
+      toast.error("Please log in to delete a reply");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Store the original replies for rollback
+    const originalReplies =
+      currentItem.comments?.find((c) => c.id === commentId)?.replies || [];
+
+    // Optimistically update the UI by removing the reply
+    setCurrentItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            comments: prev.comments?.map((comment) =>
+              comment.id === commentId
+                ? {
+                    ...comment,
+                    replies: comment.replies?.filter(
+                      (reply) => reply.id !== replyId
+                    ),
+                  }
+                : comment
+            ),
+          }
+        : prev
+    );
+
     try {
-      if (!currentItem?.id) {
-        setIsSubmitting(false);
-        return;
-      }
-      galleryActions.deleteReply(
+      await galleryActions.deleteReply(
         {
-          itemId: currentItem?.id,
+          itemId: currentItem.id,
           commentId,
           replyId,
         },
         {
           onSuccess(data) {
+            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
           },
         }
       );
     } catch (error) {
-      console.error(error);
+      // Rollback optimistic update on error
+      setCurrentItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: prev.comments?.map((comment) =>
+                comment.id === commentId
+                  ? { ...comment, replies: originalReplies }
+                  : comment
+              ),
+            }
+          : prev
+      );
+      toast.error("Failed to delete reply");
+      console.error("Delete reply error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
