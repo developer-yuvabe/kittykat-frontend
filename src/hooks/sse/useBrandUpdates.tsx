@@ -11,6 +11,8 @@ export function useBrandUpdates(brandId?: string | null) {
   const { setIsCampaignCreating } = useBrandStore();
 
   useEffect(() => {
+    setIsFetchingBrandInfo(true);
+
     if (!brandId) {
       setIsFetchingBrandInfo(false);
       return;

@@ -52,21 +52,22 @@ const StreamSession = ({
   apiKey,
   apiUrl,
   assistantId,
+  cahedData,
 }: {
   children: ReactNode;
   apiKey: string | null;
   apiUrl: string;
   assistantId: string;
+  cahedData?: StateType | null;
 }) => {
   const { user, setUser } = useUserStore();
-  if (!user) {
-  }
 
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
     threadId: user?.thread_id ?? undefined,
+    initialValues: cahedData,
     onThreadId: (id) => {
       updateUser(user!.id, {
         thread_id: id,
@@ -96,6 +97,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   const { user, setUser } = useUserStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const [hideToolCalls, setHideToolCalls] = useQueryState("hideToolCalls");
+  const [cahedData, setCachedData] = useState<StateType | null>(null);
 
   useEffect(() => {
     const initializeParams = async () => {
@@ -113,21 +115,30 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
         if (user?.thread_id) {
           try {
-            await client.threads.get(user.thread_id);
-          } catch {
-            updateUser(user!.id, {
-              thread_id: null,
-            });
-            setUser({
-              ...user!,
-              thread_id: null,
-            });
+            console.time("Fetch thread");
+
+            const threadData = await client.threads.get<StateType>(
+              user.thread_id
+            );
+            setCachedData(threadData.values);
+
+            console.timeEnd("Fetch thread");
+          } catch (error: any) {
+            if (error?.status === 404 || error?.response?.status === 404) {
+              updateUser(user!.id, {
+                thread_id: null,
+              });
+              setUser({
+                ...user!,
+                thread_id: null,
+              });
+            }
           }
         }
       } catch (error) {
         console.error("Failed to initialize query parameters:", error);
       } finally {
-        setTimeout(() => setIsInitialized(true), 100);
+        setTimeout(() => setIsInitialized(true), 10);
       }
     };
 
@@ -138,6 +149,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     return (
       <div className="flex items-center justify-center w-full h-[85vh]">
         <Loader2 className="text-primary animate-spin" size={40} />
+        <span className="ml-2 text-gray-500">Initializing...</span>
       </div>
     );
   }
@@ -147,6 +159,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
       apiKey={env.NEXT_PUBLIC_LANGSMITH_API_KEY}
       apiUrl={AppConfig.KITTYKAT_AGENT_SERVER}
       assistantId={KITTYKAT_AGENT_ID}
+      cahedData={cahedData}
     >
       {children}
     </StreamSession>
