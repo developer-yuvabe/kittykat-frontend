@@ -15,7 +15,6 @@ import { ChatMessageList } from "./ChatMessageList";
 import { ChatSuggestions } from "./ChatSuggestions";
 import { ScrollToBottom } from "./ScrollToBottom";
 import { ChatInput } from "./ChatInput";
-import { useThreads } from "@/providers/langgraph/Thread";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import {
@@ -42,7 +41,6 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
   setFirstTokenReceived,
   prevMessageLength,
 }) => {
-  const { threadsLoading } = useThreads();
   const [showChatPanel, setShowChatPanel] = useState(true);
 
   return (
@@ -133,7 +131,7 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                   </div>
 
                   <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
-                    {threadsLoading ? (
+                    {false ? (
                       <div
                         className={cn(
                           "absolute inset-0 overflow-y-scroll scrollbar",
@@ -196,11 +194,11 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                               </>
                             )}
 
-                            {!threadsLoading && (
+                            {
                               <ChatInput
                                 setFirstTokenReceived={setFirstTokenReceived}
                               />
-                            )}
+                            }
                           </div>
                         }
                       />

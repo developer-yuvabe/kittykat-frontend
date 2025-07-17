@@ -52,8 +52,6 @@ export const CampaignSection: React.FC<{
   const { user } = useUserStore();
   const stream = useStreamContext();
 
-  console.log(campaignInformation);
-
   const [fadeKey, setFadeKey] = useState(0);
 
   const currentCampaign = useMemo(

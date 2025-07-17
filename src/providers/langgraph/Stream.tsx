@@ -60,7 +60,6 @@ const StreamSession = ({
 }) => {
   const { user, setUser } = useUserStore();
   if (!user) {
-    console.log("User ID: if not found, debug this is IMPORTANT");
   }
 
   const streamValue = useTypedStream({

@@ -55,7 +55,7 @@ const VideoGeneration = ({
         throw new Error("Brand ID is missing.");
       }
       await videoGenerationService(selectedBrandId, data);
-      console.log("Video generation request submitted:", data);
+
       await delay(1000);
       closeDialog();
     } catch (err) {

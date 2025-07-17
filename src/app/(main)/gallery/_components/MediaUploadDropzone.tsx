@@ -270,7 +270,6 @@ export function MediaUploadDropzone({
         );
       }
     } catch (error) {
-      console.log(error);
       toast.error("URL upload failed", {
         description: "Please try again",
         duration: 3000,

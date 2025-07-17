@@ -13,7 +13,6 @@ export function cn(...inputs: ClassValue[]) {
 export const processAuthError = (e: unknown) => {
   let errorMsg = ERROR_MESSAGES.GENERAL_ERROR;
   if (e instanceof FirebaseError) {
-    console.log(e);
     switch (e.code) {
       case "auth/email-already-exists":
         errorMsg = ERROR_MESSAGES.EMAIL_ALREADY_EXISTS;
@@ -89,7 +88,6 @@ export async function handleApiRequest<T>(
       error.response?.data?.message || error.message || "API request failed";
 
     if (error instanceof PlatformApiError) {
-      console.log("first");
       throw error;
     }
 
@@ -218,7 +216,7 @@ export const formatToLocalTime = (dateString: string) => {
     });
   } catch (error) {
     // Fallback to original string if parsing fails
-    console.log("Error parsing date:", error);
+
     return dateString;
   }
 };

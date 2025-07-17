@@ -20,9 +20,7 @@ export function useQueueUpdates(userId?: string) {
       setData(parsed || []);
     });
 
-    eventSource.onerror = (err) => {
-      console.log("SSE error:", JSON.stringify(err, null, 2));
-    };
+    eventSource.onerror = (err) => {};
 
     return () => {
       eventSource.close();
