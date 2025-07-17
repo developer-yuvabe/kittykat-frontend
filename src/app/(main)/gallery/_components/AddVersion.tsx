@@ -40,8 +40,7 @@ const AddVersion = ({
       try {
         setIsUploading(true);
         const file = acceptedFiles[0];
-        console.log("brandId in add version", brandId);
-        console.log("campaignId in add version", campaignId);
+
         const url = await uploadFileAndReturnUrl(
           file.name,
           file.type,

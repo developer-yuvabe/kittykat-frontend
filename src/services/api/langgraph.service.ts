@@ -17,8 +17,6 @@ export const updateShowboardConfig = async (
         text_model: textModel,
       }
     );
-
-    console.log("Showboard config updated:", response.data);
   } catch (error) {
     console.error("Error updating showboard config:", error);
   }

@@ -23,8 +23,6 @@ export const updateUser = async (
       axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
     );
 
-    console.log("Updated user:", updatedUser);
-
     return updatedUser;
   } catch (error) {
     console.error("Error updating user:", error);
@@ -80,7 +78,6 @@ export const fetchUserBrands = async (
     );
     return data;
   } catch (e) {
-    console.log("Error fetching user brands", e);
     return [];
   }
 };

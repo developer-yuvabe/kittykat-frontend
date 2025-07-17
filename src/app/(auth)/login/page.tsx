@@ -62,7 +62,6 @@ const LoginPage = () => {
 
       router.push(AppConfig.HOME_ROUTE);
     } catch (e) {
-      console.log(e);
       const errorMsg = processAuthError(e);
 
       setFormError(errorMsg);
@@ -102,26 +101,26 @@ const LoginPage = () => {
                 />
 
                 <FormField
-  control={form.control}
-  name="password"
-  render={({ field }) => (
-    <FormItem>
-      <div className="flex items-center justify-between">
-        <FormLabel>Password</FormLabel>
-        <Link
-  href="/forgot-password"
-  className="text-xs font-medium text-primary hover:underline"
->
-  Forgot Password?
-</Link>
-      </div>
-      <FormControl>
-        <PasswordInput placeholder="********" {...field} />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Forgot Password?
+                        </Link>
+                      </div>
+                      <FormControl>
+                        <PasswordInput placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {formError && <ErrorMessage message={formError} />}
 

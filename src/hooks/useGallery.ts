@@ -221,8 +221,6 @@ export const useGalleryQuery = (
       await queryClient.cancelQueries({ queryKey });
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
-        console.log("🔄 Updating gallery cache optimistically", { old: !!old });
-
         if (!old) return old;
 
         const updated = {
@@ -232,7 +230,6 @@ export const useGalleryQuery = (
             gallery_items: page.gallery_items.map(
               (item: GalleryItemResponse) => {
                 if (item.id === itemId) {
-                  console.log("✅ Found and updating item:", itemId);
                   return { ...item, ...data };
                 }
                 return item;
@@ -241,7 +238,6 @@ export const useGalleryQuery = (
           })),
         };
 
-        console.log("🎯 Gallery cache updated optimistically");
         return updated;
       });
 
@@ -250,8 +246,6 @@ export const useGalleryQuery = (
     },
 
     onError: () => {
-      console.log("❌ Patch failed, rolling back optimistic updates");
-
       toast.error("Failed to update item");
     },
 

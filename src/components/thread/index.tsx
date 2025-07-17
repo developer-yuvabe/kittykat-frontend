@@ -32,7 +32,6 @@ export function Thread() {
         return;
       }
       lastError.current = message;
-      console.log(message);
     } catch {
       // no-op
     }

@@ -82,8 +82,6 @@ export function MediaUploadBrandSelector({
   const handleBrandSelect = (
     brand: BrandCampaignListResponse["brands"][number]
   ) => {
-    console.log("Brand selected:", brand.brand_name, "ID:", brand.brand_id);
-
     // Set the selected brand
     setSelectedBrand?.(brand);
 
@@ -96,7 +94,7 @@ export function MediaUploadBrandSelector({
         brands: [brand.brand_id],
         campaigns: [],
       };
-      console.log("Applying brand filters:", newFilters);
+
       return newFilters;
     });
 
@@ -130,7 +128,7 @@ export function MediaUploadBrandSelector({
         brands: [brand.brand_id],
         campaigns: [campaignId],
       };
-      console.log("Applying campaign filters:", newFilters);
+
       return newFilters;
     });
 

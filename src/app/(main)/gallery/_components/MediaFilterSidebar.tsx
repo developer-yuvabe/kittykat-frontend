@@ -132,9 +132,7 @@ export default function MediaFilterSidebar({
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  useEffect(() => {
-    console.log("Filters updated:", filters);
-  }, [filters]);
+  useEffect(() => {}, [filters]);
 
   return (
     <div className="bg-white rounded-lg mt-3 border shadow-sm w-full max-w-xs flex flex-col h-[70vh]">
