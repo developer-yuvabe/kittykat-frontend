@@ -404,7 +404,6 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-      toast.success("Comment added successfully");
     },
 
     onError: () => {
@@ -426,7 +425,6 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-      toast.success("Comment updated successfully");
     },
 
     onError: () => {
@@ -475,8 +473,6 @@ export const useGalleryQuery = (
           comments: old.comments?.filter((c: any) => c.id !== commentId),
         };
       });
-
-      toast.success("Comment deleted successfully");
     },
 
     onError: () => {
@@ -497,8 +493,6 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-
-      toast.success("Reply added successfully");
     },
 
     onError: () => {
@@ -533,20 +527,8 @@ export const useGalleryQuery = (
       updateData: CommentUpdate;
     }) => galleryService.patchComment(itemId, commentId, updateData),
 
-    onSuccess: (updatedItem, variables) => {
+    onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-
-      const updateData = variables.updateData;
-
-      if ("like_action" in updateData) {
-        toast.success(
-          updateData.like_action === "add"
-            ? "You liked the comment"
-            : "You unliked the comment"
-        );
-      } else {
-        toast.success("Comment updated successfully");
-      }
     },
 
     onError: (error, variables) => {
@@ -573,7 +555,6 @@ export const useGalleryQuery = (
     onSuccess: (updatedItem) => {
       queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
       queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
-      toast.success("Reply deleted successfully");
     },
     onError: () => {
       toast.error("Failed to delete reply");
@@ -598,21 +579,9 @@ export const useGalleryQuery = (
         replyId,
         updateData
       ),
-    onSuccess: (updatedItem, variables) => {
+    onSuccess: (updatedItem) => {
       queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
       queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
-
-      const updateData = variables.updateData;
-
-      if ("like_action" in updateData) {
-        toast.success(
-          updateData.like_action === "add"
-            ? "You liked the reply"
-            : "You unliked the reply"
-        );
-      } else {
-        toast.success("Reply updated successfully");
-      }
     },
 
     onError: (error, variables) => {
