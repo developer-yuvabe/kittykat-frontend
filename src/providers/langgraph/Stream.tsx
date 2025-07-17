@@ -68,6 +68,7 @@ const StreamSession = ({
     assistantId,
     threadId: user?.thread_id ?? undefined,
     initialValues: cahedData,
+    reconnectOnMount: true,
     onThreadId: (id) => {
       updateUser(user!.id, {
         thread_id: id,
