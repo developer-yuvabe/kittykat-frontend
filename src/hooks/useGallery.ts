@@ -15,13 +15,17 @@ import type {
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 
-const ITEMS_PER_PAGE = 20;
+export const ITEMS_PER_PAGE = 20;
 
 export const useGalleryQuery = (
   filters: GalleryFilters,
-  items_per_page: number = ITEMS_PER_PAGE
+  items_per_page: number = ITEMS_PER_PAGE,
+  enabled: boolean = true,
+  compUsed: string = "unknown"
 ) => {
   const queryClient = useQueryClient();
+
+  console.log("used this hook", compUsed);
 
   // Fetch brands and campaigns for filters
   const brandsQuery = useQuery({
@@ -51,6 +55,7 @@ export const useGalleryQuery = (
   // Infinite query for gallery items with filters
   const galleryQuery = useInfiniteQuery({
     queryKey: getGalleryQueryKey(),
+    enabled: enabled && brandsQuery.isSuccess,
     queryFn: async ({ pageParam = 0 }) => {
       try {
         if (filters.searchQuery) {
@@ -118,8 +123,9 @@ export const useGalleryQuery = (
   });
 
   // Flatten all pages of gallery items
-  const galleryItems =
-    galleryQuery.data?.pages.flatMap((page) => page.gallery_items) || [];
+  function getGalleryItems() {
+    return galleryQuery.data?.pages.flatMap((page) => page.gallery_items) || [];
+  }
 
   // Get single gallery item by ID
   const useGalleryItem = (itemId: string) => {
@@ -627,7 +633,7 @@ export const useGalleryQuery = (
     brandsRefetch: brandsQuery.refetch,
 
     // Gallery items
-    galleryItems,
+    getGalleryItems,
     galleryStatus: galleryQuery.status,
     isFetchingNextPage: galleryQuery.isFetchingNextPage,
     hasNextPage: galleryQuery.hasNextPage,

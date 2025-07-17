@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import QueueItemView from "./QueueItemView";
 import { useEnhancedFilters } from "@/hooks/useEnhancedFilters";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 
 const QueueProgress = () => {
   const { user } = useUserStore();
@@ -46,14 +46,19 @@ const QueueProgress = () => {
     favorites,
   } = useEnhancedFilters({});
 
-  const { refetchAllGalleryQueries } = useGalleryQuery({
-    selectedFilters: preselectedFilters,
-    source: source,
-    creator: creator,
-    assetType: activeTab,
-    favorites: favorites,
-    searchQuery: searchQuery,
-  });
+  const { refetchAllGalleryQueries } = useGalleryQuery(
+    {
+      selectedFilters: preselectedFilters,
+      source: source,
+      creator: creator,
+      assetType: activeTab,
+      favorites: favorites,
+      searchQuery: searchQuery,
+    },
+    ITEMS_PER_PAGE,
+    false,
+    "QueueProgress"
+  );
 
   useEffect(() => {
     refetchAllGalleryQueries();

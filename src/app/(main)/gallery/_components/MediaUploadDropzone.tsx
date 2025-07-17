@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import type {
   GalleryFilters,
   BrandCampaignListResponse,
@@ -50,8 +50,12 @@ export function MediaUploadDropzone({
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { addToGallery: addToGalleryMutation } =
-    useGalleryQuery(galleryFilters);
+  const { addToGallery: addToGalleryMutation } = useGalleryQuery(
+    galleryFilters,
+    ITEMS_PER_PAGE,
+    false,
+    "MediaUploadDropzone"
+  );
 
   const currentConfig = acceptedFileTypes[
     activeTab as keyof typeof acceptedFileTypes

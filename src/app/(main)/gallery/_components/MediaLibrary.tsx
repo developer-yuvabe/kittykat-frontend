@@ -134,7 +134,7 @@ export function MediaLibrary({
     selectedFilters,
   });
 
-  const galleryItems = galleryActions.galleryItems;
+  const galleryItems = galleryActions.getGalleryItems();
 
   useEffect(() => {
     if (effectiveBrandId || initialWorkflowStatus.length > 0) {

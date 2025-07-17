@@ -71,9 +71,9 @@ export function MediaGrid({
 
   // New function to handle opening editor
   const handleEditClick = (item: GalleryItemResponse) => {
-    const itemIndex = galleryActions.galleryItems.findIndex(
-      (galleryItem) => galleryItem.id === item.id
-    );
+    const itemIndex = galleryActions
+      .getGalleryItems()
+      .findIndex((galleryItem) => galleryItem.id === item.id);
     if (itemIndex !== -1) {
       setCurrentEditorIndex(itemIndex);
       setEditorOpen(true);
@@ -82,7 +82,7 @@ export function MediaGrid({
 
   // Handle carousel navigation
   const handleEditorNavigate = (direction: "next" | "prev") => {
-    const totalItems = galleryActions.galleryItems.length;
+    const totalItems = galleryActions.getGalleryItems().length;
 
     if (direction === "next" && currentEditorIndex < totalItems - 1) {
       setCurrentEditorIndex(currentEditorIndex + 1);
@@ -92,7 +92,7 @@ export function MediaGrid({
   };
 
   const currentEditorItem =
-    galleryActions.galleryItems[currentEditorIndex] || null;
+    galleryActions.getGalleryItems()[currentEditorIndex] || null;
 
   return (
     <>
@@ -101,7 +101,7 @@ export function MediaGrid({
         className="flex w-auto -ml-4"
         columnClassName="pl-4 bg-clip-padding"
       >
-        {galleryActions.galleryItems.map((item) => (
+        {galleryActions.getGalleryItems().map((item) => (
           <MediaItem
             key={item.id}
             item={item}
@@ -140,7 +140,7 @@ export function MediaGrid({
         galleryActions={galleryActions}
         currentIndex={currentEditorIndex}
         onNavigate={handleEditorNavigate}
-        totalItems={galleryActions.galleryItems.length}
+        totalItems={galleryActions.getGalleryItems().length}
       />
 
       {/* Delete confirmation dialog */}

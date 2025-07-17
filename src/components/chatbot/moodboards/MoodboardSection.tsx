@@ -300,21 +300,28 @@ export const MoodboardSection: React.FC<{
     }
   }, [currentMoodboard?.id, isCreatingNewMoodboard]);
 
-  const { addToGallery, galleryItems } = useGalleryQuery(
-    {
-      selectedFilters: {
-        campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
-        moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
-        brands: selectedBrandId ? [selectedBrandId] : [],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
-      },
-    },
-    200
+  const filters = {
+    campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
+    moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
+    brands: selectedBrandId ? [selectedBrandId] : [],
+    product_categories: [],
+    asset_types: [],
+    asset_sources: [],
+    media_format: [],
+    aspect_ratio: [],
+    workflow_status: [],
+  };
+
+  const shouldEnableQuery =
+    filters.campaigns.length > 0 &&
+    filters.moodboards.length > 0 &&
+    filters.brands.length > 0;
+
+  const { addToGallery, getGalleryItems } = useGalleryQuery(
+    { selectedFilters: filters },
+    200,
+    shouldEnableQuery,
+    "MoodboardSection"
   );
 
   const queryClient = useQueryClient();
@@ -832,7 +839,7 @@ export const MoodboardSection: React.FC<{
                     <MoodboardVisualSectionHeader
                       currentMoodboard={currentMoodboard}
                       isCreatingNewMoodboard={isCreatingNewMoodboard}
-                      galleryItems={galleryItems || []}
+                      galleryItems={getGalleryItems() || []}
                       brandName={brandInformation?.static?.brand?.name}
                       currentCampaign={currentCampaign}
                       moodboard={currentMoodboard}

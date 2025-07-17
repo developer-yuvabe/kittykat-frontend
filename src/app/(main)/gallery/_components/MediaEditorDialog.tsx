@@ -83,10 +83,6 @@ export function MediaEditorDialog({
 
   const isRemixEnabled = activeTab === "in-paint";
 
-  useEffect(() => {
-    setCurrentItem(item);
-  }, [item]);
-
   const queryClient = useQueryClient();
 
   const revalidateGalleryItemVersions = async (data: GalleryItemResponse) => {
@@ -871,7 +867,7 @@ export function MediaEditorDialog({
 
   useEffect(() => {
     const prefetchThreshold = 2;
-    const loadedItemsCount = galleryActions.galleryItems.length;
+    const loadedItemsCount = galleryActions.getGalleryItems().length;
     if (
       loadedItemsCount - currentIndex <= prefetchThreshold &&
       galleryActions.hasNextPage &&
@@ -881,7 +877,7 @@ export function MediaEditorDialog({
     }
   }, [
     currentIndex,
-    galleryActions.galleryItems.length,
+    galleryActions.getGalleryItems().length,
     galleryActions.hasNextPage,
     galleryActions.isFetchingNextPage,
   ]);
