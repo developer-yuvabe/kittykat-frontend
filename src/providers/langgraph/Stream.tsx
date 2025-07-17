@@ -149,7 +149,6 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     return (
       <div className="flex items-center justify-center w-full h-[85vh]">
         <Loader2 className="text-primary animate-spin" size={40} />
-        <span className="ml-2 text-gray-500">Initializing...</span>
       </div>
     );
   }
