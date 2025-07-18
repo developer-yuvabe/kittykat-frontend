@@ -29,6 +29,9 @@ import {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
 } from "@/types/gallery.types";
+import { useBrandStore } from "@/store/brand.store";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
 
 interface BrandSelectorProps {
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
@@ -56,6 +59,9 @@ export function MediaUploadBrandSelector({
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { setSelectedBrandId } = useBrandStore();
+  const { user } = useUserStore();
+  const stream = useStreamContext();
 
   useEffect(() => {
     if (brandsLoading || brands.length === 0) return;
@@ -88,35 +94,32 @@ export function MediaUploadBrandSelector({
     // Clear campaign selection
     setSelectedCampaignId(undefined);
 
-    setSelectedFilters((prev) => {
-      const newFilters = {
-        ...prev,
-        brands: [brand.brand_id],
-        campaigns: [],
-      };
+    // Update filters
+    setSelectedFilters((prev) => ({
+      ...prev,
+      brands: [brand.brand_id],
+      campaigns: [],
+    }));
 
-      return newFilters;
-    });
+    // Update the brand store to keep it in sync
+    setSelectedBrandId(brand.brand_id);
+    if (user?.thread_id) {
+      stream.client.threads.updateState(user.thread_id, {
+        values: {
+          currentBrandContextId: brand.brand_id,
+        },
+      });
+    }
 
     setOpen(false);
     setSearchTerm("");
   };
-
   const handleCampaignSelect = (
     brand: BrandCampaignListResponse["brands"][number],
     campaignId: string
   ) => {
-    console.log(
-      "Campaign selected:",
-      campaignId,
-      "for brand:",
-      brand.brand_name
-    );
-
-    // Ensure the correct brand is selected
-    if (selectedBrand?.brand_id !== brand.brand_id) {
-      setSelectedBrand?.(brand);
-    }
+    // Always set the correct brand (whether switching or not)
+    setSelectedBrand?.(brand);
 
     // Set the selected campaign
     setSelectedCampaignId(campaignId);
@@ -132,10 +135,21 @@ export function MediaUploadBrandSelector({
       return newFilters;
     });
 
+    // Update the brand store to keep it in sync (same as brand selection)
+    setSelectedBrandId(brand.brand_id);
+
+    // Update thread context if available (same as brand selection)
+    if (user?.thread_id) {
+      stream.client.threads.updateState(user.thread_id, {
+        values: {
+          currentBrandContextId: brand.brand_id,
+        },
+      });
+    }
+
     setOpen(false);
     setSearchTerm("");
   };
-
   // Filter brands and campaigns based on search
   const filteredBrands = brands.filter(
     (brand) =>

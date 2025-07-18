@@ -58,6 +58,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { updateBrandSocialMediaField } from "@/services/api/brand.service";
+import { patchMoodboard } from "@/services/api/moodboard.service";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -77,7 +78,9 @@ export const MoodboardSection: React.FC<{
   const [selectedMoodboardId, setSelectedMoodboardId] = useState<string | null>(
     null
   );
-
+  const [localTags, setLocalTags] = useState<
+    MoodboardInformation["aggregated_tags"] | null
+  >(null);
   const [isMoodboardGenerating, setIsMoodboardGenerating] = useState(false);
   const [isAddingToGallery, setIsAddingToGallery] = useState(false);
   const [hasUnsavedTagChanges, setHasUnsavedTagChanges] = useState(false);
@@ -253,21 +256,6 @@ export const MoodboardSection: React.FC<{
             "https://",
         },
       ];
-
-      // options.push({
-      //   id: SocialOptionId.Pinterest,
-      //   name: "Use Pinterest Images",
-      //   url:
-      //     existingSourcesMap.pinterest?.url ||
-      //     socialMediaPlatforms?.pinterest ||
-      //     "https://",
-      //   icon: <PinterestIcon size={44} />,
-      //   isEditing: false,
-      //   editValue:
-      //     existingSourcesMap.pinterest?.url ||
-      //     socialMediaPlatforms?.pinterest ||
-      //     "https://",
-      // });
 
       setSocialOptions(options);
 
@@ -657,6 +645,10 @@ export const MoodboardSection: React.FC<{
   };
 
   useEffect(() => {
+    console.log(
+      "current moodboard status",
+      currentMoodboard?.moodboard_generation_status
+    );
     if (currentMoodboard?.moodboard_generation_status === "in_progress") {
       setIsMoodboardGenerating(true);
     } else {
@@ -681,19 +673,33 @@ export const MoodboardSection: React.FC<{
 
     setIsMoodboardGenerating(true);
 
-    toast.promise(
-      createMoodboardForCampaign(
+    try {
+      toast.info("Moodboard generation initiated!", {
+        id: "moodboard-generate",
+      });
+
+      if (hasUnsavedTagChanges && localTags) {
+        await patchMoodboard(selectedBrandId, currentMoodboard.id, {
+          aggregated_tags: localTags,
+        });
+        setHasUnsavedTagChanges(false);
+      }
+
+      await createMoodboardForCampaign(
         selectedBrandId,
         currentMoodboard.campaign_id,
         currentMoodboard.id,
         { no_of_images: noOfImagesForMoodboard }
-      ),
-      {
-        loading: "Generating moodboard...",
-        success: "Moodboard generated successfully!",
-        error: "Failed to generate moodboard. Please try again.",
-      }
-    );
+      );
+    } catch (error) {
+      console.error("Failed to generate moodboard:", error);
+      toast.error("Failed to generate moodboard. Please try again.", {
+        id: "moodboard-generate",
+      });
+    } finally {
+      // setIsMoodboardGenerating(false);
+      console.log("generation end here");
+    }
   };
 
   // Calculate if we should show any loading state
@@ -724,7 +730,7 @@ export const MoodboardSection: React.FC<{
                     <div className="text-sm font-medium">{moodboardTitle}</div>
                   </div>
                   <div className="text-xs text-[#6e7787]">
-                    Set-up and work on your Campaign Moodboards
+                    Design the visual direction of your campaign
                   </div>
                 </div>
               </div>
@@ -889,6 +895,7 @@ export const MoodboardSection: React.FC<{
                           <MoodboardTagsSelector
                             moodboard={currentMoodboard}
                             onHasChanges={setHasUnsavedTagChanges}
+                            onTagsChange={setLocalTags}
                           />
 
                           <div className="mt-8 w-full mb-5 ">
@@ -900,9 +907,7 @@ export const MoodboardSection: React.FC<{
                                     className="w-full"
                                     disabled={
                                       currentMoodboard.moodboard_generation_status ===
-                                        "in_progress" ||
-                                      isMoodboardGenerating ||
-                                      hasUnsavedTagChanges
+                                        "in_progress" || isMoodboardGenerating
                                     }
                                   >
                                     {currentMoodboard.moodboard_generation_status ===
