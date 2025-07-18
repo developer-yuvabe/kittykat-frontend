@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, SetStateAction, Dispatch } from "react";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import type { GalleryActions } from "@/hooks/useGallery";
@@ -23,6 +23,7 @@ interface AskKittykatImageSectionProps {
   brushSize?: number;
   remixImageRef?: React.RefObject<RemixImageHandle | null>;
   revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
+  setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
 
 const VideoPlayer: React.FC<{
@@ -135,6 +136,7 @@ export const AskKittykatImageSection: React.FC<
   brushSize = 20,
   remixImageRef,
   revalidateGalleryItemVersions,
+  setCurrentItem,
 }) => {
   const isVideo = item.asset_type === "video";
 
@@ -185,9 +187,28 @@ export const AskKittykatImageSection: React.FC<
         variant="overlay"
         isLiked={item.is_favourite}
         onLike={() => {
+          setCurrentItem((prev) => {
+            if (!prev || prev.id !== item.id) return prev;
+
+            const updated = { ...prev, is_favourite: !prev.is_favourite };
+            return updated;
+          });
+
           galleryActions.toggleFavorite(item.id, {
             onSuccess: (updatedItem) => {
+              setCurrentItem((prev) => {
+                if (!prev || prev.id !== updatedItem.id) return prev;
+                return { ...prev, is_favourite: updatedItem.is_favourite };
+              });
+
               revalidateGalleryItemVersions(updatedItem);
+            },
+            onError: () => {
+              // Rollback optimistic update
+              setCurrentItem((prev) => {
+                if (!prev || prev.id !== item.id) return prev;
+                return { ...prev, is_favourite: item.is_favourite };
+              });
             },
           });
         }}

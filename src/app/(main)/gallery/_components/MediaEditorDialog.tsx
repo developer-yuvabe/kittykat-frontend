@@ -960,6 +960,7 @@ export function MediaEditorDialog({
                     revalidateGalleryItemVersions={
                       revalidateGalleryItemVersions
                     }
+                    setCurrentItem={setCurrentItem}
                   />
                 )}
                 {currentItem && (
