@@ -49,6 +49,7 @@ export function MediaUploadDropzone({
 }: MediaUploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
 
   const { addToGallery: addToGalleryMutation } =
     useGalleryQuery(galleryFilters);
@@ -303,7 +304,7 @@ export function MediaUploadDropzone({
     onDrop,
     multiple: true,
     accept: currentConfig.types,
-    disabled: isUploading,
+    disabled: isUploading || isUrlDialogOpen, // Disable dropzone when URL dialog is open
   });
 
   const isDisabled = isUploading || brands.length === 0 || brandsLoading;
@@ -322,6 +323,8 @@ export function MediaUploadDropzone({
           isDisabled={isDisabled}
           isUploading={isUploading}
           onUrlUpload={handleUrlUpload}
+          isUrlDialogOpen={isUrlDialogOpen}
+          setIsUrlDialogOpen={setIsUrlDialogOpen}
         />
 
         <MediaUploadStatus
