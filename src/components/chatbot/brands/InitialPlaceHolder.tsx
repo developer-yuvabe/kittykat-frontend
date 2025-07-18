@@ -3,14 +3,14 @@
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Command, CommandEmpty } from "@/components/ui/command";
-import { Search, CirclePlus, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Search, CirclePlus, ChevronDown, X, ChevronRight } from "lucide-react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import BrandSelector from "./BrandSelector";
 import { SubSectionCard } from "./SubSectionCard";
@@ -105,26 +105,19 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
   return (
     <>
       <style>{skeletonStyles}</style>
-      <div
-        className="bg-white rounded-2xl relative shadow-sm mb-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Card className="p-5" onClick={onToggleExpanded}>
-          {/* Header Section */}
+      <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
+        <CardHeader className="py-1">
           <div
-            className="flex items-center justify-between my-4"
-            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-between cursor-pointer "
+            onClick={onToggleExpanded}
           >
-            <div className="flex items-center gap-1">
-              {onToggleExpanded && !isLoading && (
-                <Button variant="ghost" size="sm" className="ml-2 p-1">
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
+            <div className="flex items-center">
+              {isExpanded && !isLoading ? (
+                <ChevronDown className="text-[#6e7787] mr-2" size={20} />
+              ) : (
+                <ChevronRight className="text-[#6e7787] mr-2" size={20} />
               )}
+
               {isLoading || isCreatingNewBrand ? (
                 <Avatar className="w-10 h-10 mr-2 overflow-hidden">
                   <div className="skeleton w-full h-full rounded-full"></div>
@@ -220,16 +213,19 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
               )}
             </div>
           </div>
+        </CardHeader>
 
-          {/* Expandable Fields */}
-          {isExpanded &&
-            fields.map((field) => (
+        {/* Expandable Fields */}
+        {isExpanded && (
+          <CardContent>
+            {fields.map((field) => (
               <SubSectionCard key={field} label={field} isLoading={isLoading}>
                 {!isLoading && renderFieldContent?.(field)}
               </SubSectionCard>
             ))}
-        </Card>
-      </div>
+          </CardContent>
+        )}
+      </Card>
     </>
   );
 };
