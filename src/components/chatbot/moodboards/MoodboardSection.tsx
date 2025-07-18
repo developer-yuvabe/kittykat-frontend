@@ -730,7 +730,7 @@ export const MoodboardSection: React.FC<{
                     <div className="text-sm font-medium">{moodboardTitle}</div>
                   </div>
                   <div className="text-xs text-[#6e7787]">
-                    Set-up and work on your Campaign Moodboards
+                    Design the visual direction of your campaign
                   </div>
                 </div>
               </div>
