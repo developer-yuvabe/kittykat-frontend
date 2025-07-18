@@ -24,7 +24,7 @@ import {
   deleteA2iVideo,
   toggleA2iVideoLike,
 } from "@/services/api/video-gen.service";
-import { useGalleryQuery } from "@/hooks/useGallery";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 
 export type A2iImageCardProps = {
@@ -68,19 +68,24 @@ const A2iImageCard = ({
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  const galleryActions = useGalleryQuery({
-    selectedFilters: {
-      brands: [selectedBrandId!],
-      campaigns: [],
-      moodboards: [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
+  const galleryActions = useGalleryQuery(
+    {
+      selectedFilters: {
+        brands: [selectedBrandId!],
+        campaigns: [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+      },
     },
-  });
+    ITEMS_PER_PAGE,
+    false,
+    "A2iImageCard"
+  );
 
   const id = video?.id ?? image?.id;
   const galleryItem = id ? galleryActions.useGalleryItem(id) : undefined;

@@ -153,8 +153,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         ],
       }));
 
-      console.log(newHumanMessage, "new human msg");
-
       // Handle message submission directly
       const messages = [...newFileList, newHumanMessage];
       const toolMessages = ensureToolCallsHaveResponses(stream.messages);

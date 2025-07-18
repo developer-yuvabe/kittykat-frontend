@@ -140,7 +140,6 @@ const ReferenceMoodboard = ({
         )
       );
 
-      console.log("Loaded reference photos:", loaded);
       setPhotos(loaded);
     } catch (error) {
       console.error("Failed to load reference images:", error);
@@ -201,7 +200,7 @@ const ReferenceMoodboard = ({
         <div className="space-y-8">
           {showGallery && photos.length > 0 && (
             <div className="mx-auto max-w-7xl w-full px-2">
-              <CustomGridGallery photos={photos} />
+              <CustomGridGallery photos={photos} isPreview={true} />
             </div>
           )}
 

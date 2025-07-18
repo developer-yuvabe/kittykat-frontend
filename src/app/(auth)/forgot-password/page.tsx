@@ -106,9 +106,7 @@ const ForgotPasswordPageContent = () => {
     }
 
     try {
-      console.log("Verifying reset code..."); // Debug log
       const email = await verifyPasswordResetCode(auth, oobCode);
-      console.log("Reset code verified for email:", email); // Debug log
 
       setUserEmail(email);
       setPageMode("reset");

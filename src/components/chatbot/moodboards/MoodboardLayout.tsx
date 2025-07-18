@@ -216,10 +216,7 @@ function MoodboardLayout({
         })
         .filter((item): item is NonNullable<typeof item> => item !== null); // Type-safe filter
 
-      console.log("Images to load:", imagesToLoad);
-
       if (imagesToLoad.length === 0) {
-        console.log("No images to load - check if galleryItems are loaded");
         setPhotos([]);
         setOriginalPhotos([]);
         return;
@@ -391,8 +388,6 @@ function MoodboardLayout({
         await patchMoodboard(brandId, moodboard.id, {
           visual_style_images: updatedVisualImages,
         });
-
-        console.log(`Photo ${photo.id} like status updated to: ${liked}`);
       }
     } catch (error) {
       console.error("Failed to update photo like status:", error);
@@ -437,8 +432,6 @@ function MoodboardLayout({
 
       // Update original state to match current state (but preserve like status)
       setOriginalPhotos([...photos]);
-
-      console.log("Position changes saved successfully");
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {
@@ -462,30 +455,29 @@ function MoodboardLayout({
 
   return (
     <div>
-      {moodboard.moodboard_assets.length > 0 &&
-        moodboard.style_analysis_status === "completed" && (
-          <ContentSection
-            title="Moodboard"
-            context={undefined}
-            content={
-              <div>
-                {/* Loading State - for generation, loading, or in_progress */}
-                {showLoadingState && (
-                  <ManualMoodboardSkeleton shimmer showButton={false} />
-                )}
+      {moodboard.moodboard_assets.length > 0 && (
+        <ContentSection
+          title="Moodboard"
+          context={undefined}
+          content={
+            <div>
+              {/* Loading State - for generation, loading, or in_progress */}
+              {showLoadingState && (
+                <ManualMoodboardSkeleton shimmer showButton={false} />
+              )}
 
-                {/* Failed State */}
-                {showFailedState && (
-                  <div className="w-full flex flex-col items-center justify-center py-8 gap-4">
-                    <div className="text-center">
-                      <p className="text-red-600 font-medium">
-                        Moodboard generation failed
-                      </p>
-                      <p className="text-gray-600 text-sm">Please try again</p>
-                    </div>
-                    <Button onClick={handleGenerateMoodboard} variant="outline">
-                      Try Again
-                    </Button>
+              {/* Failed State */}
+              {showFailedState && (
+                <div className="w-full flex flex-col items-center justify-center py-8 gap-4">
+                  <div className="text-center">
+                    <p className="text-red-600 font-medium">
+                      Moodboard generation failed
+                    </p>
+                    <p className="text-gray-600 text-sm">Please try again</p>
+                  </div>
+                  <Button onClick={handleGenerateMoodboard} variant="outline">
+                    Try Again
+                  </Button>
                   </div>
                 )}
 
@@ -656,15 +648,15 @@ function MoodboardLayout({
                         </>
                       )}
                     </Button>
-                  </div>
-                )}
-              </div>
-            }
-          />
-        )}
+                </div>
+              )}
+            </div>
+          }
+        />
+      )}
 
       {/* Empty State */}
-      {!showLoadingState && !showFailedState && !showGallery && (
+      {moodboard.moodboard_assets.length === 0 && (
         <div className="w-full flex flex-col gap-y-4 mt-6">
           <ManualMoodboardSkeleton />
 

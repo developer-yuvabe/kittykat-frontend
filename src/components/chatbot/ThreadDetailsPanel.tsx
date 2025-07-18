@@ -1,7 +1,6 @@
 "use client";
 
 import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
-import { useThreads } from "@/providers/langgraph/Thread";
 import { useBrandStore } from "@/store/brand.store";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import React, { useMemo, useState } from "react";
@@ -21,7 +20,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true, campaignInformation: true });
-  const { threadsLoading } = useThreads();
   const { removePinnedItem } = usePinnedContextStore();
   const { selectedBrandId, isBrandsFetched, isCreatingBrand } = useBrandStore();
   const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
@@ -48,12 +46,9 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
-      {threadsLoading ||
-      isFetchingBrandInfo ||
-      !isBrandsFetched ||
-      isCreatingBrand ? (
+      {isFetchingBrandInfo || isCreatingBrand ? (
         <InitialPlaceHolder
-          isLoading={threadsLoading || isFetchingBrandInfo || !isBrandsFetched}
+          isLoading={isFetchingBrandInfo || !isBrandsFetched}
           isCreatingNewBrand={isCreatingBrand}
         />
       ) : (

@@ -13,7 +13,6 @@ import { MessageCircle, ChevronUp } from "lucide-react";
 
 import ThreadDetailsPanel from "./ThreadDetailsPanel";
 import { ChatComponent } from "./ChatComponent";
-import { useThreads } from "@/providers/langgraph/Thread";
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +34,7 @@ const MobileChatPanel: React.FC<MobileChatPanelProps> = ({
   setFirstTokenReceived,
 }) => {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
-  const { threadsLoading } = useThreads();
+
   return (
     <div className="flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden">
       <Sheet open={isChatDrawerOpen} onOpenChange={setIsChatDrawerOpen}>
@@ -77,7 +76,6 @@ const MobileChatPanel: React.FC<MobileChatPanelProps> = ({
               firstTokenReceived={firstTokenReceived}
               prevMessageLength={prevMessageLength}
               setFirstTokenReceived={setFirstTokenReceived}
-              threadsLoading={threadsLoading}
             />
           </div>
         </SheetContent>

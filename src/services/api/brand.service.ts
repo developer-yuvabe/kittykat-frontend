@@ -2,7 +2,7 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
 
-import { BaseApiResponse } from "@/types/types";
+import { BaseApiResponse, ThreadDetails } from "@/types/types";
 import axios from "@/config/axios/api-client.config";
 import { BrandResponse, ThreadFileResponse } from "@/types/brand.types";
 
@@ -76,4 +76,27 @@ export async function deleteA2iImage(
   return handleApiRequest<{ brand_id: string; image_id: string }>(
     axiosInstance.delete(`/brands/${brand_id}/a2i/images/${image_id}`)
   );
+}
+
+export async function updateBrand(
+  brandId: string,
+  brandData: Record<string, any>
+): Promise<ThreadDetails> {
+  return handleApiRequest<ThreadDetails>(
+    axiosInstance.patch(`/brands/${brandId}`, brandData)
+  );
+}
+
+export async function updateBrandSocialMediaField(
+  brandId: string,
+  field: keyof NonNullable<
+    NonNullable<ThreadDetails["brand_information"]>["static"]
+  >["social_media"],
+  value: string
+): Promise<ThreadDetails> {
+  const payload = {
+    [`brand_information.static.social_media.${field}`]: value,
+  };
+
+  return updateBrand(brandId, payload);
 }

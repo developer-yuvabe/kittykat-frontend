@@ -53,6 +53,7 @@ type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
   }) => Promise<void>;
   hasUnsavedChanges?: boolean;
   isSyncing?: boolean;
+  isPreview?: boolean;
 };
 
 const MIN_IMAGES_REQUIRED = 10;
@@ -65,6 +66,7 @@ export default function OptimisticCustomGridGallery<TPhoto extends Photo>({
   onReplaceImage,
   hasUnsavedChanges,
   isSyncing = false,
+  isPreview = false,
 }: OptimisticCustomGridGalleryProps<TPhoto>) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
@@ -189,6 +191,7 @@ export default function OptimisticCustomGridGallery<TPhoto extends Photo>({
                 isDraggable={isDraggable}
                 isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
                 isSyncing={isSyncing}
+                isPreview={isPreview}
               />
             </div>
           );
@@ -253,6 +256,7 @@ type GridItemProps<TPhoto extends Photo> = {
   isDraggable: boolean;
   isAtMinimum: boolean;
   isSyncing?: boolean;
+  isPreview: boolean;
 };
 
 function GridItem<TPhoto extends Photo>({
@@ -266,6 +270,7 @@ function GridItem<TPhoto extends Photo>({
   isDraggable,
   isAtMinimum,
   isSyncing = false,
+  isPreview,
 }: GridItemProps<TPhoto>) {
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -305,14 +310,16 @@ function GridItem<TPhoto extends Photo>({
         />
 
         {/* Hover Overlay Gradient */}
-        {(removedPhoto || onReplaceImage || onPhotoLike) && !isSyncing && (
-          <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 " />
-          </div>
-        )}
+        {(removedPhoto || onReplaceImage || onPhotoLike) &&
+          !isSyncing &&
+          !isPreview && (
+            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 " />
+            </div>
+          )}
 
         {/* Top-left: Remove */}
-        {removedPhoto && !isSyncing && (
+        {removedPhoto && !isSyncing && !isPreview && (
           <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {isRemoving ? (
               <Loader2 className="w-5 h-5 animate-spin text-white" />
@@ -344,25 +351,28 @@ function GridItem<TPhoto extends Photo>({
         )}
 
         {/* Bottom-left: Replace */}
-        {onReplaceImage && hasUnsavedChanges === false && !isSyncing && (
-          <div className="absolute bottom-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <RotateCcw
-              size={16}
-              className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-              onClick={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                await onReplaceImage({
-                  imageToReplaceId: photo.id,
-                  replacementImageUrl: photo.src,
-                });
-              }}
-            />
-          </div>
-        )}
+        {onReplaceImage &&
+          hasUnsavedChanges === false &&
+          !isSyncing &&
+          !isPreview && (
+            <div className="absolute bottom-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <RotateCcw
+                size={16}
+                className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  await onReplaceImage({
+                    imageToReplaceId: photo.id,
+                    replacementImageUrl: photo.src,
+                  });
+                }}
+              />
+            </div>
+          )}
 
         {/* Bottom-right: Like */}
-        {onPhotoLike && !isSyncing && (
+        {onPhotoLike && !isSyncing && !isPreview && (
           <div className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <Heart
               size={16}

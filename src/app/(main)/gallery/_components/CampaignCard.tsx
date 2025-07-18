@@ -19,7 +19,7 @@ export const CampaignCard = ({
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log("Campaign card clicked:", campaign.id, campaign.title); // Debug log
+
       onSelect(campaign.id);
     },
     [campaign.id, onSelect]
