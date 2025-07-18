@@ -118,10 +118,8 @@ export function MediaUploadBrandSelector({
     brand: BrandCampaignListResponse["brands"][number],
     campaignId: string
   ) => {
-    // Ensure the correct brand is selected
-    if (selectedBrand?.brand_id !== brand.brand_id) {
-      setSelectedBrand?.(brand);
-    }
+    // Always set the correct brand (whether switching or not)
+    setSelectedBrand?.(brand);
 
     // Set the selected campaign
     setSelectedCampaignId(campaignId);
@@ -137,10 +135,21 @@ export function MediaUploadBrandSelector({
       return newFilters;
     });
 
+    // Update the brand store to keep it in sync (same as brand selection)
+    setSelectedBrandId(brand.brand_id);
+
+    // Update thread context if available (same as brand selection)
+    if (user?.thread_id) {
+      stream.client.threads.updateState(user.thread_id, {
+        values: {
+          currentBrandContextId: brand.brand_id,
+        },
+      });
+    }
+
     setOpen(false);
     setSearchTerm("");
   };
-
   // Filter brands and campaigns based on search
   const filteredBrands = brands.filter(
     (brand) =>
