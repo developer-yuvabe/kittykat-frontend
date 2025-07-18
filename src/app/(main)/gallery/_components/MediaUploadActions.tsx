@@ -15,14 +15,17 @@ interface MediaUploadActionsProps {
   isDisabled: boolean;
   isUploading: boolean;
   onUrlUpload: (urls: string[]) => void;
+  isUrlDialogOpen: boolean;
+  setIsUrlDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function MediaUploadActions({
   isDisabled,
   isUploading,
   onUrlUpload,
+  isUrlDialogOpen,
+  setIsUrlDialogOpen,
 }: MediaUploadActionsProps) {
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
 
   const handleUrlSubmit = () => {
@@ -36,7 +39,7 @@ export function MediaUploadActions({
     if (urls.length > 0) {
       onUrlUpload(urls);
       setUrlInput("");
-      setShowUrlInput(false);
+      setIsUrlDialogOpen(false);
     }
   };
 
@@ -55,7 +58,7 @@ export function MediaUploadActions({
         {isUploading ? "Uploading..." : "Upload Files"}
       </Button>
 
-      <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
+      <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
         <DialogTrigger asChild>
           <Button
             variant="outline"
@@ -89,7 +92,7 @@ export function MediaUploadActions({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                setShowUrlInput(false);
+                setIsUrlDialogOpen(false);
                 setUrlInput("");
               }}
               disabled={isUploading}
