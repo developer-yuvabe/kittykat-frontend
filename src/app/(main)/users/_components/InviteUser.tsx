@@ -29,7 +29,6 @@ import { UserRoleId } from "@/types/user.types";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -240,12 +239,7 @@ export function InviteUser() {
                       </MultiSelectGroup>
                     </MultiSelectContent>
                   </MultiSelect>
-                  {selectedRole === UserRoleId.USER && (
-                    <FormDescription>
-                      Brand access can only be changed again after the user
-                      accepts the invitation.
-                    </FormDescription>
-                  )}
+
                   <FormMessage />
                 </FormItem>
               )}
