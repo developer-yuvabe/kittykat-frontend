@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-  DialogTrigger,
   Dialog,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -49,13 +48,14 @@ import { updateInvitedUserSchema } from "@/schema/user.schema";
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
 export function EditUser({
-  children,
   user,
+  setIsOpen,
+  isOpen,
 }: {
-  children: React.ReactNode;
   user: UserListItem;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }) {
-  const [open, setOpen] = React.useState(false);
   const { brands } = useBrandStore();
   const queryClient = useQueryClient();
   const form = useForm<EditUserFormData>({
@@ -70,7 +70,7 @@ export function EditUser({
   });
 
   const onSubmit = async (data: EditUserFormData) => {
-    setOpen(false);
+    setIsOpen(false);
     form.reset();
 
     toast.promise(
@@ -108,15 +108,14 @@ export function EditUser({
 
   return (
     <Dialog
-      open={open}
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
           form.reset();
         }
-        setOpen(open);
+        setIsOpen(open);
       }}
     >
-      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
