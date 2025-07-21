@@ -1,45 +1,20 @@
-import { TextShimmer } from "@/components/ui/text-shimmer";
 import {
-  getLoadingMessageForTool,
   isAgentInboxInterruptSchema,
+  parseAnthropicStreamedToolCalls,
 } from "@/lib/langgraph.utils";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
-import { MessageContentComplex } from "@langchain/core/messages";
-import { parsePartialJson } from "@langchain/core/output_parsers";
-import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
+import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { parseAsBoolean, useQueryState } from "nuqs";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ThreadView } from "../agent-inbox";
 import { MarkdownText } from "../markdown-text";
 import { getContentString } from "../utils";
 import { GenericInterruptView } from "./generic-interrupt";
 import { BranchSwitcher, CommandBar } from "./shared";
 import { ToolCalls, ToolResult } from "./tool-calls";
+import { AssistantMessageLoader } from "./AssistantMessageLoader";
 
-function parseAnthropicStreamedToolCalls(
-  content: MessageContentComplex[]
-): AIMessage["tool_calls"] {
-  const toolCallContents = content.filter((c) => c.type === "tool_use" && c.id);
-
-  return toolCallContents.map((tc) => {
-    const toolCall = tc as Record<string, any>;
-    let json: Record<string, any> = {};
-    if (toolCall?.input) {
-      try {
-        json = parsePartialJson(toolCall.input) ?? {};
-      } catch {
-        // Pass
-      }
-    }
-    return {
-      name: toolCall.name ?? "",
-      id: toolCall.id ?? "",
-      args: json,
-      type: "tool_call",
-    };
-  });
-}
 export function AssistantMessage({
   message,
   isLoading,
@@ -83,8 +58,23 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
-  // Check if this is an agent communication that should be hidden
+  // Get the current active tool call for contextual loading - memoized with stable deps
+  const activeToolCall = useMemo(() => {
+    if (hasToolCalls && message?.tool_calls?.[0]) {
+      return message.tool_calls[0];
+    }
+    if (hasAnthropicToolCalls && anthropicStreamedToolCalls?.[0]) {
+      return anthropicStreamedToolCalls[0];
+    }
+    return null;
+  }, [
+    hasToolCalls,
+    message?.type === "ai" ? message.tool_calls : undefined,
+    hasAnthropicToolCalls,
+    anthropicStreamedToolCalls,
+  ]);
 
+  // Check if this is an agent communication that should be hidden
   if (isToolResult && hideToolCalls) {
     return null;
   }
@@ -98,7 +88,9 @@ export function AssistantMessage({
           {isLoading &&
             isLastMessage &&
             contentString.length === 0 &&
-            !toolCallsHaveContents && <AssistantMessageLoading />}
+            !toolCallsHaveContents && (
+              <AssistantMessageLoader tool={activeToolCall} />
+            )}
 
           {contentString && (
             <div className="py-1 w-[80%] bg-white p-4 break-words rounded-2xl">
@@ -148,77 +140,6 @@ export function AssistantMessage({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-// Generic loading messages to show after initial generic message
-const extendedLoadingMessages = [
-  "Processing your request...",
-  "Analyzing information...",
-  "Converting thoughts into words...",
-  "Brainstorming ideas...",
-  "Working on your request...",
-  "Crafting a response...",
-  "Connecting the dots...",
-  "Organizing thoughts...",
-  "Formulating a detailed answer...",
-  "Generating insights...",
-  "Exploring possibilities...",
-];
-
-// Initial generic message
-const initialGenericMessage = "Thinking...";
-
-export function AssistantMessageLoading({
-  tool = null,
-}: {
-  tool?: { name?: string } | null;
-}) {
-  const [currentMessage, setCurrentMessage] = useState<string | null>(null);
-
-  // Get loading message configuration based on tool name
-  const loadingConfig = tool?.name ? getLoadingMessageForTool(tool.name) : null;
-  const toolSpecificMessage = loadingConfig?.message;
-
-  // Default animation duration (can be overridden in config)
-  const animationDuration = loadingConfig?.duration || 1;
-
-  useEffect(() => {
-    // If tool has a specific message, use it immediately
-    if (toolSpecificMessage) {
-      setCurrentMessage(toolSpecificMessage);
-      return;
-    }
-
-    // Start with initial generic message instead of just dots
-    setCurrentMessage(initialGenericMessage);
-
-    // After 3 seconds, start showing extended loading messages
-    const initialTimeout = setTimeout(() => {
-      setCurrentMessage(extendedLoadingMessages[0]);
-
-      return () => {};
-    }, 4000);
-
-    return () => {
-      clearTimeout(initialTimeout);
-    };
-  }, [toolSpecificMessage]);
-
-  return (
-    <div className="flex items-start gap-2 mr-auto">
-      <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl">
-        {currentMessage && (
-          <span className="text-sm text-foreground/80 ml-2">
-            <TextShimmer
-              className="font-mono text-sm [--base-gradient-color:var(--color-purple-800)]"
-              duration={animationDuration}
-            >
-              {currentMessage}
-            </TextShimmer>
-          </span>
-        )}
-      </div>
     </div>
   );
 }
