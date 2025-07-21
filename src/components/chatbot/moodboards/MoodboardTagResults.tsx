@@ -66,7 +66,7 @@ function MoodboardTagResults({
           <Loader />
         ) : (
           <>
-            <Brain /> A2i Concept Visual Generation
+            <Brain /> Concept Visual Generation
           </>
         )}
       </Button>

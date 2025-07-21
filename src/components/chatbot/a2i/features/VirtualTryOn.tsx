@@ -101,7 +101,7 @@ const VirtualTryOn = ({
               className="w-full text-lg h-12"
             >
               <BrainIcon />
-              A2i Concept Visual Generation
+              Concept Visual Generation
             </Button>
           </div>
         </div>
