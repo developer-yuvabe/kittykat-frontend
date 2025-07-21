@@ -188,6 +188,7 @@ export function EditUser({
                         disabled={selectedRole === UserRoleId.ADMIN}
                       >
                         <MultiSelectValue
+                          overflowBehavior="wrap-when-open"
                           placeholder={
                             selectedRole === UserRoleId.ADMIN
                               ? "Admin has access to all brands"
