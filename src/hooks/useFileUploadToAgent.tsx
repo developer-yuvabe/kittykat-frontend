@@ -63,10 +63,6 @@ export function useFileUpload({
 
   const fileToContentBlock = async (file: File): Promise<ContentBlock> => {
     try {
-      if (!brandId) {
-        toast.warning("Start a conversation before uploading a file.");
-      }
-
       if (IMAGE_TYPES.includes(file.type)) {
         // Images: Upload to GCS and return URLContentBlock
         const uploadedUrl = await uploadFileAndReturnUrl(
@@ -144,9 +140,15 @@ export function useFileUpload({
       }
 
       if (uniqueFiles.length > 0) {
-        const newBlocks = await Promise.all(
-          uniqueFiles.map(fileToContentBlock)
-        );
+        const promise = Promise.all(uniqueFiles.map(fileToContentBlock));
+
+        toast.promise(promise, {
+          loading: "Uploading files...",
+          success: "Files uploaded successfully!",
+          error: "Failed to upload files.",
+        });
+
+        const newBlocks = await promise;
         setContentBlocks((prev) => [...prev, ...newBlocks]);
       }
     } catch (error) {
@@ -218,9 +220,15 @@ export function useFileUpload({
         }
 
         if (uniqueFiles.length > 0) {
-          const newBlocks = await Promise.all(
-            uniqueFiles.map(fileToContentBlock)
-          );
+          const promise = Promise.all(uniqueFiles.map(fileToContentBlock));
+
+          toast.promise(promise, {
+            loading: "Uploading files...",
+            success: "Files uploaded successfully!",
+            error: "Failed to upload files.",
+          });
+
+          const newBlocks = await promise;
           setContentBlocks((prev) => [...prev, ...newBlocks]);
         }
       } catch (error) {

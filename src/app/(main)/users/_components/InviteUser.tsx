@@ -35,21 +35,20 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  MultiSelect,
-  MultiSelectTrigger,
-  MultiSelectValue,
-  MultiSelectSearch,
-  MultiSelectContent,
-  MultiSelectList,
-  MultiSelectItem,
-  MultiSelectEmpty,
-} from "@/components/ui/multi-select";
+
 import { toast } from "sonner";
 import { checkIfEmailExists, inviteUser } from "@/services/api/user.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useUserStore } from "@/store/user.store";
+import {
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectGroup,
+  MultiSelectItem,
+  MultiSelectTrigger,
+  MultiSelectValue,
+} from "@/components/ui/multi-select-dropdown";
 
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
@@ -185,31 +184,36 @@ export function InviteUser() {
                 <FormItem className="pb-2">
                   <FormLabel>Brand Access</FormLabel>
                   <MultiSelect
-                    disabled={selectedRole === UserRoleId.ADMIN}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    maxCount={10}
+                    values={field.value}
+                    onValuesChange={field.onChange}
                   >
-                    <MultiSelectTrigger className="w-full">
-                      <MultiSelectValue
-                        placeholder={
-                          selectedRole === UserRoleId.ADMIN
-                            ? "Admin has access to all brands"
-                            : "Select brands"
-                        }
-                        maxDisplay={2}
-                        maxItemLength={20}
-                      />
-                    </MultiSelectTrigger>
-                    <MultiSelectContent>
-                      <MultiSelectSearch placeholder="Search brands..." />
-                      <MultiSelectList>
-                        <MultiSelectEmpty>No brands found</MultiSelectEmpty>
+                    <FormControl>
+                      <MultiSelectTrigger
+                        className="w-full"
+                        disabled={selectedRole === UserRoleId.ADMIN}
+                      >
+                        <MultiSelectValue
+                          placeholder={
+                            selectedRole === UserRoleId.ADMIN
+                              ? "Admin has access to all brands"
+                              : "Select brands"
+                          }
+                        />
+                      </MultiSelectTrigger>
+                    </FormControl>
+                    <MultiSelectContent
+                      search={{
+                        placeholder: "Search brands...",
+                        emptyMessage: "No brands found",
+                      }}
+                    >
+                      <MultiSelectGroup>
                         {brands.map((brand) => (
                           <MultiSelectItem
                             key={brand.id}
-                            value={brand.name}
-                            label={brand.name}
+                            value={brand.id}
+                            badgeLabel={brand.name}
+                            disabled={selectedRole === UserRoleId.ADMIN}
                           >
                             <div className="flex items-start justify-between group gap-0">
                               <div className="flex items-start min-w-0 w-full">
@@ -233,7 +237,7 @@ export function InviteUser() {
                             </div>
                           </MultiSelectItem>
                         ))}
-                      </MultiSelectList>
+                      </MultiSelectGroup>
                     </MultiSelectContent>
                   </MultiSelect>
                   {selectedRole === UserRoleId.USER && (
@@ -254,6 +258,9 @@ export function InviteUser() {
               </DialogClose>
               <Button
                 type="submit"
+                disabled={
+                  form.formState.isValidating || form.formState.isSubmitting
+                }
                 loading={
                   form.formState.isValidating || form.formState.isSubmitting
                 }

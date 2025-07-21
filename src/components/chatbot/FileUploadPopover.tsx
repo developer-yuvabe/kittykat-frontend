@@ -1,4 +1,3 @@
-import { useUserStore } from "@/store/user.store";
 import { Image } from "lucide-react";
 import { ChangeEvent, useRef, useState } from "react";
 
@@ -13,8 +12,6 @@ export function FileUploadPopover({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { user } = useUserStore();
-
   const [acceptType, setAcceptType] = useState<string>("");
 
   const triggerInput = (type: FileTriggerType) => {
@@ -23,11 +20,9 @@ export function FileUploadPopover({
     setTimeout(() => fileInputRef.current?.click(), 0);
   };
 
-  const disabled = isFileUploading || !user?.thread_id;
-
   return (
     <>
-      <button disabled={disabled} onClick={() => triggerInput("image")}>
+      <button onClick={() => triggerInput("image")}>
         <Image size={20} className="text-primary cursor-pointer" />
       </button>
 

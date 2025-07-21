@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-  DialogTrigger,
   Dialog,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -27,6 +26,7 @@ import { UserListItem, UserRoleId } from "@/types/user.types";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,28 +34,28 @@ import {
 } from "@/components/ui/form";
 import {
   MultiSelect,
+  MultiSelectContent,
+  MultiSelectGroup,
+  MultiSelectItem,
   MultiSelectTrigger,
   MultiSelectValue,
-  MultiSelectSearch,
-  MultiSelectContent,
-  MultiSelectList,
-  MultiSelectItem,
-  MultiSelectEmpty,
-} from "@/components/ui/multi-select";
+} from "@/components/ui/multi-select-dropdown";
 import { toast } from "sonner";
 import { updateUser } from "@/services/api/user.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { updateInvitedUserSchema } from "@/schema/user.schema";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
 export function EditUser({
-  children,
   user,
+  setIsOpen,
+  isOpen,
 }: {
-  children: React.ReactNode;
   user: UserListItem;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }) {
-  const [open, setOpen] = React.useState(false);
   const { brands } = useBrandStore();
   const queryClient = useQueryClient();
   const form = useForm<EditUserFormData>({
@@ -70,7 +70,7 @@ export function EditUser({
   });
 
   const onSubmit = async (data: EditUserFormData) => {
-    setOpen(false);
+    setIsOpen(false);
     form.reset();
 
     toast.promise(
@@ -108,15 +108,14 @@ export function EditUser({
 
   return (
     <Dialog
-      open={open}
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
           form.reset();
         }
-        setOpen(open);
+        setIsOpen(open);
       }}
     >
-      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
@@ -180,38 +179,68 @@ export function EditUser({
                 <FormItem className="pb-2">
                   <FormLabel>Brand Access</FormLabel>
                   <MultiSelect
-                    disabled={selectedRole === UserRoleId.ADMIN}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    maxCount={10}
+                    values={field.value}
+                    onValuesChange={field.onChange}
                   >
-                    <MultiSelectTrigger className="w-full">
-                      <MultiSelectValue
-                        placeholder={
-                          selectedRole === UserRoleId.ADMIN
-                            ? "Admin has access to all brands"
-                            : "Select brands"
-                        }
-                        maxDisplay={2}
-                        maxItemLength={20}
-                      />
-                    </MultiSelectTrigger>
-                    <MultiSelectContent>
-                      <MultiSelectSearch placeholder="Search brands..." />
-                      <MultiSelectList>
-                        <MultiSelectEmpty>No brands found</MultiSelectEmpty>
+                    <FormControl>
+                      <MultiSelectTrigger
+                        className="w-full"
+                        disabled={selectedRole === UserRoleId.ADMIN}
+                      >
+                        <MultiSelectValue
+                          placeholder={
+                            selectedRole === UserRoleId.ADMIN
+                              ? "Admin has access to all brands"
+                              : "Select brands"
+                          }
+                        />
+                      </MultiSelectTrigger>
+                    </FormControl>
+                    <MultiSelectContent
+                      search={{
+                        placeholder: "Search brands...",
+                        emptyMessage: "No brands found",
+                      }}
+                    >
+                      <MultiSelectGroup>
                         {brands.map((brand) => (
                           <MultiSelectItem
                             key={brand.id}
                             value={brand.id}
-                            label={brand.name}
+                            badgeLabel={brand.name}
+                            disabled={selectedRole === UserRoleId.ADMIN}
                           >
-                            {brand.name}
+                            <div className="flex items-start justify-between group gap-0">
+                              <div className="flex items-start min-w-0 w-full">
+                                <Avatar className="h-6 w-6 mr-2">
+                                  <AvatarFallback className="bg-blue-500 text-white">
+                                    {brand.name?.charAt(0).toUpperCase() || "B"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col space-y-1">
+                                  <span className="line-clamp- break-words">
+                                    {brand.name}
+                                  </span>
+                                  <span className="italic text-xs">
+                                    Created by{" "}
+                                    {brand.created_by.id === user?.id
+                                      ? "You"
+                                      : brand.created_by.name}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </MultiSelectItem>
                         ))}
-                      </MultiSelectList>
+                      </MultiSelectGroup>
                     </MultiSelectContent>
                   </MultiSelect>
+                  {selectedRole === UserRoleId.USER && (
+                    <FormDescription>
+                      Brand access can only be changed again after the user
+                      accepts the invitation.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
