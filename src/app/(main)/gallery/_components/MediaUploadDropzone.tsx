@@ -68,6 +68,11 @@ export function MediaUploadDropzone({
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
       "video/x-msvideo": [".avi"],
+      "image/tiff": [".tiff", ".tif"],
+      "image/webp": [".webp"],
+      "image/bmp": [".bmp"],
+      "image/gif": [".gif"],
+      "image/psd": [".psd"],
     },
     text: "PNG, JPEG, MP4",
     placeholder: "Drop media here to upload",
@@ -103,6 +108,8 @@ export function MediaUploadDropzone({
           selectedBrand?.brand_id || null,
           selectedCampaignId || null
         );
+
+        console.log("File url uploaded successfully:", url);
 
         if (addToGallery && selectedBrand) {
           try {

@@ -18,8 +18,13 @@ export const acceptedFileTypes = {
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
       "video/x-msvideo": [".avi"],
+      "image/tiff": [".tiff", ".tif"],
+      "image/webp": [".webp"],
+      "image/bmp": [".bmp"],
+      "image/gif": [".gif"],
+      "image/vnd.adobe.photoshop": [".psd"],
     },
-    text: "PNG, JPEG, JPG, SVG, MP4, MOV, AVI",
+    text: "PNG, JPEG, JPG, SVG, MP4, MOV, AVI, TIFF, WEBP, BMP, GIF, PSD",
     placeholder: "Drop images or videos here to upload",
     assetType: "image", // Default, overridden by getAssetTypeFromFile
   },
@@ -245,6 +250,10 @@ export const MEDIA_FORMAT_OPTIONS = [
   { value: "mov", label: "MOV" },
   { value: "webm", label: "WebM" },
   { value: "avi", label: "AVI" },
+  { value: "tiff", label: "TIFF" },
+  { value: "svg", label: "SVG" },
+  { value: "bmp", label: "BMP" },
+  { value: "psd", label: "PSD" },
 ];
 
 export const ASPECT_RATIO_OPTIONS = [
@@ -326,9 +335,13 @@ export const getSafeMediaFormat = (file: File): string => {
     "image/png": "png",
     "image/gif": "gif",
     "image/webp": "webp",
+    "image/tiff": "tiff",
     "video/mp4": "mp4",
     "video/quicktime": "mov",
     "video/webm": "webm",
+    "image/svg+xml": "svg",
+    "image/bmp": ".bmp",
+    "image/vnd.adobe.photoshop": "psd",
   };
 
   const fallback = mimeToExt[file.type];
