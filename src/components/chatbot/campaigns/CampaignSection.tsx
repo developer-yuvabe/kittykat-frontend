@@ -193,7 +193,10 @@ export const CampaignSection: React.FC<{
                           size="lg"
                           className="p-4"
                           variant="ghost"
-                          onClick={handleViaAgent}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViaAgent();
+                          }}
                         >
                           <CirclePlus className="size-5" />
                         </Button>
@@ -242,7 +245,10 @@ export const CampaignSection: React.FC<{
                 size="lg"
                 className="p-4"
                 variant="ghost"
-                onClick={handleViaAgent}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViaAgent();
+                }}
               >
                 <CirclePlus className="size-5" />
               </Button>

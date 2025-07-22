@@ -206,7 +206,10 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                   className="p-4"
                   tooltip={newButtonTooltip}
                   variant="ghost"
-                  onClick={onNewClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNewClick?.();
+                  }}
                 >
                   <CirclePlus className="size-5" />
                 </TooltipIconButton>
