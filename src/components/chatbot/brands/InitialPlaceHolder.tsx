@@ -292,7 +292,7 @@ export const InitialPlaceHolder: React.FC<{
         fields={brandFields}
         customSelector={!isLoading ? <BrandSelector /> : undefined}
         newButtonTooltip="New Brand"
-        onNewClick={() => console.log("New Brand clicked")}
+        onNewClick={() => {}}
         renderFieldContent={renderBrandFieldContent}
         isExpanded={brandExpanded}
         onToggleExpanded={() => setBrandExpanded(!brandExpanded)}

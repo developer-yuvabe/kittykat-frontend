@@ -109,8 +109,6 @@ export function MediaUploadDropzone({
           selectedCampaignId || null
         );
 
-        console.log("File url uploaded successfully:", url);
-
         if (addToGallery && selectedBrand) {
           try {
             const galleryItem = await createGalleryItemFromFile(
@@ -233,7 +231,6 @@ export function MediaUploadDropzone({
               moodboard_id: selecteMoodboardId,
               is_master: true,
             };
-            console.log("Adding to gallery:", galleryItem);
             addToGalleryMutation(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);
