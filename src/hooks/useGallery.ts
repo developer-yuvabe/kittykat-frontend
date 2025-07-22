@@ -20,12 +20,9 @@ export const ITEMS_PER_PAGE = 20;
 export const useGalleryQuery = (
   filters: GalleryFilters,
   items_per_page: number = ITEMS_PER_PAGE,
-  enabled: boolean = true,
-  compUsed: string = "unknown"
+  enabled: boolean = true
 ) => {
   const queryClient = useQueryClient();
-
-  console.log("used this hook", compUsed);
 
   // Fetch brands and campaigns for filters
   const brandsQuery = useQuery({
@@ -212,12 +209,6 @@ export const useGalleryQuery = (
     onMutate: async ({ itemId, data }) => {
       const queryKey = getGalleryQueryKey();
 
-      console.log("🔄 Patching item optimistically:", {
-        itemId,
-        data,
-        queryKey,
-      });
-
       await queryClient.cancelQueries({ queryKey });
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
@@ -250,10 +241,6 @@ export const useGalleryQuery = (
     },
 
     onSuccess: (updatedItem) => {
-      console.log(
-        "✅ Patch successful, updating with server data:",
-        updatedItem.id
-      );
       updateGalleryItemInCache(updatedItem);
       toast.success("Item updated successfully");
     },

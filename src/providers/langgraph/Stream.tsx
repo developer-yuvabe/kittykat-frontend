@@ -116,14 +116,10 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
         if (user?.thread_id) {
           try {
-            console.time("Fetch thread");
-
             const threadData = await client.threads.get<StateType>(
               user.thread_id
             );
             setCachedData(threadData.values);
-
-            console.timeEnd("Fetch thread");
           } catch (error: any) {
             if (error?.status === 404 || error?.response?.status === 404) {
               updateUser(user!.id, {

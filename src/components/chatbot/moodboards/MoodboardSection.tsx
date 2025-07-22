@@ -518,7 +518,6 @@ export const MoodboardSection: React.FC<{
 
       try {
         // Step 1: Create the new moodboard
-        console.log("moodboardTitle in handleFindStyle :", moodboardTitle);
         const newMoodboard = await createMoodboard(
           selectedBrandId,
           currentCampaign.id,
@@ -645,10 +644,6 @@ export const MoodboardSection: React.FC<{
   };
 
   useEffect(() => {
-    console.log(
-      "current moodboard status",
-      currentMoodboard?.moodboard_generation_status
-    );
     if (currentMoodboard?.moodboard_generation_status === "in_progress") {
       setIsMoodboardGenerating(true);
     } else {
@@ -698,7 +693,6 @@ export const MoodboardSection: React.FC<{
       });
     } finally {
       // setIsMoodboardGenerating(false);
-      console.log("generation end here");
     }
   };
 

@@ -88,6 +88,8 @@ export type ModelInformation<TSchema extends ZodTypeAny> = {
   disabled?: boolean;
   zodSchema: TSchema;
   defaultValues: z.infer<TSchema>;
+  // Optional prefix for custom finetuned models
   prefix?: string;
+  // Used for disabling fields based on conditions
   rules?: FieldRule[];
 };
