@@ -91,13 +91,9 @@ const VideoPlayer: React.FC<{
   };
 
   const handleCopyPrompt = () => {
-    // Priority order for text to copy
-    const textToCopy =
-      item.input_prompt || item.ai_description || "No prompt available";
-
-    if (textToCopy && textToCopy !== "No prompt available") {
+    if (item.input_prompt) {
       navigator.clipboard
-        .writeText(textToCopy)
+        .writeText(item.input_prompt)
         .then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
@@ -111,7 +107,7 @@ const VideoPlayer: React.FC<{
   };
 
   // Check if there's a prompt available to copy
-  const hasPromptToCopy = !!(item.input_prompt || item.ai_description);
+  const hasPromptToCopy = !!item.input_prompt;
 
   return (
     <div className="relative w-full h-full group overflow-hidden rounded-lg flex items-center justify-center">
@@ -244,7 +240,7 @@ export const AskKittykatImageSection: React.FC<
 
     // Default image rendering with copy prompt functionality
     const getPromptText = () => {
-      return item.input_prompt || item.ai_description;
+      return item.input_prompt;
     };
 
     return (
