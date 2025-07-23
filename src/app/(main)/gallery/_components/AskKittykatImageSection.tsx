@@ -27,12 +27,15 @@ interface AskKittykatImageSectionProps {
 }
 
 const VideoPlayer: React.FC<{
+  item: GalleryItemResponse;
+  galleryActions: GalleryActions;
   src: string;
   isLiked: boolean;
   onLike: () => void;
-}> = ({ src, isLiked, onLike }) => {
+}> = ({ item, src, isLiked, onLike }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -70,10 +73,34 @@ const VideoPlayer: React.FC<{
     video?.requestFullscreen?.();
   };
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(src);
-    toast.success("Video Prompt copied!");
+  const handleCopyPrompt = () => {
+    // Priority order for text to copy
+    const textToCopy =
+      item.input_prompt ||
+      item.ai_description ||
+      item.asset_title ||
+      "No prompt available";
+
+    if (textToCopy && textToCopy !== "No prompt available") {
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          toast.success("Prompt copied to clipboard!");
+        })
+        .catch((error) => {
+          console.error("Failed to copy prompt:", error);
+          toast.error("Failed to copy prompt");
+        });
+    } else {
+      toast.error("No prompt available to copy");
+    }
   };
+
+  function handleCopy(event: React.MouseEvent<SVGSVGElement>): void {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <div className="relative w-full h-full group overflow-hidden rounded-lg flex items-center justify-center">
@@ -153,6 +180,8 @@ export const AskKittykatImageSection: React.FC<
               },
             });
           }}
+          item={item}
+          galleryActions={galleryActions}
         />
       );
     }
@@ -212,6 +241,7 @@ export const AskKittykatImageSection: React.FC<
             },
           });
         }}
+        prompt={item.input_prompt || item.ai_description}
       />
     );
   };
