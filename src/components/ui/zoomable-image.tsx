@@ -38,7 +38,9 @@ export default function ZoomableImage({
   if (!src) return null;
 
   const imageUrl = typeof src === "string" ? src : URL.createObjectURL(src);
-  const copyText = prompt ?? alt ?? "";
+
+  // Only use prompt for copying, no alt fallback
+  const copyText = prompt || "";
 
   const handleCopy = () => {
     if (copyText) {
@@ -84,82 +86,86 @@ export default function ZoomableImage({
     }
     if (variant === "download") {
       return (
-        <div className="relative">
+        <div className="relative group">
           <img {...baseImageProps} />
-          <button
-            className="absolute -top-1 left-12 z-10 bg-white/80 backdrop-blur-sm rounded-full p-1 hover:bg-white"
+          <TooltipIconButton
             onClick={(e) => {
               e.stopPropagation(); // Prevent any parent click
               handleDownload();
             }}
+            tooltip="Download"
+            variant="ghost"
+            className="absolute top-2 right-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <DownloadIcon className="w-4 h-4 text-gray-700 hover:text-black" />
-          </button>
+            <DownloadIcon />
+          </TooltipIconButton>
         </div>
       );
     }
 
     // variant === "overlay"
     return (
-      <div className={"relative group"}>
+      <div className="relative group">
         <img {...baseImageProps} />
 
         {/* Overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-lg" />
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded" />
 
-          <div className="absolute inset-0 flex justify-between flex-col p-2">
-            {/* Top Right: Expand */}
-            <div className="flex justify-end">
-              <TooltipIconButton
-                onClick={() => setIsOpen(true)}
-                tooltip="Expand"
-                variant="ghost"
-                className="text-white hover:text-black size-7"
-              >
-                <ExpandIcon />
-              </TooltipIconButton>
-            </div>
+        {/* Top Right: Expand */}
+        <TooltipIconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(true);
+          }}
+          tooltip="Expand"
+          variant="ghost"
+          className="absolute top-2 right-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <ExpandIcon />
+        </TooltipIconButton>
 
-            {/* Bottom: Left icons */}
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2">
-                <TooltipIconButton
-                  onClick={handleDownload}
-                  tooltip="Download"
-                  variant="ghost"
-                  className="text-white hover:text-black size-7"
-                >
-                  <DownloadIcon />
-                </TooltipIconButton>
-                <TooltipIconButton
-                  onClick={handleCopy}
-                  tooltip="Copy"
-                  variant="ghost"
-                  className="text-white hover:text-black size-7"
-                >
-                  {copied ? <Check /> : <CopyIcon />}
-                </TooltipIconButton>
-              </div>
+        {/* Bottom Left: Download */}
+        <TooltipIconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDownload();
+          }}
+          tooltip="Download"
+          variant="ghost"
+          className="absolute bottom-2 left-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <DownloadIcon />
+        </TooltipIconButton>
 
-              {/* Bottom Right: Like (conditionally rendered) */}
-              {showLikeButton && (
-                <TooltipIconButton
-                  onClick={handleLikeToggle}
-                  tooltip="Like"
-                  variant="ghost"
-                  className="text-white hover:text-red-500 size-7"
-                >
-                  <HeartIcon
-                    className={cn({
-                      "text-red-500 fill-red-500": isLiked,
-                    })}
-                  />
-                </TooltipIconButton>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Bottom Left Second Position: Copy (only if prompt exists and is not empty) */}
+        {prompt && prompt.trim() && (
+          <TooltipIconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopy();
+            }}
+            tooltip={copied ? "Copied!" : "Copy prompt"}
+            variant="ghost"
+            className="absolute bottom-2 left-12 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {copied ? <Check /> : <CopyIcon />}
+          </TooltipIconButton>
+        )}
+
+        {/* Bottom Right: Like (conditionally rendered) */}
+        {showLikeButton && (
+          <TooltipIconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeToggle();
+            }}
+            tooltip={isLiked ? "Unlike" : "Like"}
+            variant="ghost"
+            className="absolute bottom-2 right-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <HeartIcon className={isLiked ? "fill-red-500 text-red-500" : ""} />
+          </TooltipIconButton>
+        )}
       </div>
     );
   };
