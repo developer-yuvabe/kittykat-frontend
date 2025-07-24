@@ -32,6 +32,7 @@ import {
 import { useBrandStore } from "@/store/brand.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
+import { Options } from "nuqs";
 
 interface BrandSelectorProps {
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
@@ -45,6 +46,14 @@ interface BrandSelectorProps {
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: Dispatch<SetStateAction<EnhancedSelectedFilters>>;
   preSelectedBrandId: string | null;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: Options
+  ) => Promise<URLSearchParams>;
+  setInitialBrandId: (
+    value: string | ((old: string | null) => string | null) | null,
+    options?: Options
+  ) => Promise<URLSearchParams>;
 }
 
 export function MediaUploadBrandSelector({
@@ -56,6 +65,8 @@ export function MediaUploadBrandSelector({
   selectedCampaignId,
   setSelectedFilters,
   preSelectedBrandId,
+  setInitialBrandId,
+  setInitialWorkflowStatus,
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +100,8 @@ export function MediaUploadBrandSelector({
     brand: BrandCampaignListResponse["brands"][number]
   ) => {
     // Set the selected brand
+    setInitialBrandId(null);
+    setInitialWorkflowStatus(null);
     setSelectedBrand?.(brand);
 
     // Clear campaign selection
@@ -119,6 +132,8 @@ export function MediaUploadBrandSelector({
     campaignId: string
   ) => {
     // Always set the correct brand (whether switching or not)
+    setInitialBrandId(null);
+    setInitialWorkflowStatus(null);
     setSelectedBrand?.(brand);
 
     // Set the selected campaign
