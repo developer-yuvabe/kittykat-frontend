@@ -17,13 +17,10 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
-import { deleteA2iImage, toggleA2iImageLike } from "@/services/api/a2i.service";
+import { deleteA2iImage } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import { CSSProperties } from "react";
-import {
-  deleteA2iVideo,
-  toggleA2iVideoLike,
-} from "@/services/api/video-gen.service";
+import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 
@@ -60,7 +57,7 @@ const A2iImageCard = ({
   isNSFW,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
-  const [isLiked, setIsLiked] = useState(image?.is_liked || false);
+
   const [showEditFeatures, setShowEditFeatures] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -83,12 +80,16 @@ const A2iImageCard = ({
       },
     },
     ITEMS_PER_PAGE,
-    false,
+    true,
     "A2iImageCard"
   );
 
   const id = video?.id ?? image?.id;
   const galleryItem = id ? galleryActions.useGalleryItem(id) : undefined;
+
+  const [isLiked, setIsLiked] = useState(
+    galleryItem?.data?.is_favourite || false
+  );
 
   useEffect(() => {
     if (videoRef && videoRef.current) {
@@ -122,28 +123,6 @@ const A2iImageCard = ({
     }
   };
 
-  const handleLikeToggle = () => {
-    const prevLikeStatus = isLiked;
-    setIsLiked((p) => !p);
-
-    const toggleFn = image
-      ? () =>
-          toggleA2iImageLike(selectedBrandId!, generationId, image.id, !isLiked)
-      : video
-      ? () => toggleA2iVideoLike(selectedBrandId!, generationId, !isLiked)
-      : null;
-
-    if (!toggleFn) return;
-
-    toggleFn().catch((error) => {
-      console.error("Error toggling like status:", error);
-      toast.error("Could not update like status. Please try again.", {
-        position: "bottom-right",
-      });
-      setIsLiked(prevLikeStatus);
-    });
-  };
-
   const handleRemoveItem = async () => {
     setIsDeleting(true);
     try {
@@ -162,6 +141,10 @@ const A2iImageCard = ({
       setIsDeleting(false);
     }
   };
+
+  useEffect(() => {
+    setIsLiked(galleryItem?.data?.is_favourite || false);
+  }, [galleryItem?.data?.is_favourite]);
 
   return (
     <div
@@ -314,7 +297,13 @@ const A2iImageCard = ({
 
         {(image || video) && (
           <Button
-            onClick={handleLikeToggle}
+            onClick={() => {
+              setIsLiked((prev) => !prev);
+              const id = image?.id || video?.id;
+              if (id) {
+                galleryActions.toggleFavorite(id);
+              }
+            }}
             size={"icon"}
             variant={"ghost"}
             className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
@@ -357,6 +346,8 @@ const A2iImageCard = ({
           item={galleryItem.data}
           open={showEditFeatures}
           onOpenChange={setShowEditFeatures}
+          totalItems={1}
+          currentIndex={0}
         />
       )}
 
