@@ -26,6 +26,7 @@ import {
   InstagramIcon,
   MoodboardIcon,
   PinterestIcon,
+  SearchIcon,
 } from "@/components/ui/custom-icon";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { ContentSection } from "@/components/shared/ContentSection";
@@ -59,6 +60,12 @@ import {
 } from "@/components/ui/tooltip";
 import { updateBrandSocialMediaField } from "@/services/api/brand.service";
 import { patchMoodboard } from "@/services/api/moodboard.service";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Command, CommandEmpty } from "@/components/ui/command";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -84,6 +91,7 @@ export const MoodboardSection: React.FC<{
   const [isMoodboardGenerating, setIsMoodboardGenerating] = useState(false);
   const [isAddingToGallery, setIsAddingToGallery] = useState(false);
   const [hasUnsavedTagChanges, setHasUnsavedTagChanges] = useState(false);
+  const [openPopover, setOpenPopover] = useState(false);
 
   const currentCampaign = useMemo(
     () =>
@@ -451,7 +459,7 @@ export const MoodboardSection: React.FC<{
       ? `${currentCampaign.campaign.title}'s Moodboard v${
           currentCampaignMoodboards.length + 1
         }`
-      : "New Moodboard 123"
+      : "New Moodboard"
   );
 
   useEffect(() => {
@@ -763,22 +771,41 @@ export const MoodboardSection: React.FC<{
             )}
           </div>
 
-          <div className="absolute right-3 top-6 flex gap-x-2">
-            {campaignInformation && currentCampaign && (
+          <div className="absolute right-3 top-7 flex items-center gap-x-2">
+            {campaignInformation && currentCampaign ? (
               <MoodboardSelector
-                campaignId={currentCampaign?.id}
+                campaignId={currentCampaign.id}
                 moodboards={moodboardInformation || []}
                 selectedMoodboard={currentMoodboard}
                 setSelectedMoodboard={handleMoodboardSelect}
                 onNewMoodboard={handleCreateNewMoodboard}
                 isCreatingNew={isCreatingNewMoodboard}
               />
+            ) : (
+              <Popover open={openPopover} onOpenChange={setOpenPopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <SearchIcon size={10} className="text-black" />
+                    {`Select Moodboard`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandEmpty>No Existing Moodboard</CommandEmpty>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
 
             {isCreatingNewMoodboard ? (
               <TooltipIconButton
                 tooltip="Cancel"
-                className="mt-2"
+                className="p-4"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCancelNewMoodboard();
@@ -788,12 +815,12 @@ export const MoodboardSection: React.FC<{
               </TooltipIconButton>
             ) : (
               <TooltipIconButton
-                tooltip="Create new moodboard"
+                tooltip="New Moodboard"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCreateNewMoodboard();
                 }}
-                className="mt-2"
+                className="p-4"
                 size={"lg"}
               >
                 <CirclePlus className="size-5" />

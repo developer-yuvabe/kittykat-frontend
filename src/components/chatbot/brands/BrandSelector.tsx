@@ -63,7 +63,7 @@ export default function BrandSelector() {
             onClick={(e) => e.stopPropagation()}
           >
             <SearchIcon size={10} className="text-black" />
-            Load existing Brand
+            Select Brand
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[300px] relative  p-0" align="start">

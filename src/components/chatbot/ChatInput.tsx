@@ -34,6 +34,14 @@ import { useUserStore } from "@/store/user.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useBrandStore } from "@/store/brand.store";
 import { transcribeAudio } from "@/services/api/speechtotext.service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -104,12 +112,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null); // NEW
   const wasCancelledRef = useRef(false);
-
-  const startRecording = async () => {
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [showMicPermissionDialog, setShowMicPermissionDialog] = useState(false);
+  // Request microphone permission
+  const requestMicrophonePermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setMediaStream(stream); // Save stream reference
+      setMediaStream(stream);
+      setPermissionDenied(false); // Reset permission denied state
+      return stream;
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      setPermissionDenied(true); // Set flag for permission denied
+      setShowMicPermissionDialog(true);
+      return null;
+    }
+  };
 
+  const startRecording = async () => {
+    const stream = await requestMicrophonePermission();
+    if (!stream) {
+      return;
+    }
+
+    try {
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
@@ -383,12 +409,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             />
           ) : (
             <div className="w-full h-16 p-4 rounded-lg flex items-center justify-center space-x-1 overflow-hidden ">
-              {[...Array(40)].map((_, index) => (
+              {[...Array(35)].map((_, index) => (
                 <div
                   key={index}
                   className="frequency-bar w-2 bg-gray-300 rounded"
                   style={{
-                    height: `${Math.random() * 30 + 20}px`, // Random height between 10-30px
+                    height: `${Math.random() * 40 + 30}px`,
                   }}
                 ></div>
               ))}
@@ -462,6 +488,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
       </form>
+      <Dialog
+        open={showMicPermissionDialog}
+        onOpenChange={setShowMicPermissionDialog}
+      >
+        <DialogContent hideCloseIcon>
+          <DialogHeader>
+            <DialogTitle>Microphone Permission Denied</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>
+              Your browser has blocked access to the microphone. Please allow
+              microphone access from your browser settings and try again.
+            </p>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                variant="default"
+                onClick={() => setShowMicPermissionDialog(false)}
+              >
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
