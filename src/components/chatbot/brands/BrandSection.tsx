@@ -124,8 +124,8 @@ export const renderBrandData = (
                   <div className="text-xs text-[#6e7787]">
                     Set up, switch, and modify your Brand
                   </div>
-                  <div className="absolute right-3 top-6 ">
-                    <div className="flex justify-between gap-x-2">
+                  <div className="absolute right-3 top-7">
+                    <div className="flex justify-between items-center gap-x-2">
                       <div>
                         <BrandSelector />
                       </div>
@@ -191,8 +191,8 @@ export const renderBrandData = (
                   isTextarea={false}
                 />
 
-                <div className="absolute right-3 top-6 ">
-                  <div className="flex justify-between gap-x-2">
+                <div className="absolute right-3 top-7">
+                  <div className="flex justify-between items-center gap-x-2">
                     <div>
                       <BrandSelector />
                     </div>
@@ -223,7 +223,7 @@ export const renderBrandData = (
       </CardHeader>
 
       {expandedSections.brandOverview && (
-        <CardContent className="pt-0  pb-6">
+        <CardContent className="pt-0 pb-6">
           <div className="mt-1 space-y-6">
             <BrandOverview
               tagline={staticData?.brand?.tagline}
