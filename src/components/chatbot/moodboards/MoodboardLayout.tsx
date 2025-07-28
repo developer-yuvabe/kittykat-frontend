@@ -174,6 +174,7 @@ function MoodboardLayout({
 
   // Fixed function to load images with proper type matching
   const loadImagesWithCurrentData = useCallback(async () => {
+    setLoading(true);
     const currentMoodboard = latestMoodboardRef.current;
     const currentGalleryItems = latestGalleryItemsRef.current;
 
@@ -222,13 +223,6 @@ function MoodboardLayout({
         return;
       }
 
-      // Only set loading if we don't already have photos for this moodboard
-      const shouldSetLoading =
-        photos.length === 0 || currentMoodboard.id !== currentMoodboardId;
-      if (shouldSetLoading) {
-        setLoading(true);
-      }
-
       try {
         const loaded = await Promise.all(
           imagesToLoad
@@ -269,9 +263,7 @@ function MoodboardLayout({
           setOriginalPhotos([...loaded]); // Set original state
         }
       } finally {
-        if (shouldSetLoading) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     } else {
       setPhotos([]);
