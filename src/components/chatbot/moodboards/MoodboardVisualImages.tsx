@@ -41,6 +41,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
         source: item.asset_source,
         is_liked: visualImage?.is_liked ?? false,
         ignored: visualImage?.to_ignore ?? false,
+        preview_url: item?.preview_url,
       };
     });
   }, [
@@ -66,10 +67,10 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
                 >
                   <img
                     onClick={() => setExpandedImage(item.url)}
-                    src={item.url || "/placeholder.svg"}
+                    src={item.preview_url || item.url || "/placeholder.svg"}
                     alt={item.filename}
                     className="object-cover w-40 mx-auto h-40 rounded-md cursor-pointer"
-                    loading="lazy"
+                    loading="eager"
                   />
                 </CarouselItem>
               ))}
