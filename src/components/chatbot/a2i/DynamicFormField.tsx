@@ -27,19 +27,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  AdvancedParameter,
-  FieldRule,
-  InitialParameter,
-} from "@/types/a2i-media.types";
+import { ModelParameter, Rule } from "@/types/a2i-media.types";
 import { InfoIcon } from "lucide-react";
 import { FieldValues, UseFormReturn, useWatch } from "react-hook-form";
 
-type FieldParam = InitialParameter | AdvancedParameter;
-
 type DynamicFormFieldProps<T extends FieldValues> = {
-  param: FieldParam;
-  rules?: FieldRule[];
+  param: ModelParameter;
+  rules?: Rule[];
   form: UseFormReturn<T>;
   type: "initial" | "advanced";
 };
@@ -73,13 +67,13 @@ export function DynamicFormField<T extends FieldValues>({
     if (!rules) return { disabled: false };
 
     const matchingRule = rules.find(
-      (r) => r.name === formName && r.value === value
+      (r) => r.name === formName && r.paramId === value
     );
     if (!matchingRule) return { disabled: false };
 
-    const shouldDisable = matchingRule.disableIf.some((cond) => {
-      return watchedValues?.[cond.name] === cond.value;
-    });
+    const shouldDisable =
+      watchedValues?.[matchingRule.disableIf.name] ===
+      matchingRule.disableIf.paramId;
 
     return {
       disabled: shouldDisable,
@@ -87,14 +81,10 @@ export function DynamicFormField<T extends FieldValues>({
     };
   };
 
-  if (param.disabled) {
-    return <></>;
-  }
-
   return (
     <FormField
       control={form.control}
-      name={param.formName as any}
+      name={param.id as any}
       render={({ field }) => {
         switch (param.type) {
           case "slider":
@@ -102,7 +92,7 @@ export function DynamicFormField<T extends FieldValues>({
               <FormItem>
                 <div>
                   <div className="flex items-center justify-between">
-                    <DynaicFormLabel label={param.name} />
+                    <DynaicFormLabel label={param.label} />
                     {
                       <span className="text-xs text-muted-foreground">
                         {field.value}
@@ -112,18 +102,16 @@ export function DynamicFormField<T extends FieldValues>({
                 </div>
                 <FormControl>
                   <Slider
-                    disabled={param.disabled}
-                    value={[field.value ?? param.constraints?.min ?? 0]}
+                    value={[field.value ?? param.min ?? 0]}
                     onValueChange={(val) => field.onChange(val[0])}
-                    min={param.constraints?.min}
-                    max={param.constraints?.max}
-                    step={param.constraints?.step}
+                    min={param.min}
+                    max={param.max}
+                    step={param.step}
                   />
                 </FormControl>
                 {
                   <span className="text-[10px] italic text-muted-foreground">
-                    (minimum: {param.constraints?.min}, maximum:{" "}
-                    {param.constraints?.max})
+                    (minimum: {param?.min}, maximum: {param?.max})
                   </span>
                 }
               </FormItem>
@@ -159,12 +147,12 @@ export function DynamicFormField<T extends FieldValues>({
                 </FormControl>
                 <DynaicFormLabel
                   showLabel={type !== "initial"}
-                  label={param.name}
+                  label={param.label}
                 />
               </FormItem>
             );
 
-          case "select":
+          case "enum":
             return (
               <FormItem
                 className={cn("w-full", {
@@ -173,7 +161,7 @@ export function DynamicFormField<T extends FieldValues>({
               >
                 <DynaicFormLabel
                   showLabel={type !== "initial"}
-                  label={param.name}
+                  label={param.label}
                 />
 
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -186,12 +174,12 @@ export function DynamicFormField<T extends FieldValues>({
                     >
                       {(() => {
                         const selected = param.options?.find(
-                          (opt) => opt.value === field.value
+                          (opt) => opt.optionValue === field.value
                         );
                         return selected ? (
                           <div className="flex items-center gap-2">
-                            {param.icon && <param.icon className="w-4 h-4" />}
-                            {selected.label}
+                            {/* {param.icon && <param.icon className="w-4 h-4" />} */}
+                            {selected.optionLabel}
                           </div>
                         ) : (
                           <span>Select</span>
@@ -204,20 +192,20 @@ export function DynamicFormField<T extends FieldValues>({
                       "w-max": type === "initial",
                     })}
                   >
-                    {param.options?.map(({ value, label }) => {
+                    {param.options?.map(({ optionValue, optionLabel }) => {
                       const { disabled, hintText } = getShouldDisableOption(
-                        param.formName,
-                        value.toString()
+                        param.id,
+                        optionValue.toString()
                       );
 
                       if (disabled) {
                         return (
                           <div
-                            key={value.toString()}
+                            key={optionValue.toString()}
                             className="focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none pointer-events-auto opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
                           >
                             <FormLabel className="font-normal">
-                              {label}
+                              {optionLabel}
 
                               {hintText && (
                                 <TooltipProvider>
@@ -236,12 +224,14 @@ export function DynamicFormField<T extends FieldValues>({
 
                       return (
                         <SelectItem
-                          key={value.toString()}
-                          value={value.toString()}
+                          key={optionValue.toString()}
+                          value={optionValue.toString()}
                           className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
                           title={hintText}
                         >
-                          <FormLabel className="font-normal">{label}</FormLabel>
+                          <FormLabel className="font-normal">
+                            {optionLabel}
+                          </FormLabel>
                         </SelectItem>
                       );
                     })}
@@ -250,15 +240,15 @@ export function DynamicFormField<T extends FieldValues>({
               </FormItem>
             );
 
-          case "text":
+          case "string":
             return (
               <FormItem>
                 <DynaicFormLabel
                   showLabel={type !== "initial"}
-                  label={param.name}
+                  label={param.label}
                 />
                 <FormControl>
-                  <Input {...field} placeholder={param.name} />
+                  <Input {...field} placeholder={param.label} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

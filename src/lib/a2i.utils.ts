@@ -6,7 +6,6 @@ import {
   fluxProUltraSchema,
   gptImage1Schema,
 } from "@/schema/image-gen.schema";
-import { ModelInformation } from "@/types/a2i-media.types";
 import { Ruler } from "lucide-react";
 
 export const finetunedModels = [
@@ -37,7 +36,7 @@ export const finetunedModels = [
   },
 ];
 
-export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
+export const gptImage1Model: any = {
   id: "gpt-image-1",
   name: "GPT Image 1",
   provider: "openai",
@@ -151,7 +150,7 @@ export const gptImage1Model: ModelInformation<typeof gptImage1Schema> = {
   ],
 };
 
-export const fluxDevModel: ModelInformation<typeof fluxDevSchema> = {
+export const fluxDevModel: any = {
   id: "black-forest-labs/flux-dev",
   name: "Flux Dev",
   provider: "replicate",
@@ -267,7 +266,7 @@ export const fluxDevModel: ModelInformation<typeof fluxDevSchema> = {
   },
 };
 
-export const fluxProModel: ModelInformation<typeof fluxProSchema> = {
+export const fluxProModel = {
   id: "black-forest-labs/flux-1.1-pro",
   name: "Flux 1.1 Pro",
   provider: "replicate",
@@ -349,7 +348,7 @@ export const fluxProModel: ModelInformation<typeof fluxProSchema> = {
   },
 };
 
-export const fluxProUltraModel: ModelInformation<typeof fluxProUltraSchema> = {
+export const fluxProUltraModel = {
   id: "black-forest-labs/flux-1.1-pro-ultra",
   name: "Flux 1.1 Pro Ultra",
   provider: "replicate",
@@ -433,9 +432,7 @@ export const fluxProUltraModel: ModelInformation<typeof fluxProUltraSchema> = {
   },
 };
 
-export const customFluxProFinetunedModels: ModelInformation<
-  typeof fluxProUltraFinetunedSchema
->[] = finetunedModels.map((model) => ({
+export const customFluxProFinetunedModels = finetunedModels.map((model) => ({
   id: `black-forest-labs/flux-1.1-pro-ultra-finetuned-${model.finetuneId}`,
   name: model.name,
   provider: "replicate",

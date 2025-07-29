@@ -6,8 +6,6 @@ import { useRef, useState } from "react";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
-import { Form } from "@/components/ui/form";
-import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { useQuery } from "@tanstack/react-query";
 import { getModels } from "@/services/api/models.service";
 import { useModelsStore } from "@/store/models.store";
@@ -28,13 +26,13 @@ const A2iImagesSection = function A2iImagesSection({
       try {
         const fetchedModels = await getModels();
         setModels(fetchedModels);
+        return fetchedModels;
       } finally {
         setIsModelsFetched(true);
       }
     },
   });
   const [expanded, setExpanded] = useState(true);
-  const form = useImageGenForm();
   const formRef = useRef<HTMLDivElement | null>(null);
 
   return (
@@ -68,23 +66,19 @@ const A2iImagesSection = function A2iImagesSection({
         </div>
       </CardHeader>
       {expanded && (
-        <Form {...form}>
-          <CardContent className="px-6  space-y-6">
-            <ReferenceMoodboard
-              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-              prompts={a2iImageInformation?.prompts}
-              moodboardInformation={moodboardInformation}
-              form={form}
-              formRef={formRef}
-            />
-            <A2iImagesWrapper
-              form={form}
-              formRef={formRef}
-              generations={[...(a2iImageInformation?.generations || [])]}
-              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-            />
-          </CardContent>
-        </Form>
+        <CardContent className="px-6  space-y-6">
+          <ReferenceMoodboard
+            referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+            prompts={a2iImageInformation?.prompts}
+            moodboardInformation={moodboardInformation}
+            formRef={formRef}
+          />
+          <A2iImagesWrapper
+            formRef={formRef}
+            generations={[...(a2iImageInformation?.generations || [])]}
+            referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+          />
+        </CardContent>
       )}
     </Card>
   );

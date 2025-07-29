@@ -453,6 +453,8 @@ function MoodboardLayout({
     setNoOfImagesForMoodboard(revertedPhotos.length);
   };
 
+  console.log(moodboard.visual_style_images.length, "visual style images");
+
   return (
     <div>
       {moodboard.moodboard_assets.length > 0 && (
@@ -478,108 +480,82 @@ function MoodboardLayout({
                   <Button onClick={handleGenerateMoodboard} variant="outline">
                     Try Again
                   </Button>
-                  </div>
-                )}
+                </div>
+              )}
 
-                {/* Completed Gallery State */}
-                {showGallery && (
-                  <div className="w-full flex flex-col gap-y-4">
-                    {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
-                    <div className="w-full flex flex-col gap-3">
-                      {/* Top row - Main controls */}
-                      <div className="flex flex-col 2xl:flex-row 2xl:flex-wrap gap-3 w-full">
-                        <div className="flex flex-col sm:flex-row gap-1 flex-wrap flex-1 min-w-0">
-                          <div className="min-w-[200px]">
-                            <MoodboardSelector
-                              campaignId={moodboard.campaign_id}
-                              isCreatingNew={isCreatingNew}
-                              moodboards={moodboards}
-                              onNewMoodboard={onNewMoodboard}
-                              selectedMoodboard={selectedMoodboard}
-                              setSelectedMoodboard={setSelectedMoodboard}
-                              variant="select"
-                              // className="p-2" // Optional: tighten if internal component allows
-                            />
-                          </div>
-                          <div className="min-w-[140px]">
-                            <ImageCountCard
-                              disabled
-                              maxCount={
-                                moodboard.visual_style_images.length > 16
-                                  ? 16
-                                  : moodboard.visual_style_images.length
-                              }
-                              imageCount={noOfImagesForMoodboard}
-                              onRefresh={async () => {
-                                handleSaveChanges();
-                                if (selectedBrandId) {
-                                  const newCount = noOfImagesForMoodboard + 1;
-                                  await createMoodboardForCampaign(
-                                    selectedBrandId,
-                                    moodboard?.campaign_id,
-                                    moodboard.id,
-                                    {
-                                      no_of_images: newCount,
-                                    }
-                                  );
-
-                                  setNoOfImagesForMoodboard(newCount);
-                                }
-                              }}
-                              onChange={setNoOfImagesForMoodboard}
-                              hasUnsavedChanges={false}
-                              // className="p-2" // Optional: tighten
-                            />
-                          </div>
-                          <div className="min-w-[160px]">
-                            <MoodboardGallerySelector
-                              brandId={brandId}
-                              campaignId={moodboard.campaign_id}
-                              moodboardId={moodboard.id}
-                              hasUnsavedChanges={hasUnsavedChanges}
-                              inSelectionGalleryIds={photos.map(
-                                (photo) => photo.id
-                              )}
-                              setNoOfImagesForMoodboard={
-                                setNoOfImagesForMoodboard
-                              }
-                              noOfImagesForMoodboard={noOfImagesForMoodboard}
-                              assetsLength={moodboard.moodboard_assets.length}
-                              handleSaveChanges={handleSaveChanges}
-                              // className="p-2" // Optional
-                            />
-                          </div>
+              {/* Completed Gallery State */}
+              {showGallery && (
+                <div className="w-full flex flex-col gap-y-4">
+                  {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
+                  <div className="w-full flex flex-col gap-3">
+                    {/* Top row - Main controls */}
+                    <div className="flex flex-col 2xl:flex-row 2xl:flex-wrap gap-3 w-full">
+                      <div className="flex flex-col sm:flex-row gap-1 flex-wrap flex-1 min-w-0">
+                        <div className="min-w-[200px]">
+                          <MoodboardSelector
+                            campaignId={moodboard.campaign_id}
+                            isCreatingNew={isCreatingNew}
+                            moodboards={moodboards}
+                            onNewMoodboard={onNewMoodboard}
+                            selectedMoodboard={selectedMoodboard}
+                            setSelectedMoodboard={setSelectedMoodboard}
+                            variant="select"
+                            // className="p-2" // Optional: tighten if internal component allows
+                          />
                         </div>
+                        <div className="min-w-[140px]">
+                          <ImageCountCard
+                            disabled
+                            maxCount={
+                              moodboard.visual_style_images.length > 16
+                                ? 16
+                                : moodboard.visual_style_images.length
+                            }
+                            imageCount={noOfImagesForMoodboard}
+                            onRefresh={async () => {
+                              handleSaveChanges();
+                              if (selectedBrandId) {
+                                const newCount = noOfImagesForMoodboard + 1;
+                                await createMoodboardForCampaign(
+                                  selectedBrandId,
+                                  moodboard?.campaign_id,
+                                  moodboard.id,
+                                  {
+                                    no_of_images: newCount,
+                                  }
+                                );
 
-                        {/* Save/Cancel for large screens */}
-                        {hasUnsavedChanges && (
-                          <div className="hidden 2xl:flex flex-wrap items-start gap-2 ml-auto">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleCancelChanges}
-                              disabled={isSaving}
-                              className="flex items-center gap-1 whitespace-nowrap"
-                            >
-                              <X size={16} />
-                              Cancel
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={handleSaveChanges}
-                              disabled={isSaving}
-                              className="flex items-center gap-1 whitespace-nowrap"
-                            >
-                              <SaveIcon2 size={16} />
-                              {isSaving ? "Saving..." : "Save Changes"}
-                            </Button>
-                          </div>
-                        )}
+                                setNoOfImagesForMoodboard(newCount);
+                              }
+                            }}
+                            onChange={setNoOfImagesForMoodboard}
+                            hasUnsavedChanges={false}
+                            // className="p-2" // Optional: tighten
+                          />
+                        </div>
+                        <div className="min-w-[160px]">
+                          <MoodboardGallerySelector
+                            brandId={brandId}
+                            campaignId={moodboard.campaign_id}
+                            moodboardId={moodboard.id}
+                            hasUnsavedChanges={hasUnsavedChanges}
+                            inSelectionGalleryIds={photos.map(
+                              (photo) => photo.id
+                            )}
+                            setNoOfImagesForMoodboard={
+                              setNoOfImagesForMoodboard
+                            }
+                            noOfImagesForMoodboard={noOfImagesForMoodboard}
+                            assetsLength={moodboard.moodboard_assets.length}
+                            handleSaveChanges={handleSaveChanges}
+                            // className="p-2" // Optional
+                          />
+                        </div>
                       </div>
 
-                      {/* Save/Cancel for small screens */}
+                      {/* Save/Cancel for large screens */}
                       {hasUnsavedChanges && (
-                        <div className="flex 2xl:hidden gap-2 justify-end sm:justify-start flex-wrap">
+                        <div className="hidden 2xl:flex flex-wrap items-start gap-2 ml-auto">
                           <Button
                             variant="outline"
                             size="sm"
@@ -602,52 +578,78 @@ function MoodboardLayout({
                         </div>
                       )}
                     </div>
-                    {/* Image Grid */}
-                    <div className="w-full overflow-hidden">
-                      <div className="mx-auto max-w-7xl w-full px-2">
-                        <CustomGridGallery
-                          photos={photos}
-                          movePhoto={movePhoto}
-                          onPhotoLike={onPhotoLike}
-                          removedPhoto={removedPhoto}
-                          onReplaceImage={async ({
-                            imageToReplaceId,
-                            replacementImageUrl,
-                          }) => {
-                            try {
-                              await replaceMoodboardImage(
-                                brandId,
-                                moodboard.campaign_id,
-                                moodboard.id,
-                                {
-                                  image_to_replace_id: imageToReplaceId,
-                                  replacement_image_url: replacementImageUrl,
-                                }
-                              );
-                            } catch (error) {
-                              console.error(
-                                "Failed to replace moodboard image:",
-                                error
-                              );
-                            }
-                          }}
-                          hasUnsavedChanges={hasUnsavedChanges}
-                        />
+
+                    {/* Save/Cancel for small screens */}
+                    {hasUnsavedChanges && (
+                      <div className="flex 2xl:hidden gap-2 justify-end sm:justify-start flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCancelChanges}
+                          disabled={isSaving}
+                          className="flex items-center gap-1 whitespace-nowrap"
+                        >
+                          <X size={16} />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSaveChanges}
+                          disabled={isSaving}
+                          className="flex items-center gap-1 whitespace-nowrap"
+                        >
+                          <SaveIcon2 size={16} />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
                       </div>
+                    )}
+                  </div>
+                  {/* Image Grid */}
+                  <div className="w-full overflow-hidden">
+                    <div className="mx-auto max-w-7xl w-full px-2">
+                      <CustomGridGallery
+                        photos={photos}
+                        movePhoto={movePhoto}
+                        onPhotoLike={onPhotoLike}
+                        removedPhoto={removedPhoto}
+                        onReplaceImage={async ({
+                          imageToReplaceId,
+                          replacementImageUrl,
+                        }) => {
+                          try {
+                            await replaceMoodboardImage(
+                              brandId,
+                              moodboard.campaign_id,
+                              moodboard.id,
+                              {
+                                image_to_replace_id: imageToReplaceId,
+                                replacement_image_url: replacementImageUrl,
+                              }
+                            );
+                          } catch (error) {
+                            console.error(
+                              "Failed to replace moodboard image:",
+                              error
+                            );
+                          }
+                        }}
+                        hasUnsavedChanges={hasUnsavedChanges}
+                      />
                     </div>
-                    <Button
-                      className="w-full"
-                      disabled={analyzeLoading}
-                      onClick={handleAnalyzeMoodboard}
-                    >
-                      {analyzeLoading ? (
-                        "Analyzing..."
-                      ) : (
-                        <>
-                          <AnalysisChartIcon /> Moodboard Analysis
-                        </>
-                      )}
-                    </Button>
+                  </div>
+                  <Button
+                    className="w-full"
+                    disabled={analyzeLoading}
+                    onClick={handleAnalyzeMoodboard}
+                  >
+                    {analyzeLoading ? (
+                      "Analyzing..."
+                    ) : (
+                      <>
+                        <AnalysisChartIcon /> Moodboard Analysis
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
             </div>

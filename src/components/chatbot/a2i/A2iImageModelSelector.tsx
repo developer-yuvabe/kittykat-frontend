@@ -37,8 +37,12 @@ export default function A2iImageModelSelector() {
           }
         }}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="" />
+        <SelectTrigger
+          className={cn("w-full", {
+            "min-w-32": !selectedModel?.id,
+          })}
+        >
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {!isModelsFetched ? (
