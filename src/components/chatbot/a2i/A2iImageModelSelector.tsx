@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useModelsStore } from "@/store/models.store";
 import React from "react";
@@ -14,6 +15,18 @@ import React from "react";
 export default function A2iImageModelSelector() {
   const { selectedModel, setSelectedModel, models, isModelsFetched } =
     useModelsStore();
+
+  if (!isModelsFetched) {
+    return (
+      <div className="p-1 rounded-md w-44 h-10 border-2">
+        <Skeleton className="w-full h-full flex items-center justify-center">
+          <p className="text-xs italic text-muted-foreground">
+            Loading models...
+          </p>
+        </Skeleton>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-max">
@@ -45,11 +58,7 @@ export default function A2iImageModelSelector() {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {!isModelsFetched ? (
-            <div className="p-4 text-center text-sm text-muted-foreground italic">
-              <p>Loading models...</p>
-            </div>
-          ) : models.length > 0 ? (
+          {models.length > 0 ? (
             <SelectGroup>
               <SelectLabel>Available Models</SelectLabel>
               {models.map((model) => (
