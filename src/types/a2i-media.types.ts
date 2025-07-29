@@ -93,3 +93,85 @@ export type ModelInformation<TSchema extends ZodTypeAny> = {
   // Used for disabling fields based on conditions
   rules?: FieldRule[];
 };
+
+export type Model = {
+  id: string;
+  name: string;
+  disabled: boolean;
+  description?: string;
+  provider: "openai" | "replicate";
+  type: "image" | "video";
+  prefix?: string;
+  pricing:
+    | {
+        type: "fixed";
+        price: number;
+      }
+    | {
+        type: "variable";
+        estimationTriggers: string[];
+      };
+  credits: number | null;
+  parameters: Array<
+    | {
+        type: "string";
+        category: "initial" | "advanced";
+        label: string;
+        id: string;
+        defaultValue?: any;
+        rules?: Rule[];
+      }
+    | {
+        type: "slider";
+        category: "initial" | "advanced";
+        label: string;
+        id: string;
+        defaultValue?: any;
+        rules?: Rule[];
+        min: number;
+        max: number;
+        step: number;
+      }
+    | {
+        type: "enum";
+        category: "initial" | "advanced";
+        label: string;
+        id: string;
+        defaultValue?: any;
+        rules?: Rule[];
+        options: {
+          optionValue: string;
+          optionLabel: string;
+        }[];
+      }
+    | {
+        type: "file";
+        category: "initial" | "advanced";
+        label: string;
+        id: string;
+        defaultValue?: any;
+        rules?: Rule[];
+        fileTypes: string[];
+        maxFileSizeLimit: number;
+        maxLimit: number;
+      }
+    | {
+        type: "boolean";
+        category: "initial" | "advanced";
+        label: string;
+        id: string;
+        defaultValue?: any;
+        rules?: Rule[];
+      }
+  >;
+};
+
+type Rule = {
+  name: string;
+  value: string;
+  hintText?: string;
+  disableIf: {
+    name: string;
+    value: string;
+  };
+};

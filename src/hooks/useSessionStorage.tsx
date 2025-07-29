@@ -31,6 +31,14 @@ export function useSessionStorage() {
     }
   };
 
+  const removeSessionItem = (key: string): void => {
+    try {
+      sessionStorage.removeItem(key);
+    } catch (err) {
+      console.error(`Failed to remove sessionStorage key "${key}"`, err);
+    }
+  };
+
   const deleteSessionItem = (key: string): void => {
     try {
       sessionStorage.removeItem(key);
@@ -44,5 +52,6 @@ export function useSessionStorage() {
     getSessionItem,
     updateSessionItem,
     deleteSessionItem,
+    removeSessionItem,
   };
 }

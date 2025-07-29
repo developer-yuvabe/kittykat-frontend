@@ -8,6 +8,9 @@ import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
 import { Form } from "@/components/ui/form";
 import { useImageGenForm } from "@/hooks/useImageGenForm";
+import { useQuery } from "@tanstack/react-query";
+import { getModels } from "@/services/api/models.service";
+import { useModelsStore } from "@/store/models.store";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -18,6 +21,18 @@ const A2iImagesSection = function A2iImagesSection({
   a2iImageInformation,
   moodboardInformation,
 }: A2iImagesSectionProps) {
+  const { setModels, setIsModelsFetched } = useModelsStore();
+  useQuery({
+    queryKey: ["models"],
+    queryFn: async () => {
+      try {
+        const fetchedModels = await getModels();
+        setModels(fetchedModels);
+      } finally {
+        setIsModelsFetched(true);
+      }
+    },
+  });
   const [expanded, setExpanded] = useState(true);
   const form = useImageGenForm();
   const formRef = useRef<HTMLDivElement | null>(null);
