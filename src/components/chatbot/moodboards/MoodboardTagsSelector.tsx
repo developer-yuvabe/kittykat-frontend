@@ -6,38 +6,64 @@ import type { MoodboardInformation } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 
 interface MoodboardTagsSelectorProps {
-  moodboard: MoodboardInformation;
+  moodboard: MoodboardInformation | null;
   onHasChanges?: (hasChanges: boolean) => void;
   onTagsChange?: (tags: MoodboardInformation["aggregated_tags"]) => void;
+  brandTags?: Record<string, string[]>; // category -> tag values
 }
 
 const MoodboardTagsSelector: React.FC<MoodboardTagsSelectorProps> = ({
   moodboard,
   onHasChanges,
   onTagsChange,
+  brandTags,
 }) => {
-  const [localTags, setLocalTags] = useState(moodboard.aggregated_tags);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [localTags, setLocalTags] = useState<
+    MoodboardInformation["aggregated_tags"]
+  >({});
 
-  // Check if there are changes between local and original tags
+  // Initialize local tags from brandTags + moodboard selections
   useEffect(() => {
-    const hasChangesCheck =
-      JSON.stringify(localTags) !== JSON.stringify(moodboard.aggregated_tags);
-    setHasChanges(hasChangesCheck);
-    onHasChanges?.(hasChangesCheck);
+    if (!brandTags) return;
+
+    const converted: MoodboardInformation["aggregated_tags"] = {};
+
+    for (const [category, brandTagValues] of Object.entries(brandTags)) {
+      const selectedFromMoodboard =
+        moodboard?.aggregated_tags?.[category]?.filter((t) => t.selected) ?? [];
+
+      let selectedSet = new Set<string>();
+
+      if (selectedFromMoodboard.length === 0) {
+        const shuffled = [...brandTagValues].sort(() => 0.5 - Math.random());
+        const halfCount = Math.ceil(shuffled.length / 2);
+        selectedSet = new Set(shuffled.slice(0, halfCount));
+      } else {
+        selectedSet = new Set(selectedFromMoodboard.map((t) => t.value));
+      }
+
+      converted[category] = brandTagValues.map((tagValue) => ({
+        value: tagValue,
+        selected: selectedSet.has(tagValue),
+      }));
+    }
+
+    setLocalTags(converted);
+  }, [brandTags, moodboard?.aggregated_tags]);
+
+  // Track and propagate changes
+  useEffect(() => {
+    const original = moodboard?.aggregated_tags ?? {};
+    const changed = JSON.stringify(localTags) !== JSON.stringify(original);
+    onHasChanges?.(changed);
     onTagsChange?.(localTags);
-  }, [localTags, moodboard.aggregated_tags]);
+  }, [localTags]);
 
-  // Reset local tags when moodboard changes (e.g., from external updates)
-  useEffect(() => {
-    setLocalTags(moodboard.aggregated_tags);
-  }, [moodboard.aggregated_tags]);
-
-  const toggleTag = (category: string, tagValue: string) => {
-    setLocalTags((prevTags) => ({
-      ...prevTags,
-      [category]: prevTags[category].map((tag) =>
-        tag.value === tagValue ? { ...tag, selected: !tag.selected } : tag
+  const toggleTag = (category: string, value: string) => {
+    setLocalTags((prev) => ({
+      ...prev,
+      [category]: prev[category].map((tag) =>
+        tag.value === value ? { ...tag, selected: !tag.selected } : tag
       ),
     }));
   };
@@ -48,7 +74,6 @@ const MoodboardTagsSelector: React.FC<MoodboardTagsSelectorProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Tags */}
       {Object.entries(localTags).map(([category, tags]) => (
         <div key={category} className="space-y-3">
           <h3 className="text-base font-medium text-gray-800 capitalize">

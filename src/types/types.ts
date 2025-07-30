@@ -163,6 +163,9 @@ export interface ThreadDetails {
   campaign_information?: ThreadCampaign[];
   a2i_image_information?: ThreadA2iImage;
   moodboard_information?: MoodboardInformation[];
+  moodboard_tags?: {
+    [key: string]: string[];
+  };
 }
 
 export interface QueueItem {

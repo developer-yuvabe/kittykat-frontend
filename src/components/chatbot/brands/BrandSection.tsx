@@ -7,7 +7,6 @@ import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { BrandColors } from "./BrandColors";
-import { BrandMedia } from "./BrandMedia";
 import { BrandOverview } from "./BrandOverview";
 import BrandSelector from "./BrandSelector";
 import { BrandTargetAudience } from "./BrandTargetAudience";
@@ -29,6 +28,7 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { BrandAestheticUploader } from "./BrandAestheticUploader";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -256,10 +256,10 @@ export const renderBrandData = (
             <BrandProducts products={staticData?.products || []} />
 
             <BrandTargetAudience targetAudience={staticData?.target_audience} />
-
-            <BrandMedia
-              socialMedia={staticData?.social_media}
-              brandMedia={brandMedia}
+            {/* Brand Media Upload Section */}
+            <BrandAestheticUploader
+              brandId={selectedBrandId}
+              socialMediaData={staticData?.social_media}
             />
 
             <AnimatePresence>

@@ -28,6 +28,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const campaignInformation = data?.campaign_information;
   const a2iImageInformation = data?.a2i_image_information;
   const moodboardInformation = data?.moodboard_information;
+  const moodboardTags = data?.moodboard_tags;
 
   const latestCampaignIndex = useMemo(
     () =>
@@ -77,6 +78,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
               setSelectedCampaignIndex={setSelectedCampaignIndex}
               selectedCampaignIndex={selectedCampaignIndex}
               moodboardInformation={moodboardInformation}
+              moodboardTags={moodboardTags}
             />
           )}
         </div>
