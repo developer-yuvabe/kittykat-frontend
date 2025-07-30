@@ -109,6 +109,13 @@ export type SliderParam = BaseParam & {
   step: number;
 };
 
+export type ImagesCountParam = BaseParam & {
+  type: "image_count";
+  min: number;
+  max: number;
+  step: number;
+};
+
 type EnumParam = BaseParam & {
   type: "enum";
   options: {
@@ -133,7 +140,8 @@ export type ModelParameter =
   | SliderParam
   | EnumParam
   | FileParam
-  | BooleanParam;
+  | BooleanParam
+  | ImagesCountParam;
 
 export type Model = {
   id: string;

@@ -88,6 +88,7 @@ export function DynamicFormField<T extends FieldValues>({
       render={({ field }) => {
         switch (param.type) {
           case "slider":
+          case "image_count":
             const SlideComp = (
               <FormItem>
                 <div>

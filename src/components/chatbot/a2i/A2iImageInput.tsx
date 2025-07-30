@@ -23,15 +23,15 @@ import { useDropzone } from "react-dropzone";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
 import { FileParam } from "@/types/a2i-media.types";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import { ThreadA2iImage } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { useA2iStore } from "@/store/a2i.store";
-import { estimatePricing } from "@/services/api/models.service";
 import A2iImageInputLoader from "./A2iImageInputLoader";
+import useModelPricing from "@/hooks/useModelPricing";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -39,34 +39,8 @@ const A2iImageInput = ({
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 }) => {
   const form = useImageGenForm();
+  const { credits, isCalculatingCredits } = useModelPricing({ form });
   const { selectedModel, isModelsFetched } = useModelsStore();
-  const { isDynamicPricing, estimationTriggers } = useMemo(() => {
-    const isDynamicPricing = selectedModel?.pricing?.type === "variable";
-    const estimationTriggers =
-      selectedModel?.pricing?.type === "variable"
-        ? selectedModel?.pricing?.estimationTriggers ?? []
-        : [];
-
-    return {
-      isDynamicPricing,
-      estimationTriggers,
-    };
-  }, [selectedModel?.id]);
-
-  const watchedTriggerValues = form.watch(estimationTriggers);
-  const { data: dynamicCredits, isPending: isCalculatingDynamicCredits } =
-    useQuery({
-      queryKey: [
-        "variable-pricing",
-        selectedModel?.id,
-        ...watchedTriggerValues,
-      ],
-      queryFn: async () => {
-        const values = form.getValues();
-        return await estimatePricing(values);
-      },
-      enabled: !!selectedModel?.id && isDynamicPricing,
-    });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, setReferencePrompt } = useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
@@ -396,7 +370,7 @@ const A2iImageInput = ({
                     form.formState.isSubmitting ||
                     isUploading ||
                     isPending ||
-                    isCalculatingDynamicCredits
+                    isCalculatingCredits
                   }
                 >
                   {form.formState.isSubmitting ? (
@@ -406,14 +380,10 @@ const A2iImageInput = ({
                       <p className="text-xs">Generate</p>
                       <div className="flex items-center gap-x-2 text-xs bg-[#FFD700] text-black rounded-full px-3 py-1">
                         <p>
-                          {isDynamicPricing ? (
-                            isCalculatingDynamicCredits ? (
-                              <Loader2 className="animate-spin h-4 w-4" />
-                            ) : (
-                              dynamicCredits || "0"
-                            )
+                          {isCalculatingCredits ? (
+                            <Loader2 className="animate-spin h-4 w-4" />
                           ) : (
-                            selectedModel?.credits
+                            credits
                           )}
                         </p>
                         <CreditIcon />
