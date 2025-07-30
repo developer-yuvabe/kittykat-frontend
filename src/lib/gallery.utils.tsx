@@ -153,7 +153,7 @@ export const createGalleryItemFromFile = async (
     // AI & Generation Info
     prompt_modifiers: [],
     ai_tags: [],
-    visual_style_tags: [],
+    visual_style_tags: {},
     detected_objects: [],
     detected_emotions: [],
     detected_colors: [],

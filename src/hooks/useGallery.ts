@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { galleryService } from "@/services/api/gallery.service";
 import type {
+  BulkGalleryUploadRequest,
   CommentReplyUpdate,
   CommentUpdate,
   GalleryFilters,
@@ -181,6 +182,30 @@ export const useGalleryQuery = (
     },
   });
 
+  const bulkUploadMutation = useMutation({
+    mutationFn: (body: BulkGalleryUploadRequest) =>
+      galleryService.uploadBulkGalleryItems(body),
+    onMutate: () => {
+      // Show loading toast and store the ID
+      const toastId = toast.loading("Uploading items to gallery...");
+      return { toastId };
+    },
+    onSuccess: (_data, _variables, context) => {
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+
+      // Update the loading toast to success
+      toast.success("Items uploaded to gallery", { id: context?.toastId });
+    },
+    onError: (_error, _variables, context) => {
+      // Update the loading toast to error
+      toast.error("Failed to upload items to gallery", {
+        id: context?.toastId,
+      });
+    },
+  });
+
   // Update gallery item mutation
   const updateItemMutation = useMutation({
     mutationFn: ({ itemId, data }: { itemId: string; data: GalleryItem }) =>
@@ -245,7 +270,7 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
-      toast.success("Item updated successfully");
+      // toast.success("Item updated successfully");
     },
   });
 
@@ -494,8 +519,6 @@ export const useGalleryQuery = (
     },
   });
 
-  // Ask KittyKat mutation
-
   // Download helpers
   const downloadItem = async (item: GalleryItemResponse) => {
     try {
@@ -674,6 +697,8 @@ export const useGalleryQuery = (
     totalItems,
 
     refetchAllGalleryQueries,
+
+    bulkUpload: bulkUploadMutation.mutateAsync,
   };
 };
 

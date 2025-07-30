@@ -1,3 +1,5 @@
+import { AggregatedTagItem } from "./types";
+
 export type Comment = {
   id: string;
   text: string;
@@ -61,7 +63,7 @@ export type GalleryItem = {
   metadata_raw?: Record<string, any>;
   ai_description?: string;
   ai_tags: string[];
-  visual_style_tags: string[];
+  visual_style_tags: Record<string, AggregatedTagItem[]>;
   detected_objects: string[];
   detected_emotions: string[];
   detected_colors: string[];
@@ -127,6 +129,7 @@ export type GalleryItem = {
   // 📁 Asset Management
 
   is_favourite?: boolean;
+  to_ignore?: boolean;
   is_archived?: boolean;
   quality_flag?: string;
 
@@ -237,6 +240,23 @@ export interface CommentReplyUpdate {
 
 export interface BulkGalleryItemRequest {
   ids: string[];
+}
+
+export interface ScrapeConfig {
+  url: string;
+  platform: string;
+  results_limit?: number;
+  user_id?: string;
+}
+
+export interface BulkGalleryUploadRequest {
+  gallery_items?: GalleryItem[]; // Optional if using scrape_only
+  brand_id: string;
+  campaign_id?: string;
+  moodboard_id?: string;
+  scrape_config?: ScrapeConfig;
+  scrape_only?: boolean;
+  skip_embedding_for_existing?: boolean;
 }
 
 export interface MediaWithStatus extends Omit<FileWithStatus, "file"> {

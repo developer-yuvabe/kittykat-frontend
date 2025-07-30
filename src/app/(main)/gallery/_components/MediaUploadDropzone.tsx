@@ -221,7 +221,7 @@ export function MediaUploadDropzone({
               related_asset_ids: [],
               prompt_modifiers: [],
               ai_tags: [],
-              visual_style_tags: [],
+              visual_style_tags: {},
               detected_objects: [],
               detected_emotions: [],
               detected_colors: [],
