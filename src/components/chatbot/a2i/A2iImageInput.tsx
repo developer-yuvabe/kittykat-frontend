@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { CreditIcon } from "@/components/ui/custom-icon";
 import {
   Form,
   FormControl,
@@ -376,18 +375,15 @@ const A2iImageInput = ({
                   {form.formState.isSubmitting ? (
                     <Loader2 className="animate-spin h-4 w-4" />
                   ) : (
-                    <div className="flex gap-x-2 items-center">
-                      <p className="text-xs">Generate</p>
-                      <div className="flex items-center gap-x-2 text-xs bg-[#FFD700] text-black rounded-full px-3 py-1">
-                        <p>
-                          {isCalculatingCredits ? (
-                            <Loader2 className="animate-spin h-4 w-4" />
-                          ) : (
-                            credits
-                          )}
-                        </p>
-                        <CreditIcon />
-                      </div>
+                    <div className="flex gap-x-1 items-center text-sm">
+                      <p>Generate</p>
+                      <p>
+                        {isCalculatingCredits ? (
+                          <Loader2 className="animate-spin h-4 w-4" />
+                        ) : (
+                          `(${credits} credits)`
+                        )}
+                      </p>
                     </div>
                   )}
                 </Button>

@@ -3,6 +3,7 @@
 import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
 import { useUserBrands } from "@/hooks/sse/useUserBrands";
+import { useUserCredits } from "@/hooks/sse/useUserCredits";
 import { useUserStore } from "@/store/user.store";
 import { User } from "@/types/user.types";
 import React, { useEffect } from "react";
@@ -27,6 +28,7 @@ const MainLayout = ({
   }, [userInfo]);
 
   useUserBrands(user?.id);
+  useUserCredits(user?.id);
 
   if (!user) {
     return <Splash />;

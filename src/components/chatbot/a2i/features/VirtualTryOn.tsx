@@ -1,12 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
-import { BrainIcon, X } from "lucide-react";
+import { BrainIcon, Loader2, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { cn, delay } from "@/lib/utils";
-import { createVtonImage } from "@/services/api/vton.service";
+import {
+  createVtonImage,
+  estimateVtonCredits,
+} from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
 import { toast } from "sonner";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import { useQuery } from "@tanstack/react-query";
 
 type VirtualTryOnProps = {
   productImage: string;
@@ -23,6 +27,12 @@ const VirtualTryOn = ({
   const [garmentImage, setGarmentImage] = useState<string | null>(null);
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { data: estimatedCredits, isPending } = useQuery({
+    queryKey: ["vton-credits", productImage, garmentImage],
+    queryFn: async () => {
+      return await estimateVtonCredits(productImage, garmentImage ?? "");
+    },
+  });
 
   useEffect(() => {}, [garmentImage]);
 
@@ -95,13 +105,19 @@ const VirtualTryOn = ({
 
           <div className="flex-shrink-0">
             <Button
-              disabled={!garmentImage || loading}
+              disabled={!garmentImage || loading || !estimatedCredits}
               loading={loading}
               onClick={handelVtonGeneration}
               className="w-full text-lg h-12"
             >
               <BrainIcon />
               Concept Visual Generation
+              {isPending && <Loader2 className="animate-spin" />}
+              {estimatedCredits && (
+                <span className="text-sm italic">
+                  ({estimatedCredits} credits)
+                </span>
+              )}
             </Button>
           </div>
         </div>
