@@ -176,6 +176,7 @@ function MoodboardLayout({
 
   // Fixed function to load images with proper type matching
   const loadImagesWithCurrentData = useCallback(async () => {
+    setMoodboardGenerationInProgress(true);
     const currentMoodboard = latestMoodboardRef.current;
     const currentGalleryItems = latestGalleryItemsRef.current;
 
@@ -269,6 +270,7 @@ function MoodboardLayout({
         if (shouldSetLoading) {
           setLoading(false);
         }
+        setMoodboardGenerationInProgress(false);
       }
     } else {
       setPhotos([]);
@@ -409,8 +411,12 @@ function MoodboardLayout({
     }
   };
 
+  const [moodboardGenerationInProgress, setMoodboardGenerationInProgress] =
+    useState(false);
+
   // Save changes to API (now only for position changes, not likes)
   const handleSaveChanges = async () => {
+    setMoodboardGenerationInProgress(true);
     setIsSaving(true);
     try {
       // 1. Update moodboard asset positions
@@ -459,6 +465,15 @@ function MoodboardLayout({
     setNoOfImagesForMoodboard(revertedPhotos.length);
   };
 
+  useEffect(() => {
+    const currentStatus = moodboard?.moodboard_generation_status;
+    console.log(currentStatus);
+
+    if (currentStatus === "completed") {
+      setMoodboardGenerationInProgress(false);
+    }
+  }, [moodboard?.moodboard_generation_status]);
+
   return (
     <div className="mt-4">
       {moodboard.moodboard_assets.length > 0 && (
@@ -468,7 +483,7 @@ function MoodboardLayout({
           content={
             <div>
               {/* Loading State - for generation, loading, or in_progress */}
-              {showLoadingState && (
+              {(showLoadingState || moodboardGenerationInProgress) && (
                 <ManualMoodboardSkeleton shimmer showButton={false} />
               )}
 
@@ -488,7 +503,7 @@ function MoodboardLayout({
               )}
 
               {/* Completed Gallery State */}
-              {showGallery && (
+              {showGallery && !moodboardGenerationInProgress && (
                 <div className="w-full flex flex-col gap-y-4">
                   {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
                   <div className="w-full flex flex-col gap-3">
