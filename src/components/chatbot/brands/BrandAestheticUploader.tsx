@@ -96,7 +96,14 @@ export const BrandAestheticUploader: React.FC<Props> = ({
     };
   }, [analysisLogs]);
 
-  // ... (keeping all existing handler functions unchanged)
+  const { refetchAllGalleryQueries } = useGalleryQuery({});
+
+  const completedLength = categorizedLogs.completed.length;
+  const failedLength = categorizedLogs.failed.length;
+
+  useEffect(() => {
+    refetchAllGalleryQueries();
+  }, [completedLength, failedLength]);
 
   const getSocialMediaUrl = (optionId: string): string => {
     const option = socialOptions.find((opt) => opt.id === optionId);
