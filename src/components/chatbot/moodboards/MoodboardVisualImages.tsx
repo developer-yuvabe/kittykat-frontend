@@ -43,11 +43,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
         ignored: visualImage?.to_ignore ?? false,
       };
     });
-  }, [
-    currentMoodboard?.id,
-    currentMoodboard?.visual_style_images,
-    galleryItems,
-  ]);
+  }, [currentMoodboard?.id, galleryItems]);
 
   if (!images || images.length === 0) return null;
 

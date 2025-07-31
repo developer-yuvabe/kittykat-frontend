@@ -9,6 +9,7 @@ export const remixImageService = async (
   maskImageUrl: string
 ) => {
   try {
+    // console.log("Remixing image with data:", data);
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/a2i/remix`, {
         prompt: data.prompt,

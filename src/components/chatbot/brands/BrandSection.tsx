@@ -7,7 +7,6 @@ import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { BrandColors } from "./BrandColors";
-import { BrandMedia } from "./BrandMedia";
 import { BrandOverview } from "./BrandOverview";
 import BrandSelector from "./BrandSelector";
 import { BrandTargetAudience } from "./BrandTargetAudience";
@@ -29,6 +28,7 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { BrandAestheticUploader } from "./BrandAestheticUploader";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -124,8 +124,8 @@ export const renderBrandData = (
                   <div className="text-xs text-[#6e7787]">
                     Set up, switch, and modify your Brand
                   </div>
-                  <div className="absolute right-3 top-6 ">
-                    <div className="flex justify-between gap-x-2">
+                  <div className="absolute right-3 top-7">
+                    <div className="flex justify-between items-center gap-x-2">
                       <div>
                         <BrandSelector />
                       </div>
@@ -191,8 +191,8 @@ export const renderBrandData = (
                   isTextarea={false}
                 />
 
-                <div className="absolute right-3 top-6 ">
-                  <div className="flex justify-between gap-x-2">
+                <div className="absolute right-3 top-7">
+                  <div className="flex justify-between items-center gap-x-2">
                     <div>
                       <BrandSelector />
                     </div>
@@ -223,7 +223,7 @@ export const renderBrandData = (
       </CardHeader>
 
       {expandedSections.brandOverview && (
-        <CardContent className="pt-0  pb-6">
+        <CardContent className="pt-0 pb-6">
           <div className="mt-1 space-y-6">
             <BrandOverview
               tagline={staticData?.brand?.tagline}
@@ -256,10 +256,10 @@ export const renderBrandData = (
             <BrandProducts products={staticData?.products || []} />
 
             <BrandTargetAudience targetAudience={staticData?.target_audience} />
-
-            <BrandMedia
-              socialMedia={staticData?.social_media}
-              brandMedia={brandMedia}
+            {/* Brand Media Upload Section */}
+            <BrandAestheticUploader
+              brandId={selectedBrandId}
+              socialMediaData={staticData?.social_media}
             />
 
             <AnimatePresence>

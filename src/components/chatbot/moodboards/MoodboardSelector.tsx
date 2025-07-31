@@ -289,8 +289,8 @@ export default function MoodboardSelector({
           className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          <SearchIcon size={10} className="text-black mr-1" />
-          {selectedMoodboard?.title || "Select Moodboard"}
+          <SearchIcon size={10} className="text-black" />
+          Select Moodboard
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0">

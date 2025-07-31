@@ -10,6 +10,7 @@ import {
   CommentUpdate,
   CommentReplyUpdate,
   BulkGalleryItemRequest,
+  BulkGalleryUploadRequest,
 } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -277,6 +278,14 @@ class GalleryService {
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
       axiosInstance.post(`/gallery/bulk`, body)
+    );
+  }
+
+  async uploadBulkGalleryItems(
+    body: BulkGalleryUploadRequest
+  ): Promise<GalleryItemResponse[]> {
+    return handleApiRequest<GalleryItemResponse[]>(
+      axiosInstance.post(`/gallery/bulk/upload`, body)
     );
   }
 }

@@ -68,6 +68,11 @@ export function MediaUploadDropzone({
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
       "video/x-msvideo": [".avi"],
+      "image/tiff": [".tiff", ".tif"],
+      "image/webp": [".webp"],
+      "image/bmp": [".bmp"],
+      "image/gif": [".gif"],
+      "image/psd": [".psd"],
     },
     text: "PNG, JPEG, MP4",
     placeholder: "Drop media here to upload",
@@ -216,7 +221,7 @@ export function MediaUploadDropzone({
               related_asset_ids: [],
               prompt_modifiers: [],
               ai_tags: [],
-              visual_style_tags: [],
+              visual_style_tags: {},
               detected_objects: [],
               detected_emotions: [],
               detected_colors: [],
@@ -226,7 +231,6 @@ export function MediaUploadDropzone({
               moodboard_id: selecteMoodboardId,
               is_master: true,
             };
-            console.log("Adding to gallery:", galleryItem);
             addToGalleryMutation(galleryItem);
           } catch (galleryError) {
             console.warn("Failed to add to gallery:", galleryError);

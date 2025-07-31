@@ -95,7 +95,7 @@ export function MoodboardGallerySelector({
         }}
         filters={{
           brands: [brandId],
-          campaigns: [campaignId],
+          campaigns: [],
           product_categories: [],
           has_product: undefined,
           has_people: undefined,
@@ -107,7 +107,7 @@ export function MoodboardGallerySelector({
           workflow_status: [],
           is_favourite: undefined,
           is_archived: undefined,
-          moodboards: [moodboardId],
+          moodboards: [],
         }}
         brandId={brandId}
         campaignId={campaignId}

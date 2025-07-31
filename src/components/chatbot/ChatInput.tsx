@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, X, FileText as FileTextIcon } from "lucide-react";
+import {
+  LoaderCircle,
+  X,
+  FileText as FileTextIcon,
+  Mic,
+  Check,
+} from "lucide-react";
 import React, {
   useEffect,
   useState,
@@ -27,6 +33,15 @@ import { v4 as uuidv4 } from "uuid";
 import { useUserStore } from "@/store/user.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useBrandStore } from "@/store/brand.store";
+import { transcribeAudio } from "@/services/api/speechtotext.service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -90,6 +105,111 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const [input, setInput] = useState("");
   const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null
+  );
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null); // NEW
+  const wasCancelledRef = useRef(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [showMicPermissionDialog, setShowMicPermissionDialog] = useState(false);
+  // Request microphone permission
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMediaStream(stream);
+      setPermissionDenied(false); // Reset permission denied state
+      return stream;
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      setPermissionDenied(true); // Set flag for permission denied
+      setShowMicPermissionDialog(true);
+      return null;
+    }
+  };
+
+  const startRecording = async () => {
+    const stream = await requestMicrophonePermission();
+    if (!stream) {
+      return;
+    }
+
+    try {
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        setIsRecording(false);
+        setMediaRecorder(null);
+
+        if (wasCancelledRef.current) {
+          wasCancelledRef.current = false;
+          return; // Don't transcribe
+        }
+
+        // ✅ Stop the microphone completely
+        stream.getTracks().forEach((track) => track.stop());
+        setMediaStream(null);
+
+        const audioBlob = new Blob(chunks, { type: recorder.mimeType });
+        const file = new File([audioBlob], "recording.webm", {
+          type: recorder.mimeType,
+        });
+
+        try {
+          setIsTranscribing(true);
+          const transcription = await transcribeAudio(file);
+          setInput((prev) =>
+            prev.trim() ? prev + " " + transcription : transcription
+          );
+        } catch (err) {
+          console.error("Transcription failed:", err);
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+
+    // Optional safety: Stop media stream immediately here too
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      setMediaStream(null);
+    }
+
+    await new Promise((res) => setTimeout(res, 1000));
+  };
+
+  const cancelRecording = async () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      wasCancelledRef.current = true;
+      mediaRecorder.stop();
+    }
+
+    // Stop stream as well
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      setMediaStream(null);
+    }
+
+    await new Promise((res) => setTimeout(res, 1000));
+  };
 
   const {
     contentBlocks,
@@ -262,30 +382,44 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         className="flex flex-col gap-2 w-full rounded-t-xl"
       >
         <ChatFilePreview blocks={contentBlocks} onRemove={removeBlock} />
-        <div className="flex flex-row justify-between">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (
-                e.key === "Enter" &&
-                !e.shiftKey &&
-                !e.metaKey &&
-                !e.nativeEvent.isComposing
-              ) {
-                e.preventDefault();
-                const el = e.target as HTMLElement | undefined;
-                const form = el?.closest("form");
-                form?.requestSubmit();
+        <div className="flex flex-row justify-between items-center p-6">
+          {!(isRecording || isTranscribing) ? (
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !e.metaKey &&
+                  !e.nativeEvent.isComposing
+                ) {
+                  e.preventDefault();
+                  const el = e.target as HTMLElement | undefined;
+                  const form = el?.closest("form");
+                  form?.requestSubmit();
+                }
+              }}
+              placeholder={
+                showPlaceholder ? "Type your message here..." : "Type here..."
               }
-            }}
-            placeholder={
-              showPlaceholder ? "Type your message here..." : "Type here..."
-            }
-            className="p-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0  resize-none pr-24  overflow-auto scrollbar"
-            onPaste={handlePaste}
-          />
+              className="p-2 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 overflow-auto scrollbar"
+              onPaste={handlePaste}
+            />
+          ) : (
+            <div className="w-full h-16 p-4 rounded-lg flex items-center justify-center space-x-1 overflow-hidden ">
+              {[...Array(35)].map((_, index) => (
+                <div
+                  key={index}
+                  className="frequency-bar w-2 bg-gray-300 rounded"
+                  style={{
+                    height: `${Math.random() * 40 + 30}px`,
+                  }}
+                ></div>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-x-4 px-4">
             {isLoading ? (
@@ -293,19 +427,59 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <LoaderCircle className="w-4 h-4 animate-spin" />
                 Cancel
               </Button>
+            ) : isRecording || isTranscribing ? (
+              <div className="flex items-center gap-2">
+                {isTranscribing ? (
+                  <LoaderCircle
+                    size={20}
+                    className="animate-spin text-blue-500"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                    title="Send Recording"
+                  >
+                    <Check size={20} className="text-primary cursor-pointer" />
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={cancelRecording}
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  title="Cancel Recording"
+                >
+                  <X size={20} className="text-primary cursor-pointer" />
+                </button>
+              </div>
             ) : (
               <>
                 <FileUploadPopover
                   isFileUploading={isUploading}
                   handleAddFiles={handleFileUpload}
                 />
-
                 <UrlUploadDialog onUploadComplete={handleAddFile} />
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  title="Start Recording"
+                  disabled={isTranscribing}
+                >
+                  <Mic size={20} className="text-primary cursor-pointer" />
+                </button>
                 <Button
                   type="submit"
                   variant="default"
                   size="sm"
-                  disabled={isLoading || !input.trim() || isUploading}
+                  disabled={
+                    isLoading ||
+                    !input.trim() ||
+                    isUploading ||
+                    isTranscribing ||
+                    isRecording
+                  }
                 >
                   <SendIcon size={10} />
                 </Button>
@@ -314,6 +488,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
       </form>
+      <Dialog
+        open={showMicPermissionDialog}
+        onOpenChange={setShowMicPermissionDialog}
+      >
+        <DialogContent hideCloseIcon>
+          <DialogHeader>
+            <DialogTitle>Microphone Permission Denied</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>
+              Your browser has blocked access to the microphone. Please allow
+              microphone access from your browser settings and try again.
+            </p>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                variant="default"
+                onClick={() => setShowMicPermissionDialog(false)}
+              >
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

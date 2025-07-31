@@ -40,7 +40,7 @@ const A2iImagesSection = function A2iImagesSection({
                 <ImageIcon className="text-white" size={24} />
               </div>
               <div className="flex flex-col">
-                <div className="text-sm font-medium">A2i Media</div>
+                <div className="text-sm font-medium">Concept Visual Media</div>
 
                 {!expanded && (
                   <div className="text-xs text-[#6e7787]">
