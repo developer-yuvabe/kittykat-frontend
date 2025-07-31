@@ -41,8 +41,12 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { BrushIcon } from "@/components/ui/custom-icon";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { remixImageService } from "@/services/api/remix.service";
+import {
+  estimateRemixCredits,
+  remixImageService,
+} from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useQuery } from "@tanstack/react-query";
 
 const IMAGE_SIZE = {
   "1024x1024": {
@@ -117,6 +121,15 @@ const RemixControls = ({
       n: 1,
       base_image: image.url,
       reference_images: [],
+    },
+  });
+  const { data: estimatedCredits, isPending } = useQuery({
+    queryKey: [
+      "remix-credits",
+      ...form.watch(["n", "reference_images", "size"]),
+    ],
+    queryFn: async () => {
+      return await estimateRemixCredits(form.getValues(), "");
     },
   });
   const [isUploading, setIsUploading] = React.useState(false);
@@ -497,12 +510,19 @@ const RemixControls = ({
                   disabled={
                     form.formState.isSubmitting ||
                     !form.formState.isValid ||
-                    isUploading
+                    isUploading ||
+                    isPending
                   }
                   loading={form.formState.isSubmitting}
                 >
                   <BrainIcon />
                   Concept Visual Generation
+                  {isPending && <Loader2 className="animate-spin" />}
+                  {estimatedCredits && (
+                    <span className="text-sm italic">
+                      ({estimatedCredits} credits)
+                    </span>
+                  )}
                 </Button>
               </div>
             </form>
