@@ -38,7 +38,12 @@ const useModelPricing = ({ form }: UseModelPricingProps) => {
     : 1;
   const watchedTriggerValues = form.watch(estimationTriggers);
   const { data, isPending } = useQuery({
-    queryKey: ["variable-pricing", selectedModel?.id, ...watchedTriggerValues],
+    queryKey: [
+      "variable-pricing",
+      selectedModel?.id,
+      ...watchedTriggerValues,
+      noOfImagesToBeGenerated,
+    ],
     queryFn: async () => {
       const values = form.getValues();
       return await estimatePricing(values);
@@ -47,9 +52,10 @@ const useModelPricing = ({ form }: UseModelPricingProps) => {
   });
 
   return {
-    credits:
-      ((isDynamicPricing ? data : selectedModel?.credits) ?? 0) *
-      noOfImagesToBeGenerated,
+    credits: isDynamicPricing
+      ? data ?? 0
+      : (selectedModel?.credits ?? 0) * noOfImagesToBeGenerated,
+
     isCalculatingCredits: isDynamicPricing ? isPending : false,
   };
 };
