@@ -166,6 +166,52 @@ export interface ThreadDetails {
   moodboard_tags?: {
     [key: string]: string[];
   };
+  analysis_logs?: AnalysisLogDetail[];
+}
+
+export interface AnalysisLogDetail {
+  log_id: string;
+  user_id: string;
+  campaign_id?: string;
+  analysis_type: string;
+  status: string;
+  progress_percent: number;
+  job_execution_id: string;
+  cloud_run_execution_id?: string;
+  total_items: number;
+  processed_items: number;
+  successful_items: number;
+  failed_items: number;
+  created_at: string; // ISO datetime string
+  updated_at: string;
+  started_at?: string;
+  completed_at?: string;
+  user_friendly_messages: UserMessage[];
+  technical_details: TechnicalDetails;
+  metadata: {
+    [key: string]: string | number | boolean;
+  };
+}
+
+export interface UserMessage {
+  message: string;
+  timestamp: string; // ISO datetime string
+}
+
+export interface ErrorDetail {
+  message: string;
+  details: {
+    [key: string]: string | number | boolean;
+  };
+  timestamp: string;
+}
+
+export interface TechnicalDetails {
+  errors: ErrorDetail[];
+  warnings: string[];
+  processing_stats: {
+    [key: string]: string | number;
+  };
 }
 
 export interface QueueItem {

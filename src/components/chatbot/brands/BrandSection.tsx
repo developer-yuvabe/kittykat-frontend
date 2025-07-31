@@ -10,7 +10,7 @@ import { BrandColors } from "./BrandColors";
 import { BrandOverview } from "./BrandOverview";
 import BrandSelector from "./BrandSelector";
 import { BrandTargetAudience } from "./BrandTargetAudience";
-import { Agents, ThreadBrand } from "@/types/types";
+import { Agents, AnalysisLogDetail, ThreadBrand } from "@/types/types";
 import { BrandProducts } from "./BrandProducts";
 import { BrandTypography } from "./BrandTypography";
 import BrandPurpose from "./BrandPurpose";
@@ -37,15 +37,19 @@ export const BrandSection: React.FC<{
     React.SetStateAction<{ [key: string]: boolean }>
   >;
   clearPinnedItems: () => void;
+  analysisLogs: AnalysisLogDetail[];
 }> = ({
   brandingInformation,
   expandedSections,
   setExpandedSections,
   clearPinnedItems,
+  analysisLogs,
 }) => {
   if (!brandingInformation) {
     return <InitialPlaceHolder />;
   }
+
+  console.log(brandingInformation);
   return (
     <div className="flex flex-col gap-4">
       <div key={`brand-message-${brandingInformation?.static?.name}`}>
@@ -59,7 +63,8 @@ export const BrandSection: React.FC<{
           brandingInformation.static,
           brandingInformation.dynamic,
           brandingInformation.brand_media,
-          clearPinnedItems
+          clearPinnedItems,
+          analysisLogs
         )}
       </div>
     </div>
@@ -72,8 +77,10 @@ export const renderBrandData = (
   staticData: ThreadBrand["static"],
   dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
-  clearPinnedItems: () => void
+  clearPinnedItems: () => void,
+  analysisLogs: AnalysisLogDetail[]
 ) => {
+  console.log("ana", analysisLogs);
   const brandName = staticData?.brand?.name || "No Brand Name";
   const brandInitial = brandName.charAt(0).toUpperCase();
   const allColors = extractAllColors(staticData);
@@ -260,6 +267,7 @@ export const renderBrandData = (
             <BrandAestheticUploader
               brandId={selectedBrandId}
               socialMediaData={staticData?.social_media}
+              analysisLogs={analysisLogs ?? []}
             />
 
             <AnimatePresence>
