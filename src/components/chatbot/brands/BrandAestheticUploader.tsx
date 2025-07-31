@@ -1,4 +1,3 @@
-// components/brand/BrandAestheticUploader.tsx
 "use client";
 
 import React, { useCallback, useEffect, useState, useMemo } from "react";
@@ -14,41 +13,18 @@ import {
   InstagramIcon,
   PinterestIcon,
 } from "@/components/ui/custom-icon";
-import {
-  GlobeIcon,
-  Activity,
-  CheckCircle,
-  XCircle,
-  FileText,
-} from "lucide-react";
+import { GlobeIcon } from "lucide-react";
 import { LimitsState, UploadedImage } from "@/types/moodboard.types";
 import { SocialOption, SocialOptionId } from "@/types/campaign.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { BulkGalleryUploadRequest, GalleryItem } from "@/types/gallery.types";
-import { Button } from "@/components/ui/button";
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { AnalysisLogDetail } from "@/types/types";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  formatAnalysisType,
-  formatTimestamp,
-  getEstimatedTimeRemaining,
-  getPlatformFromOptionId,
-  getStatusColor,
-  getStatusIcon,
-} from "@/lib/logs.utils";
+import { getPlatformFromOptionId } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
-
-// Analysis Status Enum to match backend
+import { BrandAnalysisLogsPopover } from "./BrandAnalysisLogsPopover";
+import { BrandSocialVerifyDialog } from "./BrandSocialVerifyDialog";
 
 interface Props {
   brandId: string | null;
@@ -95,8 +71,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
     const activeLogs = sortedLogs.filter(
       (log) =>
         log.status === AnalysisStatus.PENDING ||
-        log.status === AnalysisStatus.IN_PROGRESS ||
-        log.status === "processing" // Legacy support
+        log.status === AnalysisStatus.IN_PROGRESS
     );
 
     const completedLogs = sortedLogs.filter(
@@ -559,123 +534,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
     return "Upload to Gallery";
   };
 
-  const renderAnalysisLog = (log: AnalysisLogDetail, isActive = false) => (
-    <Card
-      key={log.log_id}
-      className={`border-0 shadow-none transition-all duration-200 ${
-        isActive
-          ? "bg-gradient-to-r from-blue-50 to-indigo-50 ring-1 ring-blue-200"
-          : "bg-gray-50/50 hover:bg-gray-50"
-      }`}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          {getStatusIcon(log.status)}
-
-          <div className="flex-1 min-w-0 space-y-3">
-            {/* Header with improved spacing and contrast */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-sm text-gray-900">
-                    {formatAnalysisType(log.analysis_type)}
-                  </h4>
-                  {isActive && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  )}
-                </div>
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-medium ${getStatusColor(
-                    log.status
-                  )}`}
-                >
-                  {log.status.charAt(0).toUpperCase() +
-                    log.status.slice(1).replace("_", " ")}
-                </Badge>
-              </div>
-              <div className="text-right space-y-1 flex-shrink-0">
-                <p className="text-xs text-gray-500 font-medium">
-                  {formatTimestamp(log.created_at)}
-                </p>
-              </div>
-            </div>
-
-            {/* Enhanced Progress Section */}
-            {(log.status === AnalysisStatus.IN_PROGRESS ||
-              log.status === "processing" ||
-              log.status === AnalysisStatus.COMPLETED) && (
-              <div className="space-y-3 bg-white rounded-lg p-3 border border-gray-100">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-gray-700">
-                    Progress
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {log.progress_percent}%
-                  </span>
-                </div>
-                <Progress
-                  value={log.progress_percent}
-                  className={`h-2.5 ${
-                    log.status === AnalysisStatus.IN_PROGRESS ||
-                    log.status === "processing"
-                      ? "bg-blue-100"
-                      : "bg-green-100"
-                  }`}
-                />
-
-                {/* Enhanced Stats with better visual hierarchy */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600 font-medium">
-                    {log.processed_items} of {log.total_items} items processed
-                  </span>
-                  <div className="flex items-center gap-3">
-                    {log.successful_items > 0 && (
-                      <div className="flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                        <span className="text-xs text-green-700 font-semibold">
-                          {log.successful_items}
-                        </span>
-                      </div>
-                    )}
-                    {log.failed_items > 0 && (
-                      <div className="flex items-center gap-1">
-                        <XCircle className="w-3 h-3 text-red-500" />
-                        <span className="text-xs text-red-700 font-semibold">
-                          {log.failed_items}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Enhanced Latest Message with better styling */}
-            {log.user_friendly_messages &&
-              log.user_friendly_messages.length > 0 && (
-                <div className="bg-white rounded-md p-3 border border-gray-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Latest Update
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-800 leading-relaxed">
-                    {
-                      log.user_friendly_messages[
-                        log.user_friendly_messages.length - 1
-                      ]?.message
-                    }
-                  </p>
-                </div>
-              )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <ContentSection
       title="Upload your brand Aesthetic"
@@ -705,145 +563,17 @@ export const BrandAestheticUploader: React.FC<Props> = ({
 
           <div className="lg:col-span-2 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button
-                onClick={handleBulkUpload}
-                disabled={
-                  (uploadedImages.length === 0 &&
-                    selectedOptions.length === 0) ||
-                  isProcessing
-                }
-                className="min-w-[200px]"
-              >
-                {isProcessing && (
-                  <Activity className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                {getButtonText()}
-              </Button>
+              <BrandSocialVerifyDialog
+                uploadedImages={uploadedImages}
+                selectedOptions={selectedOptions}
+                socialOptions={socialOptions}
+                isProcessing={isProcessing}
+                handleBulkUpload={handleBulkUpload}
+                getButtonText={getButtonText}
+              />
 
               {/* Enhanced Analysis Logs Popover */}
-              {categorizedLogs.total > 0 && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`relative transition-all duration-200 ${
-                        categorizedLogs.active.length > 0
-                          ? "border-blue-300 bg-blue-50 hover:bg-blue-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <Activity
-                        className={`w-4 h-4 mr-2 ${
-                          categorizedLogs.active.length > 0
-                            ? "animate-spin text-blue-600"
-                            : ""
-                        }`}
-                      />
-                      Analysis Logs
-                      {categorizedLogs.active.length > 0 && (
-                        <div className="flex items-center gap-1.5 ml-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                          <Badge
-                            variant="secondary"
-                            className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 font-bold border-blue-200"
-                          >
-                            {categorizedLogs.active.length}
-                          </Badge>
-                        </div>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-[600px] p-0 max-h-[70vh] overflow-y-scroll"
-                    align="start"
-                  >
-                    {/* Enhanced Header with better stats */}
-                    <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-white">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-bold text-base text-gray-900">
-                            Analysis Progress
-                          </h3>
-                          <p className="text-xs text-gray-500 mt-1">
-                            All jobs sorted by latest first
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-3 text-sm mb-1">
-                            {categorizedLogs.active.length > 0 && (
-                              <div className="flex items-center gap-1.5 text-blue-600 font-bold bg-blue-100 px-2 py-1 rounded-full">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                {categorizedLogs.active.length} active
-                              </div>
-                            )}
-                            {categorizedLogs.completed.length > 0 && (
-                              <div className="flex items-center gap-1 text-green-600 font-semibold">
-                                <CheckCircle className="w-3 h-3" />
-                                {categorizedLogs.completed.length}
-                              </div>
-                            )}
-                            {categorizedLogs.failed.length > 0 && (
-                              <div className="flex items-center gap-1 text-red-600 font-semibold">
-                                <XCircle className="w-3 h-3" />
-                                {categorizedLogs.failed.length}
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 font-medium">
-                            {categorizedLogs.total} total jobs
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <ScrollArea className="max-h-[500px]">
-                      <div className="p-4 space-y-4">
-                        {categorizedLogs.total === 0 ? (
-                          <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <FileText className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <p className="text-gray-600 font-semibold text-lg mb-2">
-                              No analysis logs yet
-                            </p>
-                            <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                              Start uploading images or scraping social media to
-                              see progress tracking here
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {/* Show all logs sorted by latest first */}
-                            {categorizedLogs.all.map((log) => {
-                              const isActive =
-                                log.status === AnalysisStatus.PENDING ||
-                                log.status === AnalysisStatus.IN_PROGRESS ||
-                                log.status === "processing";
-                              return renderAnalysisLog(log, isActive);
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-
-                    {/* Enhanced Footer with action hints */}
-                    {categorizedLogs.total > 0 && (
-                      <div className="border-t bg-gray-50 px-4 py-3">
-                        <div className="flex items-center justify-between text-xs text-gray-600">
-                          <span>Updates automatically every few seconds</span>
-                          {categorizedLogs.active.length > 0 && (
-                            <div className="flex items-center gap-1 text-blue-600 font-medium">
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                              Live tracking active
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              )}
+              <BrandAnalysisLogsPopover categorizedLogs={categorizedLogs} />
             </div>
           </div>
         </div>

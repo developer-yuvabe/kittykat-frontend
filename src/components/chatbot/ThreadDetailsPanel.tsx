@@ -72,7 +72,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             setExpandedSections={setExpandedSections}
           />
 
-          {!isCreatingBrand && (
+          {!isCreatingBrand && campaignInformation && (
             <MoodboardSection
               brandInformation={brandingInformation}
               campaignInformation={campaignInformation}

@@ -16,6 +16,7 @@ import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   campaignFields,
+  moodboardFields,
   PlaceholderSection,
 } from "../brands/InitialPlaceHolder";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ export const CampaignSection: React.FC<{
   const isCampaignExpanded = expandedSections["campaignInformation"] ?? true;
 
   const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
+  const [isMoodboardPlaceholderExpanded, setIsMoodboardPlaceholderExpanded] =
+    useState(true);
   const {
     selectedBrandId,
     isCreatingBrand,
@@ -138,20 +141,35 @@ export const CampaignSection: React.FC<{
     isCampaignCreating
   ) {
     return (
-      <PlaceholderSection
-        title={isCampaignCreating ? "Creating Campaign..." : "Campaign"}
-        avatarFallback="C"
-        avatarBgColor="bg-green-500"
-        fields={campaignFields}
-        searchPlaceholder="Select Campaign"
-        newButtonTooltip="New Campaign"
-        isExpanded={isPlaceholderExpanded}
-        onToggleExpanded={() =>
-          setIsPlaceholderExpanded((prev: boolean) => !prev)
-        }
-        onNewClick={handleViaAgent}
-        isCreatingNewCampaign={isCampaignCreating}
-      />
+      <>
+        <PlaceholderSection
+          title={isCampaignCreating ? "Creating Campaign..." : "Campaign"}
+          avatarFallback="C"
+          avatarBgColor="bg-green-500"
+          fields={campaignFields}
+          searchPlaceholder="Select Campaign"
+          newButtonTooltip="New Campaign"
+          isExpanded={isPlaceholderExpanded}
+          onToggleExpanded={() =>
+            setIsPlaceholderExpanded((prev: boolean) => !prev)
+          }
+          onNewClick={handleViaAgent}
+          isCreatingNewCampaign={isCampaignCreating}
+        />
+        <PlaceholderSection
+          title={"Moodboard"}
+          avatarFallback="M"
+          avatarBgColor="bg-orange-400"
+          fields={moodboardFields}
+          searchPlaceholder="Select Moodboard"
+          newButtonTooltip="New Moodboard"
+          isExpanded={isMoodboardPlaceholderExpanded}
+          onToggleExpanded={() =>
+            setIsMoodboardPlaceholderExpanded((prev: boolean) => !prev)
+          }
+          isCreatingNewCampaign={isCampaignCreating}
+        />
+      </>
     );
   }
 

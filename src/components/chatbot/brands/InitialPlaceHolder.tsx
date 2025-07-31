@@ -64,6 +64,11 @@ export const campaignFields = [
   "Visual Style",
   "Moodboard",
 ];
+
+export const moodboardFields = [
+  "Campaign Concept",
+  "Choose your Visual Aesthetic",
+];
 interface PlaceholderSectionProps {
   title: string;
   avatarSrc?: string;
