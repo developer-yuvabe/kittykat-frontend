@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
-import { canvasToBlob, cn, delay } from "@/lib/utils";
+import { canvasToBlob, cn, delay, PlatformApiError } from "@/lib/utils";
 import { remixImageSchema } from "@/schema/remix.schema";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +47,7 @@ import {
 } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useQuery } from "@tanstack/react-query";
+import { useUserStore } from "@/store/user.store";
 
 const IMAGE_SIZE = {
   "1024x1024": {
@@ -109,6 +110,7 @@ const RemixControls = ({
   onBrushSizeChange,
   brandId,
 }: RemixControlsProps) => {
+  const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
   const inputFileRef = React.useRef<HTMLInputElement | null>(null);
   const form = useForm<z.infer<typeof remixImageSchema>>({
@@ -250,7 +252,13 @@ const RemixControls = ({
         file
       );
 
-      remixImageService(brandId ?? selectedBrandId!, data, maskUrl);
+      remixImageService(brandId ?? selectedBrandId!, data, maskUrl).catch(
+        (error) => {
+          if (error instanceof PlatformApiError && error.statusCode === 403) {
+            setShowInsufficientCreditsModal(true);
+          }
+        }
+      );
 
       await delay(2000);
 

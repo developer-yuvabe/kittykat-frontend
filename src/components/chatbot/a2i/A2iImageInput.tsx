@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { cn, delay } from "@/lib/utils";
+import { cn, delay, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -31,6 +31,7 @@ import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { useA2iStore } from "@/store/a2i.store";
 import A2iImageInputLoader from "./A2iImageInputLoader";
 import useModelPricing from "@/hooks/useModelPricing";
+import { useUserStore } from "@/store/user.store";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -38,6 +39,7 @@ const A2iImageInput = ({
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 }) => {
   const form = useImageGenForm();
+  const { setShowInsufficientCreditsModal } = useUserStore();
   const { credits, isCalculatingCredits } = useModelPricing({ form });
   const { selectedModel, isModelsFetched } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
@@ -176,7 +178,11 @@ const A2iImageInput = ({
       data.prompt = `${selectedModel.prefix} ${data.prompt}`;
     }
 
-    generateImage(selectedBrandId!, data);
+    generateImage(selectedBrandId!, data).catch((error) => {
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+      }
+    });
 
     await delay(2000);
 
