@@ -46,7 +46,7 @@ export function useDynamicModelSchema(selectedModel: Model) {
 
   // Add default values for provider and model
   defaultValues.provider = selectedModel.provider;
-  defaultValues.model = selectedModel.id;
+  defaultValues.model = selectedModel.model;
   defaultValues.prompt = "";
 
   // TODO: Handle superfine for rules

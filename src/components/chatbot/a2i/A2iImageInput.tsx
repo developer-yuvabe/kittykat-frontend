@@ -178,6 +178,10 @@ const A2iImageInput = ({
       data.prompt = `${selectedModel.prefix} ${data.prompt}`;
     }
 
+    if (selectedModel?.finetune_id) {
+      data.finetune_id = selectedModel.finetune_id;
+    }
+
     generateImage(selectedBrandId!, data).catch((error) => {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
@@ -281,17 +285,24 @@ const A2iImageInput = ({
             />
             <div className="flex gap-2 justify-between items-center px-4">
               <div className="flex items-center gap-2">
-                <div>
-                  <input {...getInputProps()} ref={inputFileRef} />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    type="button"
-                    onClick={() => inputFileRef.current?.click()}
-                  >
-                    <Images />
-                  </Button>
-                </div>
+                {refernceImagesModelInfo && (
+                  <div>
+                    <input {...getInputProps()} ref={inputFileRef} />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      type="button"
+                      onClick={() => inputFileRef.current?.click()}
+                      disabled={
+                        refernceImagesModelInfo?.maxLimit -
+                          imageBlocks.length <=
+                        0
+                      }
+                    >
+                      <Images />
+                    </Button>
+                  </div>
+                )}
 
                 {selectedModel?.parameters
                   ?.filter((param) => param.category === "initial")

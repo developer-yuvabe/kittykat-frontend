@@ -7,7 +7,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useUserStore } from "@/store/user.store";
 
@@ -21,7 +20,6 @@ const InsufficientCreditsModal = () => {
         setShowInsufficientCreditsModal(open);
       }}
     >
-      <AlertDialogTrigger>Open</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader className="flex flex-col items-center">
           <p className="text-6xl">⚠️</p>
