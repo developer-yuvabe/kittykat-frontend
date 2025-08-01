@@ -306,7 +306,7 @@ function GridItem<TPhoto extends Photo>({
             isRemoving ? "grayscale" : "grayscale-0"
           }`}
           draggable={false}
-          loading="lazy"
+          loading="eager"
         />
 
         {/* Hover Overlay Gradient */}

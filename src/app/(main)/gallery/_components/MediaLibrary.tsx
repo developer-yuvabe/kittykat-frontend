@@ -78,18 +78,23 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId);
-  const [initialWorkflowStatus] = useQueryState<string[]>("status", {
+  const [initialWorkflowStatus, setInitialWorkflowStatus] = useQueryState<
+    string[]
+  >("status", {
     defaultValue: [],
     parse: (value) => (value ? value.split(",") : []),
     serialize: (value) => value.join(","),
     history: "push",
   });
-  const [initialBrandId] = useQueryState<string | undefined>("brandId", {
-    defaultValue: undefined,
-    parse: (value) => (value ? value : undefined),
-    serialize: (value) => value || "",
-    history: "push",
-  });
+  const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
+    "brandId",
+    {
+      defaultValue: undefined,
+      parse: (value) => (value ? value : undefined),
+      serialize: (value) => value || "",
+      history: "push",
+    }
+  );
 
   const { selectedBrandId } = useBrandStore();
 
@@ -372,6 +377,8 @@ export function MediaLibrary({
                 selectedFilters={selectedFilters}
                 setSelectedFilters={setSelectedFilters}
                 preSelectedBrandId={brandId || effectiveBrandId}
+                setInitialWorkflowStatus={setInitialWorkflowStatus}
+                setInitialBrandId={setInitialBrandId}
               />
             )}
           </div>
@@ -389,7 +396,6 @@ export function MediaLibrary({
           </Select>
         </div>
       )}
-
       {/* Optional: Simple header for dialog mode */}
       {hideHeader && isMediaSelectDialog && (
         <div className="flex justify-between items-center mb-4 pb-3 border-b">
@@ -504,6 +510,7 @@ export function MediaLibrary({
                       showFilters={showFilters}
                       selectedFilters={selectedFilters}
                       setSelectedFilters={setSelectedFilters}
+                      setInitialWorkflowStatus={setInitialWorkflowStatus}
                     />
 
                     <MediaDialogMultiSelectHeader
