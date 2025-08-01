@@ -61,16 +61,18 @@ export default function A2iImageModelSelector() {
           {models.length > 0 ? (
             <SelectGroup>
               <SelectLabel>Available Models</SelectLabel>
-              {models.map((model) => (
-                <SelectItem
-                  key={model.id}
-                  value={model.id}
-                  disabled={model.disabled}
-                  className="disabled:cursor-not-allowed"
-                >
-                  {model.name}
-                </SelectItem>
-              ))}
+              {models
+                .filter((m) => m.type === "image")
+                .map((model) => (
+                  <SelectItem
+                    key={model.id}
+                    value={model.id}
+                    disabled={model.disabled}
+                    className="disabled:cursor-not-allowed"
+                  >
+                    {model.name}
+                  </SelectItem>
+                ))}
             </SelectGroup>
           ) : (
             <div className="p-4 text-center text-sm text-muted-foreground italic">
