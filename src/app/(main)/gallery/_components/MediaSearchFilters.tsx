@@ -18,6 +18,7 @@ import {
   MultiSelectTrigger,
   MultiSelectValue,
 } from "@/components/ui/multi-select";
+import { Options } from "nuqs";
 
 interface MediaSearchFiltersProps {
   onSearchChange: (query: string) => void;
@@ -31,6 +32,10 @@ interface MediaSearchFiltersProps {
   showFilters: boolean;
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: Options
+  ) => Promise<URLSearchParams>;
 }
 
 export function MediaSearchFilters({
@@ -40,13 +45,15 @@ export function MediaSearchFilters({
   favorites,
   showFilters,
   selectedFilters,
-  setSelectedFilters,
+
+  setInitialWorkflowStatus,
 }: MediaSearchFiltersProps) {
   const handleWorkflowStatusChange = (values: string[]) => {
+    setInitialWorkflowStatus(null);
     if (values[0] === "__all__") {
-      setSelectedFilters({ ...selectedFilters, workflow_status: [] });
+      setInitialWorkflowStatus([]);
     } else {
-      setSelectedFilters({ ...selectedFilters, workflow_status: values });
+      setInitialWorkflowStatus(values);
     }
   };
 
