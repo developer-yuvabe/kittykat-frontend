@@ -20,7 +20,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
 }) => {
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(true)
   );
 
   const { messages, isLoading, interrupt, values, submit } = useStreamContext();
