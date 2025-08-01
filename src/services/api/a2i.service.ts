@@ -13,7 +13,7 @@ export const generateImage = async <T extends ZodTypeAny>(
       })
     );
   } catch (error) {
-    console.error("Error remixing image:", error);
+    console.error("Error generating image:", error);
     throw error;
   }
 };

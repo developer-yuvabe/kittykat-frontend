@@ -26,7 +26,6 @@ export const videoGenerationService = async (
   }
 };
 
-
 export const deleteA2iVideo = async (brandId: string, generationId: string) => {
   try {
     await handleApiRequest(
@@ -56,6 +55,29 @@ export const toggleA2iVideoLike = async (
     );
   } catch (error) {
     console.error("Error toggling image like status:", error);
+    throw error;
+  }
+};
+
+export const estimateVideoGenerationCredits = async (
+  data: z.infer<typeof videoGenerationSchema>
+) => {
+  try {
+    const credits = await handleApiRequest<number | null>(
+      axiosInstance.post(`/a2i/video/estimate-credits`, {
+        prompt: data.prompt,
+        start_image: data.start_image,
+        negative_prompt: data.negative_prompt,
+        duration: data.duration,
+        cfg_scale: data.cfg_scale,
+        aspect_ratio: data.aspect_ratio,
+        provider: data.provider,
+        model: data.model,
+      })
+    );
+    return credits;
+  } catch (error) {
+    console.error("Error estimating video generation credits:", error);
     throw error;
   }
 };

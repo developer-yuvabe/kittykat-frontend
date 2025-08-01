@@ -18,3 +18,22 @@ export const createVtonImage = async (
     throw error;
   }
 };
+
+export const estimateVtonCredits = async (
+  modelImage: string,
+  productImage: string | null
+) => {
+  try {
+    const credits = await handleApiRequest<number | null>(
+      axiosInstance.post(`/a2i/vton/estimate-credits`, {
+        model_image: modelImage,
+        product_image: productImage,
+      })
+    );
+
+    return credits;
+  } catch (error) {
+    console.error("Error occured during vton credits estimation:", error);
+    throw error;
+  }
+};

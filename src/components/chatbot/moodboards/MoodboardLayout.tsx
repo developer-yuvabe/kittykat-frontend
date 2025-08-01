@@ -465,6 +465,7 @@ function MoodboardLayout({
     setNoOfImagesForMoodboard(revertedPhotos.length);
   };
 
+
   useEffect(() => {
     const currentStatus = moodboard?.moodboard_generation_status;
     console.log(currentStatus);

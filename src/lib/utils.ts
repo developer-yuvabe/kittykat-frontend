@@ -316,3 +316,19 @@ export const getFilenameFromUrl = (
     return `${Date.now()}`;
   }
 };
+
+export const getZodFallback = (type: string) => {
+  switch (type) {
+    case "string":
+    case "enum":
+      return "";
+    case "slider":
+      return 0;
+    case "boolean":
+      return false;
+    case "file":
+      return null;
+    default:
+      return undefined;
+  }
+};
