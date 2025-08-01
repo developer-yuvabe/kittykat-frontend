@@ -28,7 +28,7 @@ export function AssistantMessage({
   const contentString = useMemo(() => getContentString(content), [content]);
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(true)
   );
 
   const thread = useStreamContext();
