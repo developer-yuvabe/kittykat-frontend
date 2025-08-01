@@ -5,60 +5,37 @@ import { Upload, Loader2, Globe } from "lucide-react";
 import { MoodboardVisualImages } from "./MoodboardVisualImages";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-
-import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
+import { GalleryItem, BulkGalleryUploadRequest } from "@/types/gallery.types";
 import { MoodboardInformation, ThreadCampaign } from "@/types/types";
 import {
   PinterestIcon,
   InstagramIcon,
   FacebookIcon,
 } from "@/components/ui/custom-icon";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { GalleryActions } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
-import {
-  addGalleryItemToMoodboard,
-  analyzeMoodboardImages,
-} from "@/services/api/moodboard.service";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 
 interface MoodboardVisualSectionProps {
   currentMoodboard: MoodboardInformation | null;
   isCreatingNewMoodboard: boolean;
-  galleryItems: GalleryItemResponse[];
   brandName?: string;
   currentCampaign: ThreadCampaign;
   moodboard: MoodboardInformation;
+  galleryActions: GalleryActions;
 }
 
 export const MoodboardVisualSectionHeader = ({
   currentMoodboard,
   isCreatingNewMoodboard,
-  galleryItems,
   brandName,
   currentCampaign,
   moodboard,
+  galleryActions,
 }: MoodboardVisualSectionProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { selectedBrandId } = useBrandStore();
-  const { addToGallery } = useGalleryQuery(
-    {
-      selectedFilters: {
-        campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
-        moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
-        brands: selectedBrandId ? [selectedBrandId] : [],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
-      },
-    },
-    ITEMS_PER_PAGE,
-    true,
-    "MoodboardVisualSectionHeader"
-  );
 
   if (!currentMoodboard || isCreatingNewMoodboard) return null;
 
@@ -75,21 +52,21 @@ export const MoodboardVisualSectionHeader = ({
       }...`
     );
 
-    let successCount = 0;
-    let failedCount = 0;
-
     try {
-      // Process files concurrently with a limit
+      // Step 1: Upload files to GCS and prepare gallery items
       const CONCURRENT_UPLOADS = 3;
       const chunks = [];
       for (let i = 0; i < filesArray.length; i += CONCURRENT_UPLOADS) {
         chunks.push(filesArray.slice(i, i + CONCURRENT_UPLOADS));
       }
 
+      const galleryItems: GalleryItem[] = [];
+      let failedUploads = 0;
+
       for (const chunk of chunks) {
         const chunkPromises = chunk.map(async (file) => {
           try {
-            // Upload file
+            // Upload file to GCS
             const downloadUrl = await uploadFileAndReturnUrl(
               file.name,
               file.type,
@@ -99,7 +76,7 @@ export const MoodboardVisualSectionHeader = ({
               currentCampaign.id
             );
 
-            // Create gallery item
+            // Prepare gallery item
             const galleryItem: GalleryItem = {
               brand_id: selectedBrandId,
               campaign_id: currentCampaign.id,
@@ -121,39 +98,38 @@ export const MoodboardVisualSectionHeader = ({
               custom_tags: [],
             };
 
-            // Add to gallery
-            const galleryResponse = await addToGallery(galleryItem);
-            const galleryItemId = galleryResponse.id;
-
-            // Add to moodboard
-            await addGalleryItemToMoodboard(selectedBrandId, moodboard.id, {
-              gallery_item_id: galleryItemId,
-            });
-
-            successCount++;
+            return galleryItem;
           } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
-            failedCount++;
+            failedUploads++;
+            return null;
           }
         });
 
-        await Promise.all(chunkPromises);
+        const chunkResults = await Promise.all(chunkPromises);
+        galleryItems.push(...(chunkResults.filter(Boolean) as GalleryItem[]));
       }
 
-      // Step 3: Analyze the newly created moodboard
-      await analyzeMoodboardImages(
-        selectedBrandId,
-        currentCampaign.id,
-        moodboard.id,
-        {
-          reanalyze: true,
-        }
-      );
-    } finally {
-      setIsUploading(false);
+      if (galleryItems.length === 0) {
+        throw new Error("All file uploads failed");
+      }
 
-      // Show final result toast
-      if (failedCount === 0) {
+      // Step 2: Bulk upload to gallery
+      const bulkUploadRequest: BulkGalleryUploadRequest = {
+        gallery_items: galleryItems,
+        brand_id: selectedBrandId,
+        campaign_id: currentCampaign.id,
+        moodboard_id: moodboard.id,
+        scrape_only: false,
+      };
+
+      const createdGalleryItems = await galleryActions.bulkUpload(
+        bulkUploadRequest
+      );
+
+      // Show success toast
+      const successCount = createdGalleryItems.length;
+      if (failedUploads === 0) {
         toast.success(
           `Successfully uploaded ${successCount} file${
             successCount > 1 ? "s" : ""
@@ -162,23 +138,23 @@ export const MoodboardVisualSectionHeader = ({
             id: loadingToastId,
           }
         );
-      } else if (successCount === 0) {
-        toast.error(
-          `Failed to upload ${failedCount} file${failedCount > 1 ? "s" : ""}`,
-          {
-            id: loadingToastId,
-          }
-        );
       } else {
         toast.warning(
           `Uploaded ${successCount} file${
             successCount > 1 ? "s" : ""
-          }, ${failedCount} failed`,
+          }, ${failedUploads} failed`,
           {
             id: loadingToastId,
           }
         );
       }
+    } catch (error) {
+      console.error("Bulk upload failed:", error);
+      toast.error("Failed to upload files. Please try again.", {
+        id: loadingToastId,
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -201,21 +177,29 @@ export const MoodboardVisualSectionHeader = ({
     <div className="mt-6">
       <div className="flex justify-between">
         <div className="font-semibold flex flex-row gap-x-2">
-          {`${currentMoodboard.visual_style_images.length} images of ${brandName} found...`}
-          {currentMoodboard.visual_sources
-            ?.filter((src) => src.selected)
-            .map((src) => {
-              switch (src.platform.toLowerCase()) {
-                case "pinterest":
-                  return <PinterestIcon key="pinterest" />;
-                case "instagram":
-                  return <InstagramIcon key="instagram" />;
-                case "facebook":
-                  return <FacebookIcon key="facebook" />;
-                default:
-                  return <Globe key={src.platform} />;
-              }
-            })}
+          {galleryActions.isFetching ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading images...
+            </div>
+          ) : (
+            `${galleryActions.totalItems} images of ${brandName} found...`
+          )}
+          {!galleryActions.isFetching &&
+            currentMoodboard.visual_sources
+              ?.filter((src) => src.selected)
+              .map((src) => {
+                switch (src.platform.toLowerCase()) {
+                  case "pinterest":
+                    return <PinterestIcon key="pinterest" />;
+                  case "instagram":
+                    return <InstagramIcon key="instagram" />;
+                  case "facebook":
+                    return <FacebookIcon key="facebook" />;
+                  default:
+                    return <Globe key={src.platform} />;
+                }
+              })}
         </div>
 
         <Button
@@ -245,7 +229,7 @@ export const MoodboardVisualSectionHeader = ({
 
       <MoodboardVisualImages
         currentMoodboard={currentMoodboard}
-        galleryItems={galleryItems}
+        galleryItems={galleryActions.getGalleryItems() || []}
       />
     </div>
   );

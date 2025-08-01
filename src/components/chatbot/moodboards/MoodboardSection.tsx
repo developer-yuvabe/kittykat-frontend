@@ -36,6 +36,7 @@ import {
 import { Command, CommandEmpty } from "@/components/ui/command";
 import { Loader } from "@/components/ui/loader";
 import { useGalleryQuery } from "@/hooks/useGallery";
+import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -49,6 +50,7 @@ export const MoodboardSection: React.FC<{
   selectedCampaignIndex,
   moodboardInformation,
   moodboardTags,
+  brandInformation,
 }) => {
   const { selectedBrandId } = useBrandStore();
 
@@ -467,6 +469,16 @@ export const MoodboardSection: React.FC<{
                   title={`Choose your visual aesthetic `}
                   content={
                     <div>
+                      {currentCampaign && currentMoodboard && (
+                        <MoodboardVisualSectionHeader
+                          currentMoodboard={currentMoodboard}
+                          isCreatingNewMoodboard={isCreatingNewMoodboard}
+                          brandName={brandInformation?.static?.brand?.name}
+                          currentCampaign={currentCampaign}
+                          moodboard={currentMoodboard}
+                          galleryActions={galleryActions}
+                        />
+                      )}
                       <div>
                         <div className="mt-8">
                           <MoodboardTagsSelector

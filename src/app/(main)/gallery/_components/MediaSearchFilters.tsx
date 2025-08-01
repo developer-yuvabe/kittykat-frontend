@@ -72,13 +72,13 @@ export function MediaSearchFilters({
             Favorites only
           </label>
         </div>
-        <div className="mt-1">
+        {/* <div className="mt-1">
           {!showFilters && (
             <TooltipIconButton tooltip="Show Filters" onClick={onToggleFilters}>
               <Filter size={24} />
             </TooltipIconButton>
           )}
-        </div>
+        </div> */}
         <div className="flex flex-col gap-1 mb-4">
           <Label
             htmlFor="workflow-status-select"

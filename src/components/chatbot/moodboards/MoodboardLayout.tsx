@@ -115,7 +115,10 @@ function MoodboardLayout({
 
   const handleAnalyzeMoodboard = async () => {
     setAnalyzeLoading(true);
-    handleSaveChanges();
+
+    if (hasUnsavedChanges) {
+      await handleSaveChanges();
+    }
     try {
       toast.promise(
         analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
