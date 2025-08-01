@@ -6,9 +6,22 @@ export type UserWithoutBrandAccess = Omit<User, "brand_access">;
 type Store = {
   user: UserWithoutBrandAccess | null;
   setUser: (user: UserWithoutBrandAccess | null) => void;
+
+  credits: number | null;
+  setCredits: (credits: number) => void;
+
+  showInsufficientCreditsModal: boolean;
+  setShowInsufficientCreditsModal: (show: boolean) => void;
 };
 
 export const useUserStore = create<Store>()((set) => ({
   user: null,
   setUser: (user) => set({ user }),
+
+  credits: null,
+  setCredits: (credits) => set({ credits }),
+
+  showInsufficientCreditsModal: false,
+  setShowInsufficientCreditsModal: (show) =>
+    set({ showInsufficientCreditsModal: show }),
 }));

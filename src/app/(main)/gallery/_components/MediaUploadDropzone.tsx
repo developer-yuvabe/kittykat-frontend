@@ -148,6 +148,7 @@ export function MediaUploadDropzone({
 
       const failedCount = uploadResults.length - successfulUploads.length;
 
+
       if (successfulUploads.length > 0) {
         const urls = successfulUploads.map(({ url }) => url);
         onUploadComplete?.(urls);

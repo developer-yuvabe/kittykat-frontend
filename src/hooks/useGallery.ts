@@ -26,8 +26,6 @@ export const useGalleryQuery = (
 ) => {
   const queryClient = useQueryClient();
 
-  // console.log("used this hook", compUsed);
-
   // Fetch brands and campaigns for filters
   const brandsQuery = useQuery({
     queryKey: ["brands-campaigns"],

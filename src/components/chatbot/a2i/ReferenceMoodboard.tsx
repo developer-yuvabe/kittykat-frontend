@@ -21,13 +21,12 @@ import { SortablePhoto } from "@/components/gallery/SortableGallery";
 import { Photo } from "react-photo-album";
 import ManualMoodboardSkeleton from "../moodboards/MoodboardSkeleton";
 import { EditIcon } from "@/components/ui/custom-icon";
-import { UseFormReturn } from "react-hook-form";
+import { useA2iStore } from "@/store/a2i.store";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
-  form: UseFormReturn<any>;
   formRef: RefObject<HTMLDivElement | null>;
 };
 
@@ -35,9 +34,9 @@ const ReferenceMoodboard = ({
   referenceMoodboardId,
   prompts,
   moodboardInformation,
-  form,
   formRef,
 }: ReferenceMoodboardProps) => {
+  const { setReferencePrompt } = useA2iStore();
   const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [loading, setLoading] = useState(false);
@@ -265,13 +264,8 @@ const ReferenceMoodboard = ({
                       className="absolute bottom-2 right-2"
                       size="icon"
                       onClick={() => {
-                        form.setValue("prompt", prompt, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-
                         if (formRef.current) {
+                          setReferencePrompt(prompt);
                           formRef.current.scrollIntoView({
                             behavior: "smooth",
                           });

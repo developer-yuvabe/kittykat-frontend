@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { processAuthError } from "@/lib/utils";
 import {

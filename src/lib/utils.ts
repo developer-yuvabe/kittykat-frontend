@@ -72,6 +72,7 @@ export async function handleApiRequest<T>(
 
     // Check for successful status code (200-299)
     if (response.data.status_code >= 200 && response.data.status_code < 300) {
+      // console.log("API Response:", response.data.data);
       return response.data.data as T;
     }
 
@@ -313,5 +314,21 @@ export const getFilenameFromUrl = (
     return filename || `${Date.now()}`;
   } catch {
     return `${Date.now()}`;
+  }
+};
+
+export const getZodFallback = (type: string) => {
+  switch (type) {
+    case "string":
+    case "enum":
+      return "";
+    case "slider":
+      return 0;
+    case "boolean":
+      return false;
+    case "file":
+      return null;
+    default:
+      return undefined;
   }
 };

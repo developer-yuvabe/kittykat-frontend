@@ -219,6 +219,7 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
+
     setIsCreatingNewMoodboard(true);
 
     const toastId = toast.loading("Creating moodboard...");
@@ -316,6 +317,8 @@ export const MoodboardSection: React.FC<{
       toast.error("Failed to generate moodboard. Please try again.", {
         id: "moodboard-generate",
       });
+    } finally {
+      // setIsMoodboardGenerating(false);
     }
   };
 
