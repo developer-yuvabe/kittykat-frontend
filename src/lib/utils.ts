@@ -72,6 +72,7 @@ export async function handleApiRequest<T>(
 
     // Check for successful status code (200-299)
     if (response.data.status_code >= 200 && response.data.status_code < 300) {
+      // console.log("API Response:", response.data.data);
       return response.data.data as T;
     }
 

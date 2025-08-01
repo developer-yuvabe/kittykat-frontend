@@ -10,11 +10,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Command, CommandEmpty } from "@/components/ui/command";
-import { Search, CirclePlus, ChevronDown, X, ChevronRight } from "lucide-react";
+import { CirclePlus, ChevronDown, X, ChevronRight } from "lucide-react";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import BrandSelector from "./BrandSelector";
 import { SubSectionCard } from "./SubSectionCard";
 import { useBrandStore } from "@/store/brand.store";
+import { SearchIcon } from "@/components/ui/custom-icon";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -62,6 +63,11 @@ export const campaignFields = [
   "Target Audience",
   "Visual Style",
   "Moodboard",
+];
+
+export const moodboardFields = [
+  "Campaign Concept",
+  "Choose your Visual Aesthetic",
 ];
 interface PlaceholderSectionProps {
   title: string;
@@ -145,75 +151,77 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                 </span>
               )}
             </div>
-            <div className="flex justify-between gap-x-2">
-              <div>
+            <div className="absolute right-3 top-8 ">
+              <div className="flex justify-between gap-x-2">
+                <div>
+                  {isLoading ? (
+                    <div className="skeleton w-60 h-10 rounded-md"></div>
+                  ) : (
+                    customSelector || (
+                      <Popover open={openPopover} onOpenChange={setOpenPopover}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SearchIcon size={10} className="text-black" />
+                            {searchPlaceholder || `Select ${title}`}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                          <Command>
+                            <CommandEmpty>No Existing {title}</CommandEmpty>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    )
+                  )}
+                </div>
                 {isLoading ? (
-                  <div className="skeleton w-60 h-10 rounded-md"></div>
+                  <div className="skeleton w-12 h-12 rounded-md"></div>
+                ) : isCreatingNewBrand ? (
+                  <TooltipIconButton
+                    size="lg"
+                    className="p-4"
+                    tooltip="Cancel creating brand"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCreatingBrand(false);
+                    }}
+                  >
+                    <X className="size-5" />
+                  </TooltipIconButton>
+                ) : isCreatingNewCampaign ? (
+                  <TooltipIconButton
+                    size="lg"
+                    className="p-4"
+                    tooltip="Cancel creating campaign"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCampaignCreating(false);
+                    }}
+                  >
+                    <X className="size-5" />
+                  </TooltipIconButton>
                 ) : (
-                  customSelector || (
-                    <Popover open={openPopover} onOpenChange={setOpenPopover}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Search size={10} className="text-black" />
-                          {searchPlaceholder || `Load existing ${title}`}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0">
-                        <Command>
-                          <CommandEmpty>No Existing {title}</CommandEmpty>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  )
+                  <TooltipIconButton
+                    size="lg"
+                    className="p-4"
+                    tooltip={newButtonTooltip}
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNewClick?.();
+                    }}
+                  >
+                    <CirclePlus className="size-5" />
+                  </TooltipIconButton>
                 )}
               </div>
-              {isLoading ? (
-                <div className="skeleton w-12 h-12 rounded-md"></div>
-              ) : isCreatingNewBrand ? (
-                <TooltipIconButton
-                  size="lg"
-                  className="p-4"
-                  tooltip="Cancel creating brand"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsCreatingBrand(false);
-                  }}
-                >
-                  <X className="size-5" />
-                </TooltipIconButton>
-              ) : isCreatingNewCampaign ? (
-                <TooltipIconButton
-                  size="lg"
-                  className="p-4"
-                  tooltip="Cancel creating campaign"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsCampaignCreating(false);
-                  }}
-                >
-                  <X className="size-5" />
-                </TooltipIconButton>
-              ) : (
-                <TooltipIconButton
-                  size="lg"
-                  className="p-4"
-                  tooltip={newButtonTooltip}
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNewClick?.();
-                  }}
-                >
-                  <CirclePlus className="size-5" />
-                </TooltipIconButton>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -292,7 +300,7 @@ export const InitialPlaceHolder: React.FC<{
         fields={brandFields}
         customSelector={!isLoading ? <BrandSelector /> : undefined}
         newButtonTooltip="New Brand"
-        onNewClick={() => console.log("New Brand clicked")}
+        onNewClick={() => {}}
         renderFieldContent={renderBrandFieldContent}
         isExpanded={brandExpanded}
         onToggleExpanded={() => setBrandExpanded(!brandExpanded)}

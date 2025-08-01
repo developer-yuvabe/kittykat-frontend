@@ -16,8 +16,6 @@ export async function uploadFileAndReturnUrl(
       .replace(/\s+/g, "_") // replace internal spaces with underscores
       .replace(/\.[^/.]+$/, ""); // remove file extension
 
-    // Get the presigned URL
-
     const response = await axiosInstance.post(`/users/file/upload`, {
       file_name: cleanedFileName,
       content_type: fileType,

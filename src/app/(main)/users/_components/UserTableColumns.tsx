@@ -101,7 +101,7 @@ export const getUserTableColumns = (
       const [showAllBrands, setShowAllBrands] = useState(false);
       const role = row.original.role?.id;
       if (role === "KK-ADMIN") {
-        return <p className="italic">Admin have access to all brands</p>;
+        return <p className="italic">All brands</p>;
       }
 
       return row.original.brand_access!.length ? (

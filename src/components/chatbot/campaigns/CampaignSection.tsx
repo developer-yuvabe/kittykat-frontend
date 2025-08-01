@@ -16,9 +16,11 @@ import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   campaignFields,
+  moodboardFields,
   PlaceholderSection,
 } from "../brands/InitialPlaceHolder";
 import { Button } from "@/components/ui/button";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -43,6 +45,8 @@ export const CampaignSection: React.FC<{
   const isCampaignExpanded = expandedSections["campaignInformation"] ?? true;
 
   const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
+  const [isMoodboardPlaceholderExpanded, setIsMoodboardPlaceholderExpanded] =
+    useState(true);
   const {
     selectedBrandId,
     isCreatingBrand,
@@ -137,20 +141,35 @@ export const CampaignSection: React.FC<{
     isCampaignCreating
   ) {
     return (
-      <PlaceholderSection
-        title={isCampaignCreating ? "Creating Campaign..." : "Campaign"}
-        avatarFallback="C"
-        avatarBgColor="bg-green-500"
-        fields={campaignFields}
-        searchPlaceholder="Load existing Campaign"
-        newButtonTooltip="New Campaign"
-        isExpanded={isPlaceholderExpanded}
-        onToggleExpanded={() =>
-          setIsPlaceholderExpanded((prev: boolean) => !prev)
-        }
-        onNewClick={handleViaAgent}
-        isCreatingNewCampaign={isCampaignCreating}
-      />
+      <>
+        <PlaceholderSection
+          title={isCampaignCreating ? "Creating Campaign..." : "Campaign"}
+          avatarFallback="C"
+          avatarBgColor="bg-green-500"
+          fields={campaignFields}
+          searchPlaceholder="Select Campaign"
+          newButtonTooltip="New Campaign"
+          isExpanded={isPlaceholderExpanded}
+          onToggleExpanded={() =>
+            setIsPlaceholderExpanded((prev: boolean) => !prev)
+          }
+          onNewClick={handleViaAgent}
+          isCreatingNewCampaign={isCampaignCreating}
+        />
+        <PlaceholderSection
+          title={"Moodboard"}
+          avatarFallback="M"
+          avatarBgColor="bg-orange-400"
+          fields={moodboardFields}
+          searchPlaceholder="Select Moodboard"
+          newButtonTooltip="New Moodboard"
+          isExpanded={isMoodboardPlaceholderExpanded}
+          onToggleExpanded={() =>
+            setIsMoodboardPlaceholderExpanded((prev: boolean) => !prev)
+          }
+          isCreatingNewCampaign={isCampaignCreating}
+        />
+      </>
     );
   }
 
@@ -180,26 +199,31 @@ export const CampaignSection: React.FC<{
                       {currentCampaign?.campaign?.title}
                     </div>
                     <div>
-                      <div className="absolute right-1 top-6 flex ">
-                        {campaignInformation && (
-                          <CampaignSelector
-                            campaigns={campaignInformation}
-                            selectedCampaignIndex={selectedCampaignIndex}
-                            setSelectedCampaignIndex={handleCampaignIndexChange}
-                          />
-                        )}
+                      <div className="absolute right-3 top-7 flex ">
+                        <div className="flex justify-between items-center gap-x-2">
+                          {campaignInformation && (
+                            <CampaignSelector
+                              campaigns={campaignInformation}
+                              selectedCampaignIndex={selectedCampaignIndex}
+                              setSelectedCampaignIndex={
+                                handleCampaignIndexChange
+                              }
+                            />
+                          )}
 
-                        <Button
-                          size="lg"
-                          className="p-4"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViaAgent();
-                          }}
-                        >
-                          <CirclePlus className="size-5" />
-                        </Button>
+                          <TooltipIconButton
+                            size="lg"
+                            className="p-4"
+                            tooltip="New Campaign"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViaAgent();
+                            }}
+                          >
+                            <CirclePlus className="size-5" />
+                          </TooltipIconButton>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -232,16 +256,17 @@ export const CampaignSection: React.FC<{
             )}
           </div>
           {isCampaignExpanded && (
-            <div className="absolute right-1 top-6 flex">
-              {campaignInformation && (
-                <CampaignSelector
-                  campaigns={campaignInformation}
-                  selectedCampaignIndex={selectedCampaignIndex}
-                  setSelectedCampaignIndex={handleCampaignIndexChange}
-                />
-              )}
+            <div className="absolute right-3 top-7">
+              <div className="flex justify-between items-center gap-x-2">
+                {campaignInformation && (
+                  <CampaignSelector
+                    campaigns={campaignInformation}
+                    selectedCampaignIndex={selectedCampaignIndex}
+                    setSelectedCampaignIndex={handleCampaignIndexChange}
+                  />
+                )}
 
-              <Button
+                {/* <Button
                 size="lg"
                 className="p-4"
                 variant="ghost"
@@ -251,7 +276,20 @@ export const CampaignSection: React.FC<{
                 }}
               >
                 <CirclePlus className="size-5" />
-              </Button>
+              </Button> */}
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="New Campaign"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViaAgent();
+                  }}
+                >
+                  <CirclePlus className="size-5" />
+                </TooltipIconButton>
+              </div>
             </div>
           )}
         </div>

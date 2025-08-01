@@ -5,12 +5,20 @@ import { useRef, useState, useEffect, SetStateAction, Dispatch } from "react";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import type { GalleryActions } from "@/hooks/useGallery";
-import { PlayCircle, PauseCircle, Heart, Copy, Expand } from "lucide-react";
+import {
+  PlayCircle,
+  PauseCircle,
+  Heart,
+  Copy,
+  Expand,
+  Check,
+} from "lucide-react";
 import type { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import RemixImage, {
   type RemixImageHandle,
 } from "../../_components/remix/RemixImage";
 import { toast } from "sonner";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 interface AskKittykatImageSectionProps {
   item: GalleryItemResponse;
@@ -27,12 +35,24 @@ interface AskKittykatImageSectionProps {
 }
 
 const VideoPlayer: React.FC<{
+  item: GalleryItemResponse;
+  galleryActions: GalleryActions;
   src: string;
   isLiked: boolean;
   onLike: () => void;
-}> = ({ src, isLiked, onLike }) => {
+  setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
+  revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
+}> = ({
+  item,
+  src,
+  isLiked,
+  onLike,
+  setCurrentItem,
+  revalidateGalleryItemVersions,
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -70,10 +90,24 @@ const VideoPlayer: React.FC<{
     video?.requestFullscreen?.();
   };
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(src);
-    toast.success("Video Prompt copied!");
+  const handleCopyPrompt = () => {
+    if (item.input_prompt) {
+      navigator.clipboard
+        .writeText(item.input_prompt)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          toast.success("Prompt copied to clipboard!");
+        })
+        .catch((error) => {
+          console.error("Failed to copy prompt:", error);
+          toast.error("Failed to copy prompt");
+        });
+    }
   };
+
+  // Check if there's a prompt available to copy
+  const hasPromptToCopy = !!item.input_prompt;
 
   return (
     <div className="relative w-full h-full group overflow-hidden rounded-lg flex items-center justify-center">
@@ -89,9 +123,13 @@ const VideoPlayer: React.FC<{
           playsInline
           onClick={togglePlayPause}
         />
+
+        {/* Overlay gradient */}
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg">
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-lg" />
         </div>
+
+        {/* Play/Pause button - Center */}
         <div
           className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg"
           onClick={togglePlayPause}
@@ -102,10 +140,21 @@ const VideoPlayer: React.FC<{
             <PlayCircle className="w-16 h-16 text-white opacity-100" />
           )}
         </div>
-        <Expand
-          onClick={handleFullscreen}
-          className="absolute top-2 right-2 w-6 h-6 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-        />
+
+        {/* Top Right - Expand button */}
+        <TooltipIconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            handleFullscreen();
+          }}
+          tooltip="Expand"
+          variant="ghost"
+          className="absolute top-2 right-2 size-7 text-white hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Expand />
+        </TooltipIconButton>
+
+        {/* Bottom Right - Heart/Like button */}
         <Heart
           onClick={onLike}
           className={`absolute bottom-2 right-2 w-6 h-6 cursor-pointer transition-opacity opacity-0 group-hover:opacity-100 ${
@@ -114,10 +163,21 @@ const VideoPlayer: React.FC<{
           fill={isLiked ? "red" : "none"}
           stroke={isLiked ? "red" : "white"}
         />
-        <Copy
-          onClick={handleCopy}
-          className="absolute bottom-2 left-2 w-6 h-6 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-        />
+
+        {/* Bottom Left - Copy button with conditional tooltip */}
+        {hasPromptToCopy && (
+          <TooltipIconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyPrompt();
+            }}
+            tooltip="Copy prompt"
+            variant="ghost"
+            className="absolute bottom-2 left-2 size-7 text-white hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {copied ? <Check /> : <Copy />}
+          </TooltipIconButton>
+        )}
       </div>
     </div>
   );
@@ -147,12 +207,12 @@ export const AskKittykatImageSection: React.FC<
           src={item.asset_url}
           isLiked={item.is_favourite ?? false}
           onLike={() => {
-            galleryActions.toggleFavorite(item.id, {
-              onSuccess: (updatedItem) => {
-                revalidateGalleryItemVersions(updatedItem);
-              },
-            });
+            // This onLike is now handled inside VideoPlayer
           }}
+          item={item}
+          galleryActions={galleryActions}
+          setCurrentItem={setCurrentItem}
+          revalidateGalleryItemVersions={revalidateGalleryItemVersions}
         />
       );
     }
@@ -178,7 +238,11 @@ export const AskKittykatImageSection: React.FC<
       );
     }
 
-    // Default image rendering
+    // Default image rendering with copy prompt functionality
+    const getPromptText = () => {
+      return item.input_prompt;
+    };
+
     return (
       <ZoomableImage
         src={item.asset_url}
@@ -209,9 +273,11 @@ export const AskKittykatImageSection: React.FC<
                 if (!prev || prev.id !== item.id) return prev;
                 return { ...prev, is_favourite: item.is_favourite };
               });
+              toast.error("Failed to update favorite status");
             },
           });
         }}
+        prompt={getPromptText()}
       />
     );
   };

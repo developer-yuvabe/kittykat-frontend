@@ -38,10 +38,8 @@ export interface MoodboardImageAnalysisRequest {
 
 export interface MoodboardPatchRequest {
   title?: string;
-  visual_style_images?: VisualImage[]; // Define `VisualImage[]` type if available
   aggregated_tags?: Record<string, AggregatedTagItem[]>;
   moodboard_assets?: MoodboardAsset[]; // Define `MoodboardAsset[]` type if available
-  visual_sources?: SourceHandle[]; // Define `SourceHandle[]` type if available
   delete_moodboard_assets?: string[];
 }
 

@@ -31,6 +31,8 @@ import { AnalysisChartIcon, SaveIcon2 } from "@/components/ui/custom-icon";
 import CustomGridGallery from "@/components/gallery/CustomGridGallery";
 import { galleryService } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
+import { GalleryItemResponse } from "@/types/gallery.types";
+import { useGalleryQuery } from "@/hooks/useGallery";
 
 // Fixed interface to match the data structure
 export interface MoodboardAssetItem {
@@ -174,6 +176,7 @@ function MoodboardLayout({
 
   // Fixed function to load images with proper type matching
   const loadImagesWithCurrentData = useCallback(async () => {
+    setMoodboardGenerationInProgress(true);
     const currentMoodboard = latestMoodboardRef.current;
     const currentGalleryItems = latestGalleryItemsRef.current;
 
@@ -189,13 +192,8 @@ function MoodboardLayout({
       const imagesToLoad = currentMoodboard.moodboard_assets
         .map((asset) => {
           // Find the corresponding gallery item using gallery_item_id
-          const galleryItem = currentGalleryItems.find(
+          const galleryItem: GalleryItemResponse = currentGalleryItems.find(
             (item) => item.id === asset.gallery_item_id
-          );
-
-          // Find the corresponding visual style image for like status
-          const visualImage = currentMoodboard.visual_style_images?.find(
-            (img) => img.gallery_item_id === asset.gallery_item_id
           );
 
           // Only return if we have a valid gallery item with asset_url
@@ -209,8 +207,8 @@ function MoodboardLayout({
           return {
             id: asset.gallery_item_id,
             asset_url: galleryItem.asset_url,
-            is_liked: visualImage?.is_liked || false,
-            ignored: visualImage?.to_ignore || false,
+            is_liked: galleryItem?.is_favourite || false,
+            ignored: galleryItem?.to_ignore || false,
             position: asset.position || 0,
           };
         })
@@ -272,6 +270,7 @@ function MoodboardLayout({
         if (shouldSetLoading) {
           setLoading(false);
         }
+        setMoodboardGenerationInProgress(false);
       }
     } else {
       setPhotos([]);
@@ -355,6 +354,20 @@ function MoodboardLayout({
     setNoOfImagesForMoodboard(newPhotos.length);
   };
 
+  const galleryActions = useGalleryQuery({
+    selectedFilters: {
+      brands: [brandId],
+      campaigns: [],
+      moodboards: [],
+      product_categories: [],
+      asset_types: [],
+      asset_sources: [],
+      media_format: [],
+      aspect_ratio: [],
+      workflow_status: [],
+    },
+  });
+
   // Direct API call for photo like/dislike
   const onPhotoLike = async (index: number, liked: boolean) => {
     const photo = photos[index];
@@ -374,21 +387,12 @@ function MoodboardLayout({
     });
 
     try {
-      // Find the visual style image for this photo
-      const visualImage = moodboard.visual_style_images?.find(
-        (img) => img.gallery_item_id === photo.id
-      );
-
-      if (visualImage) {
-        // Update only the visual style images with the new like status
-        const updatedVisualImages = moodboard.visual_style_images.map((img) =>
-          img.gallery_item_id === photo.id ? { ...img, is_liked: liked } : img
-        );
-
-        await patchMoodboard(brandId, moodboard.id, {
-          visual_style_images: updatedVisualImages,
-        });
-      }
+      galleryActions.patchItem({
+        itemId: photo.id,
+        data: {
+          is_favourite: liked,
+        },
+      });
     } catch (error) {
       console.error("Failed to update photo like status:", error);
 
@@ -407,30 +411,38 @@ function MoodboardLayout({
     }
   };
 
+  const [moodboardGenerationInProgress, setMoodboardGenerationInProgress] =
+    useState(false);
+
   // Save changes to API (now only for position changes, not likes)
   const handleSaveChanges = async () => {
+    setMoodboardGenerationInProgress(true);
     setIsSaving(true);
     try {
-      // Update moodboard assets positions only
+      // 1. Update moodboard asset positions
       const updatedAssets: MoodboardAsset[] = photos.map((photo, index) => ({
         gallery_item_id: photo.id,
         position: index,
       }));
 
-      // Update visual style images by marking to_ignore based on presence in photos
-      const updatedVisualImages = moodboard.visual_style_images.map((img) => ({
-        ...img,
-        to_ignore: removedPhotoIds.includes(img.gallery_item_id)
-          ? true
-          : img.to_ignore,
-      }));
-
+      // 3. Persist moodboard asset updates
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
-        visual_style_images: updatedVisualImages,
       });
 
-      // Update original state to match current state (but preserve like status)
+      // 4. Update gallery items' to_ignore flag (this updates the gallery DB)
+      const ignoreUpdatePromises = removedPhotoIds.map((galleryItemId) =>
+        galleryActions.patchItem({
+          itemId: galleryItemId,
+          data: {
+            to_ignore: true,
+          },
+        })
+      );
+
+      await Promise.all(ignoreUpdatePromises);
+
+      // 5. Update local original photo state
       setOriginalPhotos([...photos]);
     } catch (error) {
       console.error("Failed to save changes:", error);
@@ -453,10 +465,18 @@ function MoodboardLayout({
     setNoOfImagesForMoodboard(revertedPhotos.length);
   };
 
-  console.log(moodboard.visual_style_images.length, "visual style images");
+
+  useEffect(() => {
+    const currentStatus = moodboard?.moodboard_generation_status;
+    console.log(currentStatus);
+
+    if (currentStatus === "completed") {
+      setMoodboardGenerationInProgress(false);
+    }
+  }, [moodboard?.moodboard_generation_status]);
 
   return (
-    <div>
+    <div className="mt-4">
       {moodboard.moodboard_assets.length > 0 && (
         <ContentSection
           title="Moodboard"
@@ -464,7 +484,7 @@ function MoodboardLayout({
           content={
             <div>
               {/* Loading State - for generation, loading, or in_progress */}
-              {showLoadingState && (
+              {(showLoadingState || moodboardGenerationInProgress) && (
                 <ManualMoodboardSkeleton shimmer showButton={false} />
               )}
 
@@ -484,7 +504,7 @@ function MoodboardLayout({
               )}
 
               {/* Completed Gallery State */}
-              {showGallery && (
+              {showGallery && !moodboardGenerationInProgress && (
                 <div className="w-full flex flex-col gap-y-4">
                   {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
                   <div className="w-full flex flex-col gap-3">
@@ -500,16 +520,15 @@ function MoodboardLayout({
                             selectedMoodboard={selectedMoodboard}
                             setSelectedMoodboard={setSelectedMoodboard}
                             variant="select"
-                            // className="p-2" // Optional: tighten if internal component allows
                           />
                         </div>
                         <div className="min-w-[140px]">
                           <ImageCountCard
                             disabled
                             maxCount={
-                              moodboard.visual_style_images.length > 16
+                              galleryActions.totalItems > 16
                                 ? 16
-                                : moodboard.visual_style_images.length
+                                : galleryActions.totalItems
                             }
                             imageCount={noOfImagesForMoodboard}
                             onRefresh={async () => {
@@ -530,7 +549,6 @@ function MoodboardLayout({
                             }}
                             onChange={setNoOfImagesForMoodboard}
                             hasUnsavedChanges={false}
-                            // className="p-2" // Optional: tighten
                           />
                         </div>
                         <div className="min-w-[160px]">
@@ -546,7 +564,7 @@ function MoodboardLayout({
                               setNoOfImagesForMoodboard
                             }
                             noOfImagesForMoodboard={noOfImagesForMoodboard}
-                            assetsLength={moodboard.moodboard_assets.length}
+                            assetsLength={galleryActions.totalItems}
                             handleSaveChanges={handleSaveChanges}
                             // className="p-2" // Optional
                           />
