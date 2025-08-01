@@ -18,6 +18,7 @@ import {
   MultiSelectTrigger,
   MultiSelectValue,
 } from "@/components/ui/multi-select";
+import { Options } from "nuqs";
 
 interface MediaSearchFiltersProps {
   onSearchChange: (query: string) => void;
@@ -31,6 +32,10 @@ interface MediaSearchFiltersProps {
   showFilters: boolean;
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: Options
+  ) => Promise<URLSearchParams>;
 }
 
 export function MediaSearchFilters({
@@ -40,13 +45,15 @@ export function MediaSearchFilters({
   favorites,
   showFilters,
   selectedFilters,
-  setSelectedFilters,
+
+  setInitialWorkflowStatus,
 }: MediaSearchFiltersProps) {
   const handleWorkflowStatusChange = (values: string[]) => {
+    setInitialWorkflowStatus(null);
     if (values[0] === "__all__") {
-      setSelectedFilters({ ...selectedFilters, workflow_status: [] });
+      setInitialWorkflowStatus([]);
     } else {
-      setSelectedFilters({ ...selectedFilters, workflow_status: values });
+      setInitialWorkflowStatus(values);
     }
   };
 
@@ -72,13 +79,13 @@ export function MediaSearchFilters({
             Favorites only
           </label>
         </div>
-        <div className="mt-1">
+        {/* <div className="mt-1">
           {!showFilters && (
             <TooltipIconButton tooltip="Show Filters" onClick={onToggleFilters}>
               <Filter size={24} />
             </TooltipIconButton>
           )}
-        </div>
+        </div> */}
         <div className="flex flex-col gap-1 mb-4">
           <Label
             htmlFor="workflow-status-select"

@@ -987,6 +987,7 @@ export function MediaEditorDialog({
                               url: currentItem.asset_url,
                               size: currentItem.size || "original",
                             },
+                            source: "media-gallery",
                             canUndo: remixHistory.canUndo,
                             canRedo: remixHistory.canRedo,
                             onUndo: handleUndo,

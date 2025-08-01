@@ -29,18 +29,10 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
     if (!currentMoodboard || !galleryItems) return [];
 
     return galleryItems.map((item) => {
-      // Find the corresponding visual image by id
-      const visualImage = currentMoodboard.visual_style_images.find(
-        (img) => img.gallery_item_id === item.id
-      );
-
       return {
         id: item.id,
         filename: item.asset_title ?? "Untitled",
-        url: item.asset_url,
-        source: item.asset_source,
-        is_liked: visualImage?.is_liked ?? false,
-        ignored: visualImage?.to_ignore ?? false,
+        url: item.preview_url || item.asset_url,
       };
     });
   }, [currentMoodboard?.id, galleryItems]);
@@ -55,7 +47,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
             <CarouselContent>
               {images.map((item) => (
                 <CarouselItem
-                  key={`${item.id}-${item.is_liked}-${item.ignored}`} // Better key for re-rendering
+                  key={`${item.id}`} // Better key for re-rendering
                   className={`${
                     images.length < 5 ? `basis-1/${images.length}` : "basis-1/5"
                   }`}
@@ -65,7 +57,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
                     src={item.url || "/placeholder.svg"}
                     alt={item.filename}
                     className="object-cover w-40 mx-auto h-40 rounded-md cursor-pointer"
-                    loading="lazy"
+                    loading="eager"
                   />
                 </CarouselItem>
               ))}
