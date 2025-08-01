@@ -201,6 +201,7 @@ const VideoGeneration = ({
                 !form.formState.isValid ||
                 isPending
               }
+              loading={form.formState.isSubmitting}
             >
               <BrainIcon />
               Concept Visual Generation
