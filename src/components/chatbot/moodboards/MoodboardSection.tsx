@@ -217,6 +217,7 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
+
     setIsCreatingNewMoodboard(true);
 
     const toastId = toast.loading("Creating moodboard...");
@@ -261,12 +262,18 @@ export const MoodboardSection: React.FC<{
   };
 
   useEffect(() => {
-    if (currentMoodboard?.moodboard_generation_status === "in_progress") {
+    if (
+      currentMoodboard?.moodboard_generation_status === "in_progress" ||
+      galleryActions.isFetching
+    ) {
       setIsMoodboardGenerating(true);
     } else {
       setIsMoodboardGenerating(false);
     }
-  }, [currentMoodboard?.moodboard_generation_status]);
+  }, [
+    currentMoodboard?.moodboard_generation_status,
+    galleryActions.isFetching,
+  ]);
 
   const handleGenerateMoodboard = async () => {
     if (!currentMoodboard || galleryActions.totalItems < 10) {
@@ -308,6 +315,8 @@ export const MoodboardSection: React.FC<{
       toast.error("Failed to generate moodboard. Please try again.", {
         id: "moodboard-generate",
       });
+    } finally {
+      // setIsMoodboardGenerating(false);
     }
   };
 
@@ -435,111 +444,114 @@ export const MoodboardSection: React.FC<{
       </CardHeader>
 
       {expanded && (
-        <div>
-          <CardContent>
-            {currentCampaign && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="pt-0 pb-6"
-              >
-                <div className="mt-1 space-y-6">
-                  <MoodboardOverview
-                    title={currentCampaign?.campaign?.title}
-                    description={currentCampaign?.campaign?.description}
-                    tone={currentCampaign?.campaign?.tone}
-                    campaignId={currentCampaign.id}
-                  />
-                </div>
-              </motion.div>
-            )}
-
-            <ContentSection
-              title={`Choose your visual aesthetic `}
-              content={
-                <div>
-                  <div>
-                    <div className="mt-8">
-                      <MoodboardTagsSelector
-                        moodboard={currentMoodboard}
-                        onHasChanges={setHasUnsavedTagChanges}
-                        onTagsChange={setLocalTags}
-                        brandTags={moodboardTags}
-                      />
-                    </div>
-                    {!isCreatingNewMoodboard && currentMoodboard && (
-                      <div className="mt-4">
-                        <Button
-                          onClick={handleGenerateMoodboard}
-                          className="w-full"
-                          disabled={
-                            currentMoodboard.moodboard_generation_status ===
-                              "in_progress" || isMoodboardGenerating
-                          }
-                        >
-                          {currentMoodboard.moodboard_generation_status ===
-                            "in_progress" || isMoodboardGenerating ? (
-                            <span className="flex items-center gap-2">
-                              <Loader className="animate-spin text-white" />
-                              Generating...
-                            </span>
-                          ) : (
-                            <>
-                              <MoodboardIcon />
-                              Generate Moodboard
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-
-                    {isCreatingNewMoodboard && (
-                      <div className="mt-4">
-                        <Button
-                          className="w-full"
-                          onClick={handleCreateMoodboard}
-                        >
-                          Create Moodboard
-                        </Button>
-                      </div>
-                    )}
-
-                    {selectedBrandId &&
-                      currentMoodboard &&
-                      currentCampaign &&
-                      moodboardInformation &&
-                      !isCreatingNewMoodboard && (
-                        <MoodboardLayout
-                          brandId={selectedBrandId}
-                          moodboard={currentMoodboard}
-                          noOfImagesForMoodboard={noOfImagesForMoodboard}
-                          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-                          isGenerating={
-                            currentMoodboard?.moodboard_generation_status ===
-                              "in_progress" || isMoodboardGenerating
-                          }
-                          isCreatingNew={isCreatingNewMoodboard}
-                          moodboards={moodboardInformation}
-                          onNewMoodboard={handleCreateNewMoodboard}
-                          selectedMoodboard={currentMoodboard}
-                          setSelectedMoodboard={handleMoodboardSelect}
-                          handleGenerateMoodboard={handleGenerateMoodboard}
-                        />
-                      )}
+        <>
+          <div>
+            <CardContent>
+              {currentCampaign && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="pt-0 pb-6"
+                >
+                  <div className="mt-1 space-y-6">
+                    <MoodboardOverview
+                      title={currentCampaign?.campaign?.title}
+                      description={currentCampaign?.campaign?.description}
+                      tone={currentCampaign?.campaign?.tone}
+                      campaignId={currentCampaign.id}
+                    />
                   </div>
+                </motion.div>
+              )}
+
+              {currentMoodboard?.aggregated_tags && (
+                <ContentSection
+                  title={`Choose your visual aesthetic `}
+                  content={
+                    <div>
+                      <div>
+                        <div className="mt-8">
+                          <MoodboardTagsSelector
+                            moodboard={currentMoodboard}
+                            onHasChanges={setHasUnsavedTagChanges}
+                            onTagsChange={setLocalTags}
+                            brandTags={moodboardTags}
+                          />
+                        </div>
+                        {!isCreatingNewMoodboard && currentMoodboard && (
+                          <div className="mt-4">
+                            <Button
+                              onClick={handleGenerateMoodboard}
+                              className="w-full"
+                              disabled={
+                                currentMoodboard.moodboard_generation_status ===
+                                  "in_progress" || isMoodboardGenerating
+                              }
+                            >
+                              {currentMoodboard.moodboard_generation_status ===
+                                "in_progress" || isMoodboardGenerating ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader className="animate-spin text-white" />
+                                  Generating...
+                                </span>
+                              ) : (
+                                <>
+                                  <MoodboardIcon />
+                                  Generate Moodboard
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {selectedBrandId &&
+                          currentMoodboard &&
+                          currentCampaign &&
+                          moodboardInformation &&
+                          !isCreatingNewMoodboard && (
+                            <MoodboardLayout
+                              brandId={selectedBrandId}
+                              moodboard={currentMoodboard}
+                              noOfImagesForMoodboard={noOfImagesForMoodboard}
+                              setNoOfImagesForMoodboard={
+                                setNoOfImagesForMoodboard
+                              }
+                              isGenerating={
+                                currentMoodboard?.moodboard_generation_status ===
+                                  "in_progress" || isMoodboardGenerating
+                              }
+                              isCreatingNew={isCreatingNewMoodboard}
+                              moodboards={moodboardInformation}
+                              onNewMoodboard={handleCreateNewMoodboard}
+                              selectedMoodboard={currentMoodboard}
+                              setSelectedMoodboard={handleMoodboardSelect}
+                              handleGenerateMoodboard={handleGenerateMoodboard}
+                            />
+                          )}
+                      </div>
+                    </div>
+                  }
+                  context={undefined}
+                />
+              )}
+
+              {(isCreatingNewMoodboard || !moodboardInformation) && (
+                <div className="mt-4">
+                  <Button className="w-full" onClick={handleCreateMoodboard}>
+                    Create Moodboard
+                  </Button>
                 </div>
-              }
-              context={undefined}
-            />
-            {currentMoodboard && !isCreatingNewMoodboard && (
-              <MoodboardTagResults
-                moodboardId={currentMoodboard.id}
-                moodboard_tags={currentMoodboard?.moodboard_tags}
-              />
-            )}
-          </CardContent>
-        </div>
+              )}
+              {currentMoodboard && !isCreatingNewMoodboard && (
+                <MoodboardTagResults
+                  moodboardId={currentMoodboard.id}
+                  moodboard_tags={currentMoodboard?.moodboard_tags}
+                />
+              )}
+            </CardContent>
+          </div>
+        </>
       )}
     </Card>
   );

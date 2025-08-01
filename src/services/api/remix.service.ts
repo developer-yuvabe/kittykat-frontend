@@ -25,3 +25,26 @@ export const remixImageService = async (
     throw error;
   }
 };
+
+export const estimateRemixCredits = async (
+  data: z.infer<typeof remixImageSchema>,
+  maskImageUrl: string
+) => {
+  try {
+    const credits = await handleApiRequest<number | null>(
+      axiosInstance.post(`/a2i/remix/estimate-credits`, {
+        prompt: data.prompt,
+        size: data.size,
+        n: data.n,
+        base_image: data.base_image,
+        reference_images: data.reference_images,
+        mask_image: maskImageUrl,
+      })
+    );
+
+    return credits;
+  } catch (error) {
+    console.error("Error estimating remix credits:", error);
+    throw error;
+  }
+};

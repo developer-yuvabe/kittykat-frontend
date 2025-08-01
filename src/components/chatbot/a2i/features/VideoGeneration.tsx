@@ -17,10 +17,14 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { delay } from "@/lib/utils";
 import { videoGenerationSchema } from "@/schema/video-gen.schema";
-import { videoGenerationService } from "@/services/api/video-gen.service";
+import {
+  estimateVideoGenerationCredits,
+  videoGenerationService,
+} from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BrainIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BrainIcon, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -46,6 +50,12 @@ const VideoGeneration = ({
       duration: 5,
       cfg_scale: 0.5,
       aspect_ratio: "16:9",
+    },
+  });
+  const { data: estimatedCredits, isPending } = useQuery({
+    queryKey: ["video-credits", form.watch("duration")],
+    queryFn: async () => {
+      return await estimateVideoGenerationCredits(form.getValues());
     },
   });
 
@@ -186,10 +196,21 @@ const VideoGeneration = ({
             <Button
               type="submit"
               className="w-full bg-primary text-white text-md h-12 "
-              disabled={form.formState.isSubmitting || !form.formState.isValid}
+              disabled={
+                form.formState.isSubmitting ||
+                !form.formState.isValid ||
+                isPending
+              }
+              loading={form.formState.isSubmitting}
             >
               <BrainIcon />
               Concept Visual Generation
+              {isPending && <Loader2 className="animate-spin" />}
+              {estimatedCredits && (
+                <span className="text-sm italic">
+                  ({estimatedCredits} credits)
+                </span>
+              )}
             </Button>
           </form>
         </Form>

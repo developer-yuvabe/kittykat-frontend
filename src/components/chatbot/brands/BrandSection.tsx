@@ -29,6 +29,7 @@ import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
 import { BrandAestheticUploader } from "./BrandAestheticUploader";
+import { BrandMedia } from "./BrandMedia";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -269,6 +270,7 @@ export const renderBrandData = (
               socialMediaData={staticData?.social_media}
               analysisLogs={analysisLogs ?? []}
             />
+            <BrandMedia />
 
             <AnimatePresence>
               {showDynamicData && (
