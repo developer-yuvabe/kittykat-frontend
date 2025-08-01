@@ -17,12 +17,14 @@ type VirtualTryOnProps = {
   productImage: string;
   closeDialog: () => void;
   brandId?: string;
+  source: "a2i" | "media-gallery";
 };
 
 const VirtualTryOn = ({
   productImage,
   closeDialog,
   brandId,
+  source,
 }: VirtualTryOnProps) => {
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -45,7 +47,8 @@ const VirtualTryOn = ({
       createVtonImage(
         (brandId ?? selectedBrandId)!,
         productImage,
-        garmentImage
+        garmentImage,
+        source === "media-gallery"
       ).catch((error) => {
         if (error instanceof PlatformApiError && error.statusCode === 403) {
           setShowInsufficientCreditsModal(true);

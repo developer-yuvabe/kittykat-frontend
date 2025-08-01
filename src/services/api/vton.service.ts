@@ -4,13 +4,15 @@ import { handleApiRequest } from "@/lib/utils";
 export const createVtonImage = async (
   brandId: string,
   modelImage: string,
-  productImage: string
+  productImage: string,
+  addToQueue: boolean
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/a2i/vton`, {
         model_image: modelImage,
         product_image: productImage,
+        should_add_to_queue: addToQueue,
       })
     );
   } catch (error) {

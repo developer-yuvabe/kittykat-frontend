@@ -138,11 +138,21 @@ const A2iImageEditFeatures = ({
               ))}
             </TabsList>
             <div className="flex-1 overflow-hidden min-h-0">
-              <TabsContent value="virtual-tryon" className="h-full m-0 data-[state=active]:h-full">
-                <VirtualTryOn productImage={image.url} closeDialog={onClose} />
+              <TabsContent
+                value="virtual-tryon"
+                className="h-full m-0 data-[state=active]:h-full"
+              >
+                <VirtualTryOn
+                  productImage={image.url}
+                  closeDialog={onClose}
+                  source="a2i"
+                />
               </TabsContent>
 
-              <TabsContent value="in-paint" className="h-full m-0 data-[state=active]:h-full">
+              <TabsContent
+                value="in-paint"
+                className="h-full m-0 data-[state=active]:h-full"
+              >
                 <RemixControls
                   image={{ url: image.url, size: parameters.size }}
                   closeDialog={() => onClose()}
@@ -154,10 +164,14 @@ const A2iImageEditFeatures = ({
                   offScreenCanvasRef={offScreenCanvasRef}
                   brushSize={brushSize}
                   onBrushSizeChange={handleBrushSizeChange}
+                  source="a2i"
                 />
               </TabsContent>
 
-              <TabsContent value="video-gen" className="h-full m-0 data-[state=active]:h-full">
+              <TabsContent
+                value="video-gen"
+                className="h-full m-0 data-[state=active]:h-full"
+              >
                 <VideoGeneration startImage={image.url} closeDialog={onClose} />
               </TabsContent>
             </div>

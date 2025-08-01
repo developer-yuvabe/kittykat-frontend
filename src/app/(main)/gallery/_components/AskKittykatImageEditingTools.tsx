@@ -49,6 +49,7 @@ export function AskKittykatImageEditingTools({
           productImage={item.asset_url}
           closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
+          source="media-gallery"
         />
       ),
     },
@@ -69,6 +70,7 @@ export function AskKittykatImageEditingTools({
           onUndo={remixControls.onUndo}
           closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
+          source="media-gallery"
         />
       ),
     },
