@@ -21,10 +21,10 @@ export const ITEMS_PER_PAGE = 20;
 export const useGalleryQuery = (
   filters: GalleryFilters,
   items_per_page: number = ITEMS_PER_PAGE,
-  enabled: boolean = true
+  enabled: boolean = true,
+  compUsed: string = "unknown"
 ) => {
   const queryClient = useQueryClient();
-
 
   // Fetch brands and campaigns for filters
   const brandsQuery = useQuery({
