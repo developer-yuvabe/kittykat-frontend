@@ -95,6 +95,7 @@ export type RemixControlsProps = {
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
   brandId?: string;
+  source: "a2i" | "media-gallery";
 };
 
 const RemixControls = ({
@@ -109,6 +110,7 @@ const RemixControls = ({
   brushSize,
   onBrushSizeChange,
   brandId,
+  source,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
@@ -252,13 +254,16 @@ const RemixControls = ({
         file
       );
 
-      remixImageService(brandId ?? selectedBrandId!, data, maskUrl).catch(
-        (error) => {
-          if (error instanceof PlatformApiError && error.statusCode === 403) {
-            setShowInsufficientCreditsModal(true);
-          }
+      remixImageService(
+        brandId ?? selectedBrandId!,
+        data,
+        maskUrl,
+        source === "media-gallery"
+      ).catch((error) => {
+        if (error instanceof PlatformApiError && error.statusCode === 403) {
+          setShowInsufficientCreditsModal(true);
         }
-      );
+      });
 
       await delay(2000);
 

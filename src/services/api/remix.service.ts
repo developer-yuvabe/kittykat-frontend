@@ -6,7 +6,8 @@ import { z } from "zod";
 export const remixImageService = async (
   brandId: string,
   data: z.infer<typeof remixImageSchema>,
-  maskImageUrl: string
+  maskImageUrl: string,
+  addToQueue: boolean
 ) => {
   try {
     // console.log("Remixing image with data:", data);
@@ -18,6 +19,7 @@ export const remixImageService = async (
         base_image: data.base_image,
         reference_images: data.reference_images,
         mask_image: maskImageUrl,
+        should_add_to_queue: addToQueue,
       })
     );
   } catch (error) {
