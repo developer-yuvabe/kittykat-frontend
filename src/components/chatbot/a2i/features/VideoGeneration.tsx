@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { delay, PlatformApiError } from "@/lib/utils";
+import { PlatformApiError } from "@/lib/utils";
 import { videoGenerationSchema } from "@/schema/video-gen.schema";
 import {
   estimateVideoGenerationCredits,
@@ -65,15 +65,15 @@ const VideoGeneration = ({
       if (!selectedBrandId) {
         throw new Error("Brand ID is missing.");
       }
-      await videoGenerationService(selectedBrandId, data).catch((error) => {
-        if (error instanceof PlatformApiError && error.statusCode === 403) {
-          setShowInsufficientCreditsModal(true);
-        }
-      });
-
-      closeDialog();
+      await videoGenerationService(selectedBrandId, data);
     } catch (err) {
       console.error("Failed to generate video:", err);
+      if (err instanceof PlatformApiError && err.statusCode == 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
+    } finally {
+      closeDialog();
     }
   };
 
