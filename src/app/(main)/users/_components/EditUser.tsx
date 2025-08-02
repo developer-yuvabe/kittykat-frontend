@@ -71,10 +71,21 @@ export function EditUser({
     mode: "onSubmit",
   });
 
+  // Reset form values when user prop changes or dialog opens
+  useEffect(() => {
+    if (isOpen && user) {
+      form.reset({
+        role: user.role.id,
+        brandAccess: user.brand_access
+          ? user.brand_access.map((brand) => brand.id)
+          : undefined,
+      });
+    }
+  }, [isOpen, user, form]);
+
   const onSubmit = async (data: EditUserFormData) => {
     setIsOpen(false);
-    form.reset();
-
+    // console.log("brandAccess", data.brandAccess);
     toast.promise(
       updateUser(user.id, {
         roleId: data.role,
@@ -101,12 +112,21 @@ export function EditUser({
     if (selectedRole === UserRoleId.ADMIN) {
       form.setValue("brandAccess", []);
     } else {
-      form.setValue(
-        "brandAccess",
-        user.brand_access?.map((brand) => brand.id) || []
-      );
+      // Only reset to original brand access if currently empty or was admin
+      const currentBrandAccess = form.getValues("brandAccess");
+      if (!currentBrandAccess || currentBrandAccess.length === 0) {
+        form.setValue(
+          "brandAccess",
+          user.brand_access?.map((brand) => brand.id) || []
+        );
+      }
     }
-  }, [selectedRole]);
+  }, [selectedRole, form, user.brand_access]);
+
+  const handleClose = () => {
+    form.reset(); // Reset form when closing
+    setIsOpen(false);
+  };
 
   return (
     <>
@@ -119,7 +139,7 @@ export function EditUser({
           >
             {/* Header with Close Button */}
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition"
               aria-label="Close"
             >
@@ -129,10 +149,9 @@ export function EditUser({
               <div>
                 <h2 className="text-lg font-semibold">Edit User</h2>
                 <p className="text-sm text-muted-foreground">
-                  Update user details and permissions. You can change the role
-                  and brand access
+                  Update user details and permissions. You can change role and
+                  brand access for user.
                 </p>
-                <p className="text-sm text-muted-foreground">for the user</p>
               </div>
             </div>
 
@@ -162,7 +181,7 @@ export function EditUser({
                       <FormLabel>Role</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value} // Use value instead of defaultValue
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
@@ -245,12 +264,12 @@ export function EditUser({
                           </MultiSelectGroup>
                         </MultiSelectContent>
                       </MultiSelect>
-                      {selectedRole === UserRoleId.USER && (
+                      {/* {selectedRole === UserRoleId.USER && (
                         <FormDescription>
                           Brand access can only be changed again after the user
                           accepts the invitation.
                         </FormDescription>
-                      )}
+                      )} */}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -258,14 +277,7 @@ export function EditUser({
 
                 {/* Actions */}
                 <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => {
-                      setIsOpen(false);
-                      form.reset();
-                    }}
-                  >
+                  <Button variant="outline" type="button" onClick={handleClose}>
                     Cancel
                   </Button>
                   <Button type="submit" disabled={!form.formState.isDirty}>
