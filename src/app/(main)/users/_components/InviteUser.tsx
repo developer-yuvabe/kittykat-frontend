@@ -107,7 +107,10 @@ export function InviteUser() {
             )}
           >
             <button
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                form.reset();
+              }}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition"
               aria-label="Close"
             >
