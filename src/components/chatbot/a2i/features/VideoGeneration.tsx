@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { delay } from "@/lib/utils";
+import { delay, PlatformApiError } from "@/lib/utils";
 import { videoGenerationSchema } from "@/schema/video-gen.schema";
 import {
   estimateVideoGenerationCredits,
   videoGenerationService,
 } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { BrainIcon, Loader2 } from "lucide-react";
@@ -38,7 +39,7 @@ const VideoGeneration = ({
   closeDialog,
 }: VideoGenerationOnProps) => {
   const { selectedBrandId } = useBrandStore();
-
+  const { setShowInsufficientCreditsModal } = useUserStore();
   const form = useForm<z.infer<typeof videoGenerationSchema>>({
     resolver: zodResolver(videoGenerationSchema),
     defaultValues: {
@@ -64,9 +65,12 @@ const VideoGeneration = ({
       if (!selectedBrandId) {
         throw new Error("Brand ID is missing.");
       }
-      await videoGenerationService(selectedBrandId, data);
+      await videoGenerationService(selectedBrandId, data).catch((error) => {
+        if (error instanceof PlatformApiError && error.statusCode === 403) {
+          setShowInsufficientCreditsModal(true);
+        }
+      });
 
-      await delay(1000);
       closeDialog();
     } catch (err) {
       console.error("Failed to generate video:", err);
