@@ -1,30 +1,42 @@
 import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
-import { BrainIcon, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { cn, delay } from "@/lib/utils";
-import { createVtonImage } from "@/services/api/vton.service";
+import { BrainIcon, Loader2, X } from "lucide-react";
+import React, { useState } from "react";
+import { cn, delay, PlatformApiError } from "@/lib/utils";
+import {
+  createVtonImage,
+  estimateVtonCredits,
+} from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
 import { toast } from "sonner";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import { useQuery } from "@tanstack/react-query";
+import { useUserStore } from "@/store/user.store";
 
 type VirtualTryOnProps = {
   productImage: string;
   closeDialog: () => void;
   brandId?: string;
+  source: "a2i" | "media-gallery";
 };
 
 const VirtualTryOn = ({
   productImage,
   closeDialog,
   brandId,
+  source,
 }: VirtualTryOnProps) => {
   const { selectedBrandId } = useBrandStore();
+  const { setShowInsufficientCreditsModal } = useUserStore();
   const [garmentImage, setGarmentImage] = useState<string | null>(null);
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {}, [garmentImage]);
+  const { data: estimatedCredits, isPending } = useQuery({
+    queryKey: ["vton-credits", productImage, garmentImage],
+    queryFn: async () => {
+      return await estimateVtonCredits(productImage, garmentImage ?? "");
+    },
+  });
 
   const handelVtonGeneration = async () => {
     if (!garmentImage) {
@@ -35,8 +47,13 @@ const VirtualTryOn = ({
       createVtonImage(
         (brandId ?? selectedBrandId)!,
         productImage,
-        garmentImage
-      );
+        garmentImage,
+        source === "media-gallery"
+      ).catch((error) => {
+        if (error instanceof PlatformApiError && error.statusCode === 403) {
+          setShowInsufficientCreditsModal(true);
+        }
+      });
       await delay(2000);
       closeDialog();
     } catch {
@@ -69,7 +86,6 @@ const VirtualTryOn = ({
                   src={garmentImage}
                   alt="Garment"
                   className="object-contain w-[70%] max-h-[300px] lg:max-h-[350px] 2xl:max-h-[450px]"
-                  onLoad={() => console.log("Garment image loaded")}
                   onError={() =>
                     console.error("Failed to load garment image:", garmentImage)
                   }
@@ -95,13 +111,19 @@ const VirtualTryOn = ({
 
           <div className="flex-shrink-0">
             <Button
-              disabled={!garmentImage || loading}
+              disabled={!garmentImage || loading || !estimatedCredits}
               loading={loading}
               onClick={handelVtonGeneration}
               className="w-full text-lg h-12"
             >
               <BrainIcon />
-              A2i Concept Visual Generation
+              Concept Visual Generation
+              {isPending && <Loader2 className="animate-spin" />}
+              {estimatedCredits && (
+                <span className="text-sm italic">
+                  ({estimatedCredits} credits)
+                </span>
+              )}
             </Button>
           </div>
         </div>

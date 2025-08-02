@@ -183,7 +183,6 @@ export function MediaEditorDialog({
   };
 
   const handleSubmitComment = async () => {
-    console.log("user name", user?.role.name);
     if (!newComment.trim() && attachments.length === 0) return;
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to add a comment");
@@ -274,7 +273,6 @@ export function MediaEditorDialog({
   };
 
   const handleSubmitReply = async (commentId: string) => {
-    console.log("user name", user?.role.name);
     if (!replyText.trim() && replyAttachments.length === 0) return;
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to add a reply");
@@ -472,7 +470,6 @@ export function MediaEditorDialog({
     replyId: string,
     text: string
   ) => {
-    console.log("user name", user?.role.name);
     if (!text.trim()) return;
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to update a reply");
@@ -586,7 +583,6 @@ export function MediaEditorDialog({
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    console.log("user name", user?.role.name);
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to delete a comment");
       return;
@@ -665,7 +661,6 @@ export function MediaEditorDialog({
   };
 
   const handleDeleteReply = async (commentId: string, replyId: string) => {
-    console.log("user name", user?.role.name);
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to delete a reply");
       return;
@@ -960,6 +955,7 @@ export function MediaEditorDialog({
                     revalidateGalleryItemVersions={
                       revalidateGalleryItemVersions
                     }
+                    setCurrentItem={setCurrentItem}
                   />
                 )}
                 {currentItem && (
@@ -991,6 +987,7 @@ export function MediaEditorDialog({
                               url: currentItem.asset_url,
                               size: currentItem.size || "original",
                             },
+                            source: "media-gallery",
                             canUndo: remixHistory.canUndo,
                             canRedo: remixHistory.canRedo,
                             onUndo: handleUndo,

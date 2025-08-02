@@ -1,64 +1,42 @@
+"use client";
+
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ChevronDown,
   ChevronRight,
   CirclePlus,
-  GlobeIcon,
-  Loader,
   Presentation,
   X,
 } from "lucide-react";
 import { MoodboardInformation, ThreadDetails } from "@/types/types";
 import { toast } from "sonner";
-
 import { motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-import {
-  SocialOption,
-  SocialOptionId,
-  SourceHandle,
-} from "@/types/campaign.types";
-import {
-  FacebookIcon,
-  InstagramIcon,
-  MoodboardIcon,
-  PinterestIcon,
-} from "@/components/ui/custom-icon";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { MoodboardIcon, SearchIcon } from "@/components/ui/custom-icon";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardOverview } from "./MoodboardOverview";
 import {
-  addGalleryItemToMoodboard,
-  analyzeMoodboardImages,
   createMoodboard,
   createMoodboardForCampaign,
 } from "@/services/api/moodboard.service";
-import { MoodboardStyleAnalysisStatus } from "./MoodboardStyleAnalysisStatus";
 import MoodboardTagsSelector from "./MoodboardTagsSelector";
-import { useGalleryQuery } from "@/hooks/useGallery";
 import MoodboardLayout from "./MoodboardLayout";
 import MoodboardTagResults from "./MoodboardTagResults";
-import { LimitsState, UploadedImage } from "@/types/moodboard.types";
-import { MoodboardReferenceDropzone } from "./MoodboardReferenceDropzone";
-import { MoodboardReferenceUploadStatus } from "./MoodboardReferenceUploadStatus";
-import { MoodboardSocialOptions } from "./MoodboardSocialOptions";
-import { GalleryItem } from "@/types/gallery.types";
-import { MoodboardFindStyleDialog } from "./MoodboardFindStyleDialog";
 import MoodboardSelector from "./MoodboardSelector";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Input } from "@/components/ui/input";
-import { useQueryClient } from "@tanstack/react-query";
-import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { updateBrandSocialMediaField } from "@/services/api/brand.service";
 import { patchMoodboard } from "@/services/api/moodboard.service";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Command, CommandEmpty } from "@/components/ui/command";
+import { Loader } from "@/components/ui/loader";
+import { useGalleryQuery } from "@/hooks/useGallery";
+import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -66,14 +44,30 @@ export const MoodboardSection: React.FC<{
   setSelectedCampaignIndex: React.Dispatch<React.SetStateAction<number>>;
   moodboardInformation: ThreadDetails["moodboard_information"];
   selectedCampaignIndex: number;
+  moodboardTags?: { [key: string]: string[] };
 }> = ({
   campaignInformation,
-  brandInformation,
   selectedCampaignIndex,
   moodboardInformation,
+  moodboardTags,
+  brandInformation,
 }) => {
   const { selectedBrandId } = useBrandStore();
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
+  const galleryActions = useGalleryQuery({
+    selectedFilters: {
+      brands: [selectedBrandId!],
+      campaigns: [],
+      moodboards: [],
+      product_categories: [],
+      asset_types: [],
+      asset_sources: [],
+      media_format: [],
+      aspect_ratio: [],
+      workflow_status: [],
+    },
+  });
+
   const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
   const [selectedMoodboardId, setSelectedMoodboardId] = useState<string | null>(
     null
@@ -82,8 +76,8 @@ export const MoodboardSection: React.FC<{
     MoodboardInformation["aggregated_tags"] | null
   >(null);
   const [isMoodboardGenerating, setIsMoodboardGenerating] = useState(false);
-  const [isAddingToGallery, setIsAddingToGallery] = useState(false);
   const [hasUnsavedTagChanges, setHasUnsavedTagChanges] = useState(false);
+  const [openPopover, setOpenPopover] = useState(false);
 
   const currentCampaign = useMemo(
     () =>
@@ -92,8 +86,6 @@ export const MoodboardSection: React.FC<{
         : null,
     [campaignInformation, selectedCampaignIndex]
   );
-
-  const socialMediaPlatforms = brandInformation?.static?.social_media;
 
   // Get list of moodboards matching current campaign
   const currentCampaignMoodboards = useMemo(() => {
@@ -126,8 +118,6 @@ export const MoodboardSection: React.FC<{
   // Reset states when switching to create new moodboard mode
   const resetToNewMoodboardState = useCallback(() => {
     setSelectedMoodboardId(null);
-    setUploadedImages([]);
-    setSelectedOptions([]);
     setMoodboardTitle(
       currentCampaign?.campaign?.title
         ? `${currentCampaign.campaign.title}'s Moodboard v${
@@ -169,289 +159,21 @@ export const MoodboardSection: React.FC<{
 
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
-    const fallbackImageCount =
-      currentMoodboard?.visual_style_images?.length ?? 0;
+    const fallbackImageCount = galleryActions.totalItems ?? 0;
 
     const finalCount = assetCount > 0 ? assetCount : fallbackImageCount;
 
     setNoOfImagesForMoodboard(Math.min(16, finalCount));
-  }, [currentMoodboard?.id, currentMoodboard?.visual_style_images.length]);
+  }, [currentMoodboard?.id, galleryActions.totalItems]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
-  const [socialOptions, setSocialOptions] = useState<SocialOption[]>([]);
-
-  const [limits, setLimits] = useState<LimitsState>({
-    pinterest_limit: 10,
-    instagram_limit: 10,
-    facebook_limit: 10,
-    website_limit: 10,
-  });
-
-  useEffect(() => {
-    const initializeSocialOptions = async () => {
-      // Get existing sources from campaign
-      const existingSources = currentMoodboard?.visual_sources || [];
-
-      const existingSourcesMap = existingSources.reduce((acc, source) => {
-        acc[source.platform] = { ...source, url: source.url ?? undefined };
-        return acc;
-      }, {} as Record<string, SourceHandle>);
-
-      const options: SocialOption[] = [
-        {
-          id: SocialOptionId.Instagram,
-          name: "Use Instagram Images",
-          url:
-            existingSourcesMap.instagram?.url ||
-            socialMediaPlatforms?.instagram ||
-            "https://instagram.com/",
-          icon: <InstagramIcon size={44} />,
-          isEditing: false,
-          editValue:
-            existingSourcesMap.instagram?.url ||
-            socialMediaPlatforms?.instagram ||
-            "https://instagram.com/",
-        },
-        {
-          id: SocialOptionId.Pinterest,
-          name: "Use Pinterest Images",
-          url:
-            existingSourcesMap.pinterest?.url ||
-            socialMediaPlatforms?.pinterest ||
-            "https://",
-          icon: <PinterestIcon size={44} />,
-          isEditing: false,
-          editValue:
-            existingSourcesMap.pinterest?.url ||
-            socialMediaPlatforms?.pinterest ||
-            "https://",
-        },
-        {
-          id: SocialOptionId.Facebook,
-          name: "Use Facebook Images",
-          url:
-            existingSourcesMap.facebook?.url ||
-            socialMediaPlatforms?.facebook ||
-            "https://www.facebook.com/",
-          icon: <FacebookIcon size={44} />,
-          isEditing: false,
-          editValue:
-            existingSourcesMap.facebook?.url ||
-            socialMediaPlatforms?.facebook ||
-            "https://www.facebook.com/",
-        },
-        {
-          id: SocialOptionId.Website,
-          name: "Use Website Images",
-          url:
-            existingSourcesMap.website?.url ||
-            socialMediaPlatforms?.website ||
-            "https://",
-          icon: <GlobeIcon size={44} className="text-blue-600" />,
-          isEditing: false,
-          editValue:
-            existingSourcesMap.website?.url ||
-            socialMediaPlatforms?.website ||
-            "https://",
-        },
-      ];
-
-      setSocialOptions(options);
-
-      // Set selected options based on existing sources
-      if (!isCreatingNewMoodboard) {
-        const selectedIds = existingSources
-          .filter((source) => source.selected)
-          .map((source) => source.platform);
-        setSelectedOptions(selectedIds);
-      }
-    };
-
-    initializeSocialOptions();
-  }, [
-    currentCampaign,
-    socialMediaPlatforms,
-    currentMoodboard,
-    isCreatingNewMoodboard,
-  ]);
-
-  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isCreatingNewMoodboard) {
-      setUploadedImages([]);
-    }
-  }, [currentMoodboard?.id, isCreatingNewMoodboard]);
-
-  const filters = {
-    campaigns: currentCampaign?.id ? [currentCampaign.id] : [],
-    moodboards: currentMoodboard?.id ? [currentMoodboard.id] : [],
-    brands: selectedBrandId ? [selectedBrandId] : [],
-    product_categories: [],
-    asset_types: [],
-    asset_sources: [],
-    media_format: [],
-    aspect_ratio: [],
-    workflow_status: [],
-  };
-
-  const shouldEnableQuery =
-    filters.campaigns.length > 0 &&
-    filters.moodboards.length > 0 &&
-    filters.brands.length > 0;
-
-  const { addToGallery, getGalleryItems } = useGalleryQuery(
-    { selectedFilters: filters },
-    200,
-    shouldEnableQuery,
-    "MoodboardSection"
-  );
-
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (currentMoodboard?.visual_style_images) {
-      queryClient.invalidateQueries({
-        queryKey: [
-          "gallery-items",
-          /* the rest of your dynamic parts, if necessary */
-        ],
-      });
-    }
-  }, [currentMoodboard?.visual_style_images?.length]);
-
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      setIsUploading(true);
-      setUploadError(null);
-
-      try {
-        toast.promise(
-          (async () => {
-            const uploadPromises = acceptedFiles.map(async (file) => {
-              const downloadUrl = await uploadFileAndReturnUrl(
-                file.name,
-                file.type,
-                "threads",
-                file,
-                selectedBrandId,
-                currentCampaign?.id || null
-              );
-
-              const uploadedImagePayload = {
-                id: crypto.randomUUID(),
-                filename: file.name,
-                url: downloadUrl,
-                source: "upload",
-              };
-
-              // Add to state
-              setUploadedImages((prev) => [
-                ...prev,
-                {
-                  id: uploadedImagePayload.id,
-                  url: downloadUrl,
-                  name: file.name,
-                  file,
-                },
-              ]);
-
-              return downloadUrl;
-            });
-
-            await Promise.all(uploadPromises);
-          })(),
-          {
-            loading: `Uploading ${acceptedFiles.length} file(s)...`,
-            success: `Successfully uploaded ${acceptedFiles.length} file(s)!`,
-            error: "Failed to upload files. Please try again.",
-          }
-        );
-      } catch (error) {
-        setUploadError("Some files failed to upload. Please try again.");
-        console.error("Upload error:", error);
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [selectedBrandId, currentCampaign?.id]
-  );
-
-  const toggleOption = (optionId: string) => {
-    const updatedSelection = selectedOptions.includes(optionId)
-      ? selectedOptions.filter((id) => id !== optionId)
-      : [...selectedOptions, optionId];
-
-    setSelectedOptions(updatedSelection);
-  };
-
-  const startEditing = (optionId: SocialOptionId) => {
-    setSocialOptions((prev) =>
-      prev.map((option) =>
-        option.id === optionId ? { ...option, isEditing: true } : option
-      )
-    );
-  };
-
-  const cancelEditing = (optionId: SocialOptionId) => {
-    setSocialOptions((prev) =>
-      prev.map((option) =>
-        option.id === optionId
-          ? { ...option, isEditing: false, editValue: option.url }
-          : option
-      )
-    );
-  };
-
-  const saveEdit = async (optionId: SocialOptionId) => {
-    const option = socialOptions.find((opt) => opt.id === optionId);
-    if (!option) return;
-
-    try {
-      // 1. Update backend
-
-      // 2. Update local state
-      setSocialOptions((prev) =>
-        prev.map((opt) =>
-          opt.id === optionId
-            ? { ...opt, url: opt.editValue, isEditing: false }
-            : opt
-        )
-      );
-
-      await updateBrandSocialMediaField(
-        selectedBrandId!,
-        optionId as keyof NonNullable<
-          NonNullable<ThreadDetails["brand_information"]>["static"]
-        >["social_media"],
-        option.editValue
-      );
-
-      toast.success("Social media URL updated successfully!");
-    } catch (error) {
-      console.error("Failed to update social media URL", error);
-      toast.error("Failed to update social media URL.");
-    }
-  };
-
-  const updateEditValue = (optionId: SocialOptionId, value: string) => {
-    setSocialOptions((prev) =>
-      prev.map((option) =>
-        option.id === optionId ? { ...option, editValue: value } : option
-      )
-    );
-  };
-
-  // const [moodboardTitle, setMoodboardTitle] = useState("");
   const [moodboardTitle, setMoodboardTitle] = useState(
     currentCampaign?.campaign?.title
       ? `${currentCampaign.campaign.title}'s Moodboard v${
           currentCampaignMoodboards.length + 1
         }`
-      : "New Moodboard 123"
+      : "New Moodboard"
   );
 
   useEffect(() => {
@@ -484,144 +206,41 @@ export const MoodboardSection: React.FC<{
     currentMoodboard?.title,
   ]);
 
-  const totalImageCount =
-    uploadedImages.length +
-    selectedOptions.reduce((sum, id) => {
-      const key = `${id}_limit` as keyof LimitsState;
-      return sum + (limits[key] ?? 0);
-    }, 0);
-
-  async function handleFindStyle() {
+  async function handleCreateMoodboard() {
     if (!selectedBrandId || !currentCampaign?.id) {
       toast.error("Missing brand or campaign information");
       return;
     }
 
-    if (totalImageCount < 10) {
+    if (galleryActions.totalItems < 10) {
       toast.error(
         "At least 10 images are required for analysis and moodboard creation."
       );
       return;
     }
 
-    setIsAnalysisInProgress(true);
-    const visualSources: SourceHandle[] = socialOptions
-      .filter((opt) => selectedOptions.includes(opt.id))
-      .map((opt) => ({
-        platform: opt.id,
-        url: opt.editValue || opt.url,
-        selected: true,
-      }));
+
+    setIsCreatingNewMoodboard(true);
+
+    const toastId = toast.loading("Creating moodboard...");
 
     try {
-      const toastId = toast.loading("Creating moodboard...");
+      // Step 1: Create the new moodboard
+      await createMoodboard(selectedBrandId, currentCampaign.id, {
+        campaign_id: currentCampaign.id,
+        title: moodboardTitle,
+      });
 
-      try {
-        // Step 1: Create the new moodboard
-        console.log("moodboardTitle in handleFindStyle :", moodboardTitle);
-        const newMoodboard = await createMoodboard(
-          selectedBrandId,
-          currentCampaign.id,
-          {
-            campaign_id: currentCampaign.id,
-            title: moodboardTitle,
-            visual_sources: visualSources,
-          }
-        );
-
-        toast.loading("Adding images to gallery...", { id: toastId });
-        setIsAddingToGallery(true);
-
-        // Step 2: Upload selected images to gallery and add to moodboard
-        const uploadPromises = uploadedImages.map(async (file) => {
-          const galleryItem: GalleryItem = {
-            brand_id: selectedBrandId,
-            campaign_id: currentCampaign.id,
-            moodboard_id: newMoodboard.id,
-            asset_title: file.name,
-            asset_url: file.url,
-            asset_type: "image",
-            asset_source: "upload",
-            size: "unknown",
-            media_format: "jpg",
-            related_asset_ids: [],
-            prompt_modifiers: [],
-            ai_tags: [],
-            visual_style_tags: [],
-            detected_objects: [],
-            detected_emotions: [],
-            detected_colors: [],
-            search_keywords: [],
-            custom_tags: [],
-          };
-
-          const galleryResponse = await addToGallery(galleryItem);
-
-          await addGalleryItemToMoodboard(selectedBrandId, newMoodboard?.id, {
-            gallery_item_id: galleryResponse.id,
-          });
-        });
-
-        await Promise.all(uploadPromises);
-
-        setUploadedImages([]);
-        setIsCreatingNewMoodboard(false);
-        setSelectedMoodboardId(newMoodboard.id);
-        setIsAddingToGallery(false);
-
-        toast.loading("Analyzing visual style...", { id: toastId });
-
-        // Step 3: Analyze the newly created moodboard
-        await analyzeMoodboardImages(
-          selectedBrandId,
-          currentCampaign.id,
-          newMoodboard.id,
-          limits
-        );
-
-        toast.success(
-          "Moodboard created successfully! Style analysis complete.",
-          { id: toastId }
-        );
-      } catch (error) {
-        toast.error("Failed to create moodboard. Please try again.", {
-          id: toastId,
-        });
-        throw error;
-      }
+      toast.success("Moodboard created successfully!", { id: toastId });
     } catch (error) {
-      console.error("Failed to create moodboard and upload images:", error);
+      toast.error("Failed to create moodboard. Please try again.", {
+        id: toastId,
+      });
+      console.error("Failed to create moodboard:", error);
     } finally {
-      setIsAnalysisInProgress(false);
-      setIsAddingToGallery(false);
+      setIsCreatingNewMoodboard(false);
     }
   }
-
-  const [isAnalysisInProgress, setIsAnalysisInProgress] = useState(false);
-
-  useEffect(() => {
-    const status = currentMoodboard?.style_analysis_status;
-
-    switch (status) {
-      case "in_progress":
-        setIsAnalysisInProgress(true);
-        break;
-      case "not_started":
-      case "completed":
-      case "failed":
-      case "partially_completed":
-      default:
-        setIsAnalysisInProgress(false);
-        break;
-    }
-  }, [currentMoodboard?.style_analysis_status]);
-
-  const shouldShowCreationInterface = () => {
-    return (
-      isCreatingNewMoodboard ||
-      (!currentMoodboard && currentCampaignMoodboards.length === 0)
-    );
-  };
 
   const handleCreateNewMoodboard = () => {
     resetToNewMoodboardState();
@@ -645,19 +264,21 @@ export const MoodboardSection: React.FC<{
   };
 
   useEffect(() => {
-    console.log(
-      "current moodboard status",
-      currentMoodboard?.moodboard_generation_status
-    );
-    if (currentMoodboard?.moodboard_generation_status === "in_progress") {
+    if (
+      currentMoodboard?.moodboard_generation_status === "in_progress" ||
+      galleryActions.isFetching
+    ) {
       setIsMoodboardGenerating(true);
     } else {
       setIsMoodboardGenerating(false);
     }
-  }, [currentMoodboard?.moodboard_generation_status]);
+  }, [
+    currentMoodboard?.moodboard_generation_status,
+    galleryActions.isFetching,
+  ]);
 
   const handleGenerateMoodboard = async () => {
-    if (!currentMoodboard || currentMoodboard.visual_style_images.length < 10) {
+    if (!currentMoodboard || galleryActions.totalItems < 10) {
       toast.warning(
         "Please add at least 10 visual style images to generate a moodboard."
       );
@@ -698,12 +319,8 @@ export const MoodboardSection: React.FC<{
       });
     } finally {
       // setIsMoodboardGenerating(false);
-      console.log("generation end here");
     }
   };
-
-  // Calculate if we should show any loading state
-  const isProcessing = isAnalysisInProgress || isAddingToGallery;
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -769,22 +386,41 @@ export const MoodboardSection: React.FC<{
             )}
           </div>
 
-          <div className="absolute right-3 top-6 flex gap-x-2">
-            {campaignInformation && currentCampaign && (
+          <div className="absolute right-3 top-7 flex items-center gap-x-2">
+            {campaignInformation && currentCampaign ? (
               <MoodboardSelector
-                campaignId={currentCampaign?.id}
+                campaignId={currentCampaign.id}
                 moodboards={moodboardInformation || []}
                 selectedMoodboard={currentMoodboard}
                 setSelectedMoodboard={handleMoodboardSelect}
                 onNewMoodboard={handleCreateNewMoodboard}
                 isCreatingNew={isCreatingNewMoodboard}
               />
+            ) : (
+              <Popover open={openPopover} onOpenChange={setOpenPopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <SearchIcon size={10} className="text-black" />
+                    {`Select Moodboard`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandEmpty>No Existing Moodboard</CommandEmpty>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
 
             {isCreatingNewMoodboard ? (
               <TooltipIconButton
                 tooltip="Cancel"
-                className="mt-2"
+                className="p-4"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCancelNewMoodboard();
@@ -794,12 +430,12 @@ export const MoodboardSection: React.FC<{
               </TooltipIconButton>
             ) : (
               <TooltipIconButton
-                tooltip="Create new moodboard"
+                tooltip="New Moodboard"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCreateNewMoodboard();
                 }}
-                className="mt-2"
+                className="p-4"
                 size={"lg"}
               >
                 <CirclePlus className="size-5" />
@@ -810,180 +446,124 @@ export const MoodboardSection: React.FC<{
       </CardHeader>
 
       {expanded && (
-        <div>
-          <CardContent>
-            {currentCampaign && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="pt-0 pb-6"
-              >
-                <div className="mt-1 space-y-6">
-                  <MoodboardOverview
-                    title={currentCampaign?.campaign?.title}
-                    description={currentCampaign?.campaign?.description}
-                    tone={currentCampaign?.campaign?.tone}
-                    campaignId={currentCampaign.id}
-                  />
-                </div>
-              </motion.div>
-            )}
-
-            <ContentSection
-              title={`Choose your visual aesthetic `}
-              content={
-                <div>
-                  {currentCampaign && currentMoodboard && (
-                    <MoodboardVisualSectionHeader
-                      currentMoodboard={currentMoodboard}
-                      isCreatingNewMoodboard={isCreatingNewMoodboard}
-                      galleryItems={getGalleryItems() || []}
-                      brandName={brandInformation?.static?.brand?.name}
-                      currentCampaign={currentCampaign}
-                      moodboard={currentMoodboard}
+        <>
+          <div>
+            <CardContent>
+              {currentCampaign && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="pt-0 pb-6"
+                >
+                  <div className="mt-1 space-y-6">
+                    <MoodboardOverview
+                      title={currentCampaign?.campaign?.title}
+                      description={currentCampaign?.campaign?.description}
+                      tone={currentCampaign?.campaign?.tone}
+                      campaignId={currentCampaign.id}
                     />
-                  )}
+                  </div>
+                </motion.div>
+              )}
 
-                  <div>
-                    {selectedBrandId && shouldShowCreationInterface() && (
-                      <div className="grid grid-cols-1 bg-white lg:grid-cols-2 gap-6">
-                        {/* Left Column - File Upload */}
-                        <div className="space-y-4">
-                          <MoodboardReferenceDropzone
-                            onDrop={onDrop}
-                            uploadedImages={uploadedImages}
-                          />
-                          <MoodboardReferenceUploadStatus
-                            isUploading={isUploading}
-                            uploadError={uploadError}
-                          />
-                        </div>
-
-                        {/* Right Column - Social Options */}
-                        <MoodboardSocialOptions
-                          socialOptions={socialOptions}
-                          selectedOptions={selectedOptions}
-                          updateEditValue={updateEditValue}
-                          saveEdit={saveEdit}
-                          cancelEditing={cancelEditing}
-                          startEditing={startEditing}
-                          toggleOption={toggleOption}
-                          limits={limits}
-                          setLimits={setLimits}
+              {currentMoodboard?.aggregated_tags && (
+                <ContentSection
+                  title={`Choose your visual aesthetic `}
+                  content={
+                    <div>
+                      {currentCampaign && currentMoodboard && (
+                        <MoodboardVisualSectionHeader
+                          currentMoodboard={currentMoodboard}
+                          isCreatingNewMoodboard={isCreatingNewMoodboard}
+                          brandName={brandInformation?.static?.brand?.name}
+                          currentCampaign={currentCampaign}
+                          moodboard={currentMoodboard}
+                          galleryActions={galleryActions}
                         />
-                      </div>
-                    )}
-
-                    {currentMoodboard && !isCreatingNewMoodboard && (
-                      <MoodboardStyleAnalysisStatus
-                        progress={currentMoodboard?.style_analysis_progress}
-                        status={currentMoodboard?.style_analysis_status}
-                        progressMessages={
-                          currentMoodboard?.style_analysis_progress_messages
-                        }
-                        retryAnalysis={handleFindStyle}
-                        isAnalysisInProgress={isAnalysisInProgress}
-                      />
-                    )}
-
-                    {currentMoodboard?.aggregated_tags &&
-                      Object.keys(currentMoodboard?.aggregated_tags).length >
-                        0 &&
-                      !isCreatingNewMoodboard && (
+                      )}
+                      <div>
                         <div className="mt-8">
                           <MoodboardTagsSelector
                             moodboard={currentMoodboard}
                             onHasChanges={setHasUnsavedTagChanges}
                             onTagsChange={setLocalTags}
+                            brandTags={moodboardTags}
                           />
-
-                          <div className="mt-8 w-full mb-5 ">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="w-full mt-8 mb-5">
-                                  <Button
-                                    onClick={handleGenerateMoodboard}
-                                    className="w-full"
-                                    disabled={
-                                      currentMoodboard.moodboard_generation_status ===
-                                        "in_progress" || isMoodboardGenerating
-                                    }
-                                  >
-                                    {currentMoodboard.moodboard_generation_status ===
-                                      "in_progress" || isMoodboardGenerating ? (
-                                      <span className="flex items-center gap-2">
-                                        <Loader className="animate-spin text-white" />
-                                        Generating...
-                                      </span>
-                                    ) : (
-                                      <>
-                                        <MoodboardIcon />
-                                        Generate Moodboard
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </TooltipTrigger>
-
-                              {currentMoodboard.visual_style_images.length <
-                                10 && (
-                                <TooltipContent>
-                                  Add at least 10 visual style images to
-                                  generate a moodboard
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          </div>
                         </div>
-                      )}
+                        {!isCreatingNewMoodboard && currentMoodboard && (
+                          <div className="mt-4">
+                            <Button
+                              onClick={handleGenerateMoodboard}
+                              className="w-full"
+                              disabled={
+                                currentMoodboard.moodboard_generation_status ===
+                                  "in_progress" || isMoodboardGenerating
+                              }
+                            >
+                              {currentMoodboard.moodboard_generation_status ===
+                                "in_progress" || isMoodboardGenerating ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader className="animate-spin text-white" />
+                                  Generating...
+                                </span>
+                              ) : (
+                                <>
+                                  <MoodboardIcon />
+                                  Generate Moodboard
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
 
-                    {selectedBrandId &&
-                      currentMoodboard &&
-                      currentCampaign &&
-                      moodboardInformation &&
-                      !isCreatingNewMoodboard && (
-                        <MoodboardLayout
-                          brandId={selectedBrandId}
-                          moodboard={currentMoodboard}
-                          noOfImagesForMoodboard={noOfImagesForMoodboard}
-                          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-                          isGenerating={
-                            currentMoodboard?.moodboard_generation_status ===
-                              "in_progress" || isMoodboardGenerating
-                          }
-                          isCreatingNew={isCreatingNewMoodboard}
-                          moodboards={moodboardInformation}
-                          onNewMoodboard={handleCreateNewMoodboard}
-                          selectedMoodboard={currentMoodboard}
-                          setSelectedMoodboard={handleMoodboardSelect}
-                          handleGenerateMoodboard={handleGenerateMoodboard}
-                        />
-                      )}
-                  </div>
-                  <MoodboardFindStyleDialog
-                    currentMoodboard={currentMoodboard}
-                    currentCampaign={currentCampaign}
-                    uploadedImages={uploadedImages}
-                    selectedOptions={selectedOptions}
-                    socialOptions={socialOptions}
-                    isAnalysisInProgress={isProcessing}
-                    setIsAnalysisInProgress={setIsAnalysisInProgress}
-                    handleFindStyle={handleFindStyle}
-                    imageCount={totalImageCount}
-                  />
+                        {selectedBrandId &&
+                          currentMoodboard &&
+                          currentCampaign &&
+                          moodboardInformation &&
+                          !isCreatingNewMoodboard && (
+                            <MoodboardLayout
+                              brandId={selectedBrandId}
+                              moodboard={currentMoodboard}
+                              noOfImagesForMoodboard={noOfImagesForMoodboard}
+                              setNoOfImagesForMoodboard={
+                                setNoOfImagesForMoodboard
+                              }
+                              isGenerating={
+                                currentMoodboard?.moodboard_generation_status ===
+                                  "in_progress" || isMoodboardGenerating
+                              }
+                              isCreatingNew={isCreatingNewMoodboard}
+                              moodboards={moodboardInformation}
+                              onNewMoodboard={handleCreateNewMoodboard}
+                              selectedMoodboard={currentMoodboard}
+                              setSelectedMoodboard={handleMoodboardSelect}
+                              handleGenerateMoodboard={handleGenerateMoodboard}
+                            />
+                          )}
+                      </div>
+                    </div>
+                  }
+                  context={undefined}
+                />
+              )}
+
+              {(isCreatingNewMoodboard || !moodboardInformation) && (
+                <div className="mt-4">
+                  <Button className="w-full" onClick={handleCreateMoodboard}>
+                    Create Moodboard
+                  </Button>
                 </div>
-              }
-              context={undefined}
-            />
-            {currentMoodboard && !isCreatingNewMoodboard && (
-              <MoodboardTagResults
-                moodboardId={currentMoodboard.id}
-                moodboard_tags={currentMoodboard?.moodboard_tags}
-              />
-            )}
-          </CardContent>
-        </div>
+              )}
+              {currentMoodboard && !isCreatingNewMoodboard && (
+                <MoodboardTagResults
+                  moodboardId={currentMoodboard.id}
+                  moodboard_tags={currentMoodboard?.moodboard_tags}
+                />
+              )}
+            </CardContent>
+          </div>
+        </>
       )}
     </Card>
   );

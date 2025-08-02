@@ -101,7 +101,7 @@ export const getUserTableColumns = (
       const [showAllBrands, setShowAllBrands] = useState(false);
       const role = row.original.role?.id;
       if (role === "KK-ADMIN") {
-        return <p className="italic">Admin have access to all brands</p>;
+        return <p className="italic">All brands</p>;
       }
 
       return row.original.brand_access!.length ? (
@@ -137,6 +137,7 @@ export const getUserTableColumns = (
   {
     id: "actions",
     cell: ({ row }) => {
+      const [open, setOpen] = useState(false);
       const [isActionsDisabled, setIsActionsDisabled] = useState(false);
       const queryClient = useQueryClient();
 
@@ -169,49 +170,50 @@ export const getUserTableColumns = (
       };
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild className="ml-auto flex">
-            <Button variant="ghost" size="icon" className="">
-              <EllipsisIcon className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-max">
-            {row.original.status === UserStatus.ACTIVE && (
-              <>
-                <EditUser user={row.original}>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="ml-auto flex">
+              <Button variant="ghost" size="icon" className="">
+                <EllipsisIcon className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-max">
+              {row.original.status === UserStatus.ACTIVE && (
+                <>
                   <DropdownMenuItem
                     disabled={
                       isActionsDisabled || row.original.is_default_admin
                     }
-                    onSelect={(e) => e.preventDefault()}
+                    onClick={() => setOpen(true)}
                   >
                     Edit
                   </DropdownMenuItem>
-                </EditUser>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            {row.original.invitation_link && (
-              <>
-                <DropdownMenuItem
-                  disabled={isActionsDisabled}
-                  onClick={handleResendInvite}
-                >
-                  Resend Invite
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {row.original.invitation_link && (
+                <>
+                  <DropdownMenuItem
+                    disabled={isActionsDisabled}
+                    onClick={handleResendInvite}
+                  >
+                    Resend Invite
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
 
-            <DropdownMenuItem
-              variant="destructive"
-              disabled={isActionsDisabled || row.original.is_default_admin}
-              onClick={handleRevokeAccess}
-            >
-              Revoke Access
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isActionsDisabled || row.original.is_default_admin}
+                onClick={handleRevokeAccess}
+              >
+                Revoke Access
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <EditUser user={row.original} isOpen={open} setIsOpen={setOpen} />
+        </>
       );
     },
   },

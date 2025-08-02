@@ -7,11 +7,10 @@ import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { BrandColors } from "./BrandColors";
-import { BrandMedia } from "./BrandMedia";
 import { BrandOverview } from "./BrandOverview";
 import BrandSelector from "./BrandSelector";
 import { BrandTargetAudience } from "./BrandTargetAudience";
-import { Agents, ThreadBrand } from "@/types/types";
+import { Agents, AnalysisLogDetail, ThreadBrand } from "@/types/types";
 import { BrandProducts } from "./BrandProducts";
 import { BrandTypography } from "./BrandTypography";
 import BrandPurpose from "./BrandPurpose";
@@ -29,6 +28,8 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { BrandAestheticUploader } from "./BrandAestheticUploader";
+import { BrandMedia } from "./BrandMedia";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -37,15 +38,19 @@ export const BrandSection: React.FC<{
     React.SetStateAction<{ [key: string]: boolean }>
   >;
   clearPinnedItems: () => void;
+  analysisLogs: AnalysisLogDetail[];
 }> = ({
   brandingInformation,
   expandedSections,
   setExpandedSections,
   clearPinnedItems,
+  analysisLogs,
 }) => {
   if (!brandingInformation) {
     return <InitialPlaceHolder />;
   }
+
+  console.log(brandingInformation);
   return (
     <div className="flex flex-col gap-4">
       <div key={`brand-message-${brandingInformation?.static?.name}`}>
@@ -59,7 +64,8 @@ export const BrandSection: React.FC<{
           brandingInformation.static,
           brandingInformation.dynamic,
           brandingInformation.brand_media,
-          clearPinnedItems
+          clearPinnedItems,
+          analysisLogs
         )}
       </div>
     </div>
@@ -72,8 +78,10 @@ export const renderBrandData = (
   staticData: ThreadBrand["static"],
   dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
-  clearPinnedItems: () => void
+  clearPinnedItems: () => void,
+  analysisLogs: AnalysisLogDetail[]
 ) => {
+  console.log("ana", analysisLogs);
   const brandName = staticData?.brand?.name || "No Brand Name";
   const brandInitial = brandName.charAt(0).toUpperCase();
   const allColors = extractAllColors(staticData);
@@ -124,8 +132,8 @@ export const renderBrandData = (
                   <div className="text-xs text-[#6e7787]">
                     Set up, switch, and modify your Brand
                   </div>
-                  <div className="absolute right-3 top-6 ">
-                    <div className="flex justify-between gap-x-2">
+                  <div className="absolute right-3 top-7">
+                    <div className="flex justify-between items-center gap-x-2">
                       <div>
                         <BrandSelector />
                       </div>
@@ -191,8 +199,8 @@ export const renderBrandData = (
                   isTextarea={false}
                 />
 
-                <div className="absolute right-3 top-6 ">
-                  <div className="flex justify-between gap-x-2">
+                <div className="absolute right-3 top-7">
+                  <div className="flex justify-between items-center gap-x-2">
                     <div>
                       <BrandSelector />
                     </div>
@@ -223,7 +231,7 @@ export const renderBrandData = (
       </CardHeader>
 
       {expandedSections.brandOverview && (
-        <CardContent className="pt-0  pb-6">
+        <CardContent className="pt-0 pb-6">
           <div className="mt-1 space-y-6">
             <BrandOverview
               tagline={staticData?.brand?.tagline}
@@ -256,11 +264,13 @@ export const renderBrandData = (
             <BrandProducts products={staticData?.products || []} />
 
             <BrandTargetAudience targetAudience={staticData?.target_audience} />
-
-            <BrandMedia
-              socialMedia={staticData?.social_media}
-              brandMedia={brandMedia}
+            {/* Brand Media Upload Section */}
+            <BrandAestheticUploader
+              brandId={selectedBrandId}
+              socialMediaData={staticData?.social_media}
+              analysisLogs={analysisLogs ?? []}
             />
+            <BrandMedia />
 
             <AnimatePresence>
               {showDynamicData && (

@@ -1,13 +1,11 @@
 import { Checkpoint } from "@langchain/langgraph-sdk";
 import React, { Dispatch, SetStateAction, useCallback, useMemo } from "react";
 import { HumanMessage } from "../thread/messages/human";
-import {
-  AssistantMessage,
-  AssistantMessageLoading,
-} from "../thread/messages/ai";
+import { AssistantMessage } from "../thread/messages/ai";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { parseAsBoolean, useQueryState } from "nuqs";
+import { AssistantMessageLoader } from "../thread/messages/AssistantMessageLoader";
 
 type ChatMessageListProps = {
   firstTokenReceived: boolean;
@@ -22,7 +20,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
 }) => {
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(true)
   );
 
   const { messages, isLoading, interrupt, values, submit } = useStreamContext();
@@ -85,7 +83,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
         />
       )}
 
-      {isLoading && !firstTokenReceived && <AssistantMessageLoading />}
+      {isLoading && !firstTokenReceived && <AssistantMessageLoader />}
 
       {agentIndicator}
     </>

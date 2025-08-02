@@ -60,6 +60,7 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
             textClassName="text-sm text-gray-700"
             showLabel={false}
             isTextarea={true}
+            enableEdit={false}
           />
 
           {/* Values */}
@@ -89,6 +90,7 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
                     }
                   }}
                   showLabel={false}
+                  enableEdit={false}
                 />
               </div>
             </div>

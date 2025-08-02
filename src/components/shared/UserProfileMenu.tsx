@@ -10,9 +10,10 @@ import { useUserStore } from "@/store/user.store";
 import { Separator } from "../ui/separator";
 import { LogoutButton } from "./LogoutButton";
 import QueueProgress from "./QueueProgress";
+import { CreditIcon } from "../ui/custom-icon";
 
 export function UserProfileMenu({}) {
-  const { user } = useUserStore();
+  const { user, credits } = useUserStore();
 
   const getUserInitials = () => {
     if (!user?.name) return "U";
@@ -24,7 +25,14 @@ export function UserProfileMenu({}) {
   };
 
   return (
-    <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
+    <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">
+      {credits && (
+        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
+          <span className="text-xs">{credits}</span>
+          <CreditIcon className="w-2 h-2" />
+        </div>
+      )}
+
       <div className="hidden sm:block">
         <QueueProgress />
       </div>
@@ -32,17 +40,19 @@ export function UserProfileMenu({}) {
       {/* User Profile with Popover */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative h-10 w-10 rounded-full p-0 cursor-pointer"
-          >
-            <Avatar className="h-10 w-10">
-              <AvatarImage alt={user?.name || "User"} />
-              <AvatarFallback className="bg-purple-100 text-purple-600">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
+          <div className="flex flex-col items-center justify-center relative">
+            <Button
+              variant="ghost"
+              className="relative h-10 w-10 rounded-full p-0 cursor-pointer"
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage alt={user?.name || "User"} />
+                <AvatarFallback className="bg-purple-100 text-purple-600">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-72 p-0 overflow-hidden" align="end">
           {/* User Info Section */}

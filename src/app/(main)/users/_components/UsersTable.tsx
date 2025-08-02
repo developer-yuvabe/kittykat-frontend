@@ -64,7 +64,8 @@ export const UsersTable = () => {
   });
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-4 h-full flex flex-col">
+      {/* --- Top Controls --- */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold leading-0">User Management</h1>
@@ -99,82 +100,87 @@ export const UsersTable = () => {
           <InviteUser />
         </div>
       </div>
-      <div className="flex flex-col flex-1 h-[85%] border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader className="sticky top-0 bg-muted z-10 border-b border-muted-foreground">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody className="mb-40">
-            {isLoading ? (
-              Array.from({ length: limit }).map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((_, idx) => (
-                    <TableCell key={idx}>
-                      <Skeleton className="h-6 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center italic text-base py-20"
-                >
-                  No users found
-                </TableCell>
-              </TableRow>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+      {/* --- Table Wrapper --- */}
+      <div className="flex flex-col flex-1 min-h-0 border rounded-lg overflow-hidden">
+        {/* --- Scrollable Table --- */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted z-10 border-b border-muted-foreground">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
                       {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+                        header.column.columnDef.header,
+                        header.getContext()
                       )}
-                    </TableCell>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="py-2 px-4 flex items-center justify-end gap-x-4">
-        {!isLoading && (
-          <span className="text-sm">
-            Showing {(page - 1) * limit + 1}-
-            {Math.min(page * limit, data?.pagination.total || 0)} of{" "}
-            {data?.pagination.total || 0} users
-          </span>
-        )}
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: limit }).map((_, i) => (
+                  <TableRow key={i}>
+                    {columns.map((_, idx) => (
+                      <TableCell key={idx}>
+                        <Skeleton className="h-6 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="text-center italic text-base py-20"
+                  >
+                    No users found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {/* --- Sticky Footer --- */}
+        <div className="py-2 px-4 flex items-center justify-end gap-x-4 bg-white border-t">
+          {!isLoading && (
+            <span className="text-sm">
+              Showing {(page - 1) * limit + 1}-
+              {Math.min(page * limit, data?.pagination.total || 0)} of{" "}
+              {data?.pagination.total || 0} users
+            </span>
+          )}
 
-        <Button
-          variant="outline"
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={page === 1 || isLoading}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setPage((prev) => prev + 1)}
-          disabled={data ? data.users.length < limit : true || isLoading}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
+          <Button
+            variant="outline"
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={page === 1 || isLoading}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setPage((prev) => prev + 1)}
+            disabled={data ? data.users.length < limit : true || isLoading}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

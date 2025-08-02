@@ -38,7 +38,7 @@ export function MediaLibraryDialog({
 }: MediaLibraryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90%] min-w-6xl overflow-y-scroll p-0">
+      <DialogContent className="max-h-[90%] min-w-6xl overflow-y-scroll p-6">
         <div className="px-4">
           <MediaLibrary
             activeTab="all-media"
@@ -53,6 +53,7 @@ export function MediaLibraryDialog({
             inSelectionGalleryIds={inSelectionGalleryIds}
             isMultiSelect={isMultiSelect}
             maxSelectionCount={maxSelectionCount}
+            hideHeader={true}
           />
         </div>
       </DialogContent>

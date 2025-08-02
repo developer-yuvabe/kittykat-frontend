@@ -13,7 +13,6 @@ import {
   type UIMessage,
   type RemoveUIMessage,
 } from "@langchain/langgraph-sdk/react-ui";
-import { useQueryState } from "nuqs";
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { env } from "@/config/env";
 import { useUserStore } from "@/store/user.store";
@@ -97,33 +96,17 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { user, setUser } = useUserStore();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [hideToolCalls, setHideToolCalls] = useQueryState("hideToolCalls");
   const [cahedData, setCachedData] = useState<StateType | null>(null);
 
   useEffect(() => {
     const initializeParams = async () => {
       try {
-        const hideToolCallsToSet = hideToolCalls || "true";
-        const promises = [];
-
-        if (!hideToolCalls || hideToolCalls !== hideToolCallsToSet) {
-          promises.push(setHideToolCalls(hideToolCallsToSet));
-        }
-
-        if (promises.length > 0) {
-          await Promise.all(promises);
-        }
-
         if (user?.thread_id) {
           try {
-            console.time("Fetch thread");
-
             const threadData = await client.threads.get<StateType>(
               user.thread_id
             );
             setCachedData(threadData.values);
-
-            console.timeEnd("Fetch thread");
           } catch (error: any) {
             if (error?.status === 404 || error?.response?.status === 404) {
               updateUser(user!.id, {

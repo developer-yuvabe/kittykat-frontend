@@ -10,15 +10,13 @@ import type {
   BrandCampaignListResponse,
   MediaWithStatus,
   GalleryItem,
+  BulkGalleryUploadRequest,
 } from "@/types/gallery.types";
-import {
-  acceptedFileTypes,
-  createGalleryItemFromFile,
-  getAssetTypeFromUrl,
-} from "@/lib/gallery.utils";
+import { acceptedFileTypes, getAssetTypeFromUrl } from "@/lib/gallery.utils";
 import { MediaUploadActions } from "./MediaUploadActions";
 import { MediaUploadStatus } from "./MediaUploadStatus";
 import { MediaUploadDropzoneArea } from "./MediaUploadDropzoneArea";
+import { getExtensionFromUrl } from "@/lib/utils";
 
 interface MediaUploadDropzoneProps {
   activeTab: string;
@@ -41,7 +39,6 @@ export function MediaUploadDropzone({
   addToGallery = true,
   galleryFilters = {},
   selectedBrand,
-
   brands,
   brandsLoading,
   selectedCampaignId,
@@ -49,8 +46,9 @@ export function MediaUploadDropzone({
 }: MediaUploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
 
-  const { addToGallery: addToGalleryMutation } = useGalleryQuery(
+  const { bulkUpload } = useGalleryQuery(
     galleryFilters,
     ITEMS_PER_PAGE,
     false,
@@ -67,13 +65,23 @@ export function MediaUploadDropzone({
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
       "video/x-msvideo": [".avi"],
+      "image/tiff": [".tiff", ".tif"],
+      "image/webp": [".webp"],
+      "image/bmp": [".bmp"],
+      "image/gif": [".gif"],
+      "image/psd": [".psd"],
     },
     text: "PNG, JPEG, MP4",
     placeholder: "Drop media here to upload",
-    assetType: "image", // Default, overridden by getAssetTypeFromFile
+    assetType: "image",
   };
 
   const uploadFiles = async (files: File[]) => {
+    if (!selectedBrand?.brand_id) {
+      toast.error("No brand selected.");
+      return;
+    }
+
     setIsUploading(true);
     const newItemsWithStatus: MediaWithStatus[] = files.map((file) => ({
       name: file.name,
@@ -84,78 +92,111 @@ export function MediaUploadDropzone({
 
     setMediaWithStatus((prev) => [...prev, ...newItemsWithStatus]);
 
-    const uploadPromises = files.map(async (file, index) => {
-      const itemIndex = mediaWithStatus.length + index;
-
-      try {
-        setMediaWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === itemIndex ? { ...item, status: "uploading" } : item
-          )
-        );
-
-        const url = await uploadFileAndReturnUrl(
-          file.name,
-          file.type,
-          "brands",
-          file,
-          selectedBrand?.brand_id || null,
-          selectedCampaignId || null
-        );
-
-        if (addToGallery && selectedBrand) {
-          try {
-            const galleryItem = await createGalleryItemFromFile(
-              file,
-              url,
-              galleryFilters,
-              activeTab,
-              selectedBrand?.brand_id,
-              selectedCampaignId,
-              selecteMoodboardId
-            );
-            addToGalleryMutation(galleryItem);
-          } catch (galleryError) {
-            console.warn("Failed to add to gallery:", galleryError);
-          }
-        }
-
-        setMediaWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === itemIndex ? { ...item, status: "success", url } : item
-          )
-        );
-
-        return url;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Upload failed";
-
-        setMediaWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === itemIndex
-              ? { ...item, status: "error", error: errorMessage }
-              : item
-          )
-        );
-
-        throw error;
-      }
-    });
-
     try {
-      const urls = await Promise.allSettled(uploadPromises);
-      const successfulUrls = urls
+      // First, upload all files to GCS
+      const uploadPromises = files.map(async (file, index) => {
+        const itemIndex = mediaWithStatus.length + index;
+
+        try {
+          setMediaWithStatus((prev) =>
+            prev.map((item, idx) =>
+              idx === itemIndex ? { ...item, status: "uploading" } : item
+            )
+          );
+
+          const url = await uploadFileAndReturnUrl(
+            file.name,
+            file.type,
+            "brands",
+            file,
+            selectedBrand.brand_id,
+            selectedCampaignId || null
+          );
+
+          setMediaWithStatus((prev) =>
+            prev.map((item, idx) =>
+              idx === itemIndex ? { ...item, status: "success", url } : item
+            )
+          );
+
+          return { file, url };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Upload failed";
+
+          setMediaWithStatus((prev) =>
+            prev.map((item, idx) =>
+              idx === itemIndex
+                ? { ...item, status: "error", error: errorMessage }
+                : item
+            )
+          );
+
+          throw error;
+        }
+      });
+
+      const uploadResults = await Promise.allSettled(uploadPromises);
+      const successfulUploads = uploadResults
         .filter(
-          (result): result is PromiseFulfilledResult<string> =>
+          (
+            result
+          ): result is PromiseFulfilledResult<{ file: File; url: string }> =>
             result.status === "fulfilled"
         )
         .map((result) => result.value);
 
-      const failedCount = urls.length - successfulUrls.length;
+      const failedCount = uploadResults.length - successfulUploads.length;
 
-      if (successfulUrls.length > 0) {
-        onUploadComplete?.(successfulUrls);
+
+      if (successfulUploads.length > 0) {
+        const urls = successfulUploads.map(({ url }) => url);
+        onUploadComplete?.(urls);
+
+        // If addToGallery is enabled, bulk upload to gallery
+        if (addToGallery) {
+          const itemsToUpload: GalleryItem[] = successfulUploads.map(
+            ({ file, url }) => ({
+              brand_id: selectedBrand.brand_id,
+              asset_url: url,
+              asset_title: file.name,
+              asset_type: file.type.startsWith("video/") ? "video" : "image",
+              asset_source: activeTab,
+              size: `${file.size}`,
+              search_keywords: [],
+              custom_tags: [],
+              related_asset_ids: [],
+              prompt_modifiers: [],
+              ai_tags: [],
+              visual_style_tags: {},
+              detected_objects: [],
+              detected_emotions: [],
+              detected_colors: [],
+              media_format: getExtensionFromUrl(url),
+              campaign_id: selectedCampaignId,
+              moodboard_id: selecteMoodboardId,
+              is_master: true,
+            })
+          );
+
+          const bulkUploadPayload: BulkGalleryUploadRequest = {
+            gallery_items: itemsToUpload,
+            brand_id: selectedBrand.brand_id,
+            scrape_only: false,
+          };
+
+          try {
+            await bulkUpload(bulkUploadPayload);
+            toast.success(
+              `${successfulUploads.length} file(s) uploaded to gallery successfully!`
+            );
+          } catch (galleryError) {
+            console.error("Gallery bulk upload failed:", galleryError);
+            toast.error(
+              "Files uploaded but failed to add to gallery. Please try again."
+            );
+          }
+        }
       }
 
       if (failedCount > 0) {
@@ -165,7 +206,7 @@ export function MediaUploadDropzone({
         );
       }
     } catch (error) {
-      console.error(error);
+      console.error("Upload process failed:", error);
       toast.error("Upload failed", {
         description: "Please try again",
         duration: 3000,
@@ -176,6 +217,11 @@ export function MediaUploadDropzone({
   };
 
   const handleUrlUpload = async (urls: string[]) => {
+    if (!selectedBrand?.brand_id) {
+      toast.error("No brand selected.");
+      return;
+    }
+
     setIsUploading(true);
     const newItemsWithStatus: MediaWithStatus[] = urls.map((url) => ({
       name: url.split("/").pop() || url,
@@ -186,103 +232,92 @@ export function MediaUploadDropzone({
 
     setMediaWithStatus((prev) => [...prev, ...newItemsWithStatus]);
 
-    const uploadPromises = urls.map(async (url, index) => {
-      const itemIndex = mediaWithStatus.length + index;
-
-      try {
-        // Update status to uploading
-        setMediaWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === itemIndex ? { ...item, status: "uploading" } : item
-          )
-        );
-
-        // Add to gallery if enabled
-        if (addToGallery && selectedBrand) {
-          try {
-            // Get extension from URL
-            const extension =
-              url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase() || "";
-            const assetType = getAssetTypeFromUrl(url);
-            const galleryItem: GalleryItem = {
-              brand_id: selectedBrand.brand_id,
-              asset_url: url,
-              asset_source: activeTab,
-              asset_type: "image" === assetType ? "image" : "video",
-              media_format: extension,
-              asset_title: url.split("/").pop() || url,
-              size: "",
-              related_asset_ids: [],
-              prompt_modifiers: [],
-              ai_tags: [],
-              visual_style_tags: [],
-              detected_objects: [],
-              detected_emotions: [],
-              detected_colors: [],
-              search_keywords: [],
-              custom_tags: [],
-              campaign_id: selectedCampaignId,
-              moodboard_id: selecteMoodboardId,
-              is_master: true,
-            };
-            console.log("Adding to gallery:", galleryItem);
-            addToGalleryMutation(galleryItem);
-          } catch (galleryError) {
-            console.warn("Failed to add to gallery:", galleryError);
-            // Don't fail the upload if gallery addition fails
-          }
-        }
-
-        // Update status to success
-        setMediaWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === itemIndex ? { ...item, status: "success", url } : item
-          )
-        );
-
-        return url;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "URL upload failed";
-
-        // Update status to error
-        setMediaWithStatus((prev) =>
-          prev.map((item, idx) =>
-            idx === itemIndex
-              ? { ...item, status: "error", error: errorMessage }
-              : item
-          )
-        );
-
-        throw error;
-      }
-    });
-
     try {
-      const results = await Promise.allSettled(uploadPromises);
-      const successfulUrls = results
-        .filter(
-          (result): result is PromiseFulfilledResult<string> =>
-            result.status === "fulfilled"
-        )
-        .map((result) => result.value);
+      // Validate and process URLs
+      const validUrls = urls.filter((url) => {
+        try {
+          new URL(url);
+          return true;
+        } catch {
+          return false;
+        }
+      });
 
-      const failedCount = results.length - successfulUrls.length;
-
-      if (successfulUrls.length > 0) {
-        onUploadComplete?.(successfulUrls);
+      if (validUrls.length === 0) {
+        toast.error("No valid URLs provided");
+        return;
       }
 
-      if (failedCount > 0) {
-        toast.error(
-          `${failedCount} URL${failedCount > 1 ? "s" : ""} failed to upload`,
-          {
-            description: "Please try again",
-            duration: 3000,
-          }
+      // Update status for all items to uploading
+      setMediaWithStatus((prev) =>
+        prev.map((item) =>
+          item.type === "url" ? { ...item, status: "uploading" } : item
+        )
+      );
+
+      // If addToGallery is enabled, bulk upload URLs to gallery
+      if (addToGallery) {
+        const itemsToUpload: GalleryItem[] = validUrls.map((url) => {
+          const extension = getExtensionFromUrl(url);
+          const assetType = getAssetTypeFromUrl(url);
+
+          return {
+            brand_id: selectedBrand.brand_id,
+            asset_url: url,
+            asset_source: activeTab,
+            asset_type: assetType === "video" ? "video" : "image",
+            media_format: extension,
+            asset_title: url.split("/").pop() || url,
+            size: "",
+            related_asset_ids: [],
+            prompt_modifiers: [],
+            ai_tags: [],
+            visual_style_tags: {},
+            detected_objects: [],
+            detected_emotions: [],
+            detected_colors: [],
+            search_keywords: [],
+            custom_tags: [],
+            campaign_id: selectedCampaignId,
+            moodboard_id: selecteMoodboardId,
+            is_master: true,
+          };
+        });
+
+        const bulkUploadPayload: BulkGalleryUploadRequest = {
+          gallery_items: itemsToUpload,
+          brand_id: selectedBrand.brand_id,
+          scrape_only: false,
+        };
+
+        await bulkUpload(bulkUploadPayload);
+        toast.success(
+          `${validUrls.length} URL(s) uploaded to gallery successfully!`
         );
       }
+
+      // Update status to success for all items
+      setMediaWithStatus((prev) =>
+        prev.map((item) =>
+          item.type === "url"
+            ? { ...item, status: "success", url: item.originalUrl }
+            : item
+        )
+      );
+
+      onUploadComplete?.(validUrls);
     } catch (error) {
+      console.error("URL upload failed:", error);
+
+      // Update status to error for all URL items
+      setMediaWithStatus((prev) =>
+        prev.map((item) =>
+          item.type === "url"
+            ? { ...item, status: "error", error: "URL upload failed" }
+            : item
+        )
+      );
+
       toast.error("URL upload failed", {
         description: "Please try again",
         duration: 3000,
@@ -315,7 +350,7 @@ export function MediaUploadDropzone({
     onDrop,
     multiple: true,
     accept: currentConfig.types,
-    disabled: isUploading,
+    disabled: isUploading || isUrlDialogOpen,
   });
 
   const isDisabled = isUploading || brands.length === 0 || brandsLoading;
@@ -334,6 +369,8 @@ export function MediaUploadDropzone({
           isDisabled={isDisabled}
           isUploading={isUploading}
           onUrlUpload={handleUrlUpload}
+          isUrlDialogOpen={isUrlDialogOpen}
+          setIsUrlDialogOpen={setIsUrlDialogOpen}
         />
 
         <MediaUploadStatus

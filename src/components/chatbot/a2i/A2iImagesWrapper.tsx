@@ -35,11 +35,9 @@ import { updateA2iImagePositions } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
-import { UseFormReturn } from "react-hook-form";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
-  form: UseFormReturn<any>;
   formRef: RefObject<HTMLDivElement | null>;
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
 };
@@ -56,7 +54,6 @@ const getItemTrackingId = (item: A2iImageCardProps): string => {
 
 export const A2iImagesWrapper = ({
   generations,
-  form,
   formRef,
   referenceMoodboardId,
 }: A2iImagesWrapperProps) => {
@@ -268,10 +265,7 @@ export const A2iImagesWrapper = ({
               </div>
             </SortableContext>
           </DndContext>
-          <A2iImageInput
-            form={form}
-            referenceMoodboardId={referenceMoodboardId}
-          />
+          <A2iImageInput referenceMoodboardId={referenceMoodboardId} />
         </div>
       }
     />

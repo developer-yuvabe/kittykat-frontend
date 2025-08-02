@@ -1,7 +1,12 @@
 import React from "react";
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
 import { v4 as uuidv4 } from "uuid";
-import { Message, Thread, ToolMessage } from "@langchain/langgraph-sdk";
+import {
+  AIMessage,
+  Message,
+  Thread,
+  ToolMessage,
+} from "@langchain/langgraph-sdk";
 import { RENDER_FILE_ID_PREFIX } from "./constants";
 import { Dispatch, SetStateAction } from "react";
 import { FileTextIcon, Music, Video, Image } from "lucide-react";
@@ -11,9 +16,11 @@ import { validate } from "uuid";
 import { PinnedItem } from "@/store/usePinnedContextStore";
 import type {
   Base64ContentBlock,
+  MessageContentComplex,
   URLContentBlock,
 } from "@langchain/core/messages";
 import { toast } from "sonner";
+import { parsePartialJson } from "@langchain/core/output_parsers";
 
 export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 
@@ -66,54 +73,120 @@ export function ensureToolCallsHaveResponses(messages: Message[]): Message[] {
   return newMessages;
 }
 
-// Configuration file for tool loading messages
-export type LoadingMessageConfig = {
+export function parseAnthropicStreamedToolCalls(
+  content: MessageContentComplex[]
+): AIMessage["tool_calls"] {
+  const toolCallContents = content.filter((c) => c.type === "tool_use" && c.id);
+
+  return toolCallContents.map((tc) => {
+    const toolCall = tc as Record<string, any>;
+    let json: Record<string, any> = {};
+    if (toolCall?.input) {
+      try {
+        json = parsePartialJson(toolCall.input) ?? {};
+      } catch {
+        // Pass
+      }
+    }
+    return {
+      name: toolCall.name ?? "",
+      id: toolCall.id ?? "",
+      args: json,
+      type: "tool_call",
+    };
+  });
+}
+
+// types.ts - Add these type definitions
+type LoadingMessageConfig = {
   message: string;
-  animation?: "pulse" | "bounce" | "spin" | "fade";
-  icon?: string; // Optional icon name if you want to add icons later
-  duration?: number; // Animation duration in seconds
+  duration?: number;
+  animation?: "shimmer" | "pulse" | "dots";
 };
 
-// Map of tool names to their loading message configurations
-export const TOOL_LOADING_MESSAGES: Record<
+// langgraph.utils.ts - Enhanced loading message configuration
+const TOOL_LOADING_MESSAGES: Record<
   string,
   LoadingMessageConfig | LoadingMessageConfig[]
 > = {
-  // Brand tools
-  "scrape-brand": {
-    message: "Gathering brand data...",
-    animation: "pulse",
-  },
-  "generate-themes": {
-    message: "Generating Themes...",
-    animation: "pulse",
-  },
-  "generate-moodboards": {
-    message: "Creating moodboards...",
-    animation: "pulse",
-  },
+  "scrape-brand": [
+    { message: "Extracting brand data from website...", duration: 3 },
+    { message: "Analyzing brand elements...", duration: 3 },
+    { message: "Collecting visual styles...", duration: 3 },
+    { message: "Processing brand information...", duration: 3 },
+    { message: "Just a moment—finalizing the brand scrape...", duration: 6 },
+    {
+      message: "Almost there! Ensuring all brand elements are captured...",
+      duration: 30,
+    },
+  ],
+  "update-brand": [
+    { message: "Updating brand profile...", duration: 3 },
+    { message: "Syncing brand changes...", duration: 3 },
+    { message: "Applying brand updates...", duration: 2 },
+    { message: "Finalizing brand configuration...", duration: 3 },
+    {
+      message: "One last step... Verifying consistency across updates.",
+      duration: 10,
+    },
+  ],
+  "parse-brandbook": [
+    { message: "Analyzing brand guidelines...", duration: 3 },
+    { message: "Extracting style elements...", duration: 3 },
+    { message: "Processing brand standards...", duration: 2 },
+    { message: "Parsing visual identity...", duration: 4 },
+    {
+      message: "Double-checking typography and color schemes...",
+      duration: 4,
+    },
+    {
+      message: "Finalizing brandbook extraction. Thanks for your patience!",
+      duration: 30,
+    },
+  ],
+  "update-campaign": [
+    { message: "Applying updates to campaign content...", duration: 3 },
+    { message: "Refreshing campaign structure...", duration: 2 },
+    { message: "Syncing campaign changes...", duration: 3 },
+    { message: "Reviewing campaign consistency...", duration: 4 },
+    { message: "Finalizing campaign updates...", duration: 3 },
+    {
+      message: "Almost done! Making sure everything looks great...",
+      duration: 5,
+    },
+  ],
 };
 
-// Helper function to get a loading message for a tool
-export function getLoadingMessageForTool(
+// Helper function to get loading messages for a tool
+export function getLoadingMessagesForTool(
   toolName: string
-): LoadingMessageConfig | null {
+): LoadingMessageConfig[] | LoadingMessageConfig | null {
   const config = TOOL_LOADING_MESSAGES[toolName];
 
   if (!config) {
     return {
-      message: "Kittykat is thinking...",
-      animation: "pulse",
+      message: "Processing your request...",
+      duration: 2.2,
+      animation: "shimmer",
     };
-  }
-
-  // If it's an array of messages, randomly select one
-  if (Array.isArray(config)) {
-    return config[Math.floor(Math.random() * config.length)];
   }
 
   return config;
 }
+
+export const genericMessages = [
+  "Processing your request...",
+  "Analyzing information...",
+  "Converting thoughts into words...",
+  "Brainstorming ideas...",
+  "Working on your request...",
+  "Crafting a response...",
+  "Connecting the dots...",
+  "Organizing thoughts...",
+  "Formulating a detailed answer...",
+  "Generating insights...",
+  "Exploring possibilities...",
+];
 
 export const capitalizeKey = (key: string) => {
   return key

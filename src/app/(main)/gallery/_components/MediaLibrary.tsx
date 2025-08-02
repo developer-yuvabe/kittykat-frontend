@@ -50,6 +50,7 @@ type MediaLibraryProps = {
   inSelectionGalleryIds?: string[];
   isMultiSelect?: boolean;
   maxSelectionCount?: number;
+  hideHeader?: boolean; // 👈 Added this prop
 };
 
 export function MediaLibrary({
@@ -65,6 +66,7 @@ export function MediaLibrary({
   inSelectionGalleryIds = [],
   isMultiSelect = false,
   maxSelectionCount,
+  hideHeader = false, // 👈 Added default value
 }: MediaLibraryProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -359,38 +361,47 @@ export function MediaLibrary({
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
-      <div className="flex justify-between mb-2">
-        <div className="flex flex-row gap-x-4">
-          <h1 className="text-2xl font-bold">Media library</h1>
-          {!hasNoBrands && galleryView === "grid" && (
-            <MediaUploadBrandSelector
-              selectedBrand={selectedBrand}
-              setSelectedBrand={setSelectedBrand}
-              brands={galleryActions.brandsData?.brands || []}
-              brandsLoading={galleryActions.brandsLoading}
-              setSelectedCampaignId={setSelectedCampaignId}
-              selectedCampaignId={selectedCampaignId}
-              selectedFilters={selectedFilters}
-              setSelectedFilters={setSelectedFilters}
-              preSelectedBrandId={brandId || effectiveBrandId}
-              setInitialWorkflowStatus={setInitialWorkflowStatus}
-              setInitialBrandId={setInitialBrandId}
-            />
-          )}
+      {/* Conditionally render header based on hideHeader prop */}
+      {!hideHeader && (
+        <div className="flex justify-between mb-2">
+          <div className="flex flex-row gap-x-4">
+            <h1 className="text-2xl font-bold">Media library</h1>
+            {!hasNoBrands && galleryView === "grid" && (
+              <MediaUploadBrandSelector
+                selectedBrand={selectedBrand}
+                setSelectedBrand={setSelectedBrand}
+                brands={galleryActions.brandsData?.brands || []}
+                brandsLoading={galleryActions.brandsLoading}
+                setSelectedCampaignId={setSelectedCampaignId}
+                selectedCampaignId={selectedCampaignId}
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                preSelectedBrandId={brandId || effectiveBrandId}
+                setInitialWorkflowStatus={setInitialWorkflowStatus}
+                setInitialBrandId={setInitialBrandId}
+              />
+            )}
+          </div>
+          <Select
+            value={galleryView}
+            onValueChange={(val) => setGalleryView(val as "grid" | "folder")}
+          >
+            <SelectTrigger className="w-[130px] text-purple-600 border-purple-600">
+              <SelectValue placeholder="View" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="grid">Grid View</SelectItem>
+              <SelectItem value="folder">Folder View</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={galleryView}
-          onValueChange={(val) => setGalleryView(val as "grid" | "folder")}
-        >
-          <SelectTrigger className="w-[130px] text-purple-600 border-purple-600">
-            <SelectValue placeholder="View" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="grid">Grid View</SelectItem>
-            <SelectItem value="folder">Folder View</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      )}
+      {/* Optional: Simple header for dialog mode */}
+      {hideHeader && isMediaSelectDialog && (
+        <div className="flex justify-between items-center mb-4 pb-3 border-b">
+          <h2 className="text-xl font-semibold text-gray-900">Select Media</h2>
+        </div>
+      )}
 
       {/* Show no brands message */}
       {hasNoBrands && !galleryActions.brandsLoading ? (
@@ -407,7 +418,8 @@ export function MediaLibrary({
         </div>
       ) : (
         <>
-          {galleryView === "folder" && (
+          {/* Only show folder view if header is not hidden */}
+          {!hideHeader && galleryView === "folder" && (
             <div>
               <MediaFolderView
                 activeTab={activeTab}
@@ -422,7 +434,9 @@ export function MediaLibrary({
               />
             </div>
           )}
-          {galleryView === "grid" && (
+
+          {/* Force grid view when hideHeader is true, otherwise respect galleryView */}
+          {(hideHeader || galleryView === "grid") && (
             <Tabs
               defaultValue="all-media"
               value={activeTab}

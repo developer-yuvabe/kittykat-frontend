@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
-import { canvasToBlob, cn, delay } from "@/lib/utils";
+import { canvasToBlob, cn, delay, PlatformApiError } from "@/lib/utils";
 import { remixImageSchema } from "@/schema/remix.schema";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,8 +41,13 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { BrushIcon } from "@/components/ui/custom-icon";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { remixImageService } from "@/services/api/remix.service";
+import {
+  estimateRemixCredits,
+  remixImageService,
+} from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useQuery } from "@tanstack/react-query";
+import { useUserStore } from "@/store/user.store";
 
 const IMAGE_SIZE = {
   "1024x1024": {
@@ -90,6 +95,7 @@ export type RemixControlsProps = {
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
   brandId?: string;
+  source: "a2i" | "media-gallery";
 };
 
 const RemixControls = ({
@@ -104,7 +110,9 @@ const RemixControls = ({
   brushSize,
   onBrushSizeChange,
   brandId,
+  source,
 }: RemixControlsProps) => {
+  const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
   const inputFileRef = React.useRef<HTMLInputElement | null>(null);
   const form = useForm<z.infer<typeof remixImageSchema>>({
@@ -117,6 +125,15 @@ const RemixControls = ({
       n: 1,
       base_image: image.url,
       reference_images: [],
+    },
+  });
+  const { data: estimatedCredits, isPending } = useQuery({
+    queryKey: [
+      "remix-credits",
+      ...form.watch(["n", "reference_images", "size"]),
+    ],
+    queryFn: async () => {
+      return await estimateRemixCredits(form.getValues(), "");
     },
   });
   const [isUploading, setIsUploading] = React.useState(false);
@@ -237,7 +254,16 @@ const RemixControls = ({
         file
       );
 
-      remixImageService(brandId ?? selectedBrandId!, data, maskUrl);
+      remixImageService(
+        brandId ?? selectedBrandId!,
+        data,
+        maskUrl,
+        source === "media-gallery"
+      ).catch((error) => {
+        if (error instanceof PlatformApiError && error.statusCode === 403) {
+          setShowInsufficientCreditsModal(true);
+        }
+      });
 
       await delay(2000);
 
@@ -497,12 +523,19 @@ const RemixControls = ({
                   disabled={
                     form.formState.isSubmitting ||
                     !form.formState.isValid ||
-                    isUploading
+                    isUploading ||
+                    isPending
                   }
                   loading={form.formState.isSubmitting}
                 >
                   <BrainIcon />
-                  A2i Concept Visual Generation
+                  Concept Visual Generation
+                  {isPending && <Loader2 className="animate-spin" />}
+                  {estimatedCredits && (
+                    <span className="text-sm italic">
+                      ({estimatedCredits} credits)
+                    </span>
+                  )}
                 </Button>
               </div>
             </form>
