@@ -19,9 +19,16 @@ export const updateUser = async (
       brand_access: userData.brand_access,
     };
 
+    // console.log(
+    //   "Updating user with brand_access:",
+    //   fieldsToUpdate.brand_access
+    // );
+
     const updatedUser = await handleApiRequest<User | null>(
       axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
     );
+
+    // console.log("Updated user response:", updatedUser);
 
     return updatedUser;
   } catch (error) {
