@@ -514,6 +514,7 @@ export function MediaLibrary({
                       selectedFilters={selectedFilters}
                       setSelectedFilters={setSelectedFilters}
                       setInitialWorkflowStatus={setInitialWorkflowStatus}
+                      isMediaSelectDialog={isMediaSelectDialog}
                     />
 
                     <MediaDialogMultiSelectHeader
@@ -539,6 +540,7 @@ export function MediaLibrary({
                               galleryActions={galleryActions}
                               selectedItems={currentlySelectedItems}
                               onSelect={handleSelect}
+                              isMediaSelectDialog={isMediaSelectDialog} // Pass the prop here!
                               isMultiSelect={isMultiSelect}
                               inSelectionGalleryIds={inSelectionGalleryIds}
                               maxSelectionCount={maxSelectionCount}
