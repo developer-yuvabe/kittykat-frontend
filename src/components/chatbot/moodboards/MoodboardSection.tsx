@@ -219,7 +219,6 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
-
     setIsCreatingNewMoodboard(true);
 
     const toastId = toast.loading("Creating moodboard...");
@@ -433,6 +432,16 @@ export const MoodboardSection: React.FC<{
                 tooltip="New Moodboard"
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log("clicked moodboard create button");
+                  if (
+                    !moodboardInformation ||
+                    moodboardInformation.length === 0
+                  ) {
+                    toast.info(
+                      "Set up your first moodboard before creating another."
+                    );
+                    return;
+                  }
                   handleCreateNewMoodboard();
                 }}
                 className="p-4"

@@ -21,6 +21,7 @@ import {
 } from "../brands/InitialPlaceHolder";
 import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { toast } from "sonner";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -134,6 +135,10 @@ export const CampaignSection: React.FC<{
     }));
   }, []);
 
+  const handleMoodboardPlaceholderClick = () => {
+    toast.info("Please create a campaign before creating a moodboard.");
+  };
+
   if (
     !campaignInformation ||
     campaignInformation.length === 0 ||
@@ -167,6 +172,7 @@ export const CampaignSection: React.FC<{
           onToggleExpanded={() =>
             setIsMoodboardPlaceholderExpanded((prev: boolean) => !prev)
           }
+          onNewClick={handleMoodboardPlaceholderClick}
           isCreatingNewCampaign={isCampaignCreating}
         />
       </>
