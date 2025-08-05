@@ -83,6 +83,8 @@ interface UploadDropzoneProps {
   selecteMoodboardId: string | undefined;
   galleryView: "folder" | "grid";
   brandName: string;
+  isUrlDialogOpen: boolean;
+  setIsUrlDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function MediaFolderView({
@@ -98,11 +100,12 @@ export function MediaFolderView({
   selecteMoodboardId,
   galleryView = "grid",
   brandName,
+  isUrlDialogOpen,
+  setIsUrlDialogOpen,
 }: UploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
@@ -459,7 +462,7 @@ export function MediaFolderView({
     if (urls.length > 0) {
       uploadUrls(urls);
       setUrlInput("");
-      setShowUrlInput(false);
+      setIsUrlDialogOpen(false);
     }
   };
 
@@ -486,7 +489,7 @@ export function MediaFolderView({
     onDrop,
     multiple: true,
     accept: currentConfig.types,
-    disabled: isUploading,
+    disabled: isUploading || isUrlDialogOpen, // Added isUrlDialogOpen
   });
 
   let borderColor = "border-gray-300";
@@ -541,14 +544,18 @@ export function MediaFolderView({
           {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors duration-200 ease-in-out cursor-pointer ${borderColor} ${
             isDragActive ? "bg-purple-50" : "bg-white"
-          } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
+          } ${
+            isUploading || isUrlDialogOpen
+              ? "opacity-50 pointer-events-none"
+              : ""
+          }`} // Added isUrlDialogOpen
         >
           <input {...getInputProps()} />
           <div className="flex gap-x-3">
             <Button
               variant="outline"
               className="bg-[#636AE8] hover:bg-[#636AE8] hover:text-white text-white mb-2"
-              disabled={isUploading}
+              disabled={isUploading || isUrlDialogOpen} // Added isUrlDialogOpen
             >
               {isUploading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -557,7 +564,7 @@ export function MediaFolderView({
               )}
               {isUploading ? "Uploading..." : "Upload Files"}
             </Button>
-            <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
+            <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -590,7 +597,7 @@ export function MediaFolderView({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowUrlInput(false);
+                      setIsUrlDialogOpen(false);
                       setUrlInput("");
                     }}
                     disabled={isUploading}
@@ -834,7 +841,7 @@ export function MediaFolderView({
             className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors duration-200 ease-in-out cursor-pointer ${borderColor} ${
               isDragActive ? "bg-purple-50" : "bg-white"
             } ${
-              isUploading || !selectedBrand
+              isUploading || !selectedBrand || isUrlDialogOpen // Added isUrlDialogOpen
                 ? "opacity-50 pointer-events-none"
                 : ""
             }`}
@@ -844,7 +851,12 @@ export function MediaFolderView({
               <Button
                 variant="outline"
                 className="bg-[#636AE8] hover:bg-[#636AE8] hover:text-white text-white"
-                disabled={isUploading || !selectedBrand || brandsLoading}
+                disabled={
+                  isUploading ||
+                  !selectedBrand ||
+                  brandsLoading ||
+                  isUrlDialogOpen
+                } // Added isUrlDialogOpen
               >
                 {isUploading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -853,7 +865,7 @@ export function MediaFolderView({
                 )}
                 {isUploading ? "Uploading..." : "Upload Files"}
               </Button>
-              <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
+              <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
@@ -886,7 +898,7 @@ export function MediaFolderView({
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowUrlInput(false);
+                        setIsUrlDialogOpen(false);
                         setUrlInput("");
                       }}
                       disabled={isUploading}
