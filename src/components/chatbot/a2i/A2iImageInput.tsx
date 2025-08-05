@@ -234,14 +234,13 @@ const A2iImageInput = ({
 
     // Preserve the current prompt value when model changes
     if (currentPromptValue) {
-      // Use a small delay to ensure the form is ready after model change
-      setTimeout(() => {
+      queueMicrotask(() => {
         form.setValue("prompt", currentPromptValue, {
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true,
         });
-      }, 0);
+      });
     }
   }, [selectedModel?.id]);
 
