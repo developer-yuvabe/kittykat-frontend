@@ -219,7 +219,6 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
-
     setIsCreatingNewMoodboard(true);
 
     const toastId = toast.loading("Creating moodboard...");
@@ -469,7 +468,7 @@ export const MoodboardSection: React.FC<{
 
               {currentMoodboard?.aggregated_tags && (
                 <ContentSection
-                  title={`Choose your visual aesthetic `}
+                  title={`Build Your Campaign Moodboard`}
                   content={
                     <div>
                       {currentCampaign && currentMoodboard && (

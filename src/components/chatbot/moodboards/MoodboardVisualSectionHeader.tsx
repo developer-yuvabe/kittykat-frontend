@@ -174,8 +174,14 @@ export const MoodboardVisualSectionHeader = ({
   };
 
   return (
-    <div className="mt-6">
-      <div className="flex justify-between">
+    <div className="mt-3">
+      <p className="text-sm text-gray-800 mb-2">
+        Your moodboard pulls images from your current gallery to create a visual
+        aesthetic guide for this campaign. You can upload additional images here
+        before generating, then fine-tune your visual style by selecting or
+        deselecting the campaign tags below.
+      </p>
+      <div className="flex justify-between mt-3">
         <div className="font-semibold flex flex-row gap-x-2">
           {galleryActions.isFetching ? (
             <div className="flex items-center gap-2">
@@ -185,21 +191,14 @@ export const MoodboardVisualSectionHeader = ({
           ) : (
             `${galleryActions.totalItems} images of ${brandName} found...`
           )}
-          {!galleryActions.isFetching &&
-            currentMoodboard.visual_sources
-              ?.filter((src) => src.selected)
-              .map((src) => {
-                switch (src.platform.toLowerCase()) {
-                  case "pinterest":
-                    return <PinterestIcon key="pinterest" />;
-                  case "instagram":
-                    return <InstagramIcon key="instagram" />;
-                  case "facebook":
-                    return <FacebookIcon key="facebook" />;
-                  default:
-                    return <Globe key={src.platform} />;
-                }
-              })}
+          {!galleryActions.isFetching && (
+            <>
+              <PinterestIcon key="pinterest" />
+              <InstagramIcon key="instagram" />
+              <FacebookIcon key="facebook" />
+              <Globe key="web" />
+            </>
+          )}
         </div>
 
         <Button

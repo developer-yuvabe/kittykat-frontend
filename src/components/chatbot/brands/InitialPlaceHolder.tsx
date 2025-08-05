@@ -67,7 +67,7 @@ export const campaignFields = [
 
 export const moodboardFields = [
   "Campaign Concept",
-  "Choose your Visual Aesthetic",
+  "Build Your Campaign Moodboard",
 ];
 interface PlaceholderSectionProps {
   title: string;
