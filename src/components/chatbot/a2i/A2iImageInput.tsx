@@ -70,6 +70,9 @@ const A2iImageInput = ({
     }[]
   >([]);
 
+  // Store the current prompt value to preserve it across model changes
+  const [currentPromptValue, setCurrentPromptValue] = useState("");
+
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       if (acceptedFiles.length === 0) return;
@@ -193,8 +196,20 @@ const A2iImageInput = ({
     form.reset();
     if (referencePrompt) setReferencePrompt(null);
     setImageBlocks([]);
+    setCurrentPromptValue(""); // Clear the stored prompt value
   };
 
+  // Watch for changes in the form prompt field to keep our state in sync
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      if (value.prompt !== undefined) {
+        setCurrentPromptValue(value.prompt);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  // Handle reference prompt changes
   useEffect(() => {
     if (referencePrompt) {
       form.setValue("prompt", referencePrompt, {
@@ -202,10 +217,13 @@ const A2iImageInput = ({
         shouldDirty: true,
         shouldTouch: true,
       });
+      setCurrentPromptValue(referencePrompt);
     }
   }, [referencePrompt, form]);
 
+  // Handle model changes - preserve the current prompt value
   useEffect(() => {
+    // Clean up uploaded files when model changes
     for (const block of imageBlocks) {
       if (block.url) {
         deleteFile(block.url);
@@ -213,6 +231,18 @@ const A2iImageInput = ({
     }
 
     setImageBlocks([]);
+
+    // Preserve the current prompt value when model changes
+    if (currentPromptValue) {
+      // Use a small delay to ensure the form is ready after model change
+      setTimeout(() => {
+        form.setValue("prompt", currentPromptValue, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }, 0);
+    }
   }, [selectedModel?.id]);
 
   return (
@@ -262,6 +292,7 @@ const A2iImageInput = ({
                         {...field}
                         onChange={(e) => {
                           field.onChange(e.target.value);
+                          setCurrentPromptValue(e.target.value);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && e.shiftKey) {
@@ -366,6 +397,7 @@ const A2iImageInput = ({
                           shouldDirty: true,
                           shouldTouch: true,
                         });
+                        setCurrentPromptValue(data.prompt);
 
                         toast.success("Prompt enhanced successfully!");
                       },
