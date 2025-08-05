@@ -543,44 +543,51 @@ export const BrandAestheticUploader: React.FC<Props> = ({
 
   return (
     <ContentSection
-      title="Upload your brand Aesthetic"
+      title="Upload your Brand Images"
       content={
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <MoodboardReferenceDropzone
-              onDrop={onDrop}
-              uploadedImages={uploadedImages}
-            />
-            <MoodboardReferenceUploadStatus
-              isUploading={isUploading}
-              uploadError={uploadError}
-            />
-          </div>
-          <MoodboardSocialOptions
-            socialOptions={socialOptions}
-            selectedOptions={selectedOptions}
-            updateEditValue={updateEditValue}
-            saveEdit={saveEdit}
-            cancelEditing={cancelEditing}
-            startEditing={startEditing}
-            toggleOption={toggleOption}
-            limits={limits}
-            setLimits={setLimits}
-          />
-
-          <div className="lg:col-span-2 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <BrandSocialVerifyDialog
+        <div>
+          <p className="text-sm  text-gray-800 mb-4">
+            Upload brand images or connect your Instagram and Pinterest accounts
+            to teach KittyKat your visual style. Then hit &quot;Upload to
+            Gallery&quot; to add everything to your brand library.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <MoodboardReferenceDropzone
+                onDrop={onDrop}
                 uploadedImages={uploadedImages}
-                selectedOptions={selectedOptions}
-                socialOptions={socialOptions}
-                isProcessing={isProcessing}
-                handleBulkUpload={handleBulkUpload}
-                getButtonText={getButtonText}
               />
+              <MoodboardReferenceUploadStatus
+                isUploading={isUploading}
+                uploadError={uploadError}
+              />
+            </div>
+            <MoodboardSocialOptions
+              socialOptions={socialOptions}
+              selectedOptions={selectedOptions}
+              updateEditValue={updateEditValue}
+              saveEdit={saveEdit}
+              cancelEditing={cancelEditing}
+              startEditing={startEditing}
+              toggleOption={toggleOption}
+              limits={limits}
+              setLimits={setLimits}
+            />
 
-              {/* Enhanced Analysis Logs Popover */}
-              <BrandAnalysisLogsPopover categorizedLogs={categorizedLogs} />
+            <div className="lg:col-span-2 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BrandSocialVerifyDialog
+                  uploadedImages={uploadedImages}
+                  selectedOptions={selectedOptions}
+                  socialOptions={socialOptions}
+                  isProcessing={isProcessing}
+                  handleBulkUpload={handleBulkUpload}
+                  getButtonText={getButtonText}
+                />
+
+                {/* Enhanced Analysis Logs Popover */}
+                <BrandAnalysisLogsPopover categorizedLogs={categorizedLogs} />
+              </div>
             </div>
           </div>
         </div>
