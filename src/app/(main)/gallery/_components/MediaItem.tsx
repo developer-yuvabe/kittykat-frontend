@@ -84,6 +84,17 @@ export function MediaItem({
     setIsLoaded(true);
   };
 
+  // Handle image click - either select or edit based on context
+  const handleImageClick = () => {
+    if (isMediaSelectDialog) {
+      // In media select dialog, clicking image should select it
+      onSelect(item.id, !isSelected);
+    } else {
+      // In regular gallery, clicking image opens editor
+      onEditClick(item);
+    }
+  };
+
   const aspectRatio = dimensions.width / dimensions.height;
   const skeletonHeight = item.dimensions
     ? (300 * item.dimensions.height) / item.dimensions.width
@@ -116,7 +127,7 @@ export function MediaItem({
           <MediaImage
             item={item}
             onImageLoad={handleImageLoad}
-            onEditClick={onEditClick}
+            onEditClick={handleImageClick} // Use our custom handler
           />
         </div>
 
@@ -135,8 +146,8 @@ export function MediaItem({
           onDownload={onDownload}
         />
 
-        {/* More options popover */}
-        {isHovered && (
+        {/* More options popover - Only show in regular gallery, not in media select dialog */}
+        {isHovered && isMediaSelectDialog !== true && (
           <>
             <div className="absolute top-0 right-1 z-10 flex space-x-1">
               <Popover>
