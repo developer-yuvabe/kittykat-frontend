@@ -57,7 +57,7 @@ export function MediaEditorDialog({
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     item
   );
-  const [activeTab, setActiveTab] = useState("ask-kittykat");
+  const [activeTab, setActiveTab] = useState("virtual-tryon"); // Changed default to virtual-tryon
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -80,6 +80,9 @@ export function MediaEditorDialog({
   const imageRef = useRef<HTMLImageElement>(null);
   const remixImageRef = useRef<RemixImageHandle>(null);
   const remixHistory = useUndoRedoRemix();
+
+  // Add ref to track initial load
+  const initialLoadRef = useRef(true);
 
   const isRemixEnabled = activeTab === "in-paint";
 
@@ -105,11 +108,33 @@ export function MediaEditorDialog({
       setEditingReply(null);
       setAttachments([]);
       setReplyAttachments([]);
-      setActiveTab("ask-kittykat");
-      setCurrentItem(item);
-      setBrushSize(80);
+      
+      // Only reset activeTab when:
+    // 1. It's the initial load (dialog just opened)
+    // 2. OR the item ID actually changes (different item selected)
+    const isNewItem = !currentItem || currentItem.id !== item.id;
+    
+    if (initialLoadRef.current && open) {
+      // First time opening dialog
+      setActiveTab("virtual-tryon");
+      initialLoadRef.current = false;
+    } else if (isNewItem) {
+      // Different item selected
+      setActiveTab("virtual-tryon");
     }
-  }, [item]);
+    // If it's the same item (just updated data), don't change the tab
+    
+    setCurrentItem(item);
+    setBrushSize(80);
+  }
+}, [item, currentItem, open]); // Added 'open' dependency
+
+// Reset the ref when dialog closes to ensure proper behavior on next open
+useEffect(() => {
+  if (!open) {
+    initialLoadRef.current = true;
+  }
+}, [open]);
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
