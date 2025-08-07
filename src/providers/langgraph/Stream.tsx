@@ -68,6 +68,9 @@ const StreamSession = ({
     threadId: user?.thread_id ?? undefined,
     initialValues: cahedData,
     reconnectOnMount: true,
+    fetchStateHistory: {
+      limit: 1,
+    },
     onThreadId: (id) => {
       updateUser(user!.id, {
         thread_id: id,
