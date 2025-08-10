@@ -72,8 +72,6 @@ export const CustomGalleryGrid = forwardRef<
       }
     };
 
-    console.log("all items:", allItems);
-
     const handleRemovePhoto = (id: string) => {
       if (photos.length <= minImagesRequired) {
         // Toast will be handled in the grid item component
