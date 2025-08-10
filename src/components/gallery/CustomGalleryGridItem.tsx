@@ -22,6 +22,7 @@ type GridItemProps<TPhoto extends Photo> = {
   isDraggable: boolean;
   isAtMinimum: boolean;
   setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
+  showLiked?: boolean;
 };
 
 export function CustomGalleryGridItem<TPhoto extends Photo>({
@@ -35,6 +36,7 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   isDraggable,
   isAtMinimum,
   setPhotos,
+  showLiked,
 }: GridItemProps<TPhoto>) {
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -127,7 +129,13 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
 
         {/* Bottom-right: Like */}
         {onPhotoLike && (
-          <div className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div
+            className={`absolute bottom-2 right-2 z-10 ${
+              showLiked && photo.liked
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100"
+            } transition-opacity duration-200`}
+          >
             <Heart
               size={16}
               className={`w-5 h-5 cursor-pointer transition-all duration-200 ${
