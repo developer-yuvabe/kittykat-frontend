@@ -447,6 +447,15 @@ export const MoodboardSection: React.FC<{
                             />
                           )}
                       </div>
+                      {currentMoodboard && !isCreatingNewMoodboard && (
+                        <MoodboardTagResults
+                          moodboardId={currentMoodboard.id}
+                          moodboard_tags={currentMoodboard?.moodboard_tags}
+                          selected_moodboard_tags={
+                            currentMoodboard.selected_moodboard_tags
+                          }
+                        />
+                      )}
                     </div>
                   }
                   context={undefined}
@@ -459,15 +468,6 @@ export const MoodboardSection: React.FC<{
                     Create Moodboard
                   </Button>
                 </div>
-              )}
-              {currentMoodboard && !isCreatingNewMoodboard && (
-                <MoodboardTagResults
-                  moodboardId={currentMoodboard.id}
-                  moodboard_tags={currentMoodboard?.moodboard_tags}
-                  selected_moodboard_tags={
-                    currentMoodboard.selected_moodboard_tags
-                  }
-                />
               )}
             </CardContent>
           </div>

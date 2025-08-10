@@ -1,4 +1,3 @@
-import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardInformation, MoodboardAsset } from "@/types/types";
 import React, {
   useEffect,
@@ -408,208 +407,191 @@ function MoodboardLayout({
 
   return (
     <div className="mt-4">
-      <ContentSection
-        title="Moodboard"
-        context={undefined}
-        content={
-          <div>
-            {/* Completed Gallery State */}
-            {!loading && !moodboardGenerationInProgress && (
-              <div className="w-full flex flex-col gap-y-4">
-                {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
-                <div className="w-full flex flex-col gap-3">
-                  {/* Top row - Main controls */}
-                  <div className="flex flex-col 2xl:flex-row 2xl:flex-wrap gap-3 w-full">
-                    <div className="flex flex-col sm:flex-row gap-6 flex-wrap flex-1 min-w-0">
-                      <div className="min-w-[200px]">
-                        <EditableInput
-                          value={moodboard.title}
-                          onSave={async (newValue) => {
-                            await patchMoodboard(brandId, moodboard.id, {
-                              title: newValue,
-                            });
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {hasUnsavedChanges ? (
-                          <>
-                            <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
-                            <span className="text-sm">Unsaved changes</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-                            <span className="text-sm">Saved</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Save/Cancel for large screens */}
-                    {hasUnsavedChanges && (
-                      <div className="hidden 2xl:flex flex-wrap items-start gap-2 ml-auto">
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          onClick={handleCancelChanges}
-                          disabled={isSaving}
-                          className="flex items-center gap-1 py-1 whitespace-nowrap"
-                        >
-                          <X size={16} />
-                          Cancel
-                        </Button>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span tabIndex={0} className="inline-flex">
-                              <button
-                                onClick={handleSaveChanges}
-                                disabled={isSaving || photos.length < 10}
-                                className="flex items-center gap-1 whitespace-nowrap border border-gray-400 rounded-md px-3 py-[7px] text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                <SaveIcon
-                                  size={16}
-                                  className="text-gray-700 "
-                                />
-                                {isSaving ? "Saving..." : "Save"}
-                              </button>
-                            </span>
-                          </TooltipTrigger>
-                          {photos.length < 10 && (
-                            <TooltipContent>
-                              Add at least 10 images to save
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </div>
-                    )}
-                    {placeholderItems.length > 0 && (
-                      <Button
-                        size="lg"
-                        disabled={isSaving}
-                        className="flex items-center gap-1 py-1 whitespace-nowrap"
-                        onClick={autoFillPlaceholders}
-                      >
-                        <RegenerateIcon size={16} color="white" />
-                        AutoFill All
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Save/Cancel for small screens */}
-                  {hasUnsavedChanges && (
-                    <div className="flex 2xl:hidden gap-2 justify-end sm:justify-start flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelChanges}
-                        disabled={isSaving}
-                        className="flex items-center gap-1 whitespace-nowrap"
-                      >
-                        <X size={16} />
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSaveChanges}
-                        disabled={isSaving}
-                        className="flex items-center gap-1 whitespace-nowrap"
-                      >
-                        <>
-                          <SaveIcon2 size={16} />
-                          {isSaving ? "Saving..." : "Save Changes"}
-                        </>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Image Grid */}
-                <div className="w-full overflow-hidden">
-                  <div className="mx-auto max-w-7xl w-full px-2">
-                    <OptimisticCustomGridGallery
-                      photos={photos}
-                      setPhotos={setPhotos}
-                      movePhoto={movePhoto}
-                      onPhotoLike={onPhotoLike}
-                      onReplaceImage={async ({
-                        imageToReplaceId,
-                        replacementImageUrl,
-                      }) => {
-                        try {
-                          await replaceMoodboardImage(
-                            brandId,
-                            moodboard.campaign_id,
-                            moodboard.id,
-                            {
-                              image_to_replace_id: imageToReplaceId,
-                              replacement_image_url: replacementImageUrl,
-                            }
-                          );
-                        } catch (error) {
-                          console.error(
-                            "Failed to replace moodboard image:",
-                            error
-                          );
-                        }
+      <div>
+        {/* Completed Gallery State */}
+        {!loading && !moodboardGenerationInProgress && (
+          <div className="w-full flex flex-col gap-y-4">
+            {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
+            <div className="w-full flex flex-col gap-3">
+              {/* Top row - Main controls */}
+              <div className="flex flex-col 2xl:flex-row 2xl:flex-wrap gap-3 w-full">
+                <div className="flex flex-col sm:flex-row gap-6 flex-wrap flex-1 min-w-0">
+                  <div className="min-w-[200px]">
+                    <EditableInput
+                      value={moodboard.title}
+                      onSave={async (newValue) => {
+                        await patchMoodboard(brandId, moodboard.id, {
+                          title: newValue,
+                        });
                       }}
-                      hasUnsavedChanges={hasUnsavedChanges}
-                      noOfImagesForMoodboard={noOfImagesForMoodboard}
-                      setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-                      onGallerySelection={handleGallerySelection}
-                      placeholderItems={
-                        placeholderItems as SortablePhoto<Photo>[]
-                      }
-                      moodboard={moodboard}
-                      setPlaceholderItems={setPlaceholderItems}
                     />
                   </div>
-                </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span tabIndex={0} className="w-full ">
-                      <Button
-                        className="w-full"
-                        disabled={
-                          analyzeLoading ||
-                          photos.length < 10 ||
-                          hasUnsavedChanges
-                        }
-                        onClick={handleAnalyzeMoodboard}
-                      >
-                        {analyzeLoading ? (
-                          "Analyzing..."
-                        ) : (
-                          <>
-                            <AnalysisChartIcon /> Moodboard Analysis
-                          </>
-                        )}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-
-                  {/* Tooltip logic */}
-                  {analyzeLoading && (
-                    <TooltipContent>Analysis in progress...</TooltipContent>
-                  )}
-                  {!analyzeLoading && photos.length < 10 && (
-                    <TooltipContent>
-                      Add at least 10 images to analyze
-                    </TooltipContent>
-                  )}
-                  {!analyzeLoading &&
-                    photos.length >= 10 &&
-                    hasUnsavedChanges && (
-                      <TooltipContent>
-                        Save changes before analysis
-                      </TooltipContent>
+                  <div className="flex items-center gap-2">
+                    {hasUnsavedChanges ? (
+                      <>
+                        <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
+                        <span className="text-sm">Unsaved changes</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                        <span className="text-sm">Saved</span>
+                      </>
                     )}
-                </Tooltip>
+                  </div>
+                </div>
+
+                {/* Save/Cancel for large screens */}
+                {hasUnsavedChanges && (
+                  <div className="hidden 2xl:flex flex-wrap items-start gap-2 ml-auto">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleCancelChanges}
+                      disabled={isSaving}
+                      className="flex items-center gap-1 py-1 whitespace-nowrap"
+                    >
+                      <X size={16} />
+                      Cancel
+                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0} className="inline-flex">
+                          <button
+                            onClick={handleSaveChanges}
+                            disabled={isSaving || photos.length < 10}
+                            className="flex items-center gap-1 whitespace-nowrap border border-gray-400 rounded-md px-3 py-[7px] text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <SaveIcon size={16} className="text-gray-700 " />
+                            {isSaving ? "Saving..." : "Save"}
+                          </button>
+                        </span>
+                      </TooltipTrigger>
+                      {photos.length < 10 && (
+                        <TooltipContent>
+                          Add at least 10 images to save
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </div>
+                )}
+                {placeholderItems.length > 0 && (
+                  <Button
+                    size="lg"
+                    disabled={isSaving}
+                    className="flex items-center gap-1 py-1 whitespace-nowrap"
+                    onClick={autoFillPlaceholders}
+                  >
+                    <RegenerateIcon size={16} color="white" />
+                    AutoFill All
+                  </Button>
+                )}
               </div>
-            )}
+
+              {/* Save/Cancel for small screens */}
+              {hasUnsavedChanges && (
+                <div className="flex 2xl:hidden gap-2 justify-end sm:justify-start flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelChanges}
+                    disabled={isSaving}
+                    className="flex items-center gap-1 whitespace-nowrap"
+                  >
+                    <X size={16} />
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveChanges}
+                    disabled={isSaving}
+                    className="flex items-center gap-1 whitespace-nowrap"
+                  >
+                    <>
+                      <SaveIcon2 size={16} />
+                      {isSaving ? "Saving..." : "Save Changes"}
+                    </>
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Image Grid */}
+            <div className="w-full overflow-hidden">
+              <div className="mx-auto max-w-7xl w-full px-2">
+                <OptimisticCustomGridGallery
+                  photos={photos}
+                  setPhotos={setPhotos}
+                  movePhoto={movePhoto}
+                  onPhotoLike={onPhotoLike}
+                  onReplaceImage={async ({
+                    imageToReplaceId,
+                    replacementImageUrl,
+                  }) => {
+                    try {
+                      await replaceMoodboardImage(
+                        brandId,
+                        moodboard.campaign_id,
+                        moodboard.id,
+                        {
+                          image_to_replace_id: imageToReplaceId,
+                          replacement_image_url: replacementImageUrl,
+                        }
+                      );
+                    } catch (error) {
+                      console.error(
+                        "Failed to replace moodboard image:",
+                        error
+                      );
+                    }
+                  }}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  noOfImagesForMoodboard={noOfImagesForMoodboard}
+                  setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+                  onGallerySelection={handleGallerySelection}
+                  placeholderItems={placeholderItems as SortablePhoto<Photo>[]}
+                  moodboard={moodboard}
+                  setPlaceholderItems={setPlaceholderItems}
+                />
+              </div>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0} className="w-full ">
+                  <Button
+                    className="w-full"
+                    disabled={
+                      analyzeLoading || photos.length < 10 || hasUnsavedChanges
+                    }
+                    onClick={handleAnalyzeMoodboard}
+                  >
+                    {analyzeLoading ? (
+                      "Analyzing..."
+                    ) : (
+                      <>
+                        <AnalysisChartIcon /> Moodboard Analysis
+                      </>
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+
+              {/* Tooltip logic */}
+              {analyzeLoading && (
+                <TooltipContent>Analysis in progress...</TooltipContent>
+              )}
+              {!analyzeLoading && photos.length < 10 && (
+                <TooltipContent>
+                  Add at least 10 images to analyze
+                </TooltipContent>
+              )}
+              {!analyzeLoading && photos.length >= 10 && hasUnsavedChanges && (
+                <TooltipContent>Save changes before analysis</TooltipContent>
+              )}
+            </Tooltip>
           </div>
-        }
-      />
+        )}
+      </div>
     </div>
   );
 }

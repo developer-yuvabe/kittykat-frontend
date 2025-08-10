@@ -79,6 +79,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
     url: string;
     alt: string;
   } | null>(null);
+  const [showLiked, setShowLiked] = useState(false);
 
   // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
   const isDraggable =
@@ -140,6 +141,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         setPlaceholderItems={setPlaceholderItems}
         minImagesRequired={MIN_IMAGES_REQUIRED}
         setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+        showLiked={showLiked}
       />
     </div>
   );
@@ -164,6 +166,8 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
               setPlaceholderItems={setPlaceholderItems}
               minImagesRequired={MIN_IMAGES_REQUIRED}
               placeholderItems={placeholderItems}
+              showLiked={showLiked}
+              setShowLiked={setShowLiked}
             />
           )}
         </SortableContext>
