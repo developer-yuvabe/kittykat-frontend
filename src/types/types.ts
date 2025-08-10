@@ -268,6 +268,7 @@ export interface MoodboardInformation {
     | "completed"
     | "failed";
   moodboard_tags?: Record<string, string[]>;
+  selected_moodboard_tags?: Record<string, string[]>;
 }
 
 export interface VisualImage {

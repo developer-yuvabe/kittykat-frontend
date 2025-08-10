@@ -53,6 +53,7 @@ type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
   setPlaceholderItems: React.Dispatch<
     React.SetStateAction<SortablePhoto<Photo>[]>
   >;
+  isPreview?: boolean;
 };
 
 const MIN_IMAGES_REQUIRED = 10;
@@ -70,6 +71,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   setPhotos,
   placeholderItems = [],
   setPlaceholderItems,
+  isPreview = false,
 }: OptimisticCustomGridGalleryProps<TPhoto>) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
@@ -137,6 +139,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         setPhotos={setPhotos}
         setPlaceholderItems={setPlaceholderItems}
         minImagesRequired={MIN_IMAGES_REQUIRED}
+        setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
       />
     </div>
   );
@@ -152,15 +155,17 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
       >
         <SortableContext items={photos}>
           {galleryContent}
-          <CustomGalleryControls
-            photosLength={photos.length}
-            noOfImagesForMoodboard={noOfImagesForMoodboard}
-            setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-            setPhotos={setPhotos}
-            setPlaceholderItems={setPlaceholderItems}
-            minImagesRequired={MIN_IMAGES_REQUIRED}
-            placeholderItems={placeholderItems}
-          />
+          {!isPreview && (
+            <CustomGalleryControls
+              photosLength={photos.length}
+              noOfImagesForMoodboard={noOfImagesForMoodboard}
+              setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+              setPhotos={setPhotos}
+              setPlaceholderItems={setPlaceholderItems}
+              minImagesRequired={MIN_IMAGES_REQUIRED}
+              placeholderItems={placeholderItems}
+            />
+          )}
         </SortableContext>
         <CustomGalleryDragOverlay activePhoto={activePhoto} />
         {expandedImage && (

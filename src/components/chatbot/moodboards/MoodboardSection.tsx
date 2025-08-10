@@ -464,6 +464,9 @@ export const MoodboardSection: React.FC<{
                 <MoodboardTagResults
                   moodboardId={currentMoodboard.id}
                   moodboard_tags={currentMoodboard?.moodboard_tags}
+                  selected_moodboard_tags={
+                    currentMoodboard.selected_moodboard_tags
+                  }
                 />
               )}
             </CardContent>

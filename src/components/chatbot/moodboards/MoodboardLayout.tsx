@@ -36,8 +36,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Fixed interface to match the data structure
-
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
   brandId: string;
