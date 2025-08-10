@@ -63,6 +63,7 @@ export function submitOptimisticMessage({
       messages: [newMessage],
       userId,
       currentBrandContextId,
+      previousBrandContextId: stream.values.previousBrandContextId,
     },
     {
       streamMode: ["values"],
