@@ -105,7 +105,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
     ];
 
   const size = useResizeObserver<HTMLDivElement>({ ref });
-  console.log("phtos", photos);
   const allItems = [...photos, ...placeholderItems];
 
   const containerHeight = (() => {

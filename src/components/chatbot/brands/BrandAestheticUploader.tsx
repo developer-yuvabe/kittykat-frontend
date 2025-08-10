@@ -208,13 +208,11 @@ export const BrandAestheticUploader: React.FC<Props> = ({
               url: option.url,
               platform: option.platform,
               results_limit: option.resultsLimit,
-              user_id: user.id, // Ensure user_id is properly set
+              user_id: user.id,
             },
             scrape_only: true,
-            gallery_items: [], // Ensure this is included even if empty
+            gallery_items: [],
           };
-
-          console.log("Scrape payload:", scrapePayload); // Debug log
           return bulkUpload(scrapePayload);
         });
 

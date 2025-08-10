@@ -72,14 +72,12 @@ function MoodboardLayout({
     );
   }, [moodboard?.moodboard_assets]);
 
-  const { data: bulkGalleryItems = [], isLoading: isBulkLoading } = useQuery({
+  const { data: bulkGalleryItems = [] } = useQuery({
     queryKey: ["gallery-items-bulk", galleryItemIds],
     queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
     enabled: galleryItemIds.length > 0,
     staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
   });
-
-  console.log("bulkGalleryItems:", bulkGalleryItems);
 
   // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
@@ -203,7 +201,6 @@ function MoodboardLayout({
     }
   }, [bulkGalleryItems.length, moodboard.id]);
 
-  console.log("photos1:", photos);
   // Also trigger when moodboard changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -379,7 +376,37 @@ function MoodboardLayout({
     [photos.length]
   );
 
-  console.log(moodboard.moodboard_assets);
+  const autoFillPlaceholders = useCallback(() => {
+    const availableItems = galleryActions
+      .getGalleryItems()
+      .filter((item) => !photos.some((photo) => photo.id === item.id));
+
+    if (availableItems.length === 0) {
+      toast.error("No available images to add.");
+      return;
+    }
+
+    setPhotos((prevPhotos) => {
+      const updatedPhotos = [...prevPhotos];
+
+      // Determine how many placeholders we have
+      const placeholdersToFill = placeholderItems.length;
+
+      availableItems.slice(0, placeholdersToFill).forEach((item, idx) => {
+        const targetIndex = prevPhotos.length + idx;
+        updatedPhotos[targetIndex] = {
+          id: item.id,
+          src: item.asset_url,
+          width: item.dimensions?.width || 300,
+          height: item.dimensions?.height || 300,
+          alt: `Image ${item.id}`,
+          liked: item.is_favourite || false,
+        };
+      });
+
+      return updatedPhotos;
+    });
+  }, [galleryActions.getGalleryItems, photos, placeholderItems]);
 
   return (
     <div className="mt-4">
@@ -463,6 +490,7 @@ function MoodboardLayout({
                         size="lg"
                         disabled={isSaving}
                         className="flex items-center gap-1 py-1 whitespace-nowrap"
+                        onClick={autoFillPlaceholders}
                       >
                         <RegenerateIcon size={16} color="white" />
                         AutoFill All

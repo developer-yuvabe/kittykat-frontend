@@ -31,7 +31,6 @@ import {
 import { Command, CommandEmpty } from "@/components/ui/command";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
-import { set } from "lodash";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -374,7 +373,6 @@ export const MoodboardSection: React.FC<{
                 tooltip="New Moodboard"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log("clicked moodboard create button");
                   if (
                     !moodboardInformation ||
                     moodboardInformation.length === 0

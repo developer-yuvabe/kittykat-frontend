@@ -76,8 +76,6 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
         liked: item.is_favourite || false,
       } as SortablePhoto<TPhoto>;
 
-      console.log("Updated photos:", updatedPhotos);
-
       return updatedPhotos;
     });
   }, [getGalleryItems, photos]);

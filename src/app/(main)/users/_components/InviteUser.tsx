@@ -162,7 +162,6 @@ export function InviteUser() {
                               className="w-full flex-1"
                               onClick={(e) => {
                                 e.stopPropagation(); // Prevent clicks from bubbling to modal
-                                console.log("Click inside PopoverContent");
                               }}
                             >
                               <SelectItem value={UserRoleId.ADMIN}>

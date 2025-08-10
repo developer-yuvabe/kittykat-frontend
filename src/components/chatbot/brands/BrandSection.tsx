@@ -50,7 +50,6 @@ export const BrandSection: React.FC<{
     return <InitialPlaceHolder />;
   }
 
-  console.log(brandingInformation);
   return (
     <div className="flex flex-col gap-4">
       <div key={`brand-message-${brandingInformation?.static?.name}`}>
@@ -81,7 +80,6 @@ export const renderBrandData = (
   clearPinnedItems: () => void,
   analysisLogs: AnalysisLogDetail[]
 ) => {
-  console.log("ana", analysisLogs);
   const brandName = staticData?.brand?.name || "No Brand Name";
   const brandInitial = brandName.charAt(0).toUpperCase();
   const allColors = extractAllColors(staticData);
