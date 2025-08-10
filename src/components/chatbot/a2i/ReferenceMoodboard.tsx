@@ -5,7 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { generateA2iShowboard } from "@/services/api/moodboard.service";
 import { galleryService } from "@/services/api/gallery.service";
 import { useBrandStore } from "@/store/brand.store";
-import { ThreadA2iImage, ThreadDetails } from "@/types/types";
+import {
+  MoodboardInformation,
+  ThreadA2iImage,
+  ThreadDetails,
+} from "@/types/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { WandSparkles } from "lucide-react";
 import React, {
@@ -14,13 +18,17 @@ import React, {
   useCallback,
   useMemo,
   RefObject,
+  useRef,
 } from "react";
 import { toast } from "sonner";
 import { Photo } from "react-photo-album";
 import ManualMoodboardSkeleton from "../moodboards/MoodboardSkeleton";
 import { EditIcon } from "@/components/ui/custom-icon";
 import { useA2iStore } from "@/store/a2i.store";
-import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
+import CustomGalleryContainer, {
+  SortablePhoto,
+} from "@/components/gallery/CustomGalleryContainer";
+import { GalleryItemResponse } from "@/types/gallery.types";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -97,7 +105,7 @@ const ReferenceMoodboard = ({
       .sort((a, b) => a.position - b.position);
   }, [bulkGalleryItems, selectedMoodboard?.moodboard_assets]);
 
-  // Load images with proper width/height calculation
+  // Load images from ordered gallery items
   const loadImagesWithDimensions = useCallback(async () => {
     if (!orderedGalleryItems || orderedGalleryItems.length === 0) {
       setPhotos([]);
@@ -107,35 +115,15 @@ const ReferenceMoodboard = ({
     setLoading(true);
 
     try {
-      const loaded = await Promise.all(
-        orderedGalleryItems.map(
-          (item) =>
-            new Promise<SortablePhoto<Photo>>((resolve) => {
-              const img = new Image();
-              img.src = item.asset_url;
-              img.onload = () => {
-                resolve({
-                  id: item.id,
-                  src: item.asset_url,
-                  width: img.naturalWidth,
-                  height: img.naturalHeight,
-                  alt: `Reference image ${item.id}`,
-                  liked: false, // Reference images don't have like functionality
-                });
-              };
-              img.onerror = () => {
-                console.warn("Could not load image", item.asset_url);
-                resolve({
-                  id: item.id,
-                  src: item.asset_url,
-                  width: 800,
-                  height: 600,
-                  alt: `Fallback reference image ${item.id}`,
-                  liked: false,
-                });
-              };
-            })
-        )
+      const loaded: SortablePhoto<Photo>[] = orderedGalleryItems.map(
+        (item) => ({
+          id: item.id,
+          src: item.asset_url,
+          width: item.dimensions?.width || 300,
+          height: item.dimensions?.height || 300,
+          alt: `Reference image ${item.id}`,
+          liked: item.is_favourite || false,
+        })
       );
 
       setPhotos(loaded);
@@ -186,6 +174,18 @@ const ReferenceMoodboard = ({
     }
   }, [prompts]);
 
+  const latestMoodboardRef = useRef<MoodboardInformation | null>(null);
+  const latestGalleryItemsRef = useRef<GalleryItemResponse[]>([]);
+
+  // Keep track of latest values
+  useEffect(() => {
+    latestMoodboardRef.current = selectedMoodboard || null;
+  }, [selectedMoodboard]);
+
+  useEffect(() => {
+    latestGalleryItemsRef.current = bulkGalleryItems;
+  }, [bulkGalleryItems]);
+
   return (
     <ContentSection
       title="Reference Moodboard"
@@ -198,14 +198,17 @@ const ReferenceMoodboard = ({
         <div className="space-y-8">
           {showGallery && photos.length > 0 && (
             <div className="mx-auto max-w-7xl w-full px-2">
-              {/* <CustomGridGallery
+              <CustomGalleryContainer
                 photos={photos}
-                isPreview={true}
-                noOfImagesForMoodboard={0}
-                setNoOfImagesForMoodboard={function (count: number): void {
-                  throw new Error("Function not implemented.");
-                }}
-              /> */}
+                setPhotos={() => {}}
+                noOfImagesForMoodboard={photos.length}
+                setNoOfImagesForMoodboard={() => {}}
+                moodboard={selectedMoodboard!}
+                setPlaceholderItems={() => {}}
+                hasUnsavedChanges={false}
+                movePhoto={() => {}}
+                isPreview
+              />
             </div>
           )}
 

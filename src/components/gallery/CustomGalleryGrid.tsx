@@ -40,6 +40,7 @@ interface CustomGalleryGridProps<TPhoto extends Photo> {
     React.SetStateAction<SortablePhoto<Photo>[]>
   >;
   minImagesRequired: number;
+  setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const CustomGalleryGrid = forwardRef<
@@ -63,6 +64,7 @@ export const CustomGalleryGrid = forwardRef<
       isAtMinimum,
       setPhotos,
       minImagesRequired,
+      setNoOfImagesForMoodboard,
     },
     ref
   ) => {
@@ -113,6 +115,7 @@ export const CustomGalleryGrid = forwardRef<
                   onGallerySelection={onGallerySelection}
                   placeHolderIndex={index}
                   setPhotos={setPhotos}
+                  setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                 />
               ) : (
                 <CustomGalleryGridItem

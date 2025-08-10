@@ -22,6 +22,7 @@ type PlaceholderCardProps<TPhoto extends Photo> = {
   ) => void;
   placeHolderIndex: number;
   setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
+  setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
 };
 
 export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
@@ -31,6 +32,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   onGallerySelection,
   placeHolderIndex,
   setPhotos,
+  setNoOfImagesForMoodboard,
 }: PlaceholderCardProps<TPhoto>) {
   const { selectedBrandId } = useBrandStore();
 
@@ -81,51 +83,72 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   }, [getGalleryItems, photos]);
 
   return (
-    <div className="relative group w-full h-full  bg-neutral-300 flex flex-col items-center justify-center transition-all duration-200 ">
-      <div className="absolute inset-0 flex flex-col items-center justify-center  opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <Button
-          size="lg"
-          className="rounded-b-none w-28 z-40"
-          onClick={autoFillPlaceholders}
-        >
-          <RegenerateIcon size={16} color="white" />
-          Autofill
-        </Button>
-        <MoodboardGallerySelector
-          brandId={selectedBrandId!}
-          campaignId={moodboard.campaign_id}
-          moodboardId={moodboard.id}
-          hasUnsavedChanges={false}
-          inSelectionGalleryIds={photos.map((photo) => photo.id)}
-          noOfImagesForMoodboard={noOfImagesForMoodboard}
-          onGallerySelection={onGallerySelection}
-          placeHolderIndex={placeHolderIndex}
-        />
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#A1A8B3FF] via-transparent to-[#A1A8B3FF]" />
+    <div className="relative group w-full h-full bg-neutral-300 flex flex-col items-center justify-center transition-all duration-200">
+      {/* Background gradient - lowest z-index */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#A1A8B3FF] via-transparent to-[#A1A8B3FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-          <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <X
-              size={16}
-              className={`w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95 
-                }`}
-            />
-          </div>
+      {/* Main content container */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+        {/* Buttons container - enable pointer events and high z-index */}
+        <div className="flex flex-col items-center justify-center gap-0 pointer-events-auto z-50">
+          <Button
+            size="lg"
+            className="rounded-b-none w-28 hover:opacity-90"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              autoFillPlaceholders();
+            }}
+          >
+            <RegenerateIcon size={16} color="white" />
+            Autofill
+          </Button>
 
-          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <Maximize2
-              size={16}
-              className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-            />
-          </div>
-
-          <div className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
-            <HeartIcon
-              size={16}
-              className="w-5 h-5 cursor-pointer transition-all duration-200 text-white hover:scale-110 active:scale-95"
+          <div className="pointer-events-auto z-50">
+            <MoodboardGallerySelector
+              brandId={selectedBrandId!}
+              campaignId={moodboard.campaign_id}
+              moodboardId={moodboard.id}
+              hasUnsavedChanges={false}
+              inSelectionGalleryIds={photos.map((photo) => photo.id)}
+              noOfImagesForMoodboard={noOfImagesForMoodboard}
+              onGallerySelection={onGallerySelection}
+              placeHolderIndex={placeHolderIndex}
             />
           </div>
         </div>
+      </div>
+
+      {/* Corner icons */}
+      <div className="absolute top-2 left-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+        <X
+          size={16}
+          className="w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setNoOfImagesForMoodboard((prev) => prev - 1);
+            setPhotos((prev) => {
+              const newPhotos = [...prev];
+              newPhotos.splice(placeHolderIndex, 1);
+              return newPhotos;
+            });
+          }}
+        />
+      </div>
+
+      <div className="absolute top-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+        <Maximize2
+          size={16}
+          className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
+        />
+      </div>
+
+      <div className="absolute bottom-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+        <HeartIcon
+          size={16}
+          className="w-5 h-5 cursor-pointer transition-all duration-200 text-white hover:scale-110 active:scale-95"
+        />
       </div>
     </div>
   );
