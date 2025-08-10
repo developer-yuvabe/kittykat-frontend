@@ -112,7 +112,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null); // NEW
   const wasCancelledRef = useRef(false);
-  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [, setPermissionDenied] = useState(false);
   const [showMicPermissionDialog, setShowMicPermissionDialog] = useState(false);
   // Request microphone permission
   const requestMicrophonePermission = async () => {
@@ -282,6 +282,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           messages: [...toolMessages, ...messages],
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
+          previousBrandContextId: stream.values.previousBrandContextId,
         },
         {
           streamMode: ["values"],

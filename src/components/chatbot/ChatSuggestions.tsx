@@ -39,6 +39,7 @@ export function ChatSuggestions({
         messages: [...toolMessages, newHumanMessage],
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        previousBrandContextId: stream.values.previousBrandContextId,
       },
 
       {

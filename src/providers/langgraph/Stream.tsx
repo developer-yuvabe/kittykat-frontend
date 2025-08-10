@@ -26,6 +26,7 @@ export type StateType = {
   next?: string;
   userId: string;
   currentBrandContextId: string | null;
+  previousBrandContextId?: string | null;
 };
 
 const useTypedStream = useStream<
@@ -37,6 +38,7 @@ const useTypedStream = useStream<
 
       userId: string;
       currentBrandContextId: string | null;
+      previousBrandContextId?: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }

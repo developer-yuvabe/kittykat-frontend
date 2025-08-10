@@ -90,6 +90,7 @@ export default function useInterruptedActions({
         {
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
+          previousBrandContextId: thread.values.previousBrandContextId,
         },
         {
           command: {
@@ -264,6 +265,7 @@ export default function useInterruptedActions({
         {
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
+          previousBrandContextId: thread.values.previousBrandContextId,
         },
         {
           command: {
