@@ -59,9 +59,6 @@ export function ImageCountCard({
     }
   };
 
-  console.log("maxCount", maxCount);
-  console.log("imageCount", imageCount);
-
   return (
     <div className="flex flex-row ">
       <Tooltip>

@@ -14,27 +14,21 @@ import { motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MoodboardIcon, SearchIcon } from "@/components/ui/custom-icon";
+import { SearchIcon } from "@/components/ui/custom-icon";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardOverview } from "./MoodboardOverview";
-import {
-  createMoodboard,
-  createMoodboardForCampaign,
-} from "@/services/api/moodboard.service";
-import MoodboardTagsSelector from "./MoodboardTagsSelector";
+import { createMoodboard } from "@/services/api/moodboard.service";
 import MoodboardLayout from "./MoodboardLayout";
 import MoodboardTagResults from "./MoodboardTagResults";
 import MoodboardSelector from "./MoodboardSelector";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Input } from "@/components/ui/input";
-import { patchMoodboard } from "@/services/api/moodboard.service";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Command, CommandEmpty } from "@/components/ui/command";
-import { Loader } from "@/components/ui/loader";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
 
@@ -49,7 +43,6 @@ export const MoodboardSection: React.FC<{
   campaignInformation,
   selectedCampaignIndex,
   moodboardInformation,
-  moodboardTags,
   brandInformation,
 }) => {
   const { selectedBrandId } = useBrandStore();
@@ -72,11 +65,6 @@ export const MoodboardSection: React.FC<{
   const [selectedMoodboardId, setSelectedMoodboardId] = useState<string | null>(
     null
   );
-  const [localTags, setLocalTags] = useState<
-    MoodboardInformation["aggregated_tags"] | null
-  >(null);
-  const [isMoodboardGenerating, setIsMoodboardGenerating] = useState(false);
-  const [hasUnsavedTagChanges, setHasUnsavedTagChanges] = useState(false);
   const [openPopover, setOpenPopover] = useState(false);
 
   const currentCampaign = useMemo(
@@ -225,10 +213,22 @@ export const MoodboardSection: React.FC<{
 
     try {
       // Step 1: Create the new moodboard
-      await createMoodboard(selectedBrandId, currentCampaign.id, {
-        campaign_id: currentCampaign.id,
-        title: moodboardTitle,
-      });
+      const newMoodboard = await createMoodboard(
+        selectedBrandId,
+        currentCampaign.id,
+        {
+          campaign_id: currentCampaign.id,
+          title: moodboardTitle,
+        }
+      );
+
+      // Wait a short moment for the backend to process
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Set the new moodboard as selected
+      if (newMoodboard?.id) {
+        setSelectedMoodboardId(newMoodboard.id);
+      }
 
       toast.success("Moodboard created successfully!", { id: toastId });
     } catch (error) {
@@ -259,65 +259,6 @@ export const MoodboardSection: React.FC<{
     if (moodboard) {
       setSelectedMoodboardId(moodboard.id);
       setIsCreatingNewMoodboard(false);
-    }
-  };
-
-  useEffect(() => {
-    if (
-      currentMoodboard?.moodboard_generation_status === "in_progress" ||
-      galleryActions.isFetching
-    ) {
-      setIsMoodboardGenerating(true);
-    } else {
-      setIsMoodboardGenerating(false);
-    }
-  }, [
-    currentMoodboard?.moodboard_generation_status,
-    galleryActions.isFetching,
-  ]);
-
-  const handleGenerateMoodboard = async () => {
-    if (!currentMoodboard || galleryActions.totalItems < 10) {
-      toast.warning(
-        "Please add at least 10 visual style images to generate a moodboard."
-      );
-      return;
-    }
-
-    if (
-      !selectedBrandId ||
-      !currentMoodboard?.id ||
-      !currentMoodboard?.campaign_id
-    )
-      return;
-
-    setIsMoodboardGenerating(true);
-
-    try {
-      toast.info("Moodboard generation initiated!", {
-        id: "moodboard-generate",
-      });
-
-      if (hasUnsavedTagChanges && localTags) {
-        await patchMoodboard(selectedBrandId, currentMoodboard.id, {
-          aggregated_tags: localTags,
-        });
-        setHasUnsavedTagChanges(false);
-      }
-
-      await createMoodboardForCampaign(
-        selectedBrandId,
-        currentMoodboard.campaign_id,
-        currentMoodboard.id,
-        { no_of_images: noOfImagesForMoodboard }
-      );
-    } catch (error) {
-      console.error("Failed to generate moodboard:", error);
-      toast.error("Failed to generate moodboard. Please try again.", {
-        id: "moodboard-generate",
-      });
-    } finally {
-      // setIsMoodboardGenerating(false);
     }
   };
 
@@ -432,7 +373,6 @@ export const MoodboardSection: React.FC<{
                 tooltip="New Moodboard"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log("clicked moodboard create button");
                   if (
                     !moodboardInformation ||
                     moodboardInformation.length === 0
@@ -492,40 +432,6 @@ export const MoodboardSection: React.FC<{
                         />
                       )}
                       <div>
-                        <div className="mt-8">
-                          <MoodboardTagsSelector
-                            moodboard={currentMoodboard}
-                            onHasChanges={setHasUnsavedTagChanges}
-                            onTagsChange={setLocalTags}
-                            brandTags={moodboardTags}
-                          />
-                        </div>
-                        {!isCreatingNewMoodboard && currentMoodboard && (
-                          <div className="mt-4">
-                            <Button
-                              onClick={handleGenerateMoodboard}
-                              className="w-full"
-                              disabled={
-                                currentMoodboard.moodboard_generation_status ===
-                                  "in_progress" || isMoodboardGenerating
-                              }
-                            >
-                              {currentMoodboard.moodboard_generation_status ===
-                                "in_progress" || isMoodboardGenerating ? (
-                                <span className="flex items-center gap-2">
-                                  <Loader className="animate-spin text-white" />
-                                  Generating...
-                                </span>
-                              ) : (
-                                <>
-                                  <MoodboardIcon />
-                                  Generate Moodboard
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        )}
-
                         {selectedBrandId &&
                           currentMoodboard &&
                           currentCampaign &&
@@ -538,19 +444,18 @@ export const MoodboardSection: React.FC<{
                               setNoOfImagesForMoodboard={
                                 setNoOfImagesForMoodboard
                               }
-                              isGenerating={
-                                currentMoodboard?.moodboard_generation_status ===
-                                  "in_progress" || isMoodboardGenerating
-                              }
-                              isCreatingNew={isCreatingNewMoodboard}
-                              moodboards={moodboardInformation}
-                              onNewMoodboard={handleCreateNewMoodboard}
-                              selectedMoodboard={currentMoodboard}
-                              setSelectedMoodboard={handleMoodboardSelect}
-                              handleGenerateMoodboard={handleGenerateMoodboard}
                             />
                           )}
                       </div>
+                      {currentMoodboard && !isCreatingNewMoodboard && (
+                        <MoodboardTagResults
+                          moodboardId={currentMoodboard.id}
+                          moodboard_tags={currentMoodboard?.moodboard_tags}
+                          selected_moodboard_tags={
+                            currentMoodboard.selected_moodboard_tags
+                          }
+                        />
+                      )}
                     </div>
                   }
                   context={undefined}
@@ -563,12 +468,6 @@ export const MoodboardSection: React.FC<{
                     Create Moodboard
                   </Button>
                 </div>
-              )}
-              {currentMoodboard && !isCreatingNewMoodboard && (
-                <MoodboardTagResults
-                  moodboardId={currentMoodboard.id}
-                  moodboard_tags={currentMoodboard?.moodboard_tags}
-                />
               )}
             </CardContent>
           </div>

@@ -261,12 +261,6 @@ export interface MoodboardInformation {
 
   moodboard_assets: MoodboardAsset[];
 
-  moodboard_generation_status?:
-    | "not_started"
-    | "in_progress"
-    | "completed"
-    | "failed";
-
   visual_sources?: SourceHandle[];
   moodboard_analysis_status?:
     | "not_started"
@@ -274,6 +268,7 @@ export interface MoodboardInformation {
     | "completed"
     | "failed";
   moodboard_tags?: Record<string, string[]>;
+  selected_moodboard_tags?: Record<string, string[]>;
 }
 
 export interface VisualImage {
