@@ -261,12 +261,6 @@ export interface MoodboardInformation {
 
   moodboard_assets: MoodboardAsset[];
 
-  moodboard_generation_status?:
-    | "not_started"
-    | "in_progress"
-    | "completed"
-    | "failed";
-
   visual_sources?: SourceHandle[];
   moodboard_analysis_status?:
     | "not_started"

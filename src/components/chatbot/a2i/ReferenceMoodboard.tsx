@@ -1,4 +1,3 @@
-import CustomGridGallery from "@/components/gallery/CustomGridGallery";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +16,11 @@ import React, {
   RefObject,
 } from "react";
 import { toast } from "sonner";
-import { SortablePhoto } from "@/components/gallery/SortableGallery";
 import { Photo } from "react-photo-album";
 import ManualMoodboardSkeleton from "../moodboards/MoodboardSkeleton";
 import { EditIcon } from "@/components/ui/custom-icon";
 import { useA2iStore } from "@/store/a2i.store";
+import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -199,7 +198,14 @@ const ReferenceMoodboard = ({
         <div className="space-y-8">
           {showGallery && photos.length > 0 && (
             <div className="mx-auto max-w-7xl w-full px-2">
-              <CustomGridGallery photos={photos} isPreview={true} />
+              {/* <CustomGridGallery
+                photos={photos}
+                isPreview={true}
+                noOfImagesForMoodboard={0}
+                setNoOfImagesForMoodboard={function (count: number): void {
+                  throw new Error("Function not implemented.");
+                }}
+              /> */}
             </div>
           )}
 
