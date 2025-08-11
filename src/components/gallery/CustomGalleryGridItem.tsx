@@ -13,7 +13,6 @@ type GridItemProps<TPhoto extends Photo> = {
   hasUnsavedChanges?: boolean;
   handleExpandImage: (photo: SortablePhoto<TPhoto>) => void;
   isDraggable: boolean;
-  isAtMinimum: boolean;
   setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
   showLiked?: boolean;
   isPreview?: boolean;
@@ -26,7 +25,6 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   removedPhoto,
   handleExpandImage,
   isDraggable,
-  isAtMinimum,
   setPhotos,
   showLiked,
   isPreview,
@@ -36,7 +34,6 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isAtMinimum) return;
 
     setIsRemoving(true);
 
@@ -78,8 +75,7 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
             ) : (
               <X
                 size={16}
-                className={`w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95 ${
-                  isAtMinimum ? "opacity-50 cursor-not-allowed" : ""
+                className={`w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95 
                 }`}
                 onClick={handleRemove}
               />

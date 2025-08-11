@@ -337,8 +337,30 @@ function MoodboardLayout({
   };
 
   const handleCancelChanges = () => {
-    const revertedPhotos = originalPhotos.map((originalPhoto) => {
-      const currentPhoto = photos.find((p) => p.id === originalPhoto.id);
+    // Handle case where there are no original photos (new moodboard)
+    if (!originalPhotos || originalPhotos.length === 0) {
+      setPhotos([]);
+      setOriginalPhotos([]);
+      setNoOfImagesForMoodboard(10); // Reset to default
+      toast.info("Changes cancelled. Starting fresh.");
+      return;
+    }
+
+    // Filter out any undefined/null entries from originalPhotos
+    const validOriginalPhotos = originalPhotos.filter(
+      (photo) => photo && photo.id
+    );
+
+    if (validOriginalPhotos.length === 0) {
+      setPhotos([]);
+      setNoOfImagesForMoodboard(10); // Reset to default
+      toast.info("Changes cancelled. Starting fresh.");
+      return;
+    }
+
+    // Revert to original photos, preserving like status from current state
+    const revertedPhotos = validOriginalPhotos.map((originalPhoto) => {
+      const currentPhoto = photos.find((p) => p && p.id === originalPhoto.id);
       return {
         ...originalPhoto,
         liked: currentPhoto?.liked ?? originalPhoto.liked,
@@ -347,6 +369,8 @@ function MoodboardLayout({
 
     setPhotos(revertedPhotos);
     setNoOfImagesForMoodboard(revertedPhotos.length || 10);
+
+    toast.success("Changes cancelled. Reverted to last saved state.");
   };
 
   // Handle gallery item selection for placeholders

@@ -54,7 +54,6 @@ export const CustomGalleryGrid = forwardRef<
       hasUnsavedChanges,
       handleExpandImage,
       isDraggable,
-      isAtMinimum,
       setPhotos,
       minImagesRequired,
       setNoOfImagesForMoodboard,
@@ -120,7 +119,6 @@ export const CustomGalleryGrid = forwardRef<
                   hasUnsavedChanges={hasUnsavedChanges}
                   handleExpandImage={handleExpandImage}
                   isDraggable={isDraggable}
-                  isAtMinimum={isAtMinimum}
                   setPhotos={setPhotos}
                   showLiked={showLiked}
                   isPreview={!isDraggable}
