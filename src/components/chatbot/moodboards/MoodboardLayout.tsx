@@ -369,7 +369,6 @@ function MoodboardLayout({
 
     setPhotos(revertedPhotos);
     setNoOfImagesForMoodboard(revertedPhotos.length || 10);
-
     toast.success("Changes cancelled. Reverted to last saved state.");
   };
 
@@ -402,9 +401,11 @@ function MoodboardLayout({
       .filter((item) => !photos.some((photo) => photo.id === item.id));
 
     if (availableItems.length === 0) {
+
       toast.warning(
         "No available images to add. Please add images to your gallery."
       );
+
       return;
     }
 

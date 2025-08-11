@@ -122,6 +122,7 @@ export const CustomGalleryGrid = forwardRef<
                   setPhotos={setPhotos}
                   showLiked={showLiked}
                   isPreview={!isDraggable}
+
                 />
               )}
             </div>
