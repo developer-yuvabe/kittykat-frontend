@@ -129,6 +129,13 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            // Prevent removal if count would drop below 10
+            if (noOfImagesForMoodboard <= 10) {
+              toast.warning("Atleast 10 images are required.");
+              return;
+            }
+
             setNoOfImagesForMoodboard((prev) => prev - 1);
             setPhotos((prev) => {
               const newPhotos = [...prev];
