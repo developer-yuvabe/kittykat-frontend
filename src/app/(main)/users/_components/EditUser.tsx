@@ -1,37 +1,15 @@
 "use client";
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import {
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-  Dialog,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useBrandStore } from "@/store/brand.store";
-import { UserListItem, UserRoleId } from "@/types/user.types";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   MultiSelect,
   MultiSelectContent,
@@ -40,23 +18,38 @@ import {
   MultiSelectTrigger,
   MultiSelectValue,
 } from "@/components/ui/multi-select-dropdown";
-import { toast } from "sonner";
-import { updateUser } from "@/services/api/user.service";
-import { useQueryClient } from "@tanstack/react-query";
-import { updateInvitedUserSchema } from "@/schema/user.schema";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { updateInvitedUserSchema } from "@/schema/user.schema";
+import { updateUser } from "@/services/api/user.service";
+import { useBrandStore } from "@/store/brand.store";
+import { UserListItem, UserListResponse, UserRoleId } from "@/types/user.types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as z from "zod";
+
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
 export function EditUser({
   user,
   setIsOpen,
   isOpen,
+  queryKey,
 }: {
   user: UserListItem;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  queryKey: (string | number)[];
 }) {
   const { brands } = useBrandStore();
   const queryClient = useQueryClient();
@@ -85,7 +78,7 @@ export function EditUser({
 
   const onSubmit = async (data: EditUserFormData) => {
     setIsOpen(false);
-    // console.log("brandAccess", data.brandAccess);
+
     toast.promise(
       updateUser(user.id, {
         roleId: data.role,
@@ -93,10 +86,18 @@ export function EditUser({
       }),
       {
         loading: "Updating user...",
-        success: () => {
-          queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === "users",
+        success: (updatedUser) => {
+          queryClient.setQueryData<UserListResponse>(queryKey, (oldData) => {
+            if (!oldData) return oldData;
+
+            return {
+              ...oldData,
+              users: oldData.users.map((u) =>
+                u.id === user.id ? updatedUser : u
+              ),
+            };
           });
+
           return "User updated successfully!";
         },
         error: () => {

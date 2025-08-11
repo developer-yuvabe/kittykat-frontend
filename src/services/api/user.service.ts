@@ -2,7 +2,12 @@ import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
 import { inviationSchema } from "@/schema/inviation.schema";
 import { PaginationMeta } from "@/types/types";
-import { User, UserBrand, UserListItem } from "@/types/user.types";
+import {
+  User,
+  UserBrand,
+  UserListItem,
+  UserListResponse,
+} from "@/types/user.types";
 import { z } from "zod";
 
 export const updateUser = async (
@@ -11,7 +16,7 @@ export const updateUser = async (
     roleId?: string;
     brand_access?: string[];
   }
-): Promise<User | null> => {
+): Promise<UserListItem> => {
   try {
     const fieldsToUpdate = {
       role_id: userData.roleId,
@@ -19,16 +24,9 @@ export const updateUser = async (
       brand_access: userData.brand_access,
     };
 
-    // console.log(
-    //   "Updating user with brand_access:",
-    //   fieldsToUpdate.brand_access
-    // );
-
-    const updatedUser = await handleApiRequest<User | null>(
+    const updatedUser = await handleApiRequest<UserListItem>(
       axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
     );
-
-    // console.log("Updated user response:", updatedUser);
 
     return updatedUser;
   } catch (error) {
@@ -41,10 +39,7 @@ export const fetchAllUsers = async (
   page: number,
   limit: number,
   searchQuery?: string
-): Promise<{
-  users: UserListItem[];
-  pagination: PaginationMeta;
-} | null> => {
+): Promise<UserListResponse | null> => {
   try {
     const skip = (page - 1) * limit;
 
@@ -84,14 +79,14 @@ export const fetchUserBrands = async (
       axiosInstance.get(`/users/${userId}/brands`)
     );
     return data;
-  } catch (e) {
+  } catch {
     return [];
   }
 };
 
 export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
   try {
-    const response = await handleApiRequest<User | null>(
+    const response = await handleApiRequest<UserListItem>(
       axiosInstance.post("/invitations", {
         email: data.email,
         role: data.role,
@@ -99,6 +94,11 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
         base_url: window.location.origin,
       })
     );
+
+    if (!response) {
+      throw new Error("Failed to invite user");
+    }
+
     return response;
   } catch (error) {
     throw error;

@@ -37,7 +37,7 @@ export const UsersTable = () => {
     queryFn: () => fetchAllUsers(page, AppConfig.TABLE_VIEW_LIMIT, searchTerm),
   });
   const columns = useMemo(
-    () => getUserTableColumns(page, limit),
+    () => getUserTableColumns(page, limit, searchTerm),
     [page, limit]
   );
 
@@ -97,7 +97,7 @@ export const UsersTable = () => {
               className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm placeholder:text-muted-foreground border-0 outline-none focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-transparent"
             />
           </div>
-          <InviteUser />
+          <InviteUser queryKey={["users", page, limit, searchTerm]} />
         </div>
       </div>
       {/* --- Table Wrapper --- */}
