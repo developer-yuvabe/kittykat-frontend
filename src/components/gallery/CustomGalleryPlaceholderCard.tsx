@@ -59,7 +59,9 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
     );
 
     if (availableItems.length === 0) {
-      toast.error("No available images to add.");
+      toast.error(
+        "No available images to add. Please add images to your gallery."
+      );
       return;
     }
 
