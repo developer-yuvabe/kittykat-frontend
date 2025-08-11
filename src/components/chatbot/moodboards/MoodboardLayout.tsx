@@ -13,7 +13,6 @@ import { SaveIcon, X } from "lucide-react";
 import {
   analyzeMoodboard,
   patchMoodboard,
-  replaceMoodboardImage,
 } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import {
@@ -379,7 +378,9 @@ function MoodboardLayout({
       .filter((item) => !photos.some((photo) => photo.id === item.id));
 
     if (availableItems.length === 0) {
-      toast.error("No available images to add.");
+      toast.warning(
+        "No available images to add. Please add images to your gallery."
+      );
       return;
     }
 
@@ -524,27 +525,6 @@ function MoodboardLayout({
                   setPhotos={setPhotos}
                   movePhoto={movePhoto}
                   onPhotoLike={onPhotoLike}
-                  onReplaceImage={async ({
-                    imageToReplaceId,
-                    replacementImageUrl,
-                  }) => {
-                    try {
-                      await replaceMoodboardImage(
-                        brandId,
-                        moodboard.campaign_id,
-                        moodboard.id,
-                        {
-                          image_to_replace_id: imageToReplaceId,
-                          replacement_image_url: replacementImageUrl,
-                        }
-                      );
-                    } catch (error) {
-                      console.error(
-                        "Failed to replace moodboard image:",
-                        error
-                      );
-                    }
-                  }}
                   hasUnsavedChanges={hasUnsavedChanges}
                   noOfImagesForMoodboard={noOfImagesForMoodboard}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}

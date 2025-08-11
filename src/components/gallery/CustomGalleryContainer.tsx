@@ -34,13 +34,6 @@ type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
   setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
   movePhoto?: (oldIndex: number, newIndex: number) => void;
   onPhotoLike?: (index: number, liked: boolean) => void;
-  onReplaceImage?: ({
-    imageToReplaceId,
-    replacementImageUrl,
-  }: {
-    imageToReplaceId: string;
-    replacementImageUrl: string;
-  }) => Promise<void>;
   hasUnsavedChanges?: boolean;
   noOfImagesForMoodboard: number;
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
@@ -62,7 +55,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   photos,
   movePhoto,
   onPhotoLike,
-  onReplaceImage,
   hasUnsavedChanges,
   noOfImagesForMoodboard,
   setNoOfImagesForMoodboard,
@@ -132,7 +124,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         moodboard={moodboard}
         onGallerySelection={onGallerySelection}
         onPhotoLike={onPhotoLike}
-        onReplaceImage={onReplaceImage}
         hasUnsavedChanges={hasUnsavedChanges}
         handleExpandImage={handleExpandImage}
         isDraggable={isDraggable}

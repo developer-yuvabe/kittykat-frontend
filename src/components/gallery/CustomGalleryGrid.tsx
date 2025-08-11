@@ -24,13 +24,6 @@ interface CustomGalleryGridProps<TPhoto extends Photo> {
     placeHolderIndex: number
   ) => void;
   onPhotoLike?: (index: number, liked: boolean) => void;
-  onReplaceImage?: ({
-    imageToReplaceId,
-    replacementImageUrl,
-  }: {
-    imageToReplaceId: string;
-    replacementImageUrl: string;
-  }) => Promise<void>;
   hasUnsavedChanges?: boolean;
   handleExpandImage: (photo: SortablePhoto<TPhoto>) => void;
   isDraggable: boolean;
@@ -58,7 +51,6 @@ export const CustomGalleryGrid = forwardRef<
       moodboard,
       onGallerySelection,
       onPhotoLike,
-      onReplaceImage,
       hasUnsavedChanges,
       handleExpandImage,
       isDraggable,
@@ -125,13 +117,13 @@ export const CustomGalleryGrid = forwardRef<
                   index={index}
                   onPhotoLike={handlePhotoLike}
                   removedPhoto={handleRemovePhoto}
-                  onReplaceImage={onReplaceImage}
                   hasUnsavedChanges={hasUnsavedChanges}
                   handleExpandImage={handleExpandImage}
                   isDraggable={isDraggable}
                   isAtMinimum={isAtMinimum}
                   setPhotos={setPhotos}
                   showLiked={showLiked}
+                  isPreview={!isDraggable}
                 />
               )}
             </div>
