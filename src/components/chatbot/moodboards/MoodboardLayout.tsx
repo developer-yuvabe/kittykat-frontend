@@ -353,6 +353,7 @@ function MoodboardLayout({
 
     if (validOriginalPhotos.length === 0) {
       setPhotos([]);
+      setOriginalPhotos([]);
       setNoOfImagesForMoodboard(10); // Reset to default
       toast.info("Changes cancelled. Starting fresh.");
       return;
@@ -401,7 +402,6 @@ function MoodboardLayout({
       .filter((item) => !photos.some((photo) => photo.id === item.id));
 
     if (availableItems.length === 0) {
-
       toast.warning(
         "No available images to add. Please add images to your gallery."
       );
