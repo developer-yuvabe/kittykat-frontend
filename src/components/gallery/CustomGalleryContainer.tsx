@@ -47,6 +47,8 @@ type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
     React.SetStateAction<SortablePhoto<Photo>[]>
   >;
   isPreview?: boolean;
+  showAdvancedSettings?: boolean;
+  setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const MIN_IMAGES_REQUIRED = 10;
@@ -64,6 +66,8 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   placeholderItems = [],
   setPlaceholderItems,
   isPreview = false,
+  showAdvancedSettings = false,
+  setShowAdvancedSettings,
 }: OptimisticCustomGridGalleryProps<TPhoto>) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
@@ -159,6 +163,8 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
               placeholderItems={placeholderItems}
               showLiked={showLiked}
               setShowLiked={setShowLiked}
+              showAdvancedSettings={showAdvancedSettings}
+              setShowAdvancedSettings={setShowAdvancedSettings}
             />
           )}
         </SortableContext>
@@ -179,6 +185,21 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   return (
     <>
       {galleryContent}
+      {!isPreview && (
+        <CustomGalleryControls
+          photosLength={photos.length}
+          noOfImagesForMoodboard={noOfImagesForMoodboard}
+          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+          setPhotos={setPhotos}
+          setPlaceholderItems={setPlaceholderItems}
+          minImagesRequired={MIN_IMAGES_REQUIRED}
+          placeholderItems={placeholderItems}
+          showLiked={showLiked}
+          setShowLiked={setShowLiked}
+          showAdvancedSettings={showAdvancedSettings}
+          setShowAdvancedSettings={setShowAdvancedSettings}
+        />
+      )}
       {expandedImage && (
         <ImageModal
           imageUrl={expandedImage.url}

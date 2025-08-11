@@ -9,17 +9,14 @@ import React, {
 import { Photo } from "react-photo-album";
 import "react-photo-album/rows.css";
 import { Button } from "@/components/ui/button";
-import { SaveIcon, X } from "lucide-react";
+import { Loader2, SaveIcon, X } from "lucide-react";
 import {
   analyzeMoodboard,
   patchMoodboard,
+  getAutoFillMoodboardSuggestedImages,
 } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
-import {
-  AnalysisChartIcon,
-  RegenerateIcon,
-  SaveIcon2,
-} from "@/components/ui/custom-icon";
+import { RegenerateIcon } from "@/components/ui/custom-icon";
 import OptimisticCustomGridGallery, {
   SortablePhoto,
 } from "@/components/gallery/CustomGalleryContainer";
@@ -39,6 +36,8 @@ interface MoodboardLayoutProps {
   brandId: string;
   noOfImagesForMoodboard: number;
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
+  showAdvancedSettings: boolean;
+  setShowAdvancedSettings: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function MoodboardLayout({
@@ -46,13 +45,14 @@ function MoodboardLayout({
   brandId,
   noOfImagesForMoodboard,
   setNoOfImagesForMoodboard,
+  showAdvancedSettings,
+  setShowAdvancedSettings,
 }: MoodboardLayoutProps) {
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
     []
   );
   const [loading, setLoading] = useState(false);
-  const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentMoodboardId, setCurrentMoodboardId] = useState<string>(
     moodboard?.id
@@ -75,6 +75,28 @@ function MoodboardLayout({
     staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
   });
 
+  // TanStack Query for autofill suggestions - fetch on mount
+  const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
+    useQuery({
+      queryKey: [
+        "autofill-suggestions",
+        brandId,
+        moodboard.campaign_id,
+        moodboard.id,
+        50,
+      ],
+      queryFn: () =>
+        getAutoFillMoodboardSuggestedImages(
+          brandId,
+          moodboard.campaign_id,
+          moodboard.id,
+          50
+        ),
+      enabled: !!brandId && !!moodboard.campaign_id && !!moodboard.id, // Fetch when all required params are available
+      staleTime: 1000 * 60 * 5, // cache for 5 minutes
+      retry: 2, // Retry failed requests 2 times
+    });
+
   // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
     latestMoodboardRef.current = moodboard;
@@ -84,8 +106,6 @@ function MoodboardLayout({
   }, [bulkGalleryItems]);
 
   const handleAnalyzeMoodboard = async () => {
-    setAnalyzeLoading(true);
-
     if (hasUnsavedChanges) {
       await handleSaveChanges();
     }
@@ -102,8 +122,6 @@ function MoodboardLayout({
       );
     } catch (error) {
       console.error("Image analysis failed:", error);
-    } finally {
-      setAnalyzeLoading(false);
     }
   };
 
@@ -390,7 +408,7 @@ function MoodboardLayout({
 
   // Handle gallery item selection for placeholders
   const handleGallerySelection = useCallback(
-    (selectedItems: GalleryItemResponse[], placeHolderIndex: number) => {
+    (selectedItems: GalleryItemResponse[]) => {
       const placeholderStartIndex = photos.length;
 
       setPhotos((prevPhotos) => {
@@ -412,15 +430,23 @@ function MoodboardLayout({
   );
 
   const autoFillPlaceholders = useCallback(() => {
-    const availableItems = galleryActions
-      .getGalleryItems()
-      .filter((item) => !photos.some((photo) => photo.id === item.id));
+    if (isAutoFillLoading) {
+      toast.warning("AutoFill suggestions are still loading...");
+      return;
+    }
+
+    if (!autoFillSuggestions || autoFillSuggestions.length === 0) {
+      toast.warning("No suggested images available. Please try again later.");
+      return;
+    }
+
+    // Filter out images that are already in the moodboard
+    const availableItems = autoFillSuggestions.filter(
+      (item) => !photos.some((photo) => photo.id === item.id)
+    );
 
     if (availableItems.length === 0) {
-      toast.warning(
-        "No available images to add. Please add images to your gallery."
-      );
-
+      toast.warning("All suggested images are already in your moodboard.");
       return;
     }
 
@@ -444,7 +470,14 @@ function MoodboardLayout({
 
       return updatedPhotos;
     });
-  }, [galleryActions.getGalleryItems, photos, placeholderItems]);
+
+    toast.success(
+      `Added ${Math.min(
+        availableItems.length,
+        placeholderItems.length
+      )} suggested images to your moodboard.`
+    );
+  }, [isAutoFillLoading, autoFillSuggestions, photos, placeholderItems]);
 
   return (
     <div className="mt-4">
@@ -454,9 +487,10 @@ function MoodboardLayout({
           <div className="w-full flex flex-col gap-y-4">
             {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
             <div className="w-full flex flex-col gap-3">
-              {/* Top row - Main controls */}
-              <div className="flex flex-col 2xl:flex-row 2xl:flex-wrap gap-3 w-full">
-                <div className="flex flex-col sm:flex-row gap-6 flex-wrap flex-1 min-w-0">
+              {/* Top row - Title, Save Indicator, and Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
+                {/* Left side - Title and Save Indicator */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 flex-1 min-w-0">
                   <div className="min-w-[200px]">
                     <EditableInput
                       value={moodboard.title}
@@ -482,9 +516,10 @@ function MoodboardLayout({
                   </div>
                 </div>
 
-                {/* Save/Cancel for large screens */}
-                {hasUnsavedChanges && (
-                  <div className="hidden 2xl:flex flex-wrap items-start gap-2 ml-auto">
+                {/* Right side - Action Buttons (from right to left: Save, Cancel, AutoFill All) */}
+                <div className="flex gap-2 items-center justify-end">
+                  {/* Cancel Button - middle */}
+                  {hasUnsavedChanges && (
                     <Button
                       variant="outline"
                       size="lg"
@@ -495,15 +530,19 @@ function MoodboardLayout({
                       <X size={16} />
                       Cancel
                     </Button>
+                  )}
+
+                  {/* Save Button - rightmost */}
+                  {hasUnsavedChanges && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span tabIndex={0} className="inline-flex">
                           <button
-                            onClick={handleSaveChanges}
+                            onClick={handleAnalyzeMoodboard}
                             disabled={isSaving || photos.length < 10}
                             className="flex items-center gap-1 whitespace-nowrap border border-gray-400 rounded-md px-3 py-[7px] text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
-                            <SaveIcon size={16} className="text-gray-700 " />
+                            <SaveIcon size={16} className="text-gray-700" />
                             {isSaving ? "Saving..." : "Save"}
                           </button>
                         </span>
@@ -514,47 +553,31 @@ function MoodboardLayout({
                         </TooltipContent>
                       )}
                     </Tooltip>
-                  </div>
-                )}
-                {placeholderItems.length > 0 && (
-                  <Button
-                    size="lg"
-                    disabled={isSaving}
-                    className="flex items-center gap-1 py-1 whitespace-nowrap"
-                    onClick={autoFillPlaceholders}
-                  >
-                    <RegenerateIcon size={16} color="white" />
-                    AutoFill All
-                  </Button>
-                )}
-              </div>
+                  )}
 
-              {/* Save/Cancel for small screens */}
-              {hasUnsavedChanges && (
-                <div className="flex 2xl:hidden gap-2 justify-end sm:justify-start flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelChanges}
-                    disabled={isSaving}
-                    className="flex items-center gap-1 whitespace-nowrap"
-                  >
-                    <X size={16} />
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveChanges}
-                    disabled={isSaving}
-                    className="flex items-center gap-1 whitespace-nowrap"
-                  >
-                    <>
-                      <SaveIcon2 size={16} />
-                      {isSaving ? "Saving..." : "Save Changes"}
-                    </>
-                  </Button>
+                  {/* AutoFill All Button - leftmost */}
+                  {placeholderItems.length > 0 && (
+                    <Button
+                      size="lg"
+                      disabled={isSaving || isAutoFillLoading}
+                      className="flex items-center gap-1 py-1 whitespace-nowrap"
+                      onClick={autoFillPlaceholders}
+                    >
+                      {isAutoFillLoading ? (
+                        <>
+                          <span>Autofill All</span>
+                          <Loader2 className="animate-spin text-white" />
+                        </>
+                      ) : (
+                        <>
+                          <RegenerateIcon color="white" />
+                          <span>Autofill All</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Image Grid */}
@@ -572,43 +595,11 @@ function MoodboardLayout({
                   placeholderItems={placeholderItems as SortablePhoto<Photo>[]}
                   moodboard={moodboard}
                   setPlaceholderItems={setPlaceholderItems}
+                  showAdvancedSettings={showAdvancedSettings}
+                  setShowAdvancedSettings={setShowAdvancedSettings}
                 />
               </div>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="w-full ">
-                  <Button
-                    className="w-full"
-                    disabled={
-                      analyzeLoading || photos.length < 10 || hasUnsavedChanges
-                    }
-                    onClick={handleAnalyzeMoodboard}
-                  >
-                    {analyzeLoading ? (
-                      "Analyzing..."
-                    ) : (
-                      <>
-                        <AnalysisChartIcon /> Moodboard Analysis
-                      </>
-                    )}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-
-              {/* Tooltip logic */}
-              {analyzeLoading && (
-                <TooltipContent>Analysis in progress...</TooltipContent>
-              )}
-              {!analyzeLoading && photos.length < 10 && (
-                <TooltipContent>
-                  Add at least 10 images to analyze
-                </TooltipContent>
-              )}
-              {!analyzeLoading && photos.length >= 10 && hasUnsavedChanges && (
-                <TooltipContent>Save changes before analysis</TooltipContent>
-              )}
-            </Tooltip>
           </div>
         )}
       </div>

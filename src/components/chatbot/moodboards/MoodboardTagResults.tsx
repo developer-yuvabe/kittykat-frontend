@@ -18,12 +18,14 @@ type Props = {
   moodboard_tags?: Record<string, string[]>;
   selected_moodboard_tags?: Record<string, string[]>;
   moodboardId?: MoodboardInformation["id"];
+  showAdvancedSettings?: boolean;
 };
 
 function MoodboardTagResults({
   moodboard_tags,
   selected_moodboard_tags,
   moodboardId,
+  showAdvancedSettings = false,
 }: Props) {
   const [localTags, setLocalTags] = useState<
     Record<string, { value: string; selected: boolean }[]>
@@ -112,37 +114,46 @@ function MoodboardTagResults({
 
   return (
     <div className="mt-4">
-      <p className="font-medium text-neutral-500 text-sm mb-2">
-        Select the tags you want and hit &quot;Concept Visual Generation&quot;
-        to generate the prompts that align with your moodboard for concept
-        visuals.
-      </p>
-      <div className=" space-y-6">
-        {Object.entries(localTags).map(([category, tags]) => (
-          <div key={category} className="space-y-3">
-            <h3 className="text-base font-medium text-neutral-900 capitalize">
-              {capitalizeKey(category)}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Badge
-                  key={tag.value}
-                  onClick={() => toggleTag(category, tag.value)}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={tag.selected}
-                  variant={tag.selected ? "default" : "outline"}
-                  className={`cursor-pointer select-none text-sm rounded-2xl transition-all duration-200 hover:scale-105 ${
-                    tag.selected ? "bg-[#7F55E0FF]" : "bg-[#F3F4F6FF]"
-                  }`}
-                >
-                  {tag.value}
-                </Badge>
+      <div className="space-y-6">
+        {/* Moodboard Tags - Only shown when advanced settings is enabled */}
+
+        {showAdvancedSettings && (
+          <>
+            <p className="font-medium text-neutral-500 text-sm mb-2">
+              Select the tags you want and hit &quot;Concept Visual
+              Generation&quot; to generate the prompts that align with your
+              moodboard for concept visuals.
+            </p>
+            <div className="space-y-6">
+              {Object.entries(localTags).map(([category, tags]) => (
+                <div key={category} className="space-y-3">
+                  <h3 className="text-base font-medium text-neutral-900 capitalize">
+                    {capitalizeKey(category)}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag.value}
+                        onClick={() => toggleTag(category, tag.value)}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={tag.selected}
+                        variant={tag.selected ? "default" : "outline"}
+                        className={`cursor-pointer select-none text-sm rounded-2xl transition-all duration-200 hover:scale-105 ${
+                          tag.selected ? "bg-[#7F55E0FF]" : "bg-[#F3F4F6FF]"
+                        }`}
+                      >
+                        {tag.value}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        ))}
+          </>
+        )}
 
+        {/* Concept Visual Generation Button - Always visible */}
         <Button
           className="w-full"
           onClick={handleGenerate}

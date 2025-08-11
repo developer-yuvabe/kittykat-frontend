@@ -10,7 +10,9 @@ import { RegenerateIcon } from "../ui/custom-icon";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { toast } from "sonner";
 import { useCallback } from "react";
-import { HeartIcon, Maximize2, X } from "lucide-react";
+import { HeartIcon, Loader2, Maximize2, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getAutoFillMoodboardSuggestedImages } from "@/services/api/moodboard.service";
 
 type PlaceholderCardProps<TPhoto extends Photo> = {
   photos: SortablePhoto<TPhoto>[];
@@ -36,7 +38,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
 }: PlaceholderCardProps<TPhoto>) {
   const { selectedBrandId } = useBrandStore();
 
-  const { getGalleryItems } = useGalleryQuery(
+  useGalleryQuery(
     {
       selectedFilters: {
         brands: [selectedBrandId!],
@@ -53,15 +55,46 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
     30
   );
 
+  // TanStack Query for autofill suggestions - fetch on mount
+  const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
+    useQuery({
+      queryKey: [
+        "autofill-suggestions",
+        selectedBrandId,
+        moodboard.campaign_id,
+        moodboard.id,
+        50,
+      ],
+      queryFn: () =>
+        getAutoFillMoodboardSuggestedImages(
+          selectedBrandId!,
+          moodboard.campaign_id,
+          moodboard.id,
+          50
+        ),
+      enabled: !!selectedBrandId && !!moodboard.campaign_id && !!moodboard.id, // Fetch when all required params are available
+      staleTime: 1000 * 60 * 5, // cache for 5 minutes
+      retry: 2, // Retry failed requests 2 times
+    });
+
   const autoFillPlaceholders = useCallback(() => {
-    const availableItems = getGalleryItems().filter(
+    if (isAutoFillLoading) {
+      toast.warning("AutoFill suggestions are still loading...");
+      return;
+    }
+
+    if (!autoFillSuggestions || autoFillSuggestions.length === 0) {
+      toast.warning("No suggested images available. Please try again later.");
+      return;
+    }
+
+    // Filter out images that are already in the moodboard
+    const availableItems = autoFillSuggestions.filter(
       (item) => !photos.some((photo) => photo.id === item.id)
     );
 
     if (availableItems.length === 0) {
-      toast.error(
-        "No available images to add. Please add images to your gallery."
-      );
+      toast.warning("All suggested images are already in your moodboard.");
       return;
     }
 
@@ -82,7 +115,9 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
 
       return updatedPhotos;
     });
-  }, [getGalleryItems, photos]);
+
+    toast.success("Added suggested image to your moodboard.");
+  }, [isAutoFillLoading, autoFillSuggestions, photos, setPhotos]);
 
   return (
     <div className="relative group w-full h-full bg-neutral-300 flex flex-col items-center justify-center transition-all duration-200">
@@ -96,14 +131,24 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
           <Button
             size="lg"
             className="rounded-b-none w-28 hover:opacity-90"
+            disabled={isAutoFillLoading}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               autoFillPlaceholders();
             }}
           >
-            <RegenerateIcon size={16} color="white" />
-            Autofill
+            {isAutoFillLoading ? (
+              <>
+                <span className="mr-2">Autofill</span>
+                <Loader2 className="animate-spin text-white" />
+              </>
+            ) : (
+              <>
+                <RegenerateIcon color="white" />
+                <span>Autofill</span>
+              </>
+            )}
           </Button>
 
           <div className="pointer-events-auto z-50">
