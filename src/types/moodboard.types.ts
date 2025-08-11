@@ -56,3 +56,14 @@ export interface ReplaceMoodboardImageRequest {
 export interface AnalyzeMoodboardRequest {
   image_urls: string[];
 }
+
+export interface AutoFillSuggestedImage {
+  id: string;
+  is_favourite: boolean;
+  dimensions: {
+    width: number;
+    height: number;
+  };
+  asset_url: string;
+  preview_url: string | null;
+}

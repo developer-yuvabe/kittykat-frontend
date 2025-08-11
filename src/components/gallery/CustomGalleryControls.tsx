@@ -4,9 +4,10 @@ import type React from "react";
 import type { Photo } from "react-photo-album";
 import { moodboardGridLayouts } from "@/lib/moodboard.utils";
 import type { SortablePhoto } from "./CustomGalleryContainer";
-import { BrushCleaning } from "lucide-react";
+import { BrushCleaning, Settings } from "lucide-react";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 import { Switch } from "../ui/switch";
+import { Button } from "../ui/button";
 
 interface CustomGalleryControlsProps<TPhoto extends Photo> {
   photosLength: number;
@@ -20,6 +21,8 @@ interface CustomGalleryControlsProps<TPhoto extends Photo> {
   placeholderItems: SortablePhoto<Photo>[];
   showLiked: boolean;
   setShowLiked: (value: boolean) => void;
+  showAdvancedSettings?: boolean;
+  setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function CustomGalleryControls<TPhoto extends Photo>({
@@ -32,6 +35,8 @@ export function CustomGalleryControls<TPhoto extends Photo>({
   placeholderItems,
   showLiked,
   setShowLiked,
+  showAdvancedSettings = false,
+  setShowAdvancedSettings,
 }: CustomGalleryControlsProps<TPhoto>) {
   const maxImages = Math.max(...Object.keys(moodboardGridLayouts).map(Number));
 
@@ -126,6 +131,12 @@ export function CustomGalleryControls<TPhoto extends Photo>({
           onCheckedChange={setShowLiked}
           className="data-[state=checked]:bg-[#636AE8FF]"
         />
+        <Button
+          variant={showAdvancedSettings ? "outline" : "default"}
+          onClick={() => setShowAdvancedSettings?.(!showAdvancedSettings)}
+        >
+          <Settings /> Advanced Settings
+        </Button>
       </div>
     </div>
   );

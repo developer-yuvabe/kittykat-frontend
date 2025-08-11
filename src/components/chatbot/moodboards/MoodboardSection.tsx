@@ -144,6 +144,7 @@ export const MoodboardSection: React.FC<{
 
   const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
     useState<number>(0);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
@@ -284,7 +285,11 @@ export const MoodboardSection: React.FC<{
                 </div>
                 <div className="flex flex-col">
                   <div className="flex justify-between">
-                    <div className="text-sm font-medium">{moodboardTitle}</div>
+                    <div className="flex flex-col">
+                      <div className="text-sm font-medium break-words max-w-xs">
+                        {moodboardTitle}
+                      </div>
+                    </div>
                   </div>
                   <div className="text-xs text-[#6e7787]">
                     Design the visual direction of your campaign
@@ -318,7 +323,9 @@ export const MoodboardSection: React.FC<{
                         className="font-bold w-96"
                       />
                     ) : (
-                      <p className="font-bold">{moodboardTitle}</p>
+                      <p className="font-bold break-words max-w-xs">
+                        {moodboardTitle}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -444,6 +451,8 @@ export const MoodboardSection: React.FC<{
                               setNoOfImagesForMoodboard={
                                 setNoOfImagesForMoodboard
                               }
+                              showAdvancedSettings={showAdvancedSettings}
+                              setShowAdvancedSettings={setShowAdvancedSettings}
                             />
                           )}
                       </div>
@@ -454,6 +463,7 @@ export const MoodboardSection: React.FC<{
                           selected_moodboard_tags={
                             currentMoodboard.selected_moodboard_tags
                           }
+                          showAdvancedSettings={showAdvancedSettings}
                         />
                       )}
                     </div>

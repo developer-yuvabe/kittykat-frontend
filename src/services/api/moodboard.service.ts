@@ -3,6 +3,7 @@ import { handleApiRequest } from "@/lib/utils";
 import {
   AddMoodboardImageRequest,
   AnalyzeMoodboardRequest,
+  AutoFillSuggestedImage,
   CreateMoodboardRequest,
   MoodboardCreateRequest,
   MoodboardImageAnalysisRequest,
@@ -244,3 +245,19 @@ export const enhancePrompt = async (
     })
   );
 };
+
+export async function getAutoFillMoodboardSuggestedImages(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string,
+  count: number
+): Promise<AutoFillSuggestedImage[]> {
+  return handleApiRequest<AutoFillSuggestedImage[]>(
+    axiosInstance.get(
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}/auto-fill`,
+      {
+        params: { count },
+      }
+    )
+  );
+}
