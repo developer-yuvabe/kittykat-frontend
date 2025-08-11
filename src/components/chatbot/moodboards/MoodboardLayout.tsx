@@ -107,10 +107,19 @@ function MoodboardLayout({
     }
   };
 
-  // Check if there are unsaved changes (excluding like status)
+  // Fixed: Check if there are unsaved changes (excluding like status)
   const hasUnsavedChanges = useMemo(() => {
-    if (photos.length !== originalPhotos.length) return true;
+    // If both are empty, there are no unsaved changes
+    if (photos.length === 0 && originalPhotos.length === 0) {
+      return false;
+    }
 
+    // If lengths are different, there are changes
+    if (photos.length !== originalPhotos.length) {
+      return true;
+    }
+
+    // Check if order or content has changed
     return photos.some((photo, index) => {
       const originalPhoto = originalPhotos[index];
       return !originalPhoto || photo.id !== originalPhoto.id;
@@ -242,10 +251,12 @@ function MoodboardLayout({
       return updated;
     });
 
-    // Also update original photos to keep them in sync for like status
     setOriginalPhotos((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], liked };
+      const originalIndex = updated.findIndex((p) => p.id === photo.id);
+      if (originalIndex !== -1) {
+        updated[originalIndex] = { ...updated[originalIndex], liked };
+      }
       return updated;
     });
 
@@ -268,7 +279,10 @@ function MoodboardLayout({
 
       setOriginalPhotos((prev) => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], liked: !liked };
+        const originalIndex = updated.findIndex((p) => p.id === photo.id);
+        if (originalIndex !== -1) {
+          updated[originalIndex] = { ...updated[originalIndex], liked: !liked };
+        }
         return updated;
       });
     }
@@ -359,7 +373,7 @@ function MoodboardLayout({
       return;
     }
 
-    // Revert to original photos, preserving like status from current state
+    // Revert to original photos, preserving current like status
     const revertedPhotos = validOriginalPhotos.map((originalPhoto) => {
       const currentPhoto = photos.find((p) => p && p.id === originalPhoto.id);
       return {
@@ -369,6 +383,7 @@ function MoodboardLayout({
     });
 
     setPhotos(revertedPhotos);
+    setOriginalPhotos([...revertedPhotos]);
     setNoOfImagesForMoodboard(revertedPhotos.length || 10);
     toast.success("Changes cancelled. Reverted to last saved state.");
   };
