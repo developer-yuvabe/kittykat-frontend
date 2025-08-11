@@ -206,7 +206,6 @@ const ReferenceMoodboard = ({
                 moodboard={selectedMoodboard!}
                 setPlaceholderItems={() => {}}
                 hasUnsavedChanges={false}
-                movePhoto={() => {}}
                 isPreview
               />
             </div>

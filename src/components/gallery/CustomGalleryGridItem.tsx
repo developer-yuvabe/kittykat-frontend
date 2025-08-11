@@ -1,7 +1,7 @@
 import { Photo } from "react-photo-album";
 
 import { useState } from "react";
-import { Heart, Loader2, Maximize2, RotateCcw, X } from "lucide-react";
+import { Heart, Loader2, Maximize2, X } from "lucide-react";
 import Sortable from "./Sortable";
 import { SortablePhoto } from "./CustomGalleryContainer";
 
@@ -10,19 +10,12 @@ type GridItemProps<TPhoto extends Photo> = {
   index: number;
   onPhotoLike?: (index: number, liked: boolean) => void;
   removedPhoto?: (id: string) => void;
-  onReplaceImage?: ({
-    imageToReplaceId,
-    replacementImageUrl,
-  }: {
-    imageToReplaceId: string;
-    replacementImageUrl: string;
-  }) => Promise<void>;
   hasUnsavedChanges?: boolean;
   handleExpandImage: (photo: SortablePhoto<TPhoto>) => void;
   isDraggable: boolean;
-  isAtMinimum: boolean;
   setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
   showLiked?: boolean;
+  isPreview?: boolean;
 };
 
 export function CustomGalleryGridItem<TPhoto extends Photo>({
@@ -30,20 +23,17 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   index,
   onPhotoLike,
   removedPhoto,
-  onReplaceImage,
-  hasUnsavedChanges,
   handleExpandImage,
   isDraggable,
-  isAtMinimum,
   setPhotos,
   showLiked,
+  isPreview,
 }: GridItemProps<TPhoto>) {
   const [isRemoving, setIsRemoving] = useState(false);
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isAtMinimum) return;
 
     setIsRemoving(true);
 
@@ -72,22 +62,20 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
         />
 
         {/* Hover Overlay Gradient */}
-        {(removedPhoto || onReplaceImage || onPhotoLike) && (
-          <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 " />
-          </div>
-        )}
+
+        <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 " />
+        </div>
 
         {/* Top-left: Remove */}
-        {removedPhoto && (
+        {removedPhoto && !isPreview && (
           <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {isRemoving ? (
               <Loader2 className="w-5 h-5 animate-spin text-white" />
             ) : (
               <X
                 size={16}
-                className={`w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95 ${
-                  isAtMinimum ? "opacity-50 cursor-not-allowed" : ""
+                className={`w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95 
                 }`}
                 onClick={handleRemove}
               />
@@ -109,26 +97,8 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
           />
         </div>
 
-        {/* Bottom-left: Replace */}
-        {onReplaceImage && hasUnsavedChanges === false && (
-          <div className="absolute bottom-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <RotateCcw
-              size={16}
-              className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-              onClick={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                await onReplaceImage({
-                  imageToReplaceId: photo.id,
-                  replacementImageUrl: photo.src,
-                });
-              }}
-            />
-          </div>
-        )}
-
         {/* Bottom-right: Like */}
-        {onPhotoLike && (
+        {onPhotoLike && !isPreview && (
           <div
             className={`absolute bottom-2 right-2 z-10 ${
               showLiked && photo.liked

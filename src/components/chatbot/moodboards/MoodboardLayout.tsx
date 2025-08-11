@@ -13,7 +13,6 @@ import { SaveIcon, X } from "lucide-react";
 import {
   analyzeMoodboard,
   patchMoodboard,
-  replaceMoodboardImage,
 } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import {
@@ -338,8 +337,30 @@ function MoodboardLayout({
   };
 
   const handleCancelChanges = () => {
-    const revertedPhotos = originalPhotos.map((originalPhoto) => {
-      const currentPhoto = photos.find((p) => p.id === originalPhoto.id);
+    // Handle case where there are no original photos (new moodboard)
+    if (!originalPhotos || originalPhotos.length === 0) {
+      setPhotos([]);
+      setOriginalPhotos([]);
+      setNoOfImagesForMoodboard(10); // Reset to default
+      toast.info("Changes cancelled. Starting fresh.");
+      return;
+    }
+
+    // Filter out any undefined/null entries from originalPhotos
+    const validOriginalPhotos = originalPhotos.filter(
+      (photo) => photo && photo.id
+    );
+
+    if (validOriginalPhotos.length === 0) {
+      setPhotos([]);
+      setNoOfImagesForMoodboard(10); // Reset to default
+      toast.info("Changes cancelled. Starting fresh.");
+      return;
+    }
+
+    // Revert to original photos, preserving like status from current state
+    const revertedPhotos = validOriginalPhotos.map((originalPhoto) => {
+      const currentPhoto = photos.find((p) => p && p.id === originalPhoto.id);
       return {
         ...originalPhoto,
         liked: currentPhoto?.liked ?? originalPhoto.liked,
@@ -348,6 +369,7 @@ function MoodboardLayout({
 
     setPhotos(revertedPhotos);
     setNoOfImagesForMoodboard(revertedPhotos.length || 10);
+    toast.success("Changes cancelled. Reverted to last saved state.");
   };
 
   // Handle gallery item selection for placeholders
@@ -379,7 +401,11 @@ function MoodboardLayout({
       .filter((item) => !photos.some((photo) => photo.id === item.id));
 
     if (availableItems.length === 0) {
-      toast.error("No available images to add.");
+
+      toast.warning(
+        "No available images to add. Please add images to your gallery."
+      );
+
       return;
     }
 
@@ -524,27 +550,6 @@ function MoodboardLayout({
                   setPhotos={setPhotos}
                   movePhoto={movePhoto}
                   onPhotoLike={onPhotoLike}
-                  onReplaceImage={async ({
-                    imageToReplaceId,
-                    replacementImageUrl,
-                  }) => {
-                    try {
-                      await replaceMoodboardImage(
-                        brandId,
-                        moodboard.campaign_id,
-                        moodboard.id,
-                        {
-                          image_to_replace_id: imageToReplaceId,
-                          replacement_image_url: replacementImageUrl,
-                        }
-                      );
-                    } catch (error) {
-                      console.error(
-                        "Failed to replace moodboard image:",
-                        error
-                      );
-                    }
-                  }}
                   hasUnsavedChanges={hasUnsavedChanges}
                   noOfImagesForMoodboard={noOfImagesForMoodboard}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
