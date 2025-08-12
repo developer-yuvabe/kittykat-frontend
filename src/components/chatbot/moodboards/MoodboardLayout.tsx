@@ -425,6 +425,8 @@ function MoodboardLayout({
         });
         return updatedPhotos;
       });
+
+      setNoOfImagesForMoodboard(photos.length + selectedItems.length);
     },
     [photos.length]
   );
