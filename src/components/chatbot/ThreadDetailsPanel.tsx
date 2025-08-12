@@ -58,7 +58,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             brandingInformation={brandingInformation}
             expandedSections={expandedSections}
             setExpandedSections={setExpandedSections}
-            clearPinnedItems={removePinnedItem}
             analysisLogs={data?.analysis_logs ?? []}
           />
 
