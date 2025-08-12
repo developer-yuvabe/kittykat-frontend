@@ -119,6 +119,15 @@ export const useGalleryQuery = (
       return lastPage.pagination.skip + lastPage.pagination.limit;
     },
     initialPageParam: 0,
+    refetchInterval: (query) => {
+      // Check if any items are processing
+      const hasProcessingItems = query.state.data?.pages
+        ?.flatMap((page) => page.gallery_items)
+        ?.some((item) => item.processing_status === "processing");
+
+      // Return 3000ms (3 seconds) if there are processing items, otherwise false (no polling)
+      return hasProcessingItems ? 3000 : false;
+    },
   });
 
   // Flatten all pages of gallery items
@@ -167,7 +176,7 @@ export const useGalleryQuery = (
 
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
-        queryKey: ["gallery-items"],
+        queryKey: getGalleryQueryKey(),
       });
 
       // Update the loading toast to success
@@ -190,7 +199,7 @@ export const useGalleryQuery = (
     },
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
-        queryKey: ["gallery-items"],
+        queryKey: getGalleryQueryKey(),
       });
 
       // Update the loading toast to success

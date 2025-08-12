@@ -1,6 +1,13 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { HeartIcon, DownloadIcon } from "lucide-react";
+import { HeartIcon, DownloadIcon, Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -63,17 +70,48 @@ export function MediaOverlay({
       >
         {isMediaSelectDialog || isMultiSelectMode ? (
           // Checkbox for both Single and Multi Select Mode
-          <div className="flex items-center space-x-1">
-            <Checkbox
-              checked={isSelected || isAlreadySelected}
-              disabled={isCheckboxDisabled}
-              onCheckedChange={(checked) => {
-                if (!isCheckboxDisabled) {
-                  onSelect(item.id, checked as boolean);
-                }
-              }}
-            />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center space-x-1">
+                  <Checkbox
+                    checked={isSelected || isAlreadySelected}
+                    disabled={
+                      isCheckboxDisabled ||
+                      (item.processing_status === "processing" &&
+                        isMultiSelectMode)
+                    }
+                    onCheckedChange={(checked) => {
+                      if (!isCheckboxDisabled) {
+                        // Only block processing items if in multi-select mode
+                        if (
+                          !(
+                            item.processing_status === "processing" &&
+                            isMultiSelectMode
+                          )
+                        ) {
+                          onSelect(item.id, checked as boolean);
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </TooltipTrigger>
+              {isMultiSelectMode &&
+                (isCheckboxDisabled ||
+                  item.processing_status === "processing") && (
+                  <TooltipContent side="top">
+                    {item.processing_status === "processing"
+                      ? "Unable to select since the asset analysis is in progress"
+                      : isAlreadySelected
+                      ? "This item is already selected"
+                      : hasReachedMax
+                      ? `Maximum selection limit of ${maxSelectionCount} reached`
+                      : "Unable to select this item"}
+                  </TooltipContent>
+                )}
+            </Tooltip>
+          </TooltipProvider>
         ) : (
           // Regular Gallery Mode - Checkbox (existing behavior)
           <Checkbox
@@ -88,6 +126,16 @@ export function MediaOverlay({
       {isAlreadySelected && (
         <div className="absolute inset-0 bg-black/20 z-5 pointer-events-none">
           <div className="absolute inset-0 border-2 border-purple-600 " />
+        </div>
+      )}
+
+      {/* Processing Status Badge - Positioned below the three dots menu */}
+      {item.processing_status === "processing" && (
+        <div className="absolute top-4 right-1 z-10">
+          <Badge variant="secondary">
+            <Loader2 className="h-3 w-3 animate-spin " />
+            Analyzing
+          </Badge>
         </div>
       )}
 
