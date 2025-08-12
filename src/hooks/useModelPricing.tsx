@@ -48,7 +48,7 @@ const useModelPricing = ({ form }: UseModelPricingProps) => {
       const values = form.getValues();
       return await estimatePricing(values);
     },
-    enabled: isDynamicPricing,
+    enabled: isDynamicPricing && !!selectedModel?.id,
   });
 
   return {
