@@ -96,17 +96,58 @@ export const renderBrandData = (
     }
   };
 
-  // Common function to handle new brand creation
-  const handleNewBrandClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsCreatingBrand(true);
-    submitOptimisticMessage({
-      stream,
-      text: "Let's create a new brand.",
-      userId: user!.id,
-      currentBrandContextId: selectedBrandId,
-    });
-    removePinnedItem();
+  // Enhanced function to handle new brand creation with scroll
+  const handleNewBrandCreation = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    try {
+      // Set creating brand state
+      setIsCreatingBrand(true);
+
+      // Submit the message
+      submitOptimisticMessage({
+        stream,
+        text: "Let's create a new brand.",
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      });
+
+      // Clear pinned items
+      removePinnedItem();
+
+      // Scroll to bottom after a short delay to ensure message is rendered
+      setTimeout(() => {
+        // Try multiple approaches to ensure scroll happens
+        const chatContainer = document.querySelector(
+          '[class*="StickToBottom"]'
+        );
+        const scrollContainer = document.querySelector(
+          '[class*="overflow-y-scroll"]'
+        );
+
+        if (chatContainer) {
+          chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: "smooth",
+          });
+        } else if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "smooth",
+          });
+        } else {
+          // Fallback: scroll the window
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
+    } catch (error) {
+      console.error("Error creating new brand:", error);
+    }
   };
 
   return (
@@ -151,7 +192,7 @@ export const renderBrandData = (
                         className="p-4"
                         tooltip="New Brand"
                         variant="ghost"
-                        onClick={handleNewBrandClick}
+                        onClick={handleNewBrandCreation} // Use enhanced function
                       >
                         <CirclePlus className="size-5" />
                       </TooltipIconButton>
@@ -209,7 +250,7 @@ export const renderBrandData = (
                       className="p-4"
                       tooltip="New Brand"
                       variant="ghost"
-                      onClick={handleNewBrandClick}
+                      onClick={handleNewBrandCreation} // Use enhanced function
                     >
                       <CirclePlus className="size-5" />
                     </TooltipIconButton>
