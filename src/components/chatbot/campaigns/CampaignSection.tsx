@@ -201,7 +201,7 @@ export const CampaignSection: React.FC<{
                 </div>
                 <div className="flex flex-col">
                   <div>
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-semibold break-words max-w-xs">
                       {currentCampaign?.campaign?.title}
                     </div>
                     <div>
@@ -253,7 +253,7 @@ export const CampaignSection: React.FC<{
                       currentCampaign?.campaign?.title || "Unnamed Campaign"
                     }
                     onSave={handleTitleSave}
-                    textClassName="font-bold"
+                    textClassName="font-bold  break-words max-w-xs"
                     showLabel={true}
                     isTextarea={false}
                   />

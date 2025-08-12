@@ -1,4 +1,5 @@
 import { GalleryItemResponse } from "@/types/gallery.types";
+import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 
 import { Photo } from "react-photo-album";
 import { useBrandStore } from "@/store/brand.store";
@@ -11,8 +12,7 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { toast } from "sonner";
 import { useCallback } from "react";
 import { HeartIcon, Loader2, Maximize2, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { getAutoFillMoodboardSuggestedImages } from "@/services/api/moodboard.service";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 type PlaceholderCardProps<TPhoto extends Photo> = {
   photos: SortablePhoto<TPhoto>[];
@@ -57,24 +57,11 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
 
   // TanStack Query for autofill suggestions - fetch on mount
   const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
-    useQuery({
-      queryKey: [
-        "autofill-suggestions",
-        selectedBrandId,
-        moodboard.campaign_id,
-        moodboard.id,
-        50,
-      ],
-      queryFn: () =>
-        getAutoFillMoodboardSuggestedImages(
-          selectedBrandId!,
-          moodboard.campaign_id,
-          moodboard.id,
-          50
-        ),
-      enabled: !!selectedBrandId && !!moodboard.campaign_id && !!moodboard.id, // Fetch when all required params are available
-      staleTime: 1000 * 60 * 5, // cache for 5 minutes
-      retry: 2, // Retry failed requests 2 times
+    useMoodboardQuery({
+      brandId: selectedBrandId || undefined,
+      campaignId: moodboard.campaign_id,
+      moodboardId: moodboard.id,
+      count: 50,
     });
 
   const autoFillPlaceholders = useCallback(() => {
@@ -89,8 +76,16 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
     }
 
     // Filter out images that are already in the moodboard
-    const availableItems = autoFillSuggestions.filter(
-      (item) => !photos.some((photo) => photo.id === item.id)
+    let availableItems = autoFillSuggestions.filter(
+      (item: AutoFillSuggestedImage) =>
+        !photos.some((photo) => photo.id === item.id)
+    );
+
+    availableItems = availableItems.sort(
+      (a: AutoFillSuggestedImage, b: AutoFillSuggestedImage) => {
+        if (a.is_favourite === b.is_favourite) return 0;
+        return a.is_favourite ? -1 : 1;
+      }
     );
 
     if (availableItems.length === 0) {
