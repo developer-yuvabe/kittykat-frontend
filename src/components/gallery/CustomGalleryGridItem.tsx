@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Heart, Loader2, Maximize2, X } from "lucide-react";
 import Sortable from "./Sortable";
 import { SortablePhoto } from "./CustomGalleryContainer";
+import { useBrandStore } from "@/store/brand.store";
+import { MoodboardInformation } from "@/types/types";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 type GridItemProps<TPhoto extends Photo> = {
   photo: SortablePhoto<TPhoto>;
@@ -16,6 +19,7 @@ type GridItemProps<TPhoto extends Photo> = {
   setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
   showLiked?: boolean;
   isPreview?: boolean;
+  moodboard: MoodboardInformation;
 };
 
 export function CustomGalleryGridItem<TPhoto extends Photo>({
@@ -28,8 +32,19 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   setPhotos,
   showLiked,
   isPreview,
+  moodboard,
 }: GridItemProps<TPhoto>) {
   const [isRemoving, setIsRemoving] = useState(false);
+  const { selectedBrandId } = useBrandStore();
+
+  // Get the cache update function from the hook
+  const { updateAutoFillSuggestionCache } = useMoodboardQuery({
+    brandId: selectedBrandId || undefined,
+    campaignId: moodboard.campaign_id,
+    moodboardId: moodboard.id,
+    count: 50,
+    enabled: false, // We don't need to fetch data, just use the cache update function
+  });
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -41,6 +56,17 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
       setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
       setIsRemoving(false);
     }, 150);
+  };
+
+  // Enhanced onPhotoLike handler with cache update
+  const handlePhotoLike = (index: number, liked: boolean) => {
+    // Update the local photo state
+    if (onPhotoLike) {
+      onPhotoLike(index, liked);
+    }
+
+    // Optimistically update the autofill cache if this image exists there
+    updateAutoFillSuggestionCache(photo.id, liked);
   };
 
   const content = (
@@ -114,7 +140,7 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onPhotoLike(index, !photo.liked);
+                handlePhotoLike(index, !photo.liked);
               }}
             />
           </div>

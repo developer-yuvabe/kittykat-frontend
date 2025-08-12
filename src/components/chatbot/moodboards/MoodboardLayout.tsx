@@ -13,7 +13,6 @@ import { Loader2, SaveIcon, X } from "lucide-react";
 import {
   analyzeMoodboard,
   patchMoodboard,
-  getAutoFillMoodboardSuggestedImages,
 } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import { RegenerateIcon } from "@/components/ui/custom-icon";
@@ -24,6 +23,8 @@ import { galleryService } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
+import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import EditableInput from "./EditableInput";
 import {
   Tooltip,
@@ -76,26 +77,16 @@ function MoodboardLayout({
   });
 
   // TanStack Query for autofill suggestions - fetch on mount
-  const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
-    useQuery({
-      queryKey: [
-        "autofill-suggestions",
-        brandId,
-        moodboard.campaign_id,
-        moodboard.id,
-        50,
-      ],
-      queryFn: () =>
-        getAutoFillMoodboardSuggestedImages(
-          brandId,
-          moodboard.campaign_id,
-          moodboard.id,
-          50
-        ),
-      enabled: !!brandId && !!moodboard.campaign_id && !!moodboard.id, // Fetch when all required params are available
-      staleTime: 1000 * 60 * 5, // cache for 5 minutes
-      retry: 2, // Retry failed requests 2 times
-    });
+  const {
+    data: autoFillSuggestions = [],
+    isLoading: isAutoFillLoading,
+    updateAutoFillSuggestionCache,
+  } = useMoodboardQuery({
+    brandId,
+    campaignId: moodboard.campaign_id,
+    moodboardId: moodboard.id,
+    count: 50,
+  });
 
   // Update refs when values change (but don't trigger re-renders)
   useEffect(() => {
@@ -278,6 +269,9 @@ function MoodboardLayout({
       return updated;
     });
 
+    // Optimistically update the autofill cache
+    updateAutoFillSuggestionCache(photo.id, liked);
+
     try {
       galleryActions.patchItem({
         itemId: photo.id,
@@ -303,6 +297,9 @@ function MoodboardLayout({
         }
         return updated;
       });
+
+      // Revert the autofill cache update on error
+      updateAutoFillSuggestionCache(photo.id, !liked);
     }
   };
 
@@ -443,8 +440,17 @@ function MoodboardLayout({
     }
 
     // Filter out images that are already in the moodboard
-    const availableItems = autoFillSuggestions.filter(
-      (item) => !photos.some((photo) => photo.id === item.id)
+    let availableItems = autoFillSuggestions.filter(
+      (item: AutoFillSuggestedImage) =>
+        !photos.some((photo) => photo.id === item.id)
+    );
+
+    // Sort so that items with is_favourite === true come first
+    availableItems = availableItems.sort(
+      (a: AutoFillSuggestedImage, b: AutoFillSuggestedImage) => {
+        if (a.is_favourite === b.is_favourite) return 0;
+        return a.is_favourite ? -1 : 1;
+      }
     );
 
     if (availableItems.length === 0) {
@@ -458,17 +464,19 @@ function MoodboardLayout({
       // Determine how many placeholders we have
       const placeholdersToFill = placeholderItems.length;
 
-      availableItems.slice(0, placeholdersToFill).forEach((item, idx) => {
-        const targetIndex = prevPhotos.length + idx;
-        updatedPhotos[targetIndex] = {
-          id: item.id,
-          src: item.asset_url,
-          width: item.dimensions?.width || 300,
-          height: item.dimensions?.height || 300,
-          alt: `Image ${item.id}`,
-          liked: item.is_favourite || false,
-        };
-      });
+      availableItems
+        .slice(0, placeholdersToFill)
+        .forEach((item: AutoFillSuggestedImage, idx: number) => {
+          const targetIndex = prevPhotos.length + idx;
+          updatedPhotos[targetIndex] = {
+            id: item.id,
+            src: item.asset_url,
+            width: item.dimensions?.width || 300,
+            height: item.dimensions?.height || 300,
+            alt: `Image ${item.id}`,
+            liked: item.is_favourite || false,
+          };
+        });
 
       return updatedPhotos;
     });

@@ -25,6 +25,7 @@ import { getPlatformFromOptionId } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
 import { BrandAnalysisLogsPopover } from "./BrandAnalysisLogsPopover";
 import { BrandSocialVerifyDialog } from "./BrandSocialVerifyDialog";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface Props {
   brandId: string | null;
@@ -98,11 +99,14 @@ export const BrandAestheticUploader: React.FC<Props> = ({
 
   const { refetchAllGalleryQueries } = useGalleryQuery({});
 
+  const { refetchAllAutoFillQueries } = useMoodboardQuery({});
+
   const completedLength = categorizedLogs.completed.length;
   const failedLength = categorizedLogs.failed.length;
 
   useEffect(() => {
     refetchAllGalleryQueries();
+    refetchAllAutoFillQueries();
   }, [completedLength, failedLength]);
 
   const getSocialMediaUrl = (optionId: string): string => {
