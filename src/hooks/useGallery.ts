@@ -54,7 +54,10 @@ export const useGalleryQuery = (
   // Infinite query for gallery items with filters
   const galleryQuery = useInfiniteQuery({
     queryKey: getGalleryQueryKey(),
-    enabled: enabled && brandsQuery.isSuccess,
+    enabled:
+      enabled &&
+      brandsQuery.isSuccess &&
+      (filters.selectedFilters?.brands?.length ?? 0) > 0,
     queryFn: async ({ pageParam = 0 }) => {
       try {
         if (filters.searchQuery) {
@@ -65,7 +68,7 @@ export const useGalleryQuery = (
             "vector_text_search",
             undefined,
             filters.selectedFilters?.brands[0],
-            filters.selectedFilters?.campaigns[0]
+            filters.selectedFilters?.campaigns?.[0]
           );
         }
 
@@ -90,20 +93,21 @@ export const useGalleryQuery = (
           has_people: filters.selectedFilters?.has_people ?? undefined,
           has_lifestyle_context:
             filters.selectedFilters?.has_lifestyle_context ?? undefined,
-          asset_types: filters.selectedFilters?.asset_types.length
+          asset_types: filters?.selectedFilters?.asset_types?.length
             ? filters.selectedFilters.asset_types
             : undefined,
-          media_format: filters.selectedFilters?.media_format.length
+          media_format: filters.selectedFilters?.media_format?.length
             ? filters.selectedFilters.media_format
             : undefined,
-          aspect_ratio: filters.selectedFilters?.aspect_ratio.length
+          aspect_ratio: filters.selectedFilters?.aspect_ratio?.length
             ? filters.selectedFilters.aspect_ratio
             : undefined,
-          workflow_status: filters.selectedFilters?.workflow_status.length
+          workflow_status: filters.selectedFilters?.workflow_status?.length
             ? filters.selectedFilters.workflow_status
             : undefined,
           is_archived: filters.selectedFilters?.is_archived ?? undefined,
-          product_categories: filters.selectedFilters?.product_categories.length
+          product_categories: filters.selectedFilters?.product_categories
+            ?.length
             ? filters.selectedFilters.product_categories
             : undefined,
           skip: pageParam,
