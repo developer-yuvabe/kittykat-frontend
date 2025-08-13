@@ -62,6 +62,9 @@ jobs:
               development ) 
                   STAGE_TYPE="dev"
                   ;;
+              beta )
+                  STAGE_TYPE="beta"
+                  ;;
               *) 
                   echo "Unknown branch"; 
                   exit 1 
