@@ -464,6 +464,7 @@ export const MoodboardSection: React.FC<{
                             currentMoodboard.selected_moodboard_tags
                           }
                           showAdvancedSettings={showAdvancedSettings}
+                          isGalleryItemsProcessing={galleryActions.isGalleryItemsProcessing()}
                         />
                       )}
                     </div>
