@@ -6,7 +6,11 @@ import { env } from "@/config/env";
 const DeployFlag = () => {
   const environment = env.NEXT_PUBLIC_ENVIRONMENT;
 
-  if (environment === "prod" || window?.location?.hostname == "localhost")
+  if (
+    environment === "prod" ||
+    environment === "beta" ||
+    window?.location?.hostname == "localhost"
+  )
     return null;
 
   return (
