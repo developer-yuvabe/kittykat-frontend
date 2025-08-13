@@ -23,6 +23,7 @@ interface CustomGalleryControlsProps<TPhoto extends Photo> {
   setShowLiked: (value: boolean) => void;
   showAdvancedSettings?: boolean;
   setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
+  hasTags: boolean;
 }
 
 export function CustomGalleryControls<TPhoto extends Photo>({
@@ -37,6 +38,7 @@ export function CustomGalleryControls<TPhoto extends Photo>({
   setShowLiked,
   showAdvancedSettings = false,
   setShowAdvancedSettings,
+  hasTags,
 }: CustomGalleryControlsProps<TPhoto>) {
   const maxImages = Math.max(...Object.keys(moodboardGridLayouts).map(Number));
 
@@ -131,12 +133,16 @@ export function CustomGalleryControls<TPhoto extends Photo>({
           onCheckedChange={setShowLiked}
           className="data-[state=checked]:bg-[#636AE8FF]"
         />
-        <Button
-          variant={showAdvancedSettings ? "outline" : "default"}
-          onClick={() => setShowAdvancedSettings?.(!showAdvancedSettings)}
-        >
-          <Settings /> Advanced Settings
-        </Button>
+        {hasTags && (
+          <Button
+            variant={showAdvancedSettings ? "outline" : "default"}
+            onClick={() => {
+              setShowAdvancedSettings?.(!showAdvancedSettings);
+            }}
+          >
+            <Settings /> Advanced Settings
+          </Button>
+        )}
       </div>
     </div>
   );
