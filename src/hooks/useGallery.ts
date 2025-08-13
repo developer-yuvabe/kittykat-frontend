@@ -139,6 +139,12 @@ export const useGalleryQuery = (
     return galleryQuery.data?.pages.flatMap((page) => page.gallery_items) || [];
   }
 
+  function isGalleryItemsProcessing() {
+    return galleryQuery.data?.pages
+      ?.flatMap((page) => page.gallery_items)
+      ?.some((item) => item.processing_status === "processing");
+  }
+
   // Get single gallery item by ID
   const useGalleryItem = (itemId: string) => {
     return useQuery({
@@ -652,6 +658,7 @@ export const useGalleryQuery = (
 
     // Gallery items
     getGalleryItems,
+    isGalleryItemsProcessing,
     galleryStatus: galleryQuery.status,
     isFetchingNextPage: galleryQuery.isFetchingNextPage,
     hasNextPage: galleryQuery.hasNextPage,

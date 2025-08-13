@@ -88,21 +88,7 @@ export function MediaItem({
   const handleImageClick = () => {
     if (isMediaSelectDialog) {
       // In media select dialog, clicking image should select it
-      const hasReachedMax =
-        typeof selectedCount === "number" &&
-        typeof maxSelectionCount === "number" &&
-        selectedCount >= maxSelectionCount;
-
-      const isCheckboxDisabled =
-        isDisabled || isAlreadySelected || hasReachedMax;
-
-      // Only block processing items if in multi-select mode
-      const isBlocked =
-        item.processing_status === "processing" && isMultiSelect;
-
-      if (!isCheckboxDisabled && !isBlocked) {
-        onSelect(item.id, !isSelected);
-      }
+      onSelect(item.id, !isSelected);
     } else {
       // In regular gallery, clicking image opens editor
       onEditClick(item);

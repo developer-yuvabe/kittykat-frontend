@@ -13,12 +13,18 @@ import { useBrandStore } from "@/store/brand.store";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { MoodboardPatchRequest } from "@/types/moodboard.types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   moodboard_tags?: Record<string, string[]>;
   selected_moodboard_tags?: Record<string, string[]>;
   moodboardId?: MoodboardInformation["id"];
   showAdvancedSettings?: boolean;
+  isGalleryItemsProcessing?: boolean;
 };
 
 function MoodboardTagResults({
@@ -26,6 +32,7 @@ function MoodboardTagResults({
   selected_moodboard_tags,
   moodboardId,
   showAdvancedSettings = false,
+  isGalleryItemsProcessing = false,
 }: Props) {
   const [localTags, setLocalTags] = useState<
     Record<string, { value: string; selected: boolean }[]>
@@ -153,20 +160,32 @@ function MoodboardTagResults({
           </>
         )}
 
-        {/* Concept Visual Generation Button - Always visible */}
-        <Button
-          className="w-full"
-          onClick={handleGenerate}
-          disabled={isSaving || isGenerating}
-        >
-          {isSaving || isGenerating ? (
-            <Loader />
-          ) : (
-            <>
-              <Brain /> Concept Visual Generation
-            </>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="w-full">
+              <Button
+                className="w-full"
+                onClick={handleGenerate}
+                disabled={isSaving || isGenerating || isGalleryItemsProcessing}
+              >
+                {isSaving || isGenerating ? (
+                  <Loader />
+                ) : (
+                  <>
+                    <Brain /> Concept Visual Generation
+                  </>
+                )}
+              </Button>
+            </span>
+          </TooltipTrigger>
+
+          {isGalleryItemsProcessing && (
+            <TooltipContent className="max-w-xs">
+              Some items in the moodboard layout are still being analysed.
+              Please wait till completion.
+            </TooltipContent>
           )}
-        </Button>
+        </Tooltip>
       </div>
     </div>
   );
