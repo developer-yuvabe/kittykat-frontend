@@ -155,21 +155,52 @@ export const useGalleryQuery = (
   };
 
   function updateGalleryItemInCache(updatedItem: GalleryItemResponse) {
-    const queryKey = getGalleryQueryKey();
-
-    queryClient.setQueryData(queryKey, (old: any) => {
-      if (!old) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page: any) => ({
-          ...page,
-          gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
-            item.id === updatedItem.id ? updatedItem : item
-          ),
-        })),
-      };
+    // 1️⃣ Update paginated infinite queries like ["gallery-items", ...]
+    const galleryQueries = queryClient.getQueriesData({
+      queryKey: ["gallery-items"],
+      exact: false,
     });
 
+    galleryQueries.forEach(([queryKey, old]) => {
+      if (!old) return;
+
+      queryClient.setQueryData(queryKey, (prev: any) => {
+        if (!prev?.pages) return prev;
+
+        return {
+          ...prev,
+          pages: prev.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
+              item.id === updatedItem.id ? updatedItem : item
+            ),
+          })),
+        };
+      });
+    });
+
+    // 2️⃣ Update flat array bulk queries like ["gallery-items-bulk", ids]
+    const bulkQueries = queryClient.getQueriesData({
+      queryKey: ["gallery-items-bulk"],
+      exact: false,
+    });
+
+    bulkQueries.forEach(([queryKey, old]) => {
+      if (!Array.isArray(old)) return;
+
+      queryClient.setQueryData(
+        queryKey,
+        (prev: GalleryItemResponse[] | undefined) => {
+          if (!prev) return prev;
+
+          return prev.map((item) =>
+            item.id === updatedItem.id ? updatedItem : item
+          );
+        }
+      );
+    });
+
+    // 3️⃣ Update single-item query if it exists
     queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
   }
 
@@ -186,7 +217,7 @@ export const useGalleryQuery = (
 
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
-        queryKey: getGalleryQueryKey(),
+        queryKey: ["gallery-items"],
       });
 
       // Update the loading toast to success
@@ -209,7 +240,7 @@ export const useGalleryQuery = (
     },
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
-        queryKey: getGalleryQueryKey(),
+        queryKey: ["gallery-items"],
       });
 
       // Update the loading toast to success
@@ -643,7 +674,7 @@ export const useGalleryQuery = (
 
     await Promise.all(
       matchingQueries.map(([queryKey]) =>
-        queryClient.invalidateQueries({ queryKey, refetchType: "active" })
+        queryClient.invalidateQueries({ queryKey, refetchType: "all" })
       )
     );
   };

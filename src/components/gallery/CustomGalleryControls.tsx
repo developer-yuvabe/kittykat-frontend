@@ -111,7 +111,7 @@ export function CustomGalleryControls<TPhoto extends Photo>({
             +
           </button>
         </div>
-        {photosLength > 10 && placeholderItems.length > 0 && (
+        {/* {photosLength > 10 && placeholderItems.length > 0 && (
           <TooltipIconButton
             onClick={() => {
               setPlaceholderItems([]);
@@ -124,7 +124,7 @@ export function CustomGalleryControls<TPhoto extends Photo>({
           >
             <BrushCleaning />
           </TooltipIconButton>
-        )}
+        )} */}
       </div>
       <div className="flex items-center gap-2 ml-4">
         <span className="text-sm font-medium text-gray-900">Show Liked</span>

@@ -403,7 +403,6 @@ function MoodboardLayout({
     toast.success("Changes cancelled. Reverted to last saved state.");
   };
 
-  // Handle gallery item selection for placeholders
   const handleGallerySelection = useCallback(
     (selectedItems: GalleryItemResponse[]) => {
       const placeholderStartIndex = photos.length;
@@ -420,12 +419,17 @@ function MoodboardLayout({
             liked: item.is_favourite || false,
           };
         });
+
+        // ✅ Check after updating if total exceeds current noOfImagesForMoodboard
+        const newTotal = updatedPhotos.length;
+        if (newTotal > noOfImagesForMoodboard) {
+          setNoOfImagesForMoodboard(newTotal);
+        }
+
         return updatedPhotos;
       });
-
-      setNoOfImagesForMoodboard(photos.length + selectedItems.length);
     },
-    [photos.length]
+    [photos.length, noOfImagesForMoodboard]
   );
 
   const autoFillPlaceholders = useCallback(() => {

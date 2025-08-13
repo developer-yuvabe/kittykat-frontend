@@ -15,6 +15,7 @@ import {
 import { GalleryActions } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface MoodboardVisualSectionProps {
   currentMoodboard: MoodboardInformation | null;
@@ -37,6 +38,7 @@ export const MoodboardVisualSectionHeader = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { selectedBrandId } = useBrandStore();
 
+  const { refetchAllAutoFillQueries } = useMoodboardQuery({});
   if (!currentMoodboard || isCreatingNewMoodboard) return null;
 
   const handleFileUpload = async (files: FileList) => {
@@ -214,6 +216,8 @@ export const MoodboardVisualSectionHeader = ({
       });
     } finally {
       setIsUploading(false);
+      galleryActions.refetchAllGalleryQueries();
+      refetchAllAutoFillQueries();
     }
   };
 

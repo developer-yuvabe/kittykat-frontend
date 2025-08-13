@@ -98,7 +98,7 @@ export function MediaOverlay({
       )}
 
       {/* Processing Status Badge - Positioned below the three dots menu */}
-      {item.processing_status === "processing" && (
+      {/* {item.processing_status === "processing" && (
         <div
           className={`absolute right-1 z-10 ${
             isMediaSelectDialog ? "top-1" : "top-4"
@@ -109,12 +109,14 @@ export function MediaOverlay({
             Analyzing
           </Badge>
         </div>
-      )}
+      )} */}
 
       {/* Favorite Button */}
       <div
-        className={`absolute bottom-2 right-2 z-10 transition-opacity duration-200 cursor-pointer ${
-          isHovered ? "opacity-100" : "opacity-0"
+        className={`absolute bottom-2 right-2 z-30 transition-opacity duration-200 cursor-pointer ${
+          isHovered
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={handleFavoriteClick}
       >

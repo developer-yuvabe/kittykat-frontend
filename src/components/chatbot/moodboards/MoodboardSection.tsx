@@ -146,14 +146,26 @@ export const MoodboardSection: React.FC<{
     useState<number>(0);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
+  // Reset whenever moodboard changes
+  useEffect(() => {
+    setNoOfImagesForMoodboard(0);
+  }, [currentMoodboard?.id]);
+
+  // Set count when data is available
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
     const fallbackImageCount = galleryActions.totalItems ?? 0;
 
-    const finalCount = assetCount > 0 ? assetCount : fallbackImageCount;
+    if (assetCount === 0 && fallbackImageCount === 0) return;
 
-    setNoOfImagesForMoodboard(Math.min(16, finalCount));
-  }, [currentMoodboard?.id, galleryActions.totalItems]);
+    setNoOfImagesForMoodboard(
+      Math.min(16, assetCount > 0 ? assetCount : fallbackImageCount)
+    );
+  }, [
+    currentMoodboard?.id,
+    currentMoodboard?.moodboard_assets?.length,
+    galleryActions.totalItems,
+  ]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 

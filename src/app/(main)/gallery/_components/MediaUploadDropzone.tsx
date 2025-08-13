@@ -17,6 +17,7 @@ import { MediaUploadActions } from "./MediaUploadActions";
 import { MediaUploadStatus } from "./MediaUploadStatus";
 import { MediaUploadDropzoneArea } from "./MediaUploadDropzoneArea";
 import { getExtensionFromUrl } from "@/lib/utils";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface MediaUploadDropzoneProps {
   activeTab: string;
@@ -54,6 +55,8 @@ export function MediaUploadDropzone({
     false,
     "MediaUploadDropzone"
   );
+
+  const { refetchAllAutoFillQueries } = useMoodboardQuery({});
 
   const currentConfig = acceptedFileTypes[
     activeTab as keyof typeof acceptedFileTypes
@@ -250,6 +253,7 @@ export function MediaUploadDropzone({
       });
     } finally {
       setIsUploading(false);
+      refetchAllAutoFillQueries();
     }
   };
 

@@ -181,8 +181,8 @@ function MoodboardTagResults({
 
           {isGalleryItemsProcessing && (
             <TooltipContent className="max-w-xs">
-              Some items in the moodboard layout are still being analysed.
-              Please wait till completion.
+              Some items in the your brand are still being analysed. Please wait
+              till completion.
             </TooltipContent>
           )}
         </Tooltip>
