@@ -27,6 +27,7 @@ on:
       - main
       - development
       - staging
+      - beta
 
 jobs:
   Deploy:
