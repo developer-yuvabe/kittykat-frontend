@@ -89,6 +89,7 @@ jobs:
             --build-arg NEXT_PUBLIC_API_BASE_URL_PROD='${{ secrets.NEXT_PUBLIC_API_BASE_URL_PROD }}' \
             --build-arg NEXT_PUBLIC_API_BASE_URL_STG='${{ secrets.NEXT_PUBLIC_API_BASE_URL_STG }}' \
             --build-arg NEXT_PUBLIC_API_BASE_URL_DEV='${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}' \
+            --build-arg NEXT_PUBLIC_API_BASE_URL_BETA='${{ secrets.NEXT_PUBLIC_API_BASE_URL_BETA }}' \
             --build-arg FIREBASE_ADMIN_CLIENT_EMAIL='${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}' \
             --build-arg FIREBASE_ADMIN_PRIVATE_KEY='${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}' \
             --build-arg AUTH_COOKIE_NAME='${{ secrets.AUTH_COOKIE_NAME }}' \
@@ -98,6 +99,7 @@ jobs:
             --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
             --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
             --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
             --build-arg LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}'
         env:
           DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
