@@ -167,36 +167,49 @@ function MoodboardLayout({
         }));
 
       if (currentMoodboard.id === currentMoodboardId) {
-        setPhotos(loaded);
-        setOriginalPhotos([...loaded]);
+        // Only update photos state if we don't have unsaved changes or aren't currently saving
+        // This prevents overriding user's pending changes
+        if (!hasUnsavedChanges && !isSaving) {
+          setPhotos(loaded);
+          setOriginalPhotos([...loaded]);
+        }
       }
 
       setLoading(false);
       setMoodboardGenerationInProgress(false);
     } else {
-      setPhotos([]);
-      setOriginalPhotos([]);
+      // Only clear photos if we don't have unsaved changes or aren't currently saving
+      if (!hasUnsavedChanges && !isSaving) {
+        setPhotos([]);
+        setOriginalPhotos([]);
+      }
       setLoading(false);
     }
-  }, [currentMoodboardId]);
+  }, [currentMoodboardId, hasUnsavedChanges, isSaving]);
 
   // Trigger load when moodboard status changes or gallery items become available
   useEffect(() => {
+    // Don't reload if user has unsaved changes or if currently saving
+    if (hasUnsavedChanges || isSaving) return;
+
     if (bulkGalleryItems.length > 0) {
       const timeoutId = setTimeout(() => {
         loadImagesWithCurrentData();
       }, 50);
       return () => clearTimeout(timeoutId);
     }
-  }, [bulkGalleryItems.length, moodboard.id]);
+  }, [bulkGalleryItems.length, moodboard.id, hasUnsavedChanges, isSaving]);
 
   // Also trigger when moodboard changes
   useEffect(() => {
+    // Don't reload if user has unsaved changes or if currently saving
+    if (hasUnsavedChanges || isSaving) return;
+
     const timeoutId = setTimeout(() => {
       loadImagesWithCurrentData();
     }, 50);
     return () => clearTimeout(timeoutId);
-  }, [moodboard.id, loadImagesWithCurrentData]);
+  }, [moodboard.id, loadImagesWithCurrentData, hasUnsavedChanges, isSaving]);
 
   // Local move photo function (no API call)
   const movePhoto = (oldIndex: number, newIndex: number) => {
@@ -306,11 +319,11 @@ function MoodboardLayout({
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      // Get current photos with pending selections applied
-      const currentPhotosWithSelections = [...photos];
+      // Get current photos at the start of save operation
+      const photosAtSaveStart = [...photos];
 
       // 1. Update moodboard asset positions
-      const updatedAssets: MoodboardAsset[] = currentPhotosWithSelections.map(
+      const updatedAssets: MoodboardAsset[] = photosAtSaveStart.map(
         (photo, index) => ({
           gallery_item_id: photo.id,
           position: index,
@@ -321,13 +334,14 @@ function MoodboardLayout({
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
       });
-      // 4. Update local state optimistically
-      setPhotos(currentPhotosWithSelections);
-      setOriginalPhotos([...currentPhotosWithSelections]);
+
+      // 3. Only update original photos for comparison, don't overwrite current photos
+      setOriginalPhotos([...photos]); // Use current photos state, not the saved snapshot
+
       // Wait for 2 seconds before analyzing the moodboard
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-        image_urls: photos.map((photo) => photo.src),
+        image_urls: photosAtSaveStart.map((photo) => photo.src), // Use the saved snapshot for analysis
       });
     } catch (error) {
       console.error("Failed to save changes:", error);
@@ -336,19 +350,16 @@ function MoodboardLayout({
     }
   };
   useEffect(() => {
-    if (!hasUnsavedChanges) return; // no interval if nothing to save
-    // Create the interval once
+    if (!hasUnsavedChanges) return;
+
     const intervalId = setInterval(() => {
-      if (hasUnsavedChanges) {
+      if (hasUnsavedChanges && !isSaving) {
         handleSaveChanges();
       }
     }, 3000);
 
-    // Cleanup on unmount or dependency change
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [hasUnsavedChanges, handleSaveChanges]);
+    return () => clearInterval(intervalId);
+  }, [hasUnsavedChanges, handleSaveChanges, isSaving]);
 
   const handleGallerySelection = useCallback(
     (selectedItems: GalleryItemResponse[]) => {
@@ -488,7 +499,7 @@ function MoodboardLayout({
                   {placeholderItems.length > 0 && (
                     <Button
                       size="lg"
-                      disabled={isSaving || isAutoFillLoading}
+                      disabled={isAutoFillLoading}
                       className="flex items-center gap-1 py-1 whitespace-nowrap"
                       onClick={autoFillPlaceholders}
                     >

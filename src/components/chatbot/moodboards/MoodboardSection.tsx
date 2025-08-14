@@ -158,9 +158,14 @@ export const MoodboardSection: React.FC<{
 
     if (assetCount === 0 && fallbackImageCount === 0) return;
 
-    setNoOfImagesForMoodboard(
-      Math.min(16, assetCount > 0 ? assetCount : fallbackImageCount)
-    );
+    let count;
+    if (assetCount > 0) {
+      count = Math.max(10, assetCount); // ensure at least 10
+    } else {
+      count = fallbackImageCount;
+    }
+
+    setNoOfImagesForMoodboard(Math.min(16, count));
   }, [currentMoodboard?.id, galleryActions.totalItems]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
