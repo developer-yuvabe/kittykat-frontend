@@ -143,18 +143,6 @@ export const BrandAnalysisLogsPopover: React.FC<
             )}
           </div>
         </ScrollArea>
-
-        <div className="border-t bg-gray-50 px-4 py-3">
-          <div className="flex items-center justify-between text-xs text-gray-600">
-            <span>Updates automatically every few seconds</span>
-            {categorizedLogs.active.length > 0 && (
-              <div className="flex items-center gap-1 text-blue-600 font-medium">
-                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                Live tracking active
-              </div>
-            )}
-          </div>
-        </div>
       </PopoverContent>
     </Popover>
   );

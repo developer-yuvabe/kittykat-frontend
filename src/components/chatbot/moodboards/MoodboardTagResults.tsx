@@ -38,8 +38,6 @@ function MoodboardTagResults({
     Record<string, { value: string; selected: boolean }[]>
   >({});
 
-  console.log("selected_moodboard_tags", selected_moodboard_tags);
-
   const { selectedBrandId } = useBrandStore();
 
   // Mutation for patching
@@ -181,8 +179,8 @@ function MoodboardTagResults({
 
           {isGalleryItemsProcessing && (
             <TooltipContent className="max-w-xs">
-              Some items in the moodboard layout are still being analysed.
-              Please wait till completion.
+              Some items in the your brand are still being analysed. Please wait
+              till completion.
             </TooltipContent>
           )}
         </Tooltip>

@@ -165,6 +165,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
               setShowLiked={setShowLiked}
               showAdvancedSettings={showAdvancedSettings}
               setShowAdvancedSettings={setShowAdvancedSettings}
+              hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
             />
           )}
         </SortableContext>
@@ -198,6 +199,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
           setShowLiked={setShowLiked}
           showAdvancedSettings={showAdvancedSettings}
           setShowAdvancedSettings={setShowAdvancedSettings}
+          hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
         />
       )}
       {expandedImage && (

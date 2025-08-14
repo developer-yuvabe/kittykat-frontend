@@ -146,13 +146,26 @@ export const MoodboardSection: React.FC<{
     useState<number>(0);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
+  // Reset whenever moodboard changes
+  useEffect(() => {
+    setNoOfImagesForMoodboard(0);
+  }, [currentMoodboard?.id]);
+
+  // Set count when data is available
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
     const fallbackImageCount = galleryActions.totalItems ?? 0;
 
-    const finalCount = assetCount > 0 ? assetCount : fallbackImageCount;
+    if (assetCount === 0 && fallbackImageCount === 0) return;
 
-    setNoOfImagesForMoodboard(Math.min(16, finalCount));
+    let count;
+    if (assetCount > 0) {
+      count = Math.max(10, assetCount); // ensure at least 10
+    } else {
+      count = fallbackImageCount;
+    }
+
+    setNoOfImagesForMoodboard(Math.min(16, count));
   }, [currentMoodboard?.id, galleryActions.totalItems]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
@@ -473,7 +486,8 @@ export const MoodboardSection: React.FC<{
                 />
               )}
 
-              {(isCreatingNewMoodboard || !moodboardInformation) && (
+              {(isCreatingNewMoodboard ||
+                currentCampaignMoodboards.length === 0) && (
                 <div className="mt-4">
                   <Button className="w-full" onClick={handleCreateMoodboard}>
                     Create Moodboard
