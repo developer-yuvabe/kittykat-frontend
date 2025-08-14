@@ -35,6 +35,7 @@ interface CustomGalleryGridProps<TPhoto extends Photo> {
   minImagesRequired: number;
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   showLiked?: boolean;
+  isPreview?: boolean;
 }
 
 export const CustomGalleryGrid = forwardRef<
@@ -58,6 +59,7 @@ export const CustomGalleryGrid = forwardRef<
       minImagesRequired,
       setNoOfImagesForMoodboard,
       showLiked,
+      isPreview,
     },
     ref
   ) => {
@@ -109,6 +111,7 @@ export const CustomGalleryGrid = forwardRef<
                   placeHolderIndex={index}
                   setPhotos={setPhotos}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+                  isPreview={isPreview}
                 />
               ) : (
                 <CustomGalleryGridItem

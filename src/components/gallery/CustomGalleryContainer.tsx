@@ -6,7 +6,10 @@ import type { Photo } from "react-photo-album";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 import { ImageModal } from "../shared/ImageModal";
-import { moodboardGridLayouts } from "@/lib/moodboard.utils";
+import {
+  MIN_IMAGES_REQUIRED,
+  moodboardGridLayouts,
+} from "@/lib/moodboard.utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { MoodboardInformation } from "@/types/types";
 import { GalleryItemResponse } from "@/types/gallery.types";
@@ -50,8 +53,6 @@ type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
   showAdvancedSettings?: boolean;
   setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
 };
-
-const MIN_IMAGES_REQUIRED = 10;
 
 export default function CustomGalleryContainer<TPhoto extends Photo>({
   photos,
@@ -137,6 +138,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         minImagesRequired={MIN_IMAGES_REQUIRED}
         setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
         showLiked={showLiked}
+        isPreview={isPreview}
       />
     </div>
   );
