@@ -29,6 +29,7 @@ import CustomGalleryContainer, {
   SortablePhoto,
 } from "@/components/gallery/CustomGalleryContainer";
 import { GalleryItemResponse } from "@/types/gallery.types";
+import { MIN_IMAGES_REQUIRED } from "@/lib/moodboard.utils";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -47,6 +48,11 @@ const ReferenceMoodboard = ({
   const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Add placeholder functionality similar to MoodboardLayout
+  const [placeholderItems, setPlaceholderItems] = useState<
+    SortablePhoto<Photo>[]
+  >([]);
 
   const { selectedBrandId } = useBrandStore();
   const { mutate: generateShowboard, isPending } = useMutation({
@@ -163,10 +169,24 @@ const ReferenceMoodboard = ({
     }
   }, [orderedGalleryItems.length]);
 
-  // Display logic
+  // Display logic - show gallery if we have photos OR if we need placeholders for grid layout
   const showGallery = useMemo(() => {
-    return photos.length > 0 && !loading && !isBulkFetching && !isBulkLoading;
-  }, [photos.length, loading, isBulkFetching, isBulkLoading]);
+    return (
+      (photos.length > 0 || placeholderItems.length > 0) &&
+      !loading &&
+      !isBulkFetching &&
+      !isBulkLoading
+    );
+  }, [
+    photos.length,
+    placeholderItems.length,
+    loading,
+    isBulkFetching,
+    isBulkLoading,
+  ]);
+
+  // Calculate total images for moodboard (actual photos + placeholders needed for minimum grid)
+  const totalImagesForMoodboard = Math.max(photos.length, MIN_IMAGES_REQUIRED);
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
@@ -186,6 +206,24 @@ const ReferenceMoodboard = ({
     latestGalleryItemsRef.current = bulkGalleryItems;
   }, [bulkGalleryItems]);
 
+  // Create placeholder items for missing photos when less than minimum required
+  useEffect(() => {
+    const placeholders: SortablePhoto<Photo>[] = Array.from(
+      { length: Math.max(0, MIN_IMAGES_REQUIRED - photos.length) },
+      (_, index) => ({
+        id: `placeholder-${index}`,
+        src: "", // Placeholder image src (empty or a default placeholder image URL)
+        width: 300, // Default width
+        height: 300, // Default height
+        alt: `Placeholder ${index + 1}`,
+        liked: false,
+        isPlaceholder: true,
+        placeholderIndex: photos.length + index,
+      })
+    );
+    setPlaceholderItems(placeholders);
+  }, [photos.length, MIN_IMAGES_REQUIRED]);
+
   return (
     <ContentSection
       title="Reference Moodboard"
@@ -196,22 +234,23 @@ const ReferenceMoodboard = ({
       }}
       content={
         <div className="space-y-8">
-          {showGallery && photos.length > 0 && (
+          {showGallery && (
             <div className="mx-auto max-w-7xl w-full px-2">
               <CustomGalleryContainer
                 photos={photos}
                 setPhotos={() => {}}
-                noOfImagesForMoodboard={photos.length}
+                noOfImagesForMoodboard={totalImagesForMoodboard}
                 setNoOfImagesForMoodboard={() => {}}
                 moodboard={selectedMoodboard!}
-                setPlaceholderItems={() => {}}
+                placeholderItems={placeholderItems}
+                setPlaceholderItems={setPlaceholderItems}
                 hasUnsavedChanges={false}
                 isPreview
               />
             </div>
           )}
 
-          {photos.length == 0 && (
+          {!showGallery && photos.length === 0 && (
             <ManualMoodboardSkeleton
               shimmer={isBulkFetching || isBulkLoading}
               showButton={false}

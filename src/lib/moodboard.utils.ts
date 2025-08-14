@@ -232,3 +232,5 @@ export const moodboardGridLayouts = {
     ],
   },
 };
+
+export const MIN_IMAGES_REQUIRED = 10;
