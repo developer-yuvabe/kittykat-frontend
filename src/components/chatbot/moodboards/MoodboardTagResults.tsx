@@ -38,8 +38,6 @@ function MoodboardTagResults({
     Record<string, { value: string; selected: boolean }[]>
   >({});
 
-  console.log("selected_moodboard_tags", selected_moodboard_tags);
-
   const { selectedBrandId } = useBrandStore();
 
   // Mutation for patching
