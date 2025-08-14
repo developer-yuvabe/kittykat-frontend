@@ -9,7 +9,7 @@ import React, {
 import { Photo } from "react-photo-album";
 import "react-photo-album/rows.css";
 import { Button } from "@/components/ui/button";
-import { Loader2, SaveIcon, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   analyzeMoodboard,
   patchMoodboard,
@@ -26,11 +26,6 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import EditableInput from "./EditableInput";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
@@ -95,26 +90,6 @@ function MoodboardLayout({
   useEffect(() => {
     latestGalleryItemsRef.current = bulkGalleryItems;
   }, [bulkGalleryItems]);
-
-  const handleAnalyzeMoodboard = async () => {
-    if (hasUnsavedChanges) {
-      await handleSaveChanges();
-    }
-    try {
-      toast.promise(
-        analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-          image_urls: photos.map((photo) => photo.src),
-        }),
-        {
-          loading: "Analyzing moodboard...",
-          success: "Moodboard analyzed successfully!",
-          error: "Image analysis failed. Please try again.",
-        }
-      );
-    } catch (error) {
-      console.error("Image analysis failed:", error);
-    }
-  };
 
   // Fixed: Check if there are unsaved changes (excluding like status)
   const hasUnsavedChanges = useMemo(() => {
@@ -328,16 +303,11 @@ function MoodboardLayout({
     setPlaceholderItems(placeholders);
   }, [noOfImagesForMoodboard, photos.length]);
 
-  // Enhanced save function to handle new selections
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
       // Get current photos with pending selections applied
       const currentPhotosWithSelections = [...photos];
-
-      setPlaceholderItems([]);
-
-      setNoOfImagesForMoodboard(photos.length);
 
       // 1. Update moodboard asset positions
       const updatedAssets: MoodboardAsset[] = currentPhotosWithSelections.map(
@@ -351,57 +321,34 @@ function MoodboardLayout({
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
       });
-
       // 4. Update local state optimistically
       setPhotos(currentPhotosWithSelections);
       setOriginalPhotos([...currentPhotosWithSelections]);
-
-      toast.success("Moodboard updated successfully!");
+      // Wait for 2 seconds before analyzing the moodboard
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
+        image_urls: photos.map((photo) => photo.src),
+      });
     } catch (error) {
       console.error("Failed to save changes:", error);
-      toast.error("Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
+  useEffect(() => {
+    if (!hasUnsavedChanges) return; // no interval if nothing to save
+    // Create the interval once
+    const intervalId = setInterval(() => {
+      if (hasUnsavedChanges) {
+        handleSaveChanges();
+      }
+    }, 3000);
 
-  const handleCancelChanges = () => {
-    // Handle case where there are no original photos (new moodboard)
-    if (!originalPhotos || originalPhotos.length === 0) {
-      setPhotos([]);
-      setOriginalPhotos([]);
-      setNoOfImagesForMoodboard(10); // Reset to default
-      toast.info("Changes cancelled. Starting fresh.");
-      return;
-    }
-
-    // Filter out any undefined/null entries from originalPhotos
-    const validOriginalPhotos = originalPhotos.filter(
-      (photo) => photo && photo.id
-    );
-
-    if (validOriginalPhotos.length === 0) {
-      setPhotos([]);
-      setOriginalPhotos([]);
-      setNoOfImagesForMoodboard(10); // Reset to default
-      toast.info("Changes cancelled. Starting fresh.");
-      return;
-    }
-
-    // Revert to original photos, preserving current like status
-    const revertedPhotos = validOriginalPhotos.map((originalPhoto) => {
-      const currentPhoto = photos.find((p) => p && p.id === originalPhoto.id);
-      return {
-        ...originalPhoto,
-        liked: currentPhoto?.liked ?? originalPhoto.liked,
-      };
-    });
-
-    setPhotos(revertedPhotos);
-    setOriginalPhotos([...revertedPhotos]);
-    setNoOfImagesForMoodboard(revertedPhotos.length || 10);
-    toast.success("Changes cancelled. Reverted to last saved state.");
-  };
+    // Cleanup on unmount or dependency change
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [hasUnsavedChanges, handleSaveChanges]);
 
   const handleGallerySelection = useCallback(
     (selectedItems: GalleryItemResponse[]) => {
@@ -516,7 +463,12 @@ function MoodboardLayout({
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    {hasUnsavedChanges ? (
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                        <span className="text-sm">Syncing</span>
+                      </>
+                    ) : hasUnsavedChanges ? (
                       <>
                         <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
                         <span className="text-sm">Unsaved changes</span>
@@ -532,43 +484,6 @@ function MoodboardLayout({
 
                 {/* Right side - Action Buttons (from right to left: Save, Cancel, AutoFill All) */}
                 <div className="flex gap-2 items-center justify-end">
-                  {/* Cancel Button - middle */}
-                  {hasUnsavedChanges && (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={handleCancelChanges}
-                      disabled={isSaving}
-                      className="flex items-center gap-1 py-1 whitespace-nowrap"
-                    >
-                      <X size={16} />
-                      Cancel
-                    </Button>
-                  )}
-
-                  {/* Save Button - rightmost */}
-                  {hasUnsavedChanges && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span tabIndex={0} className="inline-flex">
-                          <button
-                            onClick={handleAnalyzeMoodboard}
-                            disabled={isSaving || photos.length < 10}
-                            className="flex items-center gap-1 whitespace-nowrap border border-gray-400 rounded-md px-3 py-[7px] text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <SaveIcon size={16} className="text-gray-700" />
-                            {isSaving ? "Saving..." : "Save"}
-                          </button>
-                        </span>
-                      </TooltipTrigger>
-                      {photos.length < 10 && (
-                        <TooltipContent>
-                          Add at least 10 images to save
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  )}
-
                   {/* AutoFill All Button - leftmost */}
                   {placeholderItems.length > 0 && (
                     <Button

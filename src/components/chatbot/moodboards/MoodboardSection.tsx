@@ -161,11 +161,7 @@ export const MoodboardSection: React.FC<{
     setNoOfImagesForMoodboard(
       Math.min(16, assetCount > 0 ? assetCount : fallbackImageCount)
     );
-  }, [
-    currentMoodboard?.id,
-    currentMoodboard?.moodboard_assets?.length,
-    galleryActions.totalItems,
-  ]);
+  }, [currentMoodboard?.id, galleryActions.totalItems]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
@@ -485,7 +481,8 @@ export const MoodboardSection: React.FC<{
                 />
               )}
 
-              {(isCreatingNewMoodboard || !moodboardInformation) && (
+              {(isCreatingNewMoodboard ||
+                currentCampaignMoodboards.length === 0) && (
                 <div className="mt-4">
                   <Button className="w-full" onClick={handleCreateMoodboard}>
                     Create Moodboard
