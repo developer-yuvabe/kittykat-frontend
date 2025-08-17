@@ -1,4 +1,5 @@
 import axiosInstance from "@/config/axios/api-client.config";
+import { getImageDimensionsFromLocallyUploadedImage } from "@/lib/utils";
 import axios from "axios";
 
 export async function uploadFileAndReturnUrl(
@@ -16,12 +17,25 @@ export async function uploadFileAndReturnUrl(
       .replace(/\s+/g, "_") // replace internal spaces with underscores
       .replace(/\.[^/.]+$/, ""); // remove file extension
 
+    const metadata: Record<string, string> = {
+      "x-goog-meta-size": file.size.toString(),
+      "x-goog-meta-file-type": fileType,
+    };
+
+    if (fileType.startsWith("image/")) {
+      const { width, height } =
+        await getImageDimensionsFromLocallyUploadedImage(file);
+      metadata["x-goog-meta-width"] = width.toString();
+      metadata["x-goog-meta-height"] = height.toString();
+    }
+
     const response = await axiosInstance.post(`/users/file/upload`, {
       file_name: cleanedFileName,
       content_type: fileType,
       content_source: contentSource,
       brand_id: brandId || null, // Use brandId if provided, otherwise null
       campaign_id: campaignId || null, // Use campaignId if provided, otherwise null
+      metadata,
     });
 
     const { upload_url, download_url } = response.data.data;
@@ -30,6 +44,7 @@ export async function uploadFileAndReturnUrl(
     await axios.put(upload_url, file, {
       headers: {
         "Content-Type": fileType,
+        ...metadata,
       },
     });
 

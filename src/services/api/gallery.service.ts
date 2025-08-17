@@ -285,7 +285,7 @@ class GalleryService {
     body: BulkGalleryUploadRequest
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.post(`/gallery/bulk/upload`, body)
+      axiosInstance.post(`/gallery/bulk/upload-optimized`, body)
     );
   }
 }
