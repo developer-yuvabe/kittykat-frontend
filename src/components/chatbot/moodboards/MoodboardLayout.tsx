@@ -34,6 +34,8 @@ interface MoodboardLayoutProps {
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   showAdvancedSettings: boolean;
   setShowAdvancedSettings: React.Dispatch<React.SetStateAction<boolean>>;
+  isSaving: boolean;
+  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function MoodboardLayout({
@@ -43,13 +45,15 @@ function MoodboardLayout({
   setNoOfImagesForMoodboard,
   showAdvancedSettings,
   setShowAdvancedSettings,
+  isSaving = false,
+  setIsSaving,
 }: MoodboardLayoutProps) {
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
     []
   );
   const [loading, setLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+
   const [currentMoodboardId, setCurrentMoodboardId] = useState<string>(
     moodboard?.id
   );

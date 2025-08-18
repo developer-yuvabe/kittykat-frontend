@@ -12,11 +12,8 @@ import {
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { MoreIcon } from "@/components/ui/custom-icon";
 import { MediaOverlay } from "./MediaOverlay";
-import { MediaItemCommentSection } from "./MediaItemCommentSection";
-import { MediaItemEditableTitle } from "./MediaItemEditableTitle";
 import { MediaImage } from "./MediaImage";
 import { MediaItemActionsButton } from "./MediaItemActionsButton";
-import { MediaImageDetails } from "./MediaImageDetails";
 import { GalleryActions } from "@/hooks/useGallery";
 
 // Types
@@ -77,7 +74,9 @@ export function MediaItem({
   const handleImageClick = () => {
     if (isMediaSelectDialog) {
       // In media select dialog, clicking image should select it
-      onSelect(item.id, !isSelected);
+      if (!isAlreadySelected) {
+        onSelect(item.id, !isSelected);
+      }
     } else {
       // In regular gallery, clicking image opens editor
       onEditClick(item);
@@ -158,8 +157,6 @@ export function MediaItem({
                   side="right"
                 >
                   <div className="space-y-2">
-                    {/* <MediaImageDetails item={item} /> */}
-
                     <MediaItemActionsButton
                       item={item}
                       onDetailsClick={onDetailsClick}

@@ -65,6 +65,7 @@ export const MoodboardSection: React.FC<{
   const [selectedMoodboardId, setSelectedMoodboardId] = useState<string | null>(
     null
   );
+  const [isSaving, setIsSaving] = useState(false);
   const [openPopover, setOpenPopover] = useState(false);
 
   const currentCampaign = useMemo(
@@ -466,6 +467,8 @@ export const MoodboardSection: React.FC<{
                               }
                               showAdvancedSettings={showAdvancedSettings}
                               setShowAdvancedSettings={setShowAdvancedSettings}
+                              isSaving={isSaving}
+                              setIsSaving={setIsSaving}
                             />
                           )}
                       </div>
@@ -478,6 +481,7 @@ export const MoodboardSection: React.FC<{
                           }
                           showAdvancedSettings={showAdvancedSettings}
                           isGalleryItemsProcessing={galleryActions.isGalleryItemsProcessing()}
+                          isSaving={isSaving}
                         />
                       )}
                     </div>
