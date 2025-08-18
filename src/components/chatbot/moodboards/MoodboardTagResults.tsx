@@ -25,6 +25,7 @@ type Props = {
   moodboardId?: MoodboardInformation["id"];
   showAdvancedSettings?: boolean;
   isGalleryItemsProcessing?: boolean;
+  isSaving: boolean;
 };
 
 function MoodboardTagResults({
@@ -33,6 +34,7 @@ function MoodboardTagResults({
   moodboardId,
   showAdvancedSettings = false,
   isGalleryItemsProcessing = false,
+  isSaving,
 }: Props) {
   const [localTags, setLocalTags] = useState<
     Record<string, { value: string; selected: boolean }[]>
@@ -41,7 +43,7 @@ function MoodboardTagResults({
   const { selectedBrandId } = useBrandStore();
 
   // Mutation for patching
-  const { mutateAsync: patchMoodboardMutate, isPending: isSaving } =
+  const { mutateAsync: patchMoodboardMutate, isPending: isPatching } =
     useMutation({
       mutationFn: (payload: MoodboardPatchRequest) =>
         patchMoodboard(selectedBrandId!, moodboardId!, payload),
@@ -139,7 +141,16 @@ function MoodboardTagResults({
                     {tags.map((tag) => (
                       <Badge
                         key={tag.value}
-                        onClick={() => toggleTag(category, tag.value)}
+                        onClick={() => {
+                          if (isSaving) {
+                            toast.warning(
+                              "Please wait until the moodboard is synced."
+                            );
+                            return;
+                          }
+
+                          toggleTag(category, tag.value);
+                        }}
                         role="button"
                         tabIndex={0}
                         aria-pressed={tag.selected}
@@ -164,9 +175,11 @@ function MoodboardTagResults({
               <Button
                 className="w-full"
                 onClick={handleGenerate}
-                disabled={isSaving || isGenerating || isGalleryItemsProcessing}
+                disabled={
+                  isPatching || isGenerating || isGalleryItemsProcessing
+                }
               >
-                {isSaving || isGenerating ? (
+                {isPatching || isGenerating ? (
                   <Loader />
                 ) : (
                   <>
