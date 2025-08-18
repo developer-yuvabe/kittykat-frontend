@@ -155,7 +155,7 @@ export function MediaUploadDropzone({
         const urls = successfulUploads.map(({ url }) => url);
         onUploadComplete?.(urls);
 
-        // If addToGallery is enabled, add to gallery
+        // If addToGallery is enabled, add to gallery using bulk upload only
         if (addToGallery) {
           const itemsToUpload: GalleryItem[] = successfulUploads.map(
             ({ file, url }) => ({
@@ -182,54 +182,16 @@ export function MediaUploadDropzone({
           );
 
           try {
-            // For less than 5 images, use parallel synchronous calls like in MoodboardGallerySelector
-            if (successfulUploads.length < 5) {
-              const addToGalleryPromises = itemsToUpload.map(
-                async (galleryItem) => {
-                  try {
-                    await galleryActions.addToGallery(galleryItem);
-                    return true;
-                  } catch (error) {
-                    console.error(
-                      `Failed to add ${galleryItem.asset_title} to gallery:`,
-                      error
-                    );
-                    return false;
-                  }
-                }
-              );
+            // Use bulk upload for all uploads regardless of size
+            const bulkUploadPayload: BulkGalleryUploadRequest = {
+              gallery_items: itemsToUpload,
+              brand_id: selectedBrand.brand_id,
+            };
 
-              const galleryResults = await Promise.all(addToGalleryPromises);
-              const gallerySuccessCount = galleryResults.filter(Boolean).length;
-              const galleryFailedCount =
-                galleryResults.length - gallerySuccessCount;
-
-              if (galleryFailedCount === 0) {
-                toast.success(
-                  `${gallerySuccessCount} file(s) uploaded to gallery successfully!`
-                );
-              } else if (gallerySuccessCount === 0) {
-                toast.error(
-                  "Files uploaded but failed to add to gallery. Please try again."
-                );
-              } else {
-                toast.warning(
-                  `${gallerySuccessCount} file(s) uploaded successfully, ${galleryFailedCount} failed to add to gallery.`
-                );
-              }
-            } else {
-              // For 5 or more images, use bulk upload
-              const bulkUploadPayload: BulkGalleryUploadRequest = {
-                gallery_items: itemsToUpload,
-                brand_id: selectedBrand.brand_id,
-                scrape_only: false,
-              };
-
-              await galleryActions.bulkUpload(bulkUploadPayload);
-              toast.success(
-                `${successfulUploads.length} file(s) uploaded to gallery successfully!`
-              );
-            }
+            await galleryActions.bulkUpload(bulkUploadPayload);
+            toast.success(
+              `${successfulUploads.length} file(s) uploaded to gallery successfully!`
+            );
           } catch (galleryError) {
             console.error("Gallery upload failed:", galleryError);
             toast.error(
