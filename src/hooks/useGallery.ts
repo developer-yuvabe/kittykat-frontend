@@ -254,6 +254,31 @@ export const useGalleryQuery = (
     },
   });
 
+  // Upload bulk gallery items with analysis mutation
+  const uploadBulkWithAnalysisMutation = useMutation({
+    mutationFn: (body: BulkGalleryUploadRequest) =>
+      galleryService.uploadBulkGalleryItemsWithAnalysis(body),
+    onMutate: () => {
+      // Show loading toast and store the ID
+      const toastId = toast.loading("Uploading items to gallery...");
+      return { toastId };
+    },
+    onSuccess: (_data, _variables, context) => {
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+
+      // Update the loading toast to success
+      toast.success("Items uploaded to gallery", { id: context?.toastId });
+    },
+    onError: (_error, _variables, context) => {
+      // Update the loading toast to error
+      toast.error("Failed to upload items to gallery", {
+        id: context?.toastId,
+      });
+    },
+  });
+
   // Update gallery item mutation
   const updateItemMutation = useMutation({
     mutationFn: ({ itemId, data }: { itemId: string; data: GalleryItem }) =>
@@ -748,6 +773,8 @@ export const useGalleryQuery = (
     refetchAllGalleryQueries,
 
     bulkUpload: bulkUploadMutation.mutateAsync,
+
+    uploadBulkWithAnalysis: uploadBulkWithAnalysisMutation.mutateAsync,
   };
 };
 

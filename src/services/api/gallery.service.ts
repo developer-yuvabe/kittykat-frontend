@@ -288,6 +288,14 @@ class GalleryService {
       axiosInstance.post(`/gallery/bulk/upload-optimized`, body)
     );
   }
+
+  async uploadBulkGalleryItemsWithAnalysis(
+    body: BulkGalleryUploadRequest
+  ): Promise<GalleryItemResponse[]> {
+    return handleApiRequest<GalleryItemResponse[]>(
+      axiosInstance.post(`/gallery/bulk/upload`, body)
+    );
+  }
 }
 
 export const galleryService = new GalleryService();

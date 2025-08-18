@@ -58,10 +58,17 @@ export const MoodboardVisualSectionHeader = ({
     let failedCount = 0;
 
     try {
-      // For small batches (less than 5 images), upload synchronously using addToGallery
-      if (filesArray.length < 5) {
-        // Parallelize uploads for small batches
-        const uploadPromises = filesArray.map(async (file) => {
+      // Use bulk upload with concurrent processing for all batches
+      const CONCURRENT_UPLOADS = 20;
+      const chunks = [];
+      for (let i = 0; i < filesArray.length; i += CONCURRENT_UPLOADS) {
+        chunks.push(filesArray.slice(i, i + CONCURRENT_UPLOADS));
+      }
+
+      const galleryItems: GalleryItem[] = [];
+
+      for (const chunk of chunks) {
+        const chunkPromises = chunk.map(async (file) => {
           try {
             // Upload file to GCS
             const downloadUrl = await uploadFileAndReturnUrl(
@@ -73,7 +80,7 @@ export const MoodboardVisualSectionHeader = ({
               currentCampaign.id
             );
 
-            // Create gallery item
+            // Prepare gallery item
             const galleryItem: GalleryItem = {
               brand_id: selectedBrandId,
               campaign_id: currentCampaign.id,
@@ -95,92 +102,34 @@ export const MoodboardVisualSectionHeader = ({
               custom_tags: [],
             };
 
-            // Add to gallery using individual addToGallery method
-            await galleryActions.addToGallery(galleryItem);
-            successCount++;
+            return galleryItem;
           } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
             failedCount++;
+            return null;
           }
         });
 
-        await Promise.all(uploadPromises);
-        galleryActions.refetchAllGalleryQueries();
-      } else {
-        // For larger batches (5 or more images), use bulk upload with concurrent processing
-        const CONCURRENT_UPLOADS = 3;
-        const chunks = [];
-        for (let i = 0; i < filesArray.length; i += CONCURRENT_UPLOADS) {
-          chunks.push(filesArray.slice(i, i + CONCURRENT_UPLOADS));
-        }
-
-        const galleryItems: GalleryItem[] = [];
-
-        for (const chunk of chunks) {
-          const chunkPromises = chunk.map(async (file) => {
-            try {
-              // Upload file to GCS
-              const downloadUrl = await uploadFileAndReturnUrl(
-                file.name,
-                file.type,
-                "threads",
-                file,
-                selectedBrandId,
-                currentCampaign.id
-              );
-
-              // Prepare gallery item
-              const galleryItem: GalleryItem = {
-                brand_id: selectedBrandId,
-                campaign_id: currentCampaign.id,
-                moodboard_id: moodboard.id,
-                asset_title: file.name,
-                asset_url: downloadUrl,
-                asset_type: "image",
-                asset_source: "upload",
-                size: "unknown",
-                media_format: file.type.split("/")[1] || "jpg",
-                related_asset_ids: [],
-                prompt_modifiers: [],
-                ai_tags: [],
-                visual_style_tags: {},
-                detected_objects: [],
-                detected_emotions: [],
-                detected_colors: [],
-                search_keywords: [],
-                custom_tags: [],
-              };
-
-              return galleryItem;
-            } catch (error) {
-              console.error(`Error uploading ${file.name}:`, error);
-              failedCount++;
-              return null;
-            }
-          });
-
-          const chunkResults = await Promise.all(chunkPromises);
-          galleryItems.push(...(chunkResults.filter(Boolean) as GalleryItem[]));
-        }
-
-        if (galleryItems.length === 0) {
-          throw new Error("All file uploads failed");
-        }
-
-        // Bulk upload to gallery
-        const bulkUploadRequest: BulkGalleryUploadRequest = {
-          gallery_items: galleryItems,
-          brand_id: selectedBrandId,
-          campaign_id: currentCampaign.id,
-          moodboard_id: moodboard.id,
-          scrape_only: false,
-        };
-
-        const createdGalleryItems = await galleryActions.bulkUpload(
-          bulkUploadRequest
-        );
-        successCount = createdGalleryItems.length;
+        const chunkResults = await Promise.all(chunkPromises);
+        galleryItems.push(...(chunkResults.filter(Boolean) as GalleryItem[]));
       }
+
+      if (galleryItems.length === 0) {
+        throw new Error("All file uploads failed");
+      }
+
+      // Bulk upload to gallery
+      const bulkUploadRequest: BulkGalleryUploadRequest = {
+        gallery_items: galleryItems,
+        brand_id: selectedBrandId,
+        campaign_id: currentCampaign.id,
+        moodboard_id: moodboard.id,
+      };
+
+      const createdGalleryItems = await galleryActions.bulkUpload(
+        bulkUploadRequest
+      );
+      successCount = createdGalleryItems.length;
 
       // Show final result toast
       if (failedCount === 0) {
