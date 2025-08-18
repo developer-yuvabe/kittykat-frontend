@@ -57,7 +57,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
   });
 
   const { user } = useUserStore();
-  const { bulkUpload } = useGalleryQuery({});
+  const { uploadBulkWithAnalysis: bulkUpload } = useGalleryQuery({});
 
   // Fixed categorization and sorting with proper status handling
   const categorizedLogs = useMemo(() => {
