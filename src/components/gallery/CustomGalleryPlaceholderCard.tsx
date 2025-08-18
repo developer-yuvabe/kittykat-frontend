@@ -61,8 +61,8 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
     useMoodboardQuery({
       brandId: selectedBrandId || undefined,
-      campaignId: moodboard.campaign_id,
-      moodboardId: moodboard.id,
+      campaignId: moodboard?.campaign_id,
+      moodboardId: moodboard?.id,
       count: 50,
     });
 
@@ -123,7 +123,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
 
       {/* Main content container */}
       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-        {/* Buttons container - enable pointer events and high z-index */}
+        {/* Buttons container - only when not preview */}
         {!isPreview && (
           <div className="flex flex-col items-center justify-center gap-0 pointer-events-auto z-50">
             <Button
@@ -166,41 +166,48 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
       </div>
 
       {/* Corner icons */}
-      <div className="absolute top-2 left-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
-        <X
-          size={16}
-          className="w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+      {!isPreview && (
+        <>
+          {/* Remove (X) */}
+          <div className="absolute top-2 left-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+            <X
+              size={16}
+              className="w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-            // Prevent removal if count would drop below 10
-            if (!isPreview && noOfImagesForMoodboard <= 10) {
-              toast.warning("Atleast 10 images are required.");
-              return;
-            }
+                // Prevent removal if count would drop below 10
+                if (noOfImagesForMoodboard <= 10) {
+                  toast.warning("At least 10 images are required.");
+                  return;
+                }
 
-            setNoOfImagesForMoodboard((prev) => prev - 1);
-            setPhotos((prev) => {
-              const newPhotos = [...prev];
-              newPhotos.splice(placeHolderIndex, 1);
-              return newPhotos;
-            });
-          }}
-        />
-      </div>
+                setNoOfImagesForMoodboard((prev) => prev - 1);
+                setPhotos((prev) => {
+                  const newPhotos = [...prev];
+                  newPhotos.splice(placeHolderIndex, 1);
+                  return newPhotos;
+                });
+              }}
+            />
+          </div>
 
+          {/* Like (Heart) */}
+          <div className="absolute bottom-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+            <HeartIcon
+              size={16}
+              className="w-5 h-5 cursor-pointer transition-all duration-200 text-white hover:scale-110 active:scale-95"
+            />
+          </div>
+        </>
+      )}
+
+      {/* Maximize (always available, even in preview) */}
       <div className="absolute top-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
         <Maximize2
           size={16}
           className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-        />
-      </div>
-
-      <div className="absolute bottom-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
-        <HeartIcon
-          size={16}
-          className="w-5 h-5 cursor-pointer transition-all duration-200 text-white hover:scale-110 active:scale-95"
         />
       </div>
     </div>
