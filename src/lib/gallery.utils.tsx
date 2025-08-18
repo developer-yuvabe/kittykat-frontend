@@ -337,20 +337,6 @@ type GalleryActions = {
     unknown
   >;
 
-  toggleFavorite: (
-    variables: string,
-    options?: MutateOptions<
-      GalleryItemResponse,
-      Error,
-      string,
-      {
-        previousGalleryData: unknown;
-        previousItemData: unknown;
-        queryKey: (string | boolean | EnhancedSelectedFilters | undefined)[];
-      }
-    >
-  ) => void;
-
   bulkDelete: (
     variables: string[],
     options?: MutateOptions<
@@ -417,13 +403,6 @@ class MediaItemHelper {
       itemId,
       commentId,
     });
-  };
-
-  toggleFavorite = (
-    itemId: string,
-    options?: Parameters<GalleryActions["toggleFavorite"]>[1]
-  ): void => {
-    this.actions.toggleFavorite(itemId, options);
   };
 
   bulkDelete = (

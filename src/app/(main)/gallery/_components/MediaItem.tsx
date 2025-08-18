@@ -18,7 +18,6 @@ import { MediaImage } from "./MediaImage";
 import { MediaItemActionsButton } from "./MediaItemActionsButton";
 import { MediaImageDetails } from "./MediaImageDetails";
 import { GalleryActions } from "@/hooks/useGallery";
-import { createMediaItemHelper } from "@/lib/gallery.utils";
 
 // Types
 interface MediaItemProps {
@@ -64,16 +63,6 @@ export function MediaItem({
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
   const isDisabled = isAlreadySelected && isMultiSelect;
-
-  const mediaHelper = createMediaItemHelper({
-    patchItem: galleryActions.patchItem,
-    addComment: galleryActions.addComment,
-    updateComment: galleryActions.updateComment,
-    deleteComment: galleryActions.deleteComment,
-    toggleFavorite: galleryActions.toggleFavorite,
-    bulkDelete: galleryActions.bulkDelete,
-    deleteItem: galleryActions.deleteItem,
-  });
 
   const handleImageLoad = (event: any) => {
     const target = event.target as HTMLImageElement;
@@ -137,13 +126,18 @@ export function MediaItem({
           isHovered={isHovered}
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
-          onToggleFavorite={mediaHelper.toggleFavorite}
           isAlreadySelected={isAlreadySelected}
           isDisabled={isDisabled}
           isMultiSelectMode={isMultiSelect}
           maxSelectionCount={maxSelectionCount}
           selectedCount={selectedCount}
           onDownload={onDownload}
+          onToggleFavorite={() => {
+            galleryActions.patchItem({
+              itemId: item.id,
+              data: { is_favourite: !item.is_favourite },
+            });
+          }}
         />
 
         {/* More options popover - Only show in regular gallery, NOT in media select dialog */}
