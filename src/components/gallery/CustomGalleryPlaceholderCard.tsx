@@ -61,8 +61,8 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
     useMoodboardQuery({
       brandId: selectedBrandId || undefined,
-      campaignId: moodboard.campaign_id,
-      moodboardId: moodboard.id,
+      campaignId: moodboard?.campaign_id,
+      moodboardId: moodboard?.id,
       count: 50,
     });
 
