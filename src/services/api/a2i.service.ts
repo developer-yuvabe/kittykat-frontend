@@ -77,3 +77,20 @@ export const updateA2iImagePositions = async (
     throw error;
   }
 };
+
+export const updateA2iRefernceMoodboard = async (
+  brandId: string,
+  moodboardId: string
+) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.patch(`/brands/a2i/reference-moodboard`, {
+        moodboard_id: moodboardId,
+        brand_id: brandId,
+      })
+    );
+  } catch (error) {
+    console.error("Error updating reference moodboard:", error);
+    throw error;
+  }
+};
