@@ -69,8 +69,9 @@ const ReferenceMoodboard = ({
       generateA2iShowboard(selectedBrandId!, referenceMoodboardId!, Number(n)),
   });
 
-  const selectedMoodboard = moodboardInformation?.find(
-    (mb) => mb.id === referenceMoodboardId
+  const selectedMoodboard = useMemo(
+    () => moodboardInformation?.find((mb) => mb.id === referenceMoodboardId),
+    [moodboardInformation, referenceMoodboardId]
   );
 
   // Get the campaign-level selected moodboard
@@ -281,7 +282,7 @@ const ReferenceMoodboard = ({
               {selectedMoodboard?.title}
             </p>
 
-            {moodboardInformation && (
+            {moodboardInformation && selectedMoodboard?.campaign_id && (
               <MoodboardSelector
                 campaignId={selectedMoodboard!.campaign_id!}
                 moodboards={moodboardInformation!}
