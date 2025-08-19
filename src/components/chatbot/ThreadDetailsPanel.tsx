@@ -47,7 +47,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
-
       {isFetchingBrandInfo || isCreatingBrand ? (
         <InitialPlaceHolder
           isLoading={isFetchingBrandInfo || !isBrandsFetched}
@@ -59,7 +58,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             brandingInformation={brandingInformation}
             expandedSections={expandedSections}
             setExpandedSections={setExpandedSections}
-            clearPinnedItems={removePinnedItem}
             analysisLogs={data?.analysis_logs ?? []}
           />
 

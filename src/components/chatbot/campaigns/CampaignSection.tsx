@@ -21,6 +21,8 @@ import {
 } from "../brands/InitialPlaceHolder";
 import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { toast } from "sonner";
+import { scrollToBottom } from "@/lib/scroll.utils";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -88,17 +90,35 @@ export const CampaignSection: React.FC<{
     }));
   }, [latestCampaignIndex, setExpandedSections]);
 
-  const handleViaAgent = useCallback(() => {
-    setIsCampaignCreating(true);
-    if (user) {
-      submitOptimisticMessage({
-        stream,
-        text: `Let's create a new campaign!`,
-        userId: user.id,
-        currentBrandContextId: selectedBrandId,
-      });
-    }
-  }, [user, stream, selectedBrandId]);
+  // Enhanced function to handle new campaign creation with scroll
+  const handleViaAgent = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.stopPropagation();
+      }
+
+      try {
+        // Set creating campaign state
+        setIsCampaignCreating(true);
+
+        // Submit the message
+        if (user) {
+          submitOptimisticMessage({
+            stream,
+            text: `Let's create a new campaign!`,
+            userId: user.id,
+            currentBrandContextId: selectedBrandId,
+          });
+        }
+
+        // Use the reusable scroll utility
+        scrollToBottom(100);
+      } catch (error) {
+        console.error("Error creating new campaign:", error);
+      }
+    },
+    [user, stream, selectedBrandId, setIsCampaignCreating]
+  );
 
   const handleCampaignIndexChange = useCallback((index: number) => {
     setFadeKey((prev) => prev + 1);
@@ -134,6 +154,10 @@ export const CampaignSection: React.FC<{
     }));
   }, []);
 
+  const handleMoodboardPlaceholderClick = () => {
+    toast.info("Please create a campaign before creating a moodboard.");
+  };
+
   if (
     !campaignInformation ||
     campaignInformation.length === 0 ||
@@ -167,6 +191,7 @@ export const CampaignSection: React.FC<{
           onToggleExpanded={() =>
             setIsMoodboardPlaceholderExpanded((prev: boolean) => !prev)
           }
+          onNewClick={handleMoodboardPlaceholderClick}
           isCreatingNewCampaign={isCampaignCreating}
         />
       </>
@@ -195,7 +220,7 @@ export const CampaignSection: React.FC<{
                 </div>
                 <div className="flex flex-col">
                   <div>
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-semibold break-words max-w-xs">
                       {currentCampaign?.campaign?.title}
                     </div>
                     <div>
@@ -216,10 +241,7 @@ export const CampaignSection: React.FC<{
                             className="p-4"
                             tooltip="New Campaign"
                             variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViaAgent();
-                            }}
+                            onClick={handleViaAgent}
                           >
                             <CirclePlus className="size-5" />
                           </TooltipIconButton>
@@ -247,7 +269,7 @@ export const CampaignSection: React.FC<{
                       currentCampaign?.campaign?.title || "Unnamed Campaign"
                     }
                     onSave={handleTitleSave}
-                    textClassName="font-bold"
+                    textClassName="font-bold  break-words max-w-xs"
                     showLabel={true}
                     isTextarea={false}
                   />
@@ -266,26 +288,12 @@ export const CampaignSection: React.FC<{
                   />
                 )}
 
-                {/* <Button
-                size="lg"
-                className="p-4"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleViaAgent();
-                }}
-              >
-                <CirclePlus className="size-5" />
-              </Button> */}
                 <TooltipIconButton
                   size="lg"
                   className="p-4"
                   tooltip="New Campaign"
                   variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViaAgent();
-                  }}
+                  onClick={handleViaAgent}
                 >
                   <CirclePlus className="size-5" />
                 </TooltipIconButton>

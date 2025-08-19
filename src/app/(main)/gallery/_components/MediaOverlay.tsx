@@ -1,4 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { HeartIcon, DownloadIcon } from "lucide-react";
 
@@ -9,12 +10,12 @@ interface MediaOverlayProps {
   isMediaSelectDialog?: boolean;
   isMultiSelectMode?: boolean;
   onSelect: (id: string, selected: boolean) => void;
-  onToggleFavorite: (id: string) => void;
   isAlreadySelected: boolean;
   isDisabled?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
+  onToggleFavorite: () => void;
 }
 
 // Media Overlay Component
@@ -32,9 +33,13 @@ export function MediaOverlay({
   maxSelectionCount,
   onDownload,
 }: MediaOverlayProps) {
+  const { updateAutoFillSuggestionCache } = useMoodboardQuery({});
+
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onToggleFavorite(item.id);
+    const newIsFavourite = !item.is_favourite;
+    onToggleFavorite();
+    updateAutoFillSuggestionCache(item.id, newIsFavourite);
   };
 
   const shouldShowSelection = isHovered || isSelected || isAlreadySelected;
@@ -93,8 +98,10 @@ export function MediaOverlay({
 
       {/* Favorite Button */}
       <div
-        className={`absolute bottom-2 right-2 z-10 transition-opacity duration-200 cursor-pointer ${
-          isHovered ? "opacity-100" : "opacity-0"
+        className={`absolute bottom-2 right-2 z-30 transition-opacity duration-200 cursor-pointer ${
+          isHovered
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={handleFavoriteClick}
       >

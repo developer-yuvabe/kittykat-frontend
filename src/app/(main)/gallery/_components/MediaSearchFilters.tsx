@@ -36,6 +36,7 @@ interface MediaSearchFiltersProps {
     value: string[] | ((old: string[]) => string[] | null) | null,
     options?: Options
   ) => Promise<URLSearchParams>;
+  isMediaSelectDialog?: boolean; // Add this prop
 }
 
 export function MediaSearchFilters({
@@ -45,8 +46,8 @@ export function MediaSearchFilters({
   favorites,
   showFilters,
   selectedFilters,
-
   setInitialWorkflowStatus,
+  isMediaSelectDialog = false, // Default to false
 }: MediaSearchFiltersProps) {
   const handleWorkflowStatusChange = (values: string[]) => {
     setInitialWorkflowStatus(null);
@@ -79,49 +80,46 @@ export function MediaSearchFilters({
             Favorites only
           </label>
         </div>
-        {/* <div className="mt-1">
-          {!showFilters && (
-            <TooltipIconButton tooltip="Show Filters" onClick={onToggleFilters}>
-              <Filter size={24} />
-            </TooltipIconButton>
-          )}
-        </div> */}
-        <div className="flex flex-col gap-1 mb-4">
-          <Label
-            htmlFor="workflow-status-select"
-            className="flex items-center mb-1 justify-center "
-          >
-            Kittykat Expert Status
-          </Label>
-          <MultiSelect
-            value={selectedFilters.workflow_status ?? []}
-            onValueChange={handleWorkflowStatusChange}
-            maxCount={WORKFLOW_STATUS_OPTIONS.length}
-          >
-            <MultiSelectTrigger className="min-w-30 max-w-96">
-              <MultiSelectValue
-                placeholder="Select workflow status"
-                maxDisplay={1}
-                maxItemLength={16}
-              />
-            </MultiSelectTrigger>
-            <MultiSelectContent>
-              <MultiSelectSearch placeholder="Select status..." />
-              <MultiSelectList>
-                <MultiSelectEmpty>All Status</MultiSelectEmpty>
-                {WORKFLOW_STATUS_OPTIONS.map((option) => (
-                  <MultiSelectItem
-                    key={option.value}
-                    value={option.value}
-                    label={option.label}
-                  >
-                    {option.label}
-                  </MultiSelectItem>
-                ))}
-              </MultiSelectList>
-            </MultiSelectContent>
-          </MultiSelect>
-        </div>
+        
+        {/* Only show workflow status when NOT in media select dialog */}
+        {!isMediaSelectDialog && (
+          <div className="flex flex-col gap-1 mb-4">
+            <Label
+              htmlFor="workflow-status-select"
+              className="flex items-center mb-1 justify-center "
+            >
+              Kittykat Expert Status
+            </Label>
+            <MultiSelect
+              value={selectedFilters.workflow_status ?? []}
+              onValueChange={handleWorkflowStatusChange}
+              maxCount={WORKFLOW_STATUS_OPTIONS.length}
+            >
+              <MultiSelectTrigger className="min-w-30 max-w-96">
+                <MultiSelectValue
+                  placeholder="Select workflow status"
+                  maxDisplay={1}
+                  maxItemLength={16}
+                />
+              </MultiSelectTrigger>
+              <MultiSelectContent>
+                <MultiSelectSearch placeholder="Select status..." />
+                <MultiSelectList>
+                  <MultiSelectEmpty>All Status</MultiSelectEmpty>
+                  {WORKFLOW_STATUS_OPTIONS.map((option) => (
+                    <MultiSelectItem
+                      key={option.value}
+                      value={option.value}
+                      label={option.label}
+                    >
+                      {option.label}
+                    </MultiSelectItem>
+                  ))}
+                </MultiSelectList>
+              </MultiSelectContent>
+            </MultiSelect>
+          </div>
+        )}
       </div>
     </div>
   );

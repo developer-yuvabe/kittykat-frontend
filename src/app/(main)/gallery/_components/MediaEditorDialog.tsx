@@ -105,7 +105,6 @@ export function MediaEditorDialog({
       setEditingReply(null);
       setAttachments([]);
       setReplyAttachments([]);
-      setActiveTab("ask-kittykat");
       setCurrentItem(item);
       setBrushSize(80);
     }

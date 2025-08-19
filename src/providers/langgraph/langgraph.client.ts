@@ -1,15 +1,11 @@
-import { AppConfig } from "@/config/app.config";
-import { env } from "@/config/env";
 import { Client } from "@langchain/langgraph-sdk";
 
-export function createClient(apiUrl: string, apiKey: string | undefined) {
+export function createClient(apiUrl: string) {
   return new Client({
-    apiKey,
     apiUrl,
   });
 }
 
 export const client = createClient(
-  AppConfig.KITTYKAT_AGENT_SERVER,
-  env.NEXT_PUBLIC_LANGSMITH_API_KEY
+  new URL("/api/langgraph", window.location.href).href
 );

@@ -18,9 +18,20 @@ type Store = {
 
   isCampaignCreating: boolean;
   setIsCampaignCreating: (isCreating: boolean) => void;
+
+  // Campaign-level moodboard selection - maps campaignId to selectedMoodboardId
+  campaignMoodboardSelections: Record<string, string | null>;
+  setCampaignMoodboardSelection: (
+    campaignId: string,
+    moodboardId: string | null
+  ) => void;
+  getCampaignMoodboardSelection: (campaignId: string) => string | null;
+
+  selectedMoodboardId: string | null;
+  setSelectedMoodboardId: (moodboardId: string | null) => void;
 };
 
-export const useBrandStore = create<Store>((set) => ({
+export const useBrandStore = create<Store>((set, get) => ({
   isBrandsFetched: false,
   setIsBrandsFetched: (isFetched: boolean) =>
     set({ isBrandsFetched: isFetched }),
@@ -44,4 +55,24 @@ export const useBrandStore = create<Store>((set) => ({
   isCampaignCreating: false,
   setIsCampaignCreating: (isCreating: boolean) =>
     set({ isCampaignCreating: isCreating }),
+
+  campaignMoodboardSelections: {},
+  setCampaignMoodboardSelection: (
+    campaignId: string,
+    moodboardId: string | null
+  ) =>
+    set((state) => ({
+      campaignMoodboardSelections: {
+        ...state.campaignMoodboardSelections,
+        [campaignId]: moodboardId,
+      },
+    })),
+  getCampaignMoodboardSelection: (campaignId: string) => {
+    const state = get();
+    return state.campaignMoodboardSelections[campaignId] || null;
+  },
+
+  selectedMoodboardId: null,
+  setSelectedMoodboardId: (moodboardId: string | null) =>
+    set({ selectedMoodboardId: moodboardId }),
 }));

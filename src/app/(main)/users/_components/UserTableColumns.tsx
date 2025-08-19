@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UserListItem, UserStatus } from "@/types/user.types";
+import { UserListItem, UserListResponse, UserStatus } from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisIcon } from "lucide-react";
@@ -21,7 +21,8 @@ import { EditUser } from "./EditUser";
 
 export const getUserTableColumns = (
   page: number,
-  limit: number
+  limit: number,
+  searchTerm: string | undefined = ""
 ): ColumnDef<UserListItem>[] => [
   {
     header: "#",
@@ -147,12 +148,25 @@ export const getUserTableColumns = (
         toast.promise(deleteUser(row.original.id), {
           loading: "Revoking access...",
           success: () => {
-            queryClient.invalidateQueries({
-              predicate: (query) => query.queryKey[0] === "users",
-            });
+            queryClient.setQueryData<UserListResponse>(
+              ["users", page, limit, searchTerm],
+              (oldData) => {
+                if (!oldData) return oldData;
+
+                return {
+                  ...oldData,
+                  users: oldData.users.filter(
+                    (user) => user.id !== row.original.id
+                  ),
+                };
+              }
+            );
             return "Access revoked successfully.";
           },
-          error: "Failed to revoke access.",
+          error: (e) => {
+            console.log(e);
+            return "Failed to revoke access.";
+          },
           finally: () => {
             setIsActionsDisabled(false);
           },
@@ -212,7 +226,12 @@ export const getUserTableColumns = (
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <EditUser user={row.original} isOpen={open} setIsOpen={setOpen} />
+          <EditUser
+            user={row.original}
+            isOpen={open}
+            setIsOpen={setOpen}
+            queryKey={["users", page, limit, searchTerm]}
+          />
         </>
       );
     },

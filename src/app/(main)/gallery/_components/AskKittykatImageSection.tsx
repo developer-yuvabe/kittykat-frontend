@@ -200,15 +200,67 @@ export const AskKittykatImageSection: React.FC<
 }) => {
   const isVideo = item.asset_type === "video";
 
+  // Centralized like handler
+  const handleLike = () => {
+    const newFavoriteState = !item.is_favourite;
+
+    // Optimistically update the UI immediately
+    setCurrentItem((prev) => {
+      if (!prev || prev.id !== item.id) return prev;
+      return { ...prev, is_favourite: newFavoriteState };
+    });
+
+    // Show immediate feedback to user
+    toast.success(
+      newFavoriteState ? "Added to favorites" : "Removed from favorites"
+    );
+
+    // Update on server
+    galleryActions.patchItem(
+      {
+        itemId: item.id,
+        data: { is_favourite: newFavoriteState },
+      },
+      {
+        onSuccess: (updatedItem) => {
+          // Update the current item with the server response
+          setCurrentItem((prev) => {
+            if (!prev || prev.id !== updatedItem.id) return prev;
+            return {
+              ...prev,
+              ...updatedItem,
+              // Preserve existing comments if server doesn't return complete data
+              comments:
+                updatedItem.comments && updatedItem.comments.length > 0
+                  ? updatedItem.comments
+                  : prev.comments,
+            };
+          });
+
+          // Update the versions cache
+          revalidateGalleryItemVersions(updatedItem);
+        },
+        onError: (error) => {
+          // Rollback optimistic update on error
+          setCurrentItem((prev) => {
+            if (!prev || prev.id !== item.id) return prev;
+            return { ...prev, is_favourite: !newFavoriteState }; // Revert to opposite of what we set
+          });
+
+          console.error("Failed to update favorite status:", error);
+          toast.error("Failed to update favorite status");
+        },
+      }
+    );
+  };
+
   const renderMedia = () => {
     if (isVideo) {
       return (
         <VideoPlayer
           src={item.asset_url}
           isLiked={item.is_favourite ?? false}
-          onLike={() => {
-            // This onLike is now handled inside VideoPlayer
-          }}
+          onLike={handleLike}
           item={item}
           galleryActions={galleryActions}
           setCurrentItem={setCurrentItem}
@@ -250,33 +302,7 @@ export const AskKittykatImageSection: React.FC<
         className="object-contain rounded-lg max-h-[80vh]"
         variant="overlay"
         isLiked={item.is_favourite}
-        onLike={() => {
-          setCurrentItem((prev) => {
-            if (!prev || prev.id !== item.id) return prev;
-
-            const updated = { ...prev, is_favourite: !prev.is_favourite };
-            return updated;
-          });
-
-          galleryActions.toggleFavorite(item.id, {
-            onSuccess: (updatedItem) => {
-              setCurrentItem((prev) => {
-                if (!prev || prev.id !== updatedItem.id) return prev;
-                return { ...prev, is_favourite: updatedItem.is_favourite };
-              });
-
-              revalidateGalleryItemVersions(updatedItem);
-            },
-            onError: () => {
-              // Rollback optimistic update
-              setCurrentItem((prev) => {
-                if (!prev || prev.id !== item.id) return prev;
-                return { ...prev, is_favourite: item.is_favourite };
-              });
-              toast.error("Failed to update favorite status");
-            },
-          });
-        }}
+        onLike={handleLike}
         prompt={getPromptText()}
       />
     );

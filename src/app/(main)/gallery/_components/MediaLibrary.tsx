@@ -77,6 +77,7 @@ export function MediaLibrary({
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
+  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId);
   const [initialWorkflowStatus, setInitialWorkflowStatus] = useQueryState<
     string[]
@@ -431,6 +432,8 @@ export function MediaLibrary({
                 selecteMoodboardId={moodboardId}
                 galleryView={galleryView}
                 brandName={selectedBrandName}
+                isUrlDialogOpen={isUrlDialogOpen} // Use state variable
+                setIsUrlDialogOpen={setIsUrlDialogOpen}
               />
             </div>
           )}
@@ -511,6 +514,7 @@ export function MediaLibrary({
                       selectedFilters={selectedFilters}
                       setSelectedFilters={setSelectedFilters}
                       setInitialWorkflowStatus={setInitialWorkflowStatus}
+                      isMediaSelectDialog={isMediaSelectDialog}
                     />
 
                     <MediaDialogMultiSelectHeader

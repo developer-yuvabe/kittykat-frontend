@@ -1,4 +1,3 @@
-import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardInformation, MoodboardAsset } from "@/types/types";
 import React, {
   useEffect,
@@ -7,54 +6,36 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-
-import { SubSectionCard } from "../brands/SubSectionCard";
-import { SortablePhoto } from "@/components/gallery/SortableGallery";
 import { Photo } from "react-photo-album";
-import { arrayMove } from "@dnd-kit/sortable";
 import "react-photo-album/rows.css";
-import { ImageCountCard } from "@/components/shared/ImageCountCard";
-import { MoodboardGallerySelector } from "@/components/chatbot/moodboards/MoodboardGallerySelector";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   analyzeMoodboard,
-  createMoodboardForCampaign,
   patchMoodboard,
-  replaceMoodboardImage,
 } from "@/services/api/moodboard.service";
-import { useBrandStore } from "@/store/brand.store";
-import ManualMoodboardSkeleton from "./MoodboardSkeleton";
-import MoodboardSelector from "./MoodboardSelector";
 import { toast } from "sonner";
-import { AnalysisChartIcon, SaveIcon2 } from "@/components/ui/custom-icon";
-import CustomGridGallery from "@/components/gallery/CustomGridGallery";
+import { RegenerateIcon } from "@/components/ui/custom-icon";
+import OptimisticCustomGridGallery, {
+  SortablePhoto,
+} from "@/components/gallery/CustomGalleryContainer";
 import { galleryService } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
-
-// Fixed interface to match the data structure
-export interface MoodboardAssetItem {
-  id: string;
-  asset_url: string;
-  is_liked: boolean;
-  ignored: boolean;
-  position: number;
-}
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
+import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+import EditableInput from "./EditableInput";
 
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
   brandId: string;
   noOfImagesForMoodboard: number;
-  setNoOfImagesForMoodboard: (count: number) => void;
-  isGenerating: boolean;
-  moodboards: MoodboardInformation[];
-  selectedMoodboard: MoodboardInformation | null;
-  setSelectedMoodboard: (mb: MoodboardInformation | null) => void;
-  onNewMoodboard: () => void;
-  isCreatingNew: boolean;
-  handleGenerateMoodboard: () => Promise<void>;
+  setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
+  showAdvancedSettings: boolean;
+  setShowAdvancedSettings: React.Dispatch<React.SetStateAction<boolean>>;
+  isSaving: boolean;
+  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function MoodboardLayout({
@@ -62,22 +43,17 @@ function MoodboardLayout({
   brandId,
   noOfImagesForMoodboard,
   setNoOfImagesForMoodboard,
-  isGenerating = false,
-  moodboards,
-  selectedMoodboard,
-  setSelectedMoodboard,
-  onNewMoodboard,
-  isCreatingNew,
-  handleGenerateMoodboard,
+  showAdvancedSettings,
+  setShowAdvancedSettings,
+  isSaving = false,
+  setIsSaving,
 }: MoodboardLayoutProps) {
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
     []
   );
-  const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [analyzeLoading, setAnalyzeLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+
   const [currentMoodboardId, setCurrentMoodboardId] = useState<string>(
     moodboard?.id
   );
@@ -86,23 +62,29 @@ function MoodboardLayout({
   const latestMoodboardRef = useRef(moodboard);
   const latestGalleryItemsRef = useRef<any[]>([]);
 
-  const { selectedBrandId } = useBrandStore();
-
   const galleryItemIds = useMemo(() => {
     return (
       moodboard?.moodboard_assets?.map((asset) => asset.gallery_item_id) || []
     );
   }, [moodboard?.moodboard_assets]);
 
-  const {
-    data: bulkGalleryItems = [],
-    isLoading: isBulkLoading,
-    isFetching: isBulkFetching,
-  } = useQuery({
+  const { data: bulkGalleryItems = [] } = useQuery({
     queryKey: ["gallery-items-bulk", galleryItemIds],
     queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
     enabled: galleryItemIds.length > 0,
     staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
+  });
+
+  // TanStack Query for autofill suggestions - fetch on mount
+  const {
+    data: autoFillSuggestions = [],
+    isLoading: isAutoFillLoading,
+    updateAutoFillSuggestionCache,
+  } = useMoodboardQuery({
+    brandId,
+    campaignId: moodboard.campaign_id,
+    moodboardId: moodboard.id,
+    count: 50,
   });
 
   // Update refs when values change (but don't trigger re-renders)
@@ -113,54 +95,19 @@ function MoodboardLayout({
     latestGalleryItemsRef.current = bulkGalleryItems;
   }, [bulkGalleryItems]);
 
-  const handleAnalyzeMoodboard = async () => {
-    setAnalyzeLoading(true);
-
-    if (hasUnsavedChanges) {
-      await handleSaveChanges();
-    }
-    try {
-      toast.promise(
-        analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-          image_urls: photos.map((photo) => photo.src),
-        }),
-        {
-          loading: "Analyzing moodboard...",
-          success: "Moodboard analyzed successfully!",
-          error: "Image analysis failed. Please try again.",
-        }
-      );
-    } catch (error) {
-      console.error("Image analysis failed:", error);
-    } finally {
-      setAnalyzeLoading(false);
-    }
-  };
-
-  // Memoize moodboard status checks to prevent unnecessary recalculations
-  const moodboardStatus = useMemo(() => {
-    const hasMoodboardAssets =
-      moodboard.moodboard_assets && moodboard.moodboard_assets.length > 0;
-    const isMoodboardCompleted =
-      moodboard.moodboard_generation_status === "completed";
-    const isMoodboardInProgress =
-      moodboard.moodboard_generation_status === "in_progress";
-    const isMoodboardFailed =
-      moodboard.moodboard_generation_status === "failed";
-
-    return {
-      hasMoodboardAssets,
-      isMoodboardCompleted,
-      isMoodboardInProgress,
-      isMoodboardFailed,
-      shouldShowCompletedMoodboard: hasMoodboardAssets && isMoodboardCompleted,
-    };
-  }, [moodboard.moodboard_assets, moodboard.moodboard_generation_status]);
-
-  // Check if there are unsaved changes (excluding like status)
+  // Fixed: Check if there are unsaved changes (excluding like status)
   const hasUnsavedChanges = useMemo(() => {
-    if (photos.length !== originalPhotos.length) return true;
+    // If both are empty, there are no unsaved changes
+    if (photos.length === 0 && originalPhotos.length === 0) {
+      return false;
+    }
 
+    // If lengths are different, there are changes
+    if (photos.length !== originalPhotos.length) {
+      return true;
+    }
+
+    // Check if order or content has changed
     return photos.some((photo, index) => {
       const originalPhoto = originalPhotos[index];
       return !originalPhoto || photo.id !== originalPhoto.id;
@@ -186,36 +133,25 @@ function MoodboardLayout({
     const hasMoodboardAssets =
       currentMoodboard.moodboard_assets &&
       currentMoodboard.moodboard_assets.length > 0;
-    const isMoodboardCompleted =
-      currentMoodboard.moodboard_generation_status === "completed";
-    const shouldShowCompletedMoodboard =
-      hasMoodboardAssets && isMoodboardCompleted;
 
-    if (shouldShowCompletedMoodboard && currentMoodboard.moodboard_assets) {
+    if (hasMoodboardAssets) {
       const imagesToLoad = currentMoodboard.moodboard_assets
         .map((asset) => {
-          // Find the corresponding gallery item using gallery_item_id
           const galleryItem: GalleryItemResponse = currentGalleryItems.find(
             (item) => item.id === asset.gallery_item_id
           );
 
-          // Only return if we have a valid gallery item with asset_url
-          if (!galleryItem?.asset_url) {
-            console.warn(
-              `No gallery item found for asset ${asset.gallery_item_id}`
-            );
-            return null;
-          }
-
           return {
             id: asset.gallery_item_id,
-            asset_url: galleryItem.asset_url,
+            asset_url: galleryItem?.asset_url,
             is_liked: galleryItem?.is_favourite || false,
             ignored: galleryItem?.to_ignore || false,
             position: asset.position || 0,
+            width: galleryItem?.dimensions?.width || 300,
+            height: galleryItem?.dimensions?.height || 300,
           };
         })
-        .filter((item): item is NonNullable<typeof item> => item !== null); // Type-safe filter
+        .filter((item): item is NonNullable<typeof item> => item !== null);
 
       if (imagesToLoad.length === 0) {
         setPhotos([]);
@@ -223,129 +159,72 @@ function MoodboardLayout({
         return;
       }
 
-      try {
-        const loaded = await Promise.all(
-          imagesToLoad
-            .sort((a, b) => a.position - b.position)
-            .map(
-              (item) =>
-                new Promise<SortablePhoto<Photo>>((resolve) => {
-                  const img = new Image();
-                  img.src = item.asset_url;
-                  img.onload = () => {
-                    resolve({
-                      id: item.id,
-                      src: item.asset_url,
-                      width: img.naturalWidth,
-                      height: img.naturalHeight,
-                      alt: `Image ${item.id}`,
-                      liked: item.is_liked,
-                    });
-                  };
-                  img.onerror = () => {
-                    console.warn("Could not load image", item.asset_url);
-                    resolve({
-                      id: item.id,
-                      src: item.asset_url,
-                      width: 800,
-                      height: 600,
-                      alt: `Fallback image ${item.id}`,
-                      liked: item.is_liked,
-                    });
-                  };
-                })
-            )
-        );
+      const loaded: SortablePhoto<Photo>[] = imagesToLoad
+        .sort((a, b) => a.position - b.position)
+        .map((item) => ({
+          id: item.id,
+          src: item.asset_url,
+          width: item.width || 300,
+          height: item.height || 300,
+          alt: `Image ${item.id}`,
+          liked: item.is_liked,
+        }));
 
-        // Only update photos if we're still on the same moodboard
-        if (currentMoodboard.id === currentMoodboardId) {
+      if (currentMoodboard.id === currentMoodboardId) {
+        // Only update photos state if we don't have unsaved changes or aren't currently saving
+        // This prevents overriding user's pending changes
+        if (!hasUnsavedChanges && !isSaving) {
           setPhotos(loaded);
-          setOriginalPhotos([...loaded]); // Set original state
+          setOriginalPhotos([...loaded]);
         }
-      } finally {
-        setLoading(false);
-        setMoodboardGenerationInProgress(false);
       }
+
+      setLoading(false);
+      setMoodboardGenerationInProgress(false);
     } else {
-      setPhotos([]);
-      setOriginalPhotos([]);
+      // Only clear photos if we don't have unsaved changes or aren't currently saving
+      if (!hasUnsavedChanges && !isSaving) {
+        setPhotos([]);
+        setOriginalPhotos([]);
+      }
+      setLoading(false);
     }
-  }, [currentMoodboardId, moodboard?.moodboard_assets]);
+  }, [currentMoodboardId, hasUnsavedChanges, isSaving]);
 
   // Trigger load when moodboard status changes or gallery items become available
   useEffect(() => {
-    if (
-      moodboardStatus.shouldShowCompletedMoodboard &&
-      bulkGalleryItems.length > 0
-    ) {
+    // Don't reload if user has unsaved changes or if currently saving
+    if (hasUnsavedChanges || isSaving) return;
+
+    if (bulkGalleryItems.length > 0) {
       const timeoutId = setTimeout(() => {
         loadImagesWithCurrentData();
       }, 50);
       return () => clearTimeout(timeoutId);
     }
-  }, [
-    moodboardStatus.shouldShowCompletedMoodboard,
-    bulkGalleryItems.length,
-    moodboard.id,
-  ]);
+  }, [bulkGalleryItems.length, moodboard.id, hasUnsavedChanges, isSaving]);
 
   // Also trigger when moodboard changes
   useEffect(() => {
+    // Don't reload if user has unsaved changes or if currently saving
+    if (hasUnsavedChanges || isSaving) return;
+
     const timeoutId = setTimeout(() => {
       loadImagesWithCurrentData();
     }, 50);
     return () => clearTimeout(timeoutId);
-  }, [moodboard.id, loadImagesWithCurrentData]);
-
-  // Improved display logic
-  const showGallery = useMemo(() => {
-    return (
-      photos.length > 0 &&
-      !loading &&
-      !isGenerating &&
-      !moodboardStatus.isMoodboardInProgress &&
-      moodboard.id === currentMoodboardId
-    );
-  }, [
-    photos.length,
-    loading,
-    isGenerating,
-    moodboardStatus.isMoodboardInProgress,
-    moodboard.id,
-    currentMoodboardId,
-  ]);
-
-  const showLoadingState = useMemo(() => {
-    return (
-      isGenerating ||
-      (loading && photos.length === 0) ||
-      moodboardStatus.isMoodboardInProgress ||
-      isBulkFetching ||
-      isBulkLoading
-    );
-  }, [
-    isGenerating,
-    loading,
-    photos.length,
-    moodboardStatus.isMoodboardInProgress,
-    moodboard.id,
-    isBulkFetching,
-    isBulkLoading,
-  ]);
-
-  const showFailedState = moodboardStatus.isMoodboardFailed;
+  }, [moodboard.id, loadImagesWithCurrentData, hasUnsavedChanges, isSaving]);
 
   // Local move photo function (no API call)
   const movePhoto = (oldIndex: number, newIndex: number) => {
-    const newPhotos = arrayMove(photos, oldIndex, newIndex);
-    setPhotos(newPhotos);
-  };
-
-  const removedPhoto = (id: string) => {
-    const newPhotos = photos.filter((photo) => photo.id !== id);
-    setPhotos(newPhotos);
-    setRemovedPhotoIds((prev) => [...prev, id]);
-    setNoOfImagesForMoodboard(newPhotos.length);
+    setPhotos((prevPhotos) => {
+      const updated = [...prevPhotos];
+      [updated[oldIndex], updated[newIndex]] = [
+        updated[newIndex],
+        updated[oldIndex],
+      ];
+      return updated;
+    });
   };
 
   const galleryActions = useGalleryQuery({
@@ -373,12 +252,17 @@ function MoodboardLayout({
       return updated;
     });
 
-    // Also update original photos to keep them in sync for like status
     setOriginalPhotos((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], liked };
+      const originalIndex = updated.findIndex((p) => p.id === photo.id);
+      if (originalIndex !== -1) {
+        updated[originalIndex] = { ...updated[originalIndex], liked };
+      }
       return updated;
     });
+
+    // Optimistically update the autofill cache
+    updateAutoFillSuggestionCache(photo.id, liked);
 
     try {
       galleryActions.patchItem({
@@ -399,291 +283,270 @@ function MoodboardLayout({
 
       setOriginalPhotos((prev) => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], liked: !liked };
+        const originalIndex = updated.findIndex((p) => p.id === photo.id);
+        if (originalIndex !== -1) {
+          updated[originalIndex] = { ...updated[originalIndex], liked: !liked };
+        }
         return updated;
       });
+
+      // Revert the autofill cache update on error
+      updateAutoFillSuggestionCache(photo.id, !liked);
     }
   };
 
   const [moodboardGenerationInProgress, setMoodboardGenerationInProgress] =
     useState(false);
 
-  // Save changes to API (now only for position changes, not likes)
+  // Create placeholder items for missing photos
+  const [placeholderItems, setPlaceholderItems] = useState<
+    SortablePhoto<Photo>[]
+  >([]);
+
+  useEffect(() => {
+    const placeholders: SortablePhoto<Photo>[] = Array.from(
+      { length: Math.max(0, noOfImagesForMoodboard - photos.length) },
+      (_, index) => ({
+        id: `placeholder-${index}`,
+        src: "", // Placeholder image src (empty or a default placeholder image URL)
+        width: 300, // Default width
+        height: 300, // Default height
+        alt: `Placeholder ${index + 1}`,
+        liked: false,
+        isPlaceholder: true,
+        placeholderIndex: photos.length + index,
+      })
+    );
+    setPlaceholderItems(placeholders);
+  }, [noOfImagesForMoodboard, photos.length]);
+
   const handleSaveChanges = async () => {
-    setMoodboardGenerationInProgress(true);
     setIsSaving(true);
     try {
-      // 1. Update moodboard asset positions
-      const updatedAssets: MoodboardAsset[] = photos.map((photo, index) => ({
-        gallery_item_id: photo.id,
-        position: index,
-      }));
+      // Get current photos at the start of save operation
+      const photosAtSaveStart = [...photos];
 
-      // 3. Persist moodboard asset updates
+      // 1. Update moodboard asset positions
+      const updatedAssets: MoodboardAsset[] = photosAtSaveStart.map(
+        (photo, index) => ({
+          gallery_item_id: photo.id,
+          position: index,
+        })
+      );
+
+      // 2. Persist moodboard asset updates
       await patchMoodboard(brandId, moodboard.id, {
         moodboard_assets: updatedAssets,
       });
 
-      // 4. Update gallery items' to_ignore flag (this updates the gallery DB)
-      const ignoreUpdatePromises = removedPhotoIds.map((galleryItemId) =>
-        galleryActions.patchItem({
-          itemId: galleryItemId,
-          data: {
-            to_ignore: true,
-          },
-        })
-      );
+      // 3. Only update original photos for comparison, don't overwrite current photos
+      setOriginalPhotos([...photos]); // Use current photos state, not the saved snapshot
 
-      await Promise.all(ignoreUpdatePromises);
-
-      // 5. Update local original photo state
-      setOriginalPhotos([...photos]);
+      // Wait for 2 seconds before analyzing the moodboard
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
+        image_urls: photosAtSaveStart.map((photo) => photo.src), // Use the saved snapshot for analysis
+      });
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {
       setIsSaving(false);
     }
   };
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
 
-  const handleCancelChanges = () => {
-    const revertedPhotos = originalPhotos.map((originalPhoto) => {
-      const currentPhoto = photos.find((p) => p.id === originalPhoto.id);
-      return {
-        ...originalPhoto,
-        liked: currentPhoto?.liked ?? originalPhoto.liked,
-      };
+    const intervalId = setInterval(() => {
+      if (hasUnsavedChanges && !isSaving) {
+        handleSaveChanges();
+      }
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [hasUnsavedChanges, handleSaveChanges, isSaving]);
+
+  const handleGallerySelection = useCallback(
+    (selectedItems: GalleryItemResponse[]) => {
+      const placeholderStartIndex = photos.length;
+
+      setPhotos((prevPhotos) => {
+        const updatedPhotos = [...prevPhotos];
+        selectedItems.forEach((item, index) => {
+          updatedPhotos[placeholderStartIndex + index] = {
+            id: item.id,
+            src: item.asset_url,
+            width: item.dimensions?.width || 300,
+            height: item.dimensions?.height || 300,
+            alt: `Image ${item.id}`,
+            liked: item.is_favourite || false,
+          };
+        });
+
+        // ✅ Check after updating if total exceeds current noOfImagesForMoodboard
+        const newTotal = updatedPhotos.length;
+        if (newTotal > noOfImagesForMoodboard) {
+          setNoOfImagesForMoodboard(newTotal);
+        }
+
+        return updatedPhotos;
+      });
+    },
+    [photos.length, noOfImagesForMoodboard]
+  );
+
+  const autoFillPlaceholders = useCallback(() => {
+    if (isAutoFillLoading) {
+      toast.warning("AutoFill suggestions are still loading...");
+      return;
+    }
+
+    if (!autoFillSuggestions || autoFillSuggestions.length === 0) {
+      toast.warning("No suggested images available. Please try again later.");
+      return;
+    }
+
+    // Filter out images that are already in the moodboard
+    let availableItems = autoFillSuggestions.filter(
+      (item: AutoFillSuggestedImage) =>
+        !photos.some((photo) => photo.id === item.id)
+    );
+
+    // Sort so that items with is_favourite === true come first
+    availableItems = availableItems.sort(
+      (a: AutoFillSuggestedImage, b: AutoFillSuggestedImage) => {
+        if (a.is_favourite === b.is_favourite) return 0;
+        return a.is_favourite ? -1 : 1;
+      }
+    );
+
+    if (availableItems.length === 0) {
+      toast.warning("All suggested images are already in your moodboard.");
+      return;
+    }
+
+    setPhotos((prevPhotos) => {
+      const updatedPhotos = [...prevPhotos];
+
+      // Determine how many placeholders we have
+      const placeholdersToFill = placeholderItems.length;
+
+      availableItems
+        .slice(0, placeholdersToFill)
+        .forEach((item: AutoFillSuggestedImage, idx: number) => {
+          const targetIndex = prevPhotos.length + idx;
+          updatedPhotos[targetIndex] = {
+            id: item.id,
+            src: item.asset_url,
+            width: item.dimensions?.width || 300,
+            height: item.dimensions?.height || 300,
+            alt: `Image ${item.id}`,
+            liked: item.is_favourite || false,
+          };
+        });
+
+      return updatedPhotos;
     });
 
-    setPhotos(revertedPhotos);
-    setRemovedPhotoIds([]);
-    setNoOfImagesForMoodboard(revertedPhotos.length);
-  };
-
-
-  useEffect(() => {
-    const currentStatus = moodboard?.moodboard_generation_status;
-    console.log(currentStatus);
-
-    if (currentStatus === "completed") {
-      setMoodboardGenerationInProgress(false);
-    }
-  }, [moodboard?.moodboard_generation_status]);
+    toast.success(
+      `Added ${Math.min(
+        availableItems.length,
+        placeholderItems.length
+      )} suggested images to your moodboard.`
+    );
+  }, [isAutoFillLoading, autoFillSuggestions, photos, placeholderItems]);
 
   return (
     <div className="mt-4">
-      {moodboard.moodboard_assets.length > 0 && (
-        <ContentSection
-          title="Moodboard"
-          context={undefined}
-          content={
-            <div>
-              {/* Loading State - for generation, loading, or in_progress */}
-              {(showLoadingState || moodboardGenerationInProgress) && (
-                <ManualMoodboardSkeleton shimmer showButton={false} />
-              )}
-
-              {/* Failed State */}
-              {showFailedState && (
-                <div className="w-full flex flex-col items-center justify-center py-8 gap-4">
-                  <div className="text-center">
-                    <p className="text-red-600 font-medium">
-                      Moodboard generation failed
-                    </p>
-                    <p className="text-gray-600 text-sm">Please try again</p>
+      <div>
+        {/* Completed Gallery State */}
+        {!loading && !moodboardGenerationInProgress && (
+          <div className="w-full flex flex-col gap-y-4">
+            {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
+            <div className="w-full flex flex-col gap-3">
+              {/* Top row - Title, Save Indicator, and Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
+                {/* Left side - Title and Save Indicator */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 flex-1 min-w-0">
+                  <div className="min-w-[200px]">
+                    <EditableInput
+                      value={moodboard.title}
+                      onSave={async (newValue) => {
+                        await patchMoodboard(brandId, moodboard.id, {
+                          title: newValue,
+                        });
+                      }}
+                    />
                   </div>
-                  <Button onClick={handleGenerateMoodboard} variant="outline">
-                    Try Again
-                  </Button>
-                </div>
-              )}
-
-              {/* Completed Gallery State */}
-              {showGallery && !moodboardGenerationInProgress && (
-                <div className="w-full flex flex-col gap-y-4">
-                  {/* IMPROVED RESPONSIVE CONTROLS LAYOUT */}
-                  <div className="w-full flex flex-col gap-3">
-                    {/* Top row - Main controls */}
-                    <div className="flex flex-col 2xl:flex-row 2xl:flex-wrap gap-3 w-full">
-                      <div className="flex flex-col sm:flex-row gap-1 flex-wrap flex-1 min-w-0">
-                        <div className="min-w-[200px]">
-                          <MoodboardSelector
-                            campaignId={moodboard.campaign_id}
-                            isCreatingNew={isCreatingNew}
-                            moodboards={moodboards}
-                            onNewMoodboard={onNewMoodboard}
-                            selectedMoodboard={selectedMoodboard}
-                            setSelectedMoodboard={setSelectedMoodboard}
-                            variant="select"
-                          />
-                        </div>
-                        <div className="min-w-[140px]">
-                          <ImageCountCard
-                            disabled
-                            maxCount={
-                              galleryActions.totalItems > 16
-                                ? 16
-                                : galleryActions.totalItems
-                            }
-                            imageCount={noOfImagesForMoodboard}
-                            onRefresh={async () => {
-                              handleSaveChanges();
-                              if (selectedBrandId) {
-                                const newCount = noOfImagesForMoodboard + 1;
-                                await createMoodboardForCampaign(
-                                  selectedBrandId,
-                                  moodboard?.campaign_id,
-                                  moodboard.id,
-                                  {
-                                    no_of_images: newCount,
-                                  }
-                                );
-
-                                setNoOfImagesForMoodboard(newCount);
-                              }
-                            }}
-                            onChange={setNoOfImagesForMoodboard}
-                            hasUnsavedChanges={false}
-                          />
-                        </div>
-                        <div className="min-w-[160px]">
-                          <MoodboardGallerySelector
-                            brandId={brandId}
-                            campaignId={moodboard.campaign_id}
-                            moodboardId={moodboard.id}
-                            hasUnsavedChanges={hasUnsavedChanges}
-                            inSelectionGalleryIds={photos.map(
-                              (photo) => photo.id
-                            )}
-                            setNoOfImagesForMoodboard={
-                              setNoOfImagesForMoodboard
-                            }
-                            noOfImagesForMoodboard={noOfImagesForMoodboard}
-                            assetsLength={galleryActions.totalItems}
-                            handleSaveChanges={handleSaveChanges}
-                            // className="p-2" // Optional
-                          />
-                        </div>
-                      </div>
-
-                      {/* Save/Cancel for large screens */}
-                      {hasUnsavedChanges && (
-                        <div className="hidden 2xl:flex flex-wrap items-start gap-2 ml-auto">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleCancelChanges}
-                            disabled={isSaving}
-                            className="flex items-center gap-1 whitespace-nowrap"
-                          >
-                            <X size={16} />
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={handleSaveChanges}
-                            disabled={isSaving}
-                            className="flex items-center gap-1 whitespace-nowrap"
-                          >
-                            <SaveIcon2 size={16} />
-                            {isSaving ? "Saving..." : "Save Changes"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Save/Cancel for small screens */}
-                    {hasUnsavedChanges && (
-                      <div className="flex 2xl:hidden gap-2 justify-end sm:justify-start flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCancelChanges}
-                          disabled={isSaving}
-                          className="flex items-center gap-1 whitespace-nowrap"
-                        >
-                          <X size={16} />
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSaveChanges}
-                          disabled={isSaving}
-                          className="flex items-center gap-1 whitespace-nowrap"
-                        >
-                          <SaveIcon2 size={16} />
-                          {isSaving ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  {/* Image Grid */}
-                  <div className="w-full overflow-hidden">
-                    <div className="mx-auto max-w-7xl w-full px-2">
-                      <CustomGridGallery
-                        photos={photos}
-                        movePhoto={movePhoto}
-                        onPhotoLike={onPhotoLike}
-                        removedPhoto={removedPhoto}
-                        onReplaceImage={async ({
-                          imageToReplaceId,
-                          replacementImageUrl,
-                        }) => {
-                          try {
-                            await replaceMoodboardImage(
-                              brandId,
-                              moodboard.campaign_id,
-                              moodboard.id,
-                              {
-                                image_to_replace_id: imageToReplaceId,
-                                replacement_image_url: replacementImageUrl,
-                              }
-                            );
-                          } catch (error) {
-                            console.error(
-                              "Failed to replace moodboard image:",
-                              error
-                            );
-                          }
-                        }}
-                        hasUnsavedChanges={hasUnsavedChanges}
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full"
-                    disabled={analyzeLoading}
-                    onClick={handleAnalyzeMoodboard}
-                  >
-                    {analyzeLoading ? (
-                      "Analyzing..."
+                  <div className="flex items-center gap-2">
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                        <span className="text-sm">Syncing</span>
+                      </>
+                    ) : hasUnsavedChanges ? (
+                      <>
+                        <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
+                        <span className="text-sm">Unsaved changes</span>
+                      </>
                     ) : (
                       <>
-                        <AnalysisChartIcon /> Moodboard Analysis
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                        <span className="text-sm">Saved</span>
                       </>
                     )}
-                  </Button>
+                  </div>
                 </div>
-              )}
+
+                {/* Right side - Action Buttons (from right to left: Save, Cancel, AutoFill All) */}
+                <div className="flex gap-2 items-center justify-end">
+                  {/* AutoFill All Button - leftmost */}
+                  {placeholderItems.length > 0 && (
+                    <Button
+                      size="lg"
+                      disabled={isAutoFillLoading}
+                      className="flex items-center gap-1 py-1 whitespace-nowrap"
+                      onClick={autoFillPlaceholders}
+                    >
+                      {isAutoFillLoading ? (
+                        <>
+                          <span>Autofill All</span>
+                          <Loader2 className="animate-spin text-white" />
+                        </>
+                      ) : (
+                        <>
+                          <RegenerateIcon color="white" />
+                          <span>Autofill All</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
-          }
-        />
-      )}
 
-      {/* Empty State */}
-      {moodboard.moodboard_assets.length === 0 && (
-        <div className="w-full flex flex-col gap-y-4 mt-6">
-          <ManualMoodboardSkeleton />
-
-          <>
-            <SubSectionCard label="Lighting" />
-            <SubSectionCard label="Composition" />
-            <SubSectionCard label="Texture" />
-            <SubSectionCard label="Setting" />
-            <SubSectionCard label="Casting" />
-            <SubSectionCard label="Framing" />
-          </>
-        </div>
-      )}
+            {/* Image Grid */}
+            <div className="w-full overflow-hidden">
+              <div className="mx-auto max-w-7xl w-full px-2">
+                <OptimisticCustomGridGallery
+                  photos={photos}
+                  setPhotos={setPhotos}
+                  movePhoto={movePhoto}
+                  onPhotoLike={onPhotoLike}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  noOfImagesForMoodboard={noOfImagesForMoodboard}
+                  setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+                  onGallerySelection={handleGallerySelection}
+                  placeholderItems={placeholderItems as SortablePhoto<Photo>[]}
+                  moodboard={moodboard}
+                  setPlaceholderItems={setPlaceholderItems}
+                  showAdvancedSettings={showAdvancedSettings}
+                  setShowAdvancedSettings={setShowAdvancedSettings}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

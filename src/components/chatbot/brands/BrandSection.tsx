@@ -30,6 +30,7 @@ import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
 import { BrandAestheticUploader } from "./BrandAestheticUploader";
 import { BrandMedia } from "./BrandMedia";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -37,20 +38,17 @@ export const BrandSection: React.FC<{
   setExpandedSections: React.Dispatch<
     React.SetStateAction<{ [key: string]: boolean }>
   >;
-  clearPinnedItems: () => void;
   analysisLogs: AnalysisLogDetail[];
 }> = ({
   brandingInformation,
   expandedSections,
   setExpandedSections,
-  clearPinnedItems,
   analysisLogs,
 }) => {
   if (!brandingInformation) {
     return <InitialPlaceHolder />;
   }
 
-  console.log(brandingInformation);
   return (
     <div className="flex flex-col gap-4">
       <div key={`brand-message-${brandingInformation?.static?.name}`}>
@@ -64,7 +62,6 @@ export const BrandSection: React.FC<{
           brandingInformation.static,
           brandingInformation.dynamic,
           brandingInformation.brand_media,
-          clearPinnedItems,
           analysisLogs
         )}
       </div>
@@ -78,10 +75,8 @@ export const renderBrandData = (
   staticData: ThreadBrand["static"],
   dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
-  clearPinnedItems: () => void,
   analysisLogs: AnalysisLogDetail[]
 ) => {
-  console.log("ana", analysisLogs);
   const brandName = staticData?.brand?.name || "No Brand Name";
   const brandInitial = brandName.charAt(0).toUpperCase();
   const allColors = extractAllColors(staticData);
@@ -89,6 +84,7 @@ export const renderBrandData = (
   const stream = useStreamContext();
   const { user } = useUserStore();
   const { selectedBrandId, setIsCreatingBrand } = useBrandStore();
+  const { removePinnedItem } = usePinnedContextStore();
 
   // Create a ref for the BrandCasting component
   const brandCastingRef = React.useRef<HTMLDivElement>(null);
@@ -97,6 +93,60 @@ export const renderBrandData = (
   const scrollToBrandCasting = () => {
     if (brandCastingRef.current) {
       brandCastingRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  // Enhanced function to handle new brand creation with scroll
+  const handleNewBrandCreation = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    try {
+      // Set creating brand state
+      setIsCreatingBrand(true);
+
+      // Submit the message
+      submitOptimisticMessage({
+        stream,
+        text: "Let's create a new brand.",
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      });
+
+      // Clear pinned items
+      removePinnedItem();
+
+      // Scroll to bottom after a short delay to ensure message is rendered
+      setTimeout(() => {
+        // Try multiple approaches to ensure scroll happens
+        const chatContainer = document.querySelector(
+          '[class*="StickToBottom"]'
+        );
+        const scrollContainer = document.querySelector(
+          '[class*="overflow-y-scroll"]'
+        );
+
+        if (chatContainer) {
+          chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: "smooth",
+          });
+        } else if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "smooth",
+          });
+        } else {
+          // Fallback: scroll the window
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
+    } catch (error) {
+      console.error("Error creating new brand:", error);
     }
   };
 
@@ -142,16 +192,7 @@ export const renderBrandData = (
                         className="p-4"
                         tooltip="New Brand"
                         variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          submitOptimisticMessage({
-                            stream,
-                            text: "Let's create a new brand.",
-                            userId: user!.id,
-                            currentBrandContextId: selectedBrandId,
-                          });
-                          clearPinnedItems();
-                        }}
+                        onClick={handleNewBrandCreation} // Use enhanced function
                       >
                         <CirclePlus className="size-5" />
                       </TooltipIconButton>
@@ -209,16 +250,7 @@ export const renderBrandData = (
                       className="p-4"
                       tooltip="New Brand"
                       variant="ghost"
-                      onClick={() => {
-                        setIsCreatingBrand(true);
-                        submitOptimisticMessage({
-                          stream,
-                          text: "Let's create a new brand.",
-                          userId: user!.id,
-                          currentBrandContextId: selectedBrandId,
-                        });
-                        clearPinnedItems();
-                      }}
+                      onClick={handleNewBrandCreation} // Use enhanced function
                     >
                       <CirclePlus className="size-5" />
                     </TooltipIconButton>

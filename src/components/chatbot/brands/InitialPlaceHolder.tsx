@@ -15,7 +15,11 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import BrandSelector from "./BrandSelector";
 import { SubSectionCard } from "./SubSectionCard";
 import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { SearchIcon } from "@/components/ui/custom-icon";
+import { scrollToBottom } from "@/lib/scroll.utils";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -85,6 +89,7 @@ interface PlaceholderSectionProps {
   isLoading?: boolean;
   isCreatingNewBrand?: boolean;
   isCreatingNewCampaign?: boolean;
+  clearPinnedItems?: () => void;
 }
 
 export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
@@ -103,6 +108,7 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
   isLoading = false,
   isCreatingNewBrand = false,
   isCreatingNewCampaign = false,
+  clearPinnedItems,
 }) => {
   const [openPopover, setOpenPopover] = useState(false);
 
@@ -280,8 +286,42 @@ const MediaPlatformTags: React.FC<{ isLoading?: boolean }> = ({
 export const InitialPlaceHolder: React.FC<{
   isLoading?: boolean;
   isCreatingNewBrand?: boolean;
-}> = ({ isLoading = false, isCreatingNewBrand = false }) => {
+  clearPinnedItems?: () => void;
+}> = ({ isLoading = false, isCreatingNewBrand = false, clearPinnedItems }) => {
   const [brandExpanded, setBrandExpanded] = useState(true);
+  const stream = useStreamContext();
+  const { user } = useUserStore();
+  const { selectedBrandId, setIsCreatingBrand } = useBrandStore();
+
+  // Enhanced function to handle new brand creation with scroll
+  const handleNewBrandCreation = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    try {
+      // Set creating brand state
+      setIsCreatingBrand(true);
+
+      // Submit the message
+      submitOptimisticMessage({
+        stream,
+        text: "Let's create a new brand.",
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      });
+
+      // Clear pinned items
+      if (clearPinnedItems) {
+        clearPinnedItems();
+      }
+
+      // Use the reusable scroll utility
+      scrollToBottom(100);
+    } catch (error) {
+      console.error("Error creating new brand:", error);
+    }
+  };
 
   const renderBrandFieldContent = (field: string) => {
     if (field === "Media") {
@@ -300,11 +340,12 @@ export const InitialPlaceHolder: React.FC<{
         fields={brandFields}
         customSelector={!isLoading ? <BrandSelector /> : undefined}
         newButtonTooltip="New Brand"
-        onNewClick={() => {}}
+        onNewClick={handleNewBrandCreation}
         renderFieldContent={renderBrandFieldContent}
         isExpanded={brandExpanded}
         onToggleExpanded={() => setBrandExpanded(!brandExpanded)}
         isLoading={isLoading}
+        clearPinnedItems={clearPinnedItems}
       />
     </div>
   );

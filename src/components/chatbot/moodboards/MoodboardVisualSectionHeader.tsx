@@ -15,6 +15,7 @@ import {
 import { GalleryActions } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface MoodboardVisualSectionProps {
   currentMoodboard: MoodboardInformation | null;
@@ -37,6 +38,7 @@ export const MoodboardVisualSectionHeader = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { selectedBrandId } = useBrandStore();
 
+  const { refetchAllAutoFillQueries } = useMoodboardQuery({});
   if (!currentMoodboard || isCreatingNewMoodboard) return null;
 
   const handleFileUpload = async (files: FileList) => {
@@ -52,16 +54,18 @@ export const MoodboardVisualSectionHeader = ({
       }...`
     );
 
+    let successCount = 0;
+    let failedCount = 0;
+
     try {
-      // Step 1: Upload files to GCS and prepare gallery items
-      const CONCURRENT_UPLOADS = 3;
+      // Use bulk upload with concurrent processing for all batches
+      const CONCURRENT_UPLOADS = 20;
       const chunks = [];
       for (let i = 0; i < filesArray.length; i += CONCURRENT_UPLOADS) {
         chunks.push(filesArray.slice(i, i + CONCURRENT_UPLOADS));
       }
 
       const galleryItems: GalleryItem[] = [];
-      let failedUploads = 0;
 
       for (const chunk of chunks) {
         const chunkPromises = chunk.map(async (file) => {
@@ -101,7 +105,7 @@ export const MoodboardVisualSectionHeader = ({
             return galleryItem;
           } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
-            failedUploads++;
+            failedCount++;
             return null;
           }
         });
@@ -114,22 +118,21 @@ export const MoodboardVisualSectionHeader = ({
         throw new Error("All file uploads failed");
       }
 
-      // Step 2: Bulk upload to gallery
+      // Bulk upload to gallery
       const bulkUploadRequest: BulkGalleryUploadRequest = {
         gallery_items: galleryItems,
         brand_id: selectedBrandId,
         campaign_id: currentCampaign.id,
         moodboard_id: moodboard.id,
-        scrape_only: false,
       };
 
       const createdGalleryItems = await galleryActions.bulkUpload(
         bulkUploadRequest
       );
+      successCount = createdGalleryItems.length;
 
-      // Show success toast
-      const successCount = createdGalleryItems.length;
-      if (failedUploads === 0) {
+      // Show final result toast
+      if (failedCount === 0) {
         toast.success(
           `Successfully uploaded ${successCount} file${
             successCount > 1 ? "s" : ""
@@ -138,23 +141,32 @@ export const MoodboardVisualSectionHeader = ({
             id: loadingToastId,
           }
         );
+      } else if (successCount === 0) {
+        toast.error(
+          `Failed to upload ${failedCount} file${failedCount > 1 ? "s" : ""}`,
+          {
+            id: loadingToastId,
+          }
+        );
       } else {
         toast.warning(
           `Uploaded ${successCount} file${
             successCount > 1 ? "s" : ""
-          }, ${failedUploads} failed`,
+          }, ${failedCount} failed`,
           {
             id: loadingToastId,
           }
         );
       }
     } catch (error) {
-      console.error("Bulk upload failed:", error);
+      console.error("Upload failed:", error);
       toast.error("Failed to upload files. Please try again.", {
         id: loadingToastId,
       });
     } finally {
       setIsUploading(false);
+      galleryActions.refetchAllGalleryQueries();
+      refetchAllAutoFillQueries();
     }
   };
 

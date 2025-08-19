@@ -89,33 +89,6 @@ export const getAssetTypeFromUrl = (url: string): string => {
   return "image"; // fallback
 };
 
-// Helper function to get file dimensions (for images)
-export const getImageDimensions = (
-  file: File
-): Promise<{ width: number; height: number } | null> => {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith("image/")) {
-      resolve(null);
-      return;
-    }
-
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: img.width, height: img.height });
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(null);
-    };
-
-    img.src = url;
-  });
-};
-
 // Helper function to create gallery item from uploaded file
 export const createGalleryItemFromFile = async (
   file: File,
@@ -126,13 +99,9 @@ export const createGalleryItemFromFile = async (
   campaignId?: string,
   moodboardId?: string
 ): Promise<GalleryItem> => {
-  const dimensions = await getImageDimensions(file);
   const assetType = getAssetTypeFromFile(file);
 
   // Calculate aspect ratio if dimensions are available
-  const aspectRatio = dimensions
-    ? `${dimensions.width}:${dimensions.height}`
-    : undefined;
 
   const galleryItem: GalleryItem = {
     // Basic Asset Info
@@ -141,7 +110,6 @@ export const createGalleryItemFromFile = async (
     asset_title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
     asset_url: url,
     size: formatBytes(file.size),
-    aspect_ratio: assetType === "image" ? aspectRatio : undefined,
     media_format: getSafeMediaFormat(file),
     brand_id: brandId,
     // Versioning
@@ -182,20 +150,6 @@ export const createGalleryItemFromFile = async (
 };
 
 // Helper function to get image dimensions from URL (if you need it separately)
-export const getImageDimensionsFromUrl = async (
-  url: string
-): Promise<{ width: number; height: number } | null> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = () => {
-      resolve(null);
-    };
-    img.src = url;
-  });
-};
 
 // Helper function to format bytes
 export const formatBytes = (bytes: number): string => {
@@ -383,20 +337,6 @@ type GalleryActions = {
     unknown
   >;
 
-  toggleFavorite: (
-    variables: string,
-    options?: MutateOptions<
-      GalleryItemResponse,
-      Error,
-      string,
-      {
-        previousGalleryData: unknown;
-        previousItemData: unknown;
-        queryKey: (string | boolean | EnhancedSelectedFilters | undefined)[];
-      }
-    >
-  ) => void;
-
   bulkDelete: (
     variables: string[],
     options?: MutateOptions<
@@ -463,13 +403,6 @@ class MediaItemHelper {
       itemId,
       commentId,
     });
-  };
-
-  toggleFavorite = (
-    itemId: string,
-    options?: Parameters<GalleryActions["toggleFavorite"]>[1]
-  ): void => {
-    this.actions.toggleFavorite(itemId, options);
   };
 
   bulkDelete = (

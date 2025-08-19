@@ -194,6 +194,7 @@ export function HumanMessage({
         messages: [newMessage],
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        previousBrandContextId: thread.values.previousBrandContextId,
       },
       {
         checkpoint: parentCheckpoint,

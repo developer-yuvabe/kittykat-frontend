@@ -1,3 +1,5 @@
+import { PaginationMeta } from "./types";
+
 export type User = {
   id: string;
   name: string;
@@ -25,6 +27,11 @@ export type UserListItem = {
       email: string;
     };
   }[];
+};
+
+export type UserListResponse = {
+  users: UserListItem[];
+  pagination: PaginationMeta;
 };
 
 export enum UserRoleId {

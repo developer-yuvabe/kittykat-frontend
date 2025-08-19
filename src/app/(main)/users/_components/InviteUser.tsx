@@ -15,7 +15,7 @@ import {
 import { useBrandStore } from "@/store/brand.store";
 import { Plus, X } from "lucide-react";
 import { inviationSchema } from "@/schema/inviation.schema";
-import { UserRoleId } from "@/types/user.types";
+import { UserListResponse, UserRoleId } from "@/types/user.types";
 import {
   Form,
   FormControl,
@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
-export function InviteUser() {
+export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const [open, setOpen] = React.useState(false);
   const { brands } = useBrandStore();
   const { user } = useUserStore();
@@ -72,10 +72,16 @@ export function InviteUser() {
 
     toast.promise(inviteUser(data), {
       loading: "Sending invite...",
-      success: () => {
-        queryClient.invalidateQueries({
-          predicate: (query) => query.queryKey[0] === "users",
+      success: (createdUser) => {
+        queryClient.setQueryData<UserListResponse>(queryKey, (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            users: [createdUser, ...oldData.users],
+          };
         });
+
         return "Invite sent successfully!";
       },
       error: () => {
@@ -162,7 +168,6 @@ export function InviteUser() {
                               className="w-full flex-1"
                               onClick={(e) => {
                                 e.stopPropagation(); // Prevent clicks from bubbling to modal
-                                console.log("Click inside PopoverContent");
                               }}
                             >
                               <SelectItem value={UserRoleId.ADMIN}>

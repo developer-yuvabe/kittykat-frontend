@@ -10,6 +10,7 @@ export const env = createEnv({
     AUTH_COOKIE_SIGNATURE_KEY_CURRENT: z.string().min(1),
     AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS: z.string().min(1),
     USE_SECURE_COOKIES: z.string(),
+    LANGSMITH_API_KEY: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().min(1),
@@ -18,12 +19,13 @@ export const env = createEnv({
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().min(1),
     NEXT_PUBLIC_API_BASE_URL_PROD: z.string().url(),
     NEXT_PUBLIC_API_BASE_URL_STG: z.string().url(),
-    NEXT_PUBLIC_ENVIRONMENT: z.enum(["prod", "stg", "dev"]),
+    NEXT_PUBLIC_ENVIRONMENT: z.enum(["prod", "stg", "dev", "beta"]),
     NEXT_PUBLIC_API_BASE_URL_DEV: z.string().url(),
+    NEXT_PUBLIC_API_BASE_URL_BETA: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV: z.string().url(),
-    NEXT_PUBLIC_LANGSMITH_API_KEY: z.string().min(1),
+    NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA: z.string().url(),
   },
 
   /*
@@ -53,12 +55,15 @@ export const env = createEnv({
     NEXT_PUBLIC_API_BASE_URL_PROD: process.env.NEXT_PUBLIC_API_BASE_URL_PROD,
     NEXT_PUBLIC_API_BASE_URL_STG: process.env.NEXT_PUBLIC_API_BASE_URL_STG,
     NEXT_PUBLIC_API_BASE_URL_DEV: process.env.NEXT_PUBLIC_API_BASE_URL_DEV,
+    NEXT_PUBLIC_API_BASE_URL_BETA: process.env.NEXT_PUBLIC_API_BASE_URL_BETA,
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD:
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD,
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG:
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG,
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV:
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV,
-    NEXT_PUBLIC_LANGSMITH_API_KEY: process.env.NEXT_PUBLIC_LANGSMITH_API_KEY,
+    NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA:
+      process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA,
+    LANGSMITH_API_KEY: process.env.LANGSMITH_API_KEY,
   },
 });

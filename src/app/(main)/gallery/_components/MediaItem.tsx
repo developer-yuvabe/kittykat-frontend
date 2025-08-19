@@ -12,13 +12,9 @@ import {
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { MoreIcon } from "@/components/ui/custom-icon";
 import { MediaOverlay } from "./MediaOverlay";
-import { MediaItemCommentSection } from "./MediaItemCommentSection";
-import { MediaItemEditableTitle } from "./MediaItemEditableTitle";
 import { MediaImage } from "./MediaImage";
 import { MediaItemActionsButton } from "./MediaItemActionsButton";
-import { MediaImageDetails } from "./MediaImageDetails";
 import { GalleryActions } from "@/hooks/useGallery";
-import { createMediaItemHelper } from "@/lib/gallery.utils";
 
 // Types
 interface MediaItemProps {
@@ -45,7 +41,7 @@ export function MediaItem({
   item,
   isSelected,
   isHovered,
-  isMediaSelectDialog,
+  isMediaSelectDialog = false, // Default to false
   onSelect,
   onDelete,
   onDownload,
@@ -65,16 +61,6 @@ export function MediaItem({
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
   const isDisabled = isAlreadySelected && isMultiSelect;
 
-  const mediaHelper = createMediaItemHelper({
-    patchItem: galleryActions.patchItem,
-    addComment: galleryActions.addComment,
-    updateComment: galleryActions.updateComment,
-    deleteComment: galleryActions.deleteComment,
-    toggleFavorite: galleryActions.toggleFavorite,
-    bulkDelete: galleryActions.bulkDelete,
-    deleteItem: galleryActions.deleteItem,
-  });
-
   const handleImageLoad = (event: any) => {
     const target = event.target as HTMLImageElement;
     setDimensions({
@@ -88,7 +74,9 @@ export function MediaItem({
   const handleImageClick = () => {
     if (isMediaSelectDialog) {
       // In media select dialog, clicking image should select it
-      onSelect(item.id, !isSelected);
+      if (!isAlreadySelected) {
+        onSelect(item.id, !isSelected);
+      }
     } else {
       // In regular gallery, clicking image opens editor
       onEditClick(item);
@@ -137,17 +125,23 @@ export function MediaItem({
           isHovered={isHovered}
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
-          onToggleFavorite={mediaHelper.toggleFavorite}
           isAlreadySelected={isAlreadySelected}
           isDisabled={isDisabled}
           isMultiSelectMode={isMultiSelect}
           maxSelectionCount={maxSelectionCount}
           selectedCount={selectedCount}
           onDownload={onDownload}
+          onToggleFavorite={() => {
+            galleryActions.patchItem({
+              itemId: item.id,
+              data: { is_favourite: !item.is_favourite },
+            });
+          }}
         />
 
-        {/* More options popover - Only show in regular gallery, not in media select dialog */}
-        {isHovered && isMediaSelectDialog !== true && (
+        {/* More options popover - Only show in regular gallery, NOT in media select dialog */}
+        {isHovered && isMediaSelectDialog === false && (
+
           <>
             <div className="absolute top-0 right-1 z-10 flex space-x-1">
               <Popover>
@@ -164,8 +158,6 @@ export function MediaItem({
                   side="right"
                 >
                   <div className="space-y-2">
-                    {/* <MediaImageDetails item={item} /> */}
-
                     <MediaItemActionsButton
                       item={item}
                       onDetailsClick={onDetailsClick}

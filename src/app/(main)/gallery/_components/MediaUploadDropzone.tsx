@@ -17,6 +17,7 @@ import { MediaUploadActions } from "./MediaUploadActions";
 import { MediaUploadStatus } from "./MediaUploadStatus";
 import { MediaUploadDropzoneArea } from "./MediaUploadDropzoneArea";
 import { getExtensionFromUrl } from "@/lib/utils";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface MediaUploadDropzoneProps {
   activeTab: string;
@@ -48,12 +49,14 @@ export function MediaUploadDropzone({
   const [isUploading, setIsUploading] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
 
-  const { bulkUpload } = useGalleryQuery(
+  const galleryActions = useGalleryQuery(
     galleryFilters,
     ITEMS_PER_PAGE,
     false,
     "MediaUploadDropzone"
   );
+
+  const { refetchAllAutoFillQueries } = useMoodboardQuery({});
 
   const currentConfig = acceptedFileTypes[
     activeTab as keyof typeof acceptedFileTypes
@@ -148,12 +151,11 @@ export function MediaUploadDropzone({
 
       const failedCount = uploadResults.length - successfulUploads.length;
 
-
       if (successfulUploads.length > 0) {
         const urls = successfulUploads.map(({ url }) => url);
         onUploadComplete?.(urls);
 
-        // If addToGallery is enabled, bulk upload to gallery
+        // If addToGallery is enabled, add to gallery using bulk upload only
         if (addToGallery) {
           const itemsToUpload: GalleryItem[] = successfulUploads.map(
             ({ file, url }) => ({
@@ -179,19 +181,21 @@ export function MediaUploadDropzone({
             })
           );
 
-          const bulkUploadPayload: BulkGalleryUploadRequest = {
-            gallery_items: itemsToUpload,
-            brand_id: selectedBrand.brand_id,
-            scrape_only: false,
-          };
-
           try {
-            await bulkUpload(bulkUploadPayload);
+            // Use bulk upload for all uploads regardless of size
+            const bulkUploadPayload: BulkGalleryUploadRequest = {
+              gallery_items: itemsToUpload,
+              brand_id: selectedBrand.brand_id,
+              moodboard_id: selecteMoodboardId,
+              campaign_id: selectedCampaignId,
+            };
+
+            await galleryActions.bulkUpload(bulkUploadPayload);
             toast.success(
               `${successfulUploads.length} file(s) uploaded to gallery successfully!`
             );
           } catch (galleryError) {
-            console.error("Gallery bulk upload failed:", galleryError);
+            console.error("Gallery upload failed:", galleryError);
             toast.error(
               "Files uploaded but failed to add to gallery. Please try again."
             );
@@ -213,6 +217,7 @@ export function MediaUploadDropzone({
       });
     } finally {
       setIsUploading(false);
+      refetchAllAutoFillQueries();
     }
   };
 
@@ -290,7 +295,7 @@ export function MediaUploadDropzone({
           scrape_only: false,
         };
 
-        await bulkUpload(bulkUploadPayload);
+        await galleryActions.bulkUpload(bulkUploadPayload);
         toast.success(
           `${validUrls.length} URL(s) uploaded to gallery successfully!`
         );

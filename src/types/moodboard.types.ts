@@ -1,6 +1,7 @@
 import {
   AggregatedTagItem,
   MoodboardAsset,
+  MoodboardInformation,
   SourceHandle,
   VisualImage,
 } from "./types";
@@ -26,6 +27,7 @@ export interface MoodboardCreateRequest {
   aggregated_tags?: Record<string, AggregatedTagItem[]>;
   moodboard_assets?: MoodboardAsset[];
   visual_sources?: SourceHandle[];
+  selected_moodboard_tags?: Record<string, string[]>;
 }
 
 export interface MoodboardImageAnalysisRequest {
@@ -36,12 +38,7 @@ export interface MoodboardImageAnalysisRequest {
   reanalyze?: boolean;
 }
 
-export interface MoodboardPatchRequest {
-  title?: string;
-  aggregated_tags?: Record<string, AggregatedTagItem[]>;
-  moodboard_assets?: MoodboardAsset[]; // Define `MoodboardAsset[]` type if available
-  delete_moodboard_assets?: string[];
-}
+export type MoodboardPatchRequest = Partial<MoodboardInformation>;
 
 export interface CreateMoodboardRequest {
   no_of_images: number;
@@ -58,4 +55,15 @@ export interface ReplaceMoodboardImageRequest {
 
 export interface AnalyzeMoodboardRequest {
   image_urls: string[];
+}
+
+export interface AutoFillSuggestedImage {
+  id: string;
+  is_favourite: boolean;
+  dimensions: {
+    width: number;
+    height: number;
+  };
+  asset_url: string;
+  preview_url: string | null;
 }

@@ -37,6 +37,7 @@ export default function BrandSelector() {
       stream.client.threads.updateState(user?.thread_id, {
         values: {
           currentBrandContextId: brandId,
+          previousBrandContextId: stream.values.currentBrandContextId,
         },
       });
     }

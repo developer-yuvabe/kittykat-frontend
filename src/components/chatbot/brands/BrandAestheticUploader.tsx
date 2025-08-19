@@ -25,6 +25,7 @@ import { getPlatformFromOptionId } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
 import { BrandAnalysisLogsPopover } from "./BrandAnalysisLogsPopover";
 import { BrandSocialVerifyDialog } from "./BrandSocialVerifyDialog";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface Props {
   brandId: string | null;
@@ -56,7 +57,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
   });
 
   const { user } = useUserStore();
-  const { bulkUpload } = useGalleryQuery({});
+  const { uploadBulkWithAnalysis: bulkUpload } = useGalleryQuery({});
 
   // Fixed categorization and sorting with proper status handling
   const categorizedLogs = useMemo(() => {
@@ -98,11 +99,14 @@ export const BrandAestheticUploader: React.FC<Props> = ({
 
   const { refetchAllGalleryQueries } = useGalleryQuery({});
 
+  const { refetchAllAutoFillQueries } = useMoodboardQuery({});
+
   const completedLength = categorizedLogs.completed.length;
   const failedLength = categorizedLogs.failed.length;
 
   useEffect(() => {
     refetchAllGalleryQueries();
+    refetchAllAutoFillQueries();
   }, [completedLength, failedLength]);
 
   const getSocialMediaUrl = (optionId: string): string => {
@@ -208,13 +212,11 @@ export const BrandAestheticUploader: React.FC<Props> = ({
               url: option.url,
               platform: option.platform,
               results_limit: option.resultsLimit,
-              user_id: user.id, // Ensure user_id is properly set
+              user_id: user.id,
             },
             scrape_only: true,
-            gallery_items: [], // Ensure this is included even if empty
+            gallery_items: [],
           };
-
-          console.log("Scrape payload:", scrapePayload); // Debug log
           return bulkUpload(scrapePayload);
         });
 
