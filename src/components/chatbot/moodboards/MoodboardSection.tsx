@@ -64,6 +64,10 @@ export const MoodboardSection: React.FC<{
 
   const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
 
+  const [selectedMoodboardId, setSelectedMoodboardId] = useState<string | null>(
+    null
+  );
+
   const [isSaving, setIsSaving] = useState(false);
   const [openPopover, setOpenPopover] = useState(false);
 
