@@ -341,20 +341,26 @@ const ReferenceMoodboard = ({
                     variant={"outline"}
                     className="text-primary border-primary"
                     disabled={isPending}
-                    onClick={() =>
-                      generateShowboard(undefined, {
-                        onSuccess: () => {
-                          toast.success(
-                            "Concept Visual prompts generated successfully!"
-                          );
-                        },
-                        onError: () => {
-                          toast.error(
-                            "Failed to generate concept Visual prompts. Please try again."
-                          );
-                        },
-                      })
-                    }
+                    onClick={() => {
+                      if (selectedMoodboard?.moodboard_tags?.length) {
+                        generateShowboard(undefined, {
+                          onSuccess: () => {
+                            toast.success(
+                              "Concept Visual prompts generated successfully!"
+                            );
+                          },
+                          onError: () => {
+                            toast.error(
+                              "Failed to generate concept Visual prompts. Please try again."
+                            );
+                          },
+                        });
+                      } else {
+                        toast.warning(
+                          "Please ensure your moodboard has at least one image with tags before generating prompts."
+                        );
+                      }
+                    }}
                   >
                     <WandSparkles />
                     {isPending ? "Generating prompts..." : "Generate Prompts"}
