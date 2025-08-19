@@ -47,16 +47,11 @@ const ReferenceMoodboard = ({
   formRef,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt } = useA2iStore();
-  const {
-    setCampaignMoodboardSelection,
-    getCampaignMoodboardSelection,
-    setSelectedMoodboardId,
-  } = useBrandStore();
+  const { setCampaignMoodboardSelection, setSelectedMoodboardId } =
+    useBrandStore();
   const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const [isSwitchingMoodboard, setIsSwitchingMoodboard] = useState(false);
 
   // Add placeholder functionality similar to MoodboardLayout
   const [placeholderItems, setPlaceholderItems] = useState<
@@ -74,26 +69,14 @@ const ReferenceMoodboard = ({
     [moodboardInformation, referenceMoodboardId]
   );
 
-  // Get the campaign-level selected moodboard
-  const campaignSelectedMoodboardId = selectedMoodboard?.campaign_id
-    ? getCampaignMoodboardSelection(selectedMoodboard.campaign_id)
-    : null;
-
-  // Use campaign-level selection if available, otherwise use the current reference moodboard
-  const effectiveMoodboard = campaignSelectedMoodboardId
-    ? moodboardInformation?.find(
-        (mb) => mb.id === campaignSelectedMoodboardId
-      ) || selectedMoodboard
-    : selectedMoodboard;
-
   // Extract gallery item IDs from the effective moodboard assets
   const galleryItemIds = useMemo(() => {
     return (
-      effectiveMoodboard?.moodboard_assets?.map(
+      selectedMoodboard?.moodboard_assets?.map(
         (asset) => asset.gallery_item_id
       ) || []
     );
-  }, [effectiveMoodboard?.moodboard_assets, referenceMoodboardId]);
+  }, [selectedMoodboard?.moodboard_assets, selectedMoodboard]);
 
   // Fetch only the required gallery items using bulk API
   const {
@@ -110,15 +93,15 @@ const ReferenceMoodboard = ({
   const orderedGalleryItems = useMemo(() => {
     if (
       !bulkGalleryItems ||
-      !effectiveMoodboard?.moodboard_assets ||
-      effectiveMoodboard.moodboard_assets.length === 0
+      !selectedMoodboard?.moodboard_assets ||
+      selectedMoodboard.moodboard_assets.length === 0
     ) {
       return [];
     }
 
     // Create a map of gallery_item_id to position for efficient lookup
     const positionMap = new Map(
-      effectiveMoodboard.moodboard_assets.map((asset) => [
+      selectedMoodboard.moodboard_assets.map((asset) => [
         asset.gallery_item_id,
         asset.position,
       ])
@@ -133,8 +116,8 @@ const ReferenceMoodboard = ({
       .sort((a, b) => a.position - b.position);
   }, [
     bulkGalleryItems,
-    effectiveMoodboard?.moodboard_assets,
-    referenceMoodboardId,
+    selectedMoodboard?.moodboard_assets,
+    selectedMoodboard,
   ]);
 
   // Load images from ordered gallery items
@@ -225,8 +208,8 @@ const ReferenceMoodboard = ({
 
   // Keep track of latest values
   useEffect(() => {
-    latestMoodboardRef.current = effectiveMoodboard || null;
-  }, [effectiveMoodboard]);
+    latestMoodboardRef.current = selectedMoodboard || null;
+  }, [selectedMoodboard]);
 
   useEffect(() => {
     latestGalleryItemsRef.current = bulkGalleryItems;
@@ -238,8 +221,6 @@ const ReferenceMoodboard = ({
   ) => {
     if (!moodboard) return;
 
-    setIsSwitchingMoodboard(true);
-
     setSelectedMoodboardId(moodboard.id!);
     if (moodboard && selectedMoodboard?.campaign_id) {
       setCampaignMoodboardSelection(
@@ -248,11 +229,6 @@ const ReferenceMoodboard = ({
       );
     }
     await updateA2iRefernceMoodboard(selectedBrandId!, moodboard.id!);
-
-    // Keep the loading state visible for n seconds
-    setTimeout(() => {
-      setIsSwitchingMoodboard(false);
-    }, 700);
   };
 
   // Create placeholder items for missing photos when less than minimum required
@@ -271,7 +247,7 @@ const ReferenceMoodboard = ({
       })
     );
     setPlaceholderItems(placeholders);
-  }, [photos.length, MIN_IMAGES_REQUIRED, referenceMoodboardId]);
+  }, [photos.length, MIN_IMAGES_REQUIRED, selectedMoodboard]);
 
   return (
     <ContentSection
@@ -290,7 +266,7 @@ const ReferenceMoodboard = ({
               <MoodboardSelector
                 campaignId={selectedMoodboard!.campaign_id!}
                 moodboards={moodboardInformation!}
-                selectedMoodboard={effectiveMoodboard!}
+                selectedMoodboard={selectedMoodboard!}
                 setSelectedMoodboard={handleMoodboardSelectionChange}
                 isCreatingNew={false}
                 onNewMoodboard={() => {}}
@@ -298,31 +274,23 @@ const ReferenceMoodboard = ({
             )}
           </div>
           {/* Show skeleton when switching */}
-          {isSwitchingMoodboard ? (
+          {!showGallery ? (
             <ManualMoodboardSkeleton shimmer showButton={false} />
-          ) : showGallery ? (
+          ) : (
             <div className="mx-auto max-w-7xl w-full px-2">
               <CustomGalleryContainer
                 photos={photos}
                 setPhotos={() => {}}
                 noOfImagesForMoodboard={totalImagesForMoodboard}
                 setNoOfImagesForMoodboard={() => {}}
-                moodboard={effectiveMoodboard!}
+                moodboard={selectedMoodboard!}
                 placeholderItems={placeholderItems}
                 setPlaceholderItems={setPlaceholderItems}
                 hasUnsavedChanges={false}
                 isPreview
-                key={effectiveMoodboard?.id}
+                key={selectedMoodboard?.id}
               />
             </div>
-          ) : (
-            !showGallery &&
-            photos.length === 0 && (
-              <ManualMoodboardSkeleton
-                shimmer={isBulkFetching || isBulkLoading}
-                showButton={false}
-              />
-            )
           )}
 
           {prompts && prompts.length > 0 && (
