@@ -186,6 +186,8 @@ export function MediaUploadDropzone({
             const bulkUploadPayload: BulkGalleryUploadRequest = {
               gallery_items: itemsToUpload,
               brand_id: selectedBrand.brand_id,
+              moodboard_id: selecteMoodboardId,
+              campaign_id: selectedCampaignId,
             };
 
             await galleryActions.bulkUpload(bulkUploadPayload);

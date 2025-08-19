@@ -45,7 +45,8 @@ export const MoodboardSection: React.FC<{
   moodboardInformation,
   brandInformation,
 }) => {
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedMoodboardId, setSelectedMoodboardId } =
+    useBrandStore();
 
   const galleryActions = useGalleryQuery({
     selectedFilters: {
@@ -62,9 +63,7 @@ export const MoodboardSection: React.FC<{
   });
 
   const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
-  const [selectedMoodboardId, setSelectedMoodboardId] = useState<string | null>(
-    null
-  );
+
   const [isSaving, setIsSaving] = useState(false);
   const [openPopover, setOpenPopover] = useState(false);
 
