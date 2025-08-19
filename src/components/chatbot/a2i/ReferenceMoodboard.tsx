@@ -93,7 +93,7 @@ const ReferenceMoodboard = ({
         (asset) => asset.gallery_item_id
       ) || []
     );
-  }, [effectiveMoodboard?.moodboard_assets]);
+  }, [effectiveMoodboard?.moodboard_assets, referenceMoodboardId]);
 
   // Fetch only the required gallery items using bulk API
   const {
@@ -131,7 +131,11 @@ const ReferenceMoodboard = ({
         position: positionMap.get(item.id) || 0,
       }))
       .sort((a, b) => a.position - b.position);
-  }, [bulkGalleryItems, effectiveMoodboard?.moodboard_assets]);
+  }, [
+    bulkGalleryItems,
+    effectiveMoodboard?.moodboard_assets,
+    referenceMoodboardId,
+  ]);
 
   // Load images from ordered gallery items
   const loadImagesWithDimensions = useCallback(async () => {
@@ -189,7 +193,7 @@ const ReferenceMoodboard = ({
       // Clear photos if no ordered items
       setPhotos([]);
     }
-  }, [orderedGalleryItems.length]);
+  }, [orderedGalleryItems.length, referenceMoodboardId]);
 
   // Display logic - show gallery if we have photos OR if we need placeholders for grid layout
   const showGallery = useMemo(() => {
@@ -267,7 +271,7 @@ const ReferenceMoodboard = ({
       })
     );
     setPlaceholderItems(placeholders);
-  }, [photos.length, MIN_IMAGES_REQUIRED]);
+  }, [photos.length, MIN_IMAGES_REQUIRED, referenceMoodboardId]);
 
   return (
     <ContentSection
@@ -308,6 +312,7 @@ const ReferenceMoodboard = ({
                 setPlaceholderItems={setPlaceholderItems}
                 hasUnsavedChanges={false}
                 isPreview
+                key={effectiveMoodboard?.id}
               />
             </div>
           ) : (
