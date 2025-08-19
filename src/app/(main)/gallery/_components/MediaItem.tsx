@@ -141,6 +141,7 @@ export function MediaItem({
 
         {/* More options popover - Only show in regular gallery, NOT in media select dialog */}
         {isHovered && isMediaSelectDialog === false && (
+
           <>
             <div className="absolute top-0 right-1 z-10 flex space-x-1">
               <Popover>
