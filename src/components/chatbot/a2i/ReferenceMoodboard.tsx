@@ -315,7 +315,15 @@ const ReferenceMoodboard = ({
                     className="text-primary border-primary"
                     disabled={isPending}
                     onClick={() => {
-                      if (selectedMoodboard?.moodboard_tags?.length) {
+                      const hasTags =
+                        selectedMoodboard?.moodboard_tags &&
+                        Object.keys(selectedMoodboard.moodboard_tags).length >
+                          0 &&
+                        Object.values(selectedMoodboard.moodboard_tags).some(
+                          (tagArray) => tagArray.length > 0
+                        );
+
+                      if (hasTags) {
                         generateShowboard(undefined, {
                           onSuccess: () => {
                             toast.success(
