@@ -166,7 +166,7 @@ export const MoodboardSection: React.FC<{
     }
 
     setNoOfImagesForMoodboard(Math.min(16, count));
-  }, [currentMoodboard?.id, galleryActions.totalItems]);
+  }, [currentMoodboard?.id]);
 
   const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
 
