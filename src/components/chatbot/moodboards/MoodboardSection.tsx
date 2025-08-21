@@ -126,16 +126,32 @@ export const MoodboardSection: React.FC<{
     selectedMoodboardId,
   ]);
 
+  // Handle case where selected moodboard is deleted
+  useEffect(() => {
+    if (selectedMoodboardId && currentCampaignMoodboards.length > 0) {
+      const isSelectedMoodboardStillAvailable = currentCampaignMoodboards.find(
+        (mb) => mb.id === selectedMoodboardId
+      );
+
+      if (!isSelectedMoodboardStillAvailable) {
+        // Selected moodboard was deleted, select the latest available one
+        const latestMoodboard =
+          currentCampaignMoodboards[currentCampaignMoodboards.length - 1];
+        setSelectedMoodboardId(latestMoodboard.id);
+      }
+    }
+  }, [selectedMoodboardId, currentCampaignMoodboards]);
+
   const [expanded, setExpanded] = useState(true);
 
   const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
-    useState<number>(0);
+    useState<number>(16);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
 
   // Reset whenever moodboard changes
   useEffect(() => {
-    setNoOfImagesForMoodboard(0);
+    setNoOfImagesForMoodboard(16);
   }, [currentMoodboard?.id]);
 
   // Set count when data is available
