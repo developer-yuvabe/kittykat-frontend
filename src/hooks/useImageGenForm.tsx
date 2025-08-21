@@ -5,18 +5,24 @@ import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { useDynamicModelSchema } from "./useDynamicModelSchema";
 import { useSessionStorage } from "./useSessionStorage";
+import { isEmpty } from "lodash";
 
 export const useImageGenForm = (): UseFormReturn<any> => {
   const { selectedModel } = useModelsStore();
+
+  if (!selectedModel) {
+    throw new Error(
+      "No model selected. Please select a model before using the form."
+    );
+  }
+
   const { setSessionItem } = useSessionStorage();
 
   const { schema, defaultValues } = selectedModel
     ? useDynamicModelSchema(selectedModel)
     : { schema: z.object({}), defaultValues: {} };
 
-  const formModelKey = selectedModel?.id
-    ? `imageGenForm-${selectedModel.id}`
-    : null;
+  const formModelKey = "imageGenForm";
 
   const getSavedFormValues = (() => {
     try {
@@ -36,25 +42,33 @@ export const useImageGenForm = (): UseFormReturn<any> => {
 
   useEffect(() => {
     queueMicrotask(() => {
-      form.reset(getSavedFormValues ?? defaultValues, {
-        keepDefaultValues: true,
-        keepDirty: true,
-      });
+      const previousPromptValue = form.getValues("prompt") || "";
+      form.reset(
+        {
+          ...defaultValues,
+          prompt: previousPromptValue,
+        },
+        {
+          keepDefaultValues: true,
+          keepDirty: true,
+        }
+      );
     });
   }, [selectedModel?.id]);
 
   // Watch form values and persist to sessionStorage
   useEffect(() => {
-    const subscription = form.watch((values) => {
+    const subscription = form.watch(() => {
       try {
-        if (!formModelKey) return;
+        const values = form.getValues();
+        if (!formModelKey || isEmpty(values)) return;
         setSessionItem(formModelKey, values);
       } catch {
         // ignore quota or serialization errors
       }
     });
     return () => subscription.unsubscribe();
-  }, [form, formModelKey]);
+  }, []);
 
   return form;
 };
