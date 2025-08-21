@@ -140,6 +140,11 @@ function MoodboardLayout({
             (item) => item.id === asset.gallery_item_id
           );
 
+          // Skip if gallery item is not found
+          if (!galleryItem) {
+            return null;
+          }
+
           return {
             id: asset.gallery_item_id,
             asset_url: galleryItem?.asset_url,
