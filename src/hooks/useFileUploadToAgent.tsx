@@ -160,19 +160,33 @@ export function useFileUpload({
     }
   };
 
+  // FIXED: Check if drop target is within the chat input area
+  const isDropTargetInChatArea = (target: EventTarget | null): boolean => {
+    if (!target || !dropRef.current) return false;
+    return dropRef.current.contains(target as Node);
+  };
+
   // Drag and drop handlers
   useEffect(() => {
     if (!dropRef.current) return;
 
-    const handleWindowDragEnter = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Only handle drag enter if it's within the chat input area
+      if (isDropTargetInChatArea(e.target)) {
         dragCounter.current += 1;
         setDragOver(true);
       }
     };
 
-    const handleWindowDragLeave = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Only handle drag leave if it's within the chat input area
+      if (isDropTargetInChatArea(e.target)) {
         dragCounter.current -= 1;
         if (dragCounter.current <= 0) {
           setDragOver(false);
@@ -181,9 +195,25 @@ export function useFileUpload({
       }
     };
 
-    const handleWindowDrop = async (e: DragEvent) => {
+    const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // Only show drag over state if dragging over chat input area
+      if (isDropTargetInChatArea(e.target)) {
+        setDragOver(true);
+      }
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // CRITICAL FIX: Only handle drop if it's within the chat input area
+      if (!isDropTargetInChatArea(e.target)) {
+        return; // Let other drop handlers handle this
+      }
+
       dragCounter.current = 0;
       setDragOver(false);
 
@@ -239,55 +269,26 @@ export function useFileUpload({
       }
     };
 
-    const handleWindowDragEnd = () => {
+    const handleDragEnd = () => {
       dragCounter.current = 0;
       setDragOver(false);
     };
 
-    const handleWindowDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragOver(true);
-    };
-
-    const handleDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragOver(true);
-    };
-
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragOver(false);
-    };
-
     const element = dropRef.current;
+
+    // Add event listeners to the specific element only
     element.addEventListener("dragover", handleDragOver);
     element.addEventListener("dragenter", handleDragEnter);
     element.addEventListener("dragleave", handleDragLeave);
-
-    window.addEventListener("dragenter", handleWindowDragEnter);
-    window.addEventListener("dragleave", handleWindowDragLeave);
-    window.addEventListener("drop", handleWindowDrop);
-    window.addEventListener("dragend", handleWindowDragEnd);
-    window.addEventListener("dragover", handleWindowDragOver);
+    element.addEventListener("drop", handleDrop);
+    element.addEventListener("dragend", handleDragEnd);
 
     return () => {
       element.removeEventListener("dragover", handleDragOver);
       element.removeEventListener("dragenter", handleDragEnter);
       element.removeEventListener("dragleave", handleDragLeave);
-      window.removeEventListener("dragenter", handleWindowDragEnter);
-      window.removeEventListener("dragleave", handleWindowDragLeave);
-      window.removeEventListener("drop", handleWindowDrop);
-      window.removeEventListener("dragend", handleWindowDragEnd);
-      window.removeEventListener("dragover", handleWindowDragOver);
-      dragCounter.current = 0;
+      element.removeEventListener("drop", handleDrop);
+      element.removeEventListener("dragend", handleDragEnd);
     };
   }, [contentBlocks, brandId]);
 
