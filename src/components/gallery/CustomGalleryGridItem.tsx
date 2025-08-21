@@ -35,7 +35,7 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   moodboard,
 }: GridItemProps<TPhoto>) {
   const [isRemoving, setIsRemoving] = useState(false);
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, isMoodboardSaving } = useBrandStore();
 
   // Get the cache update function from the hook
   const { updateAutoFillSuggestionCache } = useMoodboardQuery({
@@ -136,8 +136,11 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
               size={16}
               className={`w-5 h-5 cursor-pointer transition-all duration-200 ${
                 photo.liked ? "text-red-500 fill-red-500" : "text-white"
-              } hover:scale-110 active:scale-95`}
+              } hover:scale-110 active:scale-95 ${
+                isMoodboardSaving && "opacity-50 "
+              }`}
               onClick={(e) => {
+                if (isMoodboardSaving) return;
                 e.preventDefault();
                 e.stopPropagation();
                 handlePhotoLike(index, !photo.liked);

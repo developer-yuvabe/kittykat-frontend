@@ -29,6 +29,9 @@ type Store = {
 
   selectedMoodboardId: string | null;
   setSelectedMoodboardId: (moodboardId: string | null) => void;
+
+  isMoodboardSaving: boolean;
+  setIsMoodboardSaving: (isSaving: boolean) => void;
 };
 
 export const useBrandStore = create<Store>((set, get) => ({
@@ -75,4 +78,8 @@ export const useBrandStore = create<Store>((set, get) => ({
   selectedMoodboardId: null,
   setSelectedMoodboardId: (moodboardId: string | null) =>
     set({ selectedMoodboardId: moodboardId }),
+
+  isMoodboardSaving: false,
+  setIsMoodboardSaving: (isSaving: boolean) =>
+    set({ isMoodboardSaving: isSaving }),
 }));
