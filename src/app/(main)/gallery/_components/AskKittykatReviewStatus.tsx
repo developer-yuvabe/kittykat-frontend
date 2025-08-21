@@ -90,6 +90,23 @@ export function AskKittykatReviewStatus({
     setShowRejectDialog(true);
   };
 
+  const resetRejectForm = () => {
+    setRejectReason("");
+    setAttachedFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRejectDialogClose = () => {
+    setShowRejectDialog(false);
+    resetRejectForm();
+  };
+
+  const handleAcceptDialogClose = () => {
+    setShowAcceptDialog(false);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
@@ -151,9 +168,8 @@ export function AskKittykatReviewStatus({
       // Update status to rejected
       handleStatusChange("requested_revision");
 
-      // Reset form
-      setRejectReason("");
-      setAttachedFiles([]);
+      // Reset form and close dialog
+      resetRejectForm();
       setShowRejectDialog(false);
     } catch (error) {
       console.error("Error submitting rejection:", error);
@@ -278,7 +294,14 @@ export function AskKittykatReviewStatus({
       )}
 
       {/* Accept Dialog */}
-      <Dialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
+      <Dialog
+        open={showAcceptDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleAcceptDialogClose();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Approve this image?</DialogTitle>
@@ -293,7 +316,7 @@ export function AskKittykatReviewStatus({
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowAcceptDialog(false)}
+              onClick={handleAcceptDialogClose}
               disabled={isSubmittingAccept}
             >
               Back to Review
@@ -303,7 +326,7 @@ export function AskKittykatReviewStatus({
                 setIsSubmittingAccept(true);
                 try {
                   handleAccept();
-                  setShowAcceptDialog(false);
+                  handleAcceptDialogClose();
                 } finally {
                   setIsSubmittingAccept(false);
                 }
@@ -318,7 +341,14 @@ export function AskKittykatReviewStatus({
       </Dialog>
 
       {/* Reject Dialog */}
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+      <Dialog
+        open={showRejectDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleRejectDialogClose();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Provide Feedback</DialogTitle>
@@ -366,17 +396,19 @@ export function AskKittykatReviewStatus({
                 />
 
                 {attachedFiles.length > 0 && (
-                  <div className="space-y-1">
+                  <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
                     {attachedFiles.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm"
+                        className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-xs"
                       >
-                        <span className="truncate">{file.name}</span>
+                        <span className="truncate max-w-[200px]">
+                          {file.name}
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => removeFile(index)}
                         >
                           <X className="w-3 h-3" />
@@ -392,7 +424,7 @@ export function AskKittykatReviewStatus({
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowRejectDialog(false)}
+              onClick={handleRejectDialogClose}
               disabled={isSubmittingReject}
             >
               Cancel

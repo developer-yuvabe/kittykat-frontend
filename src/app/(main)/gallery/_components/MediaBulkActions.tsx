@@ -532,9 +532,7 @@ export function MediaBulkActions({
     ];
 
     // Filter out sources that are already used by selected items
-    return allSources.filter(
-      (source) => !uniqueSources.includes(source.value)
-    );
+    return allSources.filter((source) => !uniqueSources.includes(source.value));
   };
 
   const getMoveDialogContent = () => {
@@ -626,13 +624,16 @@ export function MediaBulkActions({
               {uniqueSources.length === 1 && (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-700">
-                    Moving from: {(() => {
+                    Moving from:{" "}
+                    {(() => {
                       const allSources = [
                         { value: "brand-uploads", label: "Brand Uploads" },
                         { value: "showboard-media", label: "Concept Visuals" },
                         { value: "a2i-media", label: "A2I Media" },
                       ];
-                      const currentSource = allSources.find(s => s.value === uniqueSources[0]);
+                      const currentSource = allSources.find(
+                        (s) => s.value === uniqueSources[0]
+                      );
                       return currentSource?.label || uniqueSources[0];
                     })()}
                   </p>
@@ -658,7 +659,8 @@ export function MediaBulkActions({
               </Select>
               {getAvailableSources().length === 0 && (
                 <p className="text-sm text-gray-500">
-                  All selected items are already in different tabs, or no other tabs are available.
+                  All selected items are already in different tabs, or no other
+                  tabs are available.
                 </p>
               )}
             </div>
@@ -719,7 +721,9 @@ export function MediaBulkActions({
     return (
       (moveAction === "brand" && targetBrandId) ||
       (moveAction === "campaign" && targetCampaignId) ||
-      (moveAction === "source" && targetSource && getAvailableSources().length > 0)
+      (moveAction === "source" &&
+        targetSource &&
+        getAvailableSources().length > 0)
     );
   };
 
