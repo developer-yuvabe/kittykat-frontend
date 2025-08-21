@@ -43,7 +43,8 @@ const A2iImageInput = ({
   const { credits, isCalculatingCredits } = useModelPricing({ form });
   const { selectedModel, isModelsFetched } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { referencePrompt, setReferencePrompt } = useA2iStore();
+  const { referencePrompt, setReferencePrompt, referencePromptSignal } =
+    useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
     mutationFn: () =>
       enhancePrompt(
@@ -152,7 +153,8 @@ const A2iImageInput = ({
     disabled:
       isUploading ||
       form.formState.isSubmitting ||
-      refernceImagesModelInfo?.maxLimit - imageBlocks.length <= 0,
+      refernceImagesModelInfo?.maxLimit - imageBlocks.length <= 0 ||
+      !refernceImagesModelInfo,
     maxFiles: refernceImagesModelInfo?.maxLimit - imageBlocks.length,
     maxSize: refernceImagesModelInfo?.maxFileSizeLimit * 1024 * 1024, // Convert MB to bytes
   });
@@ -219,7 +221,7 @@ const A2iImageInput = ({
       });
       setCurrentPromptValue(referencePrompt);
     }
-  }, [referencePrompt, form]);
+  }, [referencePrompt, form, referencePromptSignal]);
 
   // Handle model changes - preserve the current prompt value
   useEffect(() => {
