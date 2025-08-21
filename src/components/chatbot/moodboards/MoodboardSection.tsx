@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -47,6 +53,8 @@ export const MoodboardSection: React.FC<{
   const { selectedBrandId, selectedMoodboardId, setSelectedMoodboardId } =
     useBrandStore();
 
+  const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
+
   const galleryActions = useGalleryQuery({
     selectedFilters: {
       brands: [selectedBrandId!],
@@ -62,6 +70,13 @@ export const MoodboardSection: React.FC<{
   });
 
   const [openPopover, setOpenPopover] = useState(false);
+
+  // Track the last known moodboard count to detect new creations
+  const [lastMoodboardCount, setLastMoodboardCount] = useState(0);
+
+  // Use ref to get current selectedMoodboardId without adding to useEffect dependencies
+  const selectedMoodboardIdRef = useRef(selectedMoodboardId);
+  selectedMoodboardIdRef.current = selectedMoodboardId;
 
   const currentCampaign = useMemo(
     () =>
@@ -82,14 +97,14 @@ export const MoodboardSection: React.FC<{
   // Get current moodboard from props (real-time updates)
   const currentMoodboard = useMemo(() => {
     // If we have a selected moodboard ID, find it in the current data
-    if (selectedMoodboardId) {
+    if (selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       const found = currentCampaignMoodboards.find(
         (mb) => mb.id === selectedMoodboardId
       );
       if (found) return found;
     }
 
-    // Otherwise, get the latest moodboard
+    // If no specific selection or selected moodboard not found, get the latest moodboard
     if (currentCampaignMoodboards.length > 0) {
       return currentCampaignMoodboards[currentCampaignMoodboards.length - 1];
     }
@@ -110,20 +125,46 @@ export const MoodboardSection: React.FC<{
     toast.success("Ready to create a new moodboard!");
   }, [currentCampaign, currentCampaignMoodboards.length]);
 
-  // Auto-select latest moodboard when campaign changes or moodboards are loaded
+  // Auto-select latest moodboard when campaign changes or when new moodboards are created
   useEffect(() => {
-    if (!selectedMoodboardId && currentCampaignMoodboards.length > 0) {
-      const latestMoodboard =
-        currentCampaignMoodboards[currentCampaignMoodboards.length - 1];
+    const currentCount = currentCampaignMoodboards.length;
+
+    // If moodboard count increased, a new one was created - select the latest
+    if (currentCount > lastMoodboardCount && currentCount > 0) {
+      const latestMoodboard = currentCampaignMoodboards[currentCount - 1];
       setSelectedMoodboardId(latestMoodboard.id);
-    } else if (currentCampaignMoodboards.length === 0) {
+      setLastMoodboardCount(currentCount);
+      return;
+    }
+
+    // Update count tracker
+    if (currentCount !== lastMoodboardCount) {
+      setLastMoodboardCount(currentCount);
+    }
+
+    // Auto-select latest if no moodboard is selected and we have moodboards
+    if (
+      !selectedMoodboardIdRef.current &&
+      currentCount > 0 &&
+      !isCreatingNewMoodboard
+    ) {
+      const latestMoodboard = currentCampaignMoodboards[currentCount - 1];
+      setSelectedMoodboardId(latestMoodboard.id);
+    } else if (currentCount === 0) {
       setSelectedMoodboardId(null);
     }
   }, [
     currentCampaign?.id,
     currentCampaignMoodboards.length,
-    selectedMoodboardId,
+    lastMoodboardCount,
+    isCreatingNewMoodboard,
+    // Don't include selectedMoodboardId to avoid loops
   ]);
+
+  // Initialize the moodboard count tracker
+  useEffect(() => {
+    setLastMoodboardCount(currentCampaignMoodboards.length);
+  }, [currentCampaign?.id]); // Only when campaign changes
 
   // Handle case where selected moodboard is deleted
   useEffect(() => {
@@ -146,7 +187,6 @@ export const MoodboardSection: React.FC<{
   const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
     useState<number>(16);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
 
   // Reset whenever moodboard changes
   useEffect(() => {
@@ -227,15 +267,13 @@ export const MoodboardSection: React.FC<{
         }
       );
 
-      // Wait a short moment for the backend to process
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Set the new moodboard as selected
+      // Immediately set the new moodboard as selected if creation was successful
       if (newMoodboard?.id) {
         setSelectedMoodboardId(newMoodboard.id);
+        toast.success("Moodboard created successfully!", { id: toastId });
+      } else {
+        throw new Error("Failed to create moodboard - no ID returned");
       }
-
-      toast.success("Moodboard created successfully!", { id: toastId });
     } catch (error) {
       toast.error("Failed to create moodboard. Please try again.", {
         id: toastId,
@@ -256,6 +294,7 @@ export const MoodboardSection: React.FC<{
     // For subsequent moodboards, create directly
     if (!selectedBrandId || !currentCampaign?.id) {
       toast.error("Missing brand or campaign information");
+      setIsCreatingNewMoodboard(false);
       return;
     }
 
@@ -263,6 +302,7 @@ export const MoodboardSection: React.FC<{
       toast.error(
         "At least 10 images are required for analysis and moodboard creation."
       );
+      setIsCreatingNewMoodboard(false);
       return;
     }
 
@@ -285,15 +325,13 @@ export const MoodboardSection: React.FC<{
         }
       );
 
-      // Wait a short moment for the backend to process
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Set the new moodboard as selected
+      // Immediately set the new moodboard as selected if creation was successful
       if (newMoodboard?.id) {
         setSelectedMoodboardId(newMoodboard.id);
+        toast.success("Moodboard created successfully!", { id: toastId });
+      } else {
+        throw new Error("Failed to create moodboard - no ID returned");
       }
-
-      toast.success("Moodboard created successfully!", { id: toastId });
     } catch (error) {
       toast.error("Failed to create moodboard. Please try again.", {
         id: toastId,
@@ -307,6 +345,8 @@ export const MoodboardSection: React.FC<{
   const handleMoodboardSelect = (moodboard: MoodboardInformation | null) => {
     if (moodboard) {
       setSelectedMoodboardId(moodboard.id);
+    } else {
+      setSelectedMoodboardId(null);
     }
   };
 
