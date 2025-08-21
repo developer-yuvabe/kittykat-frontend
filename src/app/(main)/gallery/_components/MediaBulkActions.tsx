@@ -138,21 +138,6 @@ export function MediaBulkActions({
     }
   };
 
-  // const handleBulkDownload = async () => {
-  //   if (selectedItems.length === 0) return;
-
-  //   setIsDownloading(true);
-  //   try {
-  //     for (const item of selectedItems) {
-  //       await galleryActions.downloadItem(item);
-  //     }
-  //   } catch (error) {
-  //     console.error("Bulk download error:", error);
-  //   } finally {
-  //     setIsDownloading(false);
-  //   }
-  // };
-
   const getFileExtensionFromUrl = (url: string): string => {
     const fileName = url.split("/").pop()?.split("?")[0] || "";
     const ext = fileName.split(".").pop();
@@ -443,11 +428,43 @@ export function MediaBulkActions({
         )
       );
 
+      // Success toast notification
+      const getMovementDescription = () => {
+        if (moveAction === "brand") {
+          const targetBrand = galleryActions.brandsData?.brands.find(
+            (b) => b.brand_id === targetBrandId
+          );
+          return `to brand "${targetBrand?.brand_name}"`;
+        } else if (moveAction === "campaign") {
+          if (targetCampaignId === "none") {
+            return "and removed from campaigns";
+          }
+          const availableCampaigns = getAvailableCampaigns();
+          const targetCampaign = availableCampaigns.find(
+            (c) => c.id === targetCampaignId
+          );
+          return `to campaign "${targetCampaign?.title}"`;
+        } else if (moveAction === "source") {
+          const sourceMap: Record<string, string> = {
+            "brand-uploads": "Brand Uploads",
+            "showboard-media": "Concept Visuals",
+            "a2i-media": "A2I Media",
+          };
+          return `to ${sourceMap[targetSource] || targetSource}`;
+        }
+        return "";
+      };
+
+      toast.success(
+        `Successfully moved ${selectedCount} item(s) ${getMovementDescription()}`
+      );
+
       onUnselectAll();
       galleryActions.refetchGalleryItems();
       setIsMoveDialogOpen(false);
     } catch (error) {
       console.error("Move error:", error);
+      toast.error("Failed to move assets. Please try again.");
     } finally {
       setIsMoving(false);
     }
@@ -504,6 +521,20 @@ export function MediaBulkActions({
       }
     }
     return [];
+  };
+
+  // Get available sources excluding current ones
+  const getAvailableSources = () => {
+    const allSources = [
+      { value: "brand-uploads", label: "Brand Uploads" },
+      { value: "showboard-media", label: "Concept Visuals" },
+      { value: "a2i-media", label: "A2I Media" },
+    ];
+
+    // Filter out sources that are already used by selected items
+    return allSources.filter(
+      (source) => !uniqueSources.includes(source.value)
+    );
   };
 
   const getMoveDialogContent = () => {
@@ -591,16 +622,46 @@ export function MediaBulkActions({
           )}
 
           {moveAction === "source" && (
-            <Select value={targetSource} onValueChange={setTargetSource}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select target source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="brand-uploads">Brand Uploads</SelectItem>
-                <SelectItem value="showboard-media">Concept Visuals</SelectItem>
-                <SelectItem value="a2i-media">A2I Media</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              {uniqueSources.length === 1 && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-700">
+                    Moving from: {(() => {
+                      const allSources = [
+                        { value: "brand-uploads", label: "Brand Uploads" },
+                        { value: "showboard-media", label: "Concept Visuals" },
+                        { value: "a2i-media", label: "A2I Media" },
+                      ];
+                      const currentSource = allSources.find(s => s.value === uniqueSources[0]);
+                      return currentSource?.label || uniqueSources[0];
+                    })()}
+                  </p>
+                </div>
+              )}
+              <Select value={targetSource} onValueChange={setTargetSource}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableSources().length > 0 ? (
+                    getAvailableSources().map((source) => (
+                      <SelectItem key={source.value} value={source.value}>
+                        {source.label}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      No other tabs available
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {getAvailableSources().length === 0 && (
+                <p className="text-sm text-gray-500">
+                  All selected items are already in different tabs, or no other tabs are available.
+                </p>
+              )}
+            </div>
           )}
         </div>
 
@@ -658,7 +719,7 @@ export function MediaBulkActions({
     return (
       (moveAction === "brand" && targetBrandId) ||
       (moveAction === "campaign" && targetCampaignId) ||
-      (moveAction === "source" && targetSource)
+      (moveAction === "source" && targetSource && getAvailableSources().length > 0)
     );
   };
 
@@ -703,6 +764,17 @@ export function MediaBulkActions({
                   variant="ghost"
                   className="w-full justify-start text-sm"
                   onClick={() => handleMoveAction("source")}
+                  disabled={(() => {
+                    const allSources = [
+                      { value: "brand-uploads", label: "Brand Uploads" },
+                      { value: "showboard-media", label: "Concept Visuals" },
+                      { value: "a2i-media", label: "A2I Media" },
+                    ];
+                    const availableSources = allSources.filter(
+                      (source) => !uniqueSources.includes(source.value)
+                    );
+                    return availableSources.length === 0;
+                  })()}
                 >
                   Move to another Tab
                 </Button>
