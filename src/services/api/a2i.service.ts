@@ -80,7 +80,7 @@ export const updateA2iImagePositions = async (
 
 export const updateA2iRefernceMoodboard = async (
   brandId: string,
-  moodboardId: string
+  moodboardId: string | null
 ) => {
   try {
     await handleApiRequest(

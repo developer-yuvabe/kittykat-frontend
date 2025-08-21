@@ -344,9 +344,7 @@ function MoodboardLayout({
 
       // Wait for 2 seconds before analyzing the moodboard
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-        image_urls: photosAtSaveStart.map((photo) => photo.src), // Use the saved snapshot for analysis
-      });
+      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id);
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {

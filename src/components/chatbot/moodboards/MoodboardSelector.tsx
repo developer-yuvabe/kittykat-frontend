@@ -58,7 +58,7 @@ export default function MoodboardSelector({
   campaignId,
   variant = "combobox",
 }: MoodboardSelectorProps) {
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, setSelectedMoodboardId } = useBrandStore();
 
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -169,6 +169,8 @@ export default function MoodboardSelector({
       // If the deleted moodboard was selected, clear the selection
       if (selectedMoodboard?.id === moodboardId) {
         setSelectedMoodboard(null);
+        // Also update the global store to maintain consistency
+        setSelectedMoodboardId(null);
       }
     } catch (error) {
       toast.error("Failed to delete moodboard. Please try again.", {
