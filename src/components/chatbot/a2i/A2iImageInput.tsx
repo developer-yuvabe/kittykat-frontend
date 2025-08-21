@@ -43,8 +43,7 @@ const A2iImageInput = ({
   const { credits, isCalculatingCredits } = useModelPricing({ form });
   const { selectedModel, isModelsFetched } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { referencePrompt, setReferencePrompt, referencePromptSignal } =
-    useA2iStore();
+  const { referencePrompt, referencePromptSignal } = useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
     mutationFn: () =>
       enhancePrompt(
@@ -195,8 +194,7 @@ const A2iImageInput = ({
 
     await delay(2000);
 
-    form.reset();
-    if (referencePrompt) setReferencePrompt(null);
+    form.resetField("prompt", {});
     setImageBlocks([]);
     setCurrentPromptValue(""); // Clear the stored prompt value
   };
