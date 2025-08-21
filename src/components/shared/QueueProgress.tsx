@@ -11,27 +11,43 @@ import { cn } from "@/lib/utils";
 import QueueItemView from "./QueueItemView";
 import { useEnhancedFilters } from "@/hooks/useEnhancedFilters";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { isBefore, subHours } from "date-fns";
+import { deleteQueueItems } from "@/services/api/queue.service";
 
 const QueueProgress = () => {
   const { user } = useUserStore();
   const { data } = useQueueUpdates(user?.id);
   const [open, setOpen] = React.useState(false);
-  const { runningQueueItems, otherQueueItems } = useMemo(() => {
-    const running = [];
-    const others = [];
+  const { runningQueueItems, otherQueueItems, queueItemsOlderThan24Hours } =
+    useMemo(() => {
+      const running = [];
+      const others = [];
+      const older = [];
 
-    if (data && Array.isArray(data)) {
-      for (const item of data) {
-        if (item.status === "processing") {
-          running.push(item);
-        } else {
-          others.push(item);
+      if (data && Array.isArray(data)) {
+        const threshold = subHours(new Date(), 24);
+
+        for (const item of data) {
+          if (item.status === "processing") {
+            running.push(item);
+          } else {
+            const createdAt = new Date(item.created_at);
+
+            if (isBefore(createdAt, threshold)) {
+              older.push(item);
+            } else {
+              others.push(item);
+            }
+          }
         }
       }
-    }
 
-    return { runningQueueItems: running, otherQueueItems: others };
-  }, [data]);
+      return {
+        runningQueueItems: running,
+        otherQueueItems: others,
+        queueItemsOlderThan24Hours: older,
+      };
+    }, [data]);
 
   useEffect(() => {
     setOpen(runningQueueItems.length > 0);
@@ -45,6 +61,12 @@ const QueueProgress = () => {
     searchQuery,
     favorites,
   } = useEnhancedFilters({});
+
+  useEffect(() => {
+    if (queueItemsOlderThan24Hours.length > 0) {
+      deleteQueueItems(queueItemsOlderThan24Hours.map((item) => item.id));
+    }
+  }, [queueItemsOlderThan24Hours]);
 
   const { refetchAllGalleryQueries } = useGalleryQuery(
     {
