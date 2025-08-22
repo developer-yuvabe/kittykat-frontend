@@ -170,20 +170,48 @@ export function MediaFolderView({
         title="Subfolders"
       />
 
-      {/* Gallery Grid View - Show when in grid mode or no specific folder context */}
-      {(galleryView === "grid" ||
-        !selectedBrand ||
-        (galleryView === "folder" && !selectedCampaignFromUrl)) &&
-        !brandsLoading && (
-          <FolderGalleryView
-            selectedBrand={selectedBrand}
-            selectedCampaignId={selectedCampaignFromUrl || undefined}
-            searchQuery={searchQuery}
-            favorites={favorites}
-            selectedFilters={selectedFilters}
-            activeTab={activeTab}
-          />
-        )}
+      {/* Gallery Grid View - Show in multiple scenarios */}
+      {!brandsLoading && (
+        <>
+          {/* Show for grid view regardless of brand selection */}
+          {galleryView === "grid" && (
+            <FolderGalleryView
+              selectedBrand={selectedBrand}
+              selectedCampaignId={selectedCampaignFromUrl || undefined}
+              searchQuery={searchQuery}
+              favorites={favorites}
+              selectedFilters={selectedFilters}
+              activeTab={activeTab}
+            />
+          )}
+          
+          {/* Show for folder view when brand is selected but no campaign (brand-level view) */}
+          {galleryView === "folder" &&
+            selectedBrand &&
+            !selectedCampaignFromUrl && (
+              <FolderGalleryView
+                selectedBrand={selectedBrand}
+                selectedCampaignId={undefined}
+                searchQuery={searchQuery}
+                favorites={favorites}
+                selectedFilters={selectedFilters}
+                activeTab={activeTab}
+              />
+            )}
+          
+          {/* Show for folder view when no brand is selected */}
+          {galleryView === "folder" && !selectedBrand && (
+            <FolderGalleryView
+              selectedBrand={null}
+              selectedCampaignId={undefined}
+              searchQuery={searchQuery}
+              favorites={favorites}
+              selectedFilters={selectedFilters}
+              activeTab={activeTab}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
