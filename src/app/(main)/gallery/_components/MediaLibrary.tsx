@@ -203,8 +203,7 @@ export function MediaLibrary({
     setMultiSelectItems([]);
 
     // Reset filters from notification when switching tabs
-    const basePath = window.location.pathname;
-    router.replace(basePath);
+    setInitialWorkflowStatus([]);
 
     // Preserve brand-related filters when switching tabs
     setSelectedFilters((currentFilters) => ({

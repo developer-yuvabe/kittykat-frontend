@@ -46,15 +46,26 @@ export function MediaSearchFilters({
   favorites,
   showFilters,
   selectedFilters,
+  setSelectedFilters,
   setInitialWorkflowStatus,
   isMediaSelectDialog = false, // Default to false
 }: MediaSearchFiltersProps) {
   const handleWorkflowStatusChange = (values: string[]) => {
-    setInitialWorkflowStatus(null);
-    if (values[0] === "__all__") {
+    // Handle empty selection (when user unselects all) or "__all__" selection
+    if (values.length === 0 || values.includes("__all__")) {
       setInitialWorkflowStatus([]);
+      // Also update the selectedFilters to reflect the change immediately
+      setSelectedFilters({
+        ...selectedFilters,
+        workflow_status: [],
+      });
     } else {
       setInitialWorkflowStatus(values);
+      // Also update the selectedFilters to reflect the change immediately
+      setSelectedFilters({
+        ...selectedFilters,
+        workflow_status: values,
+      });
     }
   };
 
@@ -80,7 +91,7 @@ export function MediaSearchFilters({
             Favorites only
           </label>
         </div>
-        
+
         {/* Only show workflow status when NOT in media select dialog */}
         {!isMediaSelectDialog && (
           <div className="flex flex-col gap-1 mb-4">
