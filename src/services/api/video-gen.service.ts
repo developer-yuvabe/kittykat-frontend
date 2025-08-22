@@ -5,7 +5,8 @@ import { handleApiRequest } from "@/lib/utils"; // adjust path as needed
 
 export const videoGenerationService = async (
   brandId: string,
-  data: z.infer<typeof videoGenerationSchema>
+  data: z.infer<typeof videoGenerationSchema>,
+  campaignId?: string | null
 ) => {
   try {
     await handleApiRequest(
@@ -18,6 +19,7 @@ export const videoGenerationService = async (
         aspect_ratio: data.aspect_ratio,
         provider: data.provider,
         model: data.model,
+        campaign_id: campaignId,
       })
     );
   } catch (error) {

@@ -43,6 +43,7 @@ interface MediaEditorDialogProps {
   currentIndex?: number;
   onNavigate?: (direction: "next" | "prev") => void;
   totalItems?: number;
+  campaignId?: string | null;
 }
 
 export function MediaEditorDialog({
@@ -53,6 +54,7 @@ export function MediaEditorDialog({
   currentIndex = 0,
   onNavigate,
   totalItems = 0,
+  campaignId,
 }: MediaEditorDialogProps) {
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     item
@@ -112,6 +114,8 @@ export function MediaEditorDialog({
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
+
+  const campaign_id = campaignId || null;
 
   const handleNavigate = (direction: "next" | "prev") => {
     if (onNavigate) {
@@ -996,6 +1000,7 @@ export function MediaEditorDialog({
                             brushSize,
                             onBrushSizeChange: handleBrushSizeChange,
                             closeDialog: () => onOpenChange(false),
+                            campaignId: campaign_id,
                           }}
                         />
                       </>
