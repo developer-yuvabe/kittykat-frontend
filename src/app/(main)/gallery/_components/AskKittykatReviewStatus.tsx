@@ -368,7 +368,7 @@ export function AskKittykatReviewStatus({
                 placeholder="Please describe what needs to be changed or improved..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[100px] max-w-sm"
               />
             </div>
 
