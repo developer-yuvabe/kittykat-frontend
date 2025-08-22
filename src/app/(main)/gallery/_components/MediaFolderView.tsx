@@ -36,13 +36,16 @@ interface MediaFolderViewProps {
   favorites: boolean;
   onFavoritesChange: (checked: boolean) => void;
   selectedFilters: EnhancedSelectedFilters;
-  setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
   setInitialWorkflowStatus: (
     value: string[] | ((old: string[]) => string[] | null) | null,
     options?: any
   ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
+  selectedBrandId?: string;
 }
 
 export function MediaFolderView({
@@ -62,6 +65,7 @@ export function MediaFolderView({
   setSelectedFilters,
   setInitialWorkflowStatus,
   onTabChange,
+  selectedBrandId,
 }: MediaFolderViewProps) {
   const {
     selectedBrand,
@@ -69,7 +73,12 @@ export function MediaFolderView({
     handleBrandChange,
     handleCampaignSelect,
     handleBackToCampaigns,
-  } = useFolderState(selectedCampaignId, brands, brandsLoading);
+  } = useFolderState(
+    selectedCampaignId,
+    brands,
+    brandsLoading,
+    selectedBrandId
+  );
 
   // Render campaign view when in folder mode with selected brand and campaign
   if (galleryView === "folder" && selectedBrand && selectedCampaignFromUrl) {
@@ -116,7 +125,7 @@ export function MediaFolderView({
   }
 
   return (
-    <div className="w-full max-w-full overflow-hidden">
+    <div className="w-full max-w-full  overflow-hidden">
       {/* Brand Selector */}
       <FolderBrandSelector
         selectedBrand={selectedBrand}
@@ -160,6 +169,7 @@ export function MediaFolderView({
           <CampaignsList
             selectedBrand={selectedBrand}
             onCampaignSelect={handleCampaignSelect}
+            key={selectedBrand.brand_id}
           />
         )}
 
@@ -184,7 +194,7 @@ export function MediaFolderView({
               activeTab={activeTab}
             />
           )}
-          
+
           {/* Show for folder view when brand is selected but no campaign (brand-level view) */}
           {galleryView === "folder" &&
             selectedBrand &&
@@ -198,7 +208,7 @@ export function MediaFolderView({
                 activeTab={activeTab}
               />
             )}
-          
+
           {/* Show for folder view when no brand is selected */}
           {galleryView === "folder" && !selectedBrand && (
             <FolderGalleryView

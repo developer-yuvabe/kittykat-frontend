@@ -11,7 +11,7 @@ export function MediaGalleryStatusDisplay({
 }: MediaGalleryStatusDisplayProps) {
   if (galleryStatus === "pending") {
     return (
-      <div className="flex justify-center items-center py-36 2xl:py-60">
+      <div className="flex justify-center min-h-96 items-center py-36 2xl:py-60">
         <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
       </div>
     );
@@ -19,7 +19,7 @@ export function MediaGalleryStatusDisplay({
 
   if (galleryStatus === "error") {
     return (
-      <div className="flex justify-center items-center py-20">
+      <div className="flex justify-center min-h-96 items-center py-20">
         <p className="text-red-500">Error loading gallery items</p>
       </div>
     );
@@ -27,7 +27,7 @@ export function MediaGalleryStatusDisplay({
 
   if (galleryItemsLength === 0) {
     return (
-      <div className="flex justify-center items-center py-20">
+      <div className="flex justify-center min-h-96 items-center py-20">
         <p className="text-gray-500">No items found</p>
       </div>
     );

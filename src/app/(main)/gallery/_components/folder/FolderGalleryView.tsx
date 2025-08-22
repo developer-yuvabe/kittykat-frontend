@@ -37,27 +37,31 @@ export function FolderGalleryView({
       assetType: activeTab,
       favorites,
       source: activeTab,
-      creator: "Anyone",
       searchQuery,
       selectedFilters: {
-        // Merge provided filters with brand/campaign filters
-        ...(selectedFilters || {
-          moodboards: [],
-          product_categories: [],
-          asset_types: [],
-          asset_sources: [],
-          media_format: [],
-          aspect_ratio: [],
-          workflow_status: [],
-          has_product: undefined,
-          has_people: undefined,
-          has_lifestyle_context: undefined,
-          is_favourite: undefined,
-          is_archived: undefined,
-        }),
-        // Apply brand and campaign filters when available
-        brands: selectedBrand ? [selectedBrand.brand_id] : (selectedFilters?.brands || []),
-        campaigns: selectedCampaignId ? [selectedCampaignId] : (selectedFilters?.campaigns || []),
+        // Start with base filters
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        has_product: undefined,
+        has_people: undefined,
+        has_lifestyle_context: undefined,
+        is_favourite: undefined,
+        is_archived: undefined,
+        // Merge provided filters but preserve the structure
+        ...(selectedFilters || {}),
+        // Force brand and campaign filters based on current selection
+        // This ensures the URL state takes precedence over any other filters
+        brands: selectedBrand
+          ? [selectedBrand.brand_id]
+          : selectedFilters?.brands || [],
+        campaigns: selectedCampaignId
+          ? [selectedCampaignId]
+          : selectedFilters?.campaigns || [],
       },
     },
     ITEMS_PER_PAGE,
@@ -113,26 +117,32 @@ export function FolderGalleryView({
         galleryItemsLength={galleryActions.getGalleryItems().length}
       />
 
-      {galleryActions.galleryStatus === "success" &&
-        galleryActions.getGalleryItems().length > 0 && (
-          <div>
-            <MediaGrid
-              selectedItems={selectedItems}
-              onSelect={handleSelect}
-              galleryActions={galleryActions}
-            />
-            {/* Infinite scroll loading indicator */}
-            {galleryActions.hasNextPage && (
-              <div ref={ref} className="flex justify-center items-center py-8">
-                {galleryActions.isFetchingNextPage ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                ) : (
-                  <p className="text-sm text-gray-500">Load more</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+      {/* Gallery content area with minimum height to prevent layout shift */}
+      <div className="min-h-[400px]">
+        {galleryActions.galleryStatus === "success" &&
+          galleryActions.getGalleryItems().length > 0 && (
+            <div>
+              <MediaGrid
+                selectedItems={selectedItems}
+                onSelect={handleSelect}
+                galleryActions={galleryActions}
+              />
+              {/* Infinite scroll loading indicator */}
+              {galleryActions.hasNextPage && (
+                <div
+                  ref={ref}
+                  className="flex justify-center items-center py-8"
+                >
+                  {galleryActions.isFetchingNextPage ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                  ) : (
+                    <p className="text-sm text-gray-500">Load more</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+      </div>
 
       {selectedItems.length > 0 && (
         <MediaBulkActions
