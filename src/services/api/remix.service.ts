@@ -12,23 +12,16 @@ export const remixImageService = async (
 ) => {
   try {
     await handleApiRequest(
-      axiosInstance.post(
-        `/brands/${brandId}/a2i/remix`,
-        {
-          prompt: data.prompt,
-          size: data.size,
-          n: data.n,
-          base_image: data.base_image,
-          reference_images: data.reference_images,
-          mask_image: maskImageUrl,
-          should_add_to_queue: addToQueue,
-        },
-        {
-          params: {
-            campaign_id: campaignId,
-          },
-        }
-      )
+      axiosInstance.post(`/brands/${brandId}/a2i/remix`, {
+        prompt: data.prompt,
+        size: data.size,
+        n: data.n,
+        base_image: data.base_image,
+        reference_images: data.reference_images,
+        mask_image: maskImageUrl,
+        should_add_to_queue: addToQueue,
+        campaign_id: campaignId,
+      })
     );
   } catch (error) {
     console.error("Error remixing image:", error);

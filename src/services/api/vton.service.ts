@@ -10,19 +10,12 @@ export const createVtonImage = async (
 ) => {
   try {
     await handleApiRequest(
-      axiosInstance.post(
-        `/brands/${brandId}/a2i/vton`,
-        {
-          model_image: modelImage,
-          product_image: productImage,
-          should_add_to_queue: addToQueue,
-        },
-        {
-          params: {
-            campaign_id: campaignId,
-          },
-        }
-      )
+      axiosInstance.post(`/brands/${brandId}/a2i/vton`, {
+        model_image: modelImage,
+        product_image: productImage,
+        should_add_to_queue: addToQueue,
+        campaign_id: campaignId,
+      })
     );
   } catch (error) {
     console.error("Error occured during vton:", error);

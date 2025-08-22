@@ -199,7 +199,9 @@ const A2iImageInput = ({
 
     const campaignId = currentCampaign?.id || null;
 
-    generateImage(selectedBrandId!, campaignId, data).catch((error) => {
+    data.campaign_id = campaignId;
+
+    generateImage(selectedBrandId!, data).catch((error) => {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
       }

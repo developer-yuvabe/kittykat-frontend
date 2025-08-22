@@ -10,24 +10,17 @@ export const videoGenerationService = async (
 ) => {
   try {
     await handleApiRequest(
-      axiosInstance.post(
-        `/brands/${brandId}/a2i/video-generation`,
-        {
-          prompt: data.prompt,
-          start_image: data.start_image,
-          negative_prompt: data.negative_prompt,
-          duration: data.duration,
-          cfg_scale: data.cfg_scale,
-          aspect_ratio: data.aspect_ratio,
-          provider: data.provider,
-          model: data.model,
-        },
-        {
-          params: {
-            campaign_id: campaignId,
-          },
-        }
-      )
+      axiosInstance.post(`/brands/${brandId}/a2i/video-generation`, {
+        prompt: data.prompt,
+        start_image: data.start_image,
+        negative_prompt: data.negative_prompt,
+        duration: data.duration,
+        cfg_scale: data.cfg_scale,
+        aspect_ratio: data.aspect_ratio,
+        provider: data.provider,
+        model: data.model,
+        campaign_id: campaignId,
+      })
     );
   } catch (error) {
     console.error("Error generating video:", error);
