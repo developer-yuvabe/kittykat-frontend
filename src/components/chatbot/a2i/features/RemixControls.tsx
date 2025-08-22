@@ -96,6 +96,7 @@ export type RemixControlsProps = {
   onBrushSizeChange: (size: number) => void;
   brandId?: string;
   source: "a2i" | "media-gallery";
+  campaignId?: string | null;
 };
 
 const RemixControls = ({
@@ -111,6 +112,7 @@ const RemixControls = ({
   onBrushSizeChange,
   brandId,
   source,
+  campaignId,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
@@ -256,6 +258,7 @@ const RemixControls = ({
 
       remixImageService(
         brandId ?? selectedBrandId!,
+        campaignId,
         data,
         maskUrl,
         source === "media-gallery"

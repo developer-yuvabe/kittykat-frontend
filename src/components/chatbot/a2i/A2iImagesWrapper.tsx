@@ -90,6 +90,8 @@ export const A2iImagesWrapper = ({
               remixParameters: generation.remix_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
+              campaignInformation,
+              selectedCampaignIndex,
             },
           ];
         }
@@ -104,6 +106,8 @@ export const A2iImagesWrapper = ({
           remixParameters: generation.remix_parameters,
           video: generation.video,
           isNSFW: generation.is_nsfw_detected || false,
+          campaignInformation,
+          selectedCampaignIndex,
         }));
       }
     );
@@ -259,6 +263,8 @@ export const A2iImagesWrapper = ({
                       key={trackingId}
                       {...image}
                       disableDrag={!existingId}
+                      campaignInformation={campaignInformation}
+                      selectedCampaignIndex={selectedCampaignIndex}
                     />
                   );
                 })}

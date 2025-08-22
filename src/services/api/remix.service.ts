@@ -5,22 +5,30 @@ import { z } from "zod";
 
 export const remixImageService = async (
   brandId: string,
+  campaignId: string | null | undefined,
   data: z.infer<typeof remixImageSchema>,
   maskImageUrl: string,
   addToQueue: boolean
 ) => {
   try {
-    // console.log("Remixing image with data:", data);
     await handleApiRequest(
-      axiosInstance.post(`/brands/${brandId}/a2i/remix`, {
-        prompt: data.prompt,
-        size: data.size,
-        n: data.n,
-        base_image: data.base_image,
-        reference_images: data.reference_images,
-        mask_image: maskImageUrl,
-        should_add_to_queue: addToQueue,
-      })
+      axiosInstance.post(
+        `/brands/${brandId}/a2i/remix`,
+        {
+          prompt: data.prompt,
+          size: data.size,
+          n: data.n,
+          base_image: data.base_image,
+          reference_images: data.reference_images,
+          mask_image: maskImageUrl,
+          should_add_to_queue: addToQueue,
+        },
+        {
+          params: {
+            campaign_id: campaignId,
+          },
+        }
+      )
     );
   } catch (error) {
     console.error("Error remixing image:", error);
