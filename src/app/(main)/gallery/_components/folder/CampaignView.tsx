@@ -9,7 +9,10 @@ import { MediaGrid } from "../MediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import { FolderUploadDropzone } from "./FolderUploadDropzone";
-import type { BrandCampaignListResponse } from "@/types/gallery.types";
+import type {
+  BrandCampaignListResponse,
+  EnhancedSelectedFilters,
+} from "@/types/gallery.types";
 
 interface CampaignViewProps {
   selectedBrand: BrandCampaignListResponse["brands"][number];
@@ -19,6 +22,9 @@ interface CampaignViewProps {
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
   selectedMoodboardId?: string;
+  searchQuery?: string;
+  favorites?: boolean;
+  selectedFilters?: EnhancedSelectedFilters;
 }
 
 export function CampaignView({
@@ -29,6 +35,9 @@ export function CampaignView({
   onUploadComplete,
   addToGallery = true,
   selectedMoodboardId,
+  searchQuery = "",
+  favorites = false,
+  selectedFilters,
 }: CampaignViewProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
@@ -40,7 +49,12 @@ export function CampaignView({
   // Use gallery hook with proper filters
   const galleryActions = useGalleryQuery(
     {
-      selectedFilters: {
+      assetType: activeTab, // Use the activeTab instead of hardcoded value
+      favorites,
+      source: activeTab,
+      creator: "Anyone",
+      searchQuery,
+      selectedFilters: selectedFilters || {
         brands: [selectedBrand.brand_id],
         campaigns: [campaignId],
         moodboards: [],
@@ -50,6 +64,11 @@ export function CampaignView({
         media_format: [],
         aspect_ratio: [],
         workflow_status: [],
+        has_product: undefined,
+        has_people: undefined,
+        has_lifestyle_context: undefined,
+        is_favourite: undefined,
+        is_archived: undefined,
       },
     },
     ITEMS_PER_PAGE,

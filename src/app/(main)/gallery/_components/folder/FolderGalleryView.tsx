@@ -7,32 +7,57 @@ import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { MediaGrid } from "../MediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
-import type { BrandCampaignListResponse } from "@/types/gallery.types";
+import type {
+  BrandCampaignListResponse,
+  EnhancedSelectedFilters,
+} from "@/types/gallery.types";
 
 interface FolderGalleryViewProps {
   selectedBrand: BrandCampaignListResponse["brands"][number] | null;
   selectedCampaignId?: string;
+  searchQuery?: string;
+  favorites?: boolean;
+  selectedFilters?: EnhancedSelectedFilters;
+  activeTab?: string;
 }
 
 export function FolderGalleryView({
   selectedBrand,
   selectedCampaignId,
+  searchQuery = "",
+  favorites = false,
+  selectedFilters,
+  activeTab = "all-media",
 }: FolderGalleryViewProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   // Use gallery hook with proper filters
   const galleryActions = useGalleryQuery(
     {
+      assetType: activeTab,
+      favorites,
+      source: activeTab,
+      creator: "Anyone",
+      searchQuery,
       selectedFilters: {
-        brands: selectedBrand ? [selectedBrand.brand_id] : [],
-        campaigns: selectedCampaignId ? [selectedCampaignId] : [],
-        moodboards: [],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
+        // Merge provided filters with brand/campaign filters
+        ...(selectedFilters || {
+          moodboards: [],
+          product_categories: [],
+          asset_types: [],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          has_product: undefined,
+          has_people: undefined,
+          has_lifestyle_context: undefined,
+          is_favourite: undefined,
+          is_archived: undefined,
+        }),
+        // Apply brand and campaign filters when available
+        brands: selectedBrand ? [selectedBrand.brand_id] : (selectedFilters?.brands || []),
+        campaigns: selectedCampaignId ? [selectedCampaignId] : (selectedFilters?.campaigns || []),
       },
     },
     ITEMS_PER_PAGE,

@@ -1,6 +1,7 @@
 import { estimatePricing } from "@/services/api/models.service";
 import { useModelsStore } from "@/store/models.store";
 import { useQuery } from "@tanstack/react-query";
+import { isEmpty } from "lodash";
 import { useMemo } from "react";
 import { UseFormReturn } from "react-hook-form";
 
@@ -46,6 +47,7 @@ const useModelPricing = ({ form }: UseModelPricingProps) => {
     ],
     queryFn: async () => {
       const values = form.getValues();
+      if (isEmpty(values)) return;
       return await estimatePricing(values);
     },
     enabled: isDynamicPricing && !!selectedModel?.id,

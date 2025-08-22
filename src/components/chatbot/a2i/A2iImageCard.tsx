@@ -359,7 +359,11 @@ const A2iImageCard = ({
       {galleryItem?.data && !galleryItem.isFetching && (
         <MediaEditorDialog
           galleryActions={galleryActions}
-          item={galleryItem.data}
+          item={{
+            ...galleryItem.data,
+            // Ensure input_prompt is populated from parameters.prompt if missing
+            input_prompt: galleryItem.data.input_prompt || parameters.prompt,
+          }}
           open={showEditFeatures}
           onOpenChange={setShowEditFeatures}
           totalItems={1}
