@@ -117,26 +117,32 @@ export function FolderGalleryView({
         galleryItemsLength={galleryActions.getGalleryItems().length}
       />
 
-      {galleryActions.galleryStatus === "success" &&
-        galleryActions.getGalleryItems().length > 0 && (
-          <div>
-            <MediaGrid
-              selectedItems={selectedItems}
-              onSelect={handleSelect}
-              galleryActions={galleryActions}
-            />
-            {/* Infinite scroll loading indicator */}
-            {galleryActions.hasNextPage && (
-              <div ref={ref} className="flex justify-center items-center py-8">
-                {galleryActions.isFetchingNextPage ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                ) : (
-                  <p className="text-sm text-gray-500">Load more</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+      {/* Gallery content area with minimum height to prevent layout shift */}
+      <div className="min-h-[400px]">
+        {galleryActions.galleryStatus === "success" &&
+          galleryActions.getGalleryItems().length > 0 && (
+            <div>
+              <MediaGrid
+                selectedItems={selectedItems}
+                onSelect={handleSelect}
+                galleryActions={galleryActions}
+              />
+              {/* Infinite scroll loading indicator */}
+              {galleryActions.hasNextPage && (
+                <div
+                  ref={ref}
+                  className="flex justify-center items-center py-8"
+                >
+                  {galleryActions.isFetchingNextPage ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                  ) : (
+                    <p className="text-sm text-gray-500">Load more</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+      </div>
 
       {selectedItems.length > 0 && (
         <MediaBulkActions
