@@ -74,7 +74,7 @@ export function MediaEditorDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUserStore();
 
-  const [brushSize, setBrushSize] = useState(80);
+  const [brushSize, setBrushSize] = useState(50);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -106,7 +106,7 @@ export function MediaEditorDialog({
       setAttachments([]);
       setReplyAttachments([]);
       setCurrentItem(item);
-      setBrushSize(80);
+      setBrushSize(50);
     }
   }, [item]);
 

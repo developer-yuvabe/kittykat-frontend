@@ -215,11 +215,29 @@ const ReferenceMoodboard = ({
     latestGalleryItemsRef.current = bulkGalleryItems;
   }, [bulkGalleryItems]);
 
+  // Handle the case where the reference moodboard is deleted
+  useEffect(() => {
+    if (referenceMoodboardId && moodboardInformation && !selectedMoodboard) {
+      // The reference moodboard ID exists but the moodboard is not found (deleted)
+      updateA2iRefernceMoodboard(selectedBrandId!, null);
+    }
+  }, [
+    referenceMoodboardId,
+    selectedMoodboard,
+    moodboardInformation,
+    selectedBrandId,
+  ]);
+
   // Handle moodboard selection change - this will propagate to other sections
   const handleMoodboardSelectionChange = async (
     moodboard: MoodboardInformation | null
   ) => {
-    if (!moodboard) return;
+    if (!moodboard) {
+      // Handle case where moodboard is set to null (e.g., when deleted)
+      setSelectedMoodboardId(null);
+      await updateA2iRefernceMoodboard(selectedBrandId!, null);
+      return;
+    }
 
     setSelectedMoodboardId(moodboard.id!);
     if (moodboard && selectedMoodboard?.campaign_id) {
@@ -257,124 +275,153 @@ const ReferenceMoodboard = ({
       context={{ data: {} }}
       content={
         <div className="space-y-8">
-          <div className="flex justify-between">
-            <p className="font-semibold text-sm text-gray-600 break-words max-w-xs">
-              {selectedMoodboard?.title}
-            </p>
-
-            {moodboardInformation && selectedMoodboard?.campaign_id && (
-              <MoodboardSelector
-                campaignId={selectedMoodboard!.campaign_id!}
-                moodboards={moodboardInformation!}
-                selectedMoodboard={selectedMoodboard!}
-                setSelectedMoodboard={handleMoodboardSelectionChange}
-                isCreatingNew={false}
-                onNewMoodboard={() => {}}
-              />
-            )}
-          </div>
-          {/* Show skeleton when switching */}
-          {!showGallery ? (
-            <ManualMoodboardSkeleton shimmer showButton={false} />
-          ) : (
-            <div className="mx-auto max-w-7xl w-full px-2">
-              <CustomGalleryContainer
-                photos={photos}
-                setPhotos={() => {}}
-                noOfImagesForMoodboard={totalImagesForMoodboard}
-                setNoOfImagesForMoodboard={() => {}}
-                moodboard={selectedMoodboard!}
-                placeholderItems={placeholderItems}
-                setPlaceholderItems={setPlaceholderItems}
-                hasUnsavedChanges={false}
-                isPreview
-                key={selectedMoodboard?.id}
-              />
-            </div>
-          )}
-
-          {prompts && prompts.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          {/* Handle case when reference moodboard is null (deleted) */}
+          {!selectedMoodboard && referenceMoodboardId ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <p className="text-gray-500 text-center">
+                The reference moodboard has been deleted or is no longer
+                available.
+              </p>
+              {moodboardInformation && moodboardInformation.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold">Prompts</h3>
-                  <Input
-                    type="number"
-                    value={n}
-                    onChange={handleChange}
-                    onPaste={(e) => e.preventDefault()} // Disable paste
-                    min={1}
-                    max={3}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
+                  <p className="text-sm text-gray-600">
+                    Select a different moodboard:
+                  </p>
+                  <MoodboardSelector
+                    campaignId={moodboardInformation[0].campaign_id!}
+                    moodboards={moodboardInformation}
+                    selectedMoodboard={null}
+                    setSelectedMoodboard={handleMoodboardSelectionChange}
+                    isCreatingNew={false}
+                    onNewMoodboard={() => {}}
                   />
                 </div>
-                {referenceMoodboardId && (
-                  <Button
-                    variant={"outline"}
-                    className="text-primary border-primary"
-                    disabled={isPending}
-                    onClick={() => {
-                      const hasTags =
-                        selectedMoodboard?.moodboard_tags &&
-                        Object.keys(selectedMoodboard.moodboard_tags).length >
-                          0 &&
-                        Object.values(selectedMoodboard.moodboard_tags).some(
-                          (tagArray) => tagArray.length > 0
-                        );
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between">
+                <p className="font-semibold text-sm text-gray-600 break-words max-w-xs">
+                  {selectedMoodboard?.title}
+                </p>
 
-                      if (hasTags) {
-                        generateShowboard(undefined, {
-                          onSuccess: () => {
-                            toast.success(
-                              "Concept Visual prompts generated successfully!"
-                            );
-                          },
-                          onError: () => {
-                            toast.error(
-                              "Failed to generate concept Visual prompts. Please try again."
-                            );
-                          },
-                        });
-                      } else {
-                        toast.warning(
-                          "Please ensure your moodboard has at least one image with tags before generating prompts."
-                        );
-                      }
-                    }}
-                  >
-                    <WandSparkles />
-                    {isPending ? "Generating prompts..." : "Generate Prompts"}
-                  </Button>
+                {moodboardInformation && selectedMoodboard?.campaign_id && (
+                  <MoodboardSelector
+                    campaignId={selectedMoodboard.campaign_id}
+                    moodboards={moodboardInformation}
+                    selectedMoodboard={selectedMoodboard}
+                    setSelectedMoodboard={handleMoodboardSelectionChange}
+                    isCreatingNew={false}
+                    onNewMoodboard={() => {}}
+                  />
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-4 auto">
-                {prompts.map((prompt) => (
-                  <div key={prompt} className="relative">
-                    <Textarea
-                      value={prompt}
-                      readOnly
-                      className="min-h-40 max-h-40 scrollbar"
-                    />
-                    <Button
-                      variant="ghost"
-                      className="absolute bottom-2 right-2"
-                      size="icon"
-                      onClick={() => {
-                        if (formRef.current) {
-                          setReferencePrompt(prompt);
-                          formRef.current.scrollIntoView({
-                            behavior: "smooth",
-                          });
-                        }
-                      }}
-                    >
-                      <EditIcon />
-                    </Button>
+              {/* Show skeleton when switching */}
+              {!showGallery || !selectedMoodboard ? (
+                <ManualMoodboardSkeleton shimmer showButton={false} />
+              ) : (
+                <div className="mx-auto max-w-7xl w-full px-2">
+                  <CustomGalleryContainer
+                    photos={photos}
+                    setPhotos={() => {}}
+                    noOfImagesForMoodboard={totalImagesForMoodboard}
+                    setNoOfImagesForMoodboard={() => {}}
+                    moodboard={selectedMoodboard}
+                    placeholderItems={placeholderItems}
+                    setPlaceholderItems={setPlaceholderItems}
+                    hasUnsavedChanges={false}
+                    isPreview
+                    key={selectedMoodboard?.id}
+                  />
+                </div>
+              )}
+
+              {prompts && prompts.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold">Prompts</h3>
+                      <Input
+                        type="number"
+                        value={n}
+                        onChange={handleChange}
+                        onPaste={(e) => e.preventDefault()} // Disable paste
+                        min={1}
+                        max={3}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                      />
+                    </div>
+                    {referenceMoodboardId && (
+                      <Button
+                        variant={"outline"}
+                        className="text-primary border-primary"
+                        disabled={isPending}
+                        onClick={() => {
+                          const hasTags =
+                            selectedMoodboard?.moodboard_tags &&
+                            Object.keys(selectedMoodboard.moodboard_tags)
+                              .length > 0 &&
+                            Object.values(
+                              selectedMoodboard.moodboard_tags
+                            ).some((tagArray) => tagArray.length > 0);
+
+                          if (hasTags) {
+                            generateShowboard(undefined, {
+                              onSuccess: () => {
+                                toast.success(
+                                  "Concept Visual prompts generated successfully!"
+                                );
+                              },
+                              onError: () => {
+                                toast.error(
+                                  "Failed to generate concept Visual prompts. Please try again."
+                                );
+                              },
+                            });
+                          } else {
+                            toast.warning(
+                              "Please ensure your moodboard has at least one image with tags before generating prompts."
+                            );
+                          }
+                        }}
+                      >
+                        <WandSparkles />
+                        {isPending
+                          ? "Generating prompts..."
+                          : "Generate Prompts"}
+                      </Button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="grid grid-cols-3 gap-4 auto">
+                    {prompts.map((prompt) => (
+                      <div key={prompt} className="relative">
+                        <Textarea
+                          value={prompt}
+                          readOnly
+                          className="min-h-40 max-h-40 scrollbar"
+                        />
+                        <Button
+                          variant="ghost"
+                          className="absolute bottom-2 right-2"
+                          size="icon"
+                          onClick={() => {
+                            if (formRef.current) {
+                              setReferencePrompt(prompt);
+                              formRef.current.scrollIntoView({
+                                behavior: "smooth",
+                              });
+                            }
+                          }}
+                        >
+                          <EditIcon />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       }

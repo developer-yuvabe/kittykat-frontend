@@ -16,6 +16,8 @@ import type {
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 
+import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+
 export const ITEMS_PER_PAGE = 20;
 
 export const useGalleryQuery = (
@@ -123,15 +125,15 @@ export const useGalleryQuery = (
       return lastPage.pagination.skip + lastPage.pagination.limit;
     },
     initialPageParam: 0,
-    refetchInterval: (query) => {
-      // Check if any items are processing
-      const hasProcessingItems = query.state.data?.pages
-        ?.flatMap((page) => page.gallery_items)
-        ?.some((item) => item.processing_status === "processing");
+    // refetchInterval: (query) => {
+    //   // Check if any items are processing
+    //   const hasProcessingItems = query.state.data?.pages
+    //     ?.flatMap((page) => page.gallery_items)
+    //     ?.some((item) => item.processing_status === "processing");
 
-      // Return 3000ms (3 seconds) if there are processing items, otherwise false (no polling)
-      return hasProcessingItems ? 3000 : false;
-    },
+    //   // Return 3000ms (3 seconds) if there are processing items, otherwise false (no polling)
+    //   return hasProcessingItems ? 3000 : false;
+    // },
   });
 
   // Flatten all pages of gallery items
@@ -439,6 +441,42 @@ export const useGalleryQuery = (
       // Remove item from single item cache
       queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       toast.success("Item deleted successfully");
+      // Invalidate bulk items queries
+      queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
+
+      // Also remove the item from existing bulk query caches
+      const bulkQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items-bulk"],
+        exact: false,
+      });
+
+      bulkQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => item.id !== itemId);
+          }
+        );
+      });
+      const autoFillQueries = queryClient.getQueriesData({
+        queryKey: ["autofill-suggestions"],
+        exact: false,
+      });
+
+      autoFillQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: AutoFillSuggestedImage[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => !itemId.includes(item.id));
+          }
+        );
+      });
     },
   });
 
@@ -482,6 +520,44 @@ export const useGalleryQuery = (
         queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       });
       toast.success(`${data.length} items deleted successfully`);
+
+      // Invalidate and update bulk items queries
+      queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
+
+      // Also remove the items from existing bulk query caches
+      const bulkQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items-bulk"],
+        exact: false,
+      });
+
+      bulkQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => !itemIds.includes(item.id));
+          }
+        );
+      });
+
+      const autoFillQueries = queryClient.getQueriesData({
+        queryKey: ["autofill-suggestions"],
+        exact: false,
+      });
+
+      autoFillQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: AutoFillSuggestedImage[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => !itemIds.includes(item.id));
+          }
+        );
+      });
     },
   });
 

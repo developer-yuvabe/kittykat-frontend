@@ -2,7 +2,6 @@ import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
 import {
   AddMoodboardImageRequest,
-  AnalyzeMoodboardRequest,
   AutoFillSuggestedImage,
   CreateMoodboardRequest,
   MoodboardCreateRequest,
@@ -186,13 +185,11 @@ export async function updateMoodboardAssets(
 export async function analyzeMoodboard(
   brandId: string,
   campaignId: string,
-  moodboardId: string,
-  payload: AnalyzeMoodboardRequest
+  moodboardId: string
 ): Promise<void> {
   return handleApiRequest<void>(
     axiosInstance.post(
-      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}/analyze`,
-      payload
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}/analyze`
     )
   );
 }

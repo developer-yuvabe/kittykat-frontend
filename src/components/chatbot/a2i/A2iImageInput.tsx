@@ -18,7 +18,7 @@ import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
 import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useDropzone } from "react-dropzone";
+import { FileRejection, useDropzone } from "react-dropzone";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
 import { FileParam } from "@/types/a2i-media.types";
@@ -29,9 +29,9 @@ import { ThreadA2iImage } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { useA2iStore } from "@/store/a2i.store";
-import A2iImageInputLoader from "./A2iImageInputLoader";
 import useModelPricing from "@/hooks/useModelPricing";
 import { useUserStore } from "@/store/user.store";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -41,9 +41,9 @@ const A2iImageInput = ({
   const form = useImageGenForm();
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { credits, isCalculatingCredits } = useModelPricing({ form });
-  const { selectedModel, isModelsFetched } = useModelsStore();
+  const { selectedModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { referencePrompt, setReferencePrompt } = useA2iStore();
+  const { referencePrompt, referencePromptSignal } = useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
     mutationFn: () =>
       enhancePrompt(
@@ -71,10 +71,27 @@ const A2iImageInput = ({
   >([]);
 
   // Store the current prompt value to preserve it across model changes
-  const [currentPromptValue, setCurrentPromptValue] = useState("");
+  const remainingUploads =
+    refernceImagesModelInfo?.maxLimit - imageBlocks.length;
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+      if (fileRejections.length > 0) {
+        console.log("File Rejections:", fileRejections);
+        if (remainingUploads === 0)
+          toast.error(
+            `Maximum limit reached. You can only upload ${refernceImagesModelInfo?.maxLimit} image(s).`
+          );
+        else
+          toast.warning(
+            `Some files were rejected. Please note: Maximum file size is ${
+              refernceImagesModelInfo?.maxFileSizeLimit
+            } MB, allowed file types are ${refernceImagesModelInfo?.fileTypes.join(
+              ", "
+            )}, and you can upload up to ${remainingUploads} more image(s).`
+          );
+      }
+
       if (acceptedFiles.length === 0) return;
 
       setIsUploading(true);
@@ -139,7 +156,7 @@ const A2iImageInput = ({
       await Promise.allSettled(uploadPromises);
       setIsUploading(false);
     },
-    [refernceImagesModelInfo?.id]
+    [refernceImagesModelInfo?.id, remainingUploads]
   );
 
   const { getInputProps } = useDropzone({
@@ -152,7 +169,8 @@ const A2iImageInput = ({
     disabled:
       isUploading ||
       form.formState.isSubmitting ||
-      refernceImagesModelInfo?.maxLimit - imageBlocks.length <= 0,
+      remainingUploads <= 0 ||
+      !refernceImagesModelInfo,
     maxFiles: refernceImagesModelInfo?.maxLimit - imageBlocks.length,
     maxSize: refernceImagesModelInfo?.maxFileSizeLimit * 1024 * 1024, // Convert MB to bytes
   });
@@ -185,29 +203,29 @@ const A2iImageInput = ({
       data.finetune_id = selectedModel.finetune_id;
     }
 
-    generateImage(selectedBrandId!, data).catch((error) => {
+    try {
+      if (data.provider === "openai") {
+        generateImage(selectedBrandId!, data).catch((error) => {
+          if (error instanceof PlatformApiError && error.statusCode === 403) {
+            setShowInsufficientCreditsModal(true);
+          }
+        });
+        await delay(2000);
+      } else {
+        await generateImage(selectedBrandId!, data);
+      }
+    } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
       }
-    });
+    }
 
-    await delay(2000);
-
-    form.reset();
-    if (referencePrompt) setReferencePrompt(null);
+    form.setValue("prompt", "");
+    if (refernceImagesModelInfo) {
+      form.setValue(refernceImagesModelInfo.id, null);
+    }
     setImageBlocks([]);
-    setCurrentPromptValue(""); // Clear the stored prompt value
   };
-
-  // Watch for changes in the form prompt field to keep our state in sync
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      if (value.prompt !== undefined) {
-        setCurrentPromptValue(value.prompt);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
 
   // Handle reference prompt changes
   useEffect(() => {
@@ -217,11 +235,10 @@ const A2iImageInput = ({
         shouldDirty: true,
         shouldTouch: true,
       });
-      setCurrentPromptValue(referencePrompt);
     }
-  }, [referencePrompt, form]);
+  }, [referencePrompt, form, referencePromptSignal]);
 
-  // Handle model changes - preserve the current prompt value
+  // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
     // Clean up uploaded files when model changes
     for (const block of imageBlocks) {
@@ -231,215 +248,232 @@ const A2iImageInput = ({
     }
 
     setImageBlocks([]);
-
-    // Preserve the current prompt value when model changes
-    if (currentPromptValue) {
-      queueMicrotask(() => {
-        form.setValue("prompt", currentPromptValue, {
-          shouldValidate: true,
-          shouldDirty: true,
-          shouldTouch: true,
-        });
+    if (refernceImagesModelInfo) {
+      form.setValue(refernceImagesModelInfo.id, null, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
       });
     }
   }, [selectedModel?.id]);
 
+  // This useEffect is to fetch reference images stored in the session storage and populate the image blocks
+  useEffect(() => {
+    if (refernceImagesModelInfo) {
+      const referenceImages = form.getValues(refernceImagesModelInfo.id);
+
+      if (
+        referenceImages &&
+        Array.isArray(referenceImages) &&
+        referenceImages.length > 0
+      ) {
+        setImageBlocks(
+          referenceImages.map((url) => ({
+            previewUrl: url,
+            url: url,
+          }))
+        );
+      }
+    }
+  }, [form, selectedModel?.id]);
+
   return (
     <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 pb-4">
-      {!isModelsFetched ? (
-        <A2iImageInputLoader />
-      ) : (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {imageBlocks.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-4 pt-2">
-                {imageBlocks.map((block, index) => (
-                  <div
-                    key={block.previewUrl}
-                    className="relative w-12 h-12 rounded-lg"
-                  >
-                    <img
-                      src={block.previewUrl}
-                      alt={`Uploaded preview ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                    {!!block.url && (
-                      <button
-                        onClick={() => removeReferenceImage(block.url!)}
-                        className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-[100]"
-                      >
-                        <X className="h-2 w-2" />
-                      </button>
-                    )}
-                    {!block.url && (
-                      <div className="absolute top-0 right-0 bg-black/30 text-white text-xs  px-1 flex items-center justify-center w-full h-full rounded-lg">
-                        <Loader2 className="animate-spin" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            <FormField
-              control={form.control}
-              name="prompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative h-full">
-                      <Textarea
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                          setCurrentPromptValue(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && e.shiftKey) {
-                            // Allow new line on Shift + Enter
-                            return;
-                          }
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            form.handleSubmit(onSubmit)();
-                          }
-                        }}
-                        className={cn(
-                          "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top"
-                        )}
-                        placeholder="Describe what you want to see ..."
-                      />
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <div className="flex gap-2 justify-between items-center px-4">
-              <div className="flex items-center gap-2">
-                {refernceImagesModelInfo && (
-                  <div>
-                    <input {...getInputProps()} ref={inputFileRef} />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      type="button"
-                      onClick={() => inputFileRef.current?.click()}
-                      disabled={
-                        refernceImagesModelInfo?.maxLimit -
-                          imageBlocks.length <=
-                        0
-                      }
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {imageBlocks.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 pt-2">
+              {imageBlocks.map((block, index) => (
+                <div
+                  key={block.previewUrl}
+                  className="relative w-12 h-12 rounded-lg"
+                >
+                  <img
+                    src={block.previewUrl}
+                    alt={`Uploaded preview ${index + 1}`}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                  {!!block.url && (
+                    <button
+                      onClick={() => removeReferenceImage(block.url!)}
+                      className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-[100]"
                     >
-                      <Images />
-                    </Button>
-                  </div>
-                )}
-
-                {selectedModel?.parameters
-                  ?.filter((param) => param.category === "initial")
-                  .map((param) => {
-                    return (
-                      <DynamicFormField
-                        key={param.id}
-                        param={param}
-                        form={form}
-                        type="initial"
-                        rules={selectedModel?.rules}
-                      />
-                    );
-                  })}
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button size={"icon"} variant={"outline"}>
-                      <Settings2 />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    forceMount
-                    align="center"
-                    side="top"
-                    className="space-y-2 w-64"
-                  >
-                    <div className="space-y-4">
-                      <FormLabel className="py-0 text-xs">
-                        Advance Parameters
-                      </FormLabel>
-                      {selectedModel?.parameters
-                        ?.filter((param) => param.category === "advanced")
-                        .map((param) => {
-                          return (
-                            <DynamicFormField
-                              key={param.id}
-                              param={param}
-                              form={form}
-                              type="advanced"
-                              rules={selectedModel?.rules}
-                            />
-                          );
-                        })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="flex gap-x-2">
-                <Button
-                  type="button"
-                  disabled={!form.watch("prompt") || isPending}
-                  variant={"outline"}
-                  className="border-primary text-primary"
-                  onClick={() => {
-                    if (!form.getValues("prompt")) return;
-                    handleEnhancePrompt(undefined, {
-                      onSuccess: (data) => {
-                        form.setValue("prompt", data.prompt, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                        setCurrentPromptValue(data.prompt);
-
-                        toast.success("Prompt enhanced successfully!");
-                      },
-                      onError: () => {
-                        toast.error(
-                          "Failed to enhance prompt. Please try again."
-                        );
-                      },
-                    });
-                  }}
-                >
-                  <WandSparkles />
-                  {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
-                </Button>
-                <Button
-                  disabled={
-                    !form.formState.isValid ||
-                    form.formState.isSubmitting ||
-                    isUploading ||
-                    isPending ||
-                    isCalculatingCredits
-                  }
-                >
-                  {form.formState.isSubmitting ? (
-                    <Loader2 className="animate-spin h-4 w-4" />
-                  ) : (
-                    <div className="flex gap-x-1 items-center text-sm">
-                      <p>Generate</p>
-                      <p>
-                        {isCalculatingCredits ? (
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        ) : (
-                          `(${credits} credits)`
-                        )}
-                      </p>
+                      <X className="h-2 w-2" />
+                    </button>
+                  )}
+                  {!block.url && (
+                    <div className="absolute top-0 right-0 bg-black/30 text-white text-xs  px-1 flex items-center justify-center w-full h-full rounded-lg">
+                      <Loader2 className="animate-spin" />
                     </div>
                   )}
-                </Button>
-              </div>
+                </div>
+              ))}
             </div>
-          </form>
-        </Form>
-      )}
+          )}
+          <FormField
+            control={form.control}
+            name="prompt"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative h-full">
+                    <Textarea
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.shiftKey) {
+                          // Allow new line on Shift + Enter
+                          return;
+                        }
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          form.handleSubmit(onSubmit)();
+                        }
+                      }}
+                      className={cn(
+                        "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top"
+                      )}
+                      placeholder="Describe what you want to see ..."
+                    />
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <div className="flex gap-2 justify-between items-center px-4">
+            <div className="flex items-center gap-2">
+              {refernceImagesModelInfo && (
+                <div>
+                  <input {...getInputProps()} ref={inputFileRef} />
+                  <TooltipIconButton
+                    tooltip={
+                      refernceImagesModelInfo.maxLimit - imageBlocks.length <= 0
+                        ? "You’ve reached the maximum upload limit"
+                        : `You can add ${remainingUploads} more image${
+                            remainingUploads > 1 ? "s" : ""
+                          }`
+                    }
+                    className="size-max px-3 py-2"
+                    variant="outline"
+                    size="icon"
+                    type="button"
+                    onClick={() => inputFileRef.current?.click()}
+                    disabled={
+                      refernceImagesModelInfo?.maxLimit - imageBlocks.length <=
+                      0
+                    }
+                  >
+                    <Images />
+                  </TooltipIconButton>
+                </div>
+              )}
+
+              {selectedModel?.parameters
+                ?.filter((param) => param.category === "initial")
+                .map((param) => {
+                  return (
+                    <DynamicFormField
+                      key={param.id}
+                      param={param}
+                      form={form}
+                      type="initial"
+                      rules={selectedModel?.rules}
+                    />
+                  );
+                })}
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size={"icon"} variant={"outline"}>
+                    <Settings2 />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  forceMount
+                  align="center"
+                  side="top"
+                  className="space-y-2 w-64"
+                >
+                  <div className="space-y-4">
+                    <FormLabel className="py-0 text-xs">
+                      Advance Parameters
+                    </FormLabel>
+                    {selectedModel?.parameters
+                      ?.filter((param) => param.category === "advanced")
+                      .map((param) => {
+                        return (
+                          <DynamicFormField
+                            key={param.id}
+                            param={param}
+                            form={form}
+                            type="advanced"
+                            rules={selectedModel?.rules}
+                          />
+                        );
+                      })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex gap-x-2">
+              <Button
+                type="button"
+                disabled={!form.watch("prompt") || isPending}
+                variant={"outline"}
+                className="border-primary text-primary"
+                onClick={() => {
+                  if (!form.getValues("prompt")) return;
+                  handleEnhancePrompt(undefined, {
+                    onSuccess: (data) => {
+                      form.setValue("prompt", data.prompt, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                        shouldTouch: true,
+                      });
+
+                      toast.success("Prompt enhanced successfully!");
+                    },
+                    onError: () => {
+                      toast.error(
+                        "Failed to enhance prompt. Please try again."
+                      );
+                    },
+                  });
+                }}
+              >
+                <WandSparkles />
+                {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
+              </Button>
+              <Button
+                disabled={
+                  !form.formState.isValid ||
+                  form.formState.isSubmitting ||
+                  isUploading ||
+                  isPending ||
+                  isCalculatingCredits
+                }
+              >
+                {form.formState.isSubmitting ? (
+                  <Loader2 className="animate-spin h-4 w-4" />
+                ) : (
+                  <div className="flex gap-x-1 items-center text-sm">
+                    <p>Generate</p>
+                    <p>
+                      {isCalculatingCredits ? (
+                        <Loader2 className="animate-spin h-4 w-4" />
+                      ) : (
+                        `(${credits} credits)`
+                      )}
+                    </p>
+                  </div>
+                )}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 };

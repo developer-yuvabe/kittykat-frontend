@@ -22,6 +22,7 @@ import {
   getPinnedItemContextMessage,
   ensureToolCallsHaveResponses,
 } from "@/lib/langgraph.utils";
+import { scrollToBottom } from "@/lib/scroll.utils"; // Import your utility function
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
 import { PinIcon, SendIcon } from "../ui/custom-icon";
@@ -296,6 +297,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       // Reset local state after submission
       setInput("");
       resetFiles();
+
+      // Scroll to bottom after sending message using your utility function
+      scrollToBottom(100);
     },
     [
       input,

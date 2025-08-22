@@ -52,7 +52,7 @@ const A2iImageEditFeatures = ({
   const [currentFeature, setCurrentFeature] = React.useState(
     IMAGE_EDIT_FEATURES[0].key
   );
-  const [brushSize, setBrushSize] = React.useState(80);
+  const [brushSize, setBrushSize] = React.useState(50);
   const isRemixEnabled = currentFeature === "in-paint";
 
   const canvasRef = useRef<HTMLCanvasElement>(null);

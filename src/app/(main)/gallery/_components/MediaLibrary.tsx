@@ -434,6 +434,14 @@ export function MediaLibrary({
                 brandName={selectedBrandName}
                 isUrlDialogOpen={isUrlDialogOpen} // Use state variable
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                favorites={favorites}
+                onFavoritesChange={handleFavoritesChange}
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                setInitialWorkflowStatus={setInitialWorkflowStatus}
+                onTabChange={handleTabChange}
               />
             </div>
           )}

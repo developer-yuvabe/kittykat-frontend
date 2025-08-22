@@ -26,6 +26,7 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import EditableInput from "./EditableInput";
+import { useBrandStore } from "@/store/brand.store";
 
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
@@ -34,8 +35,6 @@ interface MoodboardLayoutProps {
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   showAdvancedSettings: boolean;
   setShowAdvancedSettings: React.Dispatch<React.SetStateAction<boolean>>;
-  isSaving: boolean;
-  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function MoodboardLayout({
@@ -45,8 +44,6 @@ function MoodboardLayout({
   setNoOfImagesForMoodboard,
   showAdvancedSettings,
   setShowAdvancedSettings,
-  isSaving = false,
-  setIsSaving,
 }: MoodboardLayoutProps) {
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [originalPhotos, setOriginalPhotos] = useState<SortablePhoto<Photo>[]>(
@@ -57,6 +54,8 @@ function MoodboardLayout({
   const [currentMoodboardId, setCurrentMoodboardId] = useState<string>(
     moodboard?.id
   );
+
+  const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
 
   // Use refs to track the latest values without causing re-renders
   const latestMoodboardRef = useRef(moodboard);
@@ -141,6 +140,11 @@ function MoodboardLayout({
             (item) => item.id === asset.gallery_item_id
           );
 
+          // Skip if gallery item is not found
+          if (!galleryItem) {
+            return null;
+          }
+
           return {
             id: asset.gallery_item_id,
             asset_url: galleryItem?.asset_url,
@@ -173,7 +177,7 @@ function MoodboardLayout({
       if (currentMoodboard.id === currentMoodboardId) {
         // Only update photos state if we don't have unsaved changes or aren't currently saving
         // This prevents overriding user's pending changes
-        if (!hasUnsavedChanges && !isSaving) {
+        if (!hasUnsavedChanges && !isMoodboardSaving) {
           setPhotos(loaded);
           setOriginalPhotos([...loaded]);
         }
@@ -183,18 +187,18 @@ function MoodboardLayout({
       setMoodboardGenerationInProgress(false);
     } else {
       // Only clear photos if we don't have unsaved changes or aren't currently saving
-      if (!hasUnsavedChanges && !isSaving) {
+      if (!hasUnsavedChanges && !isMoodboardSaving) {
         setPhotos([]);
         setOriginalPhotos([]);
       }
       setLoading(false);
     }
-  }, [currentMoodboardId, hasUnsavedChanges, isSaving]);
+  }, [currentMoodboardId, hasUnsavedChanges, isMoodboardSaving]);
 
   // Trigger load when moodboard status changes or gallery items become available
   useEffect(() => {
     // Don't reload if user has unsaved changes or if currently saving
-    if (hasUnsavedChanges || isSaving) return;
+    if (hasUnsavedChanges || isMoodboardSaving) return;
 
     if (bulkGalleryItems.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -202,18 +206,28 @@ function MoodboardLayout({
       }, 50);
       return () => clearTimeout(timeoutId);
     }
-  }, [bulkGalleryItems.length, moodboard.id, hasUnsavedChanges, isSaving]);
+  }, [
+    bulkGalleryItems.length,
+    moodboard.id,
+    hasUnsavedChanges,
+    isMoodboardSaving,
+  ]);
 
   // Also trigger when moodboard changes
   useEffect(() => {
     // Don't reload if user has unsaved changes or if currently saving
-    if (hasUnsavedChanges || isSaving) return;
+    if (hasUnsavedChanges || isMoodboardSaving) return;
 
     const timeoutId = setTimeout(() => {
       loadImagesWithCurrentData();
     }, 50);
     return () => clearTimeout(timeoutId);
-  }, [moodboard.id, loadImagesWithCurrentData, hasUnsavedChanges, isSaving]);
+  }, [
+    moodboard.id,
+    loadImagesWithCurrentData,
+    hasUnsavedChanges,
+    isMoodboardSaving,
+  ]);
 
   // Local move photo function (no API call)
   const movePhoto = (oldIndex: number, newIndex: number) => {
@@ -321,7 +335,7 @@ function MoodboardLayout({
   }, [noOfImagesForMoodboard, photos.length]);
 
   const handleSaveChanges = async () => {
-    setIsSaving(true);
+    setIsMoodboardSaving(true);
     try {
       // Get current photos at the start of save operation
       const photosAtSaveStart = [...photos];
@@ -342,28 +356,26 @@ function MoodboardLayout({
       // 3. Only update original photos for comparison, don't overwrite current photos
       setOriginalPhotos([...photos]); // Use current photos state, not the saved snapshot
 
-      // Wait for 2 seconds before analyzing the moodboard
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id, {
-        image_urls: photosAtSaveStart.map((photo) => photo.src), // Use the saved snapshot for analysis
-      });
+      // Wait for 1 second before analyzing the moodboard
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id);
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {
-      setIsSaving(false);
+      setIsMoodboardSaving(false);
     }
   };
   useEffect(() => {
     if (!hasUnsavedChanges) return;
 
     const intervalId = setInterval(() => {
-      if (hasUnsavedChanges && !isSaving) {
+      if (hasUnsavedChanges && !isMoodboardSaving) {
         handleSaveChanges();
       }
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, [hasUnsavedChanges, handleSaveChanges, isSaving]);
+  }, [hasUnsavedChanges, handleSaveChanges, isMoodboardSaving]);
 
   const handleGallerySelection = useCallback(
     (selectedItems: GalleryItemResponse[]) => {
@@ -478,7 +490,7 @@ function MoodboardLayout({
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    {isSaving ? (
+                    {isMoodboardSaving ? (
                       <>
                         <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
                         <span className="text-sm">Syncing</span>

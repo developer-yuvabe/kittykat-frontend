@@ -35,6 +35,8 @@ import { updateA2iImagePositions } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
+import { useModelsStore } from "@/store/models.store";
+import A2iImageInputLoader from "./A2iImageInputLoader";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -58,6 +60,7 @@ export const A2iImagesWrapper = ({
   referenceMoodboardId,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
+  const { selectedModel, isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
 
   // Track drag and server update states
@@ -265,7 +268,11 @@ export const A2iImagesWrapper = ({
               </div>
             </SortableContext>
           </DndContext>
-          <A2iImageInput referenceMoodboardId={referenceMoodboardId} />
+          {!isModelsFetched || !selectedModel ? (
+            <A2iImageInputLoader />
+          ) : (
+            <A2iImageInput referenceMoodboardId={referenceMoodboardId} />
+          )}
         </div>
       }
     />
