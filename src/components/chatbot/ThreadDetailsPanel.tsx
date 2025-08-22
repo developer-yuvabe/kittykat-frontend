@@ -41,6 +41,8 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const [selectedCampaignIndex, setSelectedCampaignIndex] =
     useState(latestCampaignIndex);
 
+  console.log("selectedCampaignIndex", selectedCampaignIndex);
+
   return (
     <div
       className={`relative rounded-2xl p-8 flex flex-col overflow-auto scrollbar ${
@@ -87,6 +89,8 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         <A2iImagesSection
           a2iImageInformation={a2iImageInformation}
           moodboardInformation={moodboardInformation}
+          campaignInformation={campaignInformation}
+          selectedCampaignIndex={selectedCampaignIndex}
         />
       )}
     </div>

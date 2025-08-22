@@ -25,7 +25,7 @@ import { FileParam } from "@/types/a2i-media.types";
 import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
-import { ThreadA2iImage } from "@/types/types";
+import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { useA2iStore } from "@/store/a2i.store";
@@ -35,8 +35,12 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 const A2iImageInput = ({
   referenceMoodboardId,
+  campaignInformation,
+  selectedCampaignIndex,
 }: {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
+  campaignInformation: ThreadDetails["campaign_information"];
+  selectedCampaignIndex: number;
 }) => {
   const form = useImageGenForm();
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -52,6 +56,14 @@ const A2iImageInput = ({
         referenceMoodboardId
       ),
   });
+
+  const currentCampaign = useMemo(
+    () =>
+      campaignInformation && campaignInformation[selectedCampaignIndex]
+        ? campaignInformation[selectedCampaignIndex]
+        : null,
+    [campaignInformation, selectedCampaignIndex]
+  );
 
   // Reference to the file input element
   const refernceImagesModelInfo = useMemo(
@@ -202,6 +214,10 @@ const A2iImageInput = ({
     if (selectedModel?.finetune_id) {
       data.finetune_id = selectedModel.finetune_id;
     }
+
+    const campaignId = currentCampaign?.id || null;
+
+    data.campaign_id = campaignId;
 
     try {
       if (data.provider === "openai") {

@@ -291,9 +291,9 @@ export function MediaUploadBrandSelector({
                       {/* Campaigns for this brand */}
                       {brand.campaigns.length > 0 && (
                         <>
-                          {brand.campaigns.map((campaign) => (
+                          {brand.campaigns.map((campaign, campaignIndex) => (
                             <CommandItem
-                              key={`${brand.brand_id}-${campaign.id}`}
+                              key={`${brand.brand_id}-${campaign.id}-${campaignIndex}`}
                               value={`campaign-${campaign.title}-${brand.brand_name}`}
                               onSelect={() =>
                                 handleCampaignSelect(brand, campaign.id)
