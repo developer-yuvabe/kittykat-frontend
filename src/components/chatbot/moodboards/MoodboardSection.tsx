@@ -61,7 +61,7 @@ export const MoodboardSection: React.FC<{
       campaigns: [],
       moodboards: [],
       product_categories: [],
-      asset_types: [],
+      asset_types: ["image"],
       asset_sources: [],
       media_format: [],
       aspect_ratio: [],
