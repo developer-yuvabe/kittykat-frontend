@@ -46,29 +46,32 @@ export function CampaignView({
     return selectedBrand.campaigns.find((c) => c.id === campaignId);
   }, [selectedBrand.campaigns, campaignId]);
 
-  // Use gallery hook with proper filters
+  // Use gallery hook with proper filters - ensure campaign filter is applied
   const galleryActions = useGalleryQuery(
     {
       assetType: activeTab, // Use the activeTab instead of hardcoded value
       favorites,
       source: activeTab,
-      creator: "Anyone",
       searchQuery,
-      selectedFilters: selectedFilters || {
+      selectedFilters: {
+        // Merge provided filters but override brand and campaign to ensure correct filtering
+        ...(selectedFilters || {
+          moodboards: [],
+          product_categories: [],
+          asset_types: [],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          has_product: undefined,
+          has_people: undefined,
+          has_lifestyle_context: undefined,
+          is_favourite: undefined,
+          is_archived: undefined,
+        }),
+        // Force the brand and campaign filters to match the current selection
         brands: [selectedBrand.brand_id],
         campaigns: [campaignId],
-        moodboards: [],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
-        has_product: undefined,
-        has_people: undefined,
-        has_lifestyle_context: undefined,
-        is_favourite: undefined,
-        is_archived: undefined,
       },
     },
     ITEMS_PER_PAGE,

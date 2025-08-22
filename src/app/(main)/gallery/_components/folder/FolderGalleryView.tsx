@@ -37,27 +37,31 @@ export function FolderGalleryView({
       assetType: activeTab,
       favorites,
       source: activeTab,
-      creator: "Anyone",
       searchQuery,
       selectedFilters: {
-        // Merge provided filters with brand/campaign filters
-        ...(selectedFilters || {
-          moodboards: [],
-          product_categories: [],
-          asset_types: [],
-          asset_sources: [],
-          media_format: [],
-          aspect_ratio: [],
-          workflow_status: [],
-          has_product: undefined,
-          has_people: undefined,
-          has_lifestyle_context: undefined,
-          is_favourite: undefined,
-          is_archived: undefined,
-        }),
-        // Apply brand and campaign filters when available
-        brands: selectedBrand ? [selectedBrand.brand_id] : (selectedFilters?.brands || []),
-        campaigns: selectedCampaignId ? [selectedCampaignId] : (selectedFilters?.campaigns || []),
+        // Start with base filters
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        has_product: undefined,
+        has_people: undefined,
+        has_lifestyle_context: undefined,
+        is_favourite: undefined,
+        is_archived: undefined,
+        // Merge provided filters but preserve the structure
+        ...(selectedFilters || {}),
+        // Force brand and campaign filters based on current selection
+        // This ensures the URL state takes precedence over any other filters
+        brands: selectedBrand
+          ? [selectedBrand.brand_id]
+          : selectedFilters?.brands || [],
+        campaigns: selectedCampaignId
+          ? [selectedCampaignId]
+          : selectedFilters?.campaigns || [],
       },
     },
     ITEMS_PER_PAGE,

@@ -39,11 +39,11 @@ export function useFolderState(
 
       if (!campaignExists && selectedCampaignFromUrl) {
         // Clear campaign selection if it doesn't exist in the new brand
-        setSelectedCampaignFromUrl("");
+        setSelectedCampaignFromUrl(null);
       }
     } else {
       // Clear campaign selection if no brand is selected
-      setSelectedCampaignFromUrl("");
+      setSelectedCampaignFromUrl(null);
     }
   }, [selectedBrand, selectedCampaignFromUrl, setSelectedCampaignFromUrl]);
 

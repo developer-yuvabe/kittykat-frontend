@@ -36,7 +36,9 @@ interface MediaFolderViewProps {
   favorites: boolean;
   onFavoritesChange: (checked: boolean) => void;
   selectedFilters: EnhancedSelectedFilters;
-  setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
   setInitialWorkflowStatus: (
     value: string[] | ((old: string[]) => string[] | null) | null,
     options?: any
@@ -116,7 +118,7 @@ export function MediaFolderView({
   }
 
   return (
-    <div className="w-full max-w-full overflow-hidden">
+    <div className="w-full max-w-full  overflow-hidden">
       {/* Brand Selector */}
       <FolderBrandSelector
         selectedBrand={selectedBrand}
@@ -160,6 +162,7 @@ export function MediaFolderView({
           <CampaignsList
             selectedBrand={selectedBrand}
             onCampaignSelect={handleCampaignSelect}
+            key={selectedBrand.brand_id}
           />
         )}
 
@@ -184,7 +187,7 @@ export function MediaFolderView({
               activeTab={activeTab}
             />
           )}
-          
+
           {/* Show for folder view when brand is selected but no campaign (brand-level view) */}
           {galleryView === "folder" &&
             selectedBrand &&
@@ -198,7 +201,7 @@ export function MediaFolderView({
                 activeTab={activeTab}
               />
             )}
-          
+
           {/* Show for folder view when no brand is selected */}
           {galleryView === "folder" && !selectedBrand && (
             <FolderGalleryView
