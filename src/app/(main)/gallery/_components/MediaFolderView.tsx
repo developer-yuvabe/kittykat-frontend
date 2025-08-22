@@ -45,6 +45,7 @@ interface MediaFolderViewProps {
   ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
+  selectedBrandId?: string;
 }
 
 export function MediaFolderView({
@@ -64,6 +65,7 @@ export function MediaFolderView({
   setSelectedFilters,
   setInitialWorkflowStatus,
   onTabChange,
+  selectedBrandId,
 }: MediaFolderViewProps) {
   const {
     selectedBrand,
@@ -71,7 +73,12 @@ export function MediaFolderView({
     handleBrandChange,
     handleCampaignSelect,
     handleBackToCampaigns,
-  } = useFolderState(selectedCampaignId, brands, brandsLoading);
+  } = useFolderState(
+    selectedCampaignId,
+    brands,
+    brandsLoading,
+    selectedBrandId
+  );
 
   // Render campaign view when in folder mode with selected brand and campaign
   if (galleryView === "folder" && selectedBrand && selectedCampaignFromUrl) {

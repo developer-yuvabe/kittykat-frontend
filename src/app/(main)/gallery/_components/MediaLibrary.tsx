@@ -441,6 +441,7 @@ export function MediaLibrary({
                 setSelectedFilters={setSelectedFilters}
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
+                selectedBrandId={effectiveBrandId!}
               />
             </div>
           )}
