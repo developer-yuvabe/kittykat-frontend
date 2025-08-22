@@ -4,13 +4,25 @@ import { z, ZodTypeAny } from "zod";
 
 export const generateImage = async <T extends ZodTypeAny>(
   brandId: string,
+  campaignId: string | null,
   data: z.infer<T>
 ) => {
   try {
+    console.log(
+      `Generating image for brand ${brandId} and campaign ${campaignId}`
+    );
     await handleApiRequest(
-      axiosInstance.post(`/brands/${brandId}/a2i/image-generation`, {
-        ...data,
-      })
+      axiosInstance.post(
+        `/brands/${brandId}/a2i/image-generation`,
+        {
+          ...data,
+        },
+        {
+          params: {
+            campaign_id: campaignId, // Send campaignId as a query parameter
+          },
+        }
+      )
     );
   } catch (error) {
     console.error("Error generating image:", error);
