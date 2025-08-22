@@ -129,7 +129,7 @@ export const RenderValue: React.FC<{
       <div className="space-y-2 mt-1">
         {Object.entries(value).map(([key, val]) => (
           <div key={key} className={`${depth > 0 ? "pl-4" : ""}`}>
-            <div className="flex items-baseline">
+            <div className="">
               <span className="text-sm font-medium text-gray-600">
                 {capitalizeKey(key)}:
               </span>

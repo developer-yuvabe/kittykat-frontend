@@ -30,27 +30,23 @@ import {
   type ResetPasswordSchema,
 } from "@/schema/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  sendPasswordResetEmail,
-  verifyPasswordResetCode,
-  confirmPasswordReset,
-} from "firebase/auth";
+import { verifyPasswordResetCode, confirmPasswordReset } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Loader } from "@/components/ui/loader";
+import { sendPasswordResetEmail } from "@/services/api/auth.service";
 
 type PageMode = "email" | "reset" | "loading" | "error";
 
-const ForgotPasswordPageContent = () => {
+const ForgotPasswordPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
 
   const loginRoute = "/login";
 
@@ -66,7 +62,7 @@ const ForgotPasswordPageContent = () => {
     return "email";
   });
 
-  const emailForm = useForm<ForgotPasswordSchema>({
+  const forgotPasswordForm = useForm<ForgotPasswordSchema>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
@@ -85,9 +81,7 @@ const ForgotPasswordPageContent = () => {
     const handleResetFlow = async () => {
       if (oobCode && mode === "resetPassword") {
         setPageMode("loading");
-        setIsVerifying(true);
         await verifyResetCode();
-        setIsVerifying(false);
       } else if (oobCode || mode || continueUrl) {
         setFormError("Invalid or incomplete reset link parameters.");
         setPageMode("error");
@@ -135,10 +129,10 @@ const ForgotPasswordPageContent = () => {
       setFormSuccess(null);
       setCountdown(null);
 
-      await sendPasswordResetEmail(auth, data.email);
+      await sendPasswordResetEmail(data.email);
 
       setFormSuccess("Password reset email sent! Please check your inbox.");
-      emailForm.reset();
+      forgotPasswordForm.reset();
       setCountdown(5);
 
       setTimeout(() => {
@@ -248,7 +242,7 @@ const ForgotPasswordPageContent = () => {
     </>
   );
 
-  const renderEmailForm = () => (
+  const renderforgotPasswordForm = () => (
     <>
       <CardHeader className="flex flex-col items-center md:items-start">
         <Logo />
@@ -258,13 +252,13 @@ const ForgotPasswordPageContent = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...emailForm}>
+        <Form {...forgotPasswordForm}>
           <form
-            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+            onSubmit={forgotPasswordForm.handleSubmit(onEmailSubmit)}
             className="space-y-6"
           >
             <FormField
-              control={emailForm.control}
+              control={forgotPasswordForm.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -291,9 +285,9 @@ const ForgotPasswordPageContent = () => {
             <Button
               className="w-full"
               type="submit"
-              disabled={emailForm.formState.isSubmitting}
+              disabled={forgotPasswordForm.formState.isSubmitting}
             >
-              {emailForm.formState.isSubmitting ? (
+              {forgotPasswordForm.formState.isSubmitting ? (
                 <Loader />
               ) : (
                 "Send Reset Link"
@@ -410,9 +404,9 @@ const ForgotPasswordPageContent = () => {
       case "reset":
         return renderResetForm();
       case "email":
-        return renderEmailForm();
+        return renderforgotPasswordForm();
       default:
-        return renderEmailForm();
+        return renderforgotPasswordForm();
     }
   };
 
@@ -424,14 +418,6 @@ const ForgotPasswordPageContent = () => {
         </Card>
       </div>
     </AuthUiWrapper>
-  );
-};
-
-const ForgotPasswordPage = () => {
-  return (
-    <Suspense fallback={<></>}>
-      <ForgotPasswordPageContent />
-    </Suspense>
   );
 };
 

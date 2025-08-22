@@ -68,7 +68,7 @@ export function MoodboardGallerySelector({
           has_product: undefined,
           has_people: undefined,
           has_lifestyle_context: undefined,
-          asset_types: [],
+          asset_types: ["image"],
           asset_sources: [],
           media_format: [],
           aspect_ratio: [],

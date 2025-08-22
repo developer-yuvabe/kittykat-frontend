@@ -43,6 +43,7 @@ interface MediaEditorDialogProps {
   currentIndex?: number;
   onNavigate?: (direction: "next" | "prev") => void;
   totalItems?: number;
+  campaignId?: string | null;
 }
 
 export function MediaEditorDialog({
@@ -53,6 +54,7 @@ export function MediaEditorDialog({
   currentIndex = 0,
   onNavigate,
   totalItems = 0,
+  campaignId,
 }: MediaEditorDialogProps) {
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     item
@@ -74,7 +76,7 @@ export function MediaEditorDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUserStore();
 
-  const [brushSize, setBrushSize] = useState(80);
+  const [brushSize, setBrushSize] = useState(50);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -106,12 +108,14 @@ export function MediaEditorDialog({
       setAttachments([]);
       setReplyAttachments([]);
       setCurrentItem(item);
-      setBrushSize(80);
+      setBrushSize(50);
     }
   }, [item]);
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
+
+  const campaign_id = campaignId || null;
 
   const handleNavigate = (direction: "next" | "prev") => {
     if (onNavigate) {
@@ -996,6 +1000,7 @@ export function MediaEditorDialog({
                             brushSize,
                             onBrushSizeChange: handleBrushSizeChange,
                             closeDialog: () => onOpenChange(false),
+                            campaignId: campaign_id,
                           }}
                         />
                       </>

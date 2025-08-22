@@ -2,6 +2,7 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 
 export function useBrandUpdates(brandId?: string | null) {
   const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
@@ -9,6 +10,13 @@ export function useBrandUpdates(brandId?: string | null) {
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
 
   const { setIsCampaignCreating } = useBrandStore();
+
+  const { brandsRefetch } = useGalleryQuery(
+    {},
+    ITEMS_PER_PAGE,
+    false,
+    "useBrandUpdates"
+  );
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -29,6 +37,7 @@ export function useBrandUpdates(brandId?: string | null) {
 
       if (newCampaign !== prevCampaign) {
         setIsCampaignCreating(false); // <-- mark creation as done
+        brandsRefetch(); // <-- refresh gallery when campaign changes
       }
 
       previousCampaignInfo.current = parsed.campaign_information;

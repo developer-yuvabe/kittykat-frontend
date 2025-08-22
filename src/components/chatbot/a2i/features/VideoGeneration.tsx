@@ -32,11 +32,13 @@ import { z } from "zod";
 type VideoGenerationOnProps = {
   startImage: string;
   closeDialog: () => void;
+  campaignId?: string | null;
 };
 
 const VideoGeneration = ({
   startImage,
   closeDialog,
+  campaignId,
 }: VideoGenerationOnProps) => {
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -65,7 +67,11 @@ const VideoGeneration = ({
       if (!selectedBrandId) {
         throw new Error("Brand ID is missing.");
       }
-      await videoGenerationService(selectedBrandId, data);
+      await videoGenerationService(
+        selectedBrandId,
+        data,
+        campaignId ?? undefined
+      );
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {

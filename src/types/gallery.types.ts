@@ -39,6 +39,7 @@ export type GalleryItem = {
   brand_id: string;
   moodboard_id?: string;
   asset_type: string;
+  latest_version_asset_type?: string;
   asset_source: string;
   asset_title: string;
   asset_url: string;

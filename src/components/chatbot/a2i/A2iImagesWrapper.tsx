@@ -1,7 +1,11 @@
 "use client";
 
 import { ContentSection } from "@/components/shared/ContentSection";
-import type { A2iImageGeneration, ThreadA2iImage } from "@/types/types";
+import type {
+  A2iImageGeneration,
+  ThreadA2iImage,
+  ThreadDetails,
+} from "@/types/types";
 import {
   A2iImageCard,
   type A2iImageCardProps,
@@ -35,11 +39,15 @@ import { updateA2iImagePositions } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
+import { useModelsStore } from "@/store/models.store";
+import A2iImageInputLoader from "./A2iImageInputLoader";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
   formRef: RefObject<HTMLDivElement | null>;
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
+  campaignInformation: ThreadDetails["campaign_information"];
+  selectedCampaignIndex: number;
 };
 
 // Helper function to get existing ID only - no fallback generation
@@ -56,8 +64,11 @@ export const A2iImagesWrapper = ({
   generations,
   formRef,
   referenceMoodboardId,
+  campaignInformation,
+  selectedCampaignIndex,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
+  const { selectedModel, isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
 
   // Track drag and server update states
@@ -82,6 +93,8 @@ export const A2iImagesWrapper = ({
               remixParameters: generation.remix_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
+              campaignInformation,
+              selectedCampaignIndex,
             },
           ];
         }
@@ -96,6 +109,8 @@ export const A2iImagesWrapper = ({
           remixParameters: generation.remix_parameters,
           video: generation.video,
           isNSFW: generation.is_nsfw_detected || false,
+          campaignInformation,
+          selectedCampaignIndex,
         }));
       }
     );
@@ -251,6 +266,8 @@ export const A2iImagesWrapper = ({
                       key={trackingId}
                       {...image}
                       disableDrag={!existingId}
+                      campaignInformation={campaignInformation}
+                      selectedCampaignIndex={selectedCampaignIndex}
                     />
                   );
                 })}
@@ -265,7 +282,15 @@ export const A2iImagesWrapper = ({
               </div>
             </SortableContext>
           </DndContext>
-          <A2iImageInput referenceMoodboardId={referenceMoodboardId} />
+          {!isModelsFetched || !selectedModel ? (
+            <A2iImageInputLoader />
+          ) : (
+            <A2iImageInput
+              referenceMoodboardId={referenceMoodboardId}
+              campaignInformation={campaignInformation}
+              selectedCampaignIndex={selectedCampaignIndex}
+            />
+          )}
         </div>
       }
     />

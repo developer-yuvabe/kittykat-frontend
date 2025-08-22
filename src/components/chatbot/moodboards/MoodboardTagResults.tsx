@@ -25,7 +25,6 @@ type Props = {
   moodboardId?: MoodboardInformation["id"];
   showAdvancedSettings?: boolean;
   isGalleryItemsProcessing?: boolean;
-  isSaving: boolean;
 };
 
 function MoodboardTagResults({
@@ -34,13 +33,12 @@ function MoodboardTagResults({
   moodboardId,
   showAdvancedSettings = false,
   isGalleryItemsProcessing = false,
-  isSaving,
 }: Props) {
   const [localTags, setLocalTags] = useState<
     Record<string, { value: string; selected: boolean }[]>
   >({});
 
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, isMoodboardSaving } = useBrandStore();
 
   // Mutation for patching
   const { mutateAsync: patchMoodboardMutate, isPending: isPatching } =
@@ -142,7 +140,7 @@ function MoodboardTagResults({
                       <Badge
                         key={tag.value}
                         onClick={() => {
-                          if (isSaving) {
+                          if (isMoodboardSaving) {
                             toast.warning(
                               "Please wait until the moodboard is synced."
                             );

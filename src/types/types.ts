@@ -292,6 +292,7 @@ export interface AggregatedTagItem {
 export interface MoodboardAsset {
   gallery_item_id: string;
   position: number;
+  is_placeholder?: boolean;
 }
 
 export interface SourceHandle {

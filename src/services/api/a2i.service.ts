@@ -4,6 +4,7 @@ import { z, ZodTypeAny } from "zod";
 
 export const generateImage = async <T extends ZodTypeAny>(
   brandId: string,
+  // campaignId: string | null,
   data: z.infer<T>
 ) => {
   try {
@@ -80,7 +81,7 @@ export const updateA2iImagePositions = async (
 
 export const updateA2iRefernceMoodboard = async (
   brandId: string,
-  moodboardId: string
+  moodboardId: string | null
 ) => {
   try {
     await handleApiRequest(

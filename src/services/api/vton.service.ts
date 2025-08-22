@@ -5,7 +5,8 @@ export const createVtonImage = async (
   brandId: string,
   modelImage: string,
   productImage: string,
-  addToQueue: boolean
+  addToQueue: boolean,
+  campaignId?: string | null
 ) => {
   try {
     await handleApiRequest(
@@ -13,6 +14,7 @@ export const createVtonImage = async (
         model_image: modelImage,
         product_image: productImage,
         should_add_to_queue: addToQueue,
+        campaign_id: campaignId,
       })
     );
   } catch (error) {
