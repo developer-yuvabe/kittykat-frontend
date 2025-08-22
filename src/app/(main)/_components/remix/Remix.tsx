@@ -260,7 +260,7 @@ export default function MaskingDialog() {
           file
         );
 
-        remixImageService(selectedBrandId!, data, maskUrl, false);
+        remixImageService(selectedBrandId!, null, data, maskUrl, false);
         setRemixUrl(null);
       } catch (err) {
         console.error(err);

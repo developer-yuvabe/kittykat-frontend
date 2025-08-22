@@ -50,6 +50,7 @@ export function AskKittykatImageEditingTools({
           closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
           source="media-gallery"
+          campaignId={remixControls.campaignId}
         />
       ),
     },
@@ -71,6 +72,7 @@ export function AskKittykatImageEditingTools({
           closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
           source="media-gallery"
+          campaignId={remixControls.campaignId}
         />
       ),
     },
@@ -82,6 +84,7 @@ export function AskKittykatImageEditingTools({
         <VideoGeneration
           closeDialog={remixControls.closeDialog}
           startImage={item.asset_url}
+          campaignId={remixControls.campaignId}
         />
       ),
     },

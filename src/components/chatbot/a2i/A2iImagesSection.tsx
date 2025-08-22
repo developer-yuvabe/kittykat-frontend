@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
@@ -13,11 +13,15 @@ import { useModelsStore } from "@/store/models.store";
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
   moodboardInformation: ThreadDetails["moodboard_information"];
+  campaignInformation: ThreadDetails["campaign_information"];
+  selectedCampaignIndex: number;
 }
 
 const A2iImagesSection = function A2iImagesSection({
   a2iImageInformation,
   moodboardInformation,
+  campaignInformation,
+  selectedCampaignIndex,
 }: A2iImagesSectionProps) {
   const { setModels, setIsModelsFetched } = useModelsStore();
   useQuery({
@@ -77,6 +81,8 @@ const A2iImagesSection = function A2iImagesSection({
             formRef={formRef}
             generations={[...(a2iImageInformation?.generations || [])]}
             referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+            campaignInformation={campaignInformation}
+            selectedCampaignIndex={selectedCampaignIndex}
           />
         </CardContent>
       )}
