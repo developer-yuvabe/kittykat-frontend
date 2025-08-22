@@ -190,3 +190,13 @@
 .frequency-bar {
   animation: pulse 1.5s ease-in-out infinite;
 }
+
+/* Scrollbar hide utility for horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

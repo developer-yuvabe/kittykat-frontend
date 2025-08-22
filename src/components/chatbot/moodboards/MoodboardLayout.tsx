@@ -356,8 +356,8 @@ function MoodboardLayout({
       // 3. Only update original photos for comparison, don't overwrite current photos
       setOriginalPhotos([...photos]); // Use current photos state, not the saved snapshot
 
-      // Wait for 2 seconds before analyzing the moodboard
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Wait for 1 second before analyzing the moodboard
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id);
     } catch (error) {
       console.error("Failed to save changes:", error);
