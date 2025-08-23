@@ -16,6 +16,7 @@ import { InlineEditableBadges } from "../shared/InlineEditableBadges";
 interface DynamicContentSectionProps {
   dynamicData: Record<string, unknown>;
   agentId?: Agents;
+  pathPrefix?: string;
 }
 
 export const RenderValue: React.FC<{
@@ -154,6 +155,7 @@ export const RenderValue: React.FC<{
 export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
   dynamicData,
   agentId,
+  pathPrefix,
 }) => {
   if (!dynamicData || Object.keys(dynamicData).length === 0) return null;
 
@@ -167,7 +169,14 @@ export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
             <div className="ml-2 space-y-2 ">
               <RenderValue
                 value={value}
-                path={`dynamic.${key}`}
+                // Empty strings can also be considered as a valid value, so using undefined check looks good
+                path={`${
+                  pathPrefix === undefined
+                    ? "dynamic"
+                    : pathPrefix === ""
+                    ? key
+                    : `${pathPrefix}.${key}`
+                }`}
                 agentId={agentId}
               />
             </div>
