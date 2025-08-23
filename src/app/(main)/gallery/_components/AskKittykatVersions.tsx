@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { cn, getExtensionFromUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { galleryService } from "@/services/api/gallery.service";
-import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
+import { GalleryItemResponse } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import AddVersion from "./AddVersion";
-import { toast } from "sonner";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
 import { useEffect } from "react";
@@ -24,51 +22,13 @@ const AskKittykatVersions = ({
   onVersionChange,
 }: AskKittykatVersionsProps) => {
   const { user } = useUserStore();
-  const { addToGallery } = useGalleryQuery(
-    {},
-    ITEMS_PER_PAGE,
-    true,
-    "AskKittykatVersions"
-  );
   const { isFetching, data, refetch } = useQuery({
     queryKey: ["versions", item.id],
     queryFn: () => galleryService.getGalleryItemVersions(item.id),
     staleTime: Infinity,
   });
 
-  const addVersion = async (uploadedUrl: string) => {
-    const galleryItem: GalleryItem = {
-      brand_id: item.brand_id,
-      campaign_id: item.campaign_id,
-      asset_url: uploadedUrl,
-      asset_source: item.asset_source,
-      asset_type: "image",
-      media_format: getExtensionFromUrl(uploadedUrl),
-      asset_title: `${item.asset_title} - Version ${(data?.length ?? 0) + 2}`,
-      size: "",
-      related_asset_ids: [],
-      prompt_modifiers: [],
-      ai_tags: [],
-      visual_style_tags: {},
-      detected_objects: [],
-      detected_emotions: [],
-      detected_colors: [],
-      search_keywords: [],
-      custom_tags: [],
-      parent_asset_id: item.id,
-      is_master: false,
-      workflow_status: "in_review",
-    };
 
-    addToGallery(galleryItem).then((item) => {
-      toast.success("Version added successfully!");
-      refetch().then(() => {
-        if (item) {
-          onVersionChange(item);
-        }
-      });
-    });
-  };
 
   useEffect(() => {
     if (data) {
@@ -126,9 +86,10 @@ const AskKittykatVersions = ({
           ))}
           {user?.role.id === UserRoleId.ADMIN && (
             <AddVersion
-              addVersion={addVersion}
-              brandId={item.brand_id}
-              campaignId={item.campaign_id}
+              item={item}
+              onVersionChange={onVersionChange}
+              refetchVersions={refetch}
+              versionsCount={(data?.length ?? 0) + 1}
             >
               <Button size="sm" variant={"ghost"} className="flex-1">
                 <Plus className="w-6 h-6" />
