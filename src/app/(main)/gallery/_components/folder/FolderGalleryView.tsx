@@ -13,7 +13,7 @@ import type {
 } from "@/types/gallery.types";
 
 interface FolderGalleryViewProps {
-  selectedBrand: BrandCampaignListResponse["brands"][number] | null;
+  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
   selectedCampaignId?: string;
   searchQuery?: string;
   favorites?: boolean;
