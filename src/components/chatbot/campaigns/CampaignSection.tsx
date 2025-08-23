@@ -332,15 +332,17 @@ export const CampaignSection: React.FC<{
                     />
                     <DynamicContentSection
                       dynamicData={{
-                        "Target Audience": currentCampaign.target_audience,
+                        target_audience: currentCampaign.target_audience,
                       }}
+                      pathPrefix=""
                       agentId={Agents.CAMPAIGN_AGENT}
                     />
                     <DynamicContentSection
                       dynamicData={{
-                        "Content Campaign Ideas":
+                        content_campaign_ideas:
                           currentCampaign.content_campaign_ideas,
                       }}
+                      pathPrefix=""
                       agentId={Agents.CAMPAIGN_AGENT}
                     />
                     <AnimatePresence>

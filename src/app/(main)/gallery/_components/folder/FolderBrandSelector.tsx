@@ -18,35 +18,85 @@ import {
 import { Check, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BrandCampaignListResponse } from "@/types/gallery.types";
+import { useBrandStore } from "@/store/brand.store";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
 
 interface FolderBrandSelectorProps {
-  selectedBrand: BrandCampaignListResponse["brands"][number] | null;
-  onBrandChange: (
-    brand: BrandCampaignListResponse["brands"][number] | null
-  ) => void;
+  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
   brands: BrandCampaignListResponse["brands"];
   brandsLoading: boolean;
+  setSelectedBrand: (
+    brand: BrandCampaignListResponse["brands"][number] | null
+  ) => void;
 }
 
 export function FolderBrandSelector({
   selectedBrand,
-  onBrandChange,
   brands,
   brandsLoading,
+  setSelectedBrand,
 }: FolderBrandSelectorProps) {
   const [open, setOpen] = useState(false);
+  const { selectedBrandId, setSelectedBrandId } = useBrandStore();
+  const { user } = useUserStore();
+  const stream = useStreamContext();
 
-  // Auto-select first brand when brands are loaded
+  // Auto-select brand when brands are loaded and no brand is selected
   useEffect(() => {
-    if (!brandsLoading && brands.length > 0 && !selectedBrand) {
-      onBrandChange(brands[0]);
+    if (brandsLoading || brands.length === 0) return;
+
+    // Only auto-select if no brand is currently selected
+    if (selectedBrand) return;
+
+    // Priority: use selectedBrandId from store, then fall back to first brand
+    let brandToSelect;
+    if (selectedBrandId) {
+      brandToSelect = brands.find(
+        (brand) => brand.brand_id === selectedBrandId
+      );
     }
-  }, [brands, brandsLoading, selectedBrand, onBrandChange]);
+
+    // If no stored brand found or no stored brand ID, use first brand
+    if (!brandToSelect) {
+      brandToSelect = brands[0];
+    }
+
+    if (brandToSelect) {
+      setSelectedBrand(brandToSelect);
+      setSelectedBrandId(brandToSelect.brand_id);
+
+      // Update stream context
+      if (user?.thread_id) {
+        stream.client.threads.updateState(user.thread_id, {
+          values: {
+            currentBrandContextId: brandToSelect.brand_id,
+            previousBrandContextId: stream.values.currentBrandContextId,
+          },
+        });
+      }
+    }
+  }, [brands, brandsLoading, selectedBrand, selectedBrandId]);
 
   const handleBrandSelect = (
-    brand: BrandCampaignListResponse["brands"][number] | null
+    brand: BrandCampaignListResponse["brands"][number]
   ) => {
-    onBrandChange(brand);
+    // Set the selected brand
+    setSelectedBrand(brand);
+
+    // Update the brand store to keep it in sync
+    setSelectedBrandId(brand.brand_id);
+
+    // Update stream context
+    if (user?.thread_id) {
+      stream.client.threads.updateState(user.thread_id, {
+        values: {
+          currentBrandContextId: brand.brand_id,
+          previousBrandContextId: stream.values.currentBrandContextId,
+        },
+      });
+    }
+
     setOpen(false);
   };
 
@@ -72,7 +122,7 @@ export function FolderBrandSelector({
                   role="combobox"
                   aria-expanded={open}
                   className="w-full justify-between text-sm bg-transparent"
-                  disabled={!selectedBrand}
+                  disabled={brandsLoading || brands.length === 0}
                 >
                   {selectedBrand ? selectedBrand.brand_name : "Select brand..."}
                   {open ? (

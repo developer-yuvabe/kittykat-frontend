@@ -24,7 +24,7 @@ interface FolderUploadDropzoneProps {
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
   galleryFilters?: GalleryFilters;
-  selectedBrand: BrandCampaignListResponse["brands"][number] | null;
+  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
   selectedCampaignId?: string;
   selectedMoodboardId?: string;
   brandsLoading: boolean;

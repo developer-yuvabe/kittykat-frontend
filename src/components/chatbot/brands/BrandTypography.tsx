@@ -52,10 +52,9 @@ export const BrandTypography: React.FC<TypographyProps> = ({
   const handleSave = () => {
     const message = `Change my ${editingFontKey} font to ${formState.name}${
       formState.weights?.length
-        ? ` with weights ${formState.weights.join(", ")}`
+        ? ` with weights ${formState.weights.join(", ")}.`
         : ""
-    }.
-</kittykat-do-not-render>
+    } <kittykat-do-not-render>
 You must use brandingAgent to update font.
 FontKey: ${editingFontKey}
 FontName: ${formState.name}

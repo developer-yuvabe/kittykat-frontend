@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LikeIcon } from "@/components/ui/custom-icon";
 import { Textarea } from "@/components/ui/textarea";
 import ZoomableImage from "@/components/ui/zoomable-image";
-import { formatToLocalTime } from "@/lib/utils";
+import { cn, formatToLocalTime } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { CommentReply } from "@/types/gallery.types";
 import { UserRoleId } from "@/types/user.types";
@@ -28,6 +28,7 @@ interface AskKittykatReplyListProps {
   onUpdateReply: (commentId: string, replyId: string, text: string) => void;
   onDeleteReply: (commentId: string, replyId: string) => void;
   onLikeReply: (reply: CommentReply, itemId: string, commentId: string) => void;
+  deleteReply?: boolean; // Optional prop to handle deleted replies
 }
 
 export function AskKittykatReplyList({
@@ -72,6 +73,8 @@ export function AskKittykatReplyList({
         const isLiked = (reply.likes ?? []).includes(user?.id ?? "");
 
         const badgeInfo = getBadgeInfo(reply.added_by_role);
+
+        const isTempReply = reply.id.startsWith("temp-");
 
         return (
           <div key={reply.id} className="flex gap-3">
@@ -150,7 +153,13 @@ export function AskKittykatReplyList({
                   <div className="flex items-center gap-3 text-xs text-gray-500">
                     <div
                       onClick={() => onLikeReply(reply, itemId, commentId)}
-                      className="flex items-center space-x-1 cursor-pointer"
+                      aria-disabled={isTempReply}
+                      className={cn(
+                        "flex items-center space-x-1 cursor-pointer transition-opacity",
+                        isTempReply
+                          ? "opacity-50 cursor-not-allowed pointer-events-none"
+                          : ""
+                      )}
                     >
                       <LikeIcon
                         className={`w-4 h-4 transition-colors duration-200 ${
@@ -178,6 +187,7 @@ export function AskKittykatReplyList({
                               });
                               setEditText(reply.text);
                             }}
+                            disabled={isTempReply}
                           >
                             <Edit className="w-3 h-3 mr-1" /> Edit
                           </Button>
@@ -186,6 +196,7 @@ export function AskKittykatReplyList({
                             size="sm"
                             className="h-auto p-0 text-red-600 hover:text-red-700"
                             onClick={() => onDeleteReply(commentId, reply.id)}
+                            disabled={isTempReply}
                           >
                             <Trash2 className="w-3 h-3 mr-1" /> Delete
                           </Button>

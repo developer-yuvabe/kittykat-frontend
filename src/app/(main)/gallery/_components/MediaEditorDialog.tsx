@@ -391,80 +391,29 @@ export function MediaEditorDialog({
   };
 
   const handleUpdateComment = async (commentId: string, text: string) => {
-    if (!currentItem?.id || !user?.id) {
-      toast.error("Please log in to update a comment");
-      return;
-    }
-
-    // Store the original comment for rollback in case of error
-    const originalComment = currentItem.comments?.find(
-      (c) => c.id === commentId
-    );
-    if (!originalComment) return;
-
-    // Optimistically update the UI
-    setCurrentItem((prev) =>
-      prev
-        ? {
-            ...prev,
-            comments: prev.comments?.map((comment) =>
-              comment.id === commentId
-                ? {
-                    ...comment,
-                    text,
-                    updated_at: new Date().toISOString(), // Update timestamp
-                  }
-                : comment
-            ),
-          }
-        : prev
-    );
-
-    // Clear editing state immediately
-    setEditingComment(null);
-
+    const toastId = `update-comment-${commentId}`; // unique ID
+    toast.loading("Updating comment...", { id: toastId });
     try {
-      await galleryActions.patchComment(
+      if (!currentItem?.id) {
+        setIsSubmitting(false);
+        return;
+      }
+      galleryActions.patchComment(
         {
-          itemId: currentItem.id,
+          itemId: currentItem?.id,
           commentId,
           updateData: { text },
         },
         {
           onSuccess(data) {
-            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-          },
-          onError: () => {
-            // Rollback optimistic update on error
-            setCurrentItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments?.map((comment) =>
-                      comment.id === commentId ? originalComment : comment
-                    ),
-                  }
-                : prev
-            );
-            toast.error("Failed to update comment");
+            toast.info("Comment updated", { id: toastId });
           },
         }
       );
     } catch (error) {
-      // Rollback optimistic update
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.map((comment) =>
-                comment.id === commentId ? originalComment : comment
-              ),
-            }
-          : prev
-      );
-      toast.error("Failed to update comment");
-      console.error("Update comment error:", error);
+      console.error(error);
+      toast.error("Failed to update comment", { id: toastId });
     }
   };
 
@@ -473,259 +422,98 @@ export function MediaEditorDialog({
     replyId: string,
     text: string
   ) => {
-    if (!text.trim()) return;
-    if (!currentItem?.id || !user?.id) {
-      toast.error("Please log in to update a reply");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // Store the original reply for rollback
-    const originalReply = currentItem.comments
-      ?.find((c) => c.id === commentId)
-      ?.replies?.find((r) => r.id === replyId);
-    if (!originalReply) {
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Optimistically update the UI
-    setCurrentItem((prev) =>
-      prev
-        ? {
-            ...prev,
-            comments: prev.comments?.map((comment) =>
-              comment.id === commentId
-                ? {
-                    ...comment,
-                    replies: comment.replies?.map((reply) =>
-                      reply.id === replyId
-                        ? {
-                            ...reply,
-                            text,
-                            updated_at: new Date().toISOString(),
-                          }
-                        : reply
-                    ),
-                  }
-                : comment
-            ),
-          }
-        : prev
-    );
-
-    // Clear editing state immediately
-    setEditingReply(null);
-
+    const toastId = `update-reply-${commentId}-${replyId}`; // unique ID
+    toast.loading("Updating reply...", { id: toastId });
     try {
-      await galleryActions.patchReply(
+      if (!currentItem?.id) {
+        setIsSubmitting(false);
+        return;
+      }
+      galleryActions.patchReply(
         {
-          itemId: currentItem.id,
+          itemId: currentItem?.id,
           commentId,
           replyId,
           updateData: { text },
         },
         {
           onSuccess(data) {
-            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-            // Replace updated reply with server data
-            setCurrentItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments?.map((comment) =>
-                      comment.id === commentId
-                        ? {
-                            ...comment,
-                            replies: comment.replies?.map((reply) =>
-                              reply.id === replyId
-                                ? data.comments
-                                    ?.find((c) => c.id === commentId)
-                                    ?.replies?.find(
-                                      (r: CommentReply) =>
-                                        r.text === text &&
-                                        r.added_by_role === user.role.name
-                                    ) || reply
-                                : reply
-                            ),
-                          }
-                        : comment
-                    ),
-                  }
-                : prev
-            );
+            // toast.info("Reply updated", { id: toastId });
+            setTimeout(() => {
+              toast.info("Reply updated", { id: toastId });
+            }, 3000);
           },
         }
       );
     } catch (error) {
-      // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.map((comment) =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: comment.replies?.map((reply) =>
-                        reply.id === replyId ? originalReply : reply
-                      ),
-                    }
-                  : comment
-              ),
-            }
-          : prev
-      );
-      toast.error("Failed to update reply");
-      console.error("Update reply error:", error);
-    } finally {
-      setIsSubmitting(false);
+      console.error(error);
+      toast.error("Failed to update reply", { id: toastId });
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!currentItem?.id || !user?.id) {
-      toast.error("Please log in to delete a comment");
+    if (!currentItem?.id) {
+      setIsSubmitting(false);
       return;
     }
-
-    setIsSubmitting(true);
-
-    // Store the original comments for rollback
-    const originalComments = currentItem.comments || [];
-
-    // Optimistically update the UI by removing the comment
-    setCurrentItem((prev) =>
-      prev
-        ? {
-            ...prev,
-            comments: prev.comments?.filter(
-              (comment) => comment.id !== commentId
-            ),
-          }
-        : prev
-    );
 
     try {
       await galleryActions.deleteComment(
         {
-          itemId: currentItem.id,
+          itemId: currentItem?.id,
           commentId,
         },
         {
           onSuccess(data) {
-            // Validate that data is a complete GalleryItemResponse
-            if (data && "comments" in data && data.id === currentItem.id) {
-              // Update cache with actual server data
-              revalidateGalleryItemVersions(data as GalleryItemResponse);
-            } else {
-              // Fallback: Manually update the cache if data is incomplete
+            if (item?.id) {
               queryClient.setQueryData(
-                ["versions", item?.id || currentItem.id],
+                ["versions", item.id],
                 (oldData: any) => {
                   if (!oldData) return oldData;
-                  return oldData.map((version: GalleryItemResponse) =>
-                    version.id === currentItem.id
-                      ? {
-                          ...version,
-                          comments: version.comments?.filter(
-                            (c: Comment) => c.id !== commentId
-                          ),
-                        }
-                      : version
-                  );
+                  return oldData.map((version: GalleryItemResponse) => {
+                    if (version.id === currentItem?.id)
+                      return {
+                        ...version,
+                        comments: version.comments?.filter(
+                          (c: Comment) => c.id !== data.id
+                        ),
+                      };
+                    return version;
+                  });
                 }
-              );
-              console.warn(
-                "Received incomplete data from deleteComment:",
-                data
               );
             }
           },
         }
       );
     } catch (error) {
-      // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: originalComments,
-            }
-          : prev
-      );
+      console.error(error);
       toast.error("Failed to delete comment");
-      console.error("Delete comment error:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleDeleteReply = async (commentId: string, replyId: string) => {
-    if (!currentItem?.id || !user?.id) {
-      toast.error("Please log in to delete a reply");
+    if (!currentItem?.id) {
+      setIsSubmitting(false);
       return;
     }
 
-    setIsSubmitting(true);
-
-    // Store the original replies for rollback
-    const originalReplies =
-      currentItem.comments?.find((c) => c.id === commentId)?.replies || [];
-
-    // Optimistically update the UI by removing the reply
-    setCurrentItem((prev) =>
-      prev
-        ? {
-            ...prev,
-            comments: prev.comments?.map((comment) =>
-              comment.id === commentId
-                ? {
-                    ...comment,
-                    replies: comment.replies?.filter(
-                      (reply) => reply.id !== replyId
-                    ),
-                  }
-                : comment
-            ),
-          }
-        : prev
-    );
-
     try {
-      await galleryActions.deleteReply(
+      galleryActions.deleteReply(
         {
-          itemId: currentItem.id,
+          itemId: currentItem?.id,
           commentId,
           replyId,
         },
         {
           onSuccess(data) {
-            // Update cache with actual server data
             revalidateGalleryItemVersions(data);
           },
         }
       );
     } catch (error) {
-      // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.map((comment) =>
-                comment.id === commentId
-                  ? { ...comment, replies: originalReplies }
-                  : comment
-              ),
-            }
-          : prev
-      );
-      toast.error("Failed to delete reply");
-      console.error("Delete reply error:", error);
-    } finally {
-      setIsSubmitting(false);
+      console.error(error);
     }
   };
 
