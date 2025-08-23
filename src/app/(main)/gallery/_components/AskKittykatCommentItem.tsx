@@ -10,7 +10,7 @@ import { UserRoleId } from "@/types/user.types";
 import { useUserStore } from "@/store/user.store";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import { LikeIcon } from "@/components/ui/custom-icon";
-import { formatToLocalTime } from "@/lib/utils";
+import { cn, formatToLocalTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 interface AskKittykatCommentItemProps {
@@ -57,6 +57,8 @@ export function AskKittykatCommentItem({
       : user?.role.name === "user"
       ? { variant: "client", label: "Client" }
       : { variant: "secondary", label: user?.role.name ?? "Unknown" });
+
+  const isTempComment = comment.id.startsWith("temp-");
 
   return (
     <div className="flex gap-3">
@@ -133,7 +135,13 @@ export function AskKittykatCommentItem({
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <div
                 onClick={() => onLikeComment(comment, itemId)}
-                className="flex items-center space-x-1 cursor-pointer"
+                aria-disabled={isTempComment}
+                className={cn(
+                  "flex items-center space-x-1 cursor-pointer transition-opacity",
+                  isTempComment
+                    ? "opacity-50 cursor-not-allowed pointer-events-none"
+                    : ""
+                )}
               >
                 <LikeIcon
                   className={`w-4 h-4 transition-colors duration-200 ${
@@ -147,6 +155,7 @@ export function AskKittykatCommentItem({
                 size="sm"
                 className="h-auto p-0"
                 onClick={() => setReplyingTo(comment.id)}
+                disabled={isTempComment}
               >
                 <Reply className="w-3 h-3 mr-1" /> Reply
               </Button>
@@ -162,6 +171,7 @@ export function AskKittykatCommentItem({
                         setEditingComment(comment.id);
                         setEditText(comment.text);
                       }}
+                      disabled={isTempComment}
                     >
                       <Edit className="w-3 h-3 mr-1" /> Edit
                     </Button>
@@ -170,6 +180,7 @@ export function AskKittykatCommentItem({
                       size="sm"
                       className="h-auto p-0 text-red-600 hover:text-red-700"
                       onClick={() => onDeleteComment(comment.id)}
+                      disabled={isTempComment}
                     >
                       <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>
