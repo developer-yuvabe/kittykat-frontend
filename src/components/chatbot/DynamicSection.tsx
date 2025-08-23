@@ -82,6 +82,7 @@ export const RenderValue: React.FC<{
 
     if (value.every((item) => typeof item !== "object" || item === null)) {
       const items = value.map((item) => String(item));
+      console.log(path);
       return (
         <div className="mt-1">
           <InlineEditableBadges
@@ -91,7 +92,7 @@ export const RenderValue: React.FC<{
                 path, // fieldPath
                 items, // old value
                 newValues, // new value
-                "BrandingAgent" // optional agent hint
+                agentId ?? "brandingAgent"
               );
               if (message) {
                 submitOptimisticMessage({
