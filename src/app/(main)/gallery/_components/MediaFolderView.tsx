@@ -19,7 +19,7 @@ interface MediaFolderViewProps {
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
-  setSelectedBrand?: React.Dispatch<
+  setSelectedBrand: React.Dispatch<
     React.SetStateAction<BrandCampaignListResponse["brands"][number] | null>
   >;
   brands: BrandCampaignListResponse["brands"];
@@ -52,6 +52,8 @@ export function MediaFolderView({
   activeTab,
   onUploadComplete,
   addToGallery = true,
+  selectedBrand,
+  setSelectedBrand,
   brands,
   brandsLoading,
   selectedCampaignId,
@@ -65,20 +67,12 @@ export function MediaFolderView({
   setSelectedFilters,
   setInitialWorkflowStatus,
   onTabChange,
-  selectedBrandId,
 }: MediaFolderViewProps) {
   const {
-    selectedBrand,
     selectedCampaignFromUrl,
-    handleBrandChange,
     handleCampaignSelect,
     handleBackToCampaigns,
-  } = useFolderState(
-    selectedCampaignId,
-    brands,
-    brandsLoading,
-    selectedBrandId
-  );
+  } = useFolderState(selectedCampaignId);
 
   // Render campaign view when in folder mode with selected brand and campaign
   if (galleryView === "folder" && selectedBrand && selectedCampaignFromUrl) {
@@ -129,9 +123,9 @@ export function MediaFolderView({
       {/* Brand Selector */}
       <FolderBrandSelector
         selectedBrand={selectedBrand}
-        onBrandChange={handleBrandChange}
         brands={brands}
         brandsLoading={brandsLoading}
+        setSelectedBrand={setSelectedBrand}
       />
 
       {/* Upload Dropzone */}
@@ -169,7 +163,7 @@ export function MediaFolderView({
           <CampaignsList
             selectedBrand={selectedBrand}
             onCampaignSelect={handleCampaignSelect}
-            key={selectedBrand.brand_id}
+            key={selectedBrand?.brand_id}
           />
         )}
 
