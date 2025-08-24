@@ -31,7 +31,6 @@ interface BrandColorsProps {
 interface ColorEditForm {
   name: string;
   hex: string;
-  label: string;
 }
 
 export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
@@ -41,7 +40,6 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   const [editForm, setEditForm] = useState<ColorEditForm>({
     name: "",
     hex: "",
-    label: "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -83,7 +81,6 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
     setEditForm({
       name: color.name || `Color ${index + 1}`,
       hex: color.hex,
-      label: color.label || "",
     });
     setEditingIndex(index);
     setPopoverOpen(index);
@@ -96,7 +93,7 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
     const hasChanges =
       editForm.name !== (originalColor.name || `Color ${editingIndex + 1}`) ||
       editForm.hex !== originalColor.hex ||
-      editForm.label !== (originalColor.label || "");
+      "";
 
     if (!hasChanges) {
       setPopoverOpen(null);
@@ -114,9 +111,7 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
         `Color ${editingIndex + 1}`;
 
       // Create a simple, direct message
-      const changeMessage = `Change my ${colorRole} to ${editForm.name} (${
-        editForm.hex
-      })${editForm.label ? ` - ${editForm.label}` : ""}.`;
+      const changeMessage = `Change my ${colorRole} to ${editForm.name} (${editForm.hex}).`;
 
       // Format the update message with minimal technical details
       const fieldPath = `static.brand.colors[${editingIndex}]`;
@@ -256,25 +251,6 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
                             </p>
                           )}
                         </div>
-
-                        <div>
-                          <Label
-                            htmlFor="color-label"
-                            className="text-sm font-medium"
-                          >
-                            Label{" "}
-                            <span className="text-gray-500">(optional)</span>
-                          </Label>
-                          <Input
-                            id="color-label"
-                            value={editForm.label}
-                            onChange={(e) =>
-                              handleFormChange("label", e.target.value)
-                            }
-                            placeholder="Primary"
-                            className="mt-1"
-                          />
-                        </div>
                       </div>
 
                       <div className="flex gap-2 pt-2">
@@ -310,11 +286,6 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
                     {color.name || `Color ${idx + 1}`}
                   </div>
                   <div className="text-[10px]">{color.hex}</div>
-                  {color.label && (
-                    <div className="text-[8px] mt-1 text-center">
-                      {color.label}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

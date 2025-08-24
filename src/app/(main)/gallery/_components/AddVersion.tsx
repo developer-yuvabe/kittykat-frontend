@@ -3,33 +3,90 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { getExtensionFromUrl } from "@/lib/utils";
+import { useGalleryQuery, ITEMS_PER_PAGE } from "@/hooks/useGallery";
+import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Link, Upload } from "lucide-react";
+import { ArrowLeft, Link, Upload, Video, Image } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 type AddVersionProps = {
   children?: React.ReactNode;
-  addVersion: (uploadedUrl: string) => void;
-  brandId: string;
-  campaignId?: string;
+  item: GalleryItemResponse;
+  onVersionChange: (item: GalleryItemResponse) => void;
+  refetchVersions: () => Promise<any>;
+  versionsCount: number;
 };
 
 const AddVersion = ({
   children,
-  addVersion,
-  brandId,
-  campaignId,
+  item,
+  onVersionChange,
+  refetchVersions,
+  versionsCount,
 }: AddVersionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
+
   const [url, setUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+
+  const { addToGallery } = useGalleryQuery(
+    {},
+    ITEMS_PER_PAGE,
+    true,
+    "AddVersion"
+  );
+
+  const addVersion = async (uploadedUrl: string, fileType: 'image' | 'video') => {
+    const galleryItem: GalleryItem = {
+      brand_id: item.brand_id,
+      campaign_id: item.campaign_id,
+      asset_url: uploadedUrl,
+      asset_source: item.asset_source,
+      asset_type: fileType,
+      media_format: getExtensionFromUrl(uploadedUrl),
+      asset_title: `${item.asset_title} - Version ${versionsCount + 1}`,
+      size: "",
+      related_asset_ids: [],
+      prompt_modifiers: [],
+      ai_tags: [],
+      visual_style_tags: {},
+      detected_objects: [],
+      detected_emotions: [],
+      detected_colors: [],
+      search_keywords: [],
+      custom_tags: [],
+      parent_asset_id: item.id,
+      is_master: false,
+      workflow_status: "in_review",
+    };
+
+    try {
+      const newVersion = await addToGallery(galleryItem);
+      toast.success("Version added successfully!");
+      if (newVersion) {
+        await refetchVersions();
+        onVersionChange(newVersion);
+      }
+      setIsOpen(false);
+      setShowUrlInput(false);
+      setUrl("");
+      setIsUploading(false);
+    } catch (error) {
+      toast.error("Failed to add version. Please try again.");
+      setIsUploading(false);
+    }
+  };
+
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
       if (fileRejections.length > 0) {
         toast.error(
-          "Some files were rejected due to unsupported types or sizes. Please ensure you're uploading a single image that meets the required specifications for a version."
+          "Some files were rejected due to unsupported types or sizes. Please ensure you're uploading a supported file format."
         );
         return;
       }
@@ -41,30 +98,34 @@ const AddVersion = ({
         setIsUploading(true);
         const file = acceptedFiles[0];
 
-        const url = await uploadFileAndReturnUrl(
+        const uploadedUrl = await uploadFileAndReturnUrl(
           file.name,
           file.type,
           "brands",
           file,
-          brandId,
-          campaignId
+          item.brand_id,
+          item.campaign_id
         );
 
-        addVersion(url);
-        setIsOpen(false);
-        setShowUrlInput(false);
-        setUrl("");
-        setIsUploading(false);
+        // Determine file type based on MIME type
+        const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+        await addVersion(uploadedUrl, fileType);
       } catch {
         toast.error(
           "An error occurred while uploading the file. Please try again."
         );
+        setIsUploading(false);
       }
     },
-    []
+    [item, versionsCount]
   );
+  
+  // Accept both images and videos
+  const acceptedFiles = {
+    "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+    "video/*": [".mp4", ".mov", ".avi", ".webm", ".mkv"]
+  };
 
-  const [isUploading, setIsUploading] = useState(false);
   const {
     getRootProps,
     getInputProps,
@@ -74,10 +135,9 @@ const AddVersion = ({
   } = useDropzone({
     onDrop,
     multiple: false,
-    accept: {
-      "image/*": [],
-    },
+    accept: acceptedFiles,
     disabled: isUploading,
+    maxSize: 100 * 1024 * 1024, // 100MB max for all files
   });
 
   let borderColor = "border-gray-300";
@@ -86,16 +146,30 @@ const AddVersion = ({
   if (isDragReject) borderColor = "border-red-500";
 
   const uploadUrl = async (url: string) => {
-    addVersion(url);
+    setIsUploading(true);
+    try {
+      // Try to determine file type from URL extension
+      const fileType = url.match(/\.(mp4|mov|avi|webm|mkv)$/i) ? 'video' : 'image';
+      await addVersion(url, fileType);
+    } catch (error) {
+      toast.error("Failed to add version from URL. Please try again.");
+      setIsUploading(false);
+    }
+  };
 
-    setIsOpen(false);
+  const resetState = () => {
     setShowUrlInput(false);
     setUrl("");
-    setIsUploading(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) resetState();
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <AnimatePresence mode="wait">
@@ -116,10 +190,11 @@ const AddVersion = ({
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
+
               <div className="w-full max-w-md">
                 <Input
                   type="text"
-                  placeholder="Enter image URL"
+                  placeholder="Enter image or video URL"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />
@@ -150,10 +225,6 @@ const AddVersion = ({
                   isDragActive ? "bg-purple-50" : "bg-white"
                 } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
               >
-                <div
-                  className="flex z-20 justify-start absolute top-3 left-2"
-                  onClick={(e) => e.stopPropagation()}
-                ></div>
                 <input {...getInputProps()} />
 
                 <div className="flex gap-x-3">
@@ -185,9 +256,9 @@ const AddVersion = ({
                 </div>
 
                 <p className="text-sm text-gray-500">
-                  Drop your new version image here, or click to select files.{" "}
+                  Drop your new version image or video here, or click to select files.{" "}
                   <br />
-                  (PNG, JPG, JPEG, WEBP)
+                  (PNG, JPG, JPEG, WEBP, MP4)
                 </p>
               </div>
             </motion.div>

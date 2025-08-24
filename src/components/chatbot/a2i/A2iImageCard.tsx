@@ -3,7 +3,11 @@ import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
-import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
+import {
+  A2iImageDetail,
+  A2iImageGeneration,
+  ThreadDetails,
+} from "@/types/types";
 import {
   Check,
   CopyIcon,
@@ -13,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
@@ -39,6 +43,8 @@ export type A2iImageCardProps = {
   style?: CSSProperties;
   disableDrag?: boolean;
   isNSFW: boolean;
+  campaignInformation: ThreadDetails["campaign_information"];
+  selectedCampaignIndex: number;
 };
 
 const A2iImageCard = ({
@@ -55,6 +61,8 @@ const A2iImageCard = ({
   disableDrag,
   video,
   isNSFW,
+  campaignInformation,
+  selectedCampaignIndex,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
 
@@ -64,6 +72,14 @@ const A2iImageCard = ({
   const { selectedBrandId } = useBrandStore();
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  const currentCampaign = useMemo(
+    () =>
+      campaignInformation && campaignInformation[selectedCampaignIndex]
+        ? campaignInformation[selectedCampaignIndex]
+        : null,
+    [campaignInformation, selectedCampaignIndex]
+  );
 
   const galleryActions = useGalleryQuery(
     {
@@ -343,11 +359,16 @@ const A2iImageCard = ({
       {galleryItem?.data && !galleryItem.isFetching && (
         <MediaEditorDialog
           galleryActions={galleryActions}
-          item={galleryItem.data}
+          item={{
+            ...galleryItem.data,
+            // Ensure input_prompt is populated from parameters.prompt if missing
+            input_prompt: galleryItem.data.input_prompt || parameters.prompt,
+          }}
           open={showEditFeatures}
           onOpenChange={setShowEditFeatures}
           totalItems={1}
           currentIndex={0}
+          campaignId={currentCampaign?.id || null}
         />
       )}
 

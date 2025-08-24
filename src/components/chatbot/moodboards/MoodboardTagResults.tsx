@@ -38,12 +38,10 @@ function MoodboardTagResults({
     Record<string, { value: string; selected: boolean }[]>
   >({});
 
-  console.log("selected_moodboard_tags", selected_moodboard_tags);
-
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, isMoodboardSaving } = useBrandStore();
 
   // Mutation for patching
-  const { mutateAsync: patchMoodboardMutate, isPending: isSaving } =
+  const { mutateAsync: patchMoodboardMutate, isPending: isPatching } =
     useMutation({
       mutationFn: (payload: MoodboardPatchRequest) =>
         patchMoodboard(selectedBrandId!, moodboardId!, payload),
@@ -141,7 +139,16 @@ function MoodboardTagResults({
                     {tags.map((tag) => (
                       <Badge
                         key={tag.value}
-                        onClick={() => toggleTag(category, tag.value)}
+                        onClick={() => {
+                          if (isMoodboardSaving) {
+                            toast.warning(
+                              "Please wait until the moodboard is synced."
+                            );
+                            return;
+                          }
+
+                          toggleTag(category, tag.value);
+                        }}
                         role="button"
                         tabIndex={0}
                         aria-pressed={tag.selected}
@@ -166,9 +173,11 @@ function MoodboardTagResults({
               <Button
                 className="w-full"
                 onClick={handleGenerate}
-                disabled={isSaving || isGenerating || isGalleryItemsProcessing}
+                disabled={
+                  isPatching || isGenerating || isGalleryItemsProcessing
+                }
               >
-                {isSaving || isGenerating ? (
+                {isPatching || isGenerating ? (
                   <Loader />
                 ) : (
                   <>
@@ -181,8 +190,8 @@ function MoodboardTagResults({
 
           {isGalleryItemsProcessing && (
             <TooltipContent className="max-w-xs">
-              Some items in the moodboard layout are still being analysed.
-              Please wait till completion.
+              Some items in the your brand are still being analysed. Please wait
+              till completion.
             </TooltipContent>
           )}
         </Tooltip>

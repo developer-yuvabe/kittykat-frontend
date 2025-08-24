@@ -16,6 +16,8 @@ import type {
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 
+import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+
 export const ITEMS_PER_PAGE = 20;
 
 export const useGalleryQuery = (
@@ -155,21 +157,52 @@ export const useGalleryQuery = (
   };
 
   function updateGalleryItemInCache(updatedItem: GalleryItemResponse) {
-    const queryKey = getGalleryQueryKey();
-
-    queryClient.setQueryData(queryKey, (old: any) => {
-      if (!old) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page: any) => ({
-          ...page,
-          gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
-            item.id === updatedItem.id ? updatedItem : item
-          ),
-        })),
-      };
+    // 1️⃣ Update paginated infinite queries like ["gallery-items", ...]
+    const galleryQueries = queryClient.getQueriesData({
+      queryKey: ["gallery-items"],
+      exact: false,
     });
 
+    galleryQueries.forEach(([queryKey, old]) => {
+      if (!old) return;
+
+      queryClient.setQueryData(queryKey, (prev: any) => {
+        if (!prev?.pages) return prev;
+
+        return {
+          ...prev,
+          pages: prev.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.map((item: GalleryItemResponse) =>
+              item.id === updatedItem.id ? updatedItem : item
+            ),
+          })),
+        };
+      });
+    });
+
+    // 2️⃣ Update flat array bulk queries like ["gallery-items-bulk", ids]
+    const bulkQueries = queryClient.getQueriesData({
+      queryKey: ["gallery-items-bulk"],
+      exact: false,
+    });
+
+    bulkQueries.forEach(([queryKey, old]) => {
+      if (!Array.isArray(old)) return;
+
+      queryClient.setQueryData(
+        queryKey,
+        (prev: GalleryItemResponse[] | undefined) => {
+          if (!prev) return prev;
+
+          return prev.map((item) =>
+            item.id === updatedItem.id ? updatedItem : item
+          );
+        }
+      );
+    });
+
+    // 3️⃣ Update single-item query if it exists
     queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
   }
 
@@ -186,7 +219,7 @@ export const useGalleryQuery = (
 
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
-        queryKey: getGalleryQueryKey(),
+        queryKey: ["gallery-items"],
       });
 
       // Update the loading toast to success
@@ -209,7 +242,32 @@ export const useGalleryQuery = (
     },
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
-        queryKey: getGalleryQueryKey(),
+        queryKey: ["gallery-items"],
+      });
+
+      // Update the loading toast to success
+      toast.success("Items uploaded to gallery", { id: context?.toastId });
+    },
+    onError: (_error, _variables, context) => {
+      // Update the loading toast to error
+      toast.error("Failed to upload items to gallery", {
+        id: context?.toastId,
+      });
+    },
+  });
+
+  // Upload bulk gallery items with analysis mutation
+  const uploadBulkWithAnalysisMutation = useMutation({
+    mutationFn: (body: BulkGalleryUploadRequest) =>
+      galleryService.uploadBulkGalleryItemsWithAnalysis(body),
+    onMutate: () => {
+      // Show loading toast and store the ID
+      const toastId = toast.loading("Uploading items to gallery...");
+      return { toastId };
+    },
+    onSuccess: (_data, _variables, context) => {
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
       });
 
       // Update the loading toast to success
@@ -383,6 +441,42 @@ export const useGalleryQuery = (
       // Remove item from single item cache
       queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       toast.success("Item deleted successfully");
+      // Invalidate bulk items queries
+      queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
+
+      // Also remove the item from existing bulk query caches
+      const bulkQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items-bulk"],
+        exact: false,
+      });
+
+      bulkQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => item.id !== itemId);
+          }
+        );
+      });
+      const autoFillQueries = queryClient.getQueriesData({
+        queryKey: ["autofill-suggestions"],
+        exact: false,
+      });
+
+      autoFillQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: AutoFillSuggestedImage[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => !itemId.includes(item.id));
+          }
+        );
+      });
     },
   });
 
@@ -426,6 +520,44 @@ export const useGalleryQuery = (
         queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       });
       toast.success(`${data.length} items deleted successfully`);
+
+      // Invalidate and update bulk items queries
+      queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
+
+      // Also remove the items from existing bulk query caches
+      const bulkQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items-bulk"],
+        exact: false,
+      });
+
+      bulkQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => !itemIds.includes(item.id));
+          }
+        );
+      });
+
+      const autoFillQueries = queryClient.getQueriesData({
+        queryKey: ["autofill-suggestions"],
+        exact: false,
+      });
+
+      autoFillQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: AutoFillSuggestedImage[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => !itemIds.includes(item.id));
+          }
+        );
+      });
     },
   });
 
@@ -643,7 +775,7 @@ export const useGalleryQuery = (
 
     await Promise.all(
       matchingQueries.map(([queryKey]) =>
-        queryClient.invalidateQueries({ queryKey, refetchType: "active" })
+        queryClient.invalidateQueries({ queryKey, refetchType: "all" })
       )
     );
   };
@@ -717,6 +849,8 @@ export const useGalleryQuery = (
     refetchAllGalleryQueries,
 
     bulkUpload: bulkUploadMutation.mutateAsync,
+
+    uploadBulkWithAnalysis: uploadBulkWithAnalysisMutation.mutateAsync,
   };
 };
 

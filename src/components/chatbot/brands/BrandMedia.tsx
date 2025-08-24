@@ -10,13 +10,13 @@ export const BrandMedia: React.FC = ({}) => {
   const { selectedBrandId } = useBrandStore();
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
-  const { getGalleryItems, totalItems, isFetching } = useGalleryQuery({
+  const { getGalleryItems, totalItems } = useGalleryQuery({
     selectedFilters: {
       brands: [selectedBrandId!],
       campaigns: [],
       moodboards: [],
       product_categories: [],
-      asset_types: [],
+      asset_types: ["image"],
       asset_sources: [],
       media_format: [],
       aspect_ratio: [],

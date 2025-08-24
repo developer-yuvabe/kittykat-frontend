@@ -8,17 +8,18 @@ import type { GalleryActions } from "@/hooks/useGallery";
 import {
   PlayCircle,
   PauseCircle,
-  Heart,
-  Copy,
-  Expand,
+  HeartIcon,
+  CopyIcon,
   Check,
 } from "lucide-react";
+import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
 import type { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import RemixImage, {
   type RemixImageHandle,
 } from "../../_components/remix/RemixImage";
 import { toast } from "sonner";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { cn, handleDownloadVideo } from "@/lib/utils";
 
 interface AskKittykatImageSectionProps {
   item: GalleryItemResponse;
@@ -106,17 +107,21 @@ const VideoPlayer: React.FC<{
     }
   };
 
+  const handleDownload = () => {
+    handleDownloadVideo(src);
+  };
+
   // Check if there's a prompt available to copy
   const hasPromptToCopy = !!item.input_prompt;
 
   return (
-    <div className="relative w-full h-full group overflow-hidden rounded-lg flex items-center justify-center">
-      <div className="relative">
+    <div className="relative w-full h-full group overflow-visible rounded-lg flex items-center justify-center">
+      {/* Video element with fixed dimensions */}
+      <div className="relative max-w-full max-h-[80vh] flex items-center justify-center">
         <video
           ref={videoRef}
           src={src}
-          className="object-contain w-full h-full cursor-pointer rounded-lg"
-          style={{ maxHeight: "80vh" }}
+          className="object-contain w-auto h-auto max-w-full max-h-[80vh] cursor-pointer rounded-lg"
           muted
           autoPlay
           loop
@@ -124,60 +129,92 @@ const VideoPlayer: React.FC<{
           onClick={togglePlayPause}
         />
 
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-lg" />
+        {/* Overlay gradient that covers the entire video container */}
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg z-10">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60 rounded-lg" />
         </div>
 
         {/* Play/Pause button - Center */}
         <div
-          className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg"
+          className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg z-20 pointer-events-auto"
           onClick={togglePlayPause}
         >
           {isPlaying ? (
-            <PauseCircle className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            <PauseCircle className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl" />
           ) : (
-            <PlayCircle className="w-16 h-16 text-white opacity-100" />
+            <PlayCircle className="w-16 h-16 text-white opacity-100 drop-shadow-2xl" />
           )}
         </div>
 
-        {/* Top Right - Expand button */}
-        <TooltipIconButton
-          onClick={(e) => {
-            e.stopPropagation();
-            handleFullscreen();
-          }}
-          tooltip="Expand"
-          variant="ghost"
-          className="absolute top-2 right-2 size-7 text-white hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <Expand />
-        </TooltipIconButton>
+        {/* Control buttons container - Always visible within video bounds */}
+        <div className="absolute inset-0 z-30 pointer-events-none">
+          {/* Top Right - Expand button */}
+          <div className="absolute top-3 right-3">
+            <TooltipIconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFullscreen();
+              }}
+              tooltip="Expand"
+              variant="ghost"
+              className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+            >
+              <ExpandIcon className="h-4 w-4" />
+            </TooltipIconButton>
+          </div>
 
-        {/* Bottom Right - Heart/Like button */}
-        <Heart
-          onClick={onLike}
-          className={`absolute bottom-2 right-2 w-6 h-6 cursor-pointer transition-opacity opacity-0 group-hover:opacity-100 ${
-            isLiked ? "text-red-500 fill-red-500" : "text-white"
-          }`}
-          fill={isLiked ? "red" : "none"}
-          stroke={isLiked ? "red" : "white"}
-        />
+          {/* Bottom Right - Heart/Like button */}
+          <div className="absolute bottom-3 right-3">
+            <TooltipIconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike();
+              }}
+              tooltip={isLiked ? "Unlike" : "Like"}
+              variant="ghost"
+              className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+            >
+              <HeartIcon
+                className={cn("h-4 w-4", {
+                  "text-red-500 fill-red-500": isLiked,
+                  "text-white": !isLiked,
+                })}
+              />
+            </TooltipIconButton>
+          </div>
 
-        {/* Bottom Left - Copy button with conditional tooltip */}
-        {hasPromptToCopy && (
-          <TooltipIconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCopyPrompt();
-            }}
-            tooltip="Copy prompt"
-            variant="ghost"
-            className="absolute bottom-2 left-2 size-7 text-white hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            {copied ? <Check /> : <Copy />}
-          </TooltipIconButton>
-        )}
+          {/* Bottom Left - Download and Copy buttons */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-x-2">
+            <TooltipIconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload();
+              }}
+              tooltip="Download"
+              variant="ghost"
+              className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+            >
+              <DownloadIcon className="h-4 w-4" />
+            </TooltipIconButton>
+            {hasPromptToCopy && (
+              <TooltipIconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyPrompt();
+                }}
+                tooltip="Copy prompt"
+                variant="ghost"
+                className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <CopyIcon className="h-4 w-4" />
+                )}
+              </TooltipIconButton>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

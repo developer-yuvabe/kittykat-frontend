@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import type {
   GalleryFilters,
   BrandCampaignListResponse,
@@ -13,38 +14,32 @@ import type {
   BulkGalleryUploadRequest,
 } from "@/types/gallery.types";
 import { acceptedFileTypes, getAssetTypeFromUrl } from "@/lib/gallery.utils";
-import { MediaUploadActions } from "./MediaUploadActions";
-import { MediaUploadStatus } from "./MediaUploadStatus";
-import { MediaUploadDropzoneArea } from "./MediaUploadDropzoneArea";
 import { getExtensionFromUrl } from "@/lib/utils";
-import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
+import { MediaUploadActions } from "../MediaUploadActions";
+import { MediaUploadStatus } from "../MediaUploadStatus";
+import { MediaUploadDropzoneArea } from "../MediaUploadDropzoneArea";
 
-interface MediaUploadDropzoneProps {
+interface FolderUploadDropzoneProps {
   activeTab: string;
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
   galleryFilters?: GalleryFilters;
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
-  setSelectedBrand?: React.Dispatch<
-    React.SetStateAction<BrandCampaignListResponse["brands"][number] | null>
-  >;
-  brands: BrandCampaignListResponse["brands"];
+  selectedCampaignId?: string;
+  selectedMoodboardId?: string;
   brandsLoading: boolean;
-  selectedCampaignId: string | undefined;
-  selecteMoodboardId: string | undefined;
 }
 
-export function MediaUploadDropzone({
+export function FolderUploadDropzone({
   activeTab,
   onUploadComplete,
   addToGallery = true,
   galleryFilters = {},
   selectedBrand,
-  brands,
-  brandsLoading,
   selectedCampaignId,
-  selecteMoodboardId,
-}: MediaUploadDropzoneProps) {
+  selectedMoodboardId,
+  brandsLoading,
+}: FolderUploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
@@ -53,7 +48,7 @@ export function MediaUploadDropzone({
     galleryFilters,
     ITEMS_PER_PAGE,
     false,
-    "MediaUploadDropzone"
+    "FolderUploadDropzone"
   );
 
   const { refetchAllAutoFillQueries } = useMoodboardQuery({});
@@ -155,7 +150,7 @@ export function MediaUploadDropzone({
         const urls = successfulUploads.map(({ url }) => url);
         onUploadComplete?.(urls);
 
-        // If addToGallery is enabled, add to gallery using bulk upload only
+        // If addToGallery is enabled, add to gallery using bulk upload
         if (addToGallery) {
           const itemsToUpload: GalleryItem[] = successfulUploads.map(
             ({ file, url }) => ({
@@ -176,7 +171,7 @@ export function MediaUploadDropzone({
               detected_colors: [],
               media_format: getExtensionFromUrl(url),
               campaign_id: selectedCampaignId,
-              moodboard_id: selecteMoodboardId,
+              moodboard_id: selectedMoodboardId,
               is_master: true,
             })
           );
@@ -186,7 +181,7 @@ export function MediaUploadDropzone({
             const bulkUploadPayload: BulkGalleryUploadRequest = {
               gallery_items: itemsToUpload,
               brand_id: selectedBrand.brand_id,
-              moodboard_id: selecteMoodboardId,
+              moodboard_id: selectedMoodboardId,
               campaign_id: selectedCampaignId,
             };
 
@@ -284,7 +279,7 @@ export function MediaUploadDropzone({
             search_keywords: [],
             custom_tags: [],
             campaign_id: selectedCampaignId,
-            moodboard_id: selecteMoodboardId,
+            moodboard_id: selectedMoodboardId,
             is_master: true,
           };
         });
@@ -358,10 +353,10 @@ export function MediaUploadDropzone({
     disabled: isUploading || isUrlDialogOpen,
   });
 
-  const isDisabled = isUploading || brands.length === 0 || brandsLoading;
+  const isDisabled = isUploading || !selectedBrand || brandsLoading;
 
   return (
-    <div className="space-y-4 relative">
+    <div className="mb-6">
       <MediaUploadDropzoneArea
         getRootProps={getRootProps}
         getInputProps={getInputProps}
@@ -379,7 +374,7 @@ export function MediaUploadDropzone({
         />
 
         <MediaUploadStatus
-          brands={brands}
+          brands={selectedBrand ? [selectedBrand] : []}
           brandsLoading={brandsLoading}
           isDragActive={isDragActive}
           currentConfig={currentConfig}

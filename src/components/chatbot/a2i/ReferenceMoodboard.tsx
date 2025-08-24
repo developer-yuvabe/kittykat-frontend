@@ -29,6 +29,9 @@ import CustomGalleryContainer, {
   SortablePhoto,
 } from "@/components/gallery/CustomGalleryContainer";
 import { GalleryItemResponse } from "@/types/gallery.types";
+import { MIN_IMAGES_REQUIRED } from "@/lib/moodboard.utils";
+import MoodboardSelector from "../moodboards/MoodboardSelector";
+import { updateA2iRefernceMoodboard } from "@/services/api/a2i.service";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -44,9 +47,16 @@ const ReferenceMoodboard = ({
   formRef,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt } = useA2iStore();
+  const { setCampaignMoodboardSelection, setSelectedMoodboardId } =
+    useBrandStore();
   const [n, setN] = useState<number | "">(prompts?.length || "");
   const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Add placeholder functionality similar to MoodboardLayout
+  const [placeholderItems, setPlaceholderItems] = useState<
+    SortablePhoto<Photo>[]
+  >([]);
 
   const { selectedBrandId } = useBrandStore();
   const { mutate: generateShowboard, isPending } = useMutation({
@@ -54,18 +64,19 @@ const ReferenceMoodboard = ({
       generateA2iShowboard(selectedBrandId!, referenceMoodboardId!, Number(n)),
   });
 
-  const selectedMoodboard = moodboardInformation?.find(
-    (mb) => mb.id === referenceMoodboardId
+  const selectedMoodboard = useMemo(
+    () => moodboardInformation?.find((mb) => mb.id === referenceMoodboardId),
+    [moodboardInformation, referenceMoodboardId]
   );
 
-  // Extract gallery item IDs from the moodboard assets
+  // Extract gallery item IDs from the effective moodboard assets
   const galleryItemIds = useMemo(() => {
     return (
       selectedMoodboard?.moodboard_assets?.map(
         (asset) => asset.gallery_item_id
       ) || []
     );
-  }, [selectedMoodboard?.moodboard_assets]);
+  }, [selectedMoodboard?.moodboard_assets, selectedMoodboard]);
 
   // Fetch only the required gallery items using bulk API
   const {
@@ -103,7 +114,11 @@ const ReferenceMoodboard = ({
         position: positionMap.get(item.id) || 0,
       }))
       .sort((a, b) => a.position - b.position);
-  }, [bulkGalleryItems, selectedMoodboard?.moodboard_assets]);
+  }, [
+    bulkGalleryItems,
+    selectedMoodboard?.moodboard_assets,
+    selectedMoodboard,
+  ]);
 
   // Load images from ordered gallery items
   const loadImagesWithDimensions = useCallback(async () => {
@@ -161,12 +176,26 @@ const ReferenceMoodboard = ({
       // Clear photos if no ordered items
       setPhotos([]);
     }
-  }, [orderedGalleryItems.length]);
+  }, [orderedGalleryItems.length, referenceMoodboardId]);
 
-  // Display logic
+  // Display logic - show gallery if we have photos OR if we need placeholders for grid layout
   const showGallery = useMemo(() => {
-    return photos.length > 0 && !loading && !isBulkFetching && !isBulkLoading;
-  }, [photos.length, loading, isBulkFetching, isBulkLoading]);
+    return (
+      (photos.length > 0 || placeholderItems.length > 0) &&
+      !loading &&
+      !isBulkFetching &&
+      !isBulkLoading
+    );
+  }, [
+    photos.length,
+    placeholderItems.length,
+    loading,
+    isBulkFetching,
+    isBulkLoading,
+  ]);
+
+  // Calculate total images for moodboard (actual photos + placeholders needed for minimum grid)
+  const totalImagesForMoodboard = Math.max(photos.length, MIN_IMAGES_REQUIRED);
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
@@ -186,106 +215,213 @@ const ReferenceMoodboard = ({
     latestGalleryItemsRef.current = bulkGalleryItems;
   }, [bulkGalleryItems]);
 
+  // Handle the case where the reference moodboard is deleted
+  useEffect(() => {
+    if (referenceMoodboardId && moodboardInformation && !selectedMoodboard) {
+      // The reference moodboard ID exists but the moodboard is not found (deleted)
+      updateA2iRefernceMoodboard(selectedBrandId!, null);
+    }
+  }, [
+    referenceMoodboardId,
+    selectedMoodboard,
+    moodboardInformation,
+    selectedBrandId,
+  ]);
+
+  // Handle moodboard selection change - this will propagate to other sections
+  const handleMoodboardSelectionChange = async (
+    moodboard: MoodboardInformation | null
+  ) => {
+    if (!moodboard) {
+      // Handle case where moodboard is set to null (e.g., when deleted)
+      setSelectedMoodboardId(null);
+      await updateA2iRefernceMoodboard(selectedBrandId!, null);
+      return;
+    }
+
+    setSelectedMoodboardId(moodboard.id!);
+    if (moodboard && selectedMoodboard?.campaign_id) {
+      setCampaignMoodboardSelection(
+        selectedMoodboard.campaign_id,
+        moodboard.id
+      );
+    }
+    await updateA2iRefernceMoodboard(selectedBrandId!, moodboard.id!);
+  };
+
+  // Create placeholder items for missing photos when less than minimum required
+  useEffect(() => {
+    const placeholders: SortablePhoto<Photo>[] = Array.from(
+      { length: Math.max(0, MIN_IMAGES_REQUIRED - photos.length) },
+      (_, index) => ({
+        id: `placeholder-${index}`,
+        src: "", // Placeholder image src
+        width: 300,
+        height: 300,
+        alt: `Placeholder ${index + 1}`,
+        liked: false,
+        isPlaceholder: true,
+        placeholderIndex: photos.length + index,
+      })
+    );
+    setPlaceholderItems(placeholders);
+  }, [photos.length, MIN_IMAGES_REQUIRED, selectedMoodboard]);
+
   return (
     <ContentSection
       title="Reference Moodboard"
       showCopy={false}
       showPin={false}
-      context={{
-        data: {},
-      }}
+      context={{ data: {} }}
       content={
         <div className="space-y-8">
-          {showGallery && photos.length > 0 && (
-            <div className="mx-auto max-w-7xl w-full px-2">
-              <CustomGalleryContainer
-                photos={photos}
-                setPhotos={() => {}}
-                noOfImagesForMoodboard={photos.length}
-                setNoOfImagesForMoodboard={() => {}}
-                moodboard={selectedMoodboard!}
-                setPlaceholderItems={() => {}}
-                hasUnsavedChanges={false}
-                isPreview
-              />
-            </div>
-          )}
-
-          {photos.length == 0 && (
-            <ManualMoodboardSkeleton
-              shimmer={isBulkFetching || isBulkLoading}
-              showButton={false}
-            />
-          )}
-
-          {prompts && prompts.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          {/* Handle case when reference moodboard is null (deleted) */}
+          {!selectedMoodboard && referenceMoodboardId ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <p className="text-gray-500 text-center">
+                The reference moodboard has been deleted or is no longer
+                available.
+              </p>
+              {moodboardInformation && moodboardInformation.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold">Prompts</h3>
-                  <Input
-                    type="number"
-                    value={n}
-                    onChange={handleChange}
-                    onPaste={(e) => e.preventDefault()} // Disable paste
-                    min={1}
-                    max={3}
-                    inputMode="numeric"
-                    pattern="[0-9]*" // Hint for mobile keyboards
+                  <p className="text-sm text-gray-600">
+                    Select a different moodboard:
+                  </p>
+                  <MoodboardSelector
+                    campaignId={moodboardInformation[0].campaign_id!}
+                    moodboards={moodboardInformation}
+                    selectedMoodboard={null}
+                    setSelectedMoodboard={handleMoodboardSelectionChange}
+                    isCreatingNew={false}
+                    onNewMoodboard={() => {}}
                   />
                 </div>
-                {referenceMoodboardId && (
-                  <Button
-                    variant={"outline"}
-                    className="text-primary border-primary"
-                    disabled={isPending}
-                    onClick={() =>
-                      generateShowboard(undefined, {
-                        onSuccess: () => {
-                          toast.success(
-                            "Concept Visual prompts generated successfully!"
-                          );
-                        },
-                        onError: () => {
-                          toast.error(
-                            "Failed to generate concept Visual prompts. Please try again."
-                          );
-                        },
-                      })
-                    }
-                  >
-                    <WandSparkles />
-                    {isPending ? "Generating prompts..." : "Generate Prompts"}
-                  </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between">
+                <p className="font-semibold text-sm text-gray-600 break-words max-w-xs">
+                  {selectedMoodboard?.title}
+                </p>
+
+                {moodboardInformation && selectedMoodboard?.campaign_id && (
+                  <MoodboardSelector
+                    campaignId={selectedMoodboard.campaign_id}
+                    moodboards={moodboardInformation}
+                    selectedMoodboard={selectedMoodboard}
+                    setSelectedMoodboard={handleMoodboardSelectionChange}
+                    isCreatingNew={false}
+                    onNewMoodboard={() => {}}
+                  />
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-4 auto">
-                {prompts.map((prompt) => (
-                  <div key={prompt} className="relative">
-                    <Textarea
-                      value={prompt}
-                      readOnly
-                      className="min-h-40 max-h-40 scrollbar"
-                    />
-                    <Button
-                      variant="ghost"
-                      className="absolute bottom-2 right-2"
-                      size="icon"
-                      onClick={() => {
-                        if (formRef.current) {
-                          setReferencePrompt(prompt);
-                          formRef.current.scrollIntoView({
-                            behavior: "smooth",
-                          });
-                        }
-                      }}
-                    >
-                      <EditIcon />
-                    </Button>
+              {/* Show skeleton when switching */}
+              {!showGallery || !selectedMoodboard ? (
+                <ManualMoodboardSkeleton shimmer showButton={false} />
+              ) : (
+                <div className="mx-auto max-w-7xl w-full px-2">
+                  <CustomGalleryContainer
+                    photos={photos}
+                    setPhotos={() => {}}
+                    noOfImagesForMoodboard={totalImagesForMoodboard}
+                    setNoOfImagesForMoodboard={() => {}}
+                    moodboard={selectedMoodboard}
+                    placeholderItems={placeholderItems}
+                    setPlaceholderItems={setPlaceholderItems}
+                    hasUnsavedChanges={false}
+                    isPreview
+                    key={selectedMoodboard?.id}
+                  />
+                </div>
+              )}
+
+              {prompts && prompts.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold">Prompts</h3>
+                      <Input
+                        type="number"
+                        value={n}
+                        onChange={handleChange}
+                        onPaste={(e) => e.preventDefault()} // Disable paste
+                        min={1}
+                        max={3}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                      />
+                    </div>
+                    {referenceMoodboardId && (
+                      <Button
+                        variant={"outline"}
+                        className="text-primary border-primary"
+                        disabled={isPending}
+                        onClick={() => {
+                          const hasTags =
+                            selectedMoodboard?.moodboard_tags &&
+                            Object.keys(selectedMoodboard.moodboard_tags)
+                              .length > 0 &&
+                            Object.values(
+                              selectedMoodboard.moodboard_tags
+                            ).some((tagArray) => tagArray.length > 0);
+
+                          if (hasTags) {
+                            generateShowboard(undefined, {
+                              onSuccess: () => {
+                                toast.success(
+                                  "Concept Visual prompts generated successfully!"
+                                );
+                              },
+                              onError: () => {
+                                toast.error(
+                                  "Failed to generate concept Visual prompts. Please try again."
+                                );
+                              },
+                            });
+                          } else {
+                            toast.warning(
+                              "Please ensure your moodboard has at least one image with tags before generating prompts."
+                            );
+                          }
+                        }}
+                      >
+                        <WandSparkles />
+                        {isPending
+                          ? "Generating prompts..."
+                          : "Generate Prompts"}
+                      </Button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="grid grid-cols-3 gap-4 auto">
+                    {prompts.map((prompt) => (
+                      <div key={prompt} className="relative">
+                        <Textarea
+                          value={prompt}
+                          readOnly
+                          className="min-h-40 max-h-40 scrollbar"
+                        />
+                        <Button
+                          variant="ghost"
+                          className="absolute bottom-2 right-2"
+                          size="icon"
+                          onClick={() => {
+                            if (formRef.current) {
+                              setReferencePrompt(prompt);
+                              formRef.current.scrollIntoView({
+                                behavior: "smooth",
+                              });
+                            }
+                          }}
+                        >
+                          <EditIcon />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       }

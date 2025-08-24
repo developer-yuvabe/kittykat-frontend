@@ -39,6 +39,22 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       null
     );
     const [lastBrushSize, setLastBrushSize] = useState(brushSize);
+    const [imageWidth, setImageWidth] = useState<number>(0);
+
+    const calculateActualBrushSize = useCallback(
+      (relativeBrushSize: number) => {
+        if (imageWidth === 0) return relativeBrushSize;
+        const minBrushPercent = 0.5;
+        const maxBrushPercent = 25;
+        const brushPercent =
+          (relativeBrushSize / 100) * (maxBrushPercent - minBrushPercent) +
+          minBrushPercent;
+        return Math.max(1, (imageWidth * brushPercent) / 100);
+      },
+      [imageWidth]
+    );
+
+    const actualBrushSize = calculateActualBrushSize(brushSize);
 
     const {
       saveState,
@@ -68,13 +84,13 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
           ctx.strokeStyle = "rgba(255, 255, 255, 1)";
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(previewX, previewY, brushSize / 2, 0, 2 * Math.PI);
+          ctx.arc(previewX, previewY, actualBrushSize / 2, 0, 2 * Math.PI);
           ctx.fill();
           ctx.stroke();
           ctx.restore();
         }
       },
-      [ctx, brushSize, isDrawing]
+      [ctx, actualBrushSize, isDrawing]
     );
 
     const rescaleExistingMask = useCallback(() => {
@@ -86,7 +102,8 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         return;
 
       const canvas = offScreenCanvasRef.current;
-      const scaleFactor = brushSize / lastBrushSize;
+      const lastActualBrushSize = calculateActualBrushSize(lastBrushSize);
+      const scaleFactor = actualBrushSize / lastActualBrushSize;
       const currentImageData = offScreenCtx.getImageData(
         0,
         0,
@@ -161,7 +178,13 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
       );
       offScreenCtx.clearRect(0, 0, canvas.width, canvas.height);
       offScreenCtx.putImageData(finalImageData, 0, 0);
-    }, [offScreenCtx, brushSize, lastBrushSize]);
+    }, [
+      offScreenCtx,
+      brushSize,
+      lastBrushSize,
+      calculateActualBrushSize,
+      actualBrushSize,
+    ]);
 
     useEffect(() => {
       const image = new Image();
@@ -174,6 +197,9 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
 
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
+
+        // Set image width for brush size calculations
+        setImageWidth(image.naturalWidth);
 
         const offScreenCanvas = document.createElement("canvas");
         offScreenCanvas.width = canvas.width;
@@ -188,7 +214,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         if (context && offScreenContext) {
           offScreenContext.lineJoin = "round";
           offScreenContext.lineCap = "round";
-          offScreenContext.lineWidth = brushSize;
+          offScreenContext.lineWidth = calculateActualBrushSize(brushSize);
           offScreenContext.strokeStyle = "rgba(255, 255, 255, 1)";
           offScreenContext.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -211,7 +237,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
           imageRef.current.height = image.naturalHeight;
         }
       };
-    }, [url, clearHistory, brushSize]);
+    }, [url, clearHistory, brushSize, calculateActualBrushSize, setImageWidth]);
 
     const getPointerCoords = useCallback(
       (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -234,7 +260,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         setMousePos({ x, y });
 
         if (isDrawing && offScreenCtx) {
-          offScreenCtx.lineWidth = brushSize;
+          offScreenCtx.lineWidth = actualBrushSize;
           offScreenCtx.lineTo(x, y);
           offScreenCtx.stroke();
           updateMainCanvas();
@@ -242,7 +268,13 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
           updateMainCanvas(true, x, y);
         }
       },
-      [isDrawing, offScreenCtx, brushSize, getPointerCoords, updateMainCanvas]
+      [
+        isDrawing,
+        offScreenCtx,
+        actualBrushSize,
+        getPointerCoords,
+        updateMainCanvas,
+      ]
     );
 
     const startDrawing = useCallback(
@@ -254,10 +286,10 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
 
         offScreenCtx.beginPath();
         offScreenCtx.moveTo(x, y);
-        offScreenCtx.lineWidth = brushSize;
+        offScreenCtx.lineWidth = actualBrushSize;
         updateMainCanvas();
       },
-      [offScreenCtx, getPointerCoords, updateMainCanvas, brushSize]
+      [offScreenCtx, getPointerCoords, updateMainCanvas, actualBrushSize]
     );
 
     const stopDrawing = useCallback(() => {
@@ -351,7 +383,8 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
     const setBrushSize = useCallback(
       (size: number) => {
         if (offScreenCtx && size !== lastBrushSize) {
-          offScreenCtx.lineWidth = size;
+          const newActualBrushSize = calculateActualBrushSize(size);
+          offScreenCtx.lineWidth = newActualBrushSize;
           rescaleExistingMask();
           setLastBrushSize(size);
           updateMainCanvas(mousePos !== null, mousePos?.x, mousePos?.y);
@@ -363,6 +396,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
         mousePos,
         updateMainCanvas,
         rescaleExistingMask,
+        calculateActualBrushSize,
       ]
     );
 

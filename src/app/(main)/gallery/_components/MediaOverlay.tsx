@@ -1,8 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { HeartIcon, DownloadIcon, Loader2 } from "lucide-react";
+import { HeartIcon, DownloadIcon } from "lucide-react";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -11,12 +10,12 @@ interface MediaOverlayProps {
   isMediaSelectDialog?: boolean;
   isMultiSelectMode?: boolean;
   onSelect: (id: string, selected: boolean) => void;
-  onToggleFavorite: (id: string) => void;
   isAlreadySelected: boolean;
   isDisabled?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
+  onToggleFavorite: () => void;
 }
 
 // Media Overlay Component
@@ -39,7 +38,7 @@ export function MediaOverlay({
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newIsFavourite = !item.is_favourite;
-    onToggleFavorite(item.id);
+    onToggleFavorite();
     updateAutoFillSuggestionCache(item.id, newIsFavourite);
   };
 
@@ -97,24 +96,12 @@ export function MediaOverlay({
         </div>
       )}
 
-      {/* Processing Status Badge - Positioned below the three dots menu */}
-      {item.processing_status === "processing" && (
-        <div
-          className={`absolute right-1 z-10 ${
-            isMediaSelectDialog ? "top-1" : "top-4"
-          }`}
-        >
-          <Badge variant="secondary">
-            <Loader2 className="h-3 w-3 animate-spin " />
-            Analyzing
-          </Badge>
-        </div>
-      )}
-
       {/* Favorite Button */}
       <div
-        className={`absolute bottom-2 right-2 z-10 transition-opacity duration-200 cursor-pointer ${
-          isHovered ? "opacity-100" : "opacity-0"
+        className={`absolute bottom-2 right-2 z-30 transition-opacity duration-200 cursor-pointer ${
+          isHovered
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={handleFavoriteClick}
       >

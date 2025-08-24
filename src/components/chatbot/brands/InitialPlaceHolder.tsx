@@ -19,6 +19,7 @@ import { useUserStore } from "@/store/user.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { SearchIcon } from "@/components/ui/custom-icon";
+import { scrollToBottom } from "@/lib/scroll.utils";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -292,16 +293,33 @@ export const InitialPlaceHolder: React.FC<{
   const { user } = useUserStore();
   const { selectedBrandId, setIsCreatingBrand } = useBrandStore();
 
-  const handleNewBrandClick = () => {
-    setIsCreatingBrand(true);
-    submitOptimisticMessage({
-      stream,
-      text: "Let's create a new brand.",
-      userId: user!.id,
-      currentBrandContextId: selectedBrandId,
-    });
-    if (clearPinnedItems) {
-      clearPinnedItems();
+  // Enhanced function to handle new brand creation with scroll
+  const handleNewBrandCreation = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    try {
+      // Set creating brand state
+      setIsCreatingBrand(true);
+
+      // Submit the message
+      submitOptimisticMessage({
+        stream,
+        text: "Let's create a new brand.",
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      });
+
+      // Clear pinned items
+      if (clearPinnedItems) {
+        clearPinnedItems();
+      }
+
+      // Use the reusable scroll utility
+      scrollToBottom(100);
+    } catch (error) {
+      console.error("Error creating new brand:", error);
     }
   };
 
@@ -322,7 +340,7 @@ export const InitialPlaceHolder: React.FC<{
         fields={brandFields}
         customSelector={!isLoading ? <BrandSelector /> : undefined}
         newButtonTooltip="New Brand"
-        onNewClick={handleNewBrandClick}
+        onNewClick={handleNewBrandCreation}
         renderFieldContent={renderBrandFieldContent}
         isExpanded={brandExpanded}
         onToggleExpanded={() => setBrandExpanded(!brandExpanded)}

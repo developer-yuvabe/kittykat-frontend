@@ -4,6 +4,7 @@ import { z, ZodTypeAny } from "zod";
 
 export const generateImage = async <T extends ZodTypeAny>(
   brandId: string,
+  // campaignId: string | null,
   data: z.infer<T>
 ) => {
   try {
@@ -74,6 +75,23 @@ export const updateA2iImagePositions = async (
     );
   } catch (error) {
     console.error("Failed to update image positions:", error);
+    throw error;
+  }
+};
+
+export const updateA2iRefernceMoodboard = async (
+  brandId: string,
+  moodboardId: string | null
+) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.patch(`/brands/a2i/reference-moodboard`, {
+        moodboard_id: moodboardId,
+        brand_id: brandId,
+      })
+    );
+  } catch (error) {
+    console.error("Error updating reference moodboard:", error);
     throw error;
   }
 };

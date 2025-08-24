@@ -2,7 +2,6 @@
 
 import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useBrandStore } from "@/store/brand.store";
-import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import React, { useMemo, useState } from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
 import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
@@ -20,7 +19,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true, campaignInformation: true });
-  const { removePinnedItem } = usePinnedContextStore();
   const { selectedBrandId, isBrandsFetched, isCreatingBrand } = useBrandStore();
   const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
 
@@ -87,6 +85,8 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         <A2iImagesSection
           a2iImageInformation={a2iImageInformation}
           moodboardInformation={moodboardInformation}
+          campaignInformation={campaignInformation}
+          selectedCampaignIndex={selectedCampaignIndex}
         />
       )}
     </div>

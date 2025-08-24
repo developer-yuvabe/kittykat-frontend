@@ -16,6 +16,7 @@ import { InlineEditableBadges } from "../shared/InlineEditableBadges";
 interface DynamicContentSectionProps {
   dynamicData: Record<string, unknown>;
   agentId?: Agents;
+  pathPrefix?: string;
 }
 
 export const RenderValue: React.FC<{
@@ -81,6 +82,7 @@ export const RenderValue: React.FC<{
 
     if (value.every((item) => typeof item !== "object" || item === null)) {
       const items = value.map((item) => String(item));
+      console.log(path);
       return (
         <div className="mt-1">
           <InlineEditableBadges
@@ -90,7 +92,7 @@ export const RenderValue: React.FC<{
                 path, // fieldPath
                 items, // old value
                 newValues, // new value
-                "BrandingAgent" // optional agent hint
+                agentId ?? "brandingAgent"
               );
               if (message) {
                 submitOptimisticMessage({
@@ -129,7 +131,7 @@ export const RenderValue: React.FC<{
       <div className="space-y-2 mt-1">
         {Object.entries(value).map(([key, val]) => (
           <div key={key} className={`${depth > 0 ? "pl-4" : ""}`}>
-            <div className="flex items-baseline">
+            <div className="">
               <span className="text-sm font-medium text-gray-600">
                 {capitalizeKey(key)}:
               </span>
@@ -154,6 +156,7 @@ export const RenderValue: React.FC<{
 export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
   dynamicData,
   agentId,
+  pathPrefix,
 }) => {
   if (!dynamicData || Object.keys(dynamicData).length === 0) return null;
 
@@ -167,7 +170,14 @@ export const DynamicContentSection: React.FC<DynamicContentSectionProps> = ({
             <div className="ml-2 space-y-2 ">
               <RenderValue
                 value={value}
-                path={`dynamic.${key}`}
+                // Empty strings can also be considered as a valid value, so using undefined check looks good
+                path={`${
+                  pathPrefix === undefined
+                    ? "dynamic"
+                    : pathPrefix === ""
+                    ? key
+                    : `${pathPrefix}.${key}`
+                }`}
                 agentId={agentId}
               />
             </div>

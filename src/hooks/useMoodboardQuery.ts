@@ -73,7 +73,7 @@ export function useMoodboardQuery({
       predicate: (query) =>
         Array.isArray(query.queryKey) &&
         typeof query.queryKey[0] === "string" &&
-        query.queryKey[0].startsWith("auto-fill"),
+        query.queryKey[0].startsWith("autofill-suggestions"),
     });
   }
 

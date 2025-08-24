@@ -215,7 +215,7 @@ export const formatToLocalTime = (dateString: string) => {
       minute: "2-digit",
       hour12: true,
     });
-  } catch (error) {
+  } catch {
     // Fallback to original string if parsing fails
 
     return dateString;
@@ -332,3 +332,21 @@ export const getZodFallback = (type: string) => {
       return undefined;
   }
 };
+
+export function getImageDimensionsFromLocallyUploadedImage(
+  file: File
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      return reject(new Error("File is not an image"));
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}

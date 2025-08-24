@@ -203,8 +203,7 @@ export function MediaLibrary({
     setMultiSelectItems([]);
 
     // Reset filters from notification when switching tabs
-    const basePath = window.location.pathname;
-    router.replace(basePath);
+    setInitialWorkflowStatus([]);
 
     // Preserve brand-related filters when switching tabs
     setSelectedFilters((currentFilters) => ({
@@ -434,6 +433,15 @@ export function MediaLibrary({
                 brandName={selectedBrandName}
                 isUrlDialogOpen={isUrlDialogOpen} // Use state variable
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                favorites={favorites}
+                onFavoritesChange={handleFavoritesChange}
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                setInitialWorkflowStatus={setInitialWorkflowStatus}
+                onTabChange={handleTabChange}
+                selectedBrandId={effectiveBrandId!}
               />
             </div>
           )}
