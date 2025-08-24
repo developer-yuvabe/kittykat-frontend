@@ -117,20 +117,60 @@ export const useMoodboardActions = ({
       setPhotos((prevPhotos) => {
         const updatedPhotos = [...prevPhotos];
 
+        if (selectedItems.length === 0) return updatedPhotos;
+
         // Replace the specific placeholder or add to a specific position
         if (placeholderIndex < updatedPhotos.length) {
-          // Replace placeholder at specific index
-          if (selectedItems.length > 0) {
-            const item = selectedItems[0]; // Take first item for single placeholder replacement
-            updatedPhotos[placeholderIndex] = {
-              id: item.id,
-              src: item.asset_url,
-              width: item.dimensions?.width || 300,
-              height: item.dimensions?.height || 300,
-              alt: `Image ${item.id}`,
-              liked: item.is_favourite || false,
-              is_placeholder: false,
-            };
+          // Replace placeholder at specific index with first selected item
+          const firstItem = selectedItems[0];
+          updatedPhotos[placeholderIndex] = {
+            id: firstItem.id,
+            src: firstItem.asset_url,
+            width: firstItem.dimensions?.width || 300,
+            height: firstItem.dimensions?.height || 300,
+            alt: `Image ${firstItem.id}`,
+            liked: firstItem.is_favourite || false,
+            is_placeholder: false,
+          };
+
+          // Handle additional selected items if there are more than one
+          if (selectedItems.length > 1) {
+            const remainingItems = selectedItems.slice(1);
+
+            // Find all available placeholder positions starting from index 0
+            const availablePlaceholderIndices: number[] = [];
+            for (let i = 0; i < updatedPhotos.length; i++) {
+              if (updatedPhotos[i].is_placeholder && i !== placeholderIndex) {
+                availablePlaceholderIndices.push(i);
+              }
+            }
+
+            // Fill available placeholders with remaining items
+            remainingItems.forEach((item, index) => {
+              if (index < availablePlaceholderIndices.length) {
+                const targetIndex = availablePlaceholderIndices[index];
+                updatedPhotos[targetIndex] = {
+                  id: item.id,
+                  src: item.asset_url,
+                  width: item.dimensions?.width || 300,
+                  height: item.dimensions?.height || 300,
+                  alt: `Image ${item.id}`,
+                  liked: item.is_favourite || false,
+                  is_placeholder: false,
+                };
+              } else {
+                // If no more placeholders available, add to the end
+                updatedPhotos.push({
+                  id: item.id,
+                  src: item.asset_url,
+                  width: item.dimensions?.width || 300,
+                  height: item.dimensions?.height || 300,
+                  alt: `Image ${item.id}`,
+                  liked: item.is_favourite || false,
+                  is_placeholder: false,
+                });
+              }
+            });
           }
         } else {
           // Add to the end if placeholderIndex is beyond current length
