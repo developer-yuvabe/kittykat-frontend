@@ -34,7 +34,27 @@ export function CustomGalleryControls({
 
   const handleIncreaseImages = () => {
     if (noOfImagesForMoodboard < maxImages) {
-      setNoOfImagesForMoodboard(noOfImagesForMoodboard + 1);
+      const newCount = noOfImagesForMoodboard + 1;
+      setNoOfImagesForMoodboard(newCount);
+
+      // Add a placeholder item to the items array
+      setItems((prevItems: UnifiedMoodboardItem[]) => {
+        const currentItemsCount = prevItems.length;
+        if (currentItemsCount < newCount) {
+          const placeholderItem: UnifiedMoodboardItem = {
+            id: `placeholder-${currentItemsCount}`,
+            src: "",
+            width: 300,
+            height: 300,
+            alt: `Placeholder ${currentItemsCount + 1}`,
+            liked: false,
+            is_placeholder: true,
+            position: currentItemsCount,
+          };
+          return [...prevItems, placeholderItem];
+        }
+        return prevItems;
+      });
     }
   };
 
@@ -98,7 +118,7 @@ export function CustomGalleryControls({
             size="icon"
           >
             <BrushCleaning />
-          </TooltipIconButton>
+          </TooltipIconButton>  
         )} */}
       </div>
       <div className="flex items-center gap-2 ml-4">
