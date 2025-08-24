@@ -1,11 +1,15 @@
-import { GalleryItemResponse } from "@/types/gallery.types";
-import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+"use client";
 
-import { Photo } from "react-photo-album";
+import type React from "react";
+
+import type { GalleryItemResponse } from "@/types/gallery.types";
+import type { AutoFillSuggestedImage } from "@/types/moodboard.types";
+import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
+import type { Photo } from "react-photo-album";
 import { useBrandStore } from "@/store/brand.store";
 import { MoodboardGallerySelector } from "../chatbot/moodboards/MoodboardGallerySelector";
-import { MoodboardInformation } from "@/types/types";
-import { SortablePhoto } from "./CustomGalleryContainer";
+import type { MoodboardInformation } from "@/types/types";
+import type { SortablePhoto } from "./CustomGalleryContainer";
 import { Button } from "../ui/button";
 import { RegenerateIcon } from "../ui/custom-icon";
 import { useGalleryQuery } from "@/hooks/useGallery";
@@ -13,6 +17,7 @@ import { toast } from "sonner";
 import { useCallback } from "react";
 import { HeartIcon, Loader2, Maximize2, X } from "lucide-react";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
+import Sortable from "./Sortable";
 
 type PlaceholderCardProps<TPhoto extends Photo> = {
   photos: SortablePhoto<TPhoto>[];
@@ -23,7 +28,8 @@ type PlaceholderCardProps<TPhoto extends Photo> = {
     placeHolderIndex: number
   ) => void;
   placeHolderIndex: number;
-  setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
+  placeholderItemId?: string;
+  setItems: React.Dispatch<React.SetStateAction<UnifiedMoodboardItem[]>>;
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   isPreview?: boolean;
 };
@@ -34,7 +40,8 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   moodboard,
   onGallerySelection,
   placeHolderIndex,
-  setPhotos,
+  placeholderItemId,
+  setItems,
   setNoOfImagesForMoodboard,
   isPreview = false,
 }: PlaceholderCardProps<TPhoto>) {
@@ -57,7 +64,6 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
     30
   );
 
-  // TanStack Query for autofill suggestions - fetch on mount
   const { data: autoFillSuggestions = [], isLoading: isAutoFillLoading } =
     useMoodboardQuery({
       brandId: selectedBrandId || undefined,
@@ -77,7 +83,6 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
       return;
     }
 
-    // Filter out images that are already in the moodboard
     let availableItems = autoFillSuggestions.filter(
       (item: AutoFillSuggestedImage) =>
         !photos.some((photo) => photo.id === item.id)
@@ -95,35 +100,40 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
       return;
     }
 
-    const placeholderStartIndex = photos.length;
+    const item = availableItems[0];
 
-    setPhotos((prevPhotos) => {
-      const updatedPhotos = [...prevPhotos];
-      const item = availableItems[0]; // just add one
-
-      updatedPhotos[placeholderStartIndex] = {
-        id: item.id,
-        src: item.asset_url,
-        width: item.dimensions?.width || 300,
-        height: item.dimensions?.height || 300,
-        alt: `Image ${item.id}`,
-        liked: item.is_favourite || false,
-      } as SortablePhoto<TPhoto>;
-
-      return updatedPhotos;
+    setItems((prevItems) => {
+      return prevItems.map((prevItem) => {
+        if (prevItem.position === placeHolderIndex && prevItem.is_placeholder) {
+          return {
+            id: item.id,
+            src: item.asset_url,
+            width: item.dimensions?.width || 300,
+            height: item.dimensions?.height || 300,
+            alt: `Image ${item.id}`,
+            liked: item.is_favourite || false,
+            is_placeholder: false,
+            position: placeHolderIndex,
+          };
+        }
+        return prevItem;
+      });
     });
 
     toast.success("Added suggested image to your moodboard.");
-  }, [isAutoFillLoading, autoFillSuggestions, photos, setPhotos]);
+  }, [
+    isAutoFillLoading,
+    autoFillSuggestions,
+    photos,
+    setItems,
+    placeHolderIndex,
+  ]);
 
-  return (
+  const placeholderContent = (
     <div className="relative group w-full h-full bg-neutral-300 flex flex-col items-center justify-center transition-all duration-200">
-      {/* Background gradient - lowest z-index */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#A1A8B3FF] via-transparent to-[#A1A8B3FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-      {/* Main content container */}
       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-        {/* Buttons container - only when not preview */}
         {!isPreview && (
           <div className="flex flex-col items-center justify-center gap-0 pointer-events-auto z-50">
             <Button
@@ -165,10 +175,8 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
         )}
       </div>
 
-      {/* Corner icons */}
       {!isPreview && (
         <>
-          {/* Remove (X) */}
           <div className="absolute top-2 left-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
             <X
               size={16}
@@ -177,23 +185,21 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Prevent removal if count would drop below 10
                 if (noOfImagesForMoodboard <= 10) {
                   toast.warning("At least 10 images are required.");
                   return;
                 }
 
                 setNoOfImagesForMoodboard((prev) => prev - 1);
-                setPhotos((prev) => {
-                  const newPhotos = [...prev];
-                  newPhotos.splice(placeHolderIndex, 1);
-                  return newPhotos;
+                setItems((prev) => {
+                  return prev.filter(
+                    (item) => item.position !== placeHolderIndex
+                  );
                 });
               }}
             />
           </div>
 
-          {/* Like (Heart) */}
           <div className="absolute bottom-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
             <HeartIcon
               size={16}
@@ -203,7 +209,6 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
         </>
       )}
 
-      {/* Maximize (always available, even in preview) */}
       <div className="absolute top-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
         <Maximize2
           size={16}
@@ -211,5 +216,11 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
         />
       </div>
     </div>
+  );
+
+  return (
+    <Sortable id={placeholderItemId || `placeholder-${placeHolderIndex}`}>
+      {placeholderContent}
+    </Sortable>
   );
 }

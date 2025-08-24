@@ -1,12 +1,9 @@
-import { MoodboardInformation, MoodboardAsset } from "@/types/types";
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
-import { Photo } from "react-photo-album";
+"use client";
+
+import type { MoodboardInformation, MoodboardAsset } from "@/types/types";
+import type React from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import type { Photo } from "react-photo-album";
 import "react-photo-album/rows.css";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -16,17 +13,18 @@ import {
 } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import { RegenerateIcon } from "@/components/ui/custom-icon";
-import OptimisticCustomGridGallery, {
-  SortablePhoto,
-} from "@/components/gallery/CustomGalleryContainer";
+
 import { galleryService } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
-import { GalleryItemResponse } from "@/types/gallery.types";
+import type { GalleryItemResponse } from "@/types/gallery.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
-import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+import type { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import EditableInput from "./EditableInput";
 import { useBrandStore } from "@/store/brand.store";
+import CustomGalleryContainer, {
+  SortablePhoto,
+} from "@/components/gallery/CustomGalleryContainer";
 
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
@@ -67,10 +65,18 @@ function MoodboardLayout({
     );
   }, [moodboard?.moodboard_assets]);
 
+  // Get only non-placeholder IDs for API call
+  const nonPlaceholderIds = useMemo(() => {
+    return galleryItemIds.filter((id) => !String(id).startsWith("placeholder"));
+  }, [galleryItemIds]);
+
   const { data: bulkGalleryItems = [] } = useQuery({
-    queryKey: ["gallery-items-bulk", galleryItemIds],
-    queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
-    enabled: galleryItemIds.length > 0,
+    queryKey: ["gallery-items-bulk", nonPlaceholderIds],
+    queryFn: () =>
+      galleryService.getGalleryItemsBulk({
+        ids: nonPlaceholderIds,
+      }),
+    enabled: nonPlaceholderIds.length > 0,
     staleTime: 1000 * 60 * 5, // optional: cache for 5 minutes
   });
 
@@ -123,6 +129,109 @@ function MoodboardLayout({
     }
   }, [moodboard.id, currentMoodboardId]);
 
+  // Add a force reload function for when we genuinely need to reload
+  const forceLoadImagesWithCurrentData = useCallback(async () => {
+    setLoading(true);
+    const currentMoodboard = latestMoodboardRef.current;
+    const currentGalleryItems = latestGalleryItemsRef.current;
+
+    const hasMoodboardAssets =
+      currentMoodboard.moodboard_assets &&
+      currentMoodboard.moodboard_assets.length > 0;
+
+    let loaded: SortablePhoto<Photo>[] = [];
+
+    if (hasMoodboardAssets) {
+      const imagesToLoad = currentMoodboard.moodboard_assets
+        .map((asset) => {
+          // Check if this is a placeholder
+          if (String(asset.gallery_item_id).startsWith("placeholder")) {
+            return {
+              id: asset.gallery_item_id,
+              src: "", // Empty for placeholder
+              is_liked: false,
+              ignored: false,
+              position: asset.position || 0,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+            };
+          }
+
+          const galleryItem: GalleryItemResponse = currentGalleryItems.find(
+            (item) => item.id === asset.gallery_item_id
+          );
+
+          // If gallery item is not found, render as placeholder
+          if (!galleryItem) {
+            return {
+              id: `placeholder-${asset.position || 0}`,
+              src: "",
+              is_liked: false,
+              ignored: false,
+              position: asset.position || 0,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+            };
+          }
+
+          return {
+            id: asset.gallery_item_id,
+            src: galleryItem?.asset_url || "",
+            is_liked: galleryItem?.is_favourite || false,
+            ignored: galleryItem?.to_ignore || false,
+            position: asset.position || 0,
+            width: galleryItem?.dimensions?.width || 300,
+            height: galleryItem?.dimensions?.height || 300,
+            is_placeholder: false,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      loaded = imagesToLoad
+        .sort((a, b) => a.position - b.position)
+        .map((item) => ({
+          id: item.id,
+          src: item.src,
+          width: item.width || 300,
+          height: item.height || 300,
+          alt: `Image ${item.id}`,
+          liked: item.is_liked,
+          is_placeholder: item.is_placeholder,
+        }));
+    }
+
+    // Fill missing positions with placeholders up to noOfImagesForMoodboard
+    for (let i = 0; i < noOfImagesForMoodboard; i++) {
+      const existingItem = loaded.find((item, index) => index === i);
+      if (!existingItem) {
+        loaded.splice(i, 0, {
+          id: `placeholder-${i}`,
+          src: "",
+          width: 300,
+          height: 300,
+          alt: `Placeholder ${i + 1}`,
+          liked: false,
+          is_placeholder: true,
+        });
+      }
+    }
+
+    // Remove any items beyond noOfImagesForMoodboard
+    if (loaded.length > noOfImagesForMoodboard) {
+      loaded = loaded.slice(0, noOfImagesForMoodboard);
+    }
+
+    if (currentMoodboard.id === currentMoodboardId) {
+      setPhotos(loaded);
+      setOriginalPhotos([...loaded]);
+    }
+
+    setLoading(false);
+    setMoodboardGenerationInProgress(false);
+  }, [currentMoodboardId, noOfImagesForMoodboard]);
+
   // Fixed function to load images with proper type matching
   const loadImagesWithCurrentData = useCallback(async () => {
     setLoading(true);
@@ -133,72 +242,123 @@ function MoodboardLayout({
       currentMoodboard.moodboard_assets &&
       currentMoodboard.moodboard_assets.length > 0;
 
+    let loaded: SortablePhoto<Photo>[] = [];
+
     if (hasMoodboardAssets) {
       const imagesToLoad = currentMoodboard.moodboard_assets
         .map((asset) => {
+          // Check if this is a placeholder
+          if (String(asset.gallery_item_id).startsWith("placeholder")) {
+            return {
+              id: asset.gallery_item_id,
+              src: "", // Empty for placeholder
+              is_liked: false,
+              ignored: false,
+              position: asset.position || 0,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+            };
+          }
+
           const galleryItem: GalleryItemResponse = currentGalleryItems.find(
             (item) => item.id === asset.gallery_item_id
           );
 
-          // Skip if gallery item is not found
+          // If gallery item is not found, render as placeholder
           if (!galleryItem) {
-            return null;
+            return {
+              id: `placeholder-${asset.position || 0}`,
+              src: "",
+              is_liked: false,
+              ignored: false,
+              position: asset.position || 0,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+            };
           }
 
           return {
             id: asset.gallery_item_id,
-            asset_url: galleryItem?.asset_url,
+            src: galleryItem?.asset_url || "",
             is_liked: galleryItem?.is_favourite || false,
             ignored: galleryItem?.to_ignore || false,
             position: asset.position || 0,
             width: galleryItem?.dimensions?.width || 300,
             height: galleryItem?.dimensions?.height || 300,
+            is_placeholder: false,
           };
         })
         .filter((item): item is NonNullable<typeof item> => item !== null);
 
-      if (imagesToLoad.length === 0) {
-        setPhotos([]);
-        setOriginalPhotos([]);
-        return;
-      }
-
-      const loaded: SortablePhoto<Photo>[] = imagesToLoad
+      loaded = imagesToLoad
         .sort((a, b) => a.position - b.position)
         .map((item) => ({
           id: item.id,
-          src: item.asset_url,
+          src: item.src,
           width: item.width || 300,
           height: item.height || 300,
           alt: `Image ${item.id}`,
           liked: item.is_liked,
+          is_placeholder: item.is_placeholder,
         }));
-
-      if (currentMoodboard.id === currentMoodboardId) {
-        // Only update photos state if we don't have unsaved changes or aren't currently saving
-        // This prevents overriding user's pending changes
-        if (!hasUnsavedChanges && !isMoodboardSaving) {
-          setPhotos(loaded);
-          setOriginalPhotos([...loaded]);
-        }
-      }
-
-      setLoading(false);
-      setMoodboardGenerationInProgress(false);
-    } else {
-      // Only clear photos if we don't have unsaved changes or aren't currently saving
-      if (!hasUnsavedChanges && !isMoodboardSaving) {
-        setPhotos([]);
-        setOriginalPhotos([]);
-      }
-      setLoading(false);
     }
-  }, [currentMoodboardId, hasUnsavedChanges, isMoodboardSaving]);
+
+    // Fill missing positions with placeholders up to noOfImagesForMoodboard
+    for (let i = 0; i < noOfImagesForMoodboard; i++) {
+      const existingItem = loaded.find((item, index) => index === i);
+      if (!existingItem) {
+        loaded.splice(i, 0, {
+          id: `placeholder-${i}`,
+          src: "",
+          width: 300,
+          height: 300,
+          alt: `Placeholder ${i + 1}`,
+          liked: false,
+          is_placeholder: true,
+        });
+      }
+    }
+
+    // Remove any items beyond noOfImagesForMoodboard
+    if (loaded.length > noOfImagesForMoodboard) {
+      loaded = loaded.slice(0, noOfImagesForMoodboard);
+    }
+
+    if (currentMoodboard.id === currentMoodboardId) {
+      // Only update photos state if we don't have unsaved changes or aren't currently saving
+      // AND if we don't already have loaded photos (prevent unnecessary reloading)
+      const hasLoadedPhotos = photos.some(
+        (photo) => !photo.is_placeholder && photo.src
+      );
+      if (!hasUnsavedChanges && !isMoodboardSaving && !hasLoadedPhotos) {
+        setPhotos(loaded);
+        setOriginalPhotos([...loaded]);
+      }
+    }
+
+    setLoading(false);
+    setMoodboardGenerationInProgress(false);
+  }, [
+    currentMoodboardId,
+    hasUnsavedChanges,
+    isMoodboardSaving,
+    noOfImagesForMoodboard,
+    photos,
+  ]);
 
   // Trigger load when moodboard status changes or gallery items become available
   useEffect(() => {
     // Don't reload if user has unsaved changes or if currently saving
     if (hasUnsavedChanges || isMoodboardSaving) return;
+
+    // Don't reload if we already have non-placeholder photos loaded
+    // This prevents unnecessary reloading when bulkGalleryItems updates
+    const hasNonPlaceholderPhotos = photos.some(
+      (photo) => !photo.is_placeholder && photo.src
+    );
+    if (hasNonPlaceholderPhotos && bulkGalleryItems.length > 0) return;
 
     if (bulkGalleryItems.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -211,6 +371,7 @@ function MoodboardLayout({
     moodboard.id,
     hasUnsavedChanges,
     isMoodboardSaving,
+    photos,
   ]);
 
   // Also trigger when moodboard changes
@@ -218,15 +379,20 @@ function MoodboardLayout({
     // Don't reload if user has unsaved changes or if currently saving
     if (hasUnsavedChanges || isMoodboardSaving) return;
 
-    const timeoutId = setTimeout(() => {
-      loadImagesWithCurrentData();
-    }, 50);
-    return () => clearTimeout(timeoutId);
+    // Force reload when moodboard actually changes
+    if (currentMoodboardId !== moodboard.id || photos.length === 0) {
+      const timeoutId = setTimeout(() => {
+        forceLoadImagesWithCurrentData();
+      }, 50);
+      return () => clearTimeout(timeoutId);
+    }
   }, [
     moodboard.id,
-    loadImagesWithCurrentData,
+    currentMoodboardId,
     hasUnsavedChanges,
     isMoodboardSaving,
+    photos.length,
+    forceLoadImagesWithCurrentData,
   ]);
 
   // Local move photo function (no API call)
@@ -312,39 +478,18 @@ function MoodboardLayout({
   const [moodboardGenerationInProgress, setMoodboardGenerationInProgress] =
     useState(false);
 
-  // Create placeholder items for missing photos
-  const [placeholderItems, setPlaceholderItems] = useState<
-    SortablePhoto<Photo>[]
-  >([]);
-
-  useEffect(() => {
-    const placeholders: SortablePhoto<Photo>[] = Array.from(
-      { length: Math.max(0, noOfImagesForMoodboard - photos.length) },
-      (_, index) => ({
-        id: `placeholder-${index}`,
-        src: "", // Placeholder image src (empty or a default placeholder image URL)
-        width: 300, // Default width
-        height: 300, // Default height
-        alt: `Placeholder ${index + 1}`,
-        liked: false,
-        isPlaceholder: true,
-        placeholderIndex: photos.length + index,
-      })
-    );
-    setPlaceholderItems(placeholders);
-  }, [noOfImagesForMoodboard, photos.length]);
-
   const handleSaveChanges = async () => {
     setIsMoodboardSaving(true);
     try {
       // Get current photos at the start of save operation
       const photosAtSaveStart = [...photos];
 
-      // 1. Update moodboard asset positions
+      // 1. Update moodboard asset positions (including placeholders)
       const updatedAssets: MoodboardAsset[] = photosAtSaveStart.map(
         (photo, index) => ({
           gallery_item_id: photo.id,
           position: index,
+          is_placeholder: photo.is_placeholder || false,
         })
       );
 
@@ -356,46 +501,61 @@ function MoodboardLayout({
       // 3. Only update original photos for comparison, don't overwrite current photos
       setOriginalPhotos([...photos]); // Use current photos state, not the saved snapshot
 
-      // Wait for 1 second before analyzing the moodboard
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id);
+      //if only assets id changes
+      // Only trigger analyzeMoodboard if the set of asset IDs has changed (ignore order/position)
+      const updatedIds = updatedAssets
+        .map((asset) => asset.gallery_item_id)
+        .sort();
+      const originalIds = originalPhotos.map((photo) => photo.id).sort();
+      if (JSON.stringify(updatedIds) !== JSON.stringify(originalIds)) {
+        await analyzeMoodboard(brandId, moodboard.campaign_id, moodboard.id);
+      }
     } catch (error) {
       console.error("Failed to save changes:", error);
     } finally {
       setIsMoodboardSaving(false);
     }
   };
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
-
-    const intervalId = setInterval(() => {
-      if (hasUnsavedChanges && !isMoodboardSaving) {
-        handleSaveChanges();
-      }
-    }, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [hasUnsavedChanges, handleSaveChanges, isMoodboardSaving]);
 
   const handleGallerySelection = useCallback(
-    (selectedItems: GalleryItemResponse[]) => {
-      const placeholderStartIndex = photos.length;
-
+    (selectedItems: GalleryItemResponse[], placeholderIndex: number) => {
       setPhotos((prevPhotos) => {
         const updatedPhotos = [...prevPhotos];
-        selectedItems.forEach((item, index) => {
-          updatedPhotos[placeholderStartIndex + index] = {
-            id: item.id,
-            src: item.asset_url,
-            width: item.dimensions?.width || 300,
-            height: item.dimensions?.height || 300,
-            alt: `Image ${item.id}`,
-            liked: item.is_favourite || false,
-          };
-        });
+
+        // Replace the specific placeholder or add to a specific position
+        if (placeholderIndex < updatedPhotos.length) {
+          // Replace placeholder at specific index
+          if (selectedItems.length > 0) {
+            const item = selectedItems[0]; // Take first item for single placeholder replacement
+            updatedPhotos[placeholderIndex] = {
+              id: item.id,
+              src: item.asset_url,
+              width: item.dimensions?.width || 300,
+              height: item.dimensions?.height || 300,
+              alt: `Image ${item.id}`,
+              liked: item.is_favourite || false,
+              is_placeholder: false,
+            };
+          }
+        } else {
+          // Add to the end if placeholderIndex is beyond current length
+          selectedItems.forEach((item) => {
+            updatedPhotos.push({
+              id: item.id,
+              src: item.asset_url,
+              width: item.dimensions?.width || 300,
+              height: item.dimensions?.height || 300,
+              alt: `Image ${item.id}`,
+              liked: item.is_favourite || false,
+              is_placeholder: false,
+            });
+          });
+        }
 
         // ✅ Check after updating if total exceeds current noOfImagesForMoodboard
-        const newTotal = updatedPhotos.length;
+        const newTotal = updatedPhotos.filter(
+          (photo) => !photo.is_placeholder
+        ).length;
         if (newTotal > noOfImagesForMoodboard) {
           setNoOfImagesForMoodboard(newTotal);
         }
@@ -403,7 +563,7 @@ function MoodboardLayout({
         return updatedPhotos;
       });
     },
-    [photos.length, noOfImagesForMoodboard]
+    [noOfImagesForMoodboard, setNoOfImagesForMoodboard]
   );
 
   const autoFillPlaceholders = useCallback(() => {
@@ -439,13 +599,16 @@ function MoodboardLayout({
     setPhotos((prevPhotos) => {
       const updatedPhotos = [...prevPhotos];
 
-      // Determine how many placeholders we have
-      const placeholdersToFill = placeholderItems.length;
+      // Find placeholder items to fill
+      const placeholderIndices = updatedPhotos
+        .map((photo, index) => ({ photo, index }))
+        .filter(({ photo }) => photo.is_placeholder)
+        .map(({ index }) => index);
 
       availableItems
-        .slice(0, placeholdersToFill)
+        .slice(0, placeholderIndices.length)
         .forEach((item: AutoFillSuggestedImage, idx: number) => {
-          const targetIndex = prevPhotos.length + idx;
+          const targetIndex = placeholderIndices[idx];
           updatedPhotos[targetIndex] = {
             id: item.id,
             src: item.asset_url,
@@ -453,19 +616,35 @@ function MoodboardLayout({
             height: item.dimensions?.height || 300,
             alt: `Image ${item.id}`,
             liked: item.is_favourite || false,
+            is_placeholder: false,
           };
         });
 
       return updatedPhotos;
     });
 
+    const placeholderCount = photos.filter(
+      (photo) => photo.is_placeholder
+    ).length;
     toast.success(
       `Added ${Math.min(
         availableItems.length,
-        placeholderItems.length
+        placeholderCount
       )} suggested images to your moodboard.`
     );
-  }, [isAutoFillLoading, autoFillSuggestions, photos, placeholderItems]);
+  }, [isAutoFillLoading, autoFillSuggestions, photos]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const intervalId = setInterval(() => {
+      if (hasUnsavedChanges && !isMoodboardSaving) {
+        handleSaveChanges();
+      }
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [hasUnsavedChanges, isMoodboardSaving]);
 
   return (
     <div className="mt-4">
@@ -512,7 +691,7 @@ function MoodboardLayout({
                 {/* Right side - Action Buttons (from right to left: Save, Cancel, AutoFill All) */}
                 <div className="flex gap-2 items-center justify-end">
                   {/* AutoFill All Button - leftmost */}
-                  {placeholderItems.length > 0 && (
+                  {photos.some((photo) => photo.is_placeholder) && (
                     <Button
                       size="lg"
                       disabled={isAutoFillLoading}
@@ -539,18 +718,52 @@ function MoodboardLayout({
             {/* Image Grid */}
             <div className="w-full overflow-hidden">
               <div className="mx-auto max-w-7xl w-full px-2">
-                <OptimisticCustomGridGallery
-                  photos={photos}
-                  setPhotos={setPhotos}
+                <CustomGalleryContainer
+                  items={photos.map((photo, index) => ({
+                    ...photo,
+                    position: index,
+                    gallery_item_id: photo.id,
+                  }))}
+                  setItems={(newItems) => {
+                    if (typeof newItems === "function") {
+                      setPhotos((prev) => {
+                        const currentItems = prev.map((photo, index) => ({
+                          ...photo,
+                          position: index,
+                          gallery_item_id: photo.id,
+                        }));
+                        const updated = newItems(currentItems);
+                        return updated.map((item) => ({
+                          id: item.id,
+                          src: item.src || "",
+                          width: item.width,
+                          height: item.height,
+                          alt: item.alt || "",
+                          liked: item.liked,
+                          is_placeholder: item.is_placeholder,
+                        }));
+                      });
+                    } else {
+                      setPhotos(
+                        newItems.map((item) => ({
+                          id: item.id,
+                          src: item.src || "",
+                          width: item.width,
+                          height: item.height,
+                          alt: item.alt || "",
+                          liked: item.liked,
+                          is_placeholder: item.is_placeholder,
+                        }))
+                      );
+                    }
+                  }}
                   movePhoto={movePhoto}
                   onPhotoLike={onPhotoLike}
                   hasUnsavedChanges={hasUnsavedChanges}
                   noOfImagesForMoodboard={noOfImagesForMoodboard}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                   onGallerySelection={handleGallerySelection}
-                  placeholderItems={placeholderItems as SortablePhoto<Photo>[]}
                   moodboard={moodboard}
-                  setPlaceholderItems={setPlaceholderItems}
                   showAdvancedSettings={showAdvancedSettings}
                   setShowAdvancedSettings={setShowAdvancedSettings}
                 />
