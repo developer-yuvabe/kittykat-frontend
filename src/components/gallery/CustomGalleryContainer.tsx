@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import type { Photo } from "react-photo-album";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
@@ -11,8 +11,9 @@ import {
   moodboardGridLayouts,
 } from "@/lib/moodboard.utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
-import { MoodboardInformation } from "@/types/types";
-import { GalleryItemResponse } from "@/types/gallery.types";
+import type { MoodboardInformation } from "@/types/types";
+import type { GalleryItemResponse } from "@/types/gallery.types";
+import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryHooks } from "./CustomGalleryHooks";
 import { CustomGalleryGrid } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
@@ -21,8 +22,8 @@ import { CustomGalleryDragOverlay } from "./CustomGalleryDragOverlay";
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
   liked?: boolean;
-  isPlaceholder?: boolean;
-  placeholderIndex?: number;
+  is_placeholder?: boolean;
+  position?: number;
 };
 
 type ActivePhoto<TPhoto extends Photo> = {
@@ -30,11 +31,12 @@ type ActivePhoto<TPhoto extends Photo> = {
   width: number;
   height: number;
   padding?: string;
+  is_placeholder?: boolean;
 };
 
-type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
-  photos: SortablePhoto<TPhoto>[];
-  setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
+type OptimisticCustomGridGalleryProps = {
+  items: UnifiedMoodboardItem[];
+  setItems: React.Dispatch<React.SetStateAction<UnifiedMoodboardItem[]>>;
   movePhoto?: (oldIndex: number, newIndex: number) => void;
   onPhotoLike?: (index: number, liked: boolean) => void;
   hasUnsavedChanges?: boolean;
@@ -45,17 +47,14 @@ type OptimisticCustomGridGalleryProps<TPhoto extends Photo> = {
     selectedItems: GalleryItemResponse[],
     placeholderIndex: number
   ) => void;
-  placeholderItems?: Array<SortablePhoto<TPhoto>>;
-  setPlaceholderItems: React.Dispatch<
-    React.SetStateAction<SortablePhoto<Photo>[]>
-  >;
   isPreview?: boolean;
   showAdvancedSettings?: boolean;
   setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export default function CustomGalleryContainer<TPhoto extends Photo>({
-  photos,
+  items,
+  setItems,
   movePhoto,
   onPhotoLike,
   hasUnsavedChanges,
@@ -63,13 +62,10 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   setNoOfImagesForMoodboard,
   moodboard,
   onGallerySelection,
-  setPhotos,
-  placeholderItems = [],
-  setPlaceholderItems,
   isPreview = false,
   showAdvancedSettings = false,
   setShowAdvancedSettings,
-}: OptimisticCustomGridGalleryProps<TPhoto>) {
+}: OptimisticCustomGridGalleryProps) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
   const [expandedImage, setExpandedImage] = useState<{
@@ -78,20 +74,95 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   } | null>(null);
   const [showLiked, setShowLiked] = useState(false);
 
+  const normalizedItems = useCallback(() => {
+    if (!items || !Array.isArray(items)) {
+      return [];
+    }
+
+    // Simply return the items as they already contain placeholders
+    // from the parent component (MoodboardLayout)
+    return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
+  }, [items]);
+
+  const normalizedItemsArray = normalizedItems();
+
   // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
   const isDraggable =
     movePhoto !== undefined && hasUnsavedChanges !== undefined;
 
   const { sensors } = CustomGalleryHooks.useDragSensors();
 
-  const { handleDragStart, handleDragEnd } = CustomGalleryHooks.useDragHandlers(
-    {
-      photos,
-      ref,
-      isDraggable,
-      movePhoto,
-      setActivePhoto,
-    }
+  const handleDragStart = useCallback(
+    (event: any) => {
+      const { active } = event;
+      const activeItem = normalizedItemsArray.find(
+        (item) => item.id === active.id
+      );
+
+      if (activeItem) {
+        setActivePhoto({
+          photo: activeItem as SortablePhoto<TPhoto>,
+          width: activeItem.width,
+          height: activeItem.height,
+          is_placeholder: activeItem.is_placeholder,
+        });
+      }
+    },
+    [normalizedItemsArray]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: any) => {
+      const { active, over } = event;
+      setActivePhoto(undefined);
+
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = normalizedItemsArray.findIndex(
+        (item) => item.id === active.id
+      );
+      const newIndex = normalizedItemsArray.findIndex(
+        (item) => item.id === over.id
+      );
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        setItems((prevItems: UnifiedMoodboardItem[]) => {
+          const newItems = [...prevItems];
+          const activeItem = normalizedItemsArray[oldIndex];
+          const overItem = normalizedItemsArray[newIndex];
+
+          // Update positions
+          const updatedActiveItem = { ...activeItem, position: newIndex };
+          const updatedOverItem = { ...overItem, position: oldIndex };
+
+          // Find and update in the original array
+          const activeOriginalIndex = newItems.findIndex(
+            (item) => item.id === activeItem.id
+          );
+          const overOriginalIndex = newItems.findIndex(
+            (item) => item.id === overItem.id
+          );
+
+          if (activeOriginalIndex !== -1) {
+            newItems[activeOriginalIndex] = updatedActiveItem;
+          }
+
+          if (overOriginalIndex !== -1) {
+            newItems[overOriginalIndex] = updatedOverItem;
+          } else if (overItem.is_placeholder) {
+            // If dragging over a placeholder, just update the active item's position
+            newItems[activeOriginalIndex] = updatedActiveItem;
+          }
+
+          return newItems;
+        });
+
+        if (movePhoto) {
+          movePhoto(oldIndex, newIndex);
+        }
+      }
+    },
+    [normalizedItemsArray, movePhoto, setItems]
   );
 
   const { handleExpandImage, handleCloseModal } =
@@ -105,7 +176,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
     ];
 
   const size = useResizeObserver<HTMLDivElement>({ ref });
-  const allItems = [...photos, ...placeholderItems];
 
   const containerHeight = (() => {
     if (!size.width || !layout) return 800; // fallback
@@ -117,11 +187,15 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
     return (size.width * rowCount) / 4.7;
   })();
 
+  const photos = normalizedItemsArray.filter(
+    (item) => !item.is_placeholder
+  ) as SortablePhoto<TPhoto>[];
+
   const galleryContent = (
     <div className="relative">
       <CustomGalleryGrid
         ref={ref}
-        allItems={allItems}
+        allItems={normalizedItemsArray}
         photos={photos}
         layout={layout}
         containerHeight={containerHeight}
@@ -133,8 +207,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         handleExpandImage={handleExpandImage}
         isDraggable={isDraggable}
         isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
-        setPhotos={setPhotos}
-        setPlaceholderItems={setPlaceholderItems}
+        setItems={setItems}
         minImagesRequired={MIN_IMAGES_REQUIRED}
         setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
         showLiked={showLiked}
@@ -152,17 +225,14 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         onDragStart={handleDragStart}
         collisionDetection={closestCenter}
       >
-        <SortableContext items={photos}>
+        <SortableContext items={normalizedItemsArray.map((item) => item.id)}>
           {galleryContent}
           {!isPreview && (
             <CustomGalleryControls
-              photosLength={photos.length}
               noOfImagesForMoodboard={noOfImagesForMoodboard}
               setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-              setPhotos={setPhotos}
-              setPlaceholderItems={setPlaceholderItems}
+              setItems={setItems}
               minImagesRequired={MIN_IMAGES_REQUIRED}
-              placeholderItems={placeholderItems}
               showLiked={showLiked}
               setShowLiked={setShowLiked}
               showAdvancedSettings={showAdvancedSettings}
@@ -190,13 +260,10 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
       {galleryContent}
       {!isPreview && (
         <CustomGalleryControls
-          photosLength={photos.length}
           noOfImagesForMoodboard={noOfImagesForMoodboard}
           setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-          setPhotos={setPhotos}
-          setPlaceholderItems={setPlaceholderItems}
+          setItems={setItems}
           minImagesRequired={MIN_IMAGES_REQUIRED}
-          placeholderItems={placeholderItems}
           showLiked={showLiked}
           setShowLiked={setShowLiked}
           showAdvancedSettings={showAdvancedSettings}

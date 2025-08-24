@@ -6,6 +6,7 @@ type OverlayProps = ComponentProps<"div"> & {
   width: number;
   height: number;
   padding?: string;
+  isPlaceholder?: boolean;
 };
 
 export default function Overlay({
@@ -13,9 +14,26 @@ export default function Overlay({
   width,
   height,
   padding,
+  isPlaceholder = false,
   style,
   ...rest
 }: OverlayProps) {
+  if (isPlaceholder) {
+    return (
+      <div
+        style={{
+          padding,
+          width,
+          height,
+          ...style,
+        }}
+        {...rest}
+      >
+        <div className="w-[150px] h-[180px] bg-neutral-300 flex flex-col items-center justify-center rounded border-2  border-neutral-400"></div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding, ...style }} {...rest}>
       <img

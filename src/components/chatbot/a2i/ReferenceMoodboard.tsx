@@ -10,6 +10,7 @@ import {
   ThreadA2iImage,
   ThreadDetails,
 } from "@/types/types";
+import { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { WandSparkles } from "lucide-react";
 import React, {
@@ -21,17 +22,14 @@ import React, {
   useRef,
 } from "react";
 import { toast } from "sonner";
-import { Photo } from "react-photo-album";
 import ManualMoodboardSkeleton from "../moodboards/MoodboardSkeleton";
 import { EditIcon } from "@/components/ui/custom-icon";
 import { useA2iStore } from "@/store/a2i.store";
-import CustomGalleryContainer, {
-  SortablePhoto,
-} from "@/components/gallery/CustomGalleryContainer";
-import { GalleryItemResponse } from "@/types/gallery.types";
+import CustomGalleryContainer from "@/components/gallery/CustomGalleryContainer";
 import { MIN_IMAGES_REQUIRED } from "@/lib/moodboard.utils";
 import MoodboardSelector from "../moodboards/MoodboardSelector";
 import { updateA2iRefernceMoodboard } from "@/services/api/a2i.service";
+import { GalleryItemResponse } from "@/types/gallery.types";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -50,13 +48,8 @@ const ReferenceMoodboard = ({
   const { setCampaignMoodboardSelection, setSelectedMoodboardId } =
     useBrandStore();
   const [n, setN] = useState<number | "">(prompts?.length || "");
-  const [photos, setPhotos] = useState<SortablePhoto<Photo>[]>([]);
+  const [items, setItems] = useState<UnifiedMoodboardItem[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Add placeholder functionality similar to MoodboardLayout
-  const [placeholderItems, setPlaceholderItems] = useState<
-    SortablePhoto<Photo>[]
-  >([]);
 
   const { selectedBrandId } = useBrandStore();
   const { mutate: generateShowboard, isPending } = useMutation({
@@ -76,7 +69,12 @@ const ReferenceMoodboard = ({
         (asset) => asset.gallery_item_id
       ) || []
     );
-  }, [selectedMoodboard?.moodboard_assets, selectedMoodboard]);
+  }, [selectedMoodboard?.moodboard_assets]);
+
+  // Get only non-placeholder IDs for API call (same as MoodboardLayout)
+  const nonPlaceholderIds = useMemo(() => {
+    return galleryItemIds.filter((id) => !String(id).startsWith("placeholder"));
+  }, [galleryItemIds]);
 
   // Fetch only the required gallery items using bulk API
   const {
@@ -84,71 +82,177 @@ const ReferenceMoodboard = ({
     isLoading: isBulkLoading,
     isFetching: isBulkFetching,
   } = useQuery({
-    queryKey: ["gallery-items-bulk", galleryItemIds],
-    queryFn: () => galleryService.getGalleryItemsBulk({ ids: galleryItemIds }),
-    enabled: galleryItemIds.length > 0,
+    queryKey: ["gallery-items-bulk", nonPlaceholderIds],
+    queryFn: () =>
+      galleryService.getGalleryItemsBulk({ ids: nonPlaceholderIds }),
+    enabled: nonPlaceholderIds.length > 0,
+    staleTime: 1000 * 60 * 5, // cache for 5 minutes
   });
 
-  // Order gallery items by moodboard position
-  const orderedGalleryItems = useMemo(() => {
-    if (
-      !bulkGalleryItems ||
-      !selectedMoodboard?.moodboard_assets ||
-      selectedMoodboard.moodboard_assets.length === 0
-    ) {
-      return [];
+  // Calculate the actual number of images for this moodboard (same logic as MoodboardLayout)
+  const noOfImagesForMoodboard = useMemo(() => {
+    if (!selectedMoodboard?.moodboard_assets) {
+      return MIN_IMAGES_REQUIRED;
     }
-
-    // Create a map of gallery_item_id to position for efficient lookup
-    const positionMap = new Map(
-      selectedMoodboard.moodboard_assets.map((asset) => [
-        asset.gallery_item_id,
-        asset.position,
-      ])
+    // Use the maximum position + 1, or minimum required, whichever is larger
+    const maxPosition = Math.max(
+      ...selectedMoodboard.moodboard_assets.map((asset) => asset.position || 0),
+      -1
     );
+    return Math.max(maxPosition + 1, MIN_IMAGES_REQUIRED);
+  }, [selectedMoodboard?.moodboard_assets]);
 
-    // Add position info to gallery items and sort by position
-    return bulkGalleryItems
-      .map((item) => ({
-        ...item,
-        position: positionMap.get(item.id) || 0,
-      }))
-      .sort((a, b) => a.position - b.position);
-  }, [
-    bulkGalleryItems,
-    selectedMoodboard?.moodboard_assets,
-    selectedMoodboard,
-  ]);
+  // Helper function to create a placeholder photo
+  const createPlaceholderPhoto = useCallback(
+    (id: string, position: number): UnifiedMoodboardItem => {
+      return {
+        id,
+        src: "",
+        width: 300,
+        height: 300,
+        alt: `Placeholder ${position + 1}`,
+        liked: false,
+        is_placeholder: true,
+        position,
+      };
+    },
+    []
+  );
 
-  // Load images from ordered gallery items
+  // Function to process moodboard assets into items
+  const processAssetsToItems = useCallback(
+    (
+      assets: any[],
+      galleryItems: GalleryItemResponse[]
+    ): UnifiedMoodboardItem[] => {
+      if (!assets || assets.length === 0) return [];
+
+      const itemsToLoad = assets
+        .map((asset) => {
+          // Check if this is a placeholder
+          if (String(asset.gallery_item_id).startsWith("placeholder")) {
+            return {
+              id: asset.gallery_item_id,
+              src: "",
+              position: asset.position || 0,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+              is_liked: false,
+            };
+          }
+
+          const galleryItem = galleryItems.find(
+            (item) => item.id === asset.gallery_item_id
+          );
+
+          // If gallery item is not found, render as placeholder
+          if (!galleryItem) {
+            return {
+              id: `placeholder-${asset.position || 0}`,
+              src: "",
+              position: asset.position || 0,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+              is_liked: false,
+            };
+          }
+
+          return {
+            id: asset.gallery_item_id,
+            src: galleryItem.asset_url || "",
+            position: asset.position || 0,
+            width: galleryItem.dimensions?.width || 300,
+            height: galleryItem.dimensions?.height || 300,
+            is_placeholder: false,
+            is_liked: galleryItem.is_favourite || false,
+          };
+        })
+        .filter((item) => item !== null);
+
+      return itemsToLoad
+        .sort((a, b) => a.position - b.position)
+        .map((item) => ({
+          id: item.id,
+          src: item.src,
+          width: item.width,
+          height: item.height,
+          alt: `Image ${item.id}`,
+          liked: item.is_liked,
+          is_placeholder: item.is_placeholder,
+          position: item.position,
+        }));
+    },
+    []
+  );
+
+  // Function to fill missing positions with placeholders
+  const fillWithPlaceholders = useCallback(
+    (
+      loadedItems: UnifiedMoodboardItem[],
+      targetCount: number
+    ): UnifiedMoodboardItem[] => {
+      const result = [...loadedItems];
+
+      // Fill missing positions with placeholders up to targetCount
+      for (let i = 0; i < targetCount; i++) {
+        const existingItem = result.find((item, index) => index === i);
+        if (!existingItem) {
+          result.splice(i, 0, createPlaceholderPhoto(`placeholder-${i}`, i));
+        }
+      }
+
+      // Remove any items beyond targetCount
+      if (result.length > targetCount) {
+        return result.slice(0, targetCount);
+      }
+
+      return result;
+    },
+    [createPlaceholderPhoto]
+  );
+
+  // Load images from ordered gallery items using the same logic as MoodboardLayout
   const loadImagesWithDimensions = useCallback(async () => {
-    if (!orderedGalleryItems || orderedGalleryItems.length === 0) {
-      setPhotos([]);
+    if (!selectedMoodboard) {
+      setItems([]);
       return;
     }
 
     setLoading(true);
 
     try {
-      const loaded: SortablePhoto<Photo>[] = orderedGalleryItems.map(
-        (item) => ({
-          id: item.id,
-          src: item.asset_url,
-          width: item.dimensions?.width || 300,
-          height: item.dimensions?.height || 300,
-          alt: `Reference image ${item.id}`,
-          liked: item.is_favourite || false,
-        })
-      );
+      const hasMoodboardAssets =
+        selectedMoodboard.moodboard_assets &&
+        selectedMoodboard.moodboard_assets.length > 0;
 
-      setPhotos(loaded);
+      let loaded: UnifiedMoodboardItem[] = [];
+
+      if (hasMoodboardAssets) {
+        loaded = processAssetsToItems(
+          selectedMoodboard.moodboard_assets,
+          bulkGalleryItems
+        );
+      }
+
+      // Fill with placeholders using the same logic as MoodboardLayout
+      loaded = fillWithPlaceholders(loaded, noOfImagesForMoodboard);
+
+      setItems(loaded);
     } catch (error) {
       console.error("Failed to load reference images:", error);
-      setPhotos([]);
+      setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [orderedGalleryItems]);
+  }, [
+    selectedMoodboard,
+    bulkGalleryItems,
+    noOfImagesForMoodboard,
+    processAssetsToItems,
+    fillWithPlaceholders,
+  ]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -165,37 +269,31 @@ const ReferenceMoodboard = ({
     }
   };
 
-  // Load images when ordered gallery items are available
+  // Load images when selected moodboard or bulk gallery items change
   useEffect(() => {
-    if (orderedGalleryItems.length > 0) {
+    if (selectedMoodboard && bulkGalleryItems) {
       const timeoutId = setTimeout(() => {
         loadImagesWithDimensions();
       }, 50);
       return () => clearTimeout(timeoutId);
     } else {
-      // Clear photos if no ordered items
-      setPhotos([]);
+      // Clear items if no moodboard
+      setItems([]);
     }
-  }, [orderedGalleryItems.length, referenceMoodboardId]);
-
-  // Display logic - show gallery if we have photos OR if we need placeholders for grid layout
-  const showGallery = useMemo(() => {
-    return (
-      (photos.length > 0 || placeholderItems.length > 0) &&
-      !loading &&
-      !isBulkFetching &&
-      !isBulkLoading
-    );
   }, [
-    photos.length,
-    placeholderItems.length,
-    loading,
-    isBulkFetching,
-    isBulkLoading,
+    selectedMoodboard?.id,
+    bulkGalleryItems.length,
+    noOfImagesForMoodboard,
+    loadImagesWithDimensions,
   ]);
 
-  // Calculate total images for moodboard (actual photos + placeholders needed for minimum grid)
-  const totalImagesForMoodboard = Math.max(photos.length, MIN_IMAGES_REQUIRED);
+  // Display logic - show gallery if we have items and not loading
+  const showGallery = useMemo(() => {
+    return items.length > 0 && !loading && !isBulkFetching && !isBulkLoading;
+  }, [items.length, loading, isBulkFetching, isBulkLoading]);
+
+  // Calculate total images for moodboard - use the calculated value
+  const totalImagesForMoodboard = noOfImagesForMoodboard;
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
@@ -248,24 +346,6 @@ const ReferenceMoodboard = ({
     }
     await updateA2iRefernceMoodboard(selectedBrandId!, moodboard.id!);
   };
-
-  // Create placeholder items for missing photos when less than minimum required
-  useEffect(() => {
-    const placeholders: SortablePhoto<Photo>[] = Array.from(
-      { length: Math.max(0, MIN_IMAGES_REQUIRED - photos.length) },
-      (_, index) => ({
-        id: `placeholder-${index}`,
-        src: "", // Placeholder image src
-        width: 300,
-        height: 300,
-        alt: `Placeholder ${index + 1}`,
-        liked: false,
-        isPlaceholder: true,
-        placeholderIndex: photos.length + index,
-      })
-    );
-    setPlaceholderItems(placeholders);
-  }, [photos.length, MIN_IMAGES_REQUIRED, selectedMoodboard]);
 
   return (
     <ContentSection
@@ -322,13 +402,11 @@ const ReferenceMoodboard = ({
               ) : (
                 <div className="mx-auto max-w-7xl w-full px-2">
                   <CustomGalleryContainer
-                    photos={photos}
-                    setPhotos={() => {}}
+                    items={items}
+                    setItems={setItems}
                     noOfImagesForMoodboard={totalImagesForMoodboard}
                     setNoOfImagesForMoodboard={() => {}}
                     moodboard={selectedMoodboard}
-                    placeholderItems={placeholderItems}
-                    setPlaceholderItems={setPlaceholderItems}
                     hasUnsavedChanges={false}
                     isPreview
                     key={selectedMoodboard?.id}

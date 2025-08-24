@@ -1,8 +1,9 @@
 import type React from "react";
 import { forwardRef } from "react";
 import type { Photo } from "react-photo-album";
-import { MoodboardInformation } from "@/types/types";
-import { GalleryItemResponse } from "@/types/gallery.types";
+import type { MoodboardInformation } from "@/types/types";
+import type { GalleryItemResponse } from "@/types/gallery.types";
+import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryPlaceholderCard } from "./CustomGalleryPlaceholderCard";
 import { CustomGalleryGridItem } from "./CustomGalleryGridItem";
 import type { SortablePhoto } from "./CustomGalleryContainer";
@@ -13,7 +14,7 @@ type GridLayout = {
 };
 
 interface CustomGalleryGridProps<TPhoto extends Photo> {
-  allItems: SortablePhoto<TPhoto>[];
+  allItems: UnifiedMoodboardItem[];
   photos: SortablePhoto<TPhoto>[];
   layout: GridLayout | undefined;
   containerHeight: number;
@@ -28,10 +29,7 @@ interface CustomGalleryGridProps<TPhoto extends Photo> {
   handleExpandImage: (photo: SortablePhoto<TPhoto>) => void;
   isDraggable: boolean;
   isAtMinimum: boolean;
-  setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
-  setPlaceholderItems: React.Dispatch<
-    React.SetStateAction<SortablePhoto<Photo>[]>
-  >;
+  setItems: React.Dispatch<React.SetStateAction<UnifiedMoodboardItem[]>>;
   minImagesRequired: number;
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   showLiked?: boolean;
@@ -55,7 +53,7 @@ export const CustomGalleryGrid = forwardRef<
       hasUnsavedChanges,
       handleExpandImage,
       isDraggable,
-      setPhotos,
+      setItems,
       minImagesRequired,
       setNoOfImagesForMoodboard,
       showLiked,
@@ -70,19 +68,28 @@ export const CustomGalleryGrid = forwardRef<
     };
 
     const handleRemovePhoto = (id: string) => {
+      const item = allItems.find((item) => item.id === id);
+      if (!item || item.is_placeholder) return;
+
       if (photos.length <= minImagesRequired) {
-        // Toast will be handled in the grid item component
         return;
       }
 
-      setPhotos((prevPhotos) => {
-        const index = prevPhotos.findIndex((photo) => photo.id === id);
-        if (index === -1) return prevPhotos;
-
-        const newPhotos = [...prevPhotos];
-        newPhotos.splice(index, 1);
-
-        return newPhotos;
+      setItems((prevItems) => {
+        return prevItems.map((prevItem) => {
+          if (prevItem.id === id) {
+            // Replace image with placeholder at same position
+            return {
+              id: `placeholder-${prevItem.position}`,
+              width: 300,
+              height: 300,
+              is_placeholder: true,
+              position: prevItem.position,
+              alt: `Placeholder ${prevItem.position + 1}`,
+            };
+          }
+          return prevItem;
+        });
       });
     };
 
@@ -96,40 +103,49 @@ export const CustomGalleryGrid = forwardRef<
           const position = layout?.positions[index];
           if (!position) return null;
 
-          return (
-            <div
-              key={item?.id || index}
-              style={{ gridArea: position.gridArea }}
-              className="relative overflow-hidden"
-            >
-              {item && "isPlaceholder" in item ? (
+          if (item.is_placeholder) {
+            return (
+              <div
+                key={item?.id || index}
+                style={{ gridArea: position.gridArea }}
+                className="relative overflow-hidden"
+              >
                 <CustomGalleryPlaceholderCard
                   photos={photos}
                   noOfImagesForMoodboard={noOfImagesForMoodboard}
                   moodboard={moodboard}
                   onGallerySelection={onGallerySelection}
                   placeHolderIndex={index}
-                  setPhotos={setPhotos}
+                  placeholderItemId={item.id}
+                  setItems={setItems}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                   isPreview={isPreview}
                 />
-              ) : (
+              </div>
+            );
+          } else {
+            return (
+              <div
+                key={item?.id || index}
+                style={{ gridArea: position.gridArea }}
+                className="relative overflow-hidden"
+              >
                 <CustomGalleryGridItem
-                  photo={item}
+                  photo={item as SortablePhoto<any>}
                   index={index}
                   onPhotoLike={handlePhotoLike}
                   removedPhoto={handleRemovePhoto}
                   hasUnsavedChanges={hasUnsavedChanges}
                   handleExpandImage={handleExpandImage}
                   isDraggable={isDraggable}
-                  setPhotos={setPhotos}
+                  setItems={setItems}
                   showLiked={showLiked}
                   isPreview={!isDraggable}
                   moodboard={moodboard}
                 />
-              )}
-            </div>
-          );
+              </div>
+            );
+          }
         })}
       </div>
     );

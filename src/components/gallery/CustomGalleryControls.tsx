@@ -1,24 +1,17 @@
 "use client";
 
 import type React from "react";
-import type { Photo } from "react-photo-album";
 import { moodboardGridLayouts } from "@/lib/moodboard.utils";
-import type { SortablePhoto } from "./CustomGalleryContainer";
-import { BrushCleaning, Settings } from "lucide-react";
-import { TooltipIconButton } from "../thread/tooltip-icon-button";
+import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
+import { Settings } from "lucide-react";
 
-interface CustomGalleryControlsProps<TPhoto extends Photo> {
-  photosLength: number;
+interface CustomGalleryControlsProps {
   noOfImagesForMoodboard: number;
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
-  setPhotos: React.Dispatch<React.SetStateAction<SortablePhoto<TPhoto>[]>>;
-  setPlaceholderItems: React.Dispatch<
-    React.SetStateAction<SortablePhoto<Photo>[]>
-  >;
+  setItems: React.Dispatch<React.SetStateAction<UnifiedMoodboardItem[]>>;
   minImagesRequired: number;
-  placeholderItems: SortablePhoto<Photo>[];
   showLiked: boolean;
   setShowLiked: (value: boolean) => void;
   showAdvancedSettings?: boolean;
@@ -26,55 +19,57 @@ interface CustomGalleryControlsProps<TPhoto extends Photo> {
   hasTags: boolean;
 }
 
-export function CustomGalleryControls<TPhoto extends Photo>({
-  photosLength,
+export function CustomGalleryControls({
   noOfImagesForMoodboard,
   setNoOfImagesForMoodboard,
-  setPhotos,
-  setPlaceholderItems,
+  setItems,
   minImagesRequired,
-  placeholderItems,
   showLiked,
   setShowLiked,
   showAdvancedSettings = false,
   setShowAdvancedSettings,
   hasTags,
-}: CustomGalleryControlsProps<TPhoto>) {
+}: CustomGalleryControlsProps) {
   const maxImages = Math.max(...Object.keys(moodboardGridLayouts).map(Number));
 
   const handleIncreaseImages = () => {
     if (noOfImagesForMoodboard < maxImages) {
-      setNoOfImagesForMoodboard(noOfImagesForMoodboard + 1);
+      const newCount = noOfImagesForMoodboard + 1;
+      setNoOfImagesForMoodboard(newCount);
+
+      // Add a placeholder item to the items array
+      setItems((prevItems: UnifiedMoodboardItem[]) => {
+        const currentItemsCount = prevItems.length;
+        if (currentItemsCount < newCount) {
+          const placeholderItem: UnifiedMoodboardItem = {
+            id: `placeholder-${currentItemsCount}`,
+            src: "",
+            width: 300,
+            height: 300,
+            alt: `Placeholder ${currentItemsCount + 1}`,
+            liked: false,
+            is_placeholder: true,
+            position: currentItemsCount,
+          };
+          return [...prevItems, placeholderItem];
+        }
+        return prevItems;
+      });
     }
   };
 
   const handleDecreaseImages = () => {
-    setPlaceholderItems((prevPlaceholders) => {
-      if (prevPlaceholders.length > 0) {
-        // Remove the last placeholder
-        const updatedPlaceholders = [...prevPlaceholders];
-        updatedPlaceholders.pop();
-
-        // Reduce the moodboard image count
-        setNoOfImagesForMoodboard((prev) => prev - 1);
-        return updatedPlaceholders;
-      }
-
-      // If no placeholders, then remove an actual photo
-      setPhotos((prevPhotos) => {
-        if (prevPhotos.length === 0) return prevPhotos;
-
-        const updatedPhotos = [...prevPhotos];
-        updatedPhotos.pop();
-
-        // Reduce the moodboard image count
-        setNoOfImagesForMoodboard((prev) => prev - 1);
-
-        return updatedPhotos;
+    if (noOfImagesForMoodboard > minImagesRequired) {
+      setItems((prevItems: UnifiedMoodboardItem[]) => {
+        // Find the last item and remove it
+        const updatedItems = [...prevItems];
+        if (updatedItems.length > 0) {
+          updatedItems.pop();
+        }
+        return updatedItems;
       });
-
-      return prevPlaceholders;
-    });
+      setNoOfImagesForMoodboard((prev: number) => prev - 1);
+    }
   };
 
   const canIncreaseImages = noOfImagesForMoodboard < maxImages;
@@ -123,7 +118,7 @@ export function CustomGalleryControls<TPhoto extends Photo>({
             size="icon"
           >
             <BrushCleaning />
-          </TooltipIconButton>
+          </TooltipIconButton>  
         )} */}
       </div>
       <div className="flex items-center gap-2 ml-4">
