@@ -18,6 +18,7 @@ import { CustomGalleryHooks } from "./CustomGalleryHooks";
 import { CustomGalleryGrid } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
 import { CustomGalleryDragOverlay } from "./CustomGalleryDragOverlay";
+import { useMoodboardStore } from "@/store/moodboard.store";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
@@ -40,16 +41,12 @@ type OptimisticCustomGridGalleryProps = {
   movePhoto?: (oldIndex: number, newIndex: number) => void;
   onPhotoLike?: (index: number, liked: boolean) => void;
   hasUnsavedChanges?: boolean;
-  noOfImagesForMoodboard: number;
-  setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   moodboard: MoodboardInformation;
   onGallerySelection?: (
     selectedItems: GalleryItemResponse[],
     placeholderIndex: number
   ) => void;
   isPreview?: boolean;
-  showAdvancedSettings?: boolean;
-  setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export default function CustomGalleryContainer<TPhoto extends Photo>({
@@ -58,13 +55,9 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   movePhoto,
   onPhotoLike,
   hasUnsavedChanges,
-  noOfImagesForMoodboard,
-  setNoOfImagesForMoodboard,
   moodboard,
   onGallerySelection,
   isPreview = false,
-  showAdvancedSettings = false,
-  setShowAdvancedSettings,
 }: OptimisticCustomGridGalleryProps) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
@@ -83,6 +76,9 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
     // from the parent component (MoodboardLayout)
     return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
   }, [items]);
+
+  const { noOfImagesForMoodboard, setNoOfImagesForMoodboard } =
+    useMoodboardStore();
 
   const normalizedItemsArray = normalizedItems();
 
@@ -235,8 +231,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
               minImagesRequired={MIN_IMAGES_REQUIRED}
               showLiked={showLiked}
               setShowLiked={setShowLiked}
-              showAdvancedSettings={showAdvancedSettings}
-              setShowAdvancedSettings={setShowAdvancedSettings}
               hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
             />
           )}
@@ -266,8 +260,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
           minImagesRequired={MIN_IMAGES_REQUIRED}
           showLiked={showLiked}
           setShowLiked={setShowLiked}
-          showAdvancedSettings={showAdvancedSettings}
-          setShowAdvancedSettings={setShowAdvancedSettings}
           hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
         />
       )}

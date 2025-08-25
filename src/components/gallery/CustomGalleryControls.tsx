@@ -3,6 +3,7 @@
 import type React from "react";
 import { moodboardGridLayouts } from "@/lib/moodboard.utils";
 import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
+import { useMoodboardStore } from "@/store/moodboard.store";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
@@ -14,8 +15,6 @@ interface CustomGalleryControlsProps {
   minImagesRequired: number;
   showLiked: boolean;
   setShowLiked: (value: boolean) => void;
-  showAdvancedSettings?: boolean;
-  setShowAdvancedSettings?: React.Dispatch<React.SetStateAction<boolean>>;
   hasTags: boolean;
 }
 
@@ -26,11 +25,12 @@ export function CustomGalleryControls({
   minImagesRequired,
   showLiked,
   setShowLiked,
-  showAdvancedSettings = false,
-  setShowAdvancedSettings,
   hasTags,
 }: CustomGalleryControlsProps) {
   const maxImages = Math.max(...Object.keys(moodboardGridLayouts).map(Number));
+
+  // Get showAdvancedSettings from Zustand store
+  const { showAdvancedSettings, setShowAdvancedSettings } = useMoodboardStore();
 
   const handleIncreaseImages = () => {
     if (noOfImagesForMoodboard < maxImages) {
