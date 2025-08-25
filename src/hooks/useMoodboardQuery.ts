@@ -52,19 +52,28 @@ export function useMoodboardQuery({
     imageId: string,
     newFavoriteState: boolean
   ) => {
-    const queryKey = getMoodboardQueryKey(
-      brandId,
-      campaignId,
-      moodboardId,
-      count
-    );
+    // get all queries starting with "autofill-suggestions"
+    const allQueries = queryClient.getQueriesData<AutoFillSuggestedImage[]>({
+      queryKey: ["autofill-suggestions"],
+      exact: false,
+    });
 
-    queryClient.setQueryData<AutoFillSuggestedImage[]>(queryKey, (oldData) => {
-      if (!oldData) return oldData;
+    allQueries.forEach(([queryKey, oldData]) => {
+      if (!oldData) return;
 
-      return oldData.map((item) =>
-        item.id === imageId ? { ...item, is_favourite: newFavoriteState } : item
-      );
+      queryClient.setQueryData<AutoFillSuggestedImage[]>(queryKey, () => {
+        const updated = oldData.map((item) =>
+          item.id === imageId
+            ? { ...item, is_favourite: newFavoriteState }
+            : item
+        );
+
+        // Reorder liked items first
+        return [...updated].sort((a, b) => {
+          if (a.is_favourite === b.is_favourite) return 0;
+          return a.is_favourite ? -1 : 1;
+        });
+      });
     });
   };
 
