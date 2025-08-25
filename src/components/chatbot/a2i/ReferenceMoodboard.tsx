@@ -271,7 +271,7 @@ const ReferenceMoodboard = ({
 
   // Load images when selected moodboard or bulk gallery items change
   useEffect(() => {
-    if (selectedMoodboard && bulkGalleryItems) {
+    if (selectedMoodboard && bulkGalleryItems.length > 0) {
       const timeoutId = setTimeout(() => {
         loadImagesWithDimensions();
       }, 50);
@@ -280,20 +280,12 @@ const ReferenceMoodboard = ({
       // Clear items if no moodboard
       setItems([]);
     }
-  }, [
-    selectedMoodboard?.id,
-    bulkGalleryItems.length,
-    noOfImagesForMoodboard,
-    loadImagesWithDimensions,
-  ]);
+  }, [selectedMoodboard?.id, bulkGalleryItems.length, noOfImagesForMoodboard]);
 
   // Display logic - show gallery if we have items and not loading
   const showGallery = useMemo(() => {
     return items.length > 0 && !loading && !isBulkFetching && !isBulkLoading;
   }, [items.length, loading, isBulkFetching, isBulkLoading]);
-
-  // Calculate total images for moodboard - use the calculated value
-  const totalImagesForMoodboard = noOfImagesForMoodboard;
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
@@ -356,7 +348,29 @@ const ReferenceMoodboard = ({
       content={
         <div className="space-y-8">
           {/* Handle case when reference moodboard is null (deleted) */}
-          {!selectedMoodboard && referenceMoodboardId ? (
+          {referenceMoodboardId === null ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <p className="text-gray-500 text-center">
+                The reference moodboard has been deleted or is no longer
+                available.
+              </p>
+              {moodboardInformation && moodboardInformation.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-600">
+                    Select a different moodboard:
+                  </p>
+                  <MoodboardSelector
+                    campaignId={moodboardInformation[0].campaign_id!}
+                    moodboards={moodboardInformation}
+                    selectedMoodboard={null}
+                    setSelectedMoodboard={handleMoodboardSelectionChange}
+                    isCreatingNew={false}
+                    onNewMoodboard={() => {}}
+                  />
+                </div>
+              )}
+            </div>
+          ) : !selectedMoodboard && referenceMoodboardId ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <p className="text-gray-500 text-center">
                 The reference moodboard has been deleted or is no longer
@@ -404,8 +418,6 @@ const ReferenceMoodboard = ({
                   <CustomGalleryContainer
                     items={items}
                     setItems={setItems}
-                    noOfImagesForMoodboard={totalImagesForMoodboard}
-                    setNoOfImagesForMoodboard={() => {}}
                     moodboard={selectedMoodboard}
                     hasUnsavedChanges={false}
                     isPreview

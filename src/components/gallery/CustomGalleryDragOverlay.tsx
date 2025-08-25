@@ -22,9 +22,9 @@ export function CustomGalleryDragOverlay<TPhoto extends Photo>({
   return (
     <DragOverlay>
       {activePhoto && (
-        <Overlay 
-          {...activePhoto} 
-          isPlaceholder={activePhoto.is_placeholder || false}
+        <Overlay
+          {...activePhoto}
+          isPlaceholderCard={activePhoto.is_placeholder || false}
         />
       )}
     </DragOverlay>

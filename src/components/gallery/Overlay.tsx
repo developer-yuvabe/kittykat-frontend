@@ -6,7 +6,7 @@ type OverlayProps = ComponentProps<"div"> & {
   width: number;
   height: number;
   padding?: string;
-  isPlaceholder?: boolean;
+  isPlaceholderCard?: boolean;
 };
 
 export default function Overlay({
@@ -14,11 +14,11 @@ export default function Overlay({
   width,
   height,
   padding,
-  isPlaceholder = false,
+  isPlaceholderCard = false,
   style,
   ...rest
 }: OverlayProps) {
-  if (isPlaceholder) {
+  if (isPlaceholderCard) {
     return (
       <div
         style={{
