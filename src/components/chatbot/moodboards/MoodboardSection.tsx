@@ -17,12 +17,12 @@ import { MoodboardInformation, ThreadDetails } from "@/types/types";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
+import { useMoodboardStore } from "@/store/moodboard.store";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SearchIcon } from "@/components/ui/custom-icon";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardOverview } from "./MoodboardOverview";
-import { createMoodboard } from "@/services/api/moodboard.service";
 import MoodboardLayout from "./MoodboardLayout";
 import MoodboardTagResults from "./MoodboardTagResults";
 import MoodboardSelector from "./MoodboardSelector";
@@ -53,7 +53,22 @@ export const MoodboardSection: React.FC<{
   const { selectedBrandId, selectedMoodboardId, setSelectedMoodboardId } =
     useBrandStore();
 
-  const [isCreatingNewMoodboard, setIsCreatingNewMoodboard] = useState(false);
+  // Get state from Zustand store instead of local state
+  const {
+    setNoOfImagesForMoodboard,
+    showAdvancedSettings,
+    expanded,
+    toggleExpanded,
+    moodboardTitle,
+    setMoodboardTitle,
+    updateImageCountFromMoodboard,
+    generateMoodboardTitle,
+    createMoodboardAsync,
+    isCreatingNewMoodboard: storeIsCreatingNewMoodboard,
+  } = useMoodboardStore();
+
+  // Use store's isCreatingNewMoodboard instead of local state
+  const isCreatingNewMoodboard = storeIsCreatingNewMoodboard;
 
   const galleryActions = useGalleryQuery({
     selectedFilters: {
@@ -115,15 +130,19 @@ export const MoodboardSection: React.FC<{
   // Reset states when switching to create new moodboard mode
   const resetToNewMoodboardState = useCallback(() => {
     setSelectedMoodboardId(null);
-    setMoodboardTitle(
-      currentCampaign?.campaign?.title
-        ? `${currentCampaign.campaign.title}'s Moodboard v${
-            currentCampaignMoodboards.length + 1
-          }`
-        : "New Moodboard"
+    const generatedTitle = generateMoodboardTitle(
+      currentCampaign?.campaign?.title,
+      currentCampaignMoodboards.length + 1
     );
+    setMoodboardTitle(generatedTitle);
     toast.success("Ready to create a new moodboard!");
-  }, [currentCampaign, currentCampaignMoodboards.length]);
+  }, [
+    currentCampaign?.campaign?.title,
+    currentCampaignMoodboards.length,
+    setSelectedMoodboardId,
+    generateMoodboardTitle,
+    setMoodboardTitle,
+  ]);
 
   // Auto-select latest moodboard when campaign changes or when new moodboards are created
   useEffect(() => {
@@ -180,13 +199,7 @@ export const MoodboardSection: React.FC<{
         setSelectedMoodboardId(latestMoodboard.id);
       }
     }
-  }, [selectedMoodboardId, currentCampaignMoodboards]);
-
-  const [expanded, setExpanded] = useState(true);
-
-  const [noOfImagesForMoodboard, setNoOfImagesForMoodboard] =
-    useState<number>(16);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  }, [selectedMoodboardId, currentCampaignMoodboards.length]);
 
   // Reset whenever moodboard changes
   useEffect(() => {
@@ -198,27 +211,12 @@ export const MoodboardSection: React.FC<{
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
     const fallbackImageCount = galleryActions.totalItems ?? 0;
 
-    if (assetCount === 0 && fallbackImageCount === 0) return;
-
-    let count;
-    if (assetCount > 0) {
-      count = Math.max(10, assetCount); // ensure at least 10
-    } else {
-      count = fallbackImageCount;
-    }
-
-    setNoOfImagesForMoodboard(Math.min(16, count));
-  }, [currentMoodboard?.id]);
-
-  const toggleExpanded = useCallback(() => setExpanded(!expanded), [expanded]);
-
-  const [moodboardTitle, setMoodboardTitle] = useState(
-    currentCampaign?.campaign?.title
-      ? `${currentCampaign.campaign.title}'s Moodboard v${
-          currentCampaignMoodboards.length + 1
-        }`
-      : "New Moodboard"
-  );
+    updateImageCountFromMoodboard(assetCount, fallbackImageCount);
+  }, [
+    currentMoodboard?.id,
+    currentMoodboard?.moodboard_assets?.length,
+    galleryActions.totalItems,
+  ]);
 
   useEffect(() => {
     if (currentMoodboard) {
@@ -226,14 +224,11 @@ export const MoodboardSection: React.FC<{
       setMoodboardTitle(currentMoodboard.title || "Untitled Moodboard");
     } else {
       // Handle case where no moodboard exists
-      setMoodboardTitle(
-        currentCampaign?.campaign?.title &&
-          currentCampaign.campaign.title !== ""
-          ? `${currentCampaign.campaign.title}'s Moodboard v${
-              currentCampaignMoodboards.length + 1
-            }`
-          : "New Moodboard"
+      const generatedTitle = generateMoodboardTitle(
+        currentCampaign?.campaign?.title,
+        currentCampaignMoodboards.length + 1
       );
+      setMoodboardTitle(generatedTitle);
     }
   }, [
     currentCampaign?.campaign?.title,
@@ -254,32 +249,14 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
-    const toastId = toast.loading("Creating moodboard...");
-
-    try {
-      // Step 1: Create the new moodboard
-      const newMoodboard = await createMoodboard(
-        selectedBrandId,
-        currentCampaign.id,
-        {
-          campaign_id: currentCampaign.id,
-          title: moodboardTitle,
-        }
-      );
-
-      // Immediately set the new moodboard as selected if creation was successful
-      if (newMoodboard?.id) {
-        setSelectedMoodboardId(newMoodboard.id);
-        toast.success("Moodboard created successfully!", { id: toastId });
-      } else {
-        throw new Error("Failed to create moodboard - no ID returned");
+    await createMoodboardAsync(
+      selectedBrandId,
+      currentCampaign.id,
+      moodboardTitle,
+      (moodboardId) => {
+        setSelectedMoodboardId(moodboardId);
       }
-    } catch (error) {
-      toast.error("Failed to create moodboard. Please try again.", {
-        id: toastId,
-      });
-      console.error("Failed to create moodboard:", error);
-    }
+    );
   }
 
   const handleCreateNewMoodboard = async () => {
@@ -289,12 +266,9 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
-    setIsCreatingNewMoodboard(true);
-
     // For subsequent moodboards, create directly
     if (!selectedBrandId || !currentCampaign?.id) {
       toast.error("Missing brand or campaign information");
-      setIsCreatingNewMoodboard(false);
       return;
     }
 
@@ -302,44 +276,22 @@ export const MoodboardSection: React.FC<{
       toast.error(
         "At least 10 images are required for analysis and moodboard creation."
       );
-      setIsCreatingNewMoodboard(false);
       return;
     }
 
-    const newTitle = currentCampaign?.campaign?.title
-      ? `${currentCampaign.campaign.title}'s Moodboard v${
-          currentCampaignMoodboards.length + 1
-        }`
-      : "New Moodboard";
+    const newTitle = generateMoodboardTitle(
+      currentCampaign?.campaign?.title,
+      currentCampaignMoodboards.length + 1
+    );
 
-    const toastId = toast.loading("Creating moodboard...");
-
-    try {
-      // Create the new moodboard directly
-      const newMoodboard = await createMoodboard(
-        selectedBrandId,
-        currentCampaign.id,
-        {
-          campaign_id: currentCampaign.id,
-          title: newTitle,
-        }
-      );
-
-      // Immediately set the new moodboard as selected if creation was successful
-      if (newMoodboard?.id) {
-        setSelectedMoodboardId(newMoodboard.id);
-        toast.success("Moodboard created successfully!", { id: toastId });
-      } else {
-        throw new Error("Failed to create moodboard - no ID returned");
+    await createMoodboardAsync(
+      selectedBrandId,
+      currentCampaign.id,
+      newTitle,
+      (moodboardId) => {
+        setSelectedMoodboardId(moodboardId);
       }
-    } catch (error) {
-      toast.error("Failed to create moodboard. Please try again.", {
-        id: toastId,
-      });
-      console.error("Failed to create moodboard:", error);
-    } finally {
-      setIsCreatingNewMoodboard(false);
-    }
+    );
   };
 
   const handleMoodboardSelect = (moodboard: MoodboardInformation | null) => {
@@ -496,7 +448,6 @@ export const MoodboardSection: React.FC<{
                       {currentCampaign && currentMoodboard && (
                         <MoodboardVisualSectionHeader
                           currentMoodboard={currentMoodboard}
-                          isCreatingNewMoodboard={false}
                           brandName={brandInformation?.static?.brand?.name}
                           currentCampaign={currentCampaign}
                           moodboard={currentMoodboard}
@@ -511,12 +462,6 @@ export const MoodboardSection: React.FC<{
                             <MoodboardLayout
                               brandId={selectedBrandId}
                               moodboard={currentMoodboard}
-                              noOfImagesForMoodboard={noOfImagesForMoodboard}
-                              setNoOfImagesForMoodboard={
-                                setNoOfImagesForMoodboard
-                              }
-                              showAdvancedSettings={showAdvancedSettings}
-                              setShowAdvancedSettings={setShowAdvancedSettings}
                             />
                           )}
                       </div>

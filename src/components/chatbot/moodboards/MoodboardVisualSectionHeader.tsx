@@ -19,7 +19,6 @@ import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface MoodboardVisualSectionProps {
   currentMoodboard: MoodboardInformation | null;
-  isCreatingNewMoodboard: boolean;
   brandName?: string;
   currentCampaign: ThreadCampaign;
   moodboard: MoodboardInformation;
@@ -28,7 +27,6 @@ interface MoodboardVisualSectionProps {
 
 export const MoodboardVisualSectionHeader = ({
   currentMoodboard,
-  isCreatingNewMoodboard,
   brandName,
   currentCampaign,
   moodboard,
@@ -39,7 +37,7 @@ export const MoodboardVisualSectionHeader = ({
   const { selectedBrandId } = useBrandStore();
 
   const { refetchAllAutoFillQueries } = useMoodboardQuery({});
-  if (!currentMoodboard || isCreatingNewMoodboard) return null;
+  if (!currentMoodboard) return null;
 
   const handleFileUpload = async (files: FileList) => {
     if (!files.length || !selectedBrandId) return;
