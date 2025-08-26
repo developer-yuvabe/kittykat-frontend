@@ -112,8 +112,9 @@ export interface ThreadCampaign {
     description: string;
   };
   dynamic?: Record<string, any>;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+  is_custom?: boolean;
 }
 
 export type A2iImageDetail = {

@@ -46,6 +46,7 @@ interface MediaFolderViewProps {
   // Add tab change prop
   onTabChange: (value: string) => void;
   selectedBrandId?: string;
+  onRefreshData?: () => void;
 }
 
 export function MediaFolderView({
@@ -67,6 +68,7 @@ export function MediaFolderView({
   setSelectedFilters,
   setInitialWorkflowStatus,
   onTabChange,
+  onRefreshData,
 }: MediaFolderViewProps) {
   const {
     selectedCampaignFromUrl,
@@ -163,6 +165,7 @@ export function MediaFolderView({
           <CampaignsList
             selectedBrand={selectedBrand}
             onCampaignSelect={handleCampaignSelect}
+            onRefreshData={onRefreshData}
             key={selectedBrand?.brand_id}
           />
         )}

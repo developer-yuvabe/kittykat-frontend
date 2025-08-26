@@ -296,6 +296,17 @@ class GalleryService {
       axiosInstance.post(`/gallery/bulk/upload`, body)
     );
   }
+
+  /**
+   * Reorder gallery items by updating brand_sort_order
+   */
+  async reorderGalleryItems(
+    reorderData: { id: string; brand_sort_order: number }[]
+  ): Promise<void> {
+    return handleApiRequest<void>(
+      axiosInstance.post(`/gallery/reorder`, { items: reorderData })
+    );
+  }
 }
 
 export const galleryService = new GalleryService();
