@@ -382,6 +382,7 @@ const ReferenceMoodboard = ({
                     setSelectedMoodboard={handleMoodboardSelectionChange}
                     isCreatingNew={false}
                     onNewMoodboard={() => {}}
+                    showAllCampaigns={true}
                   />
                 </div>
               )}
@@ -407,6 +408,7 @@ const ReferenceMoodboard = ({
                     setSelectedMoodboard={handleMoodboardSelectionChange}
                     isCreatingNew={false}
                     onNewMoodboard={() => {}}
+                    showAllCampaigns={true}
                   />
                 </div>
               )}
