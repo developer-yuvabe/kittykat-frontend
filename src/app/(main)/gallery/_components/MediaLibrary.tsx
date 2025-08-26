@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { MediaUploadDropzone } from "./MediaUploadDropzone";
 import { MediaSearchFilters } from "./MediaSearchFilters";
-import { MediaGrid } from "./MediaGrid";
+import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
@@ -132,6 +133,8 @@ export function MediaLibrary({
     BrandCampaignListResponse["brands"][number] | null
   >(null);
 
+  const queryClient = useQueryClient();
+
   // Use our custom hook for data fetching and mutations
   const galleryActions = useGalleryQuery({
     assetType: activeTab,
@@ -178,6 +181,34 @@ export function MediaLibrary({
   ]);
 
   const selectedBrandName = selectedBrand?.brand_name || "brand";
+
+  // Function to refresh brand data and update selectedBrand
+  const handleRefreshBrandData = async () => {
+    try {
+      // Invalidate and refetch brands query to bypass cache
+      await queryClient.invalidateQueries({
+        queryKey: ["brands-campaigns"],
+      });
+
+      // Small delay to ensure invalidation is processed
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Refetch brands data and get the result
+      const { data: freshBrandsData } = await galleryActions.brandsRefetch();
+
+      // Update selectedBrand with fresh data immediately
+      if (selectedBrand?.brand_id && freshBrandsData?.brands) {
+        const updatedBrand = freshBrandsData.brands.find(
+          (b) => b.brand_id === selectedBrand.brand_id
+        );
+        if (updatedBrand) {
+          setSelectedBrand(updatedBrand);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refresh brand data:", error);
+    }
+  };
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -442,6 +473,7 @@ export function MediaLibrary({
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
                 selectedBrandId={effectiveBrandId!}
+                onRefreshData={handleRefreshBrandData}
               />
             </div>
           )}
@@ -544,11 +576,11 @@ export function MediaLibrary({
                       galleryItems.length > 0 && (
                         <div>
                           {selectedBrand && (
-                            <MediaGrid
+                            <SortableMediaGrid
                               galleryActions={galleryActions}
                               selectedItems={currentlySelectedItems}
                               onSelect={handleSelect}
-                              isMediaSelectDialog={isMediaSelectDialog} // Pass the prop here!
+                              isMediaSelectDialog={isMediaSelectDialog}
                               isMultiSelect={isMultiSelect}
                               inSelectionGalleryIds={inSelectionGalleryIds}
                               maxSelectionCount={maxSelectionCount}

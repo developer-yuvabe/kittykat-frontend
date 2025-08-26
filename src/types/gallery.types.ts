@@ -139,6 +139,8 @@ export type GalleryItem = {
 
   // ⚙️ System Metadata
   processing_status?: "processing" | "ready" | "failed";
+
+  brand_sort_order?: number;
 };
 
 export interface GalleryItemResponse extends GalleryItem {
