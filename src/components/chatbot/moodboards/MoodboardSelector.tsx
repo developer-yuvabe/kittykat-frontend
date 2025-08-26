@@ -49,6 +49,7 @@ interface MoodboardSelectorProps {
   onNewMoodboard: () => void;
   isCreatingNew: boolean;
   variant?: "combobox" | "select";
+  showAllCampaigns?: boolean;
 }
 
 export default function MoodboardSelector({
@@ -57,6 +58,7 @@ export default function MoodboardSelector({
   setSelectedMoodboard,
   campaignId,
   variant = "combobox",
+  showAllCampaigns = false,
 }: MoodboardSelectorProps) {
   const { selectedBrandId, setSelectedMoodboardId } = useBrandStore();
 
@@ -77,9 +79,12 @@ export default function MoodboardSelector({
 
   // Transform moodboards (filtered by campaignId) - for combobox variant
   useEffect(() => {
-    if (!campaignId || variant !== "combobox") return;
+    if (variant !== "combobox") return;
 
-    const filtered = moodboards.filter((mb) => mb.campaign_id === campaignId);
+    const filtered = showAllCampaigns
+      ? moodboards
+      : moodboards.filter((mb) => mb.campaign_id === campaignId);
+
     const transformed = filtered.map((mb) => {
       const displayName = mb.title || "Unnamed Moodboard";
       return {
@@ -93,15 +98,18 @@ export default function MoodboardSelector({
 
     setTransformedMoodboards(transformed);
     setFilteredMoodboards(transformed);
-  }, [moodboards, campaignId, variant]);
+  }, [moodboards, campaignId, variant, showAllCampaigns]);
 
   // Filter moodboards for select variant
   useEffect(() => {
-    if (!campaignId || variant !== "select") return;
+    if (variant !== "select") return;
 
-    const filtered = moodboards.filter((mb) => mb.campaign_id === campaignId);
+    const filtered = showAllCampaigns
+      ? moodboards
+      : moodboards.filter((mb) => mb.campaign_id === campaignId);
+
     setSelectMoodboards(filtered);
-  }, [moodboards, campaignId, variant]);
+  }, [moodboards, campaignId, variant, showAllCampaigns]);
 
   // Filter by search query - for combobox variant
   useEffect(() => {
@@ -307,9 +315,7 @@ export default function MoodboardSelector({
           </div>
           <CommandList>
             <CommandEmpty>
-              {loading
-                ? "Loading..."
-                : "No moodboards were found for this campaign."}
+              {loading ? "Loading..." : "No moodboards found."}
             </CommandEmpty>
             <CommandGroup>
               {filteredMoodboards.map((mb) => (
