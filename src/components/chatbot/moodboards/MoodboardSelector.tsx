@@ -307,7 +307,9 @@ export default function MoodboardSelector({
           </div>
           <CommandList>
             <CommandEmpty>
-              {loading ? "Loading..." : "No moodboards found."}
+              {loading
+                ? "Loading..."
+                : "No moodboards were found for this campaign."}
             </CommandEmpty>
             <CommandGroup>
               {filteredMoodboards.map((mb) => (

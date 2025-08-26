@@ -36,6 +36,8 @@ type ReferenceMoodboardProps = {
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
+  campaignInformation: ThreadDetails["campaign_information"];
+  selectedCampaignIndex: number;
 };
 
 const ReferenceMoodboard = ({
@@ -43,6 +45,8 @@ const ReferenceMoodboard = ({
   prompts,
   moodboardInformation,
   formRef,
+  campaignInformation,
+  selectedCampaignIndex,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt } = useA2iStore();
   const { setCampaignMoodboardSelection, setSelectedMoodboardId } =
@@ -56,6 +60,15 @@ const ReferenceMoodboard = ({
     mutationFn: () =>
       generateA2iShowboard(selectedBrandId!, referenceMoodboardId!, Number(n)),
   });
+
+  // Get the current campaign based on selectedCampaignIndex
+  const currentCampaign = useMemo(
+    () =>
+      campaignInformation && campaignInformation[selectedCampaignIndex]
+        ? campaignInformation[selectedCampaignIndex]
+        : null,
+    [campaignInformation, selectedCampaignIndex]
+  );
 
   const selectedMoodboard = useMemo(
     () => moodboardInformation?.find((mb) => mb.id === referenceMoodboardId),
@@ -360,7 +373,10 @@ const ReferenceMoodboard = ({
                     Select a different moodboard:
                   </p>
                   <MoodboardSelector
-                    campaignId={moodboardInformation[0].campaign_id!}
+                    campaignId={
+                      currentCampaign?.id ||
+                      moodboardInformation[0].campaign_id!
+                    }
                     moodboards={moodboardInformation}
                     selectedMoodboard={null}
                     setSelectedMoodboard={handleMoodboardSelectionChange}
@@ -382,7 +398,10 @@ const ReferenceMoodboard = ({
                     Select a different moodboard:
                   </p>
                   <MoodboardSelector
-                    campaignId={moodboardInformation[0].campaign_id!}
+                    campaignId={
+                      currentCampaign?.id ||
+                      moodboardInformation[0].campaign_id!
+                    }
                     moodboards={moodboardInformation}
                     selectedMoodboard={null}
                     setSelectedMoodboard={handleMoodboardSelectionChange}

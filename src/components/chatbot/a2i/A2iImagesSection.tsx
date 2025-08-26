@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
@@ -76,6 +76,8 @@ const A2iImagesSection = function A2iImagesSection({
             prompts={a2iImageInformation?.prompts}
             moodboardInformation={moodboardInformation}
             formRef={formRef}
+            campaignInformation={campaignInformation}
+            selectedCampaignIndex={selectedCampaignIndex}
           />
           <A2iImagesWrapper
             formRef={formRef}
