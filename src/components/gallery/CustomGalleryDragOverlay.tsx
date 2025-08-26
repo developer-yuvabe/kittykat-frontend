@@ -9,6 +9,7 @@ type ActivePhoto<TPhoto extends Photo> = {
   width: number;
   height: number;
   padding?: string;
+  is_placeholder?: boolean;
 };
 
 interface CustomGalleryDragOverlayProps<TPhoto extends Photo> {
@@ -19,6 +20,13 @@ export function CustomGalleryDragOverlay<TPhoto extends Photo>({
   activePhoto,
 }: CustomGalleryDragOverlayProps<TPhoto>) {
   return (
-    <DragOverlay>{activePhoto && <Overlay {...activePhoto} />}</DragOverlay>
+    <DragOverlay>
+      {activePhoto && (
+        <Overlay
+          {...activePhoto}
+          isPlaceholderCard={activePhoto.is_placeholder || false}
+        />
+      )}
+    </DragOverlay>
   );
 }

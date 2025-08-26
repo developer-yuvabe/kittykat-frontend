@@ -1,6 +1,5 @@
 import {
   AggregatedTagItem,
-  MoodboardAsset,
   MoodboardInformation,
   SourceHandle,
   VisualImage,
@@ -62,4 +61,32 @@ export interface AutoFillSuggestedImage {
   };
   asset_url: string;
   preview_url: string | null;
+}
+
+export interface MoodboardAsset {
+  gallery_item_id: string;
+  position: number;
+  is_placeholder?: boolean;
+}
+
+export interface AutoFillSuggestedImage {
+  id: string;
+  is_favourite: boolean;
+  dimensions: {
+    width: number;
+    height: number;
+  };
+  asset_url: string;
+  preview_url: string | null;
+}
+
+export interface UnifiedMoodboardItem {
+  id: string;
+  src?: string;
+  width: number;
+  height: number;
+  alt?: string;
+  liked?: boolean;
+  is_placeholder?: boolean;
+  position: number;
 }

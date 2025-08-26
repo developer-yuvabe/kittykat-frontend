@@ -110,7 +110,15 @@ export function MediaEditorDialog({
       setCurrentItem(item);
       setBrushSize(50);
     }
-  }, [item]);
+  }, [item?.id]);
+
+  useEffect(() => {
+    if (!item || item.is_master === false) return;
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: item.comments } : item
+    );
+  }, [item?.comments]);
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
@@ -408,6 +416,7 @@ export function MediaEditorDialog({
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
             toast.info("Comment updated", { id: toastId });
+            setEditingComment(null);
           },
         }
       );
@@ -439,10 +448,8 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
-            // toast.info("Reply updated", { id: toastId });
-            setTimeout(() => {
-              toast.info("Reply updated", { id: toastId });
-            }, 3000);
+            toast.info("Reply updated", { id: toastId });
+            setEditingReply(null);
           },
         }
       );
