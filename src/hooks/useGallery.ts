@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+import { useMoodboardQuery } from "./useMoodboardQuery";
 
 export const ITEMS_PER_PAGE = 20;
 
@@ -52,6 +53,8 @@ export const useGalleryQuery = (
     filters.searchQuery,
     filters.selectedFilters,
   ];
+
+  const { updateAutoFillSuggestionCache } = useMoodboardQuery({});
 
   // Infinite query for gallery items with filters
   const galleryQuery = useInfiniteQuery({
@@ -310,6 +313,8 @@ export const useGalleryQuery = (
     }) => galleryService.patchGalleryItem(itemId, data),
 
     onMutate: async ({ itemId, data }) => {
+      updateAutoFillSuggestionCache(itemId, data.is_favourite!);
+
       const queryKey = getGalleryQueryKey();
 
       await queryClient.cancelQueries({ queryKey });
@@ -333,6 +338,29 @@ export const useGalleryQuery = (
         };
 
         return updated;
+      });
+
+      // Also remove the item from existing bulk query caches
+      const bulkQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items-bulk"],
+        exact: false,
+      });
+
+      bulkQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+            return prev.filter((item) => item.id !== itemId);
+          }
+        );
+      });
+      // Invalidate autofill-suggestions queries after patch
+      queryClient.invalidateQueries({
+        queryKey: ["autofill-suggestions"],
+        exact: false,
       });
 
       // Return context for potential rollback
@@ -516,6 +544,7 @@ export const useGalleryQuery = (
     },
     onSuccess: (data, itemIds) => {
       // Remove items from single item cache
+
       itemIds.forEach((itemId) => {
         queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       });
