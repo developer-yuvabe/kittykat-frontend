@@ -120,6 +120,7 @@ export const CustomGalleryGrid = forwardRef<
                   setItems={setItems}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                   isPreview={isPreview}
+                  key={item.id}
                 />
               </div>
             );

@@ -18,6 +18,10 @@ import { useCallback } from "react";
 import { HeartIcon, Loader2, Maximize2, X } from "lucide-react";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import Sortable from "./Sortable";
+import {
+  usePlaceholderDroppable,
+  useCarouselDnd,
+} from "@/contexts/CarouselDndContext";
 
 type PlaceholderCardProps<TPhoto extends Photo> = {
   photos: SortablePhoto<TPhoto>[];
@@ -46,6 +50,18 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   isPreview = false,
 }: PlaceholderCardProps<TPhoto>) {
   const { selectedBrandId } = useBrandStore();
+
+  // Droppable functionality for drag-and-drop from carousel
+  const {
+    setNodeRef: setDroppableRef,
+    isDraggedOver,
+    isDragging,
+  } = usePlaceholderDroppable(placeHolderIndex);
+
+  // Get carousel context to distinguish between carousel and sortable dragging
+  const carouselContext = useCarouselDnd();
+  const isDraggingCarouselItem =
+    carouselContext?.isDraggingCarouselItem || false;
 
   useGalleryQuery(
     {
@@ -130,16 +146,37 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   ]);
 
   const placeholderContent = (
-    <div className="relative group w-full h-full bg-neutral-300 flex flex-col items-center justify-center transition-all duration-200">
+    <div
+      className={`relative group w-full h-full transition-all duration-300 ${
+        isDraggedOver
+          ? "bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-500 border-dashed shadow-lg transform scale-105"
+          : "bg-neutral-300 hover:bg-neutral-400"
+      } ${
+        isDraggingCarouselItem && !isDraggedOver
+          ? "opacity-60 border-2 border-dashed border-gray-400"
+          : ""
+      } flex flex-col items-center justify-center `}
+    >
+      {/* Drop zone indicator - only for carousel items */}
+      {isDraggedOver && (
+        <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center z-50 pointer-events-none rounded-md">
+          <div className="bg-blue-500 text-white px-4 py-2  font-medium shadow-lg animate-pulse">
+            🎯 Drop image here
+          </div>
+        </div>
+      )}
+
       <div className="absolute inset-0 bg-gradient-to-b from-[#A1A8B3FF] via-transparent to-[#A1A8B3FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+      <div
+        className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-200 pointer-events-none ${"opacity-0 group-hover:opacity-100"}`}
+      >
         {!isPreview && (
           <div className="flex flex-col items-center justify-center gap-0 pointer-events-auto z-50">
             <Button
               size="lg"
               className="rounded-b-none w-28 hover:opacity-90"
-              disabled={isAutoFillLoading}
+              disabled={isAutoFillLoading || isDragging}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -175,7 +212,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
         )}
       </div>
 
-      {!isPreview && (
+      {!isPreview && !isDragging && (
         <>
           <div className="absolute top-2 left-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
             <X
@@ -219,7 +256,10 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
   );
 
   return (
-    <Sortable id={placeholderItemId || `placeholder-${placeHolderIndex}`}>
+    <Sortable
+      id={placeholderItemId || `placeholder-${placeHolderIndex}`}
+      droppableRef={setDroppableRef}
+    >
       {placeholderContent}
     </Sortable>
   );

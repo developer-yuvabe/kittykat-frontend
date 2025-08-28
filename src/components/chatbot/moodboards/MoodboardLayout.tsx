@@ -8,14 +8,23 @@ import MoodboardContent from "./MoodboardContent";
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
   brandId: string;
+  carouselHeader?: React.ReactNode;
 }
 
-function MoodboardLayout({ moodboard, brandId }: MoodboardLayoutProps) {
+function MoodboardLayout({
+  moodboard,
+  brandId,
+  carouselHeader,
+}: MoodboardLayoutProps) {
   return (
     <div className="mt-4">
       <div>
         {/* Completed Gallery State */}
-        <MoodboardContent moodboard={moodboard} brandId={brandId} />
+        <MoodboardContent
+          moodboard={moodboard}
+          brandId={brandId}
+          carouselHeader={carouselHeader}
+        />
       </div>
     </div>
   );

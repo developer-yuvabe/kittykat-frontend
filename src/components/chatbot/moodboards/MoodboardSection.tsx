@@ -445,15 +445,6 @@ export const MoodboardSection: React.FC<{
                   title={`Build Your Campaign Moodboard`}
                   content={
                     <div>
-                      {currentCampaign && currentMoodboard && (
-                        <MoodboardVisualSectionHeader
-                          currentMoodboard={currentMoodboard}
-                          brandName={brandInformation?.static?.brand?.name}
-                          currentCampaign={currentCampaign}
-                          moodboard={currentMoodboard}
-                          galleryActions={galleryActions}
-                        />
-                      )}
                       <div>
                         {selectedBrandId &&
                           currentMoodboard &&
@@ -462,6 +453,19 @@ export const MoodboardSection: React.FC<{
                             <MoodboardLayout
                               brandId={selectedBrandId}
                               moodboard={currentMoodboard}
+                              carouselHeader={
+                                currentCampaign && currentMoodboard ? (
+                                  <MoodboardVisualSectionHeader
+                                    currentMoodboard={currentMoodboard}
+                                    brandName={
+                                      brandInformation?.static?.brand?.name
+                                    }
+                                    currentCampaign={currentCampaign}
+                                    moodboard={currentMoodboard}
+                                    galleryActions={galleryActions}
+                                  />
+                                ) : null
+                              }
                             />
                           )}
                       </div>

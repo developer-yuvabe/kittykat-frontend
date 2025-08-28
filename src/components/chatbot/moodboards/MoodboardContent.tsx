@@ -12,13 +12,21 @@ import {
   useMoodboardLoadingEffects,
 } from "./hooks";
 import { useBrandStore } from "@/store/brand.store";
+import { CarouselDndProvider } from "@/contexts/CarouselDndContext";
+import { GalleryItemResponse } from "@/types/gallery.types";
+import { toast } from "sonner";
 
 interface MoodboardContentProps {
   moodboard: MoodboardInformation;
   brandId: string;
+  carouselHeader?: React.ReactNode;
 }
 
-function MoodboardContent({ moodboard, brandId }: MoodboardContentProps) {
+function MoodboardContent({
+  moodboard,
+  brandId,
+  carouselHeader,
+}: MoodboardContentProps) {
   const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
 
   // Use the data hook to get moodboard data
@@ -112,33 +120,51 @@ function MoodboardContent({ moodboard, brandId }: MoodboardContentProps) {
     forceLoadImagesWithCurrentData,
   });
 
+  // Handle drag-and-drop from carousel to moodboard placeholders
+  const handleCarouselItemDrop = (
+    item: GalleryItemResponse,
+    placeholderIndex: number
+  ) => {
+    // Use the existing gallery selection logic to handle the drop
+    handleGallerySelection([item], placeholderIndex);
+    toast.success(`Added image to your moodboard!`);
+  };
+
   // Don't render if still loading or generation in progress
   if (loading || moodboardGenerationInProgress) {
     return null;
   }
 
   return (
-    <div className="w-full flex flex-col gap-y-4">
-      <MoodboardHeader
-        moodboard={moodboard}
-        brandId={brandId}
-        isMoodboardSaving={isMoodboardSaving}
-        hasUnsavedChanges={hasUnsavedChanges}
-        photos={photos}
-        isAutoFillLoading={isAutoFillLoading}
-        autoFillPlaceholders={autoFillPlaceholders}
-      />
+    <CarouselDndProvider
+      onGalleryItemDrop={handleCarouselItemDrop}
+      onSortableMove={movePhoto}
+      sortableItems={photos}
+    >
+      <div className="w-full flex flex-col gap-y-4">
+        {carouselHeader}
 
-      <MoodboardGalleryView
-        photos={photos}
-        setPhotos={setPhotos}
-        movePhoto={movePhoto}
-        onPhotoLike={onPhotoLike}
-        hasUnsavedChanges={hasUnsavedChanges}
-        onGallerySelection={handleGallerySelection}
-        moodboard={moodboard}
-      />
-    </div>
+        <MoodboardHeader
+          moodboard={moodboard}
+          brandId={brandId}
+          isMoodboardSaving={isMoodboardSaving}
+          hasUnsavedChanges={hasUnsavedChanges}
+          photos={photos}
+          isAutoFillLoading={isAutoFillLoading}
+          autoFillPlaceholders={autoFillPlaceholders}
+        />
+
+        <MoodboardGalleryView
+          photos={photos}
+          setPhotos={setPhotos}
+          movePhoto={movePhoto}
+          onPhotoLike={onPhotoLike}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onGallerySelection={handleGallerySelection}
+          moodboard={moodboard}
+        />
+      </div>
+    </CarouselDndProvider>
   );
 }
 

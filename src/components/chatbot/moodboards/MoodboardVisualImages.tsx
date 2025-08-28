@@ -11,6 +11,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { DraggableCarouselItem } from "./DraggableCarouselItem";
 
 interface MoodboardVisualImagesProps {
   currentMoodboard: MoodboardInformation;
@@ -33,6 +34,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
         id: item.id,
         filename: item.asset_title ?? "Untitled",
         url: item.preview_url || item.asset_url,
+        galleryItem: item, // Keep the full gallery item for DND
       };
     });
   }, [currentMoodboard?.id, galleryItems]);
@@ -52,13 +54,23 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
                     images.length < 5 ? `basis-1/${images.length}` : "basis-1/5"
                   }`}
                 >
-                  <img
-                    onClick={() => setExpandedImage(item.url)}
-                    src={item.url || "/placeholder.svg"}
-                    alt={item.filename}
-                    className="object-cover w-40 mx-auto h-40 rounded-md cursor-pointer"
-                    loading="eager"
-                  />
+                  <DraggableCarouselItem
+                    item={item.galleryItem}
+                    className="block w-full"
+                  >
+                    <img
+                      onClick={(e) => {
+                        // Prevent click when dragging
+                        if (e.defaultPrevented) return;
+                        setExpandedImage(item.url);
+                      }}
+                      src={item.url || "/placeholder.svg"}
+                      alt={item.filename}
+                      className="object-cover w-40 mx-auto h-40 rounded-md cursor-pointer hover:scale-105 transition-transform duration-200"
+                      loading="eager"
+                      draggable={false} // Prevent native HTML drag
+                    />
+                  </DraggableCarouselItem>
                 </CarouselItem>
               ))}
             </CarouselContent>
