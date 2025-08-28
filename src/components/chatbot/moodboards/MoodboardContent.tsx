@@ -125,6 +125,14 @@ function MoodboardContent({
     item: GalleryItemResponse,
     placeholderIndex: number
   ) => {
+    // Check if the item is already in the moodboard
+    const isAlreadyInMoodboard = photos.some((photo) => photo.id === item.id);
+
+    if (isAlreadyInMoodboard) {
+      toast.warning("This image is already in your moodboard.");
+      return;
+    }
+
     // Use the existing gallery selection logic to handle the drop
     handleGallerySelection([item], placeholderIndex);
     toast.success(`Added image to your moodboard!`);
