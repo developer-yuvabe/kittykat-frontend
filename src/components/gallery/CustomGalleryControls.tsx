@@ -7,6 +7,7 @@ import { useMoodboardStore } from "@/store/moodboard.store";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 interface CustomGalleryControlsProps {
   noOfImagesForMoodboard: number;
@@ -41,12 +42,14 @@ export function CustomGalleryControls({
       setItems((prevItems: UnifiedMoodboardItem[]) => {
         const currentItemsCount = prevItems.length;
         if (currentItemsCount < newCount) {
+          const uniqId = uuidv4();
+
           const placeholderItem: UnifiedMoodboardItem = {
-            id: `placeholder-${currentItemsCount}`,
+            id: `placeholder-${uniqId}`,
             src: "",
             width: 300,
             height: 300,
-            alt: `Placeholder ${currentItemsCount + 1}`,
+            alt: `placeholder-${uniqId}`,
             liked: false,
             is_placeholder: true,
             position: currentItemsCount,
