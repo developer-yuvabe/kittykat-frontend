@@ -27,6 +27,7 @@ export const upscalerSchema = z.object({
     "magnific_sparkle",
   ]),
   prompt: z.string().optional(),
+  base_image: z.string().optional(),
 });
 
 export const upscaleImage = async (
