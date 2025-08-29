@@ -6,12 +6,14 @@ import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
-import type {
-  GalleryFilters,
-  BrandCampaignListResponse,
-  MediaWithStatus,
-  GalleryItem,
-  BulkGalleryUploadRequest,
+import {
+  type GalleryFilters,
+  type BrandCampaignListResponse,
+  type MediaWithStatus,
+  type GalleryItem,
+  type BulkGalleryUploadRequest,
+  IMAGE_FILE_TYPES,
+  VIDEO_FILE_TYPES,
 } from "@/types/gallery.types";
 import { acceptedFileTypes, getAssetTypeFromUrl } from "@/lib/gallery.utils";
 import { getExtensionFromUrl } from "@/lib/utils";
@@ -57,23 +59,13 @@ export function FolderUploadDropzone({
     activeTab as keyof typeof acceptedFileTypes
   ] ?? {
     types: {
-      "image/png": [".png"],
-      "image/jpeg": [".jpg", ".jpeg"],
-      "image/svg+xml": [".svg"],
-      "video/mp4": [".mp4"],
-      "video/quicktime": [".mov"],
-      "video/x-msvideo": [".avi"],
-      "image/tiff": [".tiff", ".tif"],
-      "image/webp": [".webp"],
-      "image/bmp": [".bmp"],
-      "image/gif": [".gif"],
-      "image/psd": [".psd"],
+      ...IMAGE_FILE_TYPES,
+      ...VIDEO_FILE_TYPES,
     },
     text: "PNG, JPEG, MP4",
     placeholder: "Drop media here to upload",
     assetType: "image",
   };
-
   const uploadFiles = async (files: File[]) => {
     if (!selectedBrand?.brand_id) {
       toast.error("No brand selected.");

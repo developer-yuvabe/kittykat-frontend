@@ -16,6 +16,7 @@ import { CustomGalleryHooks } from "./CustomGalleryHooks";
 import { CustomGalleryGrid } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
 import { useMoodboardStore } from "@/store/moodboard.store";
+import { GalleryActions } from "@/hooks/useGallery";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
@@ -36,6 +37,7 @@ type OptimisticCustomGridGalleryProps = {
     placeholderIndex: number
   ) => void;
   isPreview?: boolean;
+  galleryActions?: GalleryActions;
 };
 
 export default function CustomGalleryContainer<TPhoto extends Photo>({
@@ -47,6 +49,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   moodboard,
   onGallerySelection,
   isPreview = false,
+  galleryActions,
 }: OptimisticCustomGridGalleryProps) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [expandedImage, setExpandedImage] = useState<{
@@ -121,6 +124,7 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
         showLiked={showLiked}
         isPreview={isPreview}
+        galleryActions={galleryActions}
       />
     </div>
   );

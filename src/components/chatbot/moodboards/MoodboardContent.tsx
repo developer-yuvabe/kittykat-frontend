@@ -170,6 +170,7 @@ function MoodboardContent({
           hasUnsavedChanges={hasUnsavedChanges}
           onGallerySelection={handleGallerySelection}
           moodboard={moodboard}
+          galleryActions={galleryActions}
         />
       </div>
     </CarouselDndProvider>

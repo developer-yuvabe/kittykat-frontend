@@ -284,9 +284,10 @@ class GalleryService {
   async uploadBulkGalleryItems(
     body: BulkGalleryUploadRequest
   ): Promise<GalleryItemResponse[]> {
-    return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.post(`/gallery/bulk/upload-optimized`, body)
-    );
+    const response = await handleApiRequest<{
+      created_items: GalleryItemResponse[];
+    }>(axiosInstance.post(`/gallery/bulk/upload-optimized`, body));
+    return response.created_items;
   }
 
   async uploadBulkGalleryItemsWithAnalysis(
