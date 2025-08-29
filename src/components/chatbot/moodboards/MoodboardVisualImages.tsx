@@ -83,7 +83,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
     }
   }, [currentMoodboard, hasInitiallyFetched, images.length, fetchNextPage]);
 
-  if (!hasInitiallyFetched || !images || images.length === 0) {
+  if (!images || images.length === 0) {
     return (
       <div className="mb-6 mt-3">
         <div className="flex items-center justify-center p-4">

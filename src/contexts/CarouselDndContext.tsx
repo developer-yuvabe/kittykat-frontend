@@ -221,24 +221,14 @@ export const CarouselDndProvider: React.FC<CarouselDndProviderProps> = ({
     setActivePhoto(undefined);
 
     if (!over) {
-      console.log("❌ Drop cancelled - no valid drop target");
       return;
     }
 
     const dragData = active.data.current;
     const dropData = over.data.current;
 
-    console.log("📊 Drag data:", dragData);
-    console.log("📍 Drop data:", dropData);
-
     // Handle carousel to placeholder drop
     if (dragData?.type === "carousel" && dropData?.type === "placeholder") {
-      console.log(
-        "✅ Valid carousel drop - calling onGalleryItemDrop",
-        dragData.item.asset_title,
-        "to position",
-        dropData.placeholderIndex
-      );
       onGalleryItemDrop?.(dragData.item, dropData.placeholderIndex);
     }
     // Handle sortable item to placeholder as sorting/reordering (not a drop)
@@ -246,23 +236,8 @@ export const CarouselDndProvider: React.FC<CarouselDndProviderProps> = ({
       const oldIndex = sortableItems.findIndex((item) => item.id === active.id);
       const newIndex = dropData.placeholderIndex;
 
-      console.log("🔄 Sortable to placeholder reordering:", {
-        oldIndex,
-        newIndex: dropData.placeholderIndex,
-        activeId: active.id,
-        overId: over.id,
-      });
-
       if (oldIndex !== -1 && onSortableMove) {
-        console.log("✅ Valid sortable to placeholder move:", {
-          oldIndex,
-          newIndex,
-        });
         onSortableMove(oldIndex, newIndex);
-      } else {
-        console.log(
-          "❌ Could not find sortable item index or onSortableMove not available"
-        );
       }
     }
     // Handle sortable reordering (when both active and over are sortable items, and no specific types)
@@ -270,27 +245,9 @@ export const CarouselDndProvider: React.FC<CarouselDndProviderProps> = ({
       const oldIndex = sortableItems.findIndex((item) => item.id === active.id);
       const newIndex = sortableItems.findIndex((item) => item.id === over.id);
 
-      console.log("🔄 Sortable indices:", {
-        oldIndex,
-        newIndex,
-        activeId: active.id,
-        overId: over.id,
-      });
-
       if (oldIndex !== -1 && newIndex !== -1) {
-        console.log("✅ Valid sortable move:", { oldIndex, newIndex });
         onSortableMove?.(oldIndex, newIndex);
-      } else {
-        console.log("❌ Could not find indices for sortable items");
       }
-    } else {
-      console.log("❌ Invalid drop - mismatched types or same position", {
-        dragType: dragData?.type,
-        dropType: dropData?.type,
-        activeId: active.id,
-        overId: over.id,
-        isSameId: active.id === over.id,
-      });
     }
   };
 
@@ -327,10 +284,6 @@ export const useCarouselItemDraggable = (item: GalleryItemResponse) => {
 
   // If no carousel context available, return default values
   if (!carouselContext) {
-    console.warn(
-      "⚠️ useCarouselItemDraggable: No carousel context available for item:",
-      item.asset_title
-    );
     return {
       attributes: {},
       listeners: {},
@@ -354,10 +307,6 @@ export const usePlaceholderDroppable = (placeholderIndex: number) => {
 
   // If no carousel context available, return default values
   if (!carouselContext) {
-    console.warn(
-      "⚠️ usePlaceholderDroppable: No carousel context available for placeholder:",
-      placeholderIndex
-    );
     return {
       setNodeRef: () => {},
       isDraggedOver: false,

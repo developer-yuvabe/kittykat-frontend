@@ -167,12 +167,6 @@ export const A2iImagesWrapper = ({
       });
 
       if (activeIndex === -1 || overIndex === -1) {
-        console.warn("Invalid drag indices detected:", {
-          activeId: active.id,
-          overId: over.id,
-          activeIndex,
-          overIndex,
-        });
         return;
       }
 

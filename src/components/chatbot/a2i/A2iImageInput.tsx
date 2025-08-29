@@ -89,7 +89,6 @@ const A2iImageInput = ({
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
       if (fileRejections.length > 0) {
-        console.log("File Rejections:", fileRejections);
         if (remainingUploads === 0)
           toast.error(
             `Maximum limit reached. You can only upload ${refernceImagesModelInfo?.maxLimit} image(s).`

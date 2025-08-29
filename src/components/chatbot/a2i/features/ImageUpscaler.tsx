@@ -53,7 +53,6 @@ const upscaleImageService = async (
   fromGallery: boolean = false
 ): Promise<any> => {
   // Mock implementation - replace with actual API call
-  console.log("Upscaling image with data:", data);
   return new Promise((resolve) => {
     setTimeout(() => resolve({ success: true }), 2000);
   });
@@ -90,11 +89,9 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
         source === "media-gallery"
       );
 
-      console.log("Image upscaling started successfully!");
       closeDialog();
     } catch (error) {
       console.error("Upscaling failed:", error);
-      console.log("Image upscaling failed. Please try again.");
     }
   };
 
