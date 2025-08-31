@@ -135,13 +135,25 @@ export type BooleanParam = BaseParam & {
   type: "boolean";
 };
 
+export type NumberParam = BaseParam & {
+  type: "number";
+  min: number;
+  max: number;
+};
+
+export type TextAreaParam = BaseParam & {
+  type: "text_area";
+};
+
 export type ModelParameter =
   | StringParam
   | SliderParam
   | EnumParam
   | FileParam
   | BooleanParam
-  | ImagesCountParam;
+  | ImagesCountParam
+  | NumberParam
+  | TextAreaParam;
 
 export type Model = {
   id: string;

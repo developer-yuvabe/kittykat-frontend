@@ -8,6 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Popover,
   PopoverContent,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -134,6 +136,38 @@ export function DynamicFormField<T extends FieldValues>({
               </Popover>
             ) : (
               SlideComp
+            );
+
+          case "number":
+            return (
+              <FormItem className="flex flex-col  gap-2">
+                <DynaicFormLabel
+                  showLabel={type !== "initial"}
+                  label={param.label}
+                />
+                <FormControl>
+                  <NumberInput
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    min={param.min}
+                    max={param.max}
+                    className="w-24"
+                  />
+                </FormControl>
+              </FormItem>
+            );
+
+          case "text_area":
+            return (
+              <FormItem className="flex flex-col  gap-2">
+                <DynaicFormLabel
+                  showLabel={type !== "initial"}
+                  label={param.label}
+                />
+                <FormControl>
+                  <Textarea {...field} placeholder={param.label} />
+                </FormControl>
+              </FormItem>
             );
 
           case "boolean":

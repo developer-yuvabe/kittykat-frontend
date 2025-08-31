@@ -11,6 +11,9 @@ type Store = {
 
   selectedModel: Model | null;
   setSelectedModel: (model: Model) => void;
+
+  selectedVideoGenearationModel: Model | null;
+  setSelectedVideoGenearationModel: (model: Model) => void;
 };
 
 export const useModelsStore = create<Store>()((set) => {
@@ -46,6 +49,15 @@ export const useModelsStore = create<Store>()((set) => {
       setSessionItem("a2i-image-generation-model-id", model.id);
 
       set({ selectedModel: model });
+    },
+
+    selectedVideoGenearationModel:
+      getSessionItem("a2i-video-generation-model-id") || null,
+    setSelectedVideoGenearationModel: (model) => {
+      // Save to session storage
+      setSessionItem("a2i-video-generation-model-id", model.id);
+
+      set({ selectedVideoGenearationModel: model });
     },
   };
 });

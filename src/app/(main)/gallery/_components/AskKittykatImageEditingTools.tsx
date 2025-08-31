@@ -84,7 +84,7 @@ export function AskKittykatImageEditingTools({
       customComponent: (
         <VideoGeneration
           closeDialog={remixControls.closeDialog}
-          startImage={item.asset_url}
+          baseImage={item.asset_url}
           campaignId={remixControls.campaignId}
         />
       ),

@@ -44,8 +44,11 @@ const A2iImageInput = ({
 }) => {
   const form = useImageGenForm();
   const { setShowInsufficientCreditsModal } = useUserStore();
-  const { credits, isCalculatingCredits } = useModelPricing({ form });
   const { selectedModel } = useModelsStore();
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: selectedModel,
+  });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal } = useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({

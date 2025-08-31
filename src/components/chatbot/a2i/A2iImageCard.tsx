@@ -164,6 +164,12 @@ const A2iImageCard = ({
     setIsLiked(galleryItem?.data?.is_favourite || false);
   }, [galleryItem?.data?.is_favourite]);
 
+  useEffect(() => {
+    if (id == "68b3f973a1de2e98a2614374") {
+      setShowEditFeatures(true);
+    }
+  }, [id]);
+
   return (
     <div
       className={cn(
@@ -260,11 +266,10 @@ const A2iImageCard = ({
                 />
               </div>
             )}
-            {video && (
+            {(video || parameters.start_image || parameters.first_frame) && (
               <div className="flex gap-6">
                 <img
-                  src={video.url}
-                  alt="Video"
+                  src={parameters.start_image || parameters.first_frame}
                   className="w-16 h-16 object-cover rounded-md"
                 />
               </div>
