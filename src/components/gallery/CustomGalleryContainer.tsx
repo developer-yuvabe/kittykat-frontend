@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, forwardRef } from "react";
 import type { Photo } from "react-photo-album";
 import { ImageModal } from "../shared/ImageModal";
 import {
@@ -13,7 +13,7 @@ import type { MoodboardInformation } from "@/types/types";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryHooks } from "./CustomGalleryHooks";
-import { CustomGalleryGrid } from "./CustomGalleryGrid";
+import { CustomGalleryGrid, CustomGalleryGridRef } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
 import { useMoodboardStore } from "@/store/moodboard.store";
 import { GalleryActions } from "@/hooks/useGallery";
@@ -40,118 +40,132 @@ type OptimisticCustomGridGalleryProps = {
   galleryActions?: GalleryActions;
 };
 
-export default function CustomGalleryContainer<TPhoto extends Photo>({
-  items,
-  setItems,
-  movePhoto,
-  onPhotoLike,
-  hasUnsavedChanges,
-  moodboard,
-  onGallerySelection,
-  isPreview = false,
-  galleryActions,
-}: OptimisticCustomGridGalleryProps) {
-  const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
-  const [expandedImage, setExpandedImage] = useState<{
-    url: string;
-    alt: string;
-  } | null>(null);
-  const [showLiked, setShowLiked] = useState(false);
+const CustomGalleryContainer = forwardRef<
+  CustomGalleryGridRef,
+  OptimisticCustomGridGalleryProps
+>(
+  (
+    {
+      items,
+      setItems,
+      movePhoto,
+      onPhotoLike,
+      hasUnsavedChanges,
+      moodboard,
+      onGallerySelection,
+      isPreview = false,
+      galleryActions,
+    },
+    ref
+  ) => {
+    const containerRef = useRef<HTMLDivElement>(
+      null
+    ) as React.RefObject<HTMLDivElement>;
+    const [expandedImage, setExpandedImage] = useState<{
+      url: string;
+      alt: string;
+    } | null>(null);
+    const [showLiked, setShowLiked] = useState(false);
 
-  const normalizedItems = useCallback(() => {
-    if (!items || !Array.isArray(items)) {
-      return [];
-    }
+    const normalizedItems = useCallback(() => {
+      if (!items || !Array.isArray(items)) {
+        return [];
+      }
 
-    // Simply return the items as they already contain placeholders
-    // from the parent component (MoodboardLayout)
-    return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
-  }, [items]);
+      // Simply return the items as they already contain placeholders
+      // from the parent component (MoodboardLayout)
+      return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
+    }, [items]);
 
-  const { noOfImagesForMoodboard, setNoOfImagesForMoodboard } =
-    useMoodboardStore();
+    const { noOfImagesForMoodboard, setNoOfImagesForMoodboard } =
+      useMoodboardStore();
 
-  const normalizedItemsArray = normalizedItems();
+    const normalizedItemsArray = normalizedItems();
 
-  // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
-  const isDraggable =
-    movePhoto !== undefined && hasUnsavedChanges !== undefined;
+    // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
+    const isDraggable =
+      movePhoto !== undefined && hasUnsavedChanges !== undefined;
 
-  const { handleExpandImage, handleCloseModal } =
-    CustomGalleryHooks.useImageModal({
-      setExpandedImage,
-    });
+    const { handleExpandImage, handleCloseModal } =
+      CustomGalleryHooks.useImageModal({
+        setExpandedImage,
+      });
 
-  const layout =
-    moodboardGridLayouts[
-      noOfImagesForMoodboard as keyof typeof moodboardGridLayouts
-    ];
+    const layout =
+      moodboardGridLayouts[
+        noOfImagesForMoodboard as keyof typeof moodboardGridLayouts
+      ];
 
-  const size = useResizeObserver<HTMLDivElement>({ ref });
+    const size = useResizeObserver<HTMLDivElement>({ ref: containerRef });
 
-  const containerHeight = (() => {
-    if (!size.width || !layout) return 800; // fallback
-    const rowCount = layout.containerClass.match(/grid-rows-(\d)/)
-      ? Number.parseInt(layout.containerClass.match(/grid-rows-(\d)/)![1])
-      : layout.containerClass.includes("grid-rows-[33%_33%_34%]")
-      ? 3
-      : 1;
-    return (size.width * rowCount) / 4.7;
-  })();
+    const containerHeight = (() => {
+      if (!size.width || !layout) return 800; // fallback
+      const rowCount = layout.containerClass.match(/grid-rows-(\d)/)
+        ? Number.parseInt(layout.containerClass.match(/grid-rows-(\d)/)![1])
+        : layout.containerClass.includes("grid-rows-[33%_33%_34%]")
+        ? 3
+        : 1;
+      return (size.width * rowCount) / 4.7;
+    })();
 
-  const photos = normalizedItemsArray.filter(
-    (item) => !item.is_placeholder
-  ) as SortablePhoto<TPhoto>[];
+    const photos = normalizedItemsArray.filter(
+      (item) => !item.is_placeholder
+    ) as SortablePhoto<Photo>[];
 
-  const galleryContent = (
-    <div className="relative">
-      <CustomGalleryGrid
-        ref={ref}
-        allItems={normalizedItemsArray}
-        photos={photos}
-        layout={layout}
-        containerHeight={containerHeight}
-        noOfImagesForMoodboard={noOfImagesForMoodboard}
-        moodboard={moodboard}
-        onGallerySelection={onGallerySelection}
-        onPhotoLike={onPhotoLike}
-        hasUnsavedChanges={hasUnsavedChanges}
-        handleExpandImage={handleExpandImage}
-        isDraggable={isDraggable}
-        isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
-        setItems={setItems}
-        minImagesRequired={MIN_IMAGES_REQUIRED}
-        setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-        showLiked={showLiked}
-        isPreview={isPreview}
-        galleryActions={galleryActions}
-      />
-    </div>
-  );
-
-  // Now we don't need our own DndContext since it's handled by CarouselDndProvider
-  return (
-    <>
-      {galleryContent}
-      {!isPreview && (
-        <CustomGalleryControls
+    const galleryContent = (
+      <div className="relative">
+        <CustomGalleryGrid
+          ref={ref}
+          allItems={normalizedItemsArray}
+          photos={photos}
+          layout={layout}
+          containerHeight={containerHeight}
           noOfImagesForMoodboard={noOfImagesForMoodboard}
-          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+          moodboard={moodboard}
+          onGallerySelection={onGallerySelection}
+          onPhotoLike={onPhotoLike}
+          hasUnsavedChanges={hasUnsavedChanges}
+          handleExpandImage={handleExpandImage}
+          isDraggable={isDraggable}
+          isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
           setItems={setItems}
           minImagesRequired={MIN_IMAGES_REQUIRED}
+          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
           showLiked={showLiked}
-          setShowLiked={setShowLiked}
-          hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
+          isPreview={isPreview}
+          galleryActions={galleryActions}
         />
-      )}
-      {expandedImage && (
-        <ImageModal
-          imageUrl={expandedImage.url}
-          alt={expandedImage.alt}
-          isOpen={!!expandedImage}
-          onClose={handleCloseModal}
-        />
-      )}
-    </>
-  );
-}
+      </div>
+    );
+
+    // Now we don't need our own DndContext since it's handled by CarouselDndProvider
+    return (
+      <>
+        {galleryContent}
+        {!isPreview && (
+          <CustomGalleryControls
+            noOfImagesForMoodboard={noOfImagesForMoodboard}
+            setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+            setItems={setItems}
+            minImagesRequired={MIN_IMAGES_REQUIRED}
+            showLiked={showLiked}
+            setShowLiked={setShowLiked}
+            hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
+          />
+        )}
+        {expandedImage && (
+          <ImageModal
+            imageUrl={expandedImage.url}
+            alt={expandedImage.alt}
+            isOpen={!!expandedImage}
+            onClose={handleCloseModal}
+          />
+        )}
+      </>
+    );
+  }
+);
+
+CustomGalleryContainer.displayName = "CustomGalleryContainer";
+
+export default CustomGalleryContainer;

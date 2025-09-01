@@ -36,6 +36,7 @@ import {
 import { Command, CommandEmpty } from "@/components/ui/command";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
+import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -83,6 +84,9 @@ export const MoodboardSection: React.FC<{
       workflow_status: [],
     },
   });
+
+  // Create a ref for the gallery grid to capture screenshots
+  const galleryGridRef = useRef<CustomGalleryGridRef>(null);
 
   const [openPopover, setOpenPopover] = useState(false);
 
@@ -451,6 +455,7 @@ export const MoodboardSection: React.FC<{
                           currentCampaign &&
                           moodboardInformation && (
                             <MoodboardLayout
+                              ref={galleryGridRef}
                               brandId={selectedBrandId}
                               moodboard={currentMoodboard}
                               carouselHeader={
@@ -478,6 +483,9 @@ export const MoodboardSection: React.FC<{
                           }
                           showAdvancedSettings={showAdvancedSettings}
                           isGalleryItemsProcessing={galleryActions.isGalleryItemsProcessing()}
+                          galleryActions={galleryActions}
+                          currentCampaign={currentCampaign}
+                          galleryGridRef={galleryGridRef}
                         />
                       )}
                     </div>

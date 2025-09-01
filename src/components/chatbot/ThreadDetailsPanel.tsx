@@ -2,7 +2,7 @@
 
 import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useBrandStore } from "@/store/brand.store";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
 import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
@@ -19,7 +19,13 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true, campaignInformation: true });
-  const { selectedBrandId, isBrandsFetched, isCreatingBrand } = useBrandStore();
+  const {
+    selectedBrandId,
+    isBrandsFetched,
+    isCreatingBrand,
+    setSelectedCampaignId,
+    setCampaigns,
+  } = useBrandStore();
   const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
 
   const brandingInformation = data?.brand_information;
@@ -40,6 +46,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   const [selectedCampaignIndex, setSelectedCampaignIndex] =
     useState(latestCampaignIndex);
+
+  useEffect(() => {
+    setCampaigns(campaignInformation ?? []);
+
+    setSelectedCampaignId(
+      campaignInformation?.[selectedCampaignIndex]?.id ?? null
+    );
+  }, [selectedCampaignIndex]);
 
   return (
     <div
