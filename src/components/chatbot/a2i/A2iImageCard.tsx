@@ -36,6 +36,7 @@ export type A2iImageCardProps = {
   type: A2iImageGeneration["type"];
   vtonParameters?: A2iImageGeneration["vton_parameters"];
   remixParameters?: A2iImageGeneration["remix_parameters"];
+  upscaleParameters?: A2iImageGeneration["upscale_parameters"];
   video?: A2iImageGeneration["video"];
   dragListeners?: any;
   dragAttributes?: any;
@@ -53,6 +54,7 @@ const A2iImageCard = ({
   parameters,
   generationId,
   remixParameters,
+  upscaleParameters,
   dragListeners,
   dragAttributes,
   vtonParameters,
@@ -235,6 +237,16 @@ const A2iImageCard = ({
                 <img
                   src={vtonParameters.product_image}
                   alt="Garment"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </div>
+            )}
+
+            {upscaleParameters && (
+              <div className="flex gap-6">
+                <img
+                  src={upscaleParameters.base_image}
+                  alt="Base image"
                   className="w-16 h-16 object-cover rounded-md"
                 />
               </div>

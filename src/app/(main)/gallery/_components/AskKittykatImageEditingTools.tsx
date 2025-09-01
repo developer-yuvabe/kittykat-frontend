@@ -9,6 +9,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Shirt, Paintbrush, Video, ArrowUp } from "lucide-react";
 import { ReactNode } from "react";
+import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
 
 interface ToolTab {
   value: string;
@@ -92,6 +93,15 @@ export function AskKittykatImageEditingTools({
       value: "upscaler",
       icon: <ArrowUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Image Upscaler feature coming soon",
+      customComponent: (
+        <ImageUpscaler
+          closeDialog={remixControls.closeDialog}
+          brandId={item.brand_id}
+          source="media-gallery"
+          initialImage={item.asset_url}
+          campaignId={remixControls.campaignId}
+        />
+      ),
     },
   ];
 

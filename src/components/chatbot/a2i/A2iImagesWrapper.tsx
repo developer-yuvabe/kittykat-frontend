@@ -91,6 +91,7 @@ export const A2iImagesWrapper = ({
               type: generation.type,
               vtonParameters: generation.vton_parameters,
               remixParameters: generation.remix_parameters,
+              upscaleParameters: generation.upscale_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
               campaignInformation,
