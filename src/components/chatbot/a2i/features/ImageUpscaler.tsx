@@ -92,10 +92,6 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
-      const upscaleData = {
-        ...data,
-        base_image: initialImage, // Store the original image
-      };
       await upscaleImage(brandId || selectedBrandId!, data);
       toast.success("Image upscaling started successfully!");
       closeDialog();

@@ -4,6 +4,7 @@ import CustomGalleryContainer from "@/components/gallery/CustomGalleryContainer"
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
+import { GalleryActions } from "@/hooks/useGallery";
 
 interface MoodboardGalleryViewProps {
   photos: SortablePhoto<Photo>[];
@@ -13,6 +14,7 @@ interface MoodboardGalleryViewProps {
   hasUnsavedChanges: boolean;
   onGallerySelection: (items: any[], placeholderIndex: number) => void;
   moodboard: MoodboardInformation;
+  galleryActions: GalleryActions;
 }
 
 function MoodboardGalleryView({
@@ -23,6 +25,7 @@ function MoodboardGalleryView({
   hasUnsavedChanges,
   onGallerySelection,
   moodboard,
+  galleryActions,
 }: MoodboardGalleryViewProps) {
   return (
     <div className="w-full overflow-hidden">
@@ -81,6 +84,7 @@ function MoodboardGalleryView({
           hasUnsavedChanges={hasUnsavedChanges}
           onGallerySelection={onGallerySelection}
           moodboard={moodboard}
+          galleryActions={galleryActions}
         />
       </div>
     </div>

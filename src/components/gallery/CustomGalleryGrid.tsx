@@ -7,6 +7,7 @@ import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryPlaceholderCard } from "./CustomGalleryPlaceholderCard";
 import { CustomGalleryGridItem } from "./CustomGalleryGridItem";
 import type { SortablePhoto } from "./CustomGalleryContainer";
+import { GalleryActions } from "@/hooks/useGallery";
 
 type GridLayout = {
   containerClass: string;
@@ -34,6 +35,7 @@ interface CustomGalleryGridProps<TPhoto extends Photo> {
   setNoOfImagesForMoodboard: React.Dispatch<React.SetStateAction<number>>;
   showLiked?: boolean;
   isPreview?: boolean;
+  galleryActions?: GalleryActions;
 }
 
 export const CustomGalleryGrid = forwardRef<
@@ -58,6 +60,7 @@ export const CustomGalleryGrid = forwardRef<
       setNoOfImagesForMoodboard,
       showLiked,
       isPreview,
+      galleryActions,
     },
     ref
   ) => {
@@ -112,6 +115,7 @@ export const CustomGalleryGrid = forwardRef<
               >
                 <CustomGalleryPlaceholderCard
                   photos={photos}
+                  allItems={allItems}
                   noOfImagesForMoodboard={noOfImagesForMoodboard}
                   moodboard={moodboard}
                   onGallerySelection={onGallerySelection}
@@ -120,6 +124,8 @@ export const CustomGalleryGrid = forwardRef<
                   setItems={setItems}
                   setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
                   isPreview={isPreview}
+                  key={item.id}
+                  galleryActions={galleryActions}
                 />
               </div>
             );

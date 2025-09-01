@@ -3,8 +3,6 @@
 import type React from "react";
 import { useRef, useState, useCallback } from "react";
 import type { Photo } from "react-photo-album";
-import { DndContext, closestCenter } from "@dnd-kit/core";
-import { SortableContext } from "@dnd-kit/sortable";
 import { ImageModal } from "../shared/ImageModal";
 import {
   MIN_IMAGES_REQUIRED,
@@ -17,22 +15,14 @@ import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryHooks } from "./CustomGalleryHooks";
 import { CustomGalleryGrid } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
-import { CustomGalleryDragOverlay } from "./CustomGalleryDragOverlay";
 import { useMoodboardStore } from "@/store/moodboard.store";
+import { GalleryActions } from "@/hooks/useGallery";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
   liked?: boolean;
   is_placeholder?: boolean;
   position?: number;
-};
-
-type ActivePhoto<TPhoto extends Photo> = {
-  photo: SortablePhoto<TPhoto>;
-  width: number;
-  height: number;
-  padding?: string;
-  is_placeholder?: boolean;
 };
 
 type OptimisticCustomGridGalleryProps = {
@@ -47,6 +37,7 @@ type OptimisticCustomGridGalleryProps = {
     placeholderIndex: number
   ) => void;
   isPreview?: boolean;
+  galleryActions?: GalleryActions;
 };
 
 export default function CustomGalleryContainer<TPhoto extends Photo>({
@@ -58,9 +49,9 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   moodboard,
   onGallerySelection,
   isPreview = false,
+  galleryActions,
 }: OptimisticCustomGridGalleryProps) {
   const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
-  const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
   const [expandedImage, setExpandedImage] = useState<{
     url: string;
     alt: string;
@@ -85,81 +76,6 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
   // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
   const isDraggable =
     movePhoto !== undefined && hasUnsavedChanges !== undefined;
-
-  const { sensors } = CustomGalleryHooks.useDragSensors();
-
-  const handleDragStart = useCallback(
-    (event: any) => {
-      const { active } = event;
-      const activeItem = normalizedItemsArray.find(
-        (item) => item.id === active.id
-      );
-
-      if (activeItem) {
-        setActivePhoto({
-          photo: activeItem as SortablePhoto<TPhoto>,
-          width: activeItem.width,
-          height: activeItem.height,
-          is_placeholder: activeItem.is_placeholder,
-        });
-      }
-    },
-    [normalizedItemsArray]
-  );
-
-  const handleDragEnd = useCallback(
-    (event: any) => {
-      const { active, over } = event;
-      setActivePhoto(undefined);
-
-      if (!over || active.id === over.id) return;
-
-      const oldIndex = normalizedItemsArray.findIndex(
-        (item) => item.id === active.id
-      );
-      const newIndex = normalizedItemsArray.findIndex(
-        (item) => item.id === over.id
-      );
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        setItems((prevItems: UnifiedMoodboardItem[]) => {
-          const newItems = [...prevItems];
-          const activeItem = normalizedItemsArray[oldIndex];
-          const overItem = normalizedItemsArray[newIndex];
-
-          // Update positions
-          const updatedActiveItem = { ...activeItem, position: newIndex };
-          const updatedOverItem = { ...overItem, position: oldIndex };
-
-          // Find and update in the original array
-          const activeOriginalIndex = newItems.findIndex(
-            (item) => item.id === activeItem.id
-          );
-          const overOriginalIndex = newItems.findIndex(
-            (item) => item.id === overItem.id
-          );
-
-          if (activeOriginalIndex !== -1) {
-            newItems[activeOriginalIndex] = updatedActiveItem;
-          }
-
-          if (overOriginalIndex !== -1) {
-            newItems[overOriginalIndex] = updatedOverItem;
-          } else if (overItem.is_placeholder) {
-            // If dragging over a placeholder, just update the active item's position
-            newItems[activeOriginalIndex] = updatedActiveItem;
-          }
-
-          return newItems;
-        });
-
-        if (movePhoto) {
-          movePhoto(oldIndex, newIndex);
-        }
-      }
-    },
-    [normalizedItemsArray, movePhoto, setItems]
-  );
 
   const { handleExpandImage, handleCloseModal } =
     CustomGalleryHooks.useImageModal({
@@ -208,47 +124,12 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
         setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
         showLiked={showLiked}
         isPreview={isPreview}
+        galleryActions={galleryActions}
       />
     </div>
   );
 
-  // Only wrap with DndContext if dragging is enabled
-  if (isDraggable) {
-    return (
-      <DndContext
-        sensors={sensors}
-        onDragEnd={handleDragEnd}
-        onDragStart={handleDragStart}
-        collisionDetection={closestCenter}
-      >
-        <SortableContext items={normalizedItemsArray.map((item) => item.id)}>
-          {galleryContent}
-          {!isPreview && (
-            <CustomGalleryControls
-              noOfImagesForMoodboard={noOfImagesForMoodboard}
-              setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-              setItems={setItems}
-              minImagesRequired={MIN_IMAGES_REQUIRED}
-              showLiked={showLiked}
-              setShowLiked={setShowLiked}
-              hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
-            />
-          )}
-        </SortableContext>
-        <CustomGalleryDragOverlay activePhoto={activePhoto} />
-        {expandedImage && (
-          <ImageModal
-            imageUrl={expandedImage.url}
-            alt={expandedImage.alt}
-            isOpen={!!expandedImage}
-            onClose={handleCloseModal}
-          />
-        )}
-      </DndContext>
-    );
-  }
-
-  // Return gallery without drag functionality
+  // Now we don't need our own DndContext since it's handled by CarouselDndProvider
   return (
     <>
       {galleryContent}

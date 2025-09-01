@@ -269,3 +269,22 @@ export interface MediaWithStatus extends Omit<FileWithStatus, "file"> {
   name: string;
   type: "file" | "url";
 }
+
+// fileTypes.ts
+
+export const IMAGE_FILE_TYPES: Record<string, string[]> = {
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/svg+xml": [".svg"],
+  "image/tiff": [".tiff", ".tif"],
+  "image/webp": [".webp"],
+  "image/bmp": [".bmp"],
+  "image/gif": [".gif"],
+  "image/psd": [".psd"],
+};
+
+export const VIDEO_FILE_TYPES: Record<string, string[]> = {
+  "video/mp4": [".mp4"],
+  "video/quicktime": [".mov"],
+  "video/x-msvideo": [".avi"],
+};

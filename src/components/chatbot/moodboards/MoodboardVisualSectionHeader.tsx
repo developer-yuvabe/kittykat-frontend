@@ -238,7 +238,7 @@ export const MoodboardVisualSectionHeader = ({
 
       <MoodboardVisualImages
         currentMoodboard={currentMoodboard}
-        galleryItems={galleryActions.getGalleryItems() || []}
+        galleryActions={galleryActions}
       />
     </div>
   );
