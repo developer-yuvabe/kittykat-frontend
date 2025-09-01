@@ -466,7 +466,7 @@ export function MediaItemDetailsDialog({
             </div>
 
             <div className="space-y-4">
-              {displayItem.prompt_modifiers?.length > 0 &&
+              {(displayItem?.prompt_modifiers ?? []).length > 0 &&
                 renderEditableField(
                   "Prompt Modifiers",
                   "prompt_modifiers",
