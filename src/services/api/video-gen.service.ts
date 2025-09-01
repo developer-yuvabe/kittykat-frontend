@@ -21,7 +21,7 @@ export const videoGenerationService = async (
 
 export const deleteA2iVideo = async (brandId: string, generationId: string) => {
   try {
-    await handleApiRequest(
+    return await handleApiRequest(
       axiosInstance.delete(`/brands/${brandId}/a2i/video`, {
         data: {
           generation_id: generationId,

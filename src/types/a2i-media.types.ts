@@ -96,6 +96,7 @@ export type BaseParam = {
   label: string;
   category: "initial" | "advanced";
   defaultValue?: any;
+  required: boolean;
 };
 
 export type StringParam = BaseParam & {

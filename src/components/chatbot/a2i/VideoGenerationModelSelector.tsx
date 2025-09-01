@@ -33,10 +33,10 @@ export default function VideoGenerationModelSelector() {
   }
 
   const filteredVideoGenerationModels = useMemo(() => {
-    return models.filter((m) => m.type === "video");
-  }, [models]);
+    const m = models.filter((m) => m.type === "video");
 
-  console.log(selectedVideoGenearationModel);
+    return m;
+  }, [models, selectedVideoGenearationModel]);
 
   return (
     <div className="relative w-max">

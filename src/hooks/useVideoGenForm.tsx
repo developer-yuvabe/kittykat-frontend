@@ -17,9 +17,9 @@ export const useVideoGenForm = (
   const { selectedVideoGenearationModel } = useModelsStore();
 
   if (!selectedVideoGenearationModel) {
-    // throw new Error(
-    //   "No video generation model selected. Please select a model before using the form."
-    // );
+    throw new Error(
+      "No video generation model selected. Please select a model before using the form."
+    );
   }
 
   const { setSessionItem } = useSessionStorage();
