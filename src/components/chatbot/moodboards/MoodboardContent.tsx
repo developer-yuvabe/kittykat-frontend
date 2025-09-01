@@ -15,6 +15,8 @@ import { useBrandStore } from "@/store/brand.store";
 import { CarouselDndProvider } from "@/contexts/CarouselDndContext";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { toast } from "sonner";
+import { forwardRef } from "react";
+import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 
 interface MoodboardContentProps {
   moodboard: MoodboardInformation;
@@ -22,11 +24,10 @@ interface MoodboardContentProps {
   carouselHeader?: React.ReactNode;
 }
 
-function MoodboardContent({
-  moodboard,
-  brandId,
-  carouselHeader,
-}: MoodboardContentProps) {
+const MoodboardContent = forwardRef<
+  CustomGalleryGridRef,
+  MoodboardContentProps
+>(({ moodboard, brandId, carouselHeader }, ref) => {
   const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
 
   // Use the data hook to get moodboard data
@@ -163,6 +164,7 @@ function MoodboardContent({
         />
 
         <MoodboardGalleryView
+          ref={ref}
           photos={photos}
           setPhotos={setPhotos}
           movePhoto={movePhoto}
@@ -175,6 +177,8 @@ function MoodboardContent({
       </div>
     </CarouselDndProvider>
   );
-}
+});
+
+MoodboardContent.displayName = "MoodboardContent";
 
 export default MoodboardContent;
