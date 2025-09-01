@@ -166,7 +166,7 @@ const A2iImageCard = ({
 
   useEffect(() => {
     if (id == "68b3f973a1de2e98a2614374") {
-      setShowEditFeatures(true);
+      // setShowEditFeatures(true);
     }
   }, [id]);
 
