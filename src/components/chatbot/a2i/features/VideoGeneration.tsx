@@ -1,8 +1,14 @@
+import { VideoPlayer } from "@/app/(main)/gallery/_components/AskKittykatImageSection";
+import { Ripple } from "@/components/magicui/ripple";
+import { Badge } from "@/components/ui/badge";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn } from "@/lib/utils";
+import { useBrandStore } from "@/store/brand.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { A2iImageGeneration } from "@/types/types";
 import { Video } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 type VideoGenerationOnProps = {
   baseImage: string;
@@ -11,13 +17,87 @@ type VideoGenerationOnProps = {
 };
 
 const VideoGeneration = ({}: VideoGenerationOnProps) => {
+  const { selectedBrandId } = useBrandStore();
+  const galleryActions = useGalleryQuery(
+    {
+      selectedFilters: {
+        brands: [selectedBrandId!],
+        campaigns: [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+      },
+    },
+    ITEMS_PER_PAGE,
+    true,
+    "A2iImageCard"
+  );
   const [currentVideoItem, setCurrentVideoItem] =
-    useState<A2iImageGeneration["video"]>();
+    useState<A2iImageGeneration>();
   const { currentSessionGenerationIds, generations } = useVideoGenStore();
 
   const currentSessionGenerations = useMemo(() => {
-    return generations.filter((gen) => gen.type === "video");
+    return generations.filter(
+      (gen) => gen.type === "video"
+      //  && currentSessionGenerationIds.includes(gen.id)
+    );
   }, [currentSessionGenerationIds, generations]);
+
+  // Centralized like handler
+  const handleLike = () => {
+    if (!currentVideoItem || !currentVideoItem.video) return;
+
+    const newFavoriteState = !currentVideoItem.video.is_liked;
+
+    // Optimistically update the UI immediately
+    setCurrentVideoItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            video: {
+              ...prev.video!,
+              is_liked: newFavoriteState,
+            },
+          }
+        : prev
+    );
+
+    // Show immediate feedback to user
+    toast.success(
+      newFavoriteState ? "Added to favorites" : "Removed from favorites"
+    );
+
+    // Update on server
+    galleryActions.patchItem(
+      {
+        itemId: currentVideoItem.video.id,
+        data: { is_favourite: newFavoriteState },
+      },
+      {
+        onError: (error) => {
+          // Revert the optimistic update
+          setCurrentVideoItem((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  video: {
+                    ...prev.video!,
+                    is_liked: !newFavoriteState,
+                  },
+                }
+              : prev
+          );
+
+          console.error("Failed to update favorite status:", error);
+          toast.error("Failed to update favorite status");
+        },
+      }
+    );
+  };
 
   return (
     <div className="w-full h-full flex flex-col space-y-4 overflow-hidden">
@@ -30,10 +110,11 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
           })}
         >
           {currentVideoItem ? (
-            <video
-              src={currentVideoItem.url}
-              className="w-full h-full object-contain"
-              controls
+            <VideoPlayer
+              src={currentVideoItem.video!.url}
+              isLiked={currentVideoItem.video!.is_liked || false}
+              onLike={handleLike}
+              prompt={currentVideoItem.parameters.prompt || null}
             />
           ) : (
             <div className="flex flex-col items-center gap-y-2">
@@ -56,20 +137,45 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
                   src={gen.video.url}
                   className="w-32 h-32 object-cover"
                   onClick={() => {
-                    if (currentVideoItem?.url === gen.video?.url) {
-                      setCurrentVideoItem(undefined);
-                    } else {
-                      setCurrentVideoItem(gen.video);
+                    if (gen && gen.video) {
+                      setCurrentVideoItem(gen);
                     }
                   }}
                 />
               ) : gen.status === "failed" ? (
-                <div className="w-32 h-32 flex items-center justify-center bg-red-200">
-                  <span className="text-red-500">Generation Failed</span>
+                <div className="bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none w-32 h-32 flex items-center justify-center">
+                  <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
+                    Failed
+                  </Badge>
                 </div>
               ) : gen.status === "processing" ? (
-                <div className="w-32 h-32 flex items-center justify-center bg-gray-200">
-                  <span className="text-gray-500">Processing...</span>
+                <div className="w-32 h-32 relative">
+                  <Ripple numCircles={8} mainCircleSize={10} />
+                  <div className="flex flex-col items-center justify-center gap-2 h-full ">
+                    <p className="text-xs text-center overflow-hidden text-ellipsis line-clamp-2 max-h-40">
+                      {gen.parameters.prompt}
+                    </p>
+
+                    {(gen.video ||
+                      gen.parameters.start_image ||
+                      gen.parameters.first_frame) && (
+                      <div className="flex gap-4">
+                        <img
+                          src={
+                            gen.parameters.start_image ||
+                            gen.parameters.first_frame
+                          }
+                          className="w-12 h-12 object-cover rounded-md"
+                        />
+                        {gen.parameters.last_frame && (
+                          <img
+                            src={gen.parameters.last_frame}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : null}
             </div>

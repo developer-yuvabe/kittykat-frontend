@@ -70,8 +70,21 @@ export const useVideoGenForm = (
     const subscription = form.watch(() => {
       try {
         const values = form.getValues();
-        if (!formModelKey || isEmpty(values)) return;
-        setSessionItem(formModelKey, values);
+        // remove url fields before saving to session storage first_frame, last_frame, start_image, end_image
+        const excludeFields = [
+          "first_frame",
+          "last_frame",
+          "start_image",
+          "end_image",
+        ];
+
+        // create a copy without those fields
+        const filteredValues = Object.fromEntries(
+          Object.entries(values).filter(([key]) => !excludeFields.includes(key))
+        );
+
+        if (!formModelKey || isEmpty(filteredValues)) return;
+        setSessionItem(formModelKey, filteredValues);
       } catch {
         // ignore quota or serialization errors
       }

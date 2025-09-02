@@ -267,11 +267,17 @@ const A2iImageCard = ({
               </div>
             )}
             {(video || parameters.start_image || parameters.first_frame) && (
-              <div className="flex gap-6">
+              <div className="flex gap-4">
                 <img
                   src={parameters.start_image || parameters.first_frame}
                   className="w-16 h-16 object-cover rounded-md"
                 />
+                {parameters.last_frame && (
+                  <img
+                    src={parameters.last_frame}
+                    className="w-16 h-16 object-cover rounded-md"
+                  />
+                )}
               </div>
             )}
             {status === "failed" && (

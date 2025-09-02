@@ -7,7 +7,10 @@ export const videoGenerationService = async (
   campaignId?: string | null
 ) => {
   try {
-    await handleApiRequest(
+    return await handleApiRequest<{
+      generation_id: string;
+      created_at: string;
+    }>(
       axiosInstance.post(`/brands/${brandId}/a2i/video-generation`, {
         ...data,
         campaign_id: campaignId,

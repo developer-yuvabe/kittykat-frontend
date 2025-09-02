@@ -35,22 +35,12 @@ interface AskKittykatImageSectionProps {
   setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
 
-const VideoPlayer: React.FC<{
-  item: GalleryItemResponse;
-  galleryActions: GalleryActions;
+export const VideoPlayer: React.FC<{
+  prompt?: string | null;
   src: string;
   isLiked: boolean;
   onLike: () => void;
-  setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
-  revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
-}> = ({
-  item,
-  src,
-  isLiked,
-  onLike,
-  setCurrentItem,
-  revalidateGalleryItemVersions,
-}) => {
+}> = ({ prompt, src, isLiked, onLike }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -92,9 +82,9 @@ const VideoPlayer: React.FC<{
   };
 
   const handleCopyPrompt = () => {
-    if (item.input_prompt) {
+    if (prompt) {
       navigator.clipboard
-        .writeText(item.input_prompt)
+        .writeText(prompt)
         .then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
@@ -112,7 +102,7 @@ const VideoPlayer: React.FC<{
   };
 
   // Check if there's a prompt available to copy
-  const hasPromptToCopy = !!item.input_prompt;
+  const hasPromptToCopy = !!prompt;
 
   return (
     <div className="relative w-full h-full group overflow-visible rounded-lg flex items-center justify-center">
@@ -298,10 +288,7 @@ export const AskKittykatImageSection: React.FC<
           src={item.asset_url}
           isLiked={item.is_favourite ?? false}
           onLike={handleLike}
-          item={item}
-          galleryActions={galleryActions}
-          setCurrentItem={setCurrentItem}
-          revalidateGalleryItemVersions={revalidateGalleryItemVersions}
+          prompt={item.input_prompt}
         />
       );
     }

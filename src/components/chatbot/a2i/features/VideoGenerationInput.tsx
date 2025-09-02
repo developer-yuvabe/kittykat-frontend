@@ -1,5 +1,11 @@
 import { GalleryItemResponse } from "@/types/gallery.types";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import VideoGenerationModelSelector from "../VideoGenerationModelSelector";
 import { useModelsStore } from "@/store/models.store";
 import { cn, PlatformApiError } from "@/lib/utils";
@@ -28,6 +34,7 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { FileParam } from "@/types/a2i-media.types";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { useVideoGenStore } from "@/store/video-gen.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse;
@@ -63,7 +70,8 @@ const VideoGenerationInputControls = ({
     string | null
   >(null);
   const inputFileRef = useRef<HTMLInputElement | null>(null);
-
+  const { addCurrentSessionGenerationId, clearCurrentSessionGenerationIds } =
+    useVideoGenStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -114,7 +122,7 @@ const VideoGenerationInputControls = ({
       lastFrameParam,
       filteredParams,
     };
-  }, [selectedVideoGenearationModel]);
+  }, [selectedVideoGenearationModel, item]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -184,7 +192,7 @@ const VideoGenerationInputControls = ({
     maxSize: (lastFrameParam?.maxFileSizeLimit ?? 0) * 1024 * 1024,
   });
 
-  function removeLastFrame() {
+  function removeLastFrame(shouldDeleteFromGCS = true) {
     const url = form.getValues(lastFrameParam?.id || "");
     form.setValue(lastFrameParam?.id || "", "", {
       shouldValidate: true,
@@ -193,7 +201,7 @@ const VideoGenerationInputControls = ({
     });
 
     // delete the file from GCS
-    if (url) deleteFile(url);
+    if (url && shouldDeleteFromGCS) deleteFile(url);
   }
 
   const onSubmit = async (data: Record<string, any>) => {
@@ -201,11 +209,14 @@ const VideoGenerationInputControls = ({
       if (!selectedBrandId) {
         throw new Error("Brand ID is missing.");
       }
-      await videoGenerationService(
+      const { generation_id } = await videoGenerationService(
         selectedBrandId,
         data,
         campaignId ?? undefined
       );
+
+      removeLastFrame(false);
+      addCurrentSessionGenerationId(generation_id);
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
@@ -217,14 +228,26 @@ const VideoGenerationInputControls = ({
     }
   };
 
+  useEffect(() => {
+    form.reset();
+    removeLastFrame();
+    setLastFrameUploadPreview(null);
+  }, [item]);
+
+  useEffect(() => {
+    return () => {
+      clearCurrentSessionGenerationIds();
+    };
+  }, []);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="space-y-4">
+        <div className="space-y-8">
           {/* Frames */}
           <div className="flex gap-4 ">
             {firstFrameParam && (
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2 w-60">
                 <DynamicFormLabel
                   label="First Frame"
                   optional={!firstFrameParam.required}
@@ -232,12 +255,12 @@ const VideoGenerationInputControls = ({
                 <img
                   src={form.getValues(firstFrameParam.id)}
                   alt="First Frame"
-                  className="h-60 w-full object-cover"
+                  className="h-60 w-60 object-contain"
                 />
               </div>
             )}
             {lastFrameParam && (
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2 w-60">
                 <DynamicFormLabel
                   label="Last Frame"
                   optional={!lastFrameParam.required}
@@ -268,7 +291,7 @@ const VideoGenerationInputControls = ({
                       <img
                         src={form.getValues(lastFrameParam.id)}
                         alt="Last Frame"
-                        className="h-60 w-full object-cover"
+                        className="h-60 w-60 object-contain"
                       />
                       <Button
                         onClick={(e) => {
@@ -277,7 +300,7 @@ const VideoGenerationInputControls = ({
                         }}
                         variant={"ghost"}
                         size={"icon"}
-                        className="absolute top-1 right-1 text-white hover:text-black"
+                        className="absolute top-1 right-1 text-white hover:text-black p-0"
                       >
                         <X />
                       </Button>
@@ -317,7 +340,7 @@ const VideoGenerationInputControls = ({
           )}
 
           {/* Input Box */}
-          <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden z-10 pb-4">
+          <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden z-10 pb-4">
             <FormField
               control={form.control}
               name="prompt"
@@ -341,7 +364,7 @@ const VideoGenerationInputControls = ({
                           }
                         }}
                         className={cn(
-                          "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top"
+                          "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[40px] max-h-[200px] overflow-y-auto align-top pb-4"
                         )}
                         placeholder="Describe what you want to see in the video ..."
                       />
