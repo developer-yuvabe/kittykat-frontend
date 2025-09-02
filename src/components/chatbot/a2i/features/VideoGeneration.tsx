@@ -156,10 +156,9 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
                       {gen.parameters.prompt}
                     </p>
 
-                    {(gen.video ||
-                      gen.parameters.start_image ||
-                      gen.parameters.first_frame) && (
-                      <div className="flex gap-4">
+                    <div className="flex gap-4">
+                      {(gen.parameters.start_image ||
+                        gen.parameters.first_frame) && (
                         <img
                           src={
                             gen.parameters.start_image ||
@@ -167,14 +166,18 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
                           }
                           className="w-12 h-12 object-cover rounded-md"
                         />
-                        {gen.parameters.last_frame && (
-                          <img
-                            src={gen.parameters.last_frame}
-                            className="w-12 h-12 object-cover rounded-md"
-                          />
-                        )}
-                      </div>
-                    )}
+                      )}
+                      {(gen.parameters.end_image ||
+                        gen.parameters.last_frame) && (
+                        <img
+                          src={
+                            gen.parameters.end_image ||
+                            gen.parameters.last_frame
+                          }
+                          className="w-12 h-12 object-cover rounded-md"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : null}

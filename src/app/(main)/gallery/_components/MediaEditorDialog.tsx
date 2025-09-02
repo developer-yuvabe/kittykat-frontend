@@ -678,12 +678,6 @@ export function MediaEditorDialog({
     galleryActions.isFetchingNextPage,
   ]);
 
-  useEffect(() => {
-    return () => {
-      clearCurrentSessionGenerationIds();
-    };
-  }, []);
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>

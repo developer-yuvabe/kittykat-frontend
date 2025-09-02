@@ -19,7 +19,7 @@ export const useVideoGenStore = create<Store>()((set) => {
     currentSessionGenerationIds: [],
     addCurrentSessionGenerationId: (id: string) =>
       set((state) => ({
-        currentSessionGenerationIds: [...state.currentSessionGenerationIds, id],
+        currentSessionGenerationIds: [id, ...state.currentSessionGenerationIds],
       })),
     clearCurrentSessionGenerationIds: () =>
       set(() => ({ currentSessionGenerationIds: [] })),
