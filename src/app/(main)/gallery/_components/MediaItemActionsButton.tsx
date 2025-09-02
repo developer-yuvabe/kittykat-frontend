@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { DeleteIcon, DownloadIcon } from "@/components/ui/custom-icon";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { Info } from "lucide-react";
+import { PencilIcon } from "lucide-react";
 
 interface MediaItemActionsButtonProps {
   item: GalleryItemResponse;
@@ -49,6 +49,15 @@ export function MediaItemActionsButton({
         <DeleteIcon size={20} />
         <span className="ml-2">Delete</span>
       </Button>
+      {item.asset_source === "moodboard" && (
+        <Button
+          variant="ghost"
+          className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left p-2 rounded-md hover:text-foreground"
+        >
+          <PencilIcon size={20} />
+          <span className="ml-2">Edit Moodboard</span>
+        </Button>
+      )}
     </>
   );
 }

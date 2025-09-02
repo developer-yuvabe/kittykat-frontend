@@ -310,7 +310,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
     accept: IMAGE_FILE_TYPES,
     multiple: false,
     disabled: isFileUploading || isPreview,
-    noClick: false,
+    noClick: true,
     noKeyboard: true,
   });
 
