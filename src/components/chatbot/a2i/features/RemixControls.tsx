@@ -48,6 +48,7 @@ import {
 import { useBrandStore } from "@/store/brand.store";
 import { useQuery } from "@tanstack/react-query";
 import { useUserStore } from "@/store/user.store";
+import RemixModelSelector from "../RemixModelSelector";
 
 const IMAGE_SIZE = {
   "1024x1024": {
@@ -279,6 +280,7 @@ const RemixControls = ({
 
   return (
     <div className="w-full flex flex-col gap-y-6 justify-center items-center">
+      <RemixModelSelector />
       <div className="flex gap-x-4 w-full">
         <div className="flex gap-6 items-center border p-4 rounded-md flex-1">
           <BrushIcon className="text-primary" />
