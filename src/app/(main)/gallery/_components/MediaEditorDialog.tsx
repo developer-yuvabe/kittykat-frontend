@@ -35,6 +35,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import type { RemixImageHandle } from "../../_components/remix/RemixImage";
 import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
+import { useVideoGenStore } from "@/store/video-gen.store";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -83,6 +84,7 @@ export function MediaEditorDialog({
   const imageRef = useRef<HTMLImageElement>(null);
   const remixImageRef = useRef<RemixImageHandle>(null);
   const remixHistory = useUndoRedoRemix();
+  const { clearCurrentSessionGenerationIds } = useVideoGenStore();
 
   const isRemixEnabled = activeTab === "in-paint";
 
@@ -675,6 +677,12 @@ export function MediaEditorDialog({
     galleryActions.hasNextPage,
     galleryActions.isFetchingNextPage,
   ]);
+
+  useEffect(() => {
+    return () => {
+      clearCurrentSessionGenerationIds();
+    };
+  }, []);
 
   return (
     <>

@@ -76,6 +76,7 @@ export const useVideoGenForm = (
           "last_frame",
           "start_image",
           "end_image",
+          "prompt",
         ];
 
         // create a copy without those fields

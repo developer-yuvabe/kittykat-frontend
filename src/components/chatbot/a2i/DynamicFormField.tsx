@@ -44,15 +44,17 @@ export const DynamicFormLabel = ({
   label,
   showLabel = true,
   optional,
+  className,
 }: {
   label: string;
   showLabel?: boolean;
   optional: boolean;
+  className?: string;
 }) => {
   return showLabel ? (
-    <FormLabel className="text-xs text-muted-foreground">
+    <FormLabel className={cn("text-xs text-muted-foreground", className)}>
       {label}
-      <span className="italic">{optional ? " (optional)" : ""}</span>
+      <span className="italic">{optional ? "(optional)" : ""}</span>
     </FormLabel>
   ) : null;
 };
