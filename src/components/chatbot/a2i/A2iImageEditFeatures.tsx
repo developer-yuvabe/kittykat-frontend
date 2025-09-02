@@ -172,7 +172,7 @@ const A2iImageEditFeatures = ({
                 value="video-gen"
                 className="h-full m-0 data-[state=active]:h-full"
               >
-                <VideoGeneration startImage={image.url} closeDialog={onClose} />
+                <VideoGeneration baseImage={image.url} closeDialog={onClose} />
               </TabsContent>
             </div>
           </Tabs>
