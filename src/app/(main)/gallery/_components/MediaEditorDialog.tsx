@@ -34,6 +34,7 @@ import AskKittykatVersions from "./AskKittykatVersions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import type { RemixImageHandle } from "../../_components/remix/RemixImage";
+import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -59,7 +60,7 @@ export function MediaEditorDialog({
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     item
   );
-  const [activeTab, setActiveTab] = useState("ask-kittykat");
+  const [activeTab, setActiveTab] = useState("video-gen");
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -739,23 +740,30 @@ export function MediaEditorDialog({
             <div className="flex h-full gap-x-3 p-4">
               {/* Left Panel - Static */}
               <div className="w-[35%] min-w-[280px] flex flex-col gap-y-4">
-                {currentItem && (
-                  <AskKittykatImageSection
-                    item={currentItem}
-                    galleryActions={galleryActions}
-                    isRemixEnabled={isRemixEnabled}
-                    imageRef={imageRef}
-                    canvasRef={canvasRef}
-                    offScreenCanvasRef={offScreenCanvasRef}
-                    remixHistory={remixHistory}
-                    brushSize={brushSize}
-                    remixImageRef={remixImageRef}
-                    revalidateGalleryItemVersions={
-                      revalidateGalleryItemVersions
-                    }
-                    setCurrentItem={setCurrentItem}
-                  />
-                )}
+                {currentItem &&
+                  (activeTab === "video-gen" &&
+                  currentItem.asset_type === "image" ? (
+                    <VideoGenerationInput
+                      item={currentItem}
+                      campaignId={campaignId}
+                    />
+                  ) : (
+                    <AskKittykatImageSection
+                      item={currentItem}
+                      galleryActions={galleryActions}
+                      isRemixEnabled={isRemixEnabled}
+                      imageRef={imageRef}
+                      canvasRef={canvasRef}
+                      offScreenCanvasRef={offScreenCanvasRef}
+                      remixHistory={remixHistory}
+                      brushSize={brushSize}
+                      remixImageRef={remixImageRef}
+                      revalidateGalleryItemVersions={
+                        revalidateGalleryItemVersions
+                      }
+                      setCurrentItem={setCurrentItem}
+                    />
+                  ))}
                 {currentItem && (
                   <AskKittykatVersions
                     item={item!}

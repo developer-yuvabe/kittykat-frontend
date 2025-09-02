@@ -2,7 +2,10 @@ import { getZodFallback } from "@/lib/utils";
 import { Model } from "@/types/a2i-media.types";
 import { z, ZodTypeAny } from "zod";
 
-export function useDynamicModelSchema(selectedModel: Model) {
+export function useDynamicModelSchema(
+  selectedModel: Model,
+  dynamicDefaultValues?: Record<string, any>
+) {
   const fieldSchemas: Record<string, ZodTypeAny> = {};
   const defaultValues: Record<string, any> = {};
 
@@ -35,6 +38,16 @@ export function useDynamicModelSchema(selectedModel: Model) {
     fieldSchemas[id] = schema;
     defaultValues[id] = defaultValue ?? getZodFallback(param.type);
   });
+
+  // Override with dynamic default values if provided
+  if (dynamicDefaultValues) {
+    for (const id of Object.keys(dynamicDefaultValues)) {
+      const value = dynamicDefaultValues[id];
+      if (value !== undefined) {
+        defaultValues[id] = value;
+      }
+    }
+  }
 
   const baseSchema = z.object(fieldSchemas);
 
