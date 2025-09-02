@@ -229,7 +229,7 @@ export function getChatLayoutConfig(isLargeScreen: boolean) {
       : "h-[calc(100vh-6rem)]",
     containerPadding: isLargeScreen ? "px-4" : "px-3",
     threadPanelDefault: isLargeScreen ? 60 : 50, // decreased
-    threadPanelMin: isLargeScreen ? 20 : 30, // decreased
+    threadPanelMin: isLargeScreen ? 35 : 30, // decreased
     threadPanelMax: isLargeScreen ? 70 : 60, // decreased
 
     chatPanelDefault: isLargeScreen ? 40 : 50, // increased

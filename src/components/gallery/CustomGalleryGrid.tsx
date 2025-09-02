@@ -162,8 +162,10 @@ export const CustomGalleryGrid = forwardRef<
         {/* Regular grid for UI interaction */}
         <div
           ref={gridRef}
-          className={`w-full gap-1 grid ${layout?.containerClass} transition-opacity duration-200`}
-          style={{ height: `${containerHeight}px` }}
+          className={`w-full gap-1 grid ${layout?.containerClass} transition-opacity duration-200 min-w-[300px]`}
+          style={{
+            height: `${containerHeight}px`,
+          }}
         >
           {allItems.map((item, index) => {
             const position = layout?.positions[index];
@@ -224,15 +226,15 @@ export const CustomGalleryGrid = forwardRef<
           className="fixed top-[-9999px] left-[-9999px] bg-white w-[1200px] p-[30px]"
         >
           {/* Header Section */}
-          <div className="flex flex-col items-center mb-12">
+          <div className="flex flex-col items-center mb-10">
             {/* Logo */}
             <div className="mb-6">
-              <Logo height={240} width={240} />
+              <Logo height={200} width={200} />
             </div>
 
             {/* Brand - Campaign - Moodboard Names */}
             <div className="text-center">
-              <h2 className="text-2xl font-medium text-gray-800">
+              <h2 className="text-xl font-medium text-gray-800">
                 {[
                   getSelectedBrandName(),
                   getSelectedCampaignName(),
@@ -245,13 +247,11 @@ export const CustomGalleryGrid = forwardRef<
           </div>
 
           {/* Images Grid Section */}
-          <div className="mb-12">
+          <div className="mb-10">
             <div
-              className={`w-full gap-2 grid ${layout?.containerClass} transition-opacity duration-200`}
+              className={`w-full gap-1 grid ${layout?.containerClass} transition-opacity duration-200 max-w-[1080px] mx-auto`}
               style={{
-                height: `${containerHeight}px`,
-                maxWidth: "1080px", // Constrain grid width
-                margin: "0 auto", // Center the grid
+                height: `${containerHeight}px`, // Use same height as regular grid
               }}
             >
               {allItems.map((item, index) => {
@@ -276,12 +276,7 @@ export const CustomGalleryGrid = forwardRef<
                       <img
                         src={item.src}
                         alt={item.alt || ""}
-                        className="w-full h-full object-cover"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          display: "block",
-                        }}
+                        className="w-full h-full object-cover block"
                       />
                     </div>
                   );
