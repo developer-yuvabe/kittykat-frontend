@@ -113,7 +113,7 @@ export function AskKittykatImageEditingTools({
             <TabsContent
               key={tool.value}
               value={tool.value}
-              className="flex-1 p-2"
+              className="flex-1 p-2 h-full"
             >
               {tool.customComponent ? (
                 tool.customComponent

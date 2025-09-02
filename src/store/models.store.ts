@@ -24,9 +24,20 @@ export const useModelsStore = create<Store>()((set) => {
     models: [],
     setModels: (models) => {
       const selectedModelId = getSessionItem("a2i-image-generation-model-id");
+      const selectedVideoGenearationModelId = getSessionItem(
+        "a2i-video-generation-model-id"
+      );
       const selectedModel =
         models.length > 0
           ? models.find((model) => model.id === selectedModelId) || models[0]
+          : null;
+
+      const videoModels = models.filter((model) => model.type === "video");
+      const selectedVideoGenearationModel =
+        models.length > 0
+          ? videoModels.find(
+              (model) => model.id === selectedVideoGenearationModelId
+            ) || videoModels[0]
           : null;
 
       if (!selectedModel) {
@@ -34,9 +45,17 @@ export const useModelsStore = create<Store>()((set) => {
         removeSessionItem("a2i-image-generation-model-id");
       }
 
+      if (!selectedVideoGenearationModel) {
+        console.warn(
+          "No valid video generation model found, defaulting to first video model."
+        );
+        removeSessionItem("a2i-video-generation-model-id");
+      }
+
       set({
         models: models,
         selectedModel: selectedModel,
+        selectedVideoGenearationModel: selectedVideoGenearationModel,
       });
     },
 

@@ -1,18 +1,27 @@
+import { A2iImageGeneration } from "@/types/types";
 import { create } from "zustand";
 
 type Store = {
-  generationIds: string[];
-  addGenerationId: (id: string) => void;
-  clearGenerationIds: () => void;
+  generations: A2iImageGeneration[];
+  setGenerations: (generations: A2iImageGeneration[]) => void;
+
+  currentSessionGenerationIds: string[];
+  addCurrentSessionGenerationId: (id: string) => void;
+  clearCurrentSessionGenerationIds: () => void;
 };
 
 export const useVideoGenStore = create<Store>()((set) => {
   return {
-    generationIds: [],
-    addGenerationId: (id) =>
+    generations: [],
+    setGenerations: (generations: A2iImageGeneration[]) =>
+      set(() => ({ generations })),
+
+    currentSessionGenerationIds: [],
+    addCurrentSessionGenerationId: (id: string) =>
       set((state) => ({
-        generationIds: [...state.generationIds, id],
+        currentSessionGenerationIds: [...state.currentSessionGenerationIds, id],
       })),
-    clearGenerationIds: () => set({ generationIds: [] }),
+    clearCurrentSessionGenerationIds: () =>
+      set(() => ({ currentSessionGenerationIds: [] })),
   };
 });

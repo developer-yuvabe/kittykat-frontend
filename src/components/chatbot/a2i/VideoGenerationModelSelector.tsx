@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useModelsStore } from "@/store/models.store";
-import React, { useMemo } from "react";
+import React from "react";
 
 export default function VideoGenerationModelSelector() {
   const {
@@ -31,12 +31,6 @@ export default function VideoGenerationModelSelector() {
       </div>
     );
   }
-
-  const filteredVideoGenerationModels = useMemo(() => {
-    const m = models.filter((m) => m.type === "video");
-
-    return m;
-  }, [models, selectedVideoGenearationModel]);
 
   return (
     <div className="relative w-max">
@@ -71,16 +65,18 @@ export default function VideoGenerationModelSelector() {
           {models.length > 0 ? (
             <SelectGroup>
               <SelectLabel>Available Models</SelectLabel>
-              {filteredVideoGenerationModels.map((model) => (
-                <SelectItem
-                  key={model.id}
-                  value={model.id}
-                  disabled={model.disabled}
-                  className="disabled:cursor-not-allowed"
-                >
-                  {model.name}
-                </SelectItem>
-              ))}
+              {models
+                .filter((m) => m.type === "video")
+                .map((model) => (
+                  <SelectItem
+                    key={model.id}
+                    value={model.id}
+                    disabled={model.disabled}
+                    className="disabled:cursor-not-allowed"
+                  >
+                    {model.name}
+                  </SelectItem>
+                ))}
             </SelectGroup>
           ) : (
             <div className="p-4 text-center text-sm text-muted-foreground italic">
