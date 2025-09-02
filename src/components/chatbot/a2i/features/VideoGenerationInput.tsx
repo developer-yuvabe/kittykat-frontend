@@ -122,7 +122,7 @@ const VideoGenerationInputControls = ({
       lastFrameParam,
       filteredParams,
     };
-  }, [selectedVideoGenearationModel, item]);
+  }, [selectedVideoGenearationModel]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -252,11 +252,13 @@ const VideoGenerationInputControls = ({
                   label="First Frame"
                   optional={!firstFrameParam.required}
                 />
-                <img
-                  src={form.getValues(firstFrameParam.id)}
-                  alt="First Frame"
-                  className="h-60 w-60 object-contain"
-                />
+                {
+                  <img
+                    src={form.getValues(firstFrameParam.id) || item.asset_url}
+                    alt="First Frame"
+                    className="h-60 w-60 object-contain"
+                  />
+                }
               </div>
             )}
             {lastFrameParam && (

@@ -42,8 +42,8 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
 
   const currentSessionGenerations = useMemo(() => {
     return generations.filter(
-      (gen) => gen.type === "video"
-      //  && currentSessionGenerationIds.includes(gen.id)
+      (gen) =>
+        gen.type === "video" && currentSessionGenerationIds.includes(gen.id)
     );
   }, [currentSessionGenerationIds, generations]);
 

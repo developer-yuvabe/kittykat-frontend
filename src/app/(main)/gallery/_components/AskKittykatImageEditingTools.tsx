@@ -83,6 +83,7 @@ export function AskKittykatImageEditingTools({
       message: "Video Generation feature coming soon",
       customComponent: (
         <VideoGeneration
+          key={item.asset_url}
           closeDialog={remixControls.closeDialog}
           baseImage={item.asset_url}
           campaignId={remixControls.campaignId}
