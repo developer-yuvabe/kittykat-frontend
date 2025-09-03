@@ -9,6 +9,7 @@ export const inviationSchema = z.object({
     errorMap: () => ({ message: "Please select a role" }),
   }),
   brandAccess: z.array(z.string()),
+  contentFilterDisabled: z.boolean(),
 });
 
 export const invitationAcceptSchema = z.object({

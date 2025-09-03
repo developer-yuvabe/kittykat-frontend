@@ -32,9 +32,11 @@ export const useModelsStore = create<Store>()((set) => {
       );
       const selectedRemixModelId = getSessionItem("a2i-remix-model-id");
 
+      const imageModels = models.filter((model) => model.type === "image");
       const selectedModel =
-        models.length > 0
-          ? models.find((model) => model.id === selectedModelId) || models[0]
+        imageModels.length > 0
+          ? imageModels.find((model) => model.id === selectedModelId) ||
+            imageModels[0]
           : null;
 
       const videoModels = models.filter((model) => model.type === "video");

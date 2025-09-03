@@ -142,53 +142,49 @@ const VideoGenerationInputControls = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="h-[95%]">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="h-[97%]">
         <div className="flex flex-col gap-y-6 h-full">
           {/* Frames */}
-          <div className="flex-1 h-full flex gap-x-2">
+          <div className="h-full flex gap-x-2">
             {firstFrameParam && (
               <FormField
                 control={form.control}
                 name={firstFrameParam.id}
                 render={({ field }) => (
-                  <FormItem className="h-full w-full">
+                  <FormItem className="flex flex-col h-full w-full">
+                    <DynamicFormLabel
+                      label="First Frame"
+                      optional={!firstFrameParam.required}
+                      className="text-base text-foreground font-normal shrink-0"
+                    />
                     <FormControl>
-                      <div className="w-full">
-                        <DynamicFormLabel
-                          label="First Frame"
-                          optional={!firstFrameParam.required}
-                          className="text-base text-foreground font-normal"
-                        />
-                        <div className="relative w-full h-60 bg-muted">
-                          {field.value ? (
-                            <img
-                              src={field.value}
-                              className="w-full h-full object-contain"
-                            />
-                          ) : (
-                            <button
-                              onClick={() =>
-                                setGalleryPickerSource(firstFrameParam.id)
-                              }
-                              className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors"
-                            >
-                              <SelectIcon size={20} />
-                              <span>Choose from Gallery</span>
-                            </button>
-                          )}
-                          {field.value && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                              onClick={() =>
-                                form.resetField(firstFrameParam.id)
-                              }
-                            >
-                              <X />
-                            </Button>
-                          )}
-                        </div>
+                      <div className="relative w-full h-full bg-muted">
+                        {field.value ? (
+                          <img
+                            src={field.value}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <button
+                            onClick={() =>
+                              setGalleryPickerSource(firstFrameParam.id)
+                            }
+                            className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors"
+                          >
+                            <SelectIcon size={20} />
+                            <span>Choose from Gallery</span>
+                          </button>
+                        )}
+                        {field.value && !firstFrameParam.required && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+                            onClick={() => form.resetField(firstFrameParam.id)}
+                          >
+                            <X />
+                          </Button>
+                        )}
                       </div>
                     </FormControl>
                   </FormItem>
@@ -201,42 +197,40 @@ const VideoGenerationInputControls = ({
                 control={form.control}
                 name={lastFrameParam.id}
                 render={({ field }) => (
-                  <FormItem className="h-full w-full">
+                  <FormItem className="flex flex-col h-full w-full">
+                    <DynamicFormLabel
+                      label="Last Frame"
+                      optional={!lastFrameParam.required}
+                      className="text-base text-foreground font-normal shrink-0"
+                    />
                     <FormControl>
-                      <div className="w-ful">
-                        <DynamicFormLabel
-                          label="Last Frame"
-                          optional={!lastFrameParam.required}
-                          className="text-base text-foreground font-normal"
-                        />
-                        <div className="relative w-full h-60 bg-muted">
-                          {field.value ? (
-                            <img
-                              src={field.value}
-                              className="w-full h-full object-contain"
-                            />
-                          ) : (
-                            <button
-                              onClick={() =>
-                                setGalleryPickerSource(lastFrameParam.id)
-                              }
-                              className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors"
-                            >
-                              <SelectIcon size={20} />
-                              <span>Choose from Gallery</span>
-                            </button>
-                          )}
-                          {field.value && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                              onClick={() => form.resetField(lastFrameParam.id)}
-                            >
-                              <X />
-                            </Button>
-                          )}
-                        </div>
+                      <div className="relative w-full h-full bg-muted">
+                        {field.value ? (
+                          <img
+                            src={field.value}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <button
+                            onClick={() =>
+                              setGalleryPickerSource(lastFrameParam.id)
+                            }
+                            className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors"
+                          >
+                            <SelectIcon size={20} />
+                            <span>Choose from Gallery</span>
+                          </button>
+                        )}
+                        {field.value && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+                            onClick={() => form.resetField(lastFrameParam.id)}
+                          >
+                            <X />
+                          </Button>
+                        )}
                       </div>
                     </FormControl>
                   </FormItem>
@@ -256,40 +250,38 @@ const VideoGenerationInputControls = ({
           )}
 
           {/* Input Box */}
-          <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden z-10 pb-4">
+          <div className="flex flex-col gap-y-4 w-full max-h-[300px] border rounded-2xl bg-background z-10 pb-4">
             <FormField
               control={form.control}
               name="prompt"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="relative h-full">
-                      <Textarea
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && e.shiftKey) {
-                            // Allow new line on Shift + Enter
-                            return;
-                          }
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            form.handleSubmit(onSubmit)();
-                          }
-                        }}
-                        className={cn(
-                          "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[40px] max-h-[200px] overflow-y-auto align-top pb-4"
-                        )}
-                        placeholder="Describe what you want to see in the video ..."
-                      />
-                    </div>
+                    <Textarea
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.shiftKey) {
+                          // Allow new line on Shift + Enter
+                          return;
+                        }
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          form.handleSubmit(onSubmit)();
+                        }
+                      }}
+                      className={cn(
+                        "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 min-h-[80px] max-h-[200px] overflow-y-auto align-top "
+                      )}
+                      placeholder="Describe what you want to see in the video ..."
+                    />
                   </FormControl>
                 </FormItem>
               )}
             />
-            <div className="flex flex-wrap gap-2 justify-between items-center px-4">
+            <div className="flex flex-wrap gap-2 justify-between items-center px-4 flex-1">
               <div className="flex items-center gap-2">
                 {filteredParams
                   ?.filter((param) => param.category === "initial")

@@ -35,7 +35,7 @@ interface AskKittykatImageSectionProps {
   setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
 
-export const VideoPlayer: React.FC<{
+const VideoPlayer: React.FC<{
   prompt?: string | null;
   src: string;
   isLiked: boolean;
