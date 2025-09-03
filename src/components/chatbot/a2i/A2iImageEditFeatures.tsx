@@ -169,7 +169,6 @@ const A2iImageEditFeatures = ({
                     brushSize={brushSize}
                     onBrushSizeChange={handleBrushSizeChange}
                     source="a2i"
-                    key={selectedRemixModel.id}
                   />
                 )}
               </TabsContent>
