@@ -18,6 +18,7 @@ export type UserListItem = {
   status: UserStatus;
   invitation_link?: string;
   is_default_admin?: boolean;
+  content_filter_disabled?: boolean;
   brand_access?: {
     id: string;
     name: string;

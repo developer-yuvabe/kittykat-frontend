@@ -1,6 +1,8 @@
 "use client";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -32,7 +34,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { UserListItem, UserListResponse, UserRoleId } from "@/types/user.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -83,6 +85,7 @@ export function EditUser({
       updateUser(user.id, {
         roleId: data.role,
         brand_access: data.brandAccess,
+        contentFilterDisabled: data.contentFilterDisabled,
       }),
       {
         loading: "Updating user...",
@@ -172,7 +175,6 @@ export function EditUser({
                     <Input disabled value={user.email} />
                   </FormItem>
                 </div>
-
                 {/* Role */}
                 <FormField
                   control={form.control}
@@ -271,6 +273,34 @@ export function EditUser({
                           accepts the invitation.
                         </FormDescription>
                       )} */}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contentFilterDisabled"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Content Filter</FormLabel>
+                        <TooltipIconButton
+                          tooltipClassName="max-w-36"
+                          tooltip="Disabling content filter allows the user to access all types of content without restrictions. This setting should be used with caution as it may expose users to inappropriate or harmful content."
+                        >
+                          <Info />
+                        </TooltipIconButton>
+                      </div>
+                      <FormControl>
+                        <Checkbox
+                          variant="toggle"
+                          checked={!field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(!checked);
+                          }}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

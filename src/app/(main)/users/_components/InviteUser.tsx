@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBrandStore } from "@/store/brand.store";
-import { Plus, X } from "lucide-react";
+import { Info, Plus, X } from "lucide-react";
 import { inviationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
 import {
@@ -39,6 +39,8 @@ import {
   MultiSelectValue,
 } from "@/components/ui/multi-select-dropdown";
 import { cn } from "@/lib/utils";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
@@ -53,6 +55,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       email: "",
       role: UserRoleId.USER,
       brandAccess: [],
+      contentFilterDisabled: false,
     },
     mode: "onSubmit",
   });
@@ -249,6 +252,33 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                             </MultiSelectGroup>
                           </MultiSelectContent>
                         </MultiSelect>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contentFilterDisabled"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <FormLabel>Content Filter</FormLabel>u-
+                          <TooltipIconButton
+                            tooltipClassName="max-w-36"
+                            tooltip="Disabling content filter allows the user to access all types of content without restrictions. This setting should be used with caution as it may expose users to inappropriate or harmful content."
+                          >
+                            <Info />
+                          </TooltipIconButton>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            variant="toggle"
+                            checked={!field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(!checked);
+                            }}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
