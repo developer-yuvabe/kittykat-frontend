@@ -47,6 +47,22 @@ export const useRemixForm = (props?: UseRemixFormProps): UseFormReturn<any> => {
     mode: "onChange",
   });
 
+  useEffect(() => {
+    queueMicrotask(() => {
+      const previousPromptValue = form.getValues("prompt") || "";
+      form.reset(
+        {
+          ...defaultValues,
+          prompt: previousPromptValue,
+        },
+        {
+          keepDefaultValues: true,
+          keepDirty: true,
+        }
+      );
+    });
+  }, [selectedRemixModel?.id]);
+
   // Watch form values and persist to sessionStorage
   useEffect(() => {
     const subscription = form.watch(() => {
