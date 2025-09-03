@@ -49,22 +49,6 @@ export const useVideoGenForm = (
     mode: "onChange",
   });
 
-  useEffect(() => {
-    queueMicrotask(() => {
-      const previousPromptValue = form.getValues("prompt") || "";
-      form.reset(
-        {
-          ...defaultValues,
-          prompt: previousPromptValue,
-        },
-        {
-          keepDefaultValues: true,
-          keepDirty: true,
-        }
-      );
-    });
-  }, [selectedVideoGenearationModel?.id]);
-
   // Watch form values and persist to sessionStorage
   useEffect(() => {
     const subscription = form.watch(() => {
