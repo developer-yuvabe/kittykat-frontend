@@ -10,6 +10,7 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 import { Shirt, Paintbrush, Video, ArrowUp } from "lucide-react";
 import { ReactNode } from "react";
 import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
+import { useModelsStore } from "@/store/models.store";
 
 interface ToolTab {
   value: string;
@@ -40,6 +41,7 @@ export function AskKittykatImageEditingTools({
   item: GalleryItemResponse;
   remixControls: RemixControlsProps;
 }) {
+  const { selectedRemixModel } = useModelsStore();
   const tools: ToolTab[] = [
     {
       value: "virtual-tryon",
@@ -59,7 +61,7 @@ export function AskKittykatImageEditingTools({
       value: "in-paint",
       icon: <Paintbrush className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "In-Paint Editing feature coming soon",
-      customComponent: (
+      customComponent: selectedRemixModel ? (
         <RemixControls
           image={remixControls.image}
           brushSize={remixControls.brushSize}
@@ -75,6 +77,8 @@ export function AskKittykatImageEditingTools({
           source="media-gallery"
           campaignId={remixControls.campaignId}
         />
+      ) : (
+        <> </>
       ),
     },
     {
