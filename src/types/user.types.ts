@@ -7,6 +7,7 @@ export type User = {
   thread_id?: string | null;
   brand_access?: UserBrand[];
   role: UserRole;
+  is_default_admin?: boolean;
 };
 
 export type UserListItem = {

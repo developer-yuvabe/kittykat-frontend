@@ -39,6 +39,13 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useUserStore } from "@/store/user.store";
 
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
@@ -53,6 +60,7 @@ export function EditUser({
   setIsOpen: (open: boolean) => void;
   queryKey: (string | number)[];
 }) {
+  const { user: currentLoggedInUser } = useUserStore();
   const { brands } = useBrandStore();
   const queryClient = useQueryClient();
   const form = useForm<EditUserFormData>({
@@ -293,13 +301,31 @@ export function EditUser({
                         </TooltipIconButton>
                       </div>
                       <FormControl>
-                        <Checkbox
-                          variant="toggle"
-                          checked={!field.value}
-                          onCheckedChange={(checked) => {
-                            field.onChange(!checked);
-                          }}
-                        />
+                        {currentLoggedInUser?.is_default_admin ? (
+                          <Checkbox
+                            variant="toggle"
+                            checked={!field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(!checked);
+                            }}
+                          />
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="w-max">
+                                <Checkbox
+                                  disabled
+                                  variant="toggle"
+                                  checked={!field.value}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side={"right"}>
+                                You do not have permission to change this
+                                setting.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
