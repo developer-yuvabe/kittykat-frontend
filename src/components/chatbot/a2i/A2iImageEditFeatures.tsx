@@ -20,6 +20,7 @@ import React, { useCallback, useRef } from "react";
 import RemixControls from "./features/RemixControls";
 import VideoGeneration from "./features/VideoGeneration";
 import VirtualTryOn from "./features/VirtualTryOn";
+import { useModelsStore } from "@/store/models.store";
 
 const IMAGE_EDIT_FEATURES = [
   {
@@ -50,6 +51,7 @@ const A2iImageEditFeatures = ({
   parameters: A2iImageGeneration["parameters"];
   onClose: () => void;
 }) => {
+  const { selectedRemixModel } = useModelsStore();
   const [currentFeature, setCurrentFeature] = React.useState(
     IMAGE_EDIT_FEATURES[0].key
   );
@@ -154,19 +156,22 @@ const A2iImageEditFeatures = ({
                 value="in-paint"
                 className="h-full m-0 data-[state=active]:h-full"
               >
-                <RemixControls
-                  image={{ url: image.url, size: parameters.size }}
-                  closeDialog={() => onClose()}
-                  canUndo={remixHistory.canUndo}
-                  canRedo={remixHistory.canRedo}
-                  onUndo={() => remixImageRef.current?.undo()}
-                  onRedo={() => remixImageRef.current?.redo()}
-                  onClear={() => remixImageRef.current?.clearCanvas()}
-                  offScreenCanvasRef={offScreenCanvasRef}
-                  brushSize={brushSize}
-                  onBrushSizeChange={handleBrushSizeChange}
-                  source="a2i"
-                />
+                {selectedRemixModel && (
+                  <RemixControls
+                    image={{ url: image.url, size: parameters.size }}
+                    closeDialog={() => onClose()}
+                    canUndo={remixHistory.canUndo}
+                    canRedo={remixHistory.canRedo}
+                    onUndo={() => remixImageRef.current?.undo()}
+                    onRedo={() => remixImageRef.current?.redo()}
+                    onClear={() => remixImageRef.current?.clearCanvas()}
+                    offScreenCanvasRef={offScreenCanvasRef}
+                    brushSize={brushSize}
+                    onBrushSizeChange={handleBrushSizeChange}
+                    source="a2i"
+                    key={selectedRemixModel.id}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent
