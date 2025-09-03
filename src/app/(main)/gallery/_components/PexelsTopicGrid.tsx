@@ -17,6 +17,15 @@ import {
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { Checkbox } from "@/components/ui/checkbox";
+import Masonry from "react-masonry-css";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MasonryImageCard } from "./MasonryImageCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const client = createClient(env.NEXT_PUBLIC_PEXELS_API_KEY);
 
@@ -37,7 +46,26 @@ export default function TopicsGrid({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
 
+  const tabOptions = [
+    { value: "all-media", label: "All Media" },
+    { value: "brand-uploads", label: "Brand Uploads" },
+    { value: "moodboard", label: "Moodboards" },
+
+    { value: "showboard-media", label: "Concept Visuals" },
+    { value: "a2i-media", label: "A2i Media" },
+  ];
+
   const galleryActions = useGalleryQuery({});
+
+  const breakpointColumnsObj = {
+    default: 5,
+    1536: 4,
+    1280: 4,
+    1024: 3,
+    768: 2,
+    640: 2,
+    500: 1,
+  };
 
   // ✅ Debounce search (500ms)
   useEffect(() => {
@@ -106,7 +134,7 @@ export default function TopicsGrid({
     );
   };
 
-  const handleUrlUpload = async (urls: string[]) => {
+  const handleUrlUpload = async (urls: string[], assetSource: string) => {
     if (!selectedBrand?.brand_id) {
       toast.error("No brand selected.");
       return;
@@ -132,7 +160,7 @@ export default function TopicsGrid({
         return {
           brand_id: selectedBrand.brand_id,
           asset_url: url,
-          asset_source: "pexels",
+          asset_source: assetSource, // 👈 dynamic
           asset_type: "image",
           media_format: extension,
           asset_title: url.split("/").pop() || url,
@@ -159,7 +187,7 @@ export default function TopicsGrid({
         moodboard_id: selecteMoodboardId,
         scrape_only: false,
       };
-      setActiveTab("all-media");
+
       await galleryActions.bulkUpload(bulkUploadPayload);
       toast.success(`${validUrls.length} URL(s) uploaded successfully!`);
     } catch (error) {
@@ -168,20 +196,6 @@ export default function TopicsGrid({
         description: "Please try again",
         duration: 3000,
       });
-    }
-  };
-
-  const handleAddToGallery = async () => {
-    if (selected.length === 0) {
-      toast.error("No images selected");
-      return;
-    }
-    try {
-      await handleUrlUpload(selected);
-      toast.success("Added to moodboard!");
-      setSelected([]); // clear after upload
-    } catch {
-      toast.error("Failed to add to moodboard");
     }
   };
 
@@ -217,32 +231,22 @@ export default function TopicsGrid({
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Masonry
+              breakpointCols={breakpointColumnsObj}
+              className="flex w-auto -ml-4"
+              columnClassName="pl-4 bg-clip-padding"
+            >
               {data?.pages.map((page) =>
-                page.photos.map((photo) => {
-                  const isChecked = selected.includes(photo.src.medium);
-                  return (
-                    <div
-                      key={photo.id}
-                      className="relative cursor-pointer overflow-hidden shadow-md group"
-                    >
-                      <div className="absolute top-2 left-2 z-10">
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={() => toggleSelect(photo.src.medium)}
-                          className="h-5 w-5 border-2 border-white data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-black transition-all duration-200 hover:border-gray-200"
-                        />
-                      </div>
-                      <img
-                        src={photo.src.medium}
-                        alt={photo.alt ?? ""}
-                        className="w-full h-40 object-cover transition-transform duration-300"
-                      />
-                    </div>
-                  );
-                })
+                page.photos.map((photo) => (
+                  <MasonryImageCard
+                    key={photo.id}
+                    photo={photo}
+                    isChecked={selected.includes(photo.src.original)}
+                    onToggle={() => toggleSelect(photo.src.original)}
+                  />
+                ))
               )}
-            </div>
+            </Masonry>
           )}
           {isFetchingNextPage && (
             <div className="flex justify-center py-6">
@@ -280,17 +284,39 @@ export default function TopicsGrid({
       )}
 
       {/* Sticky Footer for Moodboard */}
+
       {selected.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-3 bg-white border-t shadow-md p-4 flex items-center justify-end gap-3">
+        <div className="fixed bottom-0 left-0 right-0 pr-20 bg-white border-t shadow-md p-4 flex items-center justify-end gap-3">
           <span className="text-sm font-medium">
             Selected: {selected.length}
           </span>
-          <Button
-            onClick={handleAddToGallery}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            Add to Gallery
-          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                Add to Gallery
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="center"
+              className="w-48 mt-2"
+            >
+              {tabOptions.map((tab) => (
+                <DropdownMenuItem
+                  key={tab.value}
+                  onClick={async () => {
+                    await handleUrlUpload(selected, tab.value);
+                    setActiveTab(tab.value);
+                    setSelected([]);
+                    toast.success(`Added to ${tab.label}`);
+                  }}
+                >
+                  {tab.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </div>
