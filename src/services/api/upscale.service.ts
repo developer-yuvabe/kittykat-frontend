@@ -43,3 +43,16 @@ export const upscaleImage = async (
     throw error;
   }
 };
+
+export const estimateUpscaleCredits = async (data: Record<string, any>) => {
+  try {
+    const credits = await handleApiRequest<number | null>(
+      axiosInstance.post(`/a2i/upscale/estimate-credits`, data)
+    );
+
+    return credits;
+  } catch (error) {
+    console.error("Error estimating upscale credits:", error);
+    throw error;
+  }
+};

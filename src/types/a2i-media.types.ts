@@ -162,8 +162,7 @@ export type Model = {
   disabled: boolean;
   description?: string;
   provider: "openai" | "replicate";
-  type: "image" | "video" | "remix";
-  model: string;
+  type: "image" | "video" | "remix" | "image-upscale";
   prefix?: string;
   finetune_id?: string;
   pricing:
