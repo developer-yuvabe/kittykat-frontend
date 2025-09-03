@@ -8,6 +8,7 @@ import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { MoodboardSection } from "./moodboards/MoodboardSection";
+import { useQueryState } from "nuqs";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -36,23 +37,35 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const moodboardInformation = data?.moodboard_information;
   const moodboardTags = data?.moodboard_tags;
 
-  const latestCampaignIndex = useMemo(
-    () =>
-      campaignInformation && campaignInformation.length > 0
-        ? campaignInformation.length - 1
-        : 0,
-    [campaignInformation]
-  );
+  const [selectedCampaignIdFromUrl] = useQueryState("campaignId");
 
+  const activeCampaignIndex = useMemo(() => {
+    if (!campaignInformation || campaignInformation.length === 0) return 0;
+
+    // If there's a campaignId in the URL, try to find it in the list
+    if (selectedCampaignIdFromUrl !== null) {
+      const idx = campaignInformation.findIndex(
+        (c) => c.id === selectedCampaignIdFromUrl
+      );
+      if (idx !== -1) return idx; // found campaign from URL
+    }
+
+    // fallback to latest campaign
+    return campaignInformation.length - 1;
+  }, [campaignInformation, selectedCampaignIdFromUrl]);
   const [selectedCampaignIndex, setSelectedCampaignIndex] =
-    useState(latestCampaignIndex);
+    useState(activeCampaignIndex);
+
+  const currentCampaignId = campaignInformation?.[selectedCampaignIndex]?.id;
 
   useEffect(() => {
-    setCampaigns(campaignInformation ?? []);
-
-    setSelectedCampaignId(
-      campaignInformation?.[selectedCampaignIndex]?.id ?? null
-    );
+    const updateCampaigns = async () => {
+      setCampaigns(campaignInformation ?? []);
+      if (currentCampaignId) {
+        setSelectedCampaignId(currentCampaignId);
+      }
+    };
+    updateCampaigns();
   }, [selectedCampaignIndex]);
 
   return (
@@ -78,7 +91,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
           <CampaignSection
             campaignInformation={campaignInformation}
             brandInformation={brandingInformation}
-            latestCampaignIndex={latestCampaignIndex}
+            latestCampaignIndex={activeCampaignIndex}
             selectedCampaignIndex={selectedCampaignIndex}
             setSelectedCampaignIndex={setSelectedCampaignIndex}
             expandedSections={expandedSections}

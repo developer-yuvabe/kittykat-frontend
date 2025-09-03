@@ -33,6 +33,7 @@ import {
 import { useBrandStore } from "@/store/brand.store";
 import { Input } from "@/components/ui/input";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { useQueryState } from "nuqs";
 interface TransformedMoodboard {
   id: string;
   displayName: string;
@@ -76,6 +77,9 @@ export default function MoodboardSelector({
   >([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(selectedMoodboard?.title || "");
+
+  const [, setCampaignIdFromUrl] = useQueryState("campaignId");
+  const [, setMoodboardIdFromUrl] = useQueryState("moodboardId");
 
   // Transform moodboards (filtered by campaignId) - for combobox variant
   useEffect(() => {
@@ -128,6 +132,8 @@ export default function MoodboardSelector({
 
   // Handle selection for combobox variant
   const handleSelect = (id: string) => {
+    setCampaignIdFromUrl(null);
+    setMoodboardIdFromUrl(null);
     const match = moodboards.find((mb) => mb.id === id);
     if (match) {
       setSelectedMoodboard(match);

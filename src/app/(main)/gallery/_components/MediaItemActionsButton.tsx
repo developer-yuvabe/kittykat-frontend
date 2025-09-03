@@ -2,8 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { DeleteIcon, DownloadIcon } from "@/components/ui/custom-icon";
+import { useBrandStore } from "@/store/brand.store";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { Info } from "lucide-react";
+import { PencilIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface MediaItemActionsButtonProps {
   item: GalleryItemResponse;
@@ -14,10 +16,27 @@ interface MediaItemActionsButtonProps {
 
 export function MediaItemActionsButton({
   item,
-  onDetailsClick,
   onDownload,
   onDelete,
 }: MediaItemActionsButtonProps) {
+  const router = useRouter();
+
+  const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
+
+  const handleEditMoodboard = () => {
+    // Set both campaign and moodboard to ensure proper context
+    if (item.campaign_id) {
+      setSelectedCampaignId(item.campaign_id);
+    }
+    setSelectedMoodboardId(item.moodboard_id || null);
+
+    if (item.campaign_id && item.moodboard_id) {
+      router.push(
+        `/?campaignId=${item.campaign_id}&moodboardId=${item.moodboard_id}`
+      );
+    }
+  };
+
   return (
     <>
       {/* Details button */}
@@ -49,6 +68,16 @@ export function MediaItemActionsButton({
         <DeleteIcon size={20} />
         <span className="ml-2">Delete</span>
       </Button>
+      {item.asset_source === "moodboard" && (
+        <Button
+          variant="ghost"
+          className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left p-2 rounded-md hover:text-foreground"
+          onClick={handleEditMoodboard}
+        >
+          <PencilIcon size={20} />
+          <span className="ml-2">Edit Moodboard</span>
+        </Button>
+      )}
     </>
   );
 }
