@@ -1,229 +1,186 @@
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Textarea } from "@/components/ui/textarea";
-import { PlatformApiError } from "@/lib/utils";
-import { videoGenerationSchema } from "@/schema/video-gen.schema";
-import {
-  estimateVideoGenerationCredits,
-  videoGenerationService,
-} from "@/services/api/video-gen.service";
+import { VideoPlayer } from "@/app/(main)/gallery/_components/AskKittykatImageSection";
+import { Ripple } from "@/components/magicui/ripple";
+import { Badge } from "@/components/ui/badge";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { cn } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
-import { useUserStore } from "@/store/user.store";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { BrainIcon, Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useVideoGenStore } from "@/store/video-gen.store";
+import { A2iImageGeneration } from "@/types/types";
+import { Video } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 type VideoGenerationOnProps = {
-  startImage: string;
+  baseImage: string;
   closeDialog: () => void;
   campaignId?: string | null;
 };
 
-const VideoGeneration = ({
-  startImage,
-  closeDialog,
-  campaignId,
-}: VideoGenerationOnProps) => {
+const VideoGeneration = ({}: VideoGenerationOnProps) => {
   const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
-  const form = useForm<z.infer<typeof videoGenerationSchema>>({
-    resolver: zodResolver(videoGenerationSchema),
-    defaultValues: {
-      prompt: "",
-      provider: "replicate",
-      model: "kwaivgi/kling-v1.5-standard",
-      start_image: startImage,
-      negative_prompt: "",
-      duration: 5,
-      cfg_scale: 0.5,
-      aspect_ratio: "16:9",
+  const galleryActions = useGalleryQuery(
+    {
+      selectedFilters: {
+        brands: [selectedBrandId!],
+        campaigns: [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: [],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+      },
     },
-  });
-  const { data: estimatedCredits, isPending } = useQuery({
-    queryKey: ["video-credits", form.watch("duration")],
-    queryFn: async () => {
-      return await estimateVideoGenerationCredits(form.getValues());
-    },
-  });
+    ITEMS_PER_PAGE,
+    true,
+    "A2iImageCard"
+  );
+  const [currentVideoItem, setCurrentVideoItem] =
+    useState<A2iImageGeneration>();
+  const { currentSessionGenerationIds, generations } = useVideoGenStore();
 
-  const onSubmit = async (data: z.infer<typeof videoGenerationSchema>) => {
-    try {
-      if (!selectedBrandId) {
-        throw new Error("Brand ID is missing.");
+  const currentSessionGenerations = useMemo(() => {
+    return generations.filter(
+      (gen) =>
+        gen.type === "video" && currentSessionGenerationIds.includes(gen.id)
+    );
+  }, [currentSessionGenerationIds, generations]);
+
+  // Centralized like handler
+  const handleLike = () => {
+    if (!currentVideoItem || !currentVideoItem.video) return;
+
+    const newFavoriteState = !currentVideoItem.video.is_liked;
+
+    // Optimistically update the UI immediately
+    setCurrentVideoItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            video: {
+              ...prev.video!,
+              is_liked: newFavoriteState,
+            },
+          }
+        : prev
+    );
+
+    // Show immediate feedback to user
+    toast.success(
+      newFavoriteState ? "Added to favorites" : "Removed from favorites"
+    );
+
+    // Update on server
+    galleryActions.patchItem(
+      {
+        itemId: currentVideoItem.video.id,
+        data: { is_favourite: newFavoriteState },
+      },
+      {
+        onError: (error) => {
+          // Revert the optimistic update
+          setCurrentVideoItem((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  video: {
+                    ...prev.video!,
+                    is_liked: !newFavoriteState,
+                  },
+                }
+              : prev
+          );
+
+          console.error("Failed to update favorite status:", error);
+          toast.error("Failed to update favorite status");
+        },
       }
-      await videoGenerationService(
-        selectedBrandId,
-        data,
-        campaignId ?? undefined
-      );
-    } catch (err) {
-      console.error("Failed to generate video:", err);
-      if (err instanceof PlatformApiError && err.statusCode == 403) {
-        setShowInsufficientCreditsModal(true);
-        return;
-      }
-    } finally {
-      closeDialog();
-    }
+    );
   };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row gap-6">
-      <div className="w-full flex flex-col gap-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="flex gap-4 items-end">
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration</FormLabel>
-                    <Select
-                      value={field.value.toString()}
-                      onValueChange={(val) => field.onChange(Number(val))}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {["5", "10"].map((val) => (
-                          <SelectItem key={val} value={val}>
-                            {val}s
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="aspect_ratio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Aspect Ratio</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {["16:9", "9:16", "1:1"].map((val) => (
-                          <SelectItem key={val} value={val}>
-                            {val}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
+    <div className="w-full h-full flex flex-col space-y-4 overflow-hidden">
+      {/* First section: video preview (flex-1 fills available height) */}
+      <div className="flex-1 flex">
+        <div
+          className={cn("w-full", {
+            "flex items-center justify-center bg-accent border border-dashed":
+              !currentVideoItem,
+          })}
+        >
+          {currentVideoItem ? (
+            <VideoPlayer
+              src={currentVideoItem.video!.url}
+              isLiked={currentVideoItem.video!.is_liked || false}
+              onLike={handleLike}
+              prompt={currentVideoItem.parameters.prompt || null}
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-y-2">
+              <Video />
+              <p className="text-sm text-muted-foreground">
+                Video preview will appear here
+              </p>
             </div>
-            <FormField
-              control={form.control}
-              name="cfg_scale"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center justify-between">
-                    <span>Creativity</span>
-                    <span className="text-muted-foreground text-sm">
-                      Relevance
-                    </span>
-                  </FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={[field.value]}
-                        onValueChange={(val) => field.onChange(val[0])}
-                      />
-                      <span className="text-sm font-medium w-10 text-right">
-                        {field.value.toFixed(2)}
-                      </span>
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="prompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center justify-between">
-                    <span>Prompt</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Please describe your creative ideas for the video. Example: A serene beach at sunset, a bustling city street, a futuristic landscape..."
-                      className="min-h-[120px] resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="negative_prompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center justify-between">
-                    <span>Negative Prompt (Optional)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="List the type of content you dont want to see in the video. Examples: blur, distortion, low quality... "
-                      className="min-h-[60px] resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="w-full bg-primary text-white text-md h-12 "
-              disabled={
-                form.formState.isSubmitting ||
-                !form.formState.isValid ||
-                isPending
-              }
-              loading={form.formState.isSubmitting}
-            >
-              <BrainIcon />
-              Concept Visual Generation
-              {isPending && <Loader2 className="animate-spin" />}
-              {estimatedCredits && (
-                <span className="text-sm italic">
-                  ({estimatedCredits} credits)
-                </span>
-              )}
-            </Button>
-          </form>
-        </Form>
+          )}
+        </div>
+      </div>
+
+      {/* Second section: horizontal scroll thumbnails */}
+      <div className="w-full">
+        <div className="w-full overflow-x-auto flex items-center gap-x-2">
+          {currentSessionGenerations.map((gen) => (
+            <div key={gen.id} className="h-32 w-32 cursor-pointer shrink-0">
+              {gen.status === "completed" && gen.video ? (
+                <video
+                  src={gen.video.url}
+                  className="w-32 h-32 object-cover"
+                  onClick={() => {
+                    if (gen && gen.video) {
+                      setCurrentVideoItem(gen);
+                    }
+                  }}
+                />
+              ) : gen.status === "failed" ? (
+                <div className="bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none w-32 h-32 flex items-center justify-center">
+                  <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
+                    Failed
+                  </Badge>
+                </div>
+              ) : gen.status === "processing" ? (
+                <div className="w-32 h-32 relative">
+                  <Ripple numCircles={8} mainCircleSize={10} />
+                  <div className="flex flex-col items-center justify-center gap-2 h-full ">
+                    <p className="text-xs text-center overflow-hidden text-ellipsis line-clamp-2 max-h-40">
+                      {gen.parameters.prompt}
+                    </p>
+
+                    {(gen.video ||
+                      gen.parameters.start_image ||
+                      gen.parameters.first_frame) && (
+                      <div className="flex gap-4">
+                        <img
+                          src={
+                            gen.parameters.start_image ||
+                            gen.parameters.first_frame
+                          }
+                          className="w-12 h-12 object-cover rounded-md"
+                        />
+                        {gen.parameters.last_frame && (
+                          <img
+                            src={gen.parameters.last_frame}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

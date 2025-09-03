@@ -83,8 +83,9 @@ export function AskKittykatImageEditingTools({
       message: "Video Generation feature coming soon",
       customComponent: (
         <VideoGeneration
+          key={item.asset_url}
           closeDialog={remixControls.closeDialog}
-          startImage={item.asset_url}
+          baseImage={item.asset_url}
           campaignId={remixControls.campaignId}
         />
       ),
@@ -113,7 +114,7 @@ export function AskKittykatImageEditingTools({
             <TabsContent
               key={tool.value}
               value={tool.value}
-              className="flex-1 p-2"
+              className="flex-1 p-2 h-full"
             >
               {tool.customComponent ? (
                 tool.customComponent

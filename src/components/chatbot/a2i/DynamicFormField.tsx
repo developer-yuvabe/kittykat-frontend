@@ -8,6 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Popover,
   PopoverContent,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -38,15 +40,20 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   type: "initial" | "advanced";
 };
 
-const DynaicFormLabel = ({
+export const DynamicFormLabel = ({
   label,
   showLabel = true,
+  optional,
 }: {
   label: string;
   showLabel?: boolean;
+  optional: boolean;
 }) => {
   return showLabel ? (
-    <FormLabel className="text-xs text-muted-foreground">{label}</FormLabel>
+    <FormLabel className="text-xs text-muted-foreground">
+      {label}
+      <span className="italic">{optional ? " (optional)" : ""}</span>
+    </FormLabel>
   ) : null;
 };
 
@@ -93,7 +100,10 @@ export function DynamicFormField<T extends FieldValues>({
               <FormItem>
                 <div>
                   <div className="flex items-center justify-between">
-                    <DynaicFormLabel label={param.label} />
+                    <DynamicFormLabel
+                      label={param.label}
+                      optional={!param.required}
+                    />
                     {
                       <span className="text-xs text-muted-foreground">
                         {field.value}
@@ -136,6 +146,40 @@ export function DynamicFormField<T extends FieldValues>({
               SlideComp
             );
 
+          case "number":
+            return (
+              <FormItem className="flex flex-col  gap-2">
+                <DynamicFormLabel
+                  showLabel={type !== "initial"}
+                  label={param.label}
+                  optional={!param.required}
+                />
+                <FormControl>
+                  <NumberInput
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    min={param.min}
+                    max={param.max}
+                    className="w-24"
+                  />
+                </FormControl>
+              </FormItem>
+            );
+
+          case "text_area":
+            return (
+              <FormItem className="flex flex-col  gap-2">
+                <DynamicFormLabel
+                  showLabel={type !== "initial"}
+                  label={param.label}
+                  optional={!param.required}
+                />
+                <FormControl>
+                  <Textarea {...field} placeholder={param.label} />
+                </FormControl>
+              </FormItem>
+            );
+
           case "boolean":
             return (
               <FormItem className="flex items-center gap-2">
@@ -146,9 +190,10 @@ export function DynamicFormField<T extends FieldValues>({
                     className="h-4 w-4"
                   />
                 </FormControl>
-                <DynaicFormLabel
+                <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
+                  optional={!param.required}
                 />
               </FormItem>
             );
@@ -160,9 +205,10 @@ export function DynamicFormField<T extends FieldValues>({
                   "w-max": type === "initial",
                 })}
               >
-                <DynaicFormLabel
+                <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
+                  optional={!param.required}
                 />
 
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -244,9 +290,10 @@ export function DynamicFormField<T extends FieldValues>({
           case "string":
             return (
               <FormItem>
-                <DynaicFormLabel
+                <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
+                  optional={!param.required}
                 />
                 <FormControl>
                   <Input {...field} placeholder={param.label} />

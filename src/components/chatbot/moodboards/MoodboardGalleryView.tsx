@@ -38,7 +38,7 @@ const MoodboardGalleryView = forwardRef<
   ) => {
     return (
       <div className="w-full overflow-hidden">
-        <div className="mx-auto max-w-7xl w-full px-2">
+        <div className="mx-auto max-w-5xl w-full px-2">
           <CustomGalleryContainer
             ref={ref}
             items={photos.map((photo, index) => ({

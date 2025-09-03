@@ -7,6 +7,7 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 import { PencilIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+
 interface MediaItemActionsButtonProps {
   item: GalleryItemResponse;
   onDetailsClick: (item: GalleryItemResponse) => void;

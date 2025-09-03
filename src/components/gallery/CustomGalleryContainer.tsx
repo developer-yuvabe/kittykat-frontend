@@ -99,13 +99,30 @@ const CustomGalleryContainer = forwardRef<
     const size = useResizeObserver<HTMLDivElement>({ ref: containerRef });
 
     const containerHeight = (() => {
-      if (!size.width || !layout) return 800; // fallback
+      if (!size.width || !layout) return 450; // fallback for 16:9 at 800px width
+
+      // Ensure minimum width to prevent layout breaking
+      const effectiveWidth = Math.max(size.width, 300);
+
       const rowCount = layout.containerClass.match(/grid-rows-(\d)/)
         ? Number.parseInt(layout.containerClass.match(/grid-rows-(\d)/)![1])
         : layout.containerClass.includes("grid-rows-[33%_33%_34%]")
         ? 3
         : 1;
-      return (size.width * rowCount) / 4.7;
+
+      // Calculate height based on container width and row count
+      // Use a more conservative aspect ratio that works well across different sizes
+      const aspectRatio = 16 / 9;
+      const baseHeight = effectiveWidth / aspectRatio;
+
+      // Adjust height based on row count with better scaling
+      if (rowCount === 1) {
+        return baseHeight * 0.4; // Single row uses less height
+      } else if (rowCount === 2) {
+        return baseHeight * 0.6; // Two rows
+      } else {
+        return baseHeight * 1.2; // Three or more rows
+      }
     })();
 
     const photos = normalizedItemsArray.filter(
@@ -113,7 +130,7 @@ const CustomGalleryContainer = forwardRef<
     ) as SortablePhoto<Photo>[];
 
     const galleryContent = (
-      <div className="relative">
+      <div ref={containerRef} className="relative">
         <CustomGalleryGrid
           ref={ref}
           allItems={normalizedItemsArray}

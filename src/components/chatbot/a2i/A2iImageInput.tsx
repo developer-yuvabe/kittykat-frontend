@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { cn, delay, PlatformApiError } from "@/lib/utils";
+import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -44,8 +44,11 @@ const A2iImageInput = ({
 }) => {
   const form = useImageGenForm();
   const { setShowInsufficientCreditsModal } = useUserStore();
-  const { credits, isCalculatingCredits } = useModelPricing({ form });
   const { selectedModel } = useModelsStore();
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: selectedModel,
+  });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal } = useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
@@ -219,16 +222,7 @@ const A2iImageInput = ({
     data.campaign_id = campaignId;
 
     try {
-      if (data.provider === "openai") {
-        generateImage(selectedBrandId!, data).catch((error) => {
-          if (error instanceof PlatformApiError && error.statusCode === 403) {
-            setShowInsufficientCreditsModal(true);
-          }
-        });
-        await delay(2000);
-      } else {
-        await generateImage(selectedBrandId!, data);
-      }
+      await generateImage(selectedBrandId!, data);
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
