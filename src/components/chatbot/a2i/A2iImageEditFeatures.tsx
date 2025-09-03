@@ -1,4 +1,5 @@
 "use client";
+// Important: This component is not USED
 
 import RemixImage, {
   RemixImageHandle,

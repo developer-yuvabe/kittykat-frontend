@@ -13,6 +13,8 @@ export function useDynamicModelSchema(
     const { id, defaultValue } = param;
     let schema: ZodTypeAny;
 
+    const isRequired = param.required ?? false;
+
     switch (param.type) {
       case "string":
         schema = z.string();
@@ -33,6 +35,10 @@ export function useDynamicModelSchema(
         break;
       default:
         schema = z.any();
+    }
+
+    if (!isRequired) {
+      schema = schema.optional();
     }
 
     fieldSchemas[id] = schema;
