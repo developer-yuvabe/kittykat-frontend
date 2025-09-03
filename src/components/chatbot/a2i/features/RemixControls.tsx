@@ -374,8 +374,6 @@ const RemixControls = ({
     }
   }, [form, selectedRemixModel?.id]);
 
-  console.log(form.getValues());
-
   return (
     <div className="w-full flex flex-col gap-y-6">
       <div className="mr-auto w-max">
