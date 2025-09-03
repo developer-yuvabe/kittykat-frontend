@@ -37,7 +37,6 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
-import PexelsCollections from "./PexelsCollection";
 import TopicsGrid from "./PexelsTopicGrid";
 
 type MediaLibraryProps = {
@@ -515,8 +514,12 @@ export function MediaLibrary({
                   )}
 
                 {activeTab === "pexels" ? (
-                  // <PexelsCollections />
-                  <TopicsGrid />
+                  <TopicsGrid
+                    selectedBrand={selectedBrand}
+                    selectedCampaignId={selectedCampaignId}
+                    selecteMoodboardId={moodboardId}
+                    setActiveTab={setActiveTab}
+                  />
                 ) : (
                   <div className="flex flex-col md:flex-row gap-4">
                     <div
