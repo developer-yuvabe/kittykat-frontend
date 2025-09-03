@@ -170,14 +170,18 @@ export function DynamicFormField<T extends FieldValues>({
 
           case "text_area":
             return (
-              <FormItem className="flex flex-col  gap-2">
+              <FormItem className="flex flex-col gap-2">
                 <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
                   optional={!param.required}
                 />
                 <FormControl>
-                  <Textarea {...field} placeholder={param.label} />
+                  <Textarea
+                    {...field}
+                    placeholder={param.label}
+                    className="max-h-40 resize-none"
+                  />
                 </FormControl>
               </FormItem>
             );

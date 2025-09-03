@@ -100,7 +100,7 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col space-y-4 overflow-hidden">
+    <div className="w-full h-full flex flex-col space-y-4 overflow-hidden mt-0">
       {/* First section: video preview (flex-1 fills available height) */}
       <div className="flex-1 flex">
         <div

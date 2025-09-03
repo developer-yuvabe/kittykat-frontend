@@ -113,12 +113,16 @@ export function AskKittykatImageEditingTools({
   return (
     <>
       {tools.map((tool) => (
-        <TabsContent key={tool.value} value={tool.value} className="flex-1 p-2">
+        <TabsContent
+          key={tool.value}
+          value={tool.value}
+          className="flex-1 h-full"
+        >
           {tools.map((tool) => (
             <TabsContent
               key={tool.value}
               value={tool.value}
-              className="flex-1 p-2 h-full"
+              className="flex-1 h-full"
             >
               {tool.customComponent ? (
                 tool.customComponent
