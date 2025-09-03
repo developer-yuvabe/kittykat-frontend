@@ -88,7 +88,7 @@ export function MediaEditorDialog({
 
   const isRemixEnabled =
     activeTab === "in-paint" &&
-    selectedRemixModel &&
+    !!selectedRemixModel &&
     selectedRemixModel.provider === "openai";
 
   const queryClient = useQueryClient();
