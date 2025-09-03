@@ -163,6 +163,7 @@ export type Model = {
   description?: string;
   provider: "openai" | "replicate";
   type: "image" | "video" | "remix" | "image-upscale";
+  model: string;
   prefix?: string;
   finetune_id?: string;
   pricing:
