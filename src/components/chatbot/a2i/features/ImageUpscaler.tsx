@@ -25,6 +25,8 @@ import { upscaleImage } from "@/services/api/upscale.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { PlatformApiError } from "@/lib/utils";
+import useModelPricing from "@/hooks/useModelPricing";
+import { useModelsStore } from "@/store/models.store";
 
 const upscalerSchema = z.object({
   image_url: z.string().min(1, "Image URL is required"),
@@ -72,6 +74,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
 }) => {
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
+  const { models } = useModelsStore();
 
   const form = useForm<z.infer<typeof upscalerSchema>>({
     resolver: zodResolver(upscalerSchema),
@@ -88,6 +91,10 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
       should_add_to_queue: source === "media-gallery",
       campaign_id: campaignId || null,
     },
+  });
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: models.find((model) => model.type === "image-upscale") || null,
   });
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
@@ -330,7 +337,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
         <Button
           type="submit"
           className="w-full"
-          disabled={form.formState.isSubmitting}
+          disabled={form.formState.isSubmitting || isCalculatingCredits}
         >
           {form.formState.isSubmitting ? (
             <>
@@ -340,6 +347,13 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
           ) : (
             "Upscale Image"
           )}
+          <p>
+            {isCalculatingCredits ? (
+              <Loader2 className="animate-spin h-4 w-4" />
+            ) : (
+              `(${credits} credits)`
+            )}
+          </p>
         </Button>
       </form>
     </Form>
