@@ -21,6 +21,7 @@ env:
   NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}
   NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}
   LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+  NEXT_PUBLIC_PEXELS_API_KEY: ${{ secrets.NEXT_PUBLIC_PEXELS_API_KEY }}
 on:
   push:
     branches:
@@ -103,7 +104,8 @@ jobs:
             --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
             --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
             --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
-            --build-arg LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}'
+            --build-arg LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}' \
+            --build-arg NEXT_PUBLIC_PEXELS_API_KEY='${{ secrets.NEXT_PUBLIC_PEXELS_API_KEY }}'
         env:
           DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
@@ -143,7 +145,8 @@ jobs:
             --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
             --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
             --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
-            --set-env-vars=LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}'
+            --set-env-vars=LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}' \
+            --set-env-vars=NEXT_PUBLIC_PEXELS_API_KEY='${{ secrets.NEXT_PUBLIC_PEXELS_API_KEY }}'
         env:
           DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}

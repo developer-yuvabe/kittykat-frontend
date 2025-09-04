@@ -12,6 +12,7 @@ function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
 
     { value: "showboard-media", label: "Concept Visuals" },
     { value: "a2i-media", label: "A2i Media" },
+    { value: "pexels", label: "Pexels" },
   ];
 
   return (
