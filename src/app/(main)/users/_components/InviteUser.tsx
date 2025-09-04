@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBrandStore } from "@/store/brand.store";
-import { Plus, X } from "lucide-react";
+import { Info, Plus, X } from "lucide-react";
 import { inviationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
 import {
@@ -39,6 +39,14 @@ import {
   MultiSelectValue,
 } from "@/components/ui/multi-select-dropdown";
 import { cn } from "@/lib/utils";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
@@ -53,6 +61,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       email: "",
       role: UserRoleId.USER,
       brandAccess: [],
+      contentFilterDisabled: false,
     },
     mode: "onSubmit",
   });
@@ -249,6 +258,51 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                             </MultiSelectGroup>
                           </MultiSelectContent>
                         </MultiSelect>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contentFilterDisabled"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <FormLabel>Content Filter</FormLabel>
+                          <TooltipIconButton
+                            tooltipClassName="max-w-36"
+                            tooltip="Disabling content filter allows the user to access all types of content without restrictions. This setting should be used with caution as it may expose users to inappropriate or harmful content."
+                          >
+                            <Info />
+                          </TooltipIconButton>
+                        </div>
+                        <FormControl>
+                          {user?.is_default_admin ? (
+                            <Checkbox
+                              variant="toggle"
+                              checked={!field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(!checked);
+                              }}
+                            />
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="w-max">
+                                  <Checkbox
+                                    disabled
+                                    variant="toggle"
+                                    checked={!field.value}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side={"right"}>
+                                  You do not have permission to change this
+                                  setting.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

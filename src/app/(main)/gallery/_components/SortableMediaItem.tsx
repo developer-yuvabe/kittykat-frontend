@@ -2,6 +2,8 @@
 
 import type React from "react";
 import { useState } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import {
@@ -17,7 +19,7 @@ import { MediaItemActionsButton } from "./MediaItemActionsButton";
 import { GalleryActions } from "@/hooks/useGallery";
 
 // Types
-interface MediaItemProps {
+interface SortableMediaItemProps {
   item: GalleryItemResponse;
   isSelected: boolean;
   isHovered: boolean;
@@ -34,14 +36,15 @@ interface MediaItemProps {
   maxSelectionCount?: number;
   galleryActions: GalleryActions;
   onEditClick: (item: GalleryItemResponse) => void;
+  isDraggable: boolean;
 }
 
-// Main MediaItem Component
-export function MediaItem({
+// Main SortableMediaItem Component
+export function SortableMediaItem({
   item,
   isSelected,
   isHovered,
-  isMediaSelectDialog = false, // Default to false
+  isMediaSelectDialog = false,
   onSelect,
   onDelete,
   onDownload,
@@ -54,9 +57,27 @@ export function MediaItem({
   maxSelectionCount,
   galleryActions,
   onEditClick,
-}: MediaItemProps) {
+  isDraggable,
+}: SortableMediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: item.id,
+    disabled: !isDraggable,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
   const isDisabled = isAlreadySelected && isMultiSelect;
@@ -70,29 +91,29 @@ export function MediaItem({
     setIsLoaded(true);
   };
 
-  // Handle image click - either select or edit based on context
   const handleImageClick = () => {
-    if (isMediaSelectDialog) {
-      // In media select dialog, clicking image should select it
-      if (!isAlreadySelected) {
-        onSelect(item.id, !isSelected);
-      }
-    } else {
-      // In regular gallery, clicking image opens editor
+    if (isMediaSelectDialog && !isDisabled) {
+      onSelect(item.id, !isSelected);
+    } else if (!isMediaSelectDialog) {
       onEditClick(item);
     }
   };
 
-  const aspectRatio = dimensions.width / dimensions.height;
-  const skeletonHeight = item.dimensions
-    ? (300 * item.dimensions.height) / item.dimensions.width
+  const aspectRatio = dimensions.width / dimensions.height || 1;
+  const skeletonHeight = item.dimensions?.height
+    ? Math.min(item.dimensions.height / 4, 400)
     : Math.floor(Math.random() * 200) + 200;
 
   return (
     <div
-      className="mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+      ref={setNodeRef}
+      style={style}
+      className={`mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
+        isDragging ? "opacity-50 z-50" : ""
+      }`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      {...(isDraggable ? attributes : {})}
     >
       {!isLoaded && (
         <div className="w-full">
@@ -115,7 +136,7 @@ export function MediaItem({
           <MediaImage
             item={item}
             onImageLoad={handleImageLoad}
-            onEditClick={handleImageClick} // Use our custom handler
+            onEditClick={handleImageClick}
           />
         </div>
 
@@ -139,36 +160,43 @@ export function MediaItem({
           }}
         />
 
-        {/* More options popover - Only show in regular gallery, NOT in media select dialog */}
-        {isHovered && isMediaSelectDialog === false && (
+        {/* Dark overlay for better drag handle visibility - only show on hover when draggable */}
+        {isDraggable && !isMediaSelectDialog && isHovered && (
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
+        )}
 
-          <>
-            <div className="absolute top-0 right-1 z-10 flex space-x-1">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <TooltipIconButton
-                    tooltip="More"
-                    className="hover:bg-black/50 "
-                  >
-                    <MoreIcon size={24} color="#ffffff" />
-                  </TooltipIconButton>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-72 h-max max-h-128 overflow-auto p-2"
-                  side="right"
+        {/* Actions button for non-dialog mode */}
+        {!isMediaSelectDialog && isHovered && (
+          <div className="absolute top-2 right-2 z-20">
+            <Popover>
+              <PopoverTrigger asChild>
+                <TooltipIconButton
+                  tooltip="More Actions"
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 bg-white/80 backdrop-blur-sm hover:bg-white"
                 >
-                  <div className="space-y-2">
-                    <MediaItemActionsButton
-                      item={item}
-                      onDetailsClick={onDetailsClick}
-                      onDownload={onDownload}
-                      onDelete={onDelete}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </>
+                  <MoreIcon />
+                </TooltipIconButton>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-0" align="end">
+                <MediaItemActionsButton
+                  item={item}
+                  onDelete={onDelete}
+                  onDownload={onDownload}
+                  onDetailsClick={onDetailsClick}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+
+        {/* Drag handle for non-dialog mode - same style as A2iImageCard */}
+        {isDraggable && !isMediaSelectDialog && isHovered && (
+          <div
+            {...listeners}
+            className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-20 opacity-60 hover:opacity-100"
+          />
         )}
       </div>
     </div>

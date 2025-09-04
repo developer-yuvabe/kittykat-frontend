@@ -1,10 +1,8 @@
 "use client";
 
 import type React from "react";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, forwardRef } from "react";
 import type { Photo } from "react-photo-album";
-import { DndContext, closestCenter } from "@dnd-kit/core";
-import { SortableContext } from "@dnd-kit/sortable";
 import { ImageModal } from "../shared/ImageModal";
 import {
   MIN_IMAGES_REQUIRED,
@@ -15,24 +13,16 @@ import type { MoodboardInformation } from "@/types/types";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryHooks } from "./CustomGalleryHooks";
-import { CustomGalleryGrid } from "./CustomGalleryGrid";
+import { CustomGalleryGrid, CustomGalleryGridRef } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
-import { CustomGalleryDragOverlay } from "./CustomGalleryDragOverlay";
 import { useMoodboardStore } from "@/store/moodboard.store";
+import { GalleryActions } from "@/hooks/useGallery";
 
 export type SortablePhoto<TPhoto extends Photo> = TPhoto & {
   id: string;
   liked?: boolean;
   is_placeholder?: boolean;
   position?: number;
-};
-
-type ActivePhoto<TPhoto extends Photo> = {
-  photo: SortablePhoto<TPhoto>;
-  width: number;
-  height: number;
-  padding?: string;
-  is_placeholder?: boolean;
 };
 
 type OptimisticCustomGridGalleryProps = {
@@ -47,195 +37,139 @@ type OptimisticCustomGridGalleryProps = {
     placeholderIndex: number
   ) => void;
   isPreview?: boolean;
+  galleryActions?: GalleryActions;
 };
 
-export default function CustomGalleryContainer<TPhoto extends Photo>({
-  items,
-  setItems,
-  movePhoto,
-  onPhotoLike,
-  hasUnsavedChanges,
-  moodboard,
-  onGallerySelection,
-  isPreview = false,
-}: OptimisticCustomGridGalleryProps) {
-  const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
-  const [activePhoto, setActivePhoto] = useState<ActivePhoto<TPhoto>>();
-  const [expandedImage, setExpandedImage] = useState<{
-    url: string;
-    alt: string;
-  } | null>(null);
-  const [showLiked, setShowLiked] = useState(false);
-
-  const normalizedItems = useCallback(() => {
-    if (!items || !Array.isArray(items)) {
-      return [];
-    }
-
-    // Simply return the items as they already contain placeholders
-    // from the parent component (MoodboardLayout)
-    return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
-  }, [items]);
-
-  const { noOfImagesForMoodboard, setNoOfImagesForMoodboard } =
-    useMoodboardStore();
-
-  const normalizedItemsArray = normalizedItems();
-
-  // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
-  const isDraggable =
-    movePhoto !== undefined && hasUnsavedChanges !== undefined;
-
-  const { sensors } = CustomGalleryHooks.useDragSensors();
-
-  const handleDragStart = useCallback(
-    (event: any) => {
-      const { active } = event;
-      const activeItem = normalizedItemsArray.find(
-        (item) => item.id === active.id
-      );
-
-      if (activeItem) {
-        setActivePhoto({
-          photo: activeItem as SortablePhoto<TPhoto>,
-          width: activeItem.width,
-          height: activeItem.height,
-          is_placeholder: activeItem.is_placeholder,
-        });
-      }
+const CustomGalleryContainer = forwardRef<
+  CustomGalleryGridRef,
+  OptimisticCustomGridGalleryProps
+>(
+  (
+    {
+      items,
+      setItems,
+      movePhoto,
+      onPhotoLike,
+      hasUnsavedChanges,
+      moodboard,
+      onGallerySelection,
+      isPreview = false,
+      galleryActions,
     },
-    [normalizedItemsArray]
-  );
+    ref
+  ) => {
+    const containerRef = useRef<HTMLDivElement>(
+      null
+    ) as React.RefObject<HTMLDivElement>;
+    const [expandedImage, setExpandedImage] = useState<{
+      url: string;
+      alt: string;
+    } | null>(null);
+    const [showLiked, setShowLiked] = useState(false);
 
-  const handleDragEnd = useCallback(
-    (event: any) => {
-      const { active, over } = event;
-      setActivePhoto(undefined);
-
-      if (!over || active.id === over.id) return;
-
-      const oldIndex = normalizedItemsArray.findIndex(
-        (item) => item.id === active.id
-      );
-      const newIndex = normalizedItemsArray.findIndex(
-        (item) => item.id === over.id
-      );
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        setItems((prevItems: UnifiedMoodboardItem[]) => {
-          const newItems = [...prevItems];
-          const activeItem = normalizedItemsArray[oldIndex];
-          const overItem = normalizedItemsArray[newIndex];
-
-          // Update positions
-          const updatedActiveItem = { ...activeItem, position: newIndex };
-          const updatedOverItem = { ...overItem, position: oldIndex };
-
-          // Find and update in the original array
-          const activeOriginalIndex = newItems.findIndex(
-            (item) => item.id === activeItem.id
-          );
-          const overOriginalIndex = newItems.findIndex(
-            (item) => item.id === overItem.id
-          );
-
-          if (activeOriginalIndex !== -1) {
-            newItems[activeOriginalIndex] = updatedActiveItem;
-          }
-
-          if (overOriginalIndex !== -1) {
-            newItems[overOriginalIndex] = updatedOverItem;
-          } else if (overItem.is_placeholder) {
-            // If dragging over a placeholder, just update the active item's position
-            newItems[activeOriginalIndex] = updatedActiveItem;
-          }
-
-          return newItems;
-        });
-
-        if (movePhoto) {
-          movePhoto(oldIndex, newIndex);
-        }
+    const normalizedItems = useCallback(() => {
+      if (!items || !Array.isArray(items)) {
+        return [];
       }
-    },
-    [normalizedItemsArray, movePhoto, setItems]
-  );
 
-  const { handleExpandImage, handleCloseModal } =
-    CustomGalleryHooks.useImageModal({
-      setExpandedImage,
-    });
+      // Simply return the items as they already contain placeholders
+      // from the parent component (MoodboardLayout)
+      return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
+    }, [items]);
 
-  const layout =
-    moodboardGridLayouts[
-      noOfImagesForMoodboard as keyof typeof moodboardGridLayouts
-    ];
+    const { noOfImagesForMoodboard, setNoOfImagesForMoodboard } =
+      useMoodboardStore();
 
-  const size = useResizeObserver<HTMLDivElement>({ ref });
+    const normalizedItemsArray = normalizedItems();
 
-  const containerHeight = (() => {
-    if (!size.width || !layout) return 800; // fallback
-    const rowCount = layout.containerClass.match(/grid-rows-(\d)/)
-      ? Number.parseInt(layout.containerClass.match(/grid-rows-(\d)/)![1])
-      : layout.containerClass.includes("grid-rows-[33%_33%_34%]")
-      ? 3
-      : 1;
-    return (size.width * rowCount) / 4.7;
-  })();
+    // Only enable drag functionality if both movePhoto and hasUnsavedChanges are provided
+    const isDraggable =
+      movePhoto !== undefined && hasUnsavedChanges !== undefined;
 
-  const photos = normalizedItemsArray.filter(
-    (item) => !item.is_placeholder
-  ) as SortablePhoto<TPhoto>[];
+    const { handleExpandImage, handleCloseModal } =
+      CustomGalleryHooks.useImageModal({
+        setExpandedImage,
+      });
 
-  const galleryContent = (
-    <div className="relative">
-      <CustomGalleryGrid
-        ref={ref}
-        allItems={normalizedItemsArray}
-        photos={photos}
-        layout={layout}
-        containerHeight={containerHeight}
-        noOfImagesForMoodboard={noOfImagesForMoodboard}
-        moodboard={moodboard}
-        onGallerySelection={onGallerySelection}
-        onPhotoLike={onPhotoLike}
-        hasUnsavedChanges={hasUnsavedChanges}
-        handleExpandImage={handleExpandImage}
-        isDraggable={isDraggable}
-        isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
-        setItems={setItems}
-        minImagesRequired={MIN_IMAGES_REQUIRED}
-        setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-        showLiked={showLiked}
-        isPreview={isPreview}
-      />
-    </div>
-  );
+    const layout =
+      moodboardGridLayouts[
+        noOfImagesForMoodboard as keyof typeof moodboardGridLayouts
+      ];
 
-  // Only wrap with DndContext if dragging is enabled
-  if (isDraggable) {
+    const size = useResizeObserver<HTMLDivElement>({ ref: containerRef });
+
+    const containerHeight = (() => {
+      if (!size.width || !layout) return 450; // fallback for 16:9 at 800px width
+
+      // Ensure minimum width to prevent layout breaking
+      const effectiveWidth = Math.max(size.width, 300);
+
+      const rowCount = layout.containerClass.match(/grid-rows-(\d)/)
+        ? Number.parseInt(layout.containerClass.match(/grid-rows-(\d)/)![1])
+        : layout.containerClass.includes("grid-rows-[33%_33%_34%]")
+        ? 3
+        : 1;
+
+      // Calculate height based on container width and row count
+      // Use a more conservative aspect ratio that works well across different sizes
+      const aspectRatio = 16 / 9;
+      const baseHeight = effectiveWidth / aspectRatio;
+
+      // Adjust height based on row count with better scaling
+      if (rowCount === 1) {
+        return baseHeight * 0.4; // Single row uses less height
+      } else if (rowCount === 2) {
+        return baseHeight * 0.6; // Two rows
+      } else {
+        return baseHeight * 1.2; // Three or more rows
+      }
+    })();
+
+    const photos = normalizedItemsArray.filter(
+      (item) => !item.is_placeholder
+    ) as SortablePhoto<Photo>[];
+
+    const galleryContent = (
+      <div ref={containerRef} className="relative">
+        <CustomGalleryGrid
+          ref={ref}
+          allItems={normalizedItemsArray}
+          photos={photos}
+          layout={layout}
+          containerHeight={containerHeight}
+          noOfImagesForMoodboard={noOfImagesForMoodboard}
+          moodboard={moodboard}
+          onGallerySelection={onGallerySelection}
+          onPhotoLike={onPhotoLike}
+          hasUnsavedChanges={hasUnsavedChanges}
+          handleExpandImage={handleExpandImage}
+          isDraggable={isDraggable}
+          isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
+          setItems={setItems}
+          minImagesRequired={MIN_IMAGES_REQUIRED}
+          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+          showLiked={showLiked}
+          isPreview={isPreview}
+          galleryActions={galleryActions}
+        />
+      </div>
+    );
+
+    // Now we don't need our own DndContext since it's handled by CarouselDndProvider
     return (
-      <DndContext
-        sensors={sensors}
-        onDragEnd={handleDragEnd}
-        onDragStart={handleDragStart}
-        collisionDetection={closestCenter}
-      >
-        <SortableContext items={normalizedItemsArray.map((item) => item.id)}>
-          {galleryContent}
-          {!isPreview && (
-            <CustomGalleryControls
-              noOfImagesForMoodboard={noOfImagesForMoodboard}
-              setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-              setItems={setItems}
-              minImagesRequired={MIN_IMAGES_REQUIRED}
-              showLiked={showLiked}
-              setShowLiked={setShowLiked}
-              hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
-            />
-          )}
-        </SortableContext>
-        <CustomGalleryDragOverlay activePhoto={activePhoto} />
+      <>
+        {galleryContent}
+        {!isPreview && (
+          <CustomGalleryControls
+            noOfImagesForMoodboard={noOfImagesForMoodboard}
+            setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+            setItems={setItems}
+            minImagesRequired={MIN_IMAGES_REQUIRED}
+            showLiked={showLiked}
+            setShowLiked={setShowLiked}
+            hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
+          />
+        )}
         {expandedImage && (
           <ImageModal
             imageUrl={expandedImage.url}
@@ -244,33 +178,11 @@ export default function CustomGalleryContainer<TPhoto extends Photo>({
             onClose={handleCloseModal}
           />
         )}
-      </DndContext>
+      </>
     );
   }
+);
 
-  // Return gallery without drag functionality
-  return (
-    <>
-      {galleryContent}
-      {!isPreview && (
-        <CustomGalleryControls
-          noOfImagesForMoodboard={noOfImagesForMoodboard}
-          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
-          setItems={setItems}
-          minImagesRequired={MIN_IMAGES_REQUIRED}
-          showLiked={showLiked}
-          setShowLiked={setShowLiked}
-          hasTags={Object.keys(moodboard?.moodboard_tags ?? {}).length > 0}
-        />
-      )}
-      {expandedImage && (
-        <ImageModal
-          imageUrl={expandedImage.url}
-          alt={expandedImage.alt}
-          isOpen={!!expandedImage}
-          onClose={handleCloseModal}
-        />
-      )}
-    </>
-  );
-}
+CustomGalleryContainer.displayName = "CustomGalleryContainer";
+
+export default CustomGalleryContainer;

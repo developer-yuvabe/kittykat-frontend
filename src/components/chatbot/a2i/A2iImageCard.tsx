@@ -36,6 +36,7 @@ export type A2iImageCardProps = {
   type: A2iImageGeneration["type"];
   vtonParameters?: A2iImageGeneration["vton_parameters"];
   remixParameters?: A2iImageGeneration["remix_parameters"];
+  upscaleParameters?: A2iImageGeneration["upscale_parameters"];
   video?: A2iImageGeneration["video"];
   dragListeners?: any;
   dragAttributes?: any;
@@ -53,6 +54,7 @@ const A2iImageCard = ({
   parameters,
   generationId,
   remixParameters,
+  upscaleParameters,
   dragListeners,
   dragAttributes,
   vtonParameters,
@@ -239,6 +241,16 @@ const A2iImageCard = ({
                 />
               </div>
             )}
+
+            {upscaleParameters && (
+              <div className="flex gap-6">
+                <img
+                  src={upscaleParameters.base_image}
+                  alt="Base image"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </div>
+            )}
             {remixParameters && (
               <div className="flex gap-6">
                 <img
@@ -248,13 +260,18 @@ const A2iImageCard = ({
                 />
               </div>
             )}
-            {video && (
-              <div className="flex gap-6">
+            {(video || parameters.start_image || parameters.first_frame) && (
+              <div className="flex gap-4">
                 <img
-                  src={video.url}
-                  alt="Video"
+                  src={parameters.start_image || parameters.first_frame}
                   className="w-16 h-16 object-cover rounded-md"
                 />
+                {parameters.last_frame && (
+                  <img
+                    src={parameters.last_frame}
+                    className="w-16 h-16 object-cover rounded-md"
+                  />
+                )}
               </div>
             )}
             {status === "failed" && (

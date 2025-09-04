@@ -143,6 +143,7 @@ export function MediaImage({
       quality={30}
       loading="lazy"
       onClick={() => onEditClick(item)}
+      draggable={false} // Prevent native HTML drag
     />
   );
 }

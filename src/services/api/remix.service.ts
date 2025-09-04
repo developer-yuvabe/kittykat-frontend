@@ -1,27 +1,26 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
-import { remixImageSchema } from "@/schema/remix.schema";
-import { z } from "zod";
 
 export const remixImageService = async (
   brandId: string,
   campaignId: string | null | undefined,
-  data: z.infer<typeof remixImageSchema>,
-  maskImageUrl: string,
+  data: Record<string, any>,
+  maskImageUrl: string | null,
   addToQueue: boolean
 ) => {
   try {
+    const payload: Record<string, any> = {
+      ...data,
+      should_add_to_queue: addToQueue,
+      campaign_id: campaignId,
+    };
+
+    if (maskImageUrl) {
+      payload["mask_image"] = maskImageUrl;
+    }
+
     await handleApiRequest(
-      axiosInstance.post(`/brands/${brandId}/a2i/remix`, {
-        prompt: data.prompt,
-        size: data.size,
-        n: data.n,
-        base_image: data.base_image,
-        reference_images: data.reference_images,
-        mask_image: maskImageUrl,
-        should_add_to_queue: addToQueue,
-        campaign_id: campaignId,
-      })
+      axiosInstance.post(`/brands/${brandId}/a2i/remix`, payload)
     );
   } catch (error) {
     console.error("Error remixing image:", error);
@@ -29,20 +28,10 @@ export const remixImageService = async (
   }
 };
 
-export const estimateRemixCredits = async (
-  data: z.infer<typeof remixImageSchema>,
-  maskImageUrl: string
-) => {
+export const estimateRemixCredits = async (data: Record<string, any>) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/remix/estimate-credits`, {
-        prompt: data.prompt,
-        size: data.size,
-        n: data.n,
-        base_image: data.base_image,
-        reference_images: data.reference_images,
-        mask_image: maskImageUrl,
-      })
+      axiosInstance.post(`/a2i/remix/estimate-credits`, data)
     );
 
     return credits;

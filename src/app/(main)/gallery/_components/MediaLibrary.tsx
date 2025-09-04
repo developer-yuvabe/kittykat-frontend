@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { MediaUploadDropzone } from "./MediaUploadDropzone";
 import { MediaSearchFilters } from "./MediaSearchFilters";
-import { MediaGrid } from "./MediaGrid";
+import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
@@ -36,6 +37,7 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
+import TopicsGrid from "./PexelsTopicGrid";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -132,6 +134,8 @@ export function MediaLibrary({
     BrandCampaignListResponse["brands"][number] | null
   >(null);
 
+  const queryClient = useQueryClient();
+
   // Use our custom hook for data fetching and mutations
   const galleryActions = useGalleryQuery({
     assetType: activeTab,
@@ -178,6 +182,34 @@ export function MediaLibrary({
   ]);
 
   const selectedBrandName = selectedBrand?.brand_name || "brand";
+
+  // Function to refresh brand data and update selectedBrand
+  const handleRefreshBrandData = async () => {
+    try {
+      // Invalidate and refetch brands query to bypass cache
+      await queryClient.invalidateQueries({
+        queryKey: ["brands-campaigns"],
+      });
+
+      // Small delay to ensure invalidation is processed
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Refetch brands data and get the result
+      const { data: freshBrandsData } = await galleryActions.brandsRefetch();
+
+      // Update selectedBrand with fresh data immediately
+      if (selectedBrand?.brand_id && freshBrandsData?.brands) {
+        const updatedBrand = freshBrandsData.brands.find(
+          (b) => b.brand_id === selectedBrand.brand_id
+        );
+        if (updatedBrand) {
+          setSelectedBrand(updatedBrand);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refresh brand data:", error);
+    }
+  };
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -442,6 +474,7 @@ export function MediaLibrary({
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
                 selectedBrandId={effectiveBrandId!}
+                onRefreshData={handleRefreshBrandData}
               />
             </div>
           )}
@@ -458,121 +491,140 @@ export function MediaLibrary({
                 value={activeTab}
                 className="p-3 rounded-3xl bg-white mt-0"
               >
-                {(activeTab !== "a2i-media" ||
-                  user?.role.id === UserRoleId.ADMIN) && (
-                  <MediaUploadDropzone
-                    activeTab={activeTab}
-                    galleryFilters={{
-                      assetType: activeTab,
-                      favorites,
-                      source,
-                      creator,
-                      searchQuery,
-                      selectedFilters,
-                    }}
+                {activeTab !== "pexels" &&
+                  (activeTab !== "a2i-media" ||
+                    user?.role.id === UserRoleId.ADMIN) && (
+                    <MediaUploadDropzone
+                      activeTab={activeTab}
+                      galleryFilters={{
+                        assetType: activeTab,
+                        favorites,
+                        source,
+                        creator,
+                        searchQuery,
+                        selectedFilters,
+                      }}
+                      selectedBrand={selectedBrand}
+                      setSelectedBrand={setSelectedBrand}
+                      brands={galleryActions.brandsData?.brands || []}
+                      brandsLoading={galleryActions.brandsLoading}
+                      selectedCampaignId={selectedCampaignId}
+                      selecteMoodboardId={moodboardId}
+                    />
+                  )}
+
+                {activeTab === "pexels" ? (
+                  <TopicsGrid
                     selectedBrand={selectedBrand}
-                    setSelectedBrand={setSelectedBrand}
-                    brands={galleryActions.brandsData?.brands || []}
-                    brandsLoading={galleryActions.brandsLoading}
                     selectedCampaignId={selectedCampaignId}
                     selecteMoodboardId={moodboardId}
+                    setActiveTab={setActiveTab}
+                    isMultiSelect={isMultiSelect}
+                    isMediaSelectDialog={isMediaSelectDialog}
+                    currentSelectionCount={currentSelectionCount}
+                    inSelectionGalleryIds={inSelectionGalleryIds}
+                    onMultipleMediaItemsSelected={onMultipleMediaItemsSelected}
                   />
-                )}
-
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div
-                    className={`${
-                      showFilters ? "w-full md:w-1/4" : "hidden"
-                    } transition-all duration-300 ease-in-out`}
-                  >
-                    <div className="md:hidden flex justify-between items-center mb-2">
-                      <h3 className="font-medium">Filters</h3>
-                      <Button variant="ghost" size="sm" onClick={toggleFilters}>
-                        <X className="h-4 w-4" />
-                      </Button>
+                ) : (
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div
+                      className={`${
+                        showFilters ? "w-full md:w-1/4" : "hidden"
+                      } transition-all duration-300 ease-in-out`}
+                    >
+                      <div className="md:hidden flex justify-between items-center mb-2">
+                        <h3 className="font-medium">Filters</h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={toggleFilters}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <MediaFilterSidebar
+                        selectedFilters={selectedFilters}
+                        onApply={handleApplyFilters}
+                        brandsWithCampaigns={
+                          galleryActions.brandsData?.brands || []
+                        }
+                        product_categories={
+                          galleryActions.brandsData?.product_categories || []
+                        }
+                        setShowFilter={setShowFilters}
+                      />
                     </div>
-                    <MediaFilterSidebar
-                      selectedFilters={selectedFilters}
-                      onApply={handleApplyFilters}
-                      brandsWithCampaigns={
-                        galleryActions.brandsData?.brands || []
-                      }
-                      product_categories={
-                        galleryActions.brandsData?.product_categories || []
-                      }
-                      setShowFilter={setShowFilters}
-                    />
+
+                    <div
+                      className={`${
+                        showFilters ? "w-full md:w-3/4" : "w-full"
+                      } transition-all duration-300 ease-in-out`}
+                    >
+                      <MediaSearchFilters
+                        onSearchChange={handleSearchChange}
+                        onSourceChange={handleSourceChange}
+                        onCreatorChange={handleCreatorChange}
+                        onFavoritesChange={handleFavoritesChange}
+                        onToggleFilters={toggleFilters}
+                        source={source}
+                        creator={creator}
+                        favorites={favorites}
+                        showFilters={showFilters}
+                        selectedFilters={selectedFilters}
+                        setSelectedFilters={setSelectedFilters}
+                        setInitialWorkflowStatus={setInitialWorkflowStatus}
+                        isMediaSelectDialog={isMediaSelectDialog}
+                      />
+
+                      <MediaDialogMultiSelectHeader
+                        isActive={isMultiSelect && isMediaSelectDialog}
+                        currentSelectionCount={currentSelectionCount}
+                        onClearSelection={handleUnselectAll}
+                        onAddSelectedItems={handleAddSelectedItems}
+                        totalAssets={
+                          inSelectionGalleryIds.length + currentSelectionCount
+                        }
+                      />
+
+                      <MediaGalleryStatusDisplay
+                        galleryStatus={galleryActions.galleryStatus}
+                        galleryItemsLength={galleryItems.length}
+                      />
+
+                      {galleryActions.galleryStatus === "success" &&
+                        galleryItems.length > 0 && (
+                          <div>
+                            {selectedBrand && (
+                              <SortableMediaGrid
+                                galleryActions={galleryActions}
+                                selectedItems={currentlySelectedItems}
+                                onSelect={handleSelect}
+                                isMediaSelectDialog={isMediaSelectDialog}
+                                isMultiSelect={isMultiSelect}
+                                inSelectionGalleryIds={inSelectionGalleryIds}
+                                maxSelectionCount={maxSelectionCount}
+                              />
+                            )}
+                            {/* Infinite scroll loading indicator */}
+                            {galleryActions.hasNextPage && (
+                              <div
+                                ref={ref}
+                                className="flex justify-center items-center py-8"
+                              >
+                                {galleryActions.isFetchingNextPage ? (
+                                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                                ) : (
+                                  <p className="text-sm text-gray-500">
+                                    Load more
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                    </div>
                   </div>
-
-                  <div
-                    className={`${
-                      showFilters ? "w-full md:w-3/4" : "w-full"
-                    } transition-all duration-300 ease-in-out`}
-                  >
-                    <MediaSearchFilters
-                      onSearchChange={handleSearchChange}
-                      onSourceChange={handleSourceChange}
-                      onCreatorChange={handleCreatorChange}
-                      onFavoritesChange={handleFavoritesChange}
-                      onToggleFilters={toggleFilters}
-                      source={source}
-                      creator={creator}
-                      favorites={favorites}
-                      showFilters={showFilters}
-                      selectedFilters={selectedFilters}
-                      setSelectedFilters={setSelectedFilters}
-                      setInitialWorkflowStatus={setInitialWorkflowStatus}
-                      isMediaSelectDialog={isMediaSelectDialog}
-                    />
-
-                    <MediaDialogMultiSelectHeader
-                      isActive={isMultiSelect && isMediaSelectDialog}
-                      currentSelectionCount={currentSelectionCount}
-                      onClearSelection={handleUnselectAll}
-                      onAddSelectedItems={handleAddSelectedItems}
-                      totalAssets={
-                        inSelectionGalleryIds.length + currentSelectionCount
-                      }
-                    />
-
-                    <MediaGalleryStatusDisplay
-                      galleryStatus={galleryActions.galleryStatus}
-                      galleryItemsLength={galleryItems.length}
-                    />
-
-                    {galleryActions.galleryStatus === "success" &&
-                      galleryItems.length > 0 && (
-                        <div>
-                          {selectedBrand && (
-                            <MediaGrid
-                              galleryActions={galleryActions}
-                              selectedItems={currentlySelectedItems}
-                              onSelect={handleSelect}
-                              isMediaSelectDialog={isMediaSelectDialog} // Pass the prop here!
-                              isMultiSelect={isMultiSelect}
-                              inSelectionGalleryIds={inSelectionGalleryIds}
-                              maxSelectionCount={maxSelectionCount}
-                            />
-                          )}
-                          {/* Infinite scroll loading indicator */}
-                          {galleryActions.hasNextPage && (
-                            <div
-                              ref={ref}
-                              className="flex justify-center items-center py-8"
-                            >
-                              {galleryActions.isFetchingNextPage ? (
-                                <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                              ) : (
-                                <p className="text-sm text-gray-500">
-                                  Load more
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                  </div>
-                </div>
+                )}
               </TabsContent>
             </Tabs>
           )}

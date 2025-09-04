@@ -229,7 +229,7 @@ export function getChatLayoutConfig(isLargeScreen: boolean) {
       : "h-[calc(100vh-6rem)]",
     containerPadding: isLargeScreen ? "px-4" : "px-3",
     threadPanelDefault: isLargeScreen ? 60 : 50, // decreased
-    threadPanelMin: isLargeScreen ? 20 : 30, // decreased
+    threadPanelMin: isLargeScreen ? 35 : 30, // decreased
     threadPanelMax: isLargeScreen ? 70 : 60, // decreased
 
     chatPanelDefault: isLargeScreen ? 40 : 50, // increased
@@ -350,3 +350,16 @@ export function getImageDimensionsFromLocallyUploadedImage(
     img.src = URL.createObjectURL(file);
   });
 }
+
+// Helper function to convert dataURL to blob
+export const dataURLToBlob = (dataURL: string): Blob => {
+  const arr = dataURL.split(",");
+  const mime = arr[0].match(/:(.*?);/)![1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};

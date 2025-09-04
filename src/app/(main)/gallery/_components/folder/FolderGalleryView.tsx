@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 import { Loader2 } from "lucide-react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { MediaGrid } from "../MediaGrid";
+import { SortableMediaGrid } from "../SortableMediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import type {
@@ -122,7 +122,7 @@ export function FolderGalleryView({
         {galleryActions.galleryStatus === "success" &&
           galleryActions.getGalleryItems().length > 0 && (
             <div>
-              <MediaGrid
+              <SortableMediaGrid
                 selectedItems={selectedItems}
                 onSelect={handleSelect}
                 galleryActions={galleryActions}

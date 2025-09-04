@@ -25,6 +25,7 @@ const MainLayout = ({
       email: userInfo.email,
       thread_id: userInfo.thread_id,
       role: userInfo.role,
+      is_default_admin: userInfo.is_default_admin,
     });
   }, [userInfo]);
 

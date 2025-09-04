@@ -9,6 +9,8 @@ import { TabsContent } from "@/components/ui/tabs";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Shirt, Paintbrush, Video, ArrowUp } from "lucide-react";
 import { ReactNode } from "react";
+import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
+import { useModelsStore } from "@/store/models.store";
 
 interface ToolTab {
   value: string;
@@ -39,6 +41,7 @@ export function AskKittykatImageEditingTools({
   item: GalleryItemResponse;
   remixControls: RemixControlsProps;
 }) {
+  const { selectedRemixModel } = useModelsStore();
   const tools: ToolTab[] = [
     {
       value: "virtual-tryon",
@@ -58,7 +61,7 @@ export function AskKittykatImageEditingTools({
       value: "in-paint",
       icon: <Paintbrush className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "In-Paint Editing feature coming soon",
-      customComponent: (
+      customComponent: selectedRemixModel ? (
         <RemixControls
           image={remixControls.image}
           brushSize={remixControls.brushSize}
@@ -74,6 +77,8 @@ export function AskKittykatImageEditingTools({
           source="media-gallery"
           campaignId={remixControls.campaignId}
         />
+      ) : (
+        <> </>
       ),
     },
     {
@@ -82,8 +87,9 @@ export function AskKittykatImageEditingTools({
       message: "Video Generation feature coming soon",
       customComponent: (
         <VideoGeneration
+          key={item.asset_url}
           closeDialog={remixControls.closeDialog}
-          startImage={item.asset_url}
+          baseImage={item.asset_url}
           campaignId={remixControls.campaignId}
         />
       ),
@@ -92,18 +98,31 @@ export function AskKittykatImageEditingTools({
       value: "upscaler",
       icon: <ArrowUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Image Upscaler feature coming soon",
+      customComponent: (
+        <ImageUpscaler
+          closeDialog={remixControls.closeDialog}
+          brandId={item.brand_id}
+          source="media-gallery"
+          initialImage={item.asset_url}
+          campaignId={remixControls.campaignId}
+        />
+      ),
     },
   ];
 
   return (
     <>
       {tools.map((tool) => (
-        <TabsContent key={tool.value} value={tool.value} className="flex-1 p-2">
+        <TabsContent
+          key={tool.value}
+          value={tool.value}
+          className="flex-1 h-full"
+        >
           {tools.map((tool) => (
             <TabsContent
               key={tool.value}
               value={tool.value}
-              className="flex-1 p-2"
+              className="flex-1 h-full"
             >
               {tool.customComponent ? (
                 tool.customComponent

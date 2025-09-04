@@ -212,11 +212,6 @@ function useLocalStorage<T>(
 
   const removeValue = useEventCallback(() => {
     // Prevent build error "window is undefined" but keeps working
-    if (IS_SERVER) {
-      console.warn(
-        `Tried removing localStorage key “${key}” even though environment is not a client`
-      );
-    }
 
     const defaultValue =
       initialValue instanceof Function ? initialValue() : initialValue;
