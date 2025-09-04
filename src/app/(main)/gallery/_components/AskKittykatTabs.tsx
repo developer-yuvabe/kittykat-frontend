@@ -39,7 +39,7 @@ const tabItems = [
 export function AskKittykatTabs() {
   return (
     <TabsList
-      className="grid grid-cols-5 w-full mb-8 bg-transparent h-20"
+      className="grid grid-cols-5 w-full bg-transparent h-max mb-0.5"
       variant="icon-grid"
     >
       {tabItems.map((item) => (

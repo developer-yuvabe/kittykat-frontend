@@ -35,6 +35,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import type { RemixImageHandle } from "../../_components/remix/RemixImage";
 import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
+import { useModelsStore } from "@/store/models.store";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -61,6 +62,7 @@ export function MediaEditorDialog({
     item
   );
   const [activeTab, setActiveTab] = useState("ask-kittykat");
+  const { selectedRemixModel } = useModelsStore();
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -84,7 +86,10 @@ export function MediaEditorDialog({
   const remixImageRef = useRef<RemixImageHandle>(null);
   const remixHistory = useUndoRedoRemix();
 
-  const isRemixEnabled = activeTab === "in-paint";
+  const isRemixEnabled =
+    activeTab === "in-paint" &&
+    !!selectedRemixModel &&
+    selectedRemixModel.provider === "openai";
 
   const queryClient = useQueryClient();
 

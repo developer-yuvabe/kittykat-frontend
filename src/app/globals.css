@@ -200,3 +200,28 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+.prose span[style] {
+  display: block;
+  margin: 1rem 0 0.5rem 0;
+  font-weight: 600;
+}
+
+/* Nicer tables */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.prose td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  vertical-align: top;
+}
+
+.prose img {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+}

@@ -1,20 +1,4 @@
-import { GalleryItemResponse } from "@/types/gallery.types";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import VideoGenerationModelSelector from "../VideoGenerationModelSelector";
-import { useModelsStore } from "@/store/models.store";
-import { cn, PlatformApiError } from "@/lib/utils";
-import { videoGenerationService } from "@/services/api/video-gen.service";
-import useModelPricing from "@/hooks/useModelPricing";
-import { useBrandStore } from "@/store/brand.store";
-import { useVideoGenForm } from "@/hooks/useVideoGenForm";
-import { useUserStore } from "@/store/user.store";
-import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -22,19 +6,28 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Loader2, Settings2, Upload, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { FileRejection, useDropzone } from "react-dropzone";
-import { toast } from "sonner";
-import { FileParam } from "@/types/a2i-media.types";
-import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { Textarea } from "@/components/ui/textarea";
+import useModelPricing from "@/hooks/useModelPricing";
+import { useVideoGenForm } from "@/hooks/useVideoGenForm";
+import { cn, PlatformApiError } from "@/lib/utils";
+import { videoGenerationService } from "@/services/api/video-gen.service";
+import { useBrandStore } from "@/store/brand.store";
+import { useModelsStore } from "@/store/models.store";
+import { useUserStore } from "@/store/user.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
+import { FileParam } from "@/types/a2i-media.types";
+import { GalleryItemResponse } from "@/types/gallery.types";
+import { Loader2, Settings2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
+import VideoGenerationModelSelector from "../VideoGenerationModelSelector";
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import { SelectIcon } from "@/components/ui/custom-icon";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse;
@@ -64,14 +57,10 @@ const VideoGenerationInputControls = ({
   item,
   campaignId,
 }: VideoGenerationInputProps) => {
-  const [isLastFrameUploading, setIsLastFrameUploading] =
-    useState<boolean>(false);
-  const [lastFrameUploadPreview, setLastFrameUploadPreview] = useState<
-    string | null
-  >(null);
-  const inputFileRef = useRef<HTMLInputElement | null>(null);
-  const { addCurrentSessionGenerationId, clearCurrentSessionGenerationIds } =
-    useVideoGenStore();
+  const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
+    null
+  );
+  const { addCurrentSessionGenerationId } = useVideoGenStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -124,86 +113,6 @@ const VideoGenerationInputControls = ({
     };
   }, [selectedVideoGenearationModel]);
 
-  const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      if (fileRejections.length > 0 && lastFrameParam) {
-        toast.warning(
-          `Some files were rejected. Please note: Maximum file size is ${
-            lastFrameParam.maxFileSizeLimit
-          } MB, allowed file types are ${lastFrameParam?.fileTypes.join(", ")}.`
-        );
-      }
-
-      if (acceptedFiles.length === 0 || !lastFrameParam) return;
-
-      setIsLastFrameUploading(true);
-
-      const uploadPromises = acceptedFiles.map((file) => {
-        return new Promise<void>((resolve) => {
-          const reader = new FileReader();
-
-          reader.onloadend = async () => {
-            const previewUrl = reader.result as string;
-
-            setLastFrameUploadPreview(previewUrl);
-
-            try {
-              const uploadedUrl = await uploadFileAndReturnUrl(
-                file.name,
-                file.type,
-                "brands",
-                file,
-                selectedBrandId || null
-              );
-
-              form.setValue(lastFrameParam.id, uploadedUrl, {
-                shouldValidate: true,
-                shouldDirty: true,
-                shouldTouch: true,
-              });
-              setLastFrameUploadPreview(null);
-            } catch {
-              console.error("Upload failed for", file.name);
-            } finally {
-              resolve();
-            }
-          };
-
-          reader.readAsDataURL(file);
-        });
-      });
-
-      await Promise.allSettled(uploadPromises);
-      setIsLastFrameUploading(false);
-    },
-    [lastFrameParam]
-  );
-
-  const { getInputProps } = useDropzone({
-    onDrop,
-    multiple: false,
-    accept: Object.fromEntries(
-      (lastFrameParam?.fileTypes ?? []).map((type) => [type, []])
-    ),
-    preventDropOnDocument: true,
-    disabled:
-      isLastFrameUploading || form.formState.isSubmitting || !lastFrameParam,
-    maxFiles: 1,
-    maxSize: (lastFrameParam?.maxFileSizeLimit ?? 0) * 1024 * 1024,
-  });
-
-  function removeLastFrame(shouldDeleteFromGCS = true) {
-    const url = form.getValues(lastFrameParam?.id || "");
-    form.setValue(lastFrameParam?.id || "", "", {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true,
-    });
-
-    // delete the file from GCS
-    if (url && shouldDeleteFromGCS) deleteFile(url);
-  }
-
   const onSubmit = async (data: Record<string, any>) => {
     try {
       if (!selectedBrandId) {
@@ -215,7 +124,6 @@ const VideoGenerationInputControls = ({
         campaignId ?? undefined
       );
 
-      removeLastFrame(false);
       addCurrentSessionGenerationId(generation_id);
     } catch (err) {
       console.error("Failed to generate video:", err);
@@ -230,104 +138,104 @@ const VideoGenerationInputControls = ({
 
   useEffect(() => {
     form.reset();
-    removeLastFrame();
-    setLastFrameUploadPreview(null);
   }, [item]);
-
-  useEffect(() => {
-    return () => {
-      clearCurrentSessionGenerationIds();
-    };
-  }, []);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="h-[97%]">
+        <div className="flex flex-col gap-y-6 h-full">
           {/* Frames */}
-          <div className="flex gap-4 ">
+          <div className="h-full flex gap-x-2">
             {firstFrameParam && (
-              <div className="space-y-2 w-60">
-                <DynamicFormLabel
-                  label="First Frame"
-                  optional={!firstFrameParam.required}
-                />
-                {
-                  <img
-                    src={form.getValues(firstFrameParam.id) || item.asset_url}
-                    alt="First Frame"
-                    className="h-60 w-60 object-contain"
-                  />
-                }
-              </div>
+              <FormField
+                control={form.control}
+                name={firstFrameParam.id}
+                render={({ field }) => (
+                  <FormItem className="flex flex-col h-full w-full">
+                    <DynamicFormLabel
+                      label="First Frame"
+                      optional={!firstFrameParam.required}
+                      className="text-base text-foreground font-normal shrink-0"
+                    />
+                    <FormControl>
+                      <div className="relative w-full h-full bg-muted">
+                        {field.value ? (
+                          <img
+                            src={field.value}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <button
+                            onClick={() =>
+                              setGalleryPickerSource(firstFrameParam.id)
+                            }
+                            className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors"
+                          >
+                            <SelectIcon size={20} />
+                            <span>Choose from Gallery</span>
+                          </button>
+                        )}
+                        {field.value && !firstFrameParam.required && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+                            onClick={() => form.resetField(firstFrameParam.id)}
+                          >
+                            <X />
+                          </Button>
+                        )}
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             )}
-            {lastFrameParam && (
-              <div className="space-y-2 w-60">
-                <DynamicFormLabel
-                  label="Last Frame"
-                  optional={!lastFrameParam.required}
-                />
-                <input {...getInputProps()} ref={inputFileRef} />
 
-                <div
-                  onClick={() => {
-                    if (
-                      inputFileRef.current &&
-                      !isLastFrameUploading &&
-                      !form.getValues(lastFrameParam.id)
-                    ) {
-                      inputFileRef.current.click();
-                    }
-                  }}
-                  className={cn(
-                    "h-60 w-full flex flex-col items-center justify-center text-sm text-muted-foreground cursor-pointer bg-accent transition-colors  relative",
-                    {
-                      "border-dashed border gap-y-2": !form.getValues(
-                        lastFrameParam.id
-                      ),
-                    }
-                  )}
-                >
-                  {form.watch(lastFrameParam.id) ? (
-                    <>
-                      <img
-                        src={form.getValues(lastFrameParam.id)}
-                        alt="Last Frame"
-                        className="h-60 w-60 object-contain"
-                      />
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeLastFrame();
-                        }}
-                        variant={"ghost"}
-                        size={"icon"}
-                        className="absolute top-1 right-1 text-white hover:text-black p-0"
-                      >
-                        <X />
-                      </Button>
-                    </>
-                  ) : lastFrameUploadPreview ? (
-                    <>
-                      <img
-                        src={lastFrameUploadPreview}
-                        alt="Last Frame Preview"
-                        className="h-60 w-full object-cover"
-                      />
-                      {isLastFrameUploading && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <Loader2 className="animate-spin h-10 w-10 text-white" />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Upload />
-                      <p>Upload last frame</p>
-                    </>
-                  )}
-                </div>
-              </div>
+            {lastFrameParam && (
+              <FormField
+                control={form.control}
+                name={lastFrameParam.id}
+                render={({ field }) => (
+                  <FormItem className="flex flex-col h-full w-full">
+                    <DynamicFormLabel
+                      label="Last Frame"
+                      optional={!lastFrameParam.required}
+                      className="text-base text-foreground font-normal shrink-0"
+                    />
+                    <FormControl>
+                      <div className="relative w-full h-full bg-muted">
+                        {field.value ? (
+                          <img
+                            src={field.value}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <button
+                            onClick={() =>
+                              setGalleryPickerSource(lastFrameParam.id)
+                            }
+                            className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors"
+                          >
+                            <SelectIcon size={20} />
+                            <span>Choose from Gallery</span>
+                          </button>
+                        )}
+                        {field.value && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+                            onClick={() => form.resetField(lastFrameParam.id)}
+                          >
+                            <X />
+                          </Button>
+                        )}
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             )}
           </div>
 
@@ -342,40 +250,38 @@ const VideoGenerationInputControls = ({
           )}
 
           {/* Input Box */}
-          <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden z-10 pb-4">
+          <div className="flex flex-col gap-y-4 w-full max-h-[300px] border rounded-2xl bg-background z-10 pb-4">
             <FormField
               control={form.control}
               name="prompt"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="relative h-full">
-                      <Textarea
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && e.shiftKey) {
-                            // Allow new line on Shift + Enter
-                            return;
-                          }
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            form.handleSubmit(onSubmit)();
-                          }
-                        }}
-                        className={cn(
-                          "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[40px] max-h-[200px] overflow-y-auto align-top pb-4"
-                        )}
-                        placeholder="Describe what you want to see in the video ..."
-                      />
-                    </div>
+                    <Textarea
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.shiftKey) {
+                          // Allow new line on Shift + Enter
+                          return;
+                        }
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          form.handleSubmit(onSubmit)();
+                        }
+                      }}
+                      className={cn(
+                        "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 min-h-[80px] max-h-[200px] overflow-y-auto align-top "
+                      )}
+                      placeholder="Describe what you want to see in the video ..."
+                    />
                   </FormControl>
                 </FormItem>
               )}
             />
-            <div className="flex gap-2 justify-between items-center px-4">
+            <div className="flex flex-wrap gap-2 justify-between items-center px-4 flex-1">
               <div className="flex items-center gap-2">
                 {filteredParams
                   ?.filter((param) => param.category === "initial")
@@ -452,6 +358,38 @@ const VideoGenerationInputControls = ({
           </div>
         </div>
       </form>
+      <MediaLibraryDialog
+        onFullMediaItemSelected={async (item) => {
+          if (galleryPickerSource)
+            form.setValue(galleryPickerSource, item.asset_url);
+          setGalleryPickerSource(null);
+        }}
+        open={!!galleryPickerSource}
+        onOpenChange={(o) => {
+          if (!o) {
+            setGalleryPickerSource(null);
+          }
+        }}
+        filters={{
+          brands: [selectedBrandId!],
+          campaigns: [],
+          product_categories: [],
+          has_product: undefined,
+          has_people: undefined,
+          has_lifestyle_context: undefined,
+          asset_types: ["image"],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          is_favourite: undefined,
+          is_archived: undefined,
+          moodboards: [],
+        }}
+        brandId={selectedBrandId!}
+        isMultiSelect={false}
+        maxSelectionCount={1}
+      />
     </Form>
   );
 };

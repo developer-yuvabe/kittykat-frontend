@@ -44,15 +44,17 @@ export const DynamicFormLabel = ({
   label,
   showLabel = true,
   optional,
+  className,
 }: {
   label: string;
   showLabel?: boolean;
   optional: boolean;
+  className?: string;
 }) => {
   return showLabel ? (
-    <FormLabel className="text-xs text-muted-foreground">
+    <FormLabel className={cn("text-xs text-muted-foreground", className)}>
       {label}
-      <span className="italic">{optional ? " (optional)" : ""}</span>
+      <span className="italic">{optional ? "(optional)" : ""}</span>
     </FormLabel>
   ) : null;
 };
@@ -168,14 +170,18 @@ export function DynamicFormField<T extends FieldValues>({
 
           case "text_area":
             return (
-              <FormItem className="flex flex-col  gap-2">
+              <FormItem className="flex flex-col gap-2">
                 <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
                   optional={!param.required}
                 />
                 <FormControl>
-                  <Textarea {...field} placeholder={param.label} />
+                  <Textarea
+                    {...field}
+                    placeholder={param.label}
+                    className="max-h-40 resize-none"
+                  />
                 </FormControl>
               </FormItem>
             );

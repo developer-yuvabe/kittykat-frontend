@@ -7,31 +7,29 @@ import { useDynamicModelSchema } from "./useDynamicModelSchema";
 import { useSessionStorage } from "./useSessionStorage";
 import { isEmpty } from "lodash";
 
-type UseVideoGenFormProps = {
+type UseRemixFormProps = {
   dynamicDefualtValues?: Record<string, any>;
 };
 
-export const useVideoGenForm = (
-  props?: UseVideoGenFormProps
-): UseFormReturn<any> => {
-  const { selectedVideoGenearationModel } = useModelsStore();
+export const useRemixForm = (props?: UseRemixFormProps): UseFormReturn<any> => {
+  const { selectedRemixModel } = useModelsStore();
 
-  if (!selectedVideoGenearationModel) {
+  if (!selectedRemixModel) {
     throw new Error(
-      "No video generation model selected. Please select a model before using the form."
+      "No model selected. Please select a model before using the form."
     );
   }
 
   const { setSessionItem } = useSessionStorage();
 
-  const { schema, defaultValues } = selectedVideoGenearationModel
+  const { schema, defaultValues } = selectedRemixModel
     ? useDynamicModelSchema(
-        selectedVideoGenearationModel,
+        selectedRemixModel,
         props?.dynamicDefualtValues || {}
       )
     : { schema: z.object({}), defaultValues: {} };
 
-  const formModelKey = "videoGenForm";
+  const formModelKey = "remixForm";
 
   const getSavedFormValues = (() => {
     try {
@@ -63,29 +61,15 @@ export const useVideoGenForm = (
         }
       );
     });
-  }, [selectedVideoGenearationModel?.id]);
+  }, [selectedRemixModel?.id]);
 
   // Watch form values and persist to sessionStorage
   useEffect(() => {
     const subscription = form.watch(() => {
       try {
         const values = form.getValues();
-        // remove url fields before saving to session storage first_frame, last_frame, start_image, end_image
-        const excludeFields = [
-          "first_frame",
-          "last_frame",
-          "start_image",
-          "end_image",
-          "prompt",
-        ];
-
-        // create a copy without those fields
-        const filteredValues = Object.fromEntries(
-          Object.entries(values).filter(([key]) => !excludeFields.includes(key))
-        );
-
-        if (!formModelKey || isEmpty(filteredValues)) return;
-        setSessionItem(formModelKey, filteredValues);
+        if (!formModelKey || isEmpty(values)) return;
+        setSessionItem(formModelKey, values);
       } catch {
         // ignore quota or serialization errors
       }

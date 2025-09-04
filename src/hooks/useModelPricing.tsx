@@ -1,4 +1,6 @@
 import { estimatePricing } from "@/services/api/models.service";
+import { estimateRemixCredits } from "@/services/api/remix.service";
+import { estimateUpscaleCredits } from "@/services/api/upscale.service";
 import { estimateVideoGenerationCredits } from "@/services/api/video-gen.service";
 import { Model } from "@/types/a2i-media.types";
 import { useQuery } from "@tanstack/react-query";
@@ -56,6 +58,15 @@ const useModelPricing = ({
       if (selectedModel?.type === "video") {
         return await estimateVideoGenerationCredits(values);
       }
+
+      if (selectedModel?.type === "remix") {
+        return await estimateRemixCredits(values);
+      }
+
+      if (selectedModel?.type === "image-upscale") {
+        return await estimateUpscaleCredits(values);
+      }
+
       return await estimatePricing(values);
     },
     enabled: isDynamicPricing && !!selectedModel?.id,
