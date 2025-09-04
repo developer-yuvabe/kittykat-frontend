@@ -37,9 +37,6 @@ export function MoodboardGallerySelector({
         type="button"
         size={"lg"}
         variant={"outline"}
-        // onClick={() => {
-        //   setMediaLibraryOpen("all-media");
-        // }}
         onClick={(e) => {
           e.stopPropagation();
           setMediaLibraryOpen("all-media");
