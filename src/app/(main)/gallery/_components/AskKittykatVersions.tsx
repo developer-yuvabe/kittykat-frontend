@@ -8,18 +8,20 @@ import { Plus } from "lucide-react";
 import AddVersion from "./AddVersion";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
-import { useEffect } from "react";
+import { RefObject, useEffect } from "react";
 
 type AskKittykatVersionsProps = {
   item: GalleryItemResponse;
   currentVersion: GalleryItemResponse | null;
   onVersionChange: (item: GalleryItemResponse) => void;
+  ref: RefObject<HTMLDivElement | null>;
 };
 
 const AskKittykatVersions = ({
   item,
   currentVersion,
   onVersionChange,
+  ref,
 }: AskKittykatVersionsProps) => {
   const { user } = useUserStore();
   const { isFetching, data, refetch } = useQuery({
@@ -27,8 +29,6 @@ const AskKittykatVersions = ({
     queryFn: () => galleryService.getGalleryItemVersions(item.id),
     staleTime: Infinity,
   });
-
-
 
   useEffect(() => {
     if (data) {
@@ -42,7 +42,7 @@ const AskKittykatVersions = ({
   }, [data]);
 
   return (
-    <div className="flex-shrink-0 flex flex-col py-2">
+    <div ref={ref} className="flex-shrink-0 flex flex-col py-2">
       {isFetching ? (
         <div className="flex items-center gap-x-4 w-max">
           {Array.from({ length: 3 }).map((_, index) => (

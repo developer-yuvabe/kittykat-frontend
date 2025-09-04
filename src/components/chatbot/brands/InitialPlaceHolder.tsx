@@ -108,7 +108,6 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
   isLoading = false,
   isCreatingNewBrand = false,
   isCreatingNewCampaign = false,
-  clearPinnedItems,
 }) => {
   const [openPopover, setOpenPopover] = useState(false);
 
@@ -291,7 +290,7 @@ export const InitialPlaceHolder: React.FC<{
   const [brandExpanded, setBrandExpanded] = useState(true);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId, setIsCreatingBrand } = useBrandStore();
+  const { setIsCreatingBrand, setSelectedBrandId } = useBrandStore();
 
   // Enhanced function to handle new brand creation with scroll
   const handleNewBrandCreation = async (e?: React.MouseEvent) => {
@@ -303,12 +302,14 @@ export const InitialPlaceHolder: React.FC<{
       // Set creating brand state
       setIsCreatingBrand(true);
 
+      setSelectedBrandId(null);
+
       // Submit the message
       submitOptimisticMessage({
         stream,
         text: "Let's create a new brand.",
         userId: user!.id,
-        currentBrandContextId: selectedBrandId,
+        currentBrandContextId: null,
       });
 
       // Clear pinned items

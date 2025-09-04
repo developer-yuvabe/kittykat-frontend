@@ -1,16 +1,15 @@
 "use client";
 
+import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
 import RemixControls, {
   RemixControlsProps,
 } from "@/components/chatbot/a2i/features/RemixControls";
-import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import VirtualTryOn from "@/components/chatbot/a2i/features/VirtualTryOn";
 import { TabsContent } from "@/components/ui/tabs";
-import { GalleryItemResponse } from "@/types/gallery.types";
-import { Shirt, Paintbrush, Video, ArrowUp } from "lucide-react";
-import { ReactNode } from "react";
-import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
 import { useModelsStore } from "@/store/models.store";
+import { GalleryItemResponse } from "@/types/gallery.types";
+import { ArrowUp, Paintbrush, Shirt } from "lucide-react";
+import { ReactNode } from "react";
 
 interface ToolTab {
   value: string;
@@ -79,19 +78,6 @@ export function AskKittykatImageEditingTools({
         />
       ) : (
         <> </>
-      ),
-    },
-    {
-      value: "video-gen",
-      icon: <Video className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
-      message: "Video Generation feature coming soon",
-      customComponent: (
-        <VideoGeneration
-          key={item.asset_url}
-          closeDialog={remixControls.closeDialog}
-          baseImage={item.asset_url}
-          campaignId={remixControls.campaignId}
-        />
       ),
     },
     {
