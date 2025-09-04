@@ -6,8 +6,10 @@ const page = async () => {
   const content = await getMarkdownData("help");
 
   return (
-    <div className="prose mx-auto container py-4">
-      <ReactMarkdownRender content={content} />
+    <div className="overflow-y-auto h-[calc(100vh-6rem)] scrollbar">
+      <div className="prose mx-auto container py-4">
+        <ReactMarkdownRender content={content} />
+      </div>
     </div>
   );
 };
