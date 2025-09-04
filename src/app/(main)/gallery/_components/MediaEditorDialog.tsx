@@ -36,6 +36,7 @@ import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import type { RemixImageHandle } from "../../_components/remix/RemixImage";
 import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
 import { useModelsStore } from "@/store/models.store";
+import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -77,6 +78,7 @@ export function MediaEditorDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const versionsRef = useRef<HTMLDivElement>(null);
   const { user } = useUserStore();
 
   const [brushSize, setBrushSize] = useState(50);
@@ -744,7 +746,7 @@ export function MediaEditorDialog({
           <div className="flex-1 min-h-0">
             <div className="flex h-full gap-x-3 p-4">
               {/* Left Panel - Static */}
-              <div className="w-[35%] min-w-[280px] flex flex-col gap-y-4">
+              <div className="w-[35%] min-w-[280px] flex flex-col gap-y-">
                 {currentItem &&
                   (activeTab === "video-gen" &&
                   currentItem.asset_type === "image" ? (
@@ -776,6 +778,7 @@ export function MediaEditorDialog({
                     onVersionChange={(updatedItem) => {
                       setCurrentItem(updatedItem);
                     }}
+                    ref={versionsRef}
                   />
                 )}
               </div>
@@ -813,6 +816,10 @@ export function MediaEditorDialog({
                         />
                       </>
                     )}
+
+                    <TabsContent value="video-gen" className="flex-1 h-full">
+                      <VideoGeneration heightRef={versionsRef} />
+                    </TabsContent>
 
                     <TabsContent
                       value="ask-kittykat"

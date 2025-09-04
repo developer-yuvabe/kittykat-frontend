@@ -83,7 +83,8 @@ export const renderBrandData = (
   const [showDynamicData, setShowDynamicData] = React.useState(false);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId, setIsCreatingBrand } = useBrandStore();
+  const { selectedBrandId, setIsCreatingBrand, setSelectedBrandId } =
+    useBrandStore();
   const { removePinnedItem } = usePinnedContextStore();
 
   // Create a ref for the BrandCasting component
@@ -106,12 +107,13 @@ export const renderBrandData = (
       // Set creating brand state
       setIsCreatingBrand(true);
 
+      setSelectedBrandId(null);
       // Submit the message
       submitOptimisticMessage({
         stream,
         text: "Let's create a new brand.",
         userId: user!.id,
-        currentBrandContextId: selectedBrandId,
+        currentBrandContextId: null,
       });
 
       // Clear pinned items

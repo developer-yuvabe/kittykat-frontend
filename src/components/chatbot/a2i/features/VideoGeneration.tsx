@@ -15,16 +15,14 @@ import {
   PlayCircle,
   Video,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type VideoGenerationOnProps = {
-  baseImage: string;
-  closeDialog: () => void;
-  campaignId?: string | null;
+  heightRef?: RefObject<HTMLDivElement | null>;
 };
 
-const VideoGeneration = ({}: VideoGenerationOnProps) => {
+const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
   const { selectedBrandId } = useBrandStore();
   const galleryActions = useGalleryQuery(
     {
@@ -108,7 +106,12 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col space-y-4 overflow-hidden mt-0">
+    <div
+      style={{
+        height: `calc(100% - ${heightRef?.current?.offsetHeight || 0}px)`,
+      }}
+      className="w-full flex flex-col space-y-4 overflow-hidden mt-0"
+    >
       {/* First section: video preview (flex-1 fills available height) */}
       <div className="flex-1 flex min-h-0">
         <div
@@ -137,7 +140,7 @@ const VideoGeneration = ({}: VideoGenerationOnProps) => {
 
       {/* Second section: horizontal scroll thumbnails */}
       {currentSessionGenerations.length > 0 && (
-        <div className="w-full flex-shrink-0 flex flex-col h-36">
+        <div className="w-full flex-shrink-0 flex flex-col">
           <div className="w-full overflow-x-auto flex items-center gap-x-2">
             {currentSessionGenerations.map((gen) => (
               <div key={gen.id} className="h-32 w-32 cursor-pointer shrink-0">
@@ -274,13 +277,13 @@ const VideoPlayer = ({
   const hasPromptToCopy = !!prompt;
 
   return (
-    <div className="relative w-full h-full flex-1 min-h-0 group border">
+    <div className="relative w-full h-full flex-1 min-h-0 group bg-muted">
       <video
         ref={videoRef}
         src={src}
         width={0}
         height={0}
-        className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+        className="absolute inset-0 w-full h-full object-contain cursor-pointer"
         muted
         autoPlay
         loop
