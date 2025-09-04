@@ -2,22 +2,27 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { PlayCircle, PauseCircle } from "lucide-react";
+import { ImageModal } from "@/components/shared/ImageModal";
+import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
+import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface MediaImageProps {
   item: GalleryItemResponse;
   onImageLoad: (event: any) => void;
   onEditClick: (item: GalleryItemResponse) => void;
+  onToggleFavorite: () => void;
 }
 
 export function MediaImage({
   item,
   onImageLoad,
-  onEditClick,
+  onToggleFavorite,
 }: MediaImageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // Check if the item is a video with more robust detection
   const isVideo =
@@ -80,8 +85,36 @@ export function MediaImage({
     }
   };
 
-  const handleMediaClick = () => {
-    onEditClick(item);
+  const handleImageClick = () => {
+    setShowImageModal(true);
+  };
+
+  const handleVideoClick = () => {
+    if (videoRef && videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      } else if ((videoRef.current as any).webkitRequestFullscreen) {
+        (videoRef.current as any).webkitRequestFullscreen();
+      } else if ((videoRef.current as any).msRequestFullscreen) {
+        (videoRef.current as any).msRequestFullscreen();
+      }
+    }
+  };
+
+  const handleDownload = () => {
+    if (isVideo) {
+      handleDownloadVideo(item.asset_url || item.preview_url || "");
+    } else {
+      handleDownloadImage(item.asset_url || item.preview_url || "");
+    }
+  };
+
+  const { updateAutoFillSuggestionCache } = useMoodboardQuery({});
+
+  const handleFavoriteClick = () => {
+    const newIsFavourite = !item.is_favourite;
+    onToggleFavorite();
+    updateAutoFillSuggestionCache(item.id, newIsFavourite);
   };
 
   if (isVideo && !videoError) {
@@ -95,7 +128,7 @@ export function MediaImage({
           autoPlay={false}
           loop
           playsInline
-          onClick={handleMediaClick}
+          onClick={handleVideoClick}
           style={{
             maxWidth: "100%",
             maxHeight: "100%",
@@ -105,12 +138,8 @@ export function MediaImage({
 
         {/* Play/Pause button overlay */}
         {videoLoaded && (
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ zIndex: 10 }}
-          >
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors pointer-events-auto z-10">
             <button
-              className="pointer-events-auto"
               onClick={handleVideoToggle}
               aria-label={isVideoPlaying ? "Pause video" : "Play video"}
             >
@@ -128,22 +157,34 @@ export function MediaImage({
 
   // Fallback to image rendering (either not a video or video failed to load)
   return (
-    <Image
-      src={item.preview_url || item.asset_url || "/placeholder.svg"}
-      alt={item.asset_title}
-      fill
-      className="object-cover cursor-pointer"
-      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-      onLoad={onImageLoad}
-      onError={(e) => {
-        console.error("Image failed to load:", item.asset_url);
-        // You could set a fallback image here
-        e.currentTarget.src = "/placeholder.svg";
-      }}
-      quality={30}
-      loading="lazy"
-      onClick={() => onEditClick(item)}
-      draggable={false} // Prevent native HTML drag
-    />
+    <>
+      <Image
+        src={item.preview_url || item.asset_url || "/placeholder.svg"}
+        alt={item.asset_title}
+        fill
+        className="object-cover cursor-pointer"
+        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+        onLoad={onImageLoad}
+        onError={(e) => {
+          console.error("Image failed to load:", item.asset_url);
+          // You could set a fallback image here
+          e.currentTarget.src = "/placeholder.svg";
+        }}
+        quality={30}
+        loading="lazy"
+        onClick={handleImageClick}
+        draggable={false} // Prevent native HTML drag
+      />
+
+      <ImageModal
+        imageUrl={item.asset_url || item.preview_url || "/placeholder.svg"}
+        alt={item.asset_title}
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        onDownload={handleDownload}
+        onLike={handleFavoriteClick}
+        isLiked={item.is_favourite || false}
+      />
+    </>
   );
 }

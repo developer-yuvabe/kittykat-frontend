@@ -1,8 +1,25 @@
-**<span style="font-size:20px">KittyKat Platform – Full Walkthrough & User Guide</span>**
+**<span style="font-size:28px">KittyKat Platform – Full Walkthrough & User Guide</span>**
 
 The KittyKat Platform enables clients to create and manage brands, launch campaigns, build moodboards, and generate AI-powered visuals with the help of Ask KittyKat chatbot. The platform supports collaboration between clients, creatives, and experts, ensuring a streamlined workflow from concept to final media asset.
 
-**<span style="font-size:18px">1. Invitation & Account Creation</span>**
+<div align="left">
+
+**<span style="font-size:24px">Table of Contents</span>**
+
+1. [_<span style="font-size:20px">1. Invitation & Account Creation</span>_](#1-invitation--account-creation)
+2. [_<span style="font-size:20px">2. Login Page</span>_](#2-login-page)
+3. [_<span style="font-size:20px">3. Home Page</span>_](#3-home-page)
+4. [_<span style="font-size:20px">4. Brands Section</span>_](#4-brands-section)
+5. [_<span style="font-size:20px">5. Campaigns</span>_](#5-campaigns)
+6. [_<span style="font-size:20px">6. Moodboard Section</span>_](#6-moodboard-section)
+7. [_<span style="font-size:20px">7. Concept Visual Media</span>_](#7-concept-visual-media)
+8. [_<span style="font-size:20px">8. Notifications</span>_](#8-notifications)
+9. [_<span style="font-size:20px">9. Gallery & Media Library</span>_](#9-gallery--media-library)
+
+</div>
+<br/>
+
+**<p style="font-size:25px" id="1-invitation--account-creation" >1. Invitation & Account Creation</p>**
 
 Before logging in, you must first accept your platform invitation.
 
@@ -29,7 +46,7 @@ Before logging in, you must first accept your platform invitation.
 </tr>
 </table>
 
-**<span style="font-size:18px">2. Login Page</span>**
+**<span style="font-size:25px" id="2-login-page">2. Login Page</span>**
 
 The login page is the entry point for all users. Here you can securely log into the KittyKat platform.
 
@@ -52,11 +69,11 @@ The login page is the entry point for all users. Here you can securely log into 
 </tr>
 </table>
 
-**<span style="font-size:18px">3. Home Page</span>**
+**<span style="font-size:25px" id="3-home-page">3. Home Page</span>**
 
 The **Home Page** is the central dashboard of the KittyKat Platform. From here, you can manage brands, view key details, and interact with the Ask KittyKat assistant for guidance.
 
-**<span style="font-size:16px">3.1 Layout Overview</span>**
+**<span style="font-size:20px">3.1 Layout Overview</span>**
 
 The page is divided into two main sections:
 
@@ -75,7 +92,7 @@ The page is divided into two main sections:
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Layout-Overview.png" alt="KittyKat Layout Overview" width="600"/>
 </p>
 
-**<span style="font-size:16px">3.2 Top Navigation Bar</span>**
+**<span style="font-size:20px">3.2 Top Navigation Bar</span>**
 
 <p align="left">
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Top%20navigation%20bar.png" alt="Top Navigation Bar" width="600"/>
@@ -126,7 +143,7 @@ Contains personal settings and account management options.
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Profile%20Menu.png" alt="Profile Menu" width="80"/>
 </p>
 
-**<span style="font-size:16px">3.3 Selecting a Brand</span>**
+**<span style="font-size:20px">3.3 Selecting a Brand</span>**
 
 At the top of the Brand Panel, click **Select Brand**.
 
@@ -140,7 +157,7 @@ If no brands exist, you’ll see the message _“No existing brands found.”_
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Selecting%20Brand.png" alt="Selecting a Brand" width="600"/>
 </p>
 
-**<span style="font-size:16px">3.4 Creating a New Brand</span>**
+**<span style="font-size:20px">3.4 Creating a New Brand</span>**
 
 If no brand exists, you can create one from scratch.
 
@@ -168,7 +185,7 @@ If no brand exists, you can create one from scratch.
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Create%20new-brand.png" alt="Create New Brand Screenshot" width="600"/>
 </p>
 
-**<span style="font-size:16px">3.5 Brand Information Fields</span>**
+**<span style="font-size:20px">3.5 Brand Information Fields</span>**
 
 Each brand is displayed with the following sections:
 
@@ -182,7 +199,7 @@ The **Ask KittyKat agent** collects the information you provide and automaticall
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Brand%20Information%20Fields.png" alt="Brand Information Fields" width="600"/>
 </p>
 
-**<span style="font-size:16px">3.6 Ask KittyKat Assistant Chat Panel</span>**
+**<span style="font-size:20px">3.6 Ask KittyKat Assistant Chat Panel</span>**
 
 On the right-hand side, the **Ask KittyKat assistant panel** provides contextual help and guidance.
 
@@ -202,11 +219,11 @@ You can type responses in the chat box at the bottom. Options include attaching 
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Ask%20kittykat%20chat-panel(1).png" alt="Ask KittyKat Chat Panel 2" width="600"/>
 </p>
 
-**<span style="font-size:18px">4. Brands Section</span>**
+**<span style="font-size:25px" id="4-brands-section">4. Brands Section</span>**
 
 The **Brands section** is where you define, organize, and manage all details related to your brand identity. Each brand has multiple fields covering its mission, vision, design guidelines, media assets, and more. This section ensures consistency across campaigns and moodboards.
 
-**<span style="font-size:16px">4.1 Selecting or Creating a Brand</span>**
+**<span style="font-size:20px">4.1 Selecting or Creating a Brand</span>**
 
 - **Select Brand dropdown**: Search and select an existing brand from the list.
 - **New Brand (+ button)**: Create a new brand by following the guided assistant.
@@ -228,14 +245,14 @@ The **Brands section** is where you define, organize, and manage all details rel
 </tr>
 </table>
 
-**<span style="font-size:16px">4.2 Brand Overview</span>**
+**<span style="font-size:20px">4.2 Brand Overview</span>**
 
 Your **Brand Overview** is a short summary that captures the essence of your brand. Think of it as your _elevator pitch_ — the first impression people should have when they see your name or visuals.
 
 - **Tagline / Summary →** Write a simple, memorable line that defines what your brand stands for.
 - **Brand Tags →** Add keywords (e.g., _innovative, sustainable, luxury, affordable, bold_) that describe your brand’s positioning.
 
-**<span style="font-size:16px">4.3 Brand Purpose</span>**
+**<span style="font-size:20px">4.3 Brand Purpose</span>**
 
 Your **Brand Purpose** defines why your brand exists and where it is headed.
 
@@ -244,7 +261,7 @@ Your **Brand Purpose** defines why your brand exists and where it is headed.
 - **Vision →** A long-term aspiration of where your brand wants to be in the future  
   _(e.g., “to become the world leader in sustainable living”)_.
 
-**<span style="font-size:16px">4.4 Brand Colors</span>**
+**<span style="font-size:20px">4.4 Brand Colors</span>**
 
 Your **colors** are one of the strongest ways people recognize your brand. Setting them ensures everything you create — from campaigns to visuals — feels consistent.
 
@@ -256,14 +273,14 @@ Your **colors** are one of the strongest ways people recognize your brand. Setti
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Brand%20details.png" alt="Brand Colors" width="600"/>
 </p>
 
-**<span style="font-size:16px">4.5 Brand Typography</span>**
+**<span style="font-size:20px">4.5 Brand Typography</span>**
 
 Typography is how your brand’s words look across all content. Setting your font and text styles ensures everything your brand creates — from campaigns to visuals — feels consistent and professional.
 
 - **Primary Font →** Choose the main font that represents your brand’s identity.
 - **Font Weights →** Select how bold or light your text should appear for things like titles, headings, or body text.
 
-**<span style="font-size:16px">4.6 Photography Guidelines</span>**
+**<span style="font-size:20px">4.6 Photography Guidelines</span>**
 
 Photography guidelines define the overall look and style of your brand’s visuals. They help you (and Ask KittyKat) generate or select images that match the mood and identity you want to present.
 
@@ -277,7 +294,7 @@ Photography guidelines define the overall look and style of your brand’s visua
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Photography%20Guidelines.png" alt="Photography Guidelines" width="70%">
 </p>
 
-**<span style="font-size:16px">4.7 Lighting & Moods</span>**
+**<span style="font-size:20px">4.7 Lighting & Moods</span>**
 
 Lighting and mood define the atmosphere of your visuals. By setting these preferences, you guide Ask KittyKat and your creative team to generate or capture images that match your brand’s personality.
 
@@ -285,7 +302,7 @@ Lighting and mood define the atmosphere of your visuals. By setting these prefer
 - **Preferred Moods →** Define the emotions you want your visuals to convey — such as aspirational, friendly, sophisticated, bold, or relaxed.
 - **Studio vs. Natural →** Decide whether your visuals should feel staged in a studio or more authentic in real-world environments.
 
-**<span style="font-size:16px">4.8 Styling</span>**
+**<span style="font-size:20px">4.8 Styling</span>**
 
 Styling represents how your brand is visually expressed in clothing, props, or design elements. It helps keep a consistent tone across campaigns and generated visuals.
 
@@ -297,7 +314,7 @@ Styling represents how your brand is visually expressed in clothing, props, or d
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Styling.png" alt="Styling" width="70%">
 </p>
 
-**<span style="font-size:16px">4.9 Casting</span>**
+**<span style="font-size:20px">4.9 Casting</span>**
 
 Casting defines the type of people that appear in your visuals. By setting these preferences, you ensure your brand is represented in a way that feels authentic and relatable.
 
@@ -305,7 +322,7 @@ Casting defines the type of people that appear in your visuals. By setting these
 - **Persona →** Choose the kind of personalities that best represent your brand — such as approachable, ambitious, or innovative individuals.
 - **Variation →** Decide whether you want consistent brand ambassadors or a variety of people representing different demographics (age groups, lifestyles, or professions).
 
-**<span style="font-size:16px">4.10 Setting</span>**
+**<span style="font-size:20px">4.10 Setting</span>**
 
 The setting is the environment or backdrop where your brand is shown. It creates context and adds emotional value to your visuals.
 
@@ -313,7 +330,7 @@ The setting is the environment or backdrop where your brand is shown. It creates
 - **Material Quality →** Decide whether your brand should be associated with natural, modern, minimalistic, or luxury surroundings.
 - **Avoid →** Point out any styles or environments that do not match your brand (e.g., over-designed, artificial, or cluttered spaces).
 
-**<span style="font-size:16px">4.11 Products & Target Audience</span>**
+**<span style="font-size:20px">4.11 Products & Target Audience</span>**
 
 This section helps you link your brand to what you offer and who you want to reach.
 
@@ -324,7 +341,7 @@ This section helps you link your brand to what you offer and who you want to rea
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Product%20and%20Target%20audiences.png" alt="Products & Target Audience" width="600"/>
 </p>
 
-**<span style="font-size:16px">4.12 Uploading Brand Images</span>**
+**<span style="font-size:20px">4.12 Uploading Brand Images</span>**
 
 Your brand images are the foundation of your visual identity. By uploading them, you teach Ask KittyKat your brand’s style so that all generated visuals and campaigns stay consistent with your real-world look.
 
@@ -344,7 +361,7 @@ Your brand images are the foundation of your visual identity. By uploading them,
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Uploading%20Brand%20Images.png" alt="Uploading Brand Images" width="600"/>
 </p>
 
-**<span style="font-size:16px">4.13 Brand Media</span>**
+**<span style="font-size:20px">4.13 Brand Media</span>**
 
 The Brand Media section is your centralized gallery where all uploaded and connected images are stored. This makes it easy to keep track of your brand’s visual assets in one place.
 
@@ -354,11 +371,11 @@ The Brand Media section is your centralized gallery where all uploaded and conne
 - **Organize →** Keep your brand visuals structured so they’re always easy to find and reuse.
 - **Consistency →** Ensure the same images are used across campaigns, moodboards, and concept visuals for a unified brand look.
 
-**<span style="font-size:18px">5. Campaigns</span>**
+**<span style="font-size:25px" id="5-campaigns">5. Campaigns</span>**
 
 Campaigns are marketing initiatives created under a Brand. They define the concept, audience, creative direction, and strategic goals of your brand’s promotions or product launches.
 
-**<span style="font-size:16px">5.1 Accessing Campaigns</span>**
+**<span style="font-size:20px">5.1 Accessing Campaigns</span>**
 
 - From the home screen, locate the Campaigns section.
 - Use the **Select Campaign** dropdown to view existing campaigns.
@@ -368,7 +385,7 @@ Campaigns are marketing initiatives created under a Brand. They define the conce
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/new%20campaign.png" alt="New Campaign" width="600"/>
 </p>
 
-**<span style="font-size:16px">5.2 Creating a New Campaign</span>**
+**<span style="font-size:20px">5.2 Creating a New Campaign</span>**
 
 When you click **New Campaign**, Ask KittyKat will guide you through a simple setup process.
 
@@ -383,7 +400,7 @@ When you click **New Campaign**, Ask KittyKat will guide you through a simple se
 
 After creation, your campaign becomes the anchor for moodboards and concept visuals. Everything you design will automatically tie back to this campaign’s concept and audience.
 
-**<span style="font-size:16px">5.3 Campaign Concept</span>**
+**<span style="font-size:20px">5.3 Campaign Concept</span>**
 
 Your campaign concept is the story and theme that ties everything together. It defines the mood, message, and creative direction for all visuals, moodboards, and assets linked to the campaign.
 
@@ -393,7 +410,7 @@ Your campaign concept is the story and theme that ties everything together. It d
 - **Add Keywords →** Choose descriptive tags (e.g., bold, innovative, friendly, sustainable, luxurious). These help Ask KittyKat understand the tone you want to set.
 - **Use Ask KittyKat →** The assistant can suggest ideas and refine your concept text until it captures your brand voice.
 
-**<span style="font-size:16px">5.4 Campaign Colors</span>**
+**<span style="font-size:20px">5.4 Campaign Colors</span>**
 
 Your campaign colors set the visual tone of your campaign. They can be the same as your brand palette, or you can choose a slightly different set that matches the mood of the campaign while staying aligned with your brand identity.
 
@@ -407,17 +424,40 @@ Your campaign colors set the visual tone of your campaign. They can be the same 
   <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Campaign%20colors.png" alt="Campaign Colors" width="600"/>
 </p>
 
-<span style="font-size: 25px; font-weight: bold;">6. Moodboard Section</span>
+**<span style="font-size:20px">5.5 Target Audience</span>**
+
+- Defines **who the campaign is for**.
+- Example: Professionals aged 30–60, entrepreneurs, and luxury car enthusiasts drawn to status, electric performance, and innovation.
+
+**<span style="font-size:20px">5.6 Content Campaign Ideas</span>**
+
+-Provides a **detailed creative guide** for campaign execution.
+
+-**Example content includes**:
+
+- **Settings:** Singapore skylines, luxury enclaves, rugged landscapes.
+- **Casting:** Sophisticated, diverse professionals.
+- **Styling:** Urban-chic, luxury streetwear, performance attire.
+- **Props:** New G-Class Electric, cutting-edge devices.
+- **Photography:** High-contrast lighting, dynamic poses.
+- **Mood:** Aspirational, luxurious, bold.
+- **Narrative:** Innovation meets heritage.
+
+<p align="center">
+  <img src="https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/campaign%20ideas.png" alt="Campaign Ideas" width="600"/>
+</p>
+
+<span style="font-size: 25px; font-weight: bold;" id="6-moodboard-section">6. Moodboard Section</span>
 
 Your moodboard is more than just a collection of images — it is the foundation for your campaign’s creative direction. Everything you put here teaches Ask KittyKat what style, mood, and story you want, and this moodboard then serves as the basis for generating AI visuals that reflect your vision.
 
-**Why the Moodboard matters**
+**<span style="font-size: 20px;">Why the Moodboard matters</span>**
 
 - It defines the style and mood your campaign should follow.
 - It acts as a collaborative space where you and your team can gather and refine visual inspiration.
 - Ask KittyKat uses your moodboard as a blueprint when creating AI-generated campaign images and videos.
 
-**Creating and selecting moodboards**
+**<span style="font-size: 20px;">Creating and selecting moodboards</span>**
 
 From the **Select Moodboard** dropdown, you can:
 
@@ -426,14 +466,14 @@ From the **Select Moodboard** dropdown, you can:
 
 ![Moodboard Selection](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Moodboard%20selection.png)
 
-**1. Moodboard Concept Display**
+**<span style="font-size: 20px;">1. Moodboard Concept Display</span>**
 
 At the top of your moodboard, the campaign concept is automatically linked.  
 This ensures that everything you add to the moodboard is tied back to your campaign’s strategy.
 
 ![Moodboard Concept Display](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Moodboard%20concept%20display.png)
 
-**2. Gallery Integration**
+**<span style="font-size: 20px;">2. Gallery Integration</span>**
 
 Your moodboard can pull images directly from your Gallery, making it easy to reuse existing brand or campaign assets.  
 You can also upload new images manually to add fresh inspiration.
@@ -442,7 +482,7 @@ You can also upload new images manually to add fresh inspiration.
 
 ![Gallery Integration](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Gallery%20Integration.png)
 
-**3. Image Controls**
+**<span style="font-size: 20px;">3. Image Controls</span>**
 
 You can control how images appear in your moodboard using these options:
 
@@ -454,7 +494,7 @@ You can control how images appear in your moodboard using these options:
 
 ![Image Controls](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Image%20Controls.png)
 
-**1. Image Interactions**
+**<span style="font-size: 20px">1. Image Interactions</span>**
 
 - **View Image:** Click on any image to enlarge it in preview mode.
 
@@ -467,7 +507,7 @@ You can control how images appear in your moodboard using these options:
   - This not only repositions the image but also alters the **framing and composition context** of the moodboard.
   - Useful for experimenting with visual flow and balance.
 
-**2. Advanced Settings**
+**<span style="font-size: 20px">2. Advanced Settings</span>**
 
 Advanced Settings give you more control over how your moodboard influences AI-generated visuals.
 
@@ -487,7 +527,7 @@ Advanced Settings give you more control over how your moodboard influences AI-ge
 
 ![Advanced Settings](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Advanced%20settings.png)
 
-<span style="font-size: 25px; font-weight: bold;">7. Concept Visual Media</span>
+<span style="font-size: 25px; font-weight: bold;" id="7-concept-visual-media">7. Concept Visual Media</span>
 
 The Concept Visual Media section lets you create AI-generated concept visuals that are directly shaped by your **campaign** and the **visual style of your moodboard**.  
 This ensures the images and videos you generate stay consistent with your campaign’s story, tone, and creative direction.
@@ -506,7 +546,7 @@ This ensures the images and videos you generate stay consistent with your campai
 
    ![Reference Moodboard](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Reference%20Moodboard.png)
 
-**1. Prompt Generation**
+**<span style="font-size: 20px;">1. Prompt Generation</span>**
 
 Ask KittyKat automatically creates descriptive prompts from your moodboard, covering the setting, style, lighting, and emotional tone.
 
@@ -518,7 +558,7 @@ Ask KittyKat automatically creates descriptive prompts from your moodboard, cove
 
 ![Prompt Generation](https://storage.googleapis.com/kittykat-agents/platform-assets/Screenshots/Prompt%20generation.png)
 
-**2. AI Concept Generation**
+**<span style="font-size: 20px;">2. AI Concept Generation</span>**
 
 Once your prompt is ready, you can customize it before generating AI visuals.
 
@@ -537,7 +577,7 @@ Once your prompt is ready, you can customize it before generating AI visuals.
 
 </div>
 
-**3. Model Selection**
+**<span style="font-size: 20px;">3. Model Selection</span>**
 
 You can choose from different AI models to shape how your visuals are generated.  
 Each model has unique strengths — so the one you choose depends on the type of output you want.
@@ -557,7 +597,7 @@ Each model has unique strengths — so the one you choose depends on the type of
 
 </div>
 
-**4. Output Gallery**
+**<span style="font-size: 20px;">4. Output Gallery</span>**
 
 - Generated visuals appear in a grid layout.
 - Each output can be enlarged for detail view, saved, or replaced.
@@ -568,7 +608,7 @@ Each model has unique strengths — so the one you choose depends on the type of
 
 </div>
 
-**8. Notifications**
+**<span style="font-size: 25px;" id="8-notifications">8. Notifications</span>**
 
 The Notifications section keeps you updated on changes and new activity related to your brands, campaigns, and collaborations.
 
@@ -613,12 +653,12 @@ The Notifications section keeps you updated on changes and new activity related 
    - Ensures you are always aware of the latest activity.
    - Helps clients, admins, and creatives stay aligned across multiple projects.
 
-<span style="font-size: 25px; font-weight: bold;">9. Gallery & Media Library</span>
+<span style="font-size: 20px; font-weight: bold;" id="9-gallery--media-library">9. Gallery & Media Library</span>
 
 The Gallery (Media Library) is the central place where all brand and campaign assets are uploaded, organized, and finalized.  
 It allows you to manage media files, edit visuals, and track asset versions until the final approved upload.
 
-**1. Accessing the Media Library**
+**<span style="font-size: 20px;">1. Accessing the Media Library</span>**
 
 - Navigate to the Media Library from the top menu.
 - Select your Brand (e.g., Mercedes-Benz).
@@ -631,7 +671,7 @@ It allows you to manage media files, edit visuals, and track asset versions unti
 
 </div>
 
-**2. Uploading Media**
+**<span style="font-size: 20px;">2. Uploading Media</span>**
 
 - Click **Upload Files** to add PNG, JPEG, or MP4 files.
 - Alternatively, select **Add URLs** to include external media.
@@ -644,7 +684,7 @@ It allows you to manage media files, edit visuals, and track asset versions unti
 
 </div>
 
-**3. Media Categories**  
+**<span style="font-size: 20px;">3. Media Categories</span>**  
 Your media library is divided into categories to help you organize and manage assets:
 
 - **All Media** → Displays every asset in your library.
@@ -659,7 +699,7 @@ Your media library is divided into categories to help you organize and manage as
 
 </div>
 
-**4. Organizing Media**
+**<span style="font-size: 20px;">4. Organizing Media</span>**
 
 - Use the **Search bar** to quickly find assets.
 - Apply filters such as **Favorites Only ⭐** or **Workflow Status**.
@@ -672,7 +712,7 @@ Your media library is divided into categories to help you organize and manage as
 
 </div>
 
-**5. Asset Editing (Concept Visual Editor)**  
+**<span style="font-size: 20px;">5. Asset Editing (Concept Visual Editor)</span>**  
 Clicking on any asset opens the **Concept Visual Editor**, where you can refine or transform your visuals.
 
 **Available tools:**
@@ -683,7 +723,7 @@ Clicking on any asset opens the **Concept Visual Editor**, where you can refine 
 - **Image Upscaler** → _(Coming soon)_ This feature will enhance resolution and clarity of your visuals.
 - **KittyKat Experts** → Request manual edits from professional designers when you need advanced touch-ups or custom adjustments.
 
-**How KittyKat Experts Work**
+**<span style="font-size: 20px;">How KittyKat Experts Work</span>**
 
 This workflow lets you collaborate with real creative experts when AI alone isn’t enough:
 
@@ -718,7 +758,7 @@ Every media item in your gallery can be tagged with a workflow status so you alw
 - **Requested Revision** → You’ve asked the Expert to make changes.
 - **A2i Media Created** → Expert-enhanced version has been completed and added to your A2i Media library.
 
-**How the Workflow Happens:**
+**<span style="font-size: 20px;">How the Workflow Happens:</span>**
 
 1. **You tag it** → When you want help, you set the file’s status to **Request Created** (or simply click _“Request Expert”_ in the editor).
 2. **Expert takes over** → The system updates the status automatically to **Editing in Progress** while an Expert works on it.

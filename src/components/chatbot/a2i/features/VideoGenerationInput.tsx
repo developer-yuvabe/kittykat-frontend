@@ -41,7 +41,7 @@ const VideoGenerationInput = ({
   const { isModelsFetched, selectedVideoGenearationModel } = useModelsStore();
 
   return (
-    <div className="w-full flex-1 space-y-4">
+    <div className="w-full flex-1 flex flex-col gap-y-4">
       {/* Model Chooser */}
       <div className="ml-auto w-max">
         <VideoGenerationModelSelector />
@@ -142,7 +142,10 @@ const VideoGenerationInputControls = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="h-[97%]">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-y-6 h-full"
+      >
         <div className="flex flex-col gap-y-6 h-full">
           {/* Frames */}
           <div className="h-full flex gap-x-2">

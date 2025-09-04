@@ -6,17 +6,11 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GalleryItemResponse } from "@/types/gallery.types";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { MoreIcon } from "@/components/ui/custom-icon";
 import { MediaOverlay } from "./MediaOverlay";
 import { MediaImage } from "./MediaImage";
-import { MediaItemActionsButton } from "./MediaItemActionsButton";
 import { GalleryActions } from "@/hooks/useGallery";
+import { ImageModal } from "@/components/shared/ImageModal";
+import { handleDownloadImage } from "@/lib/utils";
 
 // Types
 interface SortableMediaItemProps {
@@ -27,7 +21,6 @@ interface SortableMediaItemProps {
   onSelect: (id: string, selected: boolean) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
-  onDetailsClick: (item: GalleryItemResponse) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   inSelectionGalleryIds?: string[];
@@ -36,6 +29,7 @@ interface SortableMediaItemProps {
   maxSelectionCount?: number;
   galleryActions: GalleryActions;
   onEditClick: (item: GalleryItemResponse) => void;
+  onEditMoodboard?: (item: GalleryItemResponse) => void;
   isDraggable: boolean;
 }
 
@@ -48,7 +42,6 @@ export function SortableMediaItem({
   onSelect,
   onDelete,
   onDownload,
-  onDetailsClick,
   onMouseEnter,
   onMouseLeave,
   inSelectionGalleryIds,
@@ -57,10 +50,12 @@ export function SortableMediaItem({
   maxSelectionCount,
   galleryActions,
   onEditClick,
+  onEditMoodboard,
   isDraggable,
 }: SortableMediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const {
     attributes,
@@ -95,7 +90,7 @@ export function SortableMediaItem({
     if (isMediaSelectDialog && !isDisabled) {
       onSelect(item.id, !isSelected);
     } else if (!isMediaSelectDialog) {
-      onEditClick(item);
+      setShowImageModal(true); // Show ImageModal instead of details
     }
   };
 
@@ -137,6 +132,12 @@ export function SortableMediaItem({
             item={item}
             onImageLoad={handleImageLoad}
             onEditClick={handleImageClick}
+            onToggleFavorite={() => {
+              galleryActions.patchItem({
+                itemId: item.id,
+                data: { is_favourite: !item.is_favourite },
+              });
+            }}
           />
         </div>
 
@@ -158,37 +159,14 @@ export function SortableMediaItem({
               data: { is_favourite: !item.is_favourite },
             });
           }}
+          onEditClick={onEditClick}
+          onDelete={onDelete}
+          onEditMoodboard={onEditMoodboard}
         />
 
         {/* Dark overlay for better drag handle visibility - only show on hover when draggable */}
         {isDraggable && !isMediaSelectDialog && isHovered && (
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
-        )}
-
-        {/* Actions button for non-dialog mode */}
-        {!isMediaSelectDialog && isHovered && (
-          <div className="absolute top-2 right-2 z-20">
-            <Popover>
-              <PopoverTrigger asChild>
-                <TooltipIconButton
-                  tooltip="More Actions"
-                  size="sm"
-                  variant="secondary"
-                  className="h-8 w-8 bg-white/80 backdrop-blur-sm hover:bg-white"
-                >
-                  <MoreIcon />
-                </TooltipIconButton>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-0" align="end">
-                <MediaItemActionsButton
-                  item={item}
-                  onDelete={onDelete}
-                  onDownload={onDownload}
-                  onDetailsClick={onDetailsClick}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
         )}
 
         {/* Drag handle for non-dialog mode - same style as A2iImageCard */}
@@ -199,6 +177,22 @@ export function SortableMediaItem({
           />
         )}
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        imageUrl={item.preview_url || item.asset_url || "/placeholder.svg"}
+        alt={item.asset_title}
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        onDownload={() => handleDownloadImage(item.asset_url)}
+        onLike={() => {
+          galleryActions.patchItem({
+            itemId: item.id,
+            data: { is_favourite: !item.is_favourite },
+          });
+        }}
+        isLiked={item.is_favourite}
+      />
     </div>
   );
 }
