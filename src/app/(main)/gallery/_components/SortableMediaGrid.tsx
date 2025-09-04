@@ -19,11 +19,12 @@ import {
 } from "@dnd-kit/sortable";
 import Masonry from "react-masonry-css";
 import type { GalleryItemResponse } from "@/types/gallery.types";
-import { MediaItemDetailsDialog } from "./MediaItemDetailsDialog";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { SortableMediaItem } from "./SortableMediaItem";
 import { MediaEditorDialog } from "./MediaEditorDialog";
 import { GalleryActions } from "@/hooks/useGallery";
+import { useRouter } from "next/navigation";
+import { useBrandStore } from "@/store/brand.store";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
@@ -44,12 +45,12 @@ export function SortableMediaGrid({
   maxSelectionCount,
   galleryActions,
 }: SortableMediaGridProps) {
+  const router = useRouter();
+  const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
+
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [selectedItemForDetails, setSelectedItemForDetails] =
-    useState<GalleryItemResponse | null>(null);
 
   // New state for MediaEditor carousel
   const [editorOpen, setEditorOpen] = useState(false);
@@ -98,11 +99,6 @@ export function SortableMediaGrid({
     }
   };
 
-  const handleDetailsClick = (item: GalleryItemResponse) => {
-    setSelectedItemForDetails(item);
-    setDetailsDialogOpen(true);
-  };
-
   // New function to handle opening editor
   const handleEditClick = (item: GalleryItemResponse) => {
     const itemIndex = galleryItems.findIndex(
@@ -111,6 +107,21 @@ export function SortableMediaGrid({
     if (itemIndex !== -1) {
       setCurrentEditorIndex(itemIndex);
       setEditorOpen(true);
+    }
+  };
+
+  // Handle editing moodboard for moodboard assets
+  const handleEditMoodboard = (item: GalleryItemResponse) => {
+    // Set both campaign and moodboard to ensure proper context
+    if (item.campaign_id) {
+      setSelectedCampaignId(item.campaign_id);
+    }
+    setSelectedMoodboardId(item.moodboard_id || null);
+
+    if (item.campaign_id && item.moodboard_id) {
+      router.push(
+        `/?campaignId=${item.campaign_id}&moodboardId=${item.moodboard_id}`
+      );
     }
   };
 
@@ -146,8 +157,8 @@ export function SortableMediaGrid({
               onSelect={onSelect}
               onDelete={handleDeleteClick}
               onDownload={galleryActions.downloadItem}
-              onDetailsClick={handleDetailsClick}
               onEditClick={handleEditClick}
+              onEditMoodboard={handleEditMoodboard}
               onMouseEnter={() => setHoveredItem(item.id)}
               onMouseLeave={() => setHoveredItem(null)}
               isMultiSelect={isMultiSelect}
@@ -161,13 +172,6 @@ export function SortableMediaGrid({
         </Masonry>
 
         {/* Dialogs */}
-        <MediaItemDetailsDialog
-          open={detailsDialogOpen}
-          onOpenChange={setDetailsDialogOpen}
-          item={selectedItemForDetails}
-          handleUpdatePartialData={galleryActions.patchItem}
-        />
-
         <MediaEditorDialog
           open={editorOpen}
           onOpenChange={setEditorOpen}
@@ -244,8 +248,8 @@ export function SortableMediaGrid({
                 onSelect={onSelect}
                 onDelete={handleDeleteClick}
                 onDownload={galleryActions.downloadItem}
-                onDetailsClick={handleDetailsClick}
                 onEditClick={handleEditClick}
+                onEditMoodboard={handleEditMoodboard}
                 onMouseEnter={() => setHoveredItem(item.id)}
                 onMouseLeave={() => setHoveredItem(null)}
                 isMultiSelect={isMultiSelect}
@@ -259,14 +263,6 @@ export function SortableMediaGrid({
           </Masonry>
         </SortableContext>
       </DndContext>
-
-      {/* Details Dialog */}
-      <MediaItemDetailsDialog
-        open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
-        item={selectedItemForDetails}
-        handleUpdatePartialData={galleryActions.patchItem}
-      />
 
       {/* Media Editor Dialog with Carousel */}
       <MediaEditorDialog

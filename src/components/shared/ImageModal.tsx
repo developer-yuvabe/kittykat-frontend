@@ -9,7 +9,7 @@ import React from "react";
 import { DownloadIcon } from "../ui/custom-icon";
 import { HeartIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 
 interface ImageModalProps {
   imageUrl: string;
@@ -60,36 +60,38 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             {/* Bottom Left - Download Button with Tooltip */}
             {onDownload && (
               <div className="absolute bottom-2 left-3">
-                <TooltipIconButton
+                <TooltipButton
                   tooltip="Download"
+                  icon={<DownloadIcon className="!w-5 !h-5" />}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDownload();
                   }}
-                  className="text-white hover:text-black"
-                >
-                  <DownloadIcon className="!w-5 !h-5" />
-                </TooltipIconButton>
+                  className="text-white"
+                />
               </div>
             )}
 
             {/* Bottom Right - Like Button with Tooltip */}
             {onLike && (
               <div className="absolute bottom-2 right-3">
-                <TooltipIconButton
+                <TooltipButton
                   tooltip="Like"
+                  icon={
+                    <HeartIcon
+                      className={cn("!w-5 !h-5", {
+                        "text-red-500 fill-red-500": isLiked,
+                      })}
+                    />
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onLike();
                   }}
-                  className="text-white hover:text-red-500"
-                >
-                  <HeartIcon
-                    className={cn("!w-5 !h-5", {
-                      "text-red-500 fill-red-500": isLiked,
-                    })}
-                  />
-                </TooltipIconButton>
+                  isActive={isLiked}
+                  normalColor="text-white hover:text-red-500"
+                  activeColor="text-red-500"
+                />
               </div>
             )}
           </div>
