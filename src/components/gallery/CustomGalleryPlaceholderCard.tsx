@@ -21,7 +21,7 @@ import { Button } from "../ui/button";
 import { RegenerateIcon } from "../ui/custom-icon";
 import { GalleryActions } from "@/hooks/useGallery";
 import { toast } from "sonner";
-import { HeartIcon, Loader2, Maximize2, X, Upload } from "lucide-react";
+import { HeartIcon, Loader2, X, Upload } from "lucide-react";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import Sortable from "./Sortable";
 import {
@@ -367,6 +367,12 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
 
       <div className="absolute inset-0 bg-gradient-to-b from-[#A1A8B3FF] via-transparent to-[#A1A8B3FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
+      {/* Draggable bar on top middle */}
+      {!isPreview && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all opacity-60 hover:opacity-100" />
+        </div>
+      )}
       <div
         className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-200 pointer-events-none ${
           isCurrentlyUploading || isDragActive || isFileDragActive
@@ -432,7 +438,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
         !isDragActive &&
         !isFileDragActive && (
           <>
-            <div className="absolute top-2 left-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+            <div className="absolute top-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
               <X
                 size={16}
                 className="w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95"
@@ -463,15 +469,6 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
             </div>
           </>
         )}
-
-      {!isCurrentlyUploading && !isDragActive && !isFileDragActive && (
-        <div className="absolute top-2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
-          <Maximize2
-            size={16}
-            className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-          />
-        </div>
-      )}
     </div>
   );
 

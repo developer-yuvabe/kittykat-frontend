@@ -121,7 +121,7 @@ const CustomGalleryContainer = forwardRef<
       } else if (rowCount === 2) {
         return baseHeight * 0.6; // Two rows
       } else {
-        return baseHeight * 1.2; // Three or more rows
+        return baseHeight * 1.1; // Three or more rows
       }
     })();
 
