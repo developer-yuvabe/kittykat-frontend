@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchTopics, Topic } from "@/services/api/pexels.service";
 import { createClient, PhotosWithTotalResults, ErrorResponse } from "pexels";
 import { Loader2, X } from "lucide-react";
@@ -13,19 +13,14 @@ import {
   BrandCampaignListResponse,
   BulkGalleryUploadRequest,
   GalleryItem,
+  GalleryItemResponse,
 } from "@/types/gallery.types";
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { Checkbox } from "@/components/ui/checkbox";
 import Masonry from "react-masonry-css";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MasonryImageCard } from "./MasonryImageCard";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { PexelsMasonryImageCard } from "./PexelsMasonryImageCard";
+import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
+import { useInView } from "react-intersection-observer";
 
 const client = createClient(env.NEXT_PUBLIC_PEXELS_API_KEY);
 
@@ -34,6 +29,11 @@ interface TopicsGridProps {
   selectedCampaignId?: string;
   selecteMoodboardId?: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  currentSelectionCount: number;
+  onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void;
+  isMultiSelect?: boolean;
+  isMediaSelectDialog?: boolean;
+  inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
 }
 
 export default function TopicsGrid({
@@ -41,19 +41,14 @@ export default function TopicsGrid({
   selectedCampaignId,
   selecteMoodboardId,
   setActiveTab,
+  onMultipleMediaItemsSelected,
+  inSelectionGalleryIds = [],
+  isMultiSelect = false,
+  isMediaSelectDialog = false,
 }: TopicsGridProps) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
-
-  const tabOptions = [
-    { value: "all-media", label: "All Media" },
-    { value: "brand-uploads", label: "Brand Uploads" },
-    { value: "moodboard", label: "Moodboards" },
-
-    { value: "showboard-media", label: "Concept Visuals" },
-    { value: "a2i-media", label: "A2i Media" },
-  ];
 
   const galleryActions = useGalleryQuery({});
 
@@ -98,7 +93,7 @@ export default function TopicsGrid({
         if (!debouncedSearch) throw new Error("No search query provided");
         const result = await client.photos.search({
           query: debouncedSearch,
-          per_page: 32,
+          per_page: 30,
           page: pageParam as number,
         });
 
@@ -113,20 +108,13 @@ export default function TopicsGrid({
       initialPageParam: 1,
     });
 
-  // Infinite scroll observer
+  const { ref, inView } = useInView();
+
   useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-    const onScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 100
-      ) {
-        fetchNextPage();
-      }
-    };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const toggleSelect = (url: string) => {
     setSelected((prev) =>
@@ -134,7 +122,11 @@ export default function TopicsGrid({
     );
   };
 
-  const handleUrlUpload = async (urls: string[], assetSource: string) => {
+  const onClearSelection = () => {
+    setSelected([]);
+  };
+
+  const handleUrlUpload = async (urls: string[]) => {
     if (!selectedBrand?.brand_id) {
       toast.error("No brand selected.");
       return;
@@ -160,7 +152,86 @@ export default function TopicsGrid({
         return {
           brand_id: selectedBrand.brand_id,
           asset_url: url,
-          asset_source: assetSource, // 👈 dynamic
+          asset_source: "brand-uploads",
+          asset_type: "image",
+          media_format: extension,
+          asset_title: url.split("/").pop() || url,
+          size: "",
+          related_asset_ids: [],
+          prompt_modifiers: [],
+          ai_tags: [],
+          visual_style_tags: {},
+          detected_objects: [],
+          detected_emotions: [],
+          detected_colors: [],
+          search_keywords: [],
+          custom_tags: [],
+          campaign_id: selectedCampaignId,
+          moodboard_id: selecteMoodboardId,
+          is_master: true,
+        };
+      });
+
+      const bulkUploadPayload: BulkGalleryUploadRequest = {
+        gallery_items: itemsToUpload,
+        brand_id: selectedBrand.brand_id,
+        campaign_id: selectedCampaignId,
+        moodboard_id: selecteMoodboardId,
+        scrape_only: false,
+      };
+      setActiveTab("all-media");
+      await galleryActions.bulkUpload(bulkUploadPayload);
+      toast.success(`${validUrls.length} URL(s) uploaded successfully!`);
+    } catch (error) {
+      console.error("URL upload failed:", error);
+      toast.error("URL upload failed", {
+        description: "Please try again",
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleAddToGallery = async () => {
+    if (selected.length === 0) {
+      toast.error("No images selected");
+      return;
+    }
+    try {
+      await handleUrlUpload(selected);
+      toast.success("Added to Gallery");
+      setSelected([]); // clear after upload
+    } catch {
+      toast.error("Added to Gallery failed");
+    }
+  };
+
+  const onAddSelectedItemsToMoodboard = async () => {
+    if (!selectedBrand?.brand_id) {
+      toast.error("No brand selected.");
+      return;
+    }
+
+    try {
+      const validUrls = selected.filter((url) => {
+        try {
+          new URL(url);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+
+      if (validUrls.length === 0) {
+        toast.error("No valid URLs provided");
+        return;
+      }
+
+      const itemsToUpload: GalleryItem[] = validUrls.map((url) => {
+        const extension = getExtensionFromUrl(url);
+        return {
+          brand_id: selectedBrand.brand_id,
+          asset_url: url,
+          asset_source: "brand-uploads",
           asset_type: "image",
           media_format: extension,
           asset_title: url.split("/").pop() || url,
@@ -188,10 +259,12 @@ export default function TopicsGrid({
         scrape_only: false,
       };
 
-      await galleryActions.bulkUpload(bulkUploadPayload);
-      toast.success(`${validUrls.length} URL(s) uploaded successfully!`);
+      const response = await galleryActions.bulkUpload(bulkUploadPayload);
+      toast.success(`${validUrls.length} image(s) added to moodboard!`);
+      setSelected([]);
+      onMultipleMediaItemsSelected?.(response);
     } catch (error) {
-      console.error("URL upload failed:", error);
+      console.error("Adding to moodboard failed:", error);
       toast.error("URL upload failed", {
         description: "Please try again",
         duration: 3000,
@@ -231,28 +304,41 @@ export default function TopicsGrid({
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
             </div>
           ) : (
-            <Masonry
-              breakpointCols={breakpointColumnsObj}
-              className="flex w-auto -ml-4"
-              columnClassName="pl-4 bg-clip-padding"
-            >
-              {data?.pages.map((page) =>
-                page.photos.map((photo) => (
-                  <MasonryImageCard
-                    key={photo.id}
-                    photo={photo}
-                    isChecked={selected.includes(photo.src.original)}
-                    onToggle={() => toggleSelect(photo.src.original)}
-                  />
-                ))
-              )}
-            </Masonry>
+            <div>
+              <MediaDialogMultiSelectHeader
+                isActive={isMultiSelect && isMediaSelectDialog}
+                currentSelectionCount={selected.length}
+                onClearSelection={onClearSelection}
+                onAddSelectedItems={onAddSelectedItemsToMoodboard}
+                totalAssets={selected.length + inSelectionGalleryIds.length}
+              />
+              <Masonry
+                breakpointCols={breakpointColumnsObj}
+                className="flex w-auto -ml-4"
+                columnClassName="pl-4 bg-clip-padding"
+              >
+                {data?.pages.map((page) =>
+                  page.photos.map((photo) => (
+                    <PexelsMasonryImageCard
+                      key={photo.id}
+                      photo={photo}
+                      isChecked={selected.includes(photo.src.original)}
+                      onToggle={() => toggleSelect(photo.src.original)}
+                    />
+                  ))
+                )}
+              </Masonry>
+            </div>
           )}
+
+          {/* Loader for next page */}
           {isFetchingNextPage && (
             <div className="flex justify-center py-6">
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
             </div>
           )}
+
+          <div ref={ref} className="h-10" />
         </>
       ) : topicsLoading ? (
         <div className="flex justify-center min-h-96 items-center py-36 2xl:py-60">
@@ -283,40 +369,19 @@ export default function TopicsGrid({
         </div>
       )}
 
-      {/* Sticky Footer for Moodboard */}
+      {/* Sticky Footer for Add to GAllery */}
 
-      {selected.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 pr-20 bg-white border-t shadow-md p-4 flex items-center justify-end gap-3">
+      {selected.length > 0 && isMultiSelect == false && (
+        <div className="fixed bottom-0 left-0 right-0 pr-20 bg-white border-t shadow-md p-4 flex items-center justify-end gap-5">
           <span className="text-sm font-medium">
             Selected: {selected.length}
           </span>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                Add to Gallery
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="top"
-              align="center"
-              className="w-48 mt-2"
-            >
-              {tabOptions.map((tab) => (
-                <DropdownMenuItem
-                  key={tab.value}
-                  onClick={async () => {
-                    await handleUrlUpload(selected, tab.value);
-                    setActiveTab(tab.value);
-                    setSelected([]);
-                    toast.success(`Added to ${tab.label}`);
-                  }}
-                >
-                  {tab.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            onClick={handleAddToGallery}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            Add to Gallery
+          </Button>
         </div>
       )}
     </div>

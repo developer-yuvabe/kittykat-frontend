@@ -519,6 +519,11 @@ export function MediaLibrary({
                     selectedCampaignId={selectedCampaignId}
                     selecteMoodboardId={moodboardId}
                     setActiveTab={setActiveTab}
+                    isMultiSelect={isMultiSelect}
+                    isMediaSelectDialog={isMediaSelectDialog}
+                    currentSelectionCount={currentSelectionCount}
+                    inSelectionGalleryIds={inSelectionGalleryIds}
+                    onMultipleMediaItemsSelected={onMultipleMediaItemsSelected}
                   />
                 ) : (
                   <div className="flex flex-col md:flex-row gap-4">

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface MasonryImageCardProps {
+interface PexelsMasonryImageCardProps {
   photo: {
     id: number;
     src: { original: string; medium: string };
@@ -12,11 +12,11 @@ interface MasonryImageCardProps {
   onToggle: () => void;
 }
 
-export function MasonryImageCard({
+export function PexelsMasonryImageCard({
   photo,
   isChecked,
   onToggle,
-}: MasonryImageCardProps) {
+}: PexelsMasonryImageCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
 
