@@ -4,6 +4,7 @@ type Store = {
   referencePrompt: string | null;
   setReferencePrompt: (prompt: string | null) => void;
   referencePromptSignal: number;
+  clearReferencePrompt: () => void;
 };
 
 export const useA2iStore = create<Store>()((set) => {
@@ -12,5 +13,6 @@ export const useA2iStore = create<Store>()((set) => {
     setReferencePrompt: (prompt) =>
       set({ referencePrompt: prompt, referencePromptSignal: Date.now() }),
     referencePromptSignal: 0,
+    clearReferencePrompt: () => set({ referencePrompt: null }),
   };
 });
