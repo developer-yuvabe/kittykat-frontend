@@ -165,7 +165,7 @@ const VideoGenerationInputControls = ({
                         {field.value ? (
                           <img
                             src={field.value}
-                            className="w-full h-full object-cover"
+                            className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
                           <button
@@ -211,7 +211,7 @@ const VideoGenerationInputControls = ({
                         {field.value ? (
                           <img
                             src={field.value}
-                            className="w-full h-full object-cover"
+                            className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
                           <button
@@ -296,6 +296,7 @@ const VideoGenerationInputControls = ({
                         form={form}
                         type="initial"
                         rules={selectedVideoGenearationModel?.rules}
+                        sliderSuffix={param.id === "duration" ? "s" : undefined}
                       />
                     );
                   })}
@@ -307,7 +308,6 @@ const VideoGenerationInputControls = ({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    forceMount
                     align="center"
                     side="top"
                     className="space-y-2 w-64"
