@@ -51,10 +51,11 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const currentSessionGenerations = useMemo(() => {
-    return generations.filter(
+    const filteredGenerations = generations.filter(
       (gen) => gen.type === "video"
       // && currentSessionGenerationIds.includes(gen.id)
     );
+    return filteredGenerations;
   }, [currentSessionGenerationIds, generations]);
 
   // Centralized like handler
