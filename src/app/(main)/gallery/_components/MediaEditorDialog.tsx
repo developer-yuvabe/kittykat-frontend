@@ -815,30 +815,31 @@ export function MediaEditorDialog({
                     onValueChange={setActiveTab}
                     className="flex-1 flex flex-col bg-none"
                   >
+                    <AskKittykatTabs
+                      isVideoAsset={currentItem.asset_type === "video"}
+                    />
+
                     {currentItem.asset_type !== "video" && (
-                      <>
-                        <AskKittykatTabs />
-                        <AskKittykatImageEditingTools
-                          item={currentItem}
-                          remixControls={{
-                            image: {
-                              url: currentItem.asset_url,
-                              size: currentItem.size || "original",
-                            },
-                            source: "media-gallery",
-                            canUndo: remixHistory.canUndo,
-                            canRedo: remixHistory.canRedo,
-                            onUndo: handleUndo,
-                            onRedo: handleRedo,
-                            onClear: handleClear,
-                            offScreenCanvasRef,
-                            brushSize,
-                            onBrushSizeChange: handleBrushSizeChange,
-                            closeDialog: () => onOpenChange(false),
-                            campaignId: campaign_id,
-                          }}
-                        />
-                      </>
+                      <AskKittykatImageEditingTools
+                        item={currentItem}
+                        remixControls={{
+                          image: {
+                            url: currentItem.asset_url,
+                            size: currentItem.size || "original",
+                          },
+                          source: "media-gallery",
+                          canUndo: remixHistory.canUndo,
+                          canRedo: remixHistory.canRedo,
+                          onUndo: handleUndo,
+                          onRedo: handleRedo,
+                          onClear: handleClear,
+                          offScreenCanvasRef,
+                          brushSize,
+                          onBrushSizeChange: handleBrushSizeChange,
+                          closeDialog: () => onOpenChange(false),
+                          campaignId: campaign_id,
+                        }}
+                      />
                     )}
 
                     <TabsContent value="video-gen" className="flex-1 h-full">
