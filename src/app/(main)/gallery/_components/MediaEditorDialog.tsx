@@ -31,12 +31,13 @@ import { AskKittykatReplyList } from "./AskKittykatReplyList";
 import { AskKittykatReplyInput } from "./AskKittykatReplyInput";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import AskKittykatVersions from "./AskKittykatVersions";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import type { RemixImageHandle } from "../../_components/remix/RemixImage";
 import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
 import { useModelsStore } from "@/store/models.store";
 import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
+import { galleryService } from "@/services/api/gallery.service";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -60,7 +61,7 @@ export function MediaEditorDialog({
   campaignId,
 }: MediaEditorDialogProps) {
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
-    item
+    null
   );
   const [activeTab, setActiveTab] = useState("ask-kittykat");
   const { selectedRemixModel } = useModelsStore();
@@ -115,13 +116,20 @@ export function MediaEditorDialog({
       setEditingReply(null);
       setAttachments([]);
       setReplyAttachments([]);
-      setCurrentItem(item);
+      setCurrentItem(null);
       setBrushSize(50);
     }
   }, [item?.id]);
 
+  const versions = useQuery({
+    queryKey: ["versions", item?.id],
+    queryFn: () => galleryService.getGalleryItemVersions(item!.id),
+    enabled: !!item?.id,
+    staleTime: Infinity,
+  });
+
   useEffect(() => {
-    if (!item || item.is_master === false) return;
+    if (!item) return;
 
     setCurrentItem((prev) =>
       prev ? { ...prev, comments: item.comments } : item
@@ -746,9 +754,23 @@ export function MediaEditorDialog({
           <div className="flex-1 min-h-0">
             <div className="flex h-full gap-x-3 p-4">
               {/* Left Panel - Static */}
-              <div className="w-[35%] min-w-[280px] flex flex-col gap-y-">
-                {currentItem &&
-                  (activeTab === "video-gen" &&
+              <div className="w-[35%] min-w-[280px] flex flex-col gap-y-4">
+                {versions.isFetching ? (
+                  <div className="relative w-full h-full flex items-center justify-center animate-pulse">
+                    <div
+                      className="
+      bg-gray-200 rounded-lg
+      w-full max-w-4xl
+      h-20
+      sm:h-[16rem] 
+      md:h-[24rem] 
+      lg:h-[36rem] 
+      xl:h-[40rem]
+    "
+                    ></div>
+                  </div>
+                ) : currentItem ? (
+                  activeTab === "video-gen" &&
                   currentItem.asset_type === "image" ? (
                     <VideoGenerationInput
                       item={currentItem}
@@ -770,22 +792,24 @@ export function MediaEditorDialog({
                       }
                       setCurrentItem={setCurrentItem}
                     />
-                  ))}
-                {currentItem && (
+                  )
+                ) : null}
+                {item && (
                   <AskKittykatVersions
-                    item={item!}
+                    item={item}
                     currentVersion={currentItem}
                     onVersionChange={(updatedItem) => {
                       setCurrentItem(updatedItem);
                     }}
                     ref={versionsRef}
+                    versions={versions}
                   />
                 )}
               </div>
 
               {/* Right Panel - Scrollable */}
               <div className="flex-1 w-[65%] flex flex-col min-h-0 overflow-y-auto">
-                {currentItem && (
+                {currentItem ? (
                   <Tabs
                     value={activeTab}
                     onValueChange={setActiveTab}
@@ -965,6 +989,21 @@ export function MediaEditorDialog({
                       </div>
                     </TabsContent>
                   </Tabs>
+                ) : (
+                  <div className="flex-1 flex flex-col p-4">
+                    <div className="animate-pulse space-y-4">
+                      <div className="flex space-x-4 mb-6">
+                        <div className="h-8 bg-gray-200 rounded w-32"></div>
+                        <div className="h-8 bg-gray-200 rounded w-32"></div>
+                        <div className="h-8 bg-gray-200 rounded w-32"></div>
+                      </div>
+                      <div className="space-y-4 flex-1">
+                        <div className="h-16 bg-gray-200 rounded"></div>
+                        <div className="h-32 bg-gray-200 rounded"></div>
+                        <div className="h-8 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

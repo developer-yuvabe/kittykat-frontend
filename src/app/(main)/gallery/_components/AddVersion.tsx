@@ -7,7 +7,7 @@ import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery, ITEMS_PER_PAGE } from "@/hooks/useGallery";
 import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Link, Upload, Video, Image } from "lucide-react";
+import { ArrowLeft, Link, Upload } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -33,7 +33,6 @@ const AddVersion = ({
   const [url, setUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-
   const { addToGallery } = useGalleryQuery(
     {},
     ITEMS_PER_PAGE,
@@ -41,7 +40,10 @@ const AddVersion = ({
     "AddVersion"
   );
 
-  const addVersion = async (uploadedUrl: string, fileType: 'image' | 'video') => {
+  const addVersion = async (
+    uploadedUrl: string,
+    fileType: "image" | "video"
+  ) => {
     const galleryItem: GalleryItem = {
       brand_id: item.brand_id,
       campaign_id: item.campaign_id,
@@ -108,7 +110,7 @@ const AddVersion = ({
         );
 
         // Determine file type based on MIME type
-        const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+        const fileType = file.type.startsWith("video/") ? "video" : "image";
         await addVersion(uploadedUrl, fileType);
       } catch {
         toast.error(
@@ -119,11 +121,11 @@ const AddVersion = ({
     },
     [item, versionsCount]
   );
-  
+
   // Accept both images and videos
   const acceptedFiles = {
     "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
-    "video/*": [".mp4", ".mov", ".avi", ".webm", ".mkv"]
+    "video/*": [".mp4", ".mov", ".avi", ".webm", ".mkv"],
   };
 
   const {
@@ -149,7 +151,9 @@ const AddVersion = ({
     setIsUploading(true);
     try {
       // Try to determine file type from URL extension
-      const fileType = url.match(/\.(mp4|mov|avi|webm|mkv)$/i) ? 'video' : 'image';
+      const fileType = url.match(/\.(mp4|mov|avi|webm|mkv)$/i)
+        ? "video"
+        : "image";
       await addVersion(url, fileType);
     } catch (error) {
       toast.error("Failed to add version from URL. Please try again.");
@@ -163,8 +167,8 @@ const AddVersion = ({
   };
 
   return (
-    <Dialog 
-      open={isOpen} 
+    <Dialog
+      open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
         if (!open) resetState();
@@ -256,8 +260,8 @@ const AddVersion = ({
                 </div>
 
                 <p className="text-sm text-gray-500">
-                  Drop your new version image or video here, or click to select files.{" "}
-                  <br />
+                  Drop your new version image or video here, or click to select
+                  files. <br />
                   (PNG, JPG, JPEG, WEBP, MP4)
                 </p>
               </div>
