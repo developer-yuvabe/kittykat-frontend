@@ -13,18 +13,13 @@ import {
   PauseCircle,
   PlayCircle,
   X,
-  MoreHorizontal,
   PencilIcon,
+  CheckIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TooltipButton } from "@/components/ui/tooltip-button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
 import { deleteA2iImage } from "@/services/api/a2i.service";
@@ -362,55 +357,44 @@ const A2iImageCard = ({
           </div>
         )}
 
-        {/* 3-dot menu for actions - Bottom Left */}
+        {/* Direct Action Icons - Bottom Left */}
         {(image || video) && (
-          <div className="absolute bottom-2 left-2 z-30 pointer-events-auto">
-            <Popover>
-              <PopoverTrigger asChild>
-                <TooltipButton
-                  tooltip="More Actions"
-                  icon={
-                    <MoreHorizontal
+          <div className="absolute bottom-2 left-2 z-30 flex items-center gap-2 pointer-events-auto">
+            {/* Concept Visual Editor (Pen) Icon */}
+            <TooltipButton
+              tooltip="Concept Visual Editor"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEditFeatures((prev) => !prev);
+              }}
+              icon={
+                <PencilIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
+              }
+            />
+
+            {/* Copy Prompt Icon */}
+            {parameters.prompt && (
+              <TooltipButton
+                tooltip={copied ? "Copied!" : "Copy Prompt"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyPrompt();
+                }}
+                icon={
+                  copied ? (
+                    <CheckIcon
                       className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
                     />
-                  }
-                />
-              </PopoverTrigger>
-              <PopoverContent className="w-52 p-0" align="end">
-                <div className="py-1">
-                  <Button
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowEditFeatures((prev) => !prev);
-                    }}
-                    className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left px-3 py-2 rounded-none hover:text-foreground"
-                  >
-                    <PencilIcon
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} mr-2`}
+                  ) : (
+                    <CopyIcon
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
                     />
-                    <span>
-                      Edit {image ? "Image" : video ? "Video" : "Generation"}
-                    </span>
-                  </Button>
-                  {parameters.prompt && (
-                    <Button
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyPrompt();
-                      }}
-                      className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left px-3 py-2 rounded-none hover:text-foreground"
-                    >
-                      <CopyIcon
-                        className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} mr-2`}
-                      />
-                      <span>{copied ? "Copied!" : "Copy Prompt"}</span>
-                    </Button>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                  )
+                }
+              />
+            )}
           </div>
         )}
 
