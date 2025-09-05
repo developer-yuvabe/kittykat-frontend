@@ -57,41 +57,40 @@ export const ImageModal: React.FC<ImageModalProps> = ({
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-lg" />
             )}
 
-            {/* Bottom Left - Download Button with Tooltip */}
-            {onDownload && (
-              <div className="absolute bottom-2 left-3">
-                <TooltipButton
-                  tooltip="Download"
-                  icon={<DownloadIcon className="!w-5 !h-5" />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDownload();
-                  }}
-                  className="text-white"
-                />
-              </div>
-            )}
+            {/* Bottom Right - Actions (Download + Like) */}
+            {(onDownload || onLike) && (
+              <div className="absolute bottom-2 right-3 flex items-center space-x-2">
+                {onDownload && (
+                  <TooltipButton
+                    tooltip="Download"
+                    icon={<DownloadIcon className="!w-5 !h-5" />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload();
+                    }}
+                    className="text-white"
+                  />
+                )}
 
-            {/* Bottom Right - Like Button with Tooltip */}
-            {onLike && (
-              <div className="absolute bottom-2 right-3">
-                <TooltipButton
-                  tooltip="Like"
-                  icon={
-                    <HeartIcon
-                      className={cn("!w-5 !h-5", {
-                        "text-red-500 fill-red-500": isLiked,
-                      })}
-                    />
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLike();
-                  }}
-                  isActive={isLiked}
-                  normalColor="text-white hover:text-red-500"
-                  activeColor="text-red-500"
-                />
+                {onLike && (
+                  <TooltipButton
+                    tooltip="Like"
+                    icon={
+                      <HeartIcon
+                        className={cn("!w-5 !h-5", {
+                          "text-red-500 fill-red-500": isLiked,
+                        })}
+                      />
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLike();
+                    }}
+                    isActive={isLiked}
+                    normalColor="text-white hover:text-red-500"
+                    activeColor="text-red-500"
+                  />
+                )}
               </div>
             )}
           </div>

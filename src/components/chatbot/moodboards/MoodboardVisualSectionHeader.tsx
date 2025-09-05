@@ -201,14 +201,6 @@ export const MoodboardVisualSectionHeader = ({
           ) : (
             `${galleryActions.totalItems} images of ${brandName} found...`
           )}
-          {!galleryActions.isFetching && (
-            <>
-              <PinterestIcon key="pinterest" />
-              <InstagramIcon key="instagram" />
-              <FacebookIcon key="facebook" />
-              <Globe key="web" />
-            </>
-          )}
         </div>
 
         <Button
