@@ -23,7 +23,7 @@ import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Loader2, Settings2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import VideoGenerationModelSelector from "../VideoGenerationModelSelector";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
@@ -47,7 +47,11 @@ const VideoGenerationInput = ({
         <VideoGenerationModelSelector />
       </div>
       {isModelsFetched && selectedVideoGenearationModel && (
-        <VideoGenerationInputControls item={item} campaignId={campaignId} />
+        <VideoGenerationInputControls
+          item={item}
+          campaignId={campaignId}
+          key={item.id}
+        />
       )}
     </div>
   );
@@ -135,13 +139,6 @@ const VideoGenerationInputControls = ({
       form.setValue("prompt", "");
     }
   };
-
-  useEffect(() => {
-    form.reset();
-    if (firstFrameParam) {
-      form.setValue(firstFrameParam.id, item.asset_url);
-    }
-  }, [item]);
 
   return (
     <Form {...form}>
