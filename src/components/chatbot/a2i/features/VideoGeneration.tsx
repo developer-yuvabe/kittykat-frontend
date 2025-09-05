@@ -74,7 +74,7 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
 
       return filteredGenerations;
     });
-  }, [generations, currentVideoItem]);
+  }, [generations, currentVideoItem, currentSessionGenerationIds]);
 
   // Centralized like handler
   const handleLike = () => {
