@@ -1,15 +1,12 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useVideoGenStore } from "@/store/video-gen.store";
+import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
-import { useQuery } from "@tanstack/react-query";
-import { getModels } from "@/services/api/models.service";
-import { useModelsStore } from "@/store/models.store";
-import { useVideoGenStore } from "@/store/video-gen.store";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -25,19 +22,7 @@ const A2iImagesSection = function A2iImagesSection({
   selectedCampaignIndex,
 }: A2iImagesSectionProps) {
   const { setGenerations } = useVideoGenStore();
-  const { setModels, setIsModelsFetched } = useModelsStore();
-  useQuery({
-    queryKey: ["models"],
-    queryFn: async () => {
-      try {
-        const fetchedModels = await getModels();
-        setModels(fetchedModels);
-        return fetchedModels;
-      } finally {
-        setIsModelsFetched(true);
-      }
-    },
-  });
+
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLDivElement | null>(null);
 

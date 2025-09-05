@@ -18,7 +18,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type VideoGenerationOnProps = {
@@ -49,13 +49,32 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
     useState<A2iImageGeneration>();
   const { currentSessionGenerationIds, generations } = useVideoGenStore();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentSessionGenerations, setCurrentSessionGenerations] = useState<
+    A2iImageGeneration[]
+  >([]);
 
-  const currentSessionGenerations = useMemo(() => {
-    return generations.filter(
-      (gen) => gen.type === "video"
-      // && currentSessionGenerationIds.includes(gen.id)
+  useEffect(() => {
+    const filteredGenerations = generations.filter(
+      (gen) =>
+        gen.type === "video" && currentSessionGenerationIds.includes(gen.id)
     );
-  }, [currentSessionGenerationIds, generations]);
+    setCurrentSessionGenerations((prev) => {
+      // Find a generation that was "processing" before but now is "completed"
+      const justCompleted = generations.find(
+        (gen) =>
+          gen.type === "video" &&
+          gen.status === "completed" &&
+          // check if we had it earlier in processing state
+          prev.some((p) => p.id === gen.id && p.status === "processing")
+      );
+
+      if (!currentVideoItem && justCompleted) {
+        setCurrentVideoItem(justCompleted);
+      }
+
+      return filteredGenerations;
+    });
+  }, [generations, currentVideoItem]);
 
   // Centralized like handler
   const handleLike = () => {
