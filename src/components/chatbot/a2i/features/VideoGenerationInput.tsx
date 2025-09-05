@@ -307,7 +307,6 @@ const VideoGenerationInputControls = ({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    forceMount
                     align="center"
                     side="top"
                     className="space-y-2 w-64"

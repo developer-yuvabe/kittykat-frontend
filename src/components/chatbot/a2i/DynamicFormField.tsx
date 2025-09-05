@@ -136,7 +136,6 @@ export function DynamicFormField<T extends FieldValues>({
                   <Button variant={"outline"}>{field.value}x</Button>
                 </PopoverTrigger>
                 <PopoverContent
-                  forceMount
                   align="center"
                   side="top"
                   className="space-y-2 w-64"
