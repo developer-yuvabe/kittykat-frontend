@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/command";
 import { AvatarFallback, Avatar } from "@/components/ui/avatar";
 import { SearchIcon } from "@/components/ui/custom-icon";
+import { useQueryState } from "nuqs";
 
 interface TransformedCampaign {
   id: string;
@@ -46,6 +47,9 @@ export default function CampaignSelector({
     TransformedCampaign[]
   >([]);
   const [loading] = useState(false);
+
+  const [, setCampaignIdFromUrl] = useQueryState("campaignId");
+  const [, setMoodboardIdFromUrl] = useQueryState("moodboardId");
 
   // Transform campaigns on initial load
   useEffect(() => {
@@ -81,6 +85,8 @@ export default function CampaignSelector({
   }, [searchQuery, transformedCampaigns]);
 
   const handleCampaignSelect = (campaignId: string) => {
+    setCampaignIdFromUrl(null);
+    setMoodboardIdFromUrl(null);
     const index = campaigns.findIndex((campaign) => campaign.id === campaignId);
     if (index !== -1) {
       setSelectedCampaignIndex(index);

@@ -4,16 +4,19 @@ import React, { useRef, useState, useEffect } from "react";
 import { Folder, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CampaignCard } from "../CampaignCard";
+import { CreateCampaignDialog } from "@/components/gallery/CreateCampaignDialog";
 import type { BrandCampaignListResponse } from "@/types/gallery.types";
 
 interface CampaignsListProps {
   selectedBrand: BrandCampaignListResponse["brands"][number] | null;
   onCampaignSelect: (campaignId: string) => void;
+  onRefreshData?: () => void;
 }
 
 export function CampaignsList({
   selectedBrand,
   onCampaignSelect,
+  onRefreshData,
 }: CampaignsListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -61,9 +64,17 @@ export function CampaignsList({
         <h3 className="text-lg font-semibold text-gray-900">
           {selectedBrand.brand_name} Campaigns
         </h3>
-        <span className="text-sm text-gray-500">
-          {campaigns.length} campaigns
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            {campaigns.length} campaigns
+          </span>
+          <CreateCampaignDialog
+            brandId={selectedBrand.brand_id}
+            brandName={selectedBrand.brand_name}
+            onCampaignCreated={onCampaignSelect}
+            onRefreshData={onRefreshData}
+          />
+        </div>
       </div>
 
       {campaigns.length > 0 ? (
@@ -111,7 +122,20 @@ export function CampaignsList({
       ) : (
         <div className="text-center py-8">
           <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No campaigns found for this brand</p>
+          <p className="text-gray-500 mb-4">
+            No campaigns found for this brand
+          </p>
+          <CreateCampaignDialog
+            brandId={selectedBrand.brand_id}
+            brandName={selectedBrand.brand_name}
+            onCampaignCreated={onCampaignSelect}
+            onRefreshData={onRefreshData}
+            trigger={
+              <Button variant="outline" size="sm">
+                Create Your First Campaign
+              </Button>
+            }
+          />
         </div>
       )}
     </div>

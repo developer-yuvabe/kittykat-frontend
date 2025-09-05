@@ -8,6 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Popover,
   PopoverContent,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -36,17 +38,25 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   rules?: Rule[];
   form: UseFormReturn<T>;
   type: "initial" | "advanced";
+  sliderSuffix?: string;
 };
 
-const DynaicFormLabel = ({
+export const DynamicFormLabel = ({
   label,
   showLabel = true,
+  optional,
+  className,
 }: {
   label: string;
   showLabel?: boolean;
+  optional: boolean;
+  className?: string;
 }) => {
   return showLabel ? (
-    <FormLabel className="text-xs text-muted-foreground">{label}</FormLabel>
+    <FormLabel className={cn("text-xs text-muted-foreground", className)}>
+      {label}
+      <span className="italic">{optional ? "(optional)" : ""}</span>
+    </FormLabel>
   ) : null;
 };
 
@@ -55,6 +65,7 @@ export function DynamicFormField<T extends FieldValues>({
   form,
   type = "initial",
   rules,
+  sliderSuffix,
 }: DynamicFormFieldProps<T>) {
   const watchedValues = useWatch({
     control: form.control,
@@ -93,7 +104,10 @@ export function DynamicFormField<T extends FieldValues>({
               <FormItem>
                 <div>
                   <div className="flex items-center justify-between">
-                    <DynaicFormLabel label={param.label} />
+                    <DynamicFormLabel
+                      label={param.label}
+                      optional={!param.required}
+                    />
                     {
                       <span className="text-xs text-muted-foreground">
                         {field.value}
@@ -121,10 +135,12 @@ export function DynamicFormField<T extends FieldValues>({
             return type === "initial" ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"}>{field.value}x</Button>
+                  <Button variant={"outline"}>
+                    {field.value}
+                    {sliderSuffix ?? "x"}
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                  forceMount
                   align="center"
                   side="top"
                   className="space-y-2 w-64"
@@ -134,6 +150,44 @@ export function DynamicFormField<T extends FieldValues>({
               </Popover>
             ) : (
               SlideComp
+            );
+
+          case "number":
+            return (
+              <FormItem className="flex flex-col  gap-2">
+                <DynamicFormLabel
+                  showLabel={type !== "initial"}
+                  label={param.label}
+                  optional={!param.required}
+                />
+                <FormControl>
+                  <NumberInput
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    min={param.min}
+                    max={param.max}
+                    className="w-24"
+                  />
+                </FormControl>
+              </FormItem>
+            );
+
+          case "text_area":
+            return (
+              <FormItem className="flex flex-col gap-2">
+                <DynamicFormLabel
+                  showLabel={type !== "initial"}
+                  label={param.label}
+                  optional={!param.required}
+                />
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder={param.label}
+                    className="max-h-40 resize-none"
+                  />
+                </FormControl>
+              </FormItem>
             );
 
           case "boolean":
@@ -146,9 +200,10 @@ export function DynamicFormField<T extends FieldValues>({
                     className="h-4 w-4"
                   />
                 </FormControl>
-                <DynaicFormLabel
+                <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
+                  optional={!param.required}
                 />
               </FormItem>
             );
@@ -160,9 +215,10 @@ export function DynamicFormField<T extends FieldValues>({
                   "w-max": type === "initial",
                 })}
               >
-                <DynaicFormLabel
+                <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
+                  optional={!param.required}
                 />
 
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -244,9 +300,10 @@ export function DynamicFormField<T extends FieldValues>({
           case "string":
             return (
               <FormItem>
-                <DynaicFormLabel
+                <DynamicFormLabel
                   showLabel={type !== "initial"}
                   label={param.label}
+                  optional={!param.required}
                 />
                 <FormControl>
                   <Input {...field} placeholder={param.label} />

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, RefObject } from "react";
 import { capitalizeKey } from "@/lib/langgraph.utils";
-import { MoodboardInformation } from "@/types/types";
+import { MoodboardInformation, ThreadCampaign } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
@@ -18,6 +18,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GalleryActions } from "@/hooks/useGallery";
+import { GalleryItem, BulkGalleryUploadRequest } from "@/types/gallery.types";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
+import { dataURLToBlob } from "@/lib/utils";
 
 type Props = {
   moodboard_tags?: Record<string, string[]>;
@@ -25,6 +30,9 @@ type Props = {
   moodboardId?: MoodboardInformation["id"];
   showAdvancedSettings?: boolean;
   isGalleryItemsProcessing?: boolean;
+  galleryActions?: GalleryActions;
+  currentCampaign?: ThreadCampaign | null;
+  galleryGridRef?: RefObject<CustomGalleryGridRef | null>;
 };
 
 function MoodboardTagResults({
@@ -33,12 +41,18 @@ function MoodboardTagResults({
   moodboardId,
   showAdvancedSettings = false,
   isGalleryItemsProcessing = false,
+  galleryActions,
+  currentCampaign,
+  galleryGridRef,
 }: Props) {
   const [localTags, setLocalTags] = useState<
     Record<string, { value: string; selected: boolean }[]>
   >({});
 
   const { selectedBrandId, isMoodboardSaving } = useBrandStore();
+
+  // Add loading state for screenshot capture and upload
+  const [isCapturingAndUploading, setIsCapturingAndUploading] = useState(false);
 
   // Mutation for patching
   const { mutateAsync: patchMoodboardMutate, isPending: isPatching } =
@@ -83,8 +97,92 @@ function MoodboardTagResults({
     }));
   };
 
+  // Function to capture moodboard screenshot and upload to gallery
+  const captureMoodboardAndUploadToGallery = async (): Promise<boolean> => {
+    if (
+      !galleryGridRef?.current ||
+      !galleryActions ||
+      !currentCampaign ||
+      !selectedBrandId ||
+      !moodboardId
+    ) {
+      return false;
+    }
+
+    try {
+      setIsCapturingAndUploading(true);
+
+      // Use the screenshot capture function from the ref
+      const dataURL = await galleryGridRef.current.captureScreenshot();
+
+      if (!dataURL) {
+        throw new Error("Failed to capture screenshot");
+      }
+
+      // Convert dataURL to blob
+      const blob = dataURLToBlob(dataURL);
+
+      // Create a File object from the blob
+      const file = new File(
+        [blob],
+        `moodboard-${moodboardId}-${Date.now()}.png`,
+        {
+          type: "image/png",
+        }
+      );
+
+      // Upload file to GCS
+      const downloadUrl = await uploadFileAndReturnUrl(
+        file.name,
+        file.type,
+        "brands",
+        file,
+        selectedBrandId,
+        currentCampaign.id
+      );
+
+      // Prepare gallery item with moodboard asset source
+      const galleryItem: GalleryItem = {
+        brand_id: selectedBrandId,
+        campaign_id: currentCampaign.id,
+        moodboard_id: moodboardId,
+        asset_title: `Moodboard Screenshot - ${new Date().toLocaleString()}`,
+        asset_url: downloadUrl,
+        asset_type: "image",
+        asset_source: "moodboard",
+        size: "unknown",
+        media_format: "png",
+        is_master: true,
+      };
+
+      // Upload to gallery using bulk upload
+      const bulkUploadRequest: BulkGalleryUploadRequest = {
+        gallery_items: [galleryItem],
+        brand_id: selectedBrandId,
+        campaign_id: currentCampaign.id,
+        moodboard_id: moodboardId,
+      };
+
+      await galleryActions.bulkUpload(bulkUploadRequest);
+
+      toast.success("Moodboard screenshot added to gallery successfully!");
+      return true;
+    } catch (error) {
+      console.error("Error capturing moodboard screenshot:", error);
+      toast.error(
+        "Failed to capture moodboard screenshot. Proceeding with generation anyway..."
+      );
+      return false;
+    } finally {
+      setIsCapturingAndUploading(false);
+    }
+  };
+
   const handleGenerate = async () => {
     try {
+      // First, capture the moodboard screenshot and add to gallery
+      await captureMoodboardAndUploadToGallery();
+
       // Prepare selected_moodboard_tags payload
       const selectedTagsPayload: Record<string, string[]> = {};
       for (const [category, tags] of Object.entries(localTags)) {
@@ -174,10 +272,13 @@ function MoodboardTagResults({
                 className="w-full"
                 onClick={handleGenerate}
                 disabled={
-                  isPatching || isGenerating || isGalleryItemsProcessing
+                  isPatching ||
+                  isGenerating ||
+                  isGalleryItemsProcessing ||
+                  isCapturingAndUploading
                 }
               >
-                {isPatching || isGenerating ? (
+                {isPatching || isGenerating || isCapturingAndUploading ? (
                   <Loader />
                 ) : (
                   <>

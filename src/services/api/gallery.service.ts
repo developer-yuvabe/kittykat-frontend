@@ -284,9 +284,10 @@ class GalleryService {
   async uploadBulkGalleryItems(
     body: BulkGalleryUploadRequest
   ): Promise<GalleryItemResponse[]> {
-    return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.post(`/gallery/bulk/upload-optimized`, body)
-    );
+    const response = await handleApiRequest<{
+      created_items: GalleryItemResponse[];
+    }>(axiosInstance.post(`/gallery/bulk/upload-optimized`, body));
+    return response.created_items;
   }
 
   async uploadBulkGalleryItemsWithAnalysis(
@@ -294,6 +295,17 @@ class GalleryService {
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
       axiosInstance.post(`/gallery/bulk/upload`, body)
+    );
+  }
+
+  /**
+   * Reorder gallery items by updating brand_sort_order
+   */
+  async reorderGalleryItems(
+    reorderData: { id: string; brand_sort_order: number }[]
+  ): Promise<void> {
+    return handleApiRequest<void>(
+      axiosInstance.post(`/gallery/reorder`, { items: reorderData })
     );
   }
 }

@@ -112,8 +112,9 @@ export interface ThreadCampaign {
     description: string;
   };
   dynamic?: Record<string, any>;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+  is_custom?: boolean;
 }
 
 export type A2iImageDetail = {
@@ -135,7 +136,7 @@ export type A2iVideoDetail = {
 export type A2iImageGeneration = {
   id: string;
   status: "processing" | "completed" | "failed";
-  type: "a2i" | "vton" | "remix" | "video";
+  type: "a2i" | "vton" | "remix" | "video" | "upscale";
   created_at: string;
   updated_at: string;
   parameters: Record<string, any>;
@@ -147,6 +148,11 @@ export type A2iImageGeneration = {
   remix_parameters?: {
     base_image: string;
     reference_images: string[];
+  };
+  upscale_parameters?: {
+    base_image: string;
+    scale_factor: string;
+    optimized_for?: string;
   };
   video?: A2iVideoDetail;
   is_nsfw_detected?: boolean;

@@ -36,6 +36,12 @@ import {
 import { Command, CommandEmpty } from "@/components/ui/command";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
+import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
+import {
+  moodboardFields,
+  PlaceholderSection,
+} from "../brands/InitialPlaceHolder";
+import { useQueryState } from "nuqs";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -50,8 +56,13 @@ export const MoodboardSection: React.FC<{
   moodboardInformation,
   brandInformation,
 }) => {
-  const { selectedBrandId, selectedMoodboardId, setSelectedMoodboardId } =
-    useBrandStore();
+  const {
+    selectedBrandId,
+    selectedMoodboardId,
+    setSelectedMoodboardId,
+    isCreatingBrand,
+    isCampaignCreating,
+  } = useBrandStore();
 
   // Get state from Zustand store instead of local state
   const {
@@ -84,7 +95,16 @@ export const MoodboardSection: React.FC<{
     },
   });
 
+  // Create a ref for the gallery grid to capture screenshots
+  const galleryGridRef = useRef<CustomGalleryGridRef>(null);
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const [moodboardIdFromUrl, setMoodboardIdFromUrl] =
+    useQueryState("moodboardId");
+
   const [openPopover, setOpenPopover] = useState(false);
+  const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
 
   // Track the last known moodboard count to detect new creations
   const [lastMoodboardCount, setLastMoodboardCount] = useState(0);
@@ -109,9 +129,23 @@ export const MoodboardSection: React.FC<{
     );
   }, [currentCampaign, moodboardInformation]);
 
+  // Handle moodboard selection from URL parameter - HIGH PRIORITY
+  useEffect(() => {
+    if (moodboardIdFromUrl && currentCampaignMoodboards.length > 0) {
+      // Validate that the moodboard belongs to the current campaign before setting it
+      const targetMoodboard = currentCampaignMoodboards.find(
+        (mb) => mb.id === moodboardIdFromUrl
+      );
+      if (targetMoodboard) {
+        setSelectedMoodboardId(moodboardIdFromUrl);
+      }
+    }
+  }, [moodboardIdFromUrl, currentCampaignMoodboards, setSelectedMoodboardId]);
+
   // Get current moodboard from props (real-time updates)
   const currentMoodboard = useMemo(() => {
     // If we have a selected moodboard ID, find it in the current data
+
     if (selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       const found = currentCampaignMoodboards.find(
         (mb) => mb.id === selectedMoodboardId
@@ -127,26 +161,14 @@ export const MoodboardSection: React.FC<{
     return null;
   }, [currentCampaignMoodboards, selectedMoodboardId]);
 
-  // Reset states when switching to create new moodboard mode
-  const resetToNewMoodboardState = useCallback(() => {
-    setSelectedMoodboardId(null);
-    const generatedTitle = generateMoodboardTitle(
-      currentCampaign?.campaign?.title,
-      currentCampaignMoodboards.length + 1
-    );
-    setMoodboardTitle(generatedTitle);
-    toast.success("Ready to create a new moodboard!");
-  }, [
-    currentCampaign?.campaign?.title,
-    currentCampaignMoodboards.length,
-    setSelectedMoodboardId,
-    generateMoodboardTitle,
-    setMoodboardTitle,
-  ]);
-
   // Auto-select latest moodboard when campaign changes or when new moodboards are created
   useEffect(() => {
     const currentCount = currentCampaignMoodboards.length;
+
+    // Don't auto-select if we have a moodboard ID from URL to process
+    if (moodboardIdFromUrl) {
+      return;
+    }
 
     // If moodboard count increased, a new one was created - select the latest
     if (currentCount > lastMoodboardCount && currentCount > 0) {
@@ -177,7 +199,39 @@ export const MoodboardSection: React.FC<{
     currentCampaignMoodboards.length,
     lastMoodboardCount,
     isCreatingNewMoodboard,
+    moodboardIdFromUrl,
     // Don't include selectedMoodboardId to avoid loops
+  ]);
+
+  // Handle scrolling when moodboard is selected from URL
+  useEffect(() => {
+    const scrollAndReset = async () => {
+      if (moodboardIdFromUrl && scrollRef.current) {
+        // Make sure the ref exists before scrolling
+        scrollRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    };
+    scrollAndReset();
+  }, [moodboardIdFromUrl, setMoodboardIdFromUrl]);
+
+  // Reset states when switching to create new moodboard mode
+  const resetToNewMoodboardState = useCallback(() => {
+    setSelectedMoodboardId(null);
+    const generatedTitle = generateMoodboardTitle(
+      currentCampaign?.campaign?.title,
+      currentCampaignMoodboards.length + 1
+    );
+    setMoodboardTitle(generatedTitle);
+    toast.success("Ready to create a new moodboard!");
+  }, [
+    currentCampaign?.campaign?.title,
+    currentCampaignMoodboards.length,
+    setSelectedMoodboardId,
+    generateMoodboardTitle,
+    setMoodboardTitle,
   ]);
 
   // Initialize the moodboard count tracker
@@ -187,6 +241,11 @@ export const MoodboardSection: React.FC<{
 
   // Handle case where selected moodboard is deleted
   useEffect(() => {
+    // Don't auto-correct if we have a URL parameter to process
+    if (moodboardIdFromUrl) {
+      return;
+    }
+
     if (selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       const isSelectedMoodboardStillAvailable = currentCampaignMoodboards.find(
         (mb) => mb.id === selectedMoodboardId
@@ -199,7 +258,11 @@ export const MoodboardSection: React.FC<{
         setSelectedMoodboardId(latestMoodboard.id);
       }
     }
-  }, [selectedMoodboardId, currentCampaignMoodboards.length]);
+  }, [
+    selectedMoodboardId,
+    currentCampaignMoodboards.length,
+    moodboardIdFromUrl,
+  ]);
 
   // Reset whenever moodboard changes
   useEffect(() => {
@@ -301,6 +364,40 @@ export const MoodboardSection: React.FC<{
       setSelectedMoodboardId(null);
     }
   };
+
+  const handleMoodboardPlaceholderClick = () => {
+    toast.info("Please create a campaign before creating a moodboard.");
+  };
+
+  // Don't render MoodboardSection at all when campaign is being created
+  // The CampaignSection handles both placeholders in that case
+  if (isCampaignCreating) {
+    return null;
+  }
+
+  // Show placeholder only when creating brand or when no campaigns exist
+  if (
+    isCreatingBrand ||
+    !campaignInformation ||
+    campaignInformation.length === 0
+  ) {
+    return (
+      <PlaceholderSection
+        title={"Moodboard"}
+        avatarFallback="M"
+        avatarBgColor="bg-orange-400"
+        fields={moodboardFields}
+        searchPlaceholder="Select Moodboard"
+        newButtonTooltip="New Moodboard"
+        isExpanded={isPlaceholderExpanded}
+        onToggleExpanded={() =>
+          setIsPlaceholderExpanded((prev: boolean) => !prev)
+        }
+        onNewClick={handleMoodboardPlaceholderClick}
+        isCreatingNewCampaign={false}
+      />
+    );
+  }
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -445,23 +542,29 @@ export const MoodboardSection: React.FC<{
                   title={`Build Your Campaign Moodboard`}
                   content={
                     <div>
-                      {currentCampaign && currentMoodboard && (
-                        <MoodboardVisualSectionHeader
-                          currentMoodboard={currentMoodboard}
-                          brandName={brandInformation?.static?.brand?.name}
-                          currentCampaign={currentCampaign}
-                          moodboard={currentMoodboard}
-                          galleryActions={galleryActions}
-                        />
-                      )}
+                      <div ref={scrollRef}></div>
                       <div>
                         {selectedBrandId &&
                           currentMoodboard &&
                           currentCampaign &&
                           moodboardInformation && (
                             <MoodboardLayout
+                              ref={galleryGridRef}
                               brandId={selectedBrandId}
                               moodboard={currentMoodboard}
+                              carouselHeader={
+                                currentCampaign && currentMoodboard ? (
+                                  <MoodboardVisualSectionHeader
+                                    currentMoodboard={currentMoodboard}
+                                    brandName={
+                                      brandInformation?.static?.brand?.name
+                                    }
+                                    currentCampaign={currentCampaign}
+                                    moodboard={currentMoodboard}
+                                    galleryActions={galleryActions}
+                                  />
+                                ) : null
+                              }
                             />
                           )}
                       </div>
@@ -474,6 +577,9 @@ export const MoodboardSection: React.FC<{
                           }
                           showAdvancedSettings={showAdvancedSettings}
                           isGalleryItemsProcessing={galleryActions.isGalleryItemsProcessing()}
+                          galleryActions={galleryActions}
+                          currentCampaign={currentCampaign}
+                          galleryGridRef={galleryGridRef}
                         />
                       )}
                     </div>

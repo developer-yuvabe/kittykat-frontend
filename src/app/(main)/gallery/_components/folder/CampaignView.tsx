@@ -5,7 +5,7 @@ import { useInView } from "react-intersection-observer";
 import { ArrowLeft, Folder, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { MediaGrid } from "../MediaGrid";
+import { SortableMediaGrid } from "../SortableMediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import { FolderUploadDropzone } from "./FolderUploadDropzone";
@@ -45,6 +45,20 @@ export function CampaignView({
   const currentCampaign = useMemo(() => {
     return selectedBrand.campaigns.find((c) => c.id === campaignId);
   }, [selectedBrand.campaigns, campaignId]);
+
+  // If campaign is not found, it might be because data is stale - let's give some time for refresh
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (!currentCampaign && retryCount < 3) {
+      // Campaign not found, but we might be in the middle of data refresh
+      const timer = setTimeout(() => {
+        setRetryCount((prev) => prev + 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentCampaign, retryCount]);
 
   // Use gallery hook with proper filters - ensure campaign filter is applied
   const galleryActions = useGalleryQuery(
@@ -133,7 +147,14 @@ export function CampaignView({
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <p className="text-sm text-red-500">Campaign not found</p>
+            {retryCount < 3 ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                <p className="text-sm text-gray-600">Loading campaign...</p>
+              </div>
+            ) : (
+              <p className="text-sm text-red-500">Campaign not found</p>
+            )}
           </div>
         </div>
       </div>
@@ -203,10 +224,11 @@ export function CampaignView({
         {galleryActions.galleryStatus === "success" &&
           galleryActions.getGalleryItems().length > 0 && (
             <div>
-              <MediaGrid
+              <SortableMediaGrid
                 selectedItems={selectedItems}
                 onSelect={handleSelect}
                 galleryActions={galleryActions}
+                isMediaSelectDialog={false} // This is not a dialog
               />
               {/* Infinite scroll loading indicator */}
               {galleryActions.hasNextPage && (

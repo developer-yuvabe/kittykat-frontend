@@ -26,7 +26,7 @@ export function UserProfileMenu({}) {
 
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">
-      {credits && (
+      {credits !== null && (
         <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
           <span className="text-xs">{credits}</span>
           <CreditIcon className="w-2 h-2" />

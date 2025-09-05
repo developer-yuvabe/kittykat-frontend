@@ -6,9 +6,12 @@ import React, {
 } from "react";
 import { ImageModal } from "../shared/ImageModal";
 import { cn, handleDownloadImage } from "@/lib/utils";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { ExpandIcon, DownloadIcon } from "@/components/ui/custom-icon";
+import { TooltipButton } from "@/components/ui/tooltip-button";
+import { DownloadIcon } from "@/components/ui/custom-icon";
 import { CopyIcon, HeartIcon, Check } from "lucide-react";
+
+// 🔑 Control size for all overlay buttons (matching MediaOverlay)
+const OVERLAY_CONTROL_SIZE = 5;
 
 interface ZoomableImageProps
   extends DetailedHTMLProps<
@@ -88,84 +91,95 @@ export default function ZoomableImage({
       return (
         <div className="relative group">
           <img {...baseImageProps} />
-          <TooltipIconButton
+          <TooltipButton
             onClick={(e) => {
               e.stopPropagation(); // Prevent any parent click
               handleDownload();
             }}
             tooltip="Download"
-            variant="ghost"
-            className="absolute top-2 right-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <DownloadIcon />
-          </TooltipIconButton>
+            icon={
+              <DownloadIcon
+                className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+              />
+            }
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          />
         </div>
       );
     }
 
     // variant === "overlay"
     return (
-      <div className="relative group">
+      <div className="relative group overflow-hidden rounded">
         <img {...baseImageProps} />
 
         {/* Overlay */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded" />
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded pointer-events-none" />
 
-        {/* Top Right: Expand */}
-        <TooltipIconButton
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsOpen(true);
-          }}
-          tooltip="Expand"
-          variant="ghost"
-          className="absolute top-2 right-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <ExpandIcon />
-        </TooltipIconButton>
-
-        {/* Bottom Left: Download */}
-        <TooltipIconButton
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDownload();
-          }}
-          tooltip="Download"
-          variant="ghost"
-          className="absolute bottom-2 left-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <DownloadIcon />
-        </TooltipIconButton>
-
-        {/* Bottom Left Second Position: Copy (only if prompt exists and is not empty) */}
+        {/* Bottom Left: Copy (only if prompt exists and is not empty) */}
         {prompt && prompt.trim() && (
-          <TooltipIconButton
+          <TooltipButton
             onClick={(e) => {
               e.stopPropagation();
               handleCopy();
             }}
             tooltip={copied ? "Copied!" : "Copy prompt"}
-            variant="ghost"
-            className="absolute bottom-2 left-12 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            {copied ? <Check /> : <CopyIcon />}
-          </TooltipIconButton>
+            icon={
+              copied ? (
+                <Check
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
+              ) : (
+                <CopyIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
+              )
+            }
+            className="absolute bottom-2 left-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          />
         )}
 
-        {/* Bottom Right: Like (conditionally rendered) */}
-        {showLikeButton && (
-          <TooltipIconButton
+        {/* Download and Heart Buttons - Bottom Right (matching MediaOverlay) */}
+        <div className="absolute bottom-2 right-2 z-30 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <TooltipButton
             onClick={(e) => {
               e.stopPropagation();
-              handleLikeToggle();
+              handleDownload();
             }}
-            tooltip={isLiked ? "Unlike" : "Like"}
-            variant="ghost"
-            className="absolute bottom-2 right-2 text-white hover:text-black size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <HeartIcon className={isLiked ? "fill-red-500 text-red-500" : ""} />
-          </TooltipIconButton>
-        )}
+            tooltip="Download"
+            icon={
+              <DownloadIcon
+                className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+              />
+            }
+          />
+
+          {showLikeButton && (
+            <TooltipButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLikeToggle();
+              }}
+              tooltip={isLiked ? "Unlike" : "Like"}
+              icon={
+                <HeartIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
+                    isLiked ? "fill-current" : ""
+                  }`}
+                />
+              }
+              isActive={isLiked}
+              normalColor="text-white hover:text-red-300"
+              activeColor="text-red-500"
+              className="transition-all duration-300"
+            />
+          )}
+        </div>
+
+        {/* Bottom Gradient (matching MediaOverlay) */}
+        <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <div className="absolute left-0 right-0 bottom-0 h-8 bg-gradient-to-t from-black/60 to-transparent rounded-b" />
+        </div>
       </div>
     );
   };

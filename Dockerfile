@@ -1,12 +1,13 @@
 FROM node:18-alpine AS base
 
+RUN npm install -g pnpm
+
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --only=production
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
@@ -37,6 +38,7 @@ ARG NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG
 ARG NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV
 ARG NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA
 ARG LANGSMITH_API_KEY
+ARG NEXT_PUBLIC_PEXELS_API_KEY
 
 # ENVIRONMENT VARIABLES
 ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
@@ -59,8 +61,9 @@ ENV NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG=$NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG
 ENV NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV=$NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV
 ENV NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA=$NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA
 ENV LANGSMITH_API_KEY=$LANGSMITH_API_KEY
+ENV NEXT_PUBLIC_PEXELS_API_KEY=$NEXT_PUBLIC_PEXELS_API_KEY
 
-RUN npm run build
+RUN pnpm run build
 
 FROM base AS runner
 WORKDIR /app
@@ -75,10 +78,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./
+COPY --from=builder --chown=nextjs:nodejs /app/docs ./docs
+
 USER nextjs
 
 EXPOSE 3000
 
 ENV PORT=3000
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]

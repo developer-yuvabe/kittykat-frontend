@@ -57,8 +57,23 @@ const ReferenceMoodboard = ({
 
   const { selectedBrandId } = useBrandStore();
   const { mutate: generateShowboard, isPending } = useMutation({
-    mutationFn: () =>
-      generateA2iShowboard(selectedBrandId!, referenceMoodboardId!, Number(n)),
+    mutationFn: ({
+      brandId,
+      moodboardId,
+      numberOfPrompts,
+    }: {
+      brandId: string;
+      moodboardId: string;
+      numberOfPrompts: number;
+    }) => generateA2iShowboard(brandId, moodboardId, numberOfPrompts),
+    onSuccess: () => {
+      toast.success("Concept Visual prompts generated successfully!");
+    },
+    onError: () => {
+      toast.error(
+        "Failed to generate concept Visual prompts. Please try again."
+      );
+    },
   });
 
   // Get the current campaign based on selectedCampaignIndex
@@ -350,6 +365,13 @@ const ReferenceMoodboard = ({
       );
     }
     await updateA2iRefernceMoodboard(selectedBrandId!, moodboard.id!);
+
+    // Use the mutation for consistency and proper error handling
+    generateShowboard({
+      brandId: selectedBrandId!,
+      moodboardId: moodboard.id!,
+      numberOfPrompts: Number(n) || 1,
+    });
   };
 
   return (
@@ -478,17 +500,10 @@ const ReferenceMoodboard = ({
                             ).some((tagArray) => tagArray.length > 0);
 
                           if (hasTags) {
-                            generateShowboard(undefined, {
-                              onSuccess: () => {
-                                toast.success(
-                                  "Concept Visual prompts generated successfully!"
-                                );
-                              },
-                              onError: () => {
-                                toast.error(
-                                  "Failed to generate concept Visual prompts. Please try again."
-                                );
-                              },
+                            generateShowboard({
+                              brandId: selectedBrandId!,
+                              moodboardId: referenceMoodboardId!,
+                              numberOfPrompts: Number(n),
                             });
                           } else {
                             toast.warning(
