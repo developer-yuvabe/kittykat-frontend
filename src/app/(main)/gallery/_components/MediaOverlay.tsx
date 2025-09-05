@@ -6,15 +6,9 @@ import {
   DownloadIcon,
   PencilIcon,
   X,
-  MoreHorizontal,
+  LayoutGridIcon,
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -139,57 +133,46 @@ export function MediaOverlay({
         </div>
       )}
 
-      {/* 3-dot menu for moodboard assets */}
+      {/* Direct Action Icons for moodboard assets - Bottom Left */}
       {!isMediaSelectDialog &&
         item.asset_source === "moodboard" &&
-        onEditMoodboard && (
+        (onEditClick || onEditMoodboard) && (
           <div
-            className={`absolute bottom-2 left-2 z-30 transition-opacity duration-200 ${
+            className={`absolute bottom-2 left-2 z-30 flex items-center gap-2 transition-opacity duration-200 ${
               isHovered ? "opacity-100" : "opacity-0"
             }`}
           >
-            <Popover>
-              <PopoverTrigger asChild>
-                <TooltipButton
-                  tooltip="More Actions"
-                  icon={
-                    <MoreHorizontal
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                    />
-                  }
-                />
-              </PopoverTrigger>
-              <PopoverContent className="w-52 p-0" align="end">
-                <div className="py-1">
-                  <Button
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onEditClick) onEditClick(item);
-                    }}
-                    className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left px-3 py-2 rounded-none hover:text-foreground"
-                  >
-                    <PencilIcon
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} mr-2`}
-                    />
-                    <span>Edit Image</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditMoodboard(item);
-                    }}
-                    className="w-full flex items-center justify-start hover:bg-gray-100 transition-colors cursor-pointer text-left px-3 py-2 rounded-none hover:text-foreground"
-                  >
-                    <PencilIcon
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} mr-2`}
-                    />
-                    <span>Edit Moodboard Layout</span>
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+            {/* Edit Image Icon */}
+            {onEditClick && (
+              <TooltipButton
+                tooltip="Concept Visual Editor"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onEditClick(item);
+                }}
+                icon={
+                  <PencilIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
+
+            {/* Edit Moodboard Layout Icon */}
+            {onEditMoodboard && (
+              <TooltipButton
+                tooltip="Edit Moodboard Layout"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onEditMoodboard(item);
+                }}
+                icon={
+                  <LayoutGridIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
           </div>
         )}
 
@@ -203,7 +186,7 @@ export function MediaOverlay({
             }`}
           >
             <TooltipButton
-              tooltip="Edit"
+              tooltip="Concept Visual Editor"
               onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 onEditClick(item);
