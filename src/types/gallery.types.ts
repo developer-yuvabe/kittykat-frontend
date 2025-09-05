@@ -56,18 +56,18 @@ export type GalleryItem = {
   version_group_id?: string;
   parent_asset_id?: string;
   version_tag?: string;
-  related_asset_ids: string[];
+  related_asset_ids?: string[];
 
   // 🔮 AI & Generation Info
   input_prompt?: string;
-  prompt_modifiers: string[];
+  prompt_modifiers?: string[];
   metadata_raw?: Record<string, any>;
   ai_description?: string;
-  ai_tags: string[];
-  visual_style_tags: Record<string, AggregatedTagItem[]>;
-  detected_objects: string[];
-  detected_emotions: string[];
-  detected_colors: string[];
+  ai_tags?: string[];
+  visual_style_tags?: Record<string, AggregatedTagItem[]>;
+  detected_objects?: string[];
+  detected_emotions?: string[];
+  detected_colors?: string[];
   dominant_color?: string;
   ai_similarity_vector?: number[];
   technical_quality_score?: number;
@@ -111,8 +111,8 @@ export type GalleryItem = {
   performance_score?: number;
 
   // 🏷️ Tagging & Classification
-  search_keywords: string[];
-  custom_tags: string[];
+  search_keywords?: string[];
+  custom_tags?: string[];
 
   // 🔁 Workflow & Collaboration
   workflow_status?: WorkflowStatus;
@@ -139,6 +139,8 @@ export type GalleryItem = {
 
   // ⚙️ System Metadata
   processing_status?: "processing" | "ready" | "failed";
+
+  brand_sort_order?: number;
 };
 
 export interface GalleryItemResponse extends GalleryItem {
@@ -267,3 +269,22 @@ export interface MediaWithStatus extends Omit<FileWithStatus, "file"> {
   name: string;
   type: "file" | "url";
 }
+
+// fileTypes.ts
+
+export const IMAGE_FILE_TYPES: Record<string, string[]> = {
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/svg+xml": [".svg"],
+  "image/tiff": [".tiff", ".tif"],
+  "image/webp": [".webp"],
+  "image/bmp": [".bmp"],
+  "image/gif": [".gif"],
+  "image/psd": [".psd"],
+};
+
+export const VIDEO_FILE_TYPES: Record<string, string[]> = {
+  "video/mp4": [".mp4"],
+  "video/quicktime": [".mov"],
+  "video/x-msvideo": [".avi"],
+};

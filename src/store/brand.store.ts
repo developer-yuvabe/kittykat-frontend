@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { UserBrand } from "@/types/user.types";
+import { ThreadCampaign, MoodboardInformation } from "@/types/types";
 
 type Store = {
   isBrandsFetched: boolean;
@@ -10,8 +11,17 @@ type Store = {
   addBrand: (brand: UserBrand) => void;
   removeBrand: (brandId: string) => void;
 
+  campaigns: ThreadCampaign[];
+  setCampaigns: (campaigns: ThreadCampaign[]) => void;
+
+  moodboards: MoodboardInformation[];
+  setMoodboards: (moodboards: MoodboardInformation[]) => void;
+
   selectedBrandId: string | null;
   setSelectedBrandId: (brand: string | null) => void;
+
+  selectedCampaignId: string | null;
+  setSelectedCampaignId: (campaignId: string | null) => void;
 
   isCreatingBrand: boolean;
   setIsCreatingBrand: (isCreating: boolean) => void;
@@ -32,6 +42,11 @@ type Store = {
 
   isMoodboardSaving: boolean;
   setIsMoodboardSaving: (isSaving: boolean) => void;
+
+  // Getters for selected names
+  getSelectedBrandName: () => string | null;
+  getSelectedCampaignName: () => string | null;
+  getSelectedMoodboardName: () => string | null;
 };
 
 export const useBrandStore = create<Store>((set, get) => ({
@@ -48,8 +63,18 @@ export const useBrandStore = create<Store>((set, get) => ({
       brands: state.brands.filter((brand) => brand.id !== brandId),
     })),
 
+  campaigns: [],
+  setCampaigns: (campaigns: ThreadCampaign[]) => set({ campaigns }),
+
+  moodboards: [],
+  setMoodboards: (moodboards: MoodboardInformation[]) => set({ moodboards }),
+
   selectedBrandId: null,
   setSelectedBrandId: (brand: string | null) => set({ selectedBrandId: brand }),
+
+  selectedCampaignId: null,
+  setSelectedCampaignId: (campaignId: string | null) =>
+    set({ selectedCampaignId: campaignId }),
 
   isCreatingBrand: false,
   setIsCreatingBrand: (isCreating: boolean) =>
@@ -82,4 +107,31 @@ export const useBrandStore = create<Store>((set, get) => ({
   isMoodboardSaving: false,
   setIsMoodboardSaving: (isSaving: boolean) =>
     set({ isMoodboardSaving: isSaving }),
+
+  // Getters for selected names
+  getSelectedBrandName: () => {
+    const state = get();
+    const selectedBrand = state.brands.find(
+      (brand) => brand.id === state.selectedBrandId
+    );
+    return selectedBrand?.name || null;
+  },
+
+  getSelectedCampaignName: () => {
+    const state = get();
+    if (!state.selectedCampaignId || !state.campaigns) return null;
+    const selectedCampaign = state.campaigns.find(
+      (campaign) => campaign.id === state.selectedCampaignId
+    );
+    return selectedCampaign?.campaign?.title || null;
+  },
+
+  getSelectedMoodboardName: () => {
+    const state = get();
+    if (!state.selectedMoodboardId || !state.moodboards) return null;
+    const selectedMoodboard = state.moodboards.find(
+      (moodboard) => moodboard.id === state.selectedMoodboardId
+    );
+    return selectedMoodboard?.title || null;
+  },
 }));

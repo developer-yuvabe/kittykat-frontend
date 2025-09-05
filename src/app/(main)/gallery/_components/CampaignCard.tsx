@@ -28,7 +28,7 @@ export const CampaignCard = ({
   return (
     <div
       onClick={handleClick}
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition-all duration-200 cursor-pointer group"
+      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition-all duration-200 cursor-pointer group animate-in fade-in slide-in-from-bottom-2"
       data-campaign-id={campaign.id}
       role="button"
       tabIndex={0}

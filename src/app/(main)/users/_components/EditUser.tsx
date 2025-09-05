@@ -1,6 +1,8 @@
 "use client";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -32,11 +34,18 @@ import { useBrandStore } from "@/store/brand.store";
 import { UserListItem, UserListResponse, UserRoleId } from "@/types/user.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useUserStore } from "@/store/user.store";
 
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
@@ -51,6 +60,7 @@ export function EditUser({
   setIsOpen: (open: boolean) => void;
   queryKey: (string | number)[];
 }) {
+  const { user: currentLoggedInUser } = useUserStore();
   const { brands } = useBrandStore();
   const queryClient = useQueryClient();
   const form = useForm<EditUserFormData>({
@@ -60,6 +70,7 @@ export function EditUser({
       brandAccess: user.brand_access
         ? user.brand_access.map((brand) => brand.id)
         : undefined,
+      contentFilterDisabled: user.content_filter_disabled || false,
     },
     mode: "onSubmit",
   });
@@ -72,6 +83,7 @@ export function EditUser({
         brandAccess: user.brand_access
           ? user.brand_access.map((brand) => brand.id)
           : undefined,
+        contentFilterDisabled: user.content_filter_disabled ?? false,
       });
     }
   }, [isOpen, user, form]);
@@ -83,6 +95,7 @@ export function EditUser({
       updateUser(user.id, {
         roleId: data.role,
         brand_access: data.brandAccess,
+        contentFilterDisabled: data.contentFilterDisabled,
       }),
       {
         loading: "Updating user...",
@@ -135,7 +148,7 @@ export function EditUser({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
             className={cn(
-              "relative bg-background text-foreground rounded-lg shadow-lg p-6 w-full max-w-xl mx-4"
+              "relative bg-background text-foreground rounded-lg shadow-lg p-6 w-full max-w-xl"
             )}
           >
             {/* Header with Close Button */}
@@ -146,14 +159,11 @@ export function EditUser({
             >
               <X className="h-5 w-5" />
             </button>
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-lg font-semibold">Edit User</h2>
-                <p className="text-sm text-muted-foreground">
-                  Update user details and permissions. You can change role and
-                  brand access for user.
-                </p>
-              </div>
+            <div className="flex flex-col max-w-full">
+              <h2 className="text-lg font-semibold">Edit User</h2>
+              <p className="text-sm text-muted-foreground break-words">
+                Update user details and permissions.
+              </p>
             </div>
 
             <Form {...form}>
@@ -172,7 +182,6 @@ export function EditUser({
                     <Input disabled value={user.email} />
                   </FormItem>
                 </div>
-
                 {/* Role */}
                 <FormField
                   control={form.control}
@@ -271,6 +280,52 @@ export function EditUser({
                           accepts the invitation.
                         </FormDescription>
                       )} */}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contentFilterDisabled"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Content Filter</FormLabel>
+                        <TooltipIconButton
+                          tooltipClassName="max-w-36"
+                          tooltip="Disabling content filter allows the user to access all types of content without restrictions. This setting should be used with caution as it may expose users to inappropriate or harmful content."
+                        >
+                          <Info />
+                        </TooltipIconButton>
+                      </div>
+                      <FormControl>
+                        {currentLoggedInUser?.is_default_admin ? (
+                          <Checkbox
+                            variant="toggle"
+                            checked={!field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(!checked);
+                            }}
+                          />
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="w-max">
+                                <Checkbox
+                                  disabled
+                                  variant="toggle"
+                                  checked={!field.value}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side={"right"}>
+                                You do not have permission to change this
+                                setting.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

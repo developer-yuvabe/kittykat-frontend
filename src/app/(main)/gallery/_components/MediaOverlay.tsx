@@ -1,7 +1,14 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { HeartIcon, DownloadIcon } from "lucide-react";
+import {
+  HeartIcon,
+  DownloadIcon,
+  PencilIcon,
+  X,
+  LayoutGridIcon,
+} from "lucide-react";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -16,9 +23,14 @@ interface MediaOverlayProps {
   maxSelectionCount?: number;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
   onToggleFavorite: () => void;
+  onEditClick?: (item: GalleryItemResponse) => void;
+  onDelete?: (id: string, e: React.MouseEvent) => void;
+  onEditMoodboard?: (item: GalleryItemResponse) => void;
 }
 
-// Media Overlay Component
+// 🔑 Control size for all overlay buttons & checkbox
+const OVERLAY_CONTROL_SIZE = 5;
+
 export function MediaOverlay({
   item,
   isSelected,
@@ -32,6 +44,9 @@ export function MediaOverlay({
   selectedCount,
   maxSelectionCount,
   onDownload,
+  onEditClick,
+  onDelete,
+  onEditMoodboard,
 }: MediaOverlayProps) {
   const { updateAutoFillSuggestionCache } = useMoodboardQuery({});
 
@@ -77,6 +92,7 @@ export function MediaOverlay({
                   onSelect(item.id, checked as boolean);
                 }
               }}
+              className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
             />
           </div>
         ) : (
@@ -84,7 +100,9 @@ export function MediaOverlay({
           <Checkbox
             checked={isSelected}
             onCheckedChange={(checked) => onSelect(item.id, checked as boolean)}
-            className="h-5 w-5 border-2 border-white bg-black/30 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-black transition-all duration-200 hover:border-gray-200"
+            className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} border-2 border-white bg-black/30 
+        data-[state=checked]:border-white data-[state=checked]:bg-white 
+        data-[state=checked]:text-black transition-all duration-200 hover:border-gray-200`}
           />
         )}
       </div>
@@ -96,32 +114,123 @@ export function MediaOverlay({
         </div>
       )}
 
-      {/* Favorite Button */}
-      <div
-        className={`absolute bottom-2 right-2 z-30 transition-opacity duration-200 cursor-pointer ${
-          isHovered
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
-        onClick={handleFavoriteClick}
-      >
-        <HeartIcon
-          className={`h-5 w-5 transition-all duration-300 hover:scale-110 ${
-            item.is_favourite
-              ? "fill-red-500 text-red-500"
-              : "text-white hover:text-red-300"
+      {/* Delete Button - Top Right */}
+      {!isMediaSelectDialog && onDelete && (
+        <div
+          className={`absolute top-2 right-2 z-30 transition-opacity duration-200 ${
+            isHovered ? "opacity-100" : "opacity-0"
           }`}
-        />
-      </div>
+        >
+          <TooltipButton
+            tooltip="Delete"
+            onClick={(e: React.MouseEvent) => onDelete(item.id, e)}
+            icon={
+              <X
+                className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+              />
+            }
+          />
+        </div>
+      )}
 
-      {/* Download Button */}
+      {/* Direct Action Icons for moodboard assets - Bottom Left */}
+      {!isMediaSelectDialog &&
+        item.asset_source === "moodboard" &&
+        (onEditClick || onEditMoodboard) && (
+          <div
+            className={`absolute bottom-2 left-2 z-30 flex items-center gap-2 transition-opacity duration-200 ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {/* Edit Image Icon */}
+            {onEditClick && (
+              <TooltipButton
+                tooltip="Concept Visual Editor"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onEditClick(item);
+                }}
+                icon={
+                  <PencilIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
+
+            {/* Edit Moodboard Layout Icon */}
+            {onEditMoodboard && (
+              <TooltipButton
+                tooltip="Edit Moodboard Layout"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onEditMoodboard(item);
+                }}
+                icon={
+                  <LayoutGridIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
+          </div>
+        )}
+
+      {/* Edit Button - Bottom Left (non-moodboard assets) */}
+      {!isMediaSelectDialog &&
+        onEditClick &&
+        item.asset_source !== "moodboard" && (
+          <div
+            className={`absolute bottom-2 left-2 z-30 transition-opacity duration-200 ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <TooltipButton
+              tooltip="Concept Visual Editor"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                onEditClick(item);
+              }}
+              icon={
+                <PencilIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
+              }
+            />
+          </div>
+        )}
+
+      {/* Download and Favorite Buttons - Bottom Right */}
       <div
-        className={`absolute bottom-2 left-2 z-10 transition-opacity duration-200 cursor-pointer ${
+        className={`absolute bottom-2 right-2 z-30 flex items-center gap-2 transition-opacity duration-200 ${
           isHovered ? "opacity-100" : "opacity-0"
         }`}
-        onClick={(e) => onDownload(item, e)}
       >
-        <DownloadIcon className="h-5 w-5 text-white hover:text-gray-300 transition-all duration-300 hover:scale-110" />
+        <TooltipButton
+          tooltip="Download"
+          onClick={(e: React.MouseEvent) => onDownload(item, e)}
+          icon={
+            <DownloadIcon
+              className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+            />
+          }
+        />
+
+        <TooltipButton
+          tooltip={item.is_favourite ? "Unlike" : "Like"}
+          onClick={handleFavoriteClick}
+          icon={
+            <HeartIcon
+              className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
+                item.is_favourite ? "fill-current" : ""
+              }`}
+            />
+          }
+          isActive={item.is_favourite}
+          normalColor="text-white hover:text-red-300"
+          activeColor="text-red-500"
+          className="transition-all duration-300"
+        />
       </div>
 
       {/* Bottom Gradient */}

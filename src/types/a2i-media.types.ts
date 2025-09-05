@@ -96,6 +96,7 @@ export type BaseParam = {
   label: string;
   category: "initial" | "advanced";
   defaultValue?: any;
+  required: boolean;
 };
 
 export type StringParam = BaseParam & {
@@ -135,13 +136,25 @@ export type BooleanParam = BaseParam & {
   type: "boolean";
 };
 
+export type NumberParam = BaseParam & {
+  type: "number";
+  min: number;
+  max: number;
+};
+
+export type TextAreaParam = BaseParam & {
+  type: "text_area";
+};
+
 export type ModelParameter =
   | StringParam
   | SliderParam
   | EnumParam
   | FileParam
   | BooleanParam
-  | ImagesCountParam;
+  | ImagesCountParam
+  | NumberParam
+  | TextAreaParam;
 
 export type Model = {
   id: string;
@@ -149,7 +162,7 @@ export type Model = {
   disabled: boolean;
   description?: string;
   provider: "openai" | "replicate";
-  type: "image" | "video";
+  type: "image" | "video" | "remix" | "image-upscale";
   model: string;
   prefix?: string;
   finetune_id?: string;

@@ -2,7 +2,7 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
 
-import { BaseApiResponse, ThreadDetails } from "@/types/types";
+import { BaseApiResponse, ThreadCampaign, ThreadDetails } from "@/types/types";
 import axios from "@/config/axios/api-client.config";
 import { BrandResponse, ThreadFileResponse } from "@/types/brand.types";
 
@@ -99,4 +99,13 @@ export async function updateBrandSocialMediaField(
   };
 
   return updateBrand(brandId, payload);
+}
+
+export async function createCampaign(
+  brandId: string,
+  campaignData: Omit<ThreadCampaign, "id">
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.post(`/brands/${brandId}/campaign`, campaignData)
+  );
 }

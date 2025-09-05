@@ -4,7 +4,7 @@ import type React from "react";
 
 import type { Photo } from "react-photo-album";
 import { useState } from "react";
-import { Heart, Loader2, Maximize2, X } from "lucide-react";
+import { Heart, Loader2, X } from "lucide-react";
 import Sortable from "./Sortable";
 import type { SortablePhoto } from "./CustomGalleryContainer";
 import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
@@ -100,36 +100,37 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
           loading="eager"
         />
 
-        <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 " />
+        <div
+          className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-10"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleExpandImage(photo);
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 cursor-pointer" />
         </div>
 
+        {/* Draggable bar on top middle */}
+        {isDraggable && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all opacity-60 hover:opacity-100" />
+          </div>
+        )}
+
         {removedPhoto && !isPreview && (
-          <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {isRemoving ? (
               <Loader2 className="w-5 h-5 animate-spin text-white" />
             ) : (
               <X
                 size={16}
-                className={`w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95 
-                }`}
+                className="w-5 h-5 cursor-pointer transition-all duration-200 text-white fill-white hover:scale-110 active:scale-95"
                 onClick={handleRemove}
               />
             )}
           </div>
         )}
-
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <Maximize2
-            size={16}
-            className="w-5 h-5 cursor-pointer transition-colors text-white hover:scale-110 active:scale-95"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleExpandImage(photo);
-            }}
-          />
-        </div>
 
         {onPhotoLike && !isPreview && (
           <div

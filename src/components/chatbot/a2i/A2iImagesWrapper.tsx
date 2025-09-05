@@ -91,6 +91,7 @@ export const A2iImagesWrapper = ({
               type: generation.type,
               vtonParameters: generation.vton_parameters,
               remixParameters: generation.remix_parameters,
+              upscaleParameters: generation.upscale_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
               campaignInformation,
@@ -167,12 +168,6 @@ export const A2iImagesWrapper = ({
       });
 
       if (activeIndex === -1 || overIndex === -1) {
-        console.warn("Invalid drag indices detected:", {
-          activeId: active.id,
-          overId: over.id,
-          activeIndex,
-          overIndex,
-        });
         return;
       }
 

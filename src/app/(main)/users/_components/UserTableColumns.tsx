@@ -95,6 +95,22 @@ export const getUserTableColumns = (
     ),
   },
   {
+    header: "Content filter",
+    accessorKey: "role.content_filter_disabled",
+    cell: ({ row }) => (
+      <Badge
+        className={cn("uppercase border", {
+          "border-primary bg-primary/10 text-primary":
+            row.original.content_filter_disabled === false,
+          "border-destructive bg-destructive/10 text-destructive":
+            row.original.content_filter_disabled === true,
+        })}
+      >
+        {row.original.content_filter_disabled ? "Disabled" : "Enabled"}
+      </Badge>
+    ),
+  },
+  {
     header: "Brand Access",
     accessorKey: "brand_access",
     cell: ({ row }) => {

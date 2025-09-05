@@ -1,7 +1,6 @@
 import { Ripple } from "@/components/magicui/ripple";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Badge } from "@/components/ui/badge";
-import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
+import { DownloadIcon } from "@/components/ui/custom-icon";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import {
   A2iImageDetail,
@@ -9,16 +8,18 @@ import {
   ThreadDetails,
 } from "@/types/types";
 import {
-  Check,
   CopyIcon,
   HeartIcon,
   PauseCircle,
   PlayCircle,
   X,
+  PencilIcon,
+  CheckIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
 import { deleteA2iImage } from "@/services/api/a2i.service";
@@ -27,6 +28,7 @@ import { CSSProperties } from "react";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
+import { ImageModal } from "@/components/shared/ImageModal";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -36,6 +38,7 @@ export type A2iImageCardProps = {
   type: A2iImageGeneration["type"];
   vtonParameters?: A2iImageGeneration["vton_parameters"];
   remixParameters?: A2iImageGeneration["remix_parameters"];
+  upscaleParameters?: A2iImageGeneration["upscale_parameters"];
   video?: A2iImageGeneration["video"];
   dragListeners?: any;
   dragAttributes?: any;
@@ -47,12 +50,16 @@ export type A2iImageCardProps = {
   selectedCampaignIndex: number;
 };
 
+// 🔑 Control size for all overlay buttons
+const OVERLAY_CONTROL_SIZE = 5;
+
 const A2iImageCard = ({
   image,
   status,
   parameters,
   generationId,
   remixParameters,
+  upscaleParameters,
   dragListeners,
   dragAttributes,
   vtonParameters,
@@ -65,6 +72,7 @@ const A2iImageCard = ({
   selectedCampaignIndex,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const [showEditFeatures, setShowEditFeatures] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -162,6 +170,24 @@ const A2iImageCard = ({
     setIsLiked(galleryItem?.data?.is_favourite || false);
   }, [galleryItem?.data?.is_favourite]);
 
+  const handleItemClick = () => {
+    if (image) {
+      setShowImageModal(true);
+    }
+  };
+
+  const handleVideoClick = () => {
+    if (videoRef && videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      } else if ((videoRef.current as any).webkitRequestFullscreen) {
+        (videoRef.current as any).webkitRequestFullscreen();
+      } else if ((videoRef.current as any).msRequestFullscreen) {
+        (videoRef.current as any).msRequestFullscreen();
+      }
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -171,17 +197,27 @@ const A2iImageCard = ({
       style={style}
     >
       {image && (
-        <Image
-          src={image.url}
-          alt={parameters.prompt}
-          fill
-          className="object-contain"
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-        />
+        <div
+          className="relative w-full h-full cursor-pointer group/image hover:brightness-110 transition-all duration-200 z-10"
+          onClick={handleItemClick}
+        >
+          <Image
+            src={image.url}
+            alt={parameters.prompt}
+            fill
+            className="object-contain"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          />
+          {/* Zoom hint */}
+        </div>
       )}
 
       {video && (
-        <div className="relative w-full h-full">
+        <div
+          className="relative w-full h-full cursor-pointer"
+          onClick={handleVideoClick}
+          title="Click to fullscreen"
+        >
           <video
             ref={videoRef}
             src={video.url}
@@ -191,8 +227,9 @@ const A2iImageCard = ({
             loop
           />
           <button
-            className="absolute inset-0 flex items-center justify-center"
-            onClick={() => {
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
               if (videoRef && videoRef.current) {
                 if (videoRef.current.paused) {
                   videoRef.current.play();
@@ -239,6 +276,16 @@ const A2iImageCard = ({
                 />
               </div>
             )}
+
+            {upscaleParameters && (
+              <div className="flex gap-6">
+                <img
+                  src={upscaleParameters.base_image}
+                  alt="Base image"
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </div>
+            )}
             {remixParameters && (
               <div className="flex gap-6">
                 <img
@@ -248,13 +295,18 @@ const A2iImageCard = ({
                 />
               </div>
             )}
-            {video && (
-              <div className="flex gap-6">
+            {(video || parameters.start_image || parameters.first_frame) && (
+              <div className="flex gap-4">
                 <img
-                  src={video.url}
-                  alt="Video"
+                  src={parameters.start_image || parameters.first_frame}
                   className="w-16 h-16 object-cover rounded-md"
                 />
+                {parameters.last_frame && (
+                  <img
+                    src={parameters.last_frame}
+                    className="w-16 h-16 object-cover rounded-md"
+                  />
+                )}
               </div>
             )}
             {status === "failed" && (
@@ -271,13 +323,13 @@ const A2iImageCard = ({
         </>
       )}
 
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
 
         {status === "completed" && !showEditFeatures && (
           <div
             className={cn(
-              "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute",
+              "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-30 pointer-events-auto",
               !disableDrag && "opacity-60 hover:opacity-100"
             )}
             {...(dragAttributes || {})}
@@ -285,73 +337,104 @@ const A2iImageCard = ({
           />
         )}
 
+        {/* Delete Button - Top Right */}
         {status !== "processing" && (
-          <TooltipIconButton
-            onClick={() => setShowDeleteDialog(true)}
-            tooltip={`Delete ${
-              image ? "image" : video ? "video" : "generation"
-            }`}
-            variant={"ghost"}
-            className="absolute top-2 left-2 text-white hover:text-black"
-          >
-            <X />
-          </TooltipIconButton>
-        )}
-
-        {(image || video) && (
-          <Button
-            onClick={() => {
-              setShowEditFeatures((prev) => !prev);
-            }}
-            size={"icon"}
-            variant={"ghost"}
-            className="absolute top-2 right-2 size-7 text-white hover:text-black"
-          >
-            <ExpandIcon />
-          </Button>
-        )}
-
-        {(image || video) && (
-          <Button
-            onClick={() => {
-              setIsLiked((prev) => !prev);
-              const id = image?.id || video?.id;
-              if (id) {
-                galleryActions.toggleFavorite(id);
+          <div className="absolute top-2 right-2 z-30 pointer-events-auto">
+            <TooltipButton
+              tooltip={`Delete ${
+                image ? "image" : video ? "video" : "generation"
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteDialog(true);
+              }}
+              icon={
+                <X
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
               }
-            }}
-            size={"icon"}
-            variant={"ghost"}
-            className="hover:bg-transparent absolute bottom-2 right-2 size-7 hover:text-current"
-          >
-            <HeartIcon
-              className={cn("text-white", {
-                "text-red-500 fill-red-500": isLiked,
-              })}
             />
-          </Button>
+          </div>
         )}
 
+        {/* Direct Action Icons - Bottom Left */}
         {(image || video) && (
-          <div className="flex items-center gap-x-2 absolute bottom-2 left-2">
-            <TooltipIconButton
-              onClick={handleDownload}
-              tooltip="Download"
-              variant={"ghost"}
-              className="text-white hover:text-black size-7"
-            >
-              <DownloadIcon />
-            </TooltipIconButton>
+          <div className="absolute bottom-2 left-2 z-30 flex items-center gap-2 pointer-events-auto">
+            {/* Concept Visual Editor (Pen) Icon */}
+            <TooltipButton
+              tooltip="Concept Visual Editor"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEditFeatures((prev) => !prev);
+              }}
+              icon={
+                <PencilIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
+              }
+            />
+
+            {/* Copy Prompt Icon */}
             {parameters.prompt && (
-              <TooltipIconButton
-                onClick={handleCopyPrompt}
-                tooltip="Copy prompt"
-                variant={"ghost"}
-                className="text-white hover:text-black"
-              >
-                {copied ? <Check /> : <CopyIcon />}
-              </TooltipIconButton>
+              <TooltipButton
+                tooltip={copied ? "Copied!" : "Copy Prompt"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyPrompt();
+                }}
+                icon={
+                  copied ? (
+                    <CheckIcon
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                    />
+                  ) : (
+                    <CopyIcon
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                    />
+                  )
+                }
+              />
             )}
+          </div>
+        )}
+
+        {/* Download and Favorite Buttons - Bottom Right */}
+        {(image || video) && (
+          <div className="absolute bottom-2 right-2 z-30 flex items-center gap-2 pointer-events-auto">
+            <TooltipButton
+              tooltip="Download"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload();
+              }}
+              icon={
+                <DownloadIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                />
+              }
+            />
+            <TooltipButton
+              tooltip={isLiked ? "Unlike" : "Like"}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLiked((prev) => !prev);
+                const id = image?.id || video?.id;
+                if (id) {
+                  galleryActions.toggleFavorite(id);
+                }
+              }}
+              icon={
+                <HeartIcon
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
+                    isLiked ? "fill-current" : ""
+                  }`}
+                />
+              }
+              isActive={isLiked}
+              normalColor="text-white hover:text-red-300"
+              activeColor="text-red-500"
+              className="transition-all duration-300"
+            />
           </div>
         )}
       </div>
@@ -385,6 +468,24 @@ const A2iImageCard = ({
         isLoading={isDeleting}
         danger
       />
+
+      {image && (
+        <ImageModal
+          imageUrl={image.url}
+          alt={parameters.prompt}
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          onDownload={handleDownload}
+          onLike={() => {
+            setIsLiked((prev) => !prev);
+            const id = image?.id;
+            if (id) {
+              galleryActions.toggleFavorite(id);
+            }
+          }}
+          isLiked={isLiked}
+        />
+      )}
     </div>
   );
 };

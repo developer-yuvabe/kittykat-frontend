@@ -790,6 +790,58 @@ export const useGalleryQuery = (
     },
   });
 
+  // Reorder gallery items mutation with optimistic updates
+  const reorderItemsMutation = useMutation({
+    mutationFn: (reorderData: { id: string; brand_sort_order: number }[]) =>
+      galleryService.reorderGalleryItems(reorderData),
+
+    onMutate: async (reorderData) => {
+      const queryKey = getGalleryQueryKey();
+      
+      await queryClient.cancelQueries({ queryKey });
+      
+      // Optimistically update gallery items list
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return old;
+
+        const updated = {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            gallery_items: page.gallery_items.map((item: GalleryItemResponse) => {
+              const reorderItem = reorderData.find(r => r.id === item.id);
+              if (reorderItem) {
+                return { ...item, brand_sort_order: reorderItem.brand_sort_order };
+              }
+              return item;
+            })
+            // Sort by brand_sort_order after update
+            .sort((a: GalleryItemResponse, b: GalleryItemResponse) => 
+              (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
+            ),
+          })),
+        };
+
+        return updated;
+      });
+
+      return { queryKey, reorderData };
+    },
+
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.queryKey) {
+        queryClient.invalidateQueries({ queryKey: context.queryKey });
+      }
+      toast.error("Failed to reorder items");
+    },
+
+    onSuccess: () => {
+      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: getGalleryQueryKey() });
+    },
+  });
+
   const refetchAllGalleryQueries = async () => {
     const matchingQueries = queryClient.getQueriesData<GalleryItemResponse[]>({
       queryKey: ["gallery-items"],
@@ -869,6 +921,10 @@ export const useGalleryQuery = (
 
     patchReply: patchReplyMutation.mutate,
     isPatchingReply: patchReplyMutation.isPending,
+
+    // Reorder items
+    reorderItems: reorderItemsMutation.mutate,
+    isReorderingItems: reorderItemsMutation.isPending,
 
     // Download helpers
     downloadItem,

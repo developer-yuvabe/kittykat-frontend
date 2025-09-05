@@ -54,6 +54,7 @@ export function MediaLibraryDialog({
             isMultiSelect={isMultiSelect}
             maxSelectionCount={maxSelectionCount}
             hideHeader={true}
+            closeDialog={() => onOpenChange(false)}
           />
         </div>
       </DialogContent>

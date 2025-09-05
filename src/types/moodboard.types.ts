@@ -89,4 +89,5 @@ export interface UnifiedMoodboardItem {
   liked?: boolean;
   is_placeholder?: boolean;
   position: number;
+  isUploading?: boolean;
 }
