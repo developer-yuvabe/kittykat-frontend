@@ -70,6 +70,7 @@ export function EditUser({
       brandAccess: user.brand_access
         ? user.brand_access.map((brand) => brand.id)
         : undefined,
+      contentFilterDisabled: user.content_filter_disabled || false,
     },
     mode: "onSubmit",
   });
@@ -82,6 +83,7 @@ export function EditUser({
         brandAccess: user.brand_access
           ? user.brand_access.map((brand) => brand.id)
           : undefined,
+        contentFilterDisabled: user.content_filter_disabled ?? false,
       });
     }
   }, [isOpen, user, form]);
@@ -146,7 +148,7 @@ export function EditUser({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
             className={cn(
-              "relative bg-background text-foreground rounded-lg shadow-lg p-6 w-full max-w-xl mx-4"
+              "relative bg-background text-foreground rounded-lg shadow-lg p-6 w-full max-w-xl"
             )}
           >
             {/* Header with Close Button */}
@@ -157,14 +159,11 @@ export function EditUser({
             >
               <X className="h-5 w-5" />
             </button>
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-lg font-semibold">Edit User</h2>
-                <p className="text-sm text-muted-foreground">
-                  Update user details and permissions. You can change role and
-                  brand access for user.
-                </p>
-              </div>
+            <div className="flex flex-col max-w-full">
+              <h2 className="text-lg font-semibold">Edit User</h2>
+              <p className="text-sm text-muted-foreground break-words">
+                Update user details and permissions.
+              </p>
             </div>
 
             <Form {...form}>

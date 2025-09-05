@@ -34,6 +34,7 @@ interface TopicsGridProps {
   isMultiSelect?: boolean;
   isMediaSelectDialog?: boolean;
   inSelectionGalleryIds?: string[]; // gallery item ids that are already selected
+  closeDialog?: () => void;
 }
 
 export default function TopicsGrid({
@@ -45,6 +46,7 @@ export default function TopicsGrid({
   inSelectionGalleryIds = [],
   isMultiSelect = false,
   isMediaSelectDialog = false,
+  closeDialog,
 }: TopicsGridProps) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -259,10 +261,15 @@ export default function TopicsGrid({
         scrape_only: false,
       };
 
-      const response = await galleryActions.bulkUpload(bulkUploadPayload);
-      toast.success(`${validUrls.length} image(s) added to moodboard!`);
+      // Fire and forget - we handle success/failure with toasts
+      galleryActions.bulkUpload(bulkUploadPayload).then((res) => {
+        toast.success(`${validUrls.length} image(s) added to moodboard!`);
+        onMultipleMediaItemsSelected?.(res);
+      });
+
+      closeDialog?.();
+
       setSelected([]);
-      onMultipleMediaItemsSelected?.(response);
     } catch (error) {
       console.error("Adding to moodboard failed:", error);
       toast.error("URL upload failed", {

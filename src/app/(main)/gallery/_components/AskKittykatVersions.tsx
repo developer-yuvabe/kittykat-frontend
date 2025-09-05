@@ -1,20 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { galleryService } from "@/services/api/gallery.service";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { useQuery } from "@tanstack/react-query";
+import { UseQueryResult } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import AddVersion from "./AddVersion";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
-import { RefObject, useEffect } from "react";
+import { RefObject, useEffect, useState } from "react";
+
+type VersionState = {
+  itemId: string;
+  hasInitialized: boolean;
+};
 
 type AskKittykatVersionsProps = {
   item: GalleryItemResponse;
   currentVersion: GalleryItemResponse | null;
   onVersionChange: (item: GalleryItemResponse) => void;
   ref: RefObject<HTMLDivElement | null>;
+  versions?: UseQueryResult<GalleryItemResponse[], Error>;
 };
 
 const AskKittykatVersions = ({
@@ -22,36 +27,76 @@ const AskKittykatVersions = ({
   currentVersion,
   onVersionChange,
   ref,
+  versions,
 }: AskKittykatVersionsProps) => {
   const { user } = useUserStore();
-  const { isFetching, data, refetch } = useQuery({
-    queryKey: ["versions", item.id],
-    queryFn: () => galleryService.getGalleryItemVersions(item.id),
-    staleTime: Infinity,
+  const [versionState, setVersionState] = useState<VersionState>({
+    itemId: item.id,
+    hasInitialized: false,
   });
 
   useEffect(() => {
-    if (data) {
-      for (const version of data) {
-        if (version.id === currentVersion?.id) {
-          onVersionChange(version);
-          return;
-        }
+    // Reset state when item changes
+    if (versionState.itemId !== item.id) {
+      setVersionState({
+        itemId: item.id,
+        hasInitialized: false,
+      });
+      return;
+    }
+
+    // Initialize with latest version when data loads
+    if (
+      versions?.data?.length &&
+      !versionState.hasInitialized &&
+      !versions.isFetching
+    ) {
+      const latestVersion = versions.data[versions.data.length - 1];
+      onVersionChange(latestVersion);
+      setVersionState((prev) => ({ ...prev, hasInitialized: true }));
+      return;
+    }
+
+    // Update current version with fresh data (preserving user selection)
+    if (
+      versions?.data?.length &&
+      versionState.hasInitialized &&
+      currentVersion
+    ) {
+      const updatedVersion =
+        versions.data.find((v) => v.id === currentVersion.id) ||
+        versions.data.find((v) => v.id === item.id); // fallback to original item
+
+      if (updatedVersion && updatedVersion.id === currentVersion.id) {
+        onVersionChange(updatedVersion);
       }
     }
-  }, [data]);
+  }, [
+    versions?.data,
+    versions?.isFetching,
+    versionState,
+    currentVersion?.id,
+    item.id,
+    onVersionChange,
+  ]);
 
   return (
     <div ref={ref} className="flex-shrink-0 flex flex-col py-2">
-      {isFetching ? (
-        <div className="flex items-center gap-x-4 w-max">
-          {Array.from({ length: 3 }).map((_, index) => (
+      {versions?.isFetching ? (
+        <div className="flex items-center gap-x-2 flex-wrap">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-max border border-primary bg-muted"
+          >
+            Version 1
+          </Button>
+          {Array.from({ length: 2 }).map((_, index) => (
             <Skeleton
               key={index}
-              className="h-4 w-24 bg-gray-300 animate-pulse"
+              className="h-8 w-20 bg-gray-300 animate-pulse rounded"
             />
           ))}
-          <Skeleton className="h-4 w-4 rounded-full bg-gray-300 animate-pulse" />
         </div>
       ) : (
         <div className="flex items-center gap-x-2 flex-wrap">
@@ -68,7 +113,7 @@ const AskKittykatVersions = ({
           >
             Version 1
           </Button>
-          {data?.map((version, idx) => (
+          {versions?.data?.map((version, idx) => (
             <Button
               key={version.id}
               variant="ghost"
@@ -77,9 +122,7 @@ const AskKittykatVersions = ({
                 "border border-primary bg-muted":
                   currentVersion?.id === version.id,
               })}
-              onClick={() => {
-                onVersionChange(version);
-              }}
+              onClick={() => onVersionChange(version)}
             >
               Version {idx + 2}
             </Button>
@@ -88,8 +131,8 @@ const AskKittykatVersions = ({
             <AddVersion
               item={item}
               onVersionChange={onVersionChange}
-              refetchVersions={refetch}
-              versionsCount={(data?.length ?? 0) + 1}
+              refetchVersions={() => versions?.refetch?.() ?? Promise.resolve()}
+              versionsCount={(versions?.data?.length ?? 0) + 1}
             >
               <Button size="sm" variant={"ghost"} className="flex-1">
                 <Plus className="w-6 h-6" />

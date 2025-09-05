@@ -177,7 +177,7 @@ export function MediaImage({
       />
 
       <ImageModal
-        imageUrl={item.asset_url || item.preview_url || "/placeholder.svg"}
+        imageUrl={item.preview_url || item.asset_url}
         alt={item.asset_title}
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
