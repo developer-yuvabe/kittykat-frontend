@@ -138,6 +138,9 @@ const VideoGenerationInputControls = ({
 
   useEffect(() => {
     form.reset();
+    if (firstFrameParam) {
+      form.setValue(firstFrameParam.id, item.asset_url);
+    }
   }, [item]);
 
   return (

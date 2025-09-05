@@ -181,12 +181,6 @@ const A2iImageCard = ({
     }
   };
 
-  useEffect(() => {
-    if (id === "68b8662cb215eee14bc0f173") {
-      setShowEditFeatures(true);
-    }
-  }, []);
-
   const handleVideoClick = () => {
     if (videoRef && videoRef.current) {
       if (videoRef.current.requestFullscreen) {
