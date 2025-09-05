@@ -38,6 +38,7 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   rules?: Rule[];
   form: UseFormReturn<T>;
   type: "initial" | "advanced";
+  sliderSuffix?: string;
 };
 
 export const DynamicFormLabel = ({
@@ -64,6 +65,7 @@ export function DynamicFormField<T extends FieldValues>({
   form,
   type = "initial",
   rules,
+  sliderSuffix,
 }: DynamicFormFieldProps<T>) {
   const watchedValues = useWatch({
     control: form.control,
@@ -133,7 +135,10 @@ export function DynamicFormField<T extends FieldValues>({
             return type === "initial" ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"}>{field.value}x</Button>
+                  <Button variant={"outline"}>
+                    {field.value}
+                    {sliderSuffix ?? "x"}
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent
                   align="center"

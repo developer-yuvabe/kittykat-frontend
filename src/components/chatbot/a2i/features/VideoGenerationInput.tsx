@@ -296,6 +296,7 @@ const VideoGenerationInputControls = ({
                         form={form}
                         type="initial"
                         rules={selectedVideoGenearationModel?.rules}
+                        sliderSuffix={param.id === "duration" ? "s" : undefined}
                       />
                     );
                   })}
