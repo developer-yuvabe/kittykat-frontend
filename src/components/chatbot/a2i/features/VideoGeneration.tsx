@@ -1,9 +1,10 @@
 import { Ripple } from "@/components/magicui/ripple";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Badge } from "@/components/ui/badge";
-import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
+import { DownloadIcon } from "@/components/ui/custom-icon";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadVideo } from "@/lib/utils";
+import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { A2iImageGeneration } from "@/types/types";
@@ -15,6 +16,7 @@ import {
   PauseCircle,
   PlayCircle,
   Video,
+  X,
 } from "lucide-react";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -46,6 +48,7 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
   const [currentVideoItem, setCurrentVideoItem] =
     useState<A2iImageGeneration>();
   const { currentSessionGenerationIds, generations } = useVideoGenStore();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentSessionGenerations = useMemo(() => {
     return generations.filter(
@@ -106,6 +109,22 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
     );
   };
 
+  const handleRemoveItem = async () => {
+    if (!currentVideoItem || !currentVideoItem.video) return;
+
+    setIsDeleting(true);
+    toast.promise(deleteA2iVideo(selectedBrandId!, currentVideoItem.id), {
+      loading: "Deleting video...",
+      success: () => {
+        // Remove from local state
+        setCurrentVideoItem(undefined);
+        return "Video deleted successfully.";
+      },
+      error: "Failed to delete video.",
+      finally: () => setIsDeleting(false),
+    });
+  };
+
   return (
     <div
       style={{
@@ -126,6 +145,8 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
               src={currentVideoItem.video!.url}
               isLiked={currentVideoItem.video!.is_liked || false}
               onLike={handleLike}
+              onDelete={handleRemoveItem}
+              isDeleting={isDeleting}
               prompt={currentVideoItem.parameters.prompt || null}
             />
           ) : (
@@ -221,11 +242,15 @@ const VideoPlayer = ({
   src,
   isLiked,
   onLike,
+  onDelete,
+  isDeleting,
 }: {
   prompt?: string | null;
   src: string;
   isLiked: boolean;
   onLike: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -264,6 +289,8 @@ const VideoPlayer = ({
 
   const handleFullscreen = () => {
     const video = videoRef.current;
+
+    if (!video) return;
     video?.requestFullscreen?.();
   };
 
@@ -297,7 +324,7 @@ const VideoPlayer = ({
         src={src}
         width={0}
         height={0}
-        className="absolute inset-0 w-full h-full object-contain cursor-pointer"
+        className="absolute inset-0 w-full h-full object-fit object-top top-0 cursor-pointer"
         muted
         autoPlay
         loop
@@ -313,34 +340,53 @@ const VideoPlayer = ({
       {/* Play/Pause button - Center */}
       <div
         className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg z-20 pointer-events-auto"
-        onClick={togglePlayPause}
+        onClick={handleFullscreen}
       >
-        {isPlaying ? (
-          <PauseCircle className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl" />
-        ) : (
-          <PlayCircle className="w-16 h-16 text-white opacity-100 drop-shadow-2xl" />
-        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlayPause();
+          }}
+        >
+          {isPlaying ? (
+            <PauseCircle className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl" />
+          ) : (
+            <PlayCircle className="w-16 h-16 text-white opacity-100 drop-shadow-2xl" />
+          )}
+        </button>
       </div>
 
       {/* Control buttons container - Always visible within video bounds */}
-      <div className="absolute inset-0 z-30 pointer-events-none">
-        {/* Top Right - Expand button */}
+      <div className="absolute inset-0 z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        {/* Top Right - Delete */}
         <div className="absolute top-3 right-3">
           <TooltipIconButton
             onClick={(e) => {
               e.stopPropagation();
-              handleFullscreen();
+              onDelete();
             }}
-            tooltip="Expand"
+            disabled={isDeleting}
+            tooltip="Delete video"
             variant="ghost"
-            className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+            className="size-8 pointer-events-auto hover:bg-transparent hover:text-white text-white"
           >
-            <ExpandIcon className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </TooltipIconButton>
         </div>
 
         {/* Bottom Right - Heart/Like button */}
-        <div className="absolute bottom-3 right-3">
+        <div className="flex gap-x-1 absolute bottom-3 right-3">
+          <TooltipIconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload();
+            }}
+            tooltip="Download"
+            variant="ghost"
+            className="size-8 pointer-events-auto hover:bg-transparent hover:text-white text-white"
+          >
+            <DownloadIcon className="h-4 w-4" />
+          </TooltipIconButton>
           <TooltipIconButton
             onClick={(e) => {
               e.stopPropagation();
@@ -348,7 +394,7 @@ const VideoPlayer = ({
             }}
             tooltip={isLiked ? "Unlike" : "Like"}
             variant="ghost"
-            className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+            className="size-8 pointer-events-auto hover:bg-transparent hover:text-white"
           >
             <HeartIcon
               className={cn("h-4 w-4", {
@@ -361,17 +407,6 @@ const VideoPlayer = ({
 
         {/* Bottom Left - Download and Copy buttons */}
         <div className="absolute bottom-3 left-3 flex items-center gap-x-2">
-          <TooltipIconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDownload();
-            }}
-            tooltip="Download"
-            variant="ghost"
-            className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
-          >
-            <DownloadIcon className="h-4 w-4" />
-          </TooltipIconButton>
           {hasPromptToCopy && (
             <TooltipIconButton
               onClick={(e) => {
@@ -380,7 +415,7 @@ const VideoPlayer = ({
               }}
               tooltip="Copy prompt"
               variant="ghost"
-              className="size-8 bg-black/20 backdrop-blur-sm text-white hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 drop-shadow-xl pointer-events-auto border border-white/20"
+              className="size-8 pointer-events-auto hover:bg-transparent hover:text-white text-white"
             >
               {copied ? (
                 <Check className="h-4 w-4" />
