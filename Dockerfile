@@ -1,12 +1,13 @@
 FROM node:18-alpine AS base
 
+RUN npm install -g pnpm
+
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --only=production
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
@@ -62,7 +63,7 @@ ENV NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA=$NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BE
 ENV LANGSMITH_API_KEY=$LANGSMITH_API_KEY
 ENV NEXT_PUBLIC_PEXELS_API_KEY=$NEXT_PUBLIC_PEXELS_API_KEY
 
-RUN npm run build
+RUN pnpm run build
 
 FROM base AS runner
 WORKDIR /app
@@ -85,4 +86,4 @@ EXPOSE 3000
 
 ENV PORT=3000
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]
