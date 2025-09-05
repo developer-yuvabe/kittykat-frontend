@@ -53,6 +53,7 @@ type MediaLibraryProps = {
   isMultiSelect?: boolean;
   maxSelectionCount?: number;
   hideHeader?: boolean; // 👈 Added this prop
+  closeDialog?: () => void; // callback to close the dialog
 };
 
 export function MediaLibrary({
@@ -69,6 +70,7 @@ export function MediaLibrary({
   isMultiSelect = false,
   maxSelectionCount,
   hideHeader = false, // 👈 Added default value
+  closeDialog,
 }: MediaLibraryProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -524,6 +526,7 @@ export function MediaLibrary({
                     currentSelectionCount={currentSelectionCount}
                     inSelectionGalleryIds={inSelectionGalleryIds}
                     onMultipleMediaItemsSelected={onMultipleMediaItemsSelected}
+                    closeDialog={closeDialog}
                   />
                 ) : (
                   <div className="flex flex-col md:flex-row gap-4">
