@@ -63,7 +63,7 @@ export function MediaEditorDialog({
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     null
   );
-  const [activeTab, setActiveTab] = useState("video-gen");
+  const [activeTab, setActiveTab] = useState("ask-kittykat");
   const { selectedRemixModel } = useModelsStore();
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
