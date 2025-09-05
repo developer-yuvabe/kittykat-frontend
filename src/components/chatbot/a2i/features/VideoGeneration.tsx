@@ -10,6 +10,7 @@ import { A2iImageGeneration } from "@/types/types";
 import {
   Check,
   CopyIcon,
+  Eye,
   HeartIcon,
   PauseCircle,
   PlayCircle,
@@ -48,8 +49,8 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
 
   const currentSessionGenerations = useMemo(() => {
     return generations.filter(
-      (gen) =>
-        gen.type === "video" && currentSessionGenerationIds.includes(gen.id)
+      (gen) => gen.type === "video"
+      // && currentSessionGenerationIds.includes(gen.id)
     );
   }, [currentSessionGenerationIds, generations]);
 
@@ -140,62 +141,75 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
 
       {/* Second section: horizontal scroll thumbnails */}
       {currentSessionGenerations.length > 0 && (
-        <div className="w-full flex-shrink-0 flex flex-col">
-          <div className="w-full overflow-x-auto flex items-center gap-x-2">
-            {currentSessionGenerations.map((gen) => (
-              <div key={gen.id} className="h-32 w-32 cursor-pointer shrink-0">
-                {gen.status === "completed" && gen.video ? (
+        <div className="w-full overflow-x-auto flex items-center gap-x-2 h-">
+          {currentSessionGenerations.map((gen) => (
+            <div
+              key={gen.id}
+              className={cn("h-32 w-32 cursor-pointer shrink-0 relative", {
+                "border-2 border-primary shadow":
+                  currentVideoItem?.id === gen.id,
+              })}
+            >
+              {gen.status === "completed" && gen.video ? (
+                <>
                   <video
                     src={gen.video.url}
-                    className="w-32 h-32 object-cover"
+                    className="w-full h-full object-cover"
                     onClick={() => {
                       if (gen && gen.video) {
                         setCurrentVideoItem(gen);
                       }
                     }}
                   />
-                ) : gen.status === "failed" ? (
-                  <div className="bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none w-32 h-32 flex items-center justify-center">
-                    <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
-                      Failed
-                    </Badge>
-                  </div>
-                ) : gen.status === "processing" ? (
-                  <div className="w-32 h-32 relative">
-                    <Ripple numCircles={8} mainCircleSize={10} />
-                    <div className="flex flex-col items-center justify-center gap-2 h-full ">
-                      <p className="text-xs text-center overflow-hidden text-ellipsis line-clamp-2 max-h-40">
-                        {gen.parameters.prompt}
-                      </p>
-
-                      <div className="flex gap-4">
-                        {(gen.parameters.start_image ||
-                          gen.parameters.first_frame) && (
-                          <img
-                            src={
-                              gen.parameters.start_image ||
-                              gen.parameters.first_frame
-                            }
-                            className="w-12 h-12 object-cover rounded-md"
-                          />
-                        )}
-                        {(gen.parameters.end_image ||
-                          gen.parameters.last_frame) && (
-                          <img
-                            src={
-                              gen.parameters.end_image ||
-                              gen.parameters.last_frame
-                            }
-                            className="w-12 h-12 object-cover rounded-md"
-                          />
-                        )}
+                  {currentVideoItem?.id === gen.id && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="text-white">
+                        <Eye />
                       </div>
                     </div>
+                  )}
+                </>
+              ) : gen.status === "failed" ? (
+                <div className="bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none w-32 h-32 flex items-center justify-center">
+                  <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
+                    Failed
+                  </Badge>
+                </div>
+              ) : gen.status === "processing" ? (
+                <div className="w-32 h-32 relative">
+                  <Ripple numCircles={8} mainCircleSize={10} />
+                  <div className="flex flex-col items-center justify-center gap-2 h-full ">
+                    <p className="text-xs text-center overflow-hidden text-ellipsis line-clamp-2 max-h-40">
+                      {gen.parameters.prompt}
+                    </p>
+
+                    <div className="flex gap-4">
+                      {(gen.parameters.start_image ||
+                        gen.parameters.first_frame) && (
+                        <img
+                          src={
+                            gen.parameters.start_image ||
+                            gen.parameters.first_frame
+                          }
+                          className="w-12 h-12 object-cover rounded-md"
+                        />
+                      )}
+                      {(gen.parameters.end_image ||
+                        gen.parameters.last_frame) && (
+                        <img
+                          src={
+                            gen.parameters.end_image ||
+                            gen.parameters.last_frame
+                          }
+                          className="w-12 h-12 object-cover rounded-md"
+                        />
+                      )}
+                    </div>
                   </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
+                </div>
+              ) : null}
+            </div>
+          ))}
         </div>
       )}
     </div>
