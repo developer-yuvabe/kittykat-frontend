@@ -165,7 +165,7 @@ const VideoGenerationInputControls = ({
                         {field.value ? (
                           <img
                             src={field.value}
-                            className="w-full h-full object-cover"
+                            className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
                           <button
@@ -211,7 +211,7 @@ const VideoGenerationInputControls = ({
                         {field.value ? (
                           <img
                             src={field.value}
-                            className="w-full h-full object-cover"
+                            className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
                           <button
