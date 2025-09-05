@@ -50,7 +50,8 @@ const A2iImageInput = ({
     model: selectedModel,
   });
   const { selectedBrandId } = useBrandStore();
-  const { referencePrompt, referencePromptSignal } = useA2iStore();
+  const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
+    useA2iStore();
   const { mutate: handleEnhancePrompt, isPending } = useMutation({
     mutationFn: () =>
       enhancePrompt(
@@ -58,6 +59,9 @@ const A2iImageInput = ({
         form.getValues("prompt"),
         referenceMoodboardId
       ),
+    onSuccess: () => {
+      clearReferencePrompt();
+    },
   });
 
   const currentCampaign = useMemo(
@@ -234,6 +238,7 @@ const A2iImageInput = ({
       form.setValue(refernceImagesModelInfo.id, null);
     }
     setImageBlocks([]);
+    clearReferencePrompt();
   };
 
   // Handle reference prompt changes
