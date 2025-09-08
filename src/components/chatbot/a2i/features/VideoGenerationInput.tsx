@@ -119,11 +119,11 @@ const VideoGenerationInputControls = ({
 
   const onSubmit = async (data: Record<string, any>) => {
     try {
-      if (!selectedBrandId) {
+      if (!selectedBrandId && !item.brand_id) {
         throw new Error("Brand ID is missing.");
       }
       const { generation_id } = await videoGenerationService(
-        selectedBrandId,
+        selectedBrandId || item.brand_id,
         data,
         campaignId ?? undefined
       );

@@ -38,6 +38,7 @@ import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
+import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -135,6 +136,9 @@ export function MediaLibrary({
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
   >(null);
+
+  if (!isMediaSelectDialog)
+    useBrandUpdates(effectiveBrandId || selectedBrand?.brand_id);
 
   const queryClient = useQueryClient();
 
