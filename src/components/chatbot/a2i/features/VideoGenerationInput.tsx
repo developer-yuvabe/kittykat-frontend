@@ -25,9 +25,9 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 import { Loader2, Settings2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
-import VideoGenerationModelSelector from "../VideoGenerationModelSelector";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { SelectIcon } from "@/components/ui/custom-icon";
+import ModelSelector from "../ModelSelector";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse;
@@ -38,13 +38,23 @@ const VideoGenerationInput = ({
   item,
   campaignId,
 }: VideoGenerationInputProps) => {
-  const { isModelsFetched, selectedVideoGenearationModel } = useModelsStore();
+  const {
+    isModelsFetched,
+    selectedVideoGenearationModel,
+    setSelectedVideoGenearationModel,
+  } = useModelsStore();
 
   return (
     <div className="w-full flex-1 flex flex-col gap-y-4">
       {/* Model Chooser */}
       <div className="ml-auto w-max">
-        <VideoGenerationModelSelector />
+        <ModelSelector
+          typeFilter="video"
+          selectedModel={selectedVideoGenearationModel}
+          onModelChange={(m) => {
+            setSelectedVideoGenearationModel(m);
+          }}
+        />
       </div>
       {isModelsFetched && selectedVideoGenearationModel && (
         <VideoGenerationInputControls
