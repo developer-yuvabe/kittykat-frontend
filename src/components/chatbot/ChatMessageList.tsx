@@ -25,17 +25,19 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   const { messages, isLoading, interrupt, values, submit } = useStreamContext();
 
-  const handleRegenerate = useCallback(
-    (parentCheckpoint: Checkpoint | null | undefined) => {
-      prevMessageLength.current -= 1;
-      setFirstTokenReceived(false);
-      submit(undefined, {
-        checkpoint: parentCheckpoint,
-        streamMode: ["values"],
-      });
-    },
-    [prevMessageLength, setFirstTokenReceived, submit]
-  );
+  const handleRegenerate = (
+    parentCheckpoint: Checkpoint | null | undefined
+  ) => {
+    // Do this so the loading state is correct
+    prevMessageLength.current = prevMessageLength.current - 1;
+    setFirstTokenReceived(false);
+    submit(undefined, {
+      checkpoint: parentCheckpoint,
+      streamMode: ["values"],
+      streamSubgraphs: true,
+      streamResumable: true,
+    });
+  };
 
   const filteredMessages = useMemo(() => {
     return messages.filter((m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX));
