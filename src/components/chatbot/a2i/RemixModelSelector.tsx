@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, getProviderIcon } from "@/lib/utils";
 import { useModelsStore } from "@/store/models.store";
 import React from "react";
 
@@ -63,16 +63,20 @@ export default function RemixModelSelector() {
               <SelectLabel>Available Models</SelectLabel>
               {models
                 .filter((m) => m.type === "remix")
-                .map((model) => (
-                  <SelectItem
-                    key={model.id}
-                    value={model.id}
-                    disabled={model.disabled}
-                    className="disabled:cursor-not-allowed"
-                  >
-                    {model.name}
-                  </SelectItem>
-                ))}
+                .map((model) => {
+                  const ProviderIcon = getProviderIcon(model.provider);
+                  return (
+                    <SelectItem
+                      key={model.id}
+                      value={model.id}
+                      disabled={model.disabled}
+                      className="disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <ProviderIcon />
+                      {model.name}
+                    </SelectItem>
+                  );
+                })}
             </SelectGroup>
           ) : (
             <div className="p-4 text-center text-sm text-muted-foreground italic">
