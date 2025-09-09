@@ -15,7 +15,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { CarouselDndProvider } from "@/contexts/CarouselDndContext";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { toast } from "sonner";
-import { forwardRef } from "react";
+import { forwardRef, useState, useCallback } from "react";
 import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 
 interface MoodboardContentProps {
@@ -29,6 +29,9 @@ const MoodboardContent = forwardRef<
   MoodboardContentProps
 >(({ moodboard, brandId, carouselHeader }, ref) => {
   const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
+
+  // State to force re-render of CarouselDndProvider when gallery selection happens
+  const [gallerySelectionKey, setGallerySelectionKey] = useState(0);
 
   // Use the data hook to get moodboard data
   const {
@@ -63,6 +66,8 @@ const MoodboardContent = forwardRef<
     isMoodboardSaving,
   });
 
+  console.log("moodboard photos:", photos);
+
   // Gallery actions
   const galleryActions = useGalleryQuery({
     selectedFilters: {
@@ -82,7 +87,7 @@ const MoodboardContent = forwardRef<
   const {
     movePhoto,
     onPhotoLike,
-    handleGallerySelection,
+    handleGallerySelection: originalHandleGallerySelection,
     autoFillPlaceholders,
   } = useMoodboardActions({
     photos,
@@ -95,6 +100,16 @@ const MoodboardContent = forwardRef<
     autoFillSuggestions,
     isAutoFillLoading,
   });
+
+  // Wrapper for handleGallerySelection to force re-render of CarouselDndProvider
+  const handleGallerySelection = useCallback(
+    (selectedItems: GalleryItemResponse[]) => {
+      originalHandleGallerySelection(selectedItems);
+      // Force re-render of CarouselDndProvider by incrementing the key
+      setGallerySelectionKey((prev) => prev + 1);
+    },
+    [originalHandleGallerySelection, setGallerySelectionKey]
+  );
 
   // Custom hook for save functionality
   useMoodboardSave({
@@ -122,10 +137,7 @@ const MoodboardContent = forwardRef<
   });
 
   // Handle drag-and-drop from carousel to moodboard placeholders
-  const handleCarouselItemDrop = (
-    item: GalleryItemResponse,
-    placeholderIndex: number
-  ) => {
+  const handleCarouselItemDrop = (item: GalleryItemResponse) => {
     // Check if the item is already in the moodboard
     const isAlreadyInMoodboard = photos.some((photo) => photo.id === item.id);
 
@@ -135,7 +147,7 @@ const MoodboardContent = forwardRef<
     }
 
     // Use the existing gallery selection logic to handle the drop
-    handleGallerySelection([item], placeholderIndex);
+    handleGallerySelection([item]);
     toast.success(`Added image to your moodboard!`);
   };
 
@@ -146,6 +158,7 @@ const MoodboardContent = forwardRef<
 
   return (
     <CarouselDndProvider
+      key={gallerySelectionKey}
       onGalleryItemDrop={handleCarouselItemDrop}
       onSortableMove={movePhoto}
       sortableItems={photos}

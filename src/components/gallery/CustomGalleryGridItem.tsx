@@ -11,6 +11,7 @@ import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { useBrandStore } from "@/store/brand.store";
 import type { MoodboardInformation } from "@/types/types";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
+import Image from "next/image";
 
 type GridItemProps<TPhoto extends Photo> = {
   photo: SortablePhoto<TPhoto>;
@@ -91,13 +92,16 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
       } `}
     >
       <div className="relative w-full h-full">
-        <img
+        <Image
           src={photo.src || "/placeholder.svg"}
           className={`w-full h-full object-cover transition-all duration-200 ${
             isRemoving ? "grayscale" : "grayscale-0"
           }`}
           draggable={false}
           loading="eager"
+          alt={photo.alt || `Image ${photo.id}`}
+          quality={20}
+          fill
         />
 
         <div
