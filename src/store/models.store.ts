@@ -9,8 +9,8 @@ type Store = {
   isModelsFetched: boolean;
   setIsModelsFetched: (isFetched: boolean) => void;
 
-  selectedModel: Model | null;
-  setSelectedModel: (model: Model) => void;
+  selectedImageGenerationModel: Model | null;
+  setSelectedImageGenerationModel: (model: Model) => void;
 
   selectedVideoGenearationModel: Model | null;
   setSelectedVideoGenearationModel: (model: Model) => void;
@@ -33,7 +33,7 @@ export const useModelsStore = create<Store>()((set) => {
       const selectedRemixModelId = getSessionItem("a2i-remix-model-id");
 
       const imageModels = models.filter((model) => model.type === "image");
-      const selectedModel =
+      const selectedImageGenerationModel =
         imageModels.length > 0
           ? imageModels.find((model) => model.id === selectedModelId) ||
             imageModels[0]
@@ -54,7 +54,7 @@ export const useModelsStore = create<Store>()((set) => {
             remixModels[0]
           : null;
 
-      if (!selectedModel) {
+      if (!selectedImageGenerationModel) {
         console.warn("No valid model found, defaulting to first model.");
         removeSessionItem("a2i-image-generation-model-id");
       }
@@ -75,7 +75,7 @@ export const useModelsStore = create<Store>()((set) => {
 
       set({
         models: models,
-        selectedModel: selectedModel,
+        selectedImageGenerationModel: selectedImageGenerationModel,
         selectedVideoGenearationModel: selectedVideoGenearationModel,
         selectedRemixModel: selectedRemixModel,
       });
@@ -84,12 +84,13 @@ export const useModelsStore = create<Store>()((set) => {
     isModelsFetched: false,
     setIsModelsFetched: (isFetched) => set({ isModelsFetched: isFetched }),
 
-    selectedModel: getSessionItem("a2i-image-generation-model-id") || null,
-    setSelectedModel: (model) => {
+    selectedImageGenerationModel:
+      getSessionItem("a2i-image-generation-model-id") || null,
+    setSelectedImageGenerationModel: (model) => {
       // Save to session storage
       setSessionItem("a2i-image-generation-model-id", model.id);
 
-      set({ selectedModel: model });
+      set({ selectedImageGenerationModel: model });
     },
 
     selectedVideoGenearationModel:

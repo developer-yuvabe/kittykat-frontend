@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
-import { MdOutlineCampaign } from "react-icons/md";
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  CirclePlus,
+  MegaphoneIcon,
+} from "lucide-react";
 import { DynamicContentSection } from "../DynamicSection";
 import { Agents, ThreadDetails } from "@/types/types";
 import { CampaignColors } from "./CampaignColors";
@@ -215,7 +220,7 @@ export const CampaignSection: React.FC<{
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3 overflow-hidden">
                   <span className="text-white font-bold">
-                    <MdOutlineCampaign size={24} />
+                    <MegaphoneIcon size={24} />
                   </span>
                 </div>
                 <div className="flex flex-col">
@@ -258,7 +263,7 @@ export const CampaignSection: React.FC<{
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3 overflow-hidden">
                   <span className="text-white font-bold">
-                    <MdOutlineCampaign size={24} />
+                    <MegaphoneIcon size={24} />
                   </span>
                 </div>
                 <div>

@@ -8,9 +8,9 @@ import { useSessionStorage } from "./useSessionStorage";
 import { isEmpty } from "lodash";
 
 export const useImageGenForm = (): UseFormReturn<any> => {
-  const { selectedModel } = useModelsStore();
+  const { selectedImageGenerationModel } = useModelsStore();
 
-  if (!selectedModel) {
+  if (!selectedImageGenerationModel) {
     throw new Error(
       "No model selected. Please select a model before using the form."
     );
@@ -18,8 +18,8 @@ export const useImageGenForm = (): UseFormReturn<any> => {
 
   const { setSessionItem } = useSessionStorage();
 
-  const { schema, defaultValues } = selectedModel
-    ? useDynamicModelSchema(selectedModel)
+  const { schema, defaultValues } = selectedImageGenerationModel
+    ? useDynamicModelSchema(selectedImageGenerationModel)
     : { schema: z.object({}), defaultValues: {} };
 
   const formModelKey = "imageGenForm";
@@ -54,7 +54,7 @@ export const useImageGenForm = (): UseFormReturn<any> => {
         }
       );
     });
-  }, [selectedModel?.id]);
+  }, [selectedImageGenerationModel?.id]);
 
   // Watch form values and persist to sessionStorage
   useEffect(() => {
