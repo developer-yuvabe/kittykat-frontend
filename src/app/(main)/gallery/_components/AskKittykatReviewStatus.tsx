@@ -68,6 +68,10 @@ export function AskKittykatReviewStatus({
       | "requested_revision"
       | "a2i_media_created"
   ) => {
+    setCurrentItem((prev) =>
+      prev ? { ...prev, workflow_status: newStatus as WorkflowStatus } : prev
+    );
+
     galleryActions.patchItem(
       {
         itemId: item.id,
@@ -75,10 +79,15 @@ export function AskKittykatReviewStatus({
       },
       {
         onSuccess(data) {
+          setCurrentItem(data);
           revalidateGalleryItemVersions(data);
+        },
+        onError() {
+          setCurrentItem(item);
         },
       }
     );
+
     setIsEditingStatus(false);
   };
 
