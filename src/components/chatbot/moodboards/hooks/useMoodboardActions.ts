@@ -113,69 +113,24 @@ export const useMoodboardActions = ({
 
   // Handle gallery selection for placeholder replacement
   const handleGallerySelection = useCallback(
-    (selectedItems: GalleryItemResponse[], placeholderIndex: number) => {
+    (selectedItems: GalleryItemResponse[]) => {
+      if (!selectedItems || selectedItems.length === 0) return;
+
       setPhotos((prevPhotos) => {
         const updatedPhotos = [...prevPhotos];
 
-        if (selectedItems.length === 0) return updatedPhotos;
+        // Find placeholder items to fill (same simple logic as autofill)
+        const placeholderIndices = updatedPhotos
+          .map((photo, index) => ({ photo, index }))
+          .filter(({ photo }) => photo.is_placeholder)
+          .map(({ index }) => index);
 
-        // Replace the specific placeholder or add to a specific position
-        if (placeholderIndex < updatedPhotos.length) {
-          // Replace placeholder at specific index with first selected item
-          const firstItem = selectedItems[0];
-          updatedPhotos[placeholderIndex] = {
-            id: firstItem.id,
-            src: firstItem.asset_url,
-            width: firstItem.dimensions?.width || 300,
-            height: firstItem.dimensions?.height || 300,
-            alt: `Image ${firstItem.id}`,
-            liked: firstItem.is_favourite || false,
-            is_placeholder: false,
-          };
-
-          // Handle additional selected items if there are more than one
-          if (selectedItems.length > 1) {
-            const remainingItems = selectedItems.slice(1);
-
-            // Find all available placeholder positions starting from index 0
-            const availablePlaceholderIndices: number[] = [];
-            for (let i = 0; i < updatedPhotos.length; i++) {
-              if (updatedPhotos[i].is_placeholder && i !== placeholderIndex) {
-                availablePlaceholderIndices.push(i);
-              }
-            }
-
-            // Fill available placeholders with remaining items
-            remainingItems.forEach((item, index) => {
-              if (index < availablePlaceholderIndices.length) {
-                const targetIndex = availablePlaceholderIndices[index];
-                updatedPhotos[targetIndex] = {
-                  id: item.id,
-                  src: item.asset_url,
-                  width: item.dimensions?.width || 300,
-                  height: item.dimensions?.height || 300,
-                  alt: `Image ${item.id}`,
-                  liked: item.is_favourite || false,
-                  is_placeholder: false,
-                };
-              } else {
-                // If no more placeholders available, add to the end
-                updatedPhotos.push({
-                  id: item.id,
-                  src: item.asset_url,
-                  width: item.dimensions?.width || 300,
-                  height: item.dimensions?.height || 300,
-                  alt: `Image ${item.id}`,
-                  liked: item.is_favourite || false,
-                  is_placeholder: false,
-                });
-              }
-            });
-          }
-        } else {
-          // Add to the end if placeholderIndex is beyond current length
-          selectedItems.forEach((item) => {
-            updatedPhotos.push({
+        // Fill placeholders with selected items (same simple logic as autofill)
+        selectedItems
+          .slice(0, placeholderIndices.length)
+          .forEach((item: GalleryItemResponse, idx: number) => {
+            const targetIndex = placeholderIndices[idx];
+            updatedPhotos[targetIndex] = {
               id: item.id,
               src: item.asset_url,
               width: item.dimensions?.width || 300,
@@ -183,11 +138,27 @@ export const useMoodboardActions = ({
               alt: `Image ${item.id}`,
               liked: item.is_favourite || false,
               is_placeholder: false,
-            });
+            };
           });
+
+        // If there are more selected items than placeholders, append to end
+        if (selectedItems.length > placeholderIndices.length) {
+          selectedItems
+            .slice(placeholderIndices.length)
+            .forEach((item: GalleryItemResponse) => {
+              updatedPhotos.push({
+                id: item.id,
+                src: item.asset_url,
+                width: item.dimensions?.width || 300,
+                height: item.dimensions?.height || 300,
+                alt: `Image ${item.id}`,
+                liked: item.is_favourite || false,
+                is_placeholder: false,
+              });
+            });
         }
 
-        // Check after updating if total exceeds current noOfImagesForMoodboard
+        // Update noOfImagesForMoodboard if needed
         const newTotal = updatedPhotos.filter(
           (photo) => !photo.is_placeholder
         ).length;

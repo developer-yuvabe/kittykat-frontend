@@ -304,14 +304,6 @@ export const MoodboardSection: React.FC<{
       toast.error("Missing brand or campaign information");
       return;
     }
-
-    if (galleryActions.totalItems < 10) {
-      toast.error(
-        "At least 10 images are required for analysis and moodboard creation."
-      );
-      return;
-    }
-
     await createMoodboardAsync(
       selectedBrandId,
       currentCampaign.id,
@@ -332,13 +324,6 @@ export const MoodboardSection: React.FC<{
     // For subsequent moodboards, create directly
     if (!selectedBrandId || !currentCampaign?.id) {
       toast.error("Missing brand or campaign information");
-      return;
-    }
-
-    if (galleryActions.totalItems < 10) {
-      toast.error(
-        "At least 10 images are required for analysis and moodboard creation."
-      );
       return;
     }
 
