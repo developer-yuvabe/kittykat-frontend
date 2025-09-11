@@ -648,6 +648,9 @@ export function MediaEditorDialog({
         setIsSubmitting(false);
         return;
       }
+      setCurrentItem((prev) =>
+        prev ? { ...prev, workflow_status: "request_created" } : prev
+      );
       galleryActions.patchItem(
         {
           itemId: currentItem?.id,
@@ -658,7 +661,11 @@ export function MediaEditorDialog({
         },
         {
           onSuccess(data) {
+            setCurrentItem(data);
             revalidateGalleryItemVersions(data);
+          },
+          onError() {
+            setCurrentItem(item);
           },
         }
       );
