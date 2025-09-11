@@ -1,6 +1,10 @@
 import React, { useState, useEffect, RefObject } from "react";
 import { capitalizeKey } from "@/lib/langgraph.utils";
-import { MoodboardInformation, ThreadCampaign } from "@/types/types";
+import {
+  MoodboardAsset,
+  MoodboardInformation,
+  ThreadCampaign,
+} from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
@@ -23,6 +27,7 @@ import { GalleryItem, BulkGalleryUploadRequest } from "@/types/gallery.types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 import { dataURLToBlob } from "@/lib/utils";
+import { useA2iStore } from "@/store/a2i.store";
 
 type Props = {
   moodboard_tags?: Record<string, string[]>;
@@ -33,6 +38,7 @@ type Props = {
   galleryActions?: GalleryActions;
   currentCampaign?: ThreadCampaign | null;
   galleryGridRef?: RefObject<CustomGalleryGridRef | null>;
+  moodboardAssets?: MoodboardAsset[];
 };
 
 function MoodboardTagResults({
@@ -44,12 +50,14 @@ function MoodboardTagResults({
   galleryActions,
   currentCampaign,
   galleryGridRef,
+  moodboardAssets = [],
 }: Props) {
   const [localTags, setLocalTags] = useState<
     Record<string, { value: string; selected: boolean }[]>
   >({});
 
   const { selectedBrandId, isMoodboardSaving } = useBrandStore();
+  const { isGeneratingPrompts, setIsGeneratingPrompts } = useA2iStore();
 
   // Add loading state for screenshot capture and upload
   const [isCapturingAndUploading, setIsCapturingAndUploading] = useState(false);
@@ -62,8 +70,15 @@ function MoodboardTagResults({
     });
 
   // Mutation for generating showboard
-  const { mutate: generateShowboard, isPending: isGenerating } = useMutation({
-    mutationFn: () => generateA2iShowboard(selectedBrandId!, moodboardId!),
+  const { mutate: generateShowboard } = useMutation({
+    mutationFn: () =>
+      generateA2iShowboard(selectedBrandId!, moodboardId!, moodboardAssets),
+    onMutate: () => {
+      setIsGeneratingPrompts(true);
+    },
+    onSettled: () => {
+      setIsGeneratingPrompts(false);
+    },
   });
 
   // Initialize localTags from both moodboard_tags & selected_moodboard_tags
@@ -273,12 +288,14 @@ function MoodboardTagResults({
                 onClick={handleGenerate}
                 disabled={
                   isPatching ||
-                  isGenerating ||
+                  isGeneratingPrompts ||
                   isGalleryItemsProcessing ||
                   isCapturingAndUploading
                 }
               >
-                {isPatching || isGenerating || isCapturingAndUploading ? (
+                {isPatching ||
+                isGeneratingPrompts ||
+                isCapturingAndUploading ? (
                   <Loader />
                 ) : (
                   <>

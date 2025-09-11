@@ -1,17 +1,12 @@
 // components/MoodboardVisualSection.tsx
 
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2, Globe } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { MoodboardVisualImages } from "./MoodboardVisualImages";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { GalleryItem, BulkGalleryUploadRequest } from "@/types/gallery.types";
 import { MoodboardInformation, ThreadCampaign } from "@/types/types";
-import {
-  PinterestIcon,
-  InstagramIcon,
-  FacebookIcon,
-} from "@/components/ui/custom-icon";
 import { GalleryActions } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";

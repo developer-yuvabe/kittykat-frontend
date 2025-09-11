@@ -565,6 +565,9 @@ export const MoodboardSection: React.FC<{
                           galleryActions={galleryActions}
                           currentCampaign={currentCampaign}
                           galleryGridRef={galleryGridRef}
+                          moodboardAssets={
+                            currentMoodboard.moodboard_assets || []
+                          }
                         />
                       )}
                     </div>

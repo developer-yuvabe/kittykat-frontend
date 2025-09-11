@@ -74,6 +74,9 @@ const A2iImagesSection = function A2iImagesSection({
             formRef={formRef}
             campaignInformation={campaignInformation}
             selectedCampaignIndex={selectedCampaignIndex}
+            referenceMoodboardAssets={
+              a2iImageInformation?.reference_moodboard_assets
+            }
           />
           <A2iImagesWrapper
             formRef={formRef}
