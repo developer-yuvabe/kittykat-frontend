@@ -272,7 +272,7 @@ export const MoodboardSection: React.FC<{
   // Set count when data is available
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
-    const fallbackImageCount = galleryActions.totalItems ?? 0;
+    const fallbackImageCount = 16;
 
     updateImageCountFromMoodboard(assetCount, fallbackImageCount);
   }, [

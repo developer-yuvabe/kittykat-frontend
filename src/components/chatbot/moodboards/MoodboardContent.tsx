@@ -66,8 +66,6 @@ const MoodboardContent = forwardRef<
     isMoodboardSaving,
   });
 
-  console.log("moodboard photos:", photos);
-
   // Gallery actions
   const galleryActions = useGalleryQuery({
     selectedFilters: {
@@ -103,8 +101,8 @@ const MoodboardContent = forwardRef<
 
   // Wrapper for handleGallerySelection to force re-render of CarouselDndProvider
   const handleGallerySelection = useCallback(
-    (selectedItems: GalleryItemResponse[]) => {
-      originalHandleGallerySelection(selectedItems);
+    (selectedItems: GalleryItemResponse[], placeHolderIndex?: number) => {
+      originalHandleGallerySelection(selectedItems, placeHolderIndex);
       // Force re-render of CarouselDndProvider by incrementing the key
       setGallerySelectionKey((prev) => prev + 1);
     },
