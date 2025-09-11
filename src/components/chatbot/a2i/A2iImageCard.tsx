@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { toast } from "sonner";
@@ -149,23 +148,40 @@ const A2iImageCard = ({
 
   const handleRemoveItem = async () => {
     setIsDeleting(true);
-    try {
+    setShowDeleteDialog(false); // Close dialog immediately
+
+    const deletePromise = (async () => {
+      // Delete the A2I generation first
       if (video) {
         await deleteA2iVideo(selectedBrandId!, generationId);
       } else {
         await deleteA2iImage(selectedBrandId!, generationId, image?.id ?? null);
       }
-      setShowDeleteDialog(false);
-    } catch (error) {
-      console.error("Error deleting image:", error);
-      toast.error("Could not delete image at the moment. Please try again.", {
-        position: "bottom-right",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
+      // If there's a corresponding gallery item, delete it as well
+      const itemId = video?.id ?? image?.id;
+      if (itemId && galleryItem?.data) {
+        try {
+          galleryActions.deleteItem(itemId);
+        } catch (galleryError) {
+          console.warn(
+            "Failed to delete gallery item, but A2I generation was deleted:",
+            galleryError
+          );
+        }
+      }
+    })();
+
+    toast.promise(deletePromise, {
+      loading: "Deleting...",
+      success: "Deleted successfully!",
+      error: "Could not delete item. Please try again.",
+    });
+
+    deletePromise.finally(() => {
+      setIsDeleting(false);
+    });
+  };
   useEffect(() => {
     setIsLiked(galleryItem?.data?.is_favourite || false);
   }, [galleryItem?.data?.is_favourite]);

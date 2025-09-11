@@ -161,7 +161,7 @@ export type Model = {
   name: string;
   disabled: boolean;
   description?: string;
-  provider: "openai" | "replicate";
+  provider: "openai" | "replicate" | "byteplus" | "gemini";
   type: "image" | "video" | "remix" | "image-upscale";
   model: string;
   prefix?: string;

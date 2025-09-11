@@ -97,13 +97,6 @@ export function MediaFolderView({
           isMediaSelectDialog={false}
         />
 
-        {/* Folder Tabs for campaign view */}
-        <FolderTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          title="Subfolders"
-        />
-
         <CampaignView
           selectedBrand={selectedBrand}
           campaignId={selectedCampaignFromUrl}
@@ -115,6 +108,7 @@ export function MediaFolderView({
           searchQuery={searchQuery}
           favorites={favorites}
           selectedFilters={selectedFilters}
+          onTabChange={onTabChange}
         />
       </div>
     );

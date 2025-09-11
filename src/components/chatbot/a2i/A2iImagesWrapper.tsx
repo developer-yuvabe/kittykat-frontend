@@ -12,7 +12,6 @@ import {
   A2iImagePlaceholderCard,
 } from "./A2iImageCard";
 import A2iImageInput from "./A2iImageInput";
-import A2iImageModelSelector from "./A2iImageModelSelector";
 import {
   useEffect,
   useState,
@@ -41,6 +40,7 @@ import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
 import { useModelsStore } from "@/store/models.store";
 import A2iImageInputLoader from "./A2iImageInputLoader";
+import ModelSelector from "./ModelSelector";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -68,7 +68,11 @@ export const A2iImagesWrapper = ({
   selectedCampaignIndex,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
-  const { selectedModel, isModelsFetched } = useModelsStore();
+  const {
+    selectedImageGenerationModel,
+    isModelsFetched,
+    setSelectedImageGenerationModel,
+  } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
 
   // Track drag and server update states
@@ -216,7 +220,16 @@ export const A2iImagesWrapper = ({
     return items.map(getExistingId).filter(Boolean) as string[];
   }, [items]);
 
-  const customActions = useMemo(() => <A2iImageModelSelector />, []);
+  const customActions = useMemo(
+    () => (
+      <ModelSelector
+        typeFilter="image"
+        selectedModel={selectedImageGenerationModel}
+        onModelChange={(m) => setSelectedImageGenerationModel(m)}
+      />
+    ),
+    [selectedImageGenerationModel]
+  );
   const contextValue = useMemo(() => ({ data: {} }), []);
 
   const INITIAL_IMAGE_PLACEHOLDER = 12;
@@ -277,7 +290,7 @@ export const A2iImagesWrapper = ({
               </div>
             </SortableContext>
           </DndContext>
-          {!isModelsFetched || !selectedModel ? (
+          {!isModelsFetched || !selectedImageGenerationModel ? (
             <A2iImageInputLoader />
           ) : (
             <A2iImageInput

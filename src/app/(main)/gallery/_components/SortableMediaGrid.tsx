@@ -54,7 +54,8 @@ export function SortableMediaGrid({
 
   // New state for MediaEditor carousel
   const [editorOpen, setEditorOpen] = useState(false);
-  const [currentEditorIndex, setCurrentEditorIndex] = useState(0);
+  const [currentEditorItem, setCurrentEditorItem] =
+    useState<GalleryItemResponse | null>(null);
 
   // Get the gallery items and sort them by brand_sort_order
   const galleryItems = useMemo(() => {
@@ -101,13 +102,8 @@ export function SortableMediaGrid({
 
   // New function to handle opening editor
   const handleEditClick = (item: GalleryItemResponse) => {
-    const itemIndex = galleryItems.findIndex(
-      (galleryItem) => galleryItem.id === item.id
-    );
-    if (itemIndex !== -1) {
-      setCurrentEditorIndex(itemIndex);
-      setEditorOpen(true);
-    }
+    setCurrentEditorItem(item);
+    setEditorOpen(true);
   };
 
   // Handle editing moodboard for moodboard assets
@@ -125,18 +121,21 @@ export function SortableMediaGrid({
     }
   };
 
+  const currentEditorIndex = useMemo(() => {
+    if (!currentEditorItem) return -1;
+    return galleryItems.findIndex((item) => item.id === currentEditorItem.id);
+  }, [currentEditorItem, galleryItems]);
+
   // Handle carousel navigation
   const handleEditorNavigate = (direction: "next" | "prev") => {
     const totalItems = galleryItems.length;
 
     if (direction === "next" && currentEditorIndex < totalItems - 1) {
-      setCurrentEditorIndex(currentEditorIndex + 1);
+      setCurrentEditorItem(galleryItems[currentEditorIndex + 1] || null);
     } else if (direction === "prev" && currentEditorIndex > 0) {
-      setCurrentEditorIndex(currentEditorIndex - 1);
+      setCurrentEditorItem(galleryItems[currentEditorIndex - 1] || null);
     }
   };
-
-  const currentEditorItem = galleryItems[currentEditorIndex] || null;
 
   // Don't show DnD in dialog mode
   if (isMediaSelectDialog) {
@@ -177,9 +176,9 @@ export function SortableMediaGrid({
           onOpenChange={setEditorOpen}
           item={currentEditorItem}
           galleryActions={galleryActions}
-          currentIndex={currentEditorIndex}
           onNavigate={handleEditorNavigate}
           totalItems={galleryItems.length}
+          currentIndex={currentEditorIndex}
         />
 
         <ReusableAlertDialog
@@ -270,9 +269,9 @@ export function SortableMediaGrid({
         onOpenChange={setEditorOpen}
         item={currentEditorItem}
         galleryActions={galleryActions}
-        currentIndex={currentEditorIndex}
         onNavigate={handleEditorNavigate}
         totalItems={galleryItems.length}
+        currentIndex={currentEditorIndex}
       />
 
       {/* Delete confirmation dialog */}

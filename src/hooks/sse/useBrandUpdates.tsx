@@ -3,11 +3,13 @@ import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
+import { useVideoGenStore } from "@/store/video-gen.store";
 
 export function useBrandUpdates(brandId?: string | null) {
   const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
   const [data, setData] = useState<ThreadDetails | null>(null);
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
+  const { setGenerations } = useVideoGenStore();
 
   const { setIsCampaignCreating } = useBrandStore();
 
@@ -43,6 +45,13 @@ export function useBrandUpdates(brandId?: string | null) {
       previousCampaignInfo.current = parsed.campaign_information;
       setIsFetchingBrandInfo(false);
       setData(parsed);
+
+      if (
+        parsed.a2i_image_information?.generations &&
+        parsed.a2i_image_information.generations.length > 0
+      ) {
+        setGenerations(parsed.a2i_image_information.generations);
+      }
     });
 
     eventSource.onerror = (err) => {
