@@ -91,31 +91,79 @@ export const CustomGalleryGrid = forwardRef<
           }
 
           try {
-            // Wait for images to load
-            const images =
-              screenshotContainerRef.current.querySelectorAll("img");
-            await Promise.all(
-              Array.from(images).map(
-                (img) =>
-                  new Promise((resolve) => {
-                    if (img.complete) resolve(true);
-                    else {
-                      img.onload = () => resolve(true);
-                      img.onerror = () => resolve(true); // Continue even if image fails
-                    }
-                  })
-              )
-            );
-
-            const canvas = await html2canvas(screenshotContainerRef.current, {
-              useCORS: true,
-              allowTaint: true,
-              scale: 2,
-              backgroundColor: "#ffffff",
-              logging: false, // Disable console logs in production
+            // Create a timeout promise for the entire operation
+            const timeoutPromise = new Promise<string | null>((_, reject) => {
+              setTimeout(
+                () => reject(new Error("Screenshot timeout after 10 seconds")),
+                10000
+              );
             });
 
-            return canvas.toDataURL("image/png");
+            const screenshotPromise = async (): Promise<string | null> => {
+              // Wait for images to load with individual timeouts
+              const images =
+                screenshotContainerRef.current!.querySelectorAll("img");
+
+              const imagePromises = Array.from(images).map(
+                (img) =>
+                  new Promise<void>((resolve) => {
+                    if (img.complete) {
+                      resolve();
+                      return;
+                    }
+
+                    const timeout = setTimeout(() => {
+                      console.warn(
+                        "Image load timeout, proceeding anyway:",
+                        img.src
+                      );
+                      resolve();
+                    }, 3000);
+
+                    const cleanup = () => {
+                      clearTimeout(timeout);
+                      resolve();
+                    };
+
+                    img.onload = cleanup;
+                    img.onerror = cleanup;
+                  })
+              );
+
+              // Wait for all images with timeout
+              await Promise.all(imagePromises);
+
+              // Small delay to ensure rendering is complete
+              await new Promise((resolve) => setTimeout(resolve, 100));
+
+              const canvas = await html2canvas(
+                screenshotContainerRef.current!,
+                {
+                  useCORS: true,
+                  allowTaint: true,
+                  scale: 2,
+                  backgroundColor: "#ffffff",
+                  logging: false,
+                  removeContainer: true,
+                  foreignObjectRendering: false,
+                  imageTimeout: 2000, // 2 second timeout for each image
+                  onclone: (clonedDoc) => {
+                    // Ensure all styles are applied in cloned document
+                    const clonedElement = clonedDoc.querySelector(
+                      "[data-screenshot-container]"
+                    );
+                    if (clonedElement) {
+                      (clonedElement as HTMLElement).style.position = "static";
+                      (clonedElement as HTMLElement).style.top = "auto";
+                      (clonedElement as HTMLElement).style.left = "auto";
+                    }
+                  },
+                }
+              );
+
+              return canvas.toDataURL("image/png");
+            };
+            return await Promise.race([screenshotPromise(), timeoutPromise]);
           } catch (error) {
             console.error("Failed to capture screenshot:", error);
             return null;
@@ -223,6 +271,7 @@ export const CustomGalleryGrid = forwardRef<
         {/* Hidden screenshot container with full layout */}
         <div
           ref={screenshotContainerRef}
+          data-screenshot-container="true"
           className="fixed top-[-9999px] left-[-9999px] bg-white w-[1200px] p-[30px]"
         >
           {/* Header Section */}
