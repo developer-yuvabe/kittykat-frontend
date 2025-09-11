@@ -51,9 +51,6 @@ function MoodboardTagResults({
 
   const { selectedBrandId, isMoodboardSaving } = useBrandStore();
 
-  // Add loading state for screenshot capture and upload
-  const [isCapturingAndUploading, setIsCapturingAndUploading] = useState(false);
-
   // Mutation for patching
   const { mutateAsync: patchMoodboardMutate, isPending: isPatching } =
     useMutation({
@@ -106,17 +103,26 @@ function MoodboardTagResults({
       !selectedBrandId ||
       !moodboardId
     ) {
+      console.warn("Missing required dependencies for screenshot capture");
       return false;
     }
 
     try {
-      setIsCapturingAndUploading(true);
+      console.log("Starting screenshot capture...");
 
-      // Use the screenshot capture function from the ref
-      const dataURL = await galleryGridRef.current.captureScreenshot();
+      // Add a timeout wrapper for the entire screenshot operation
+      const screenshotPromise = galleryGridRef.current.captureScreenshot();
+      const timeoutPromise = new Promise<string | null>((_, reject) => {
+        setTimeout(
+          () => reject(new Error("Screenshot operation timeout")),
+          15000
+        );
+      });
+
+      const dataURL = await Promise.race([screenshotPromise, timeoutPromise]);
 
       if (!dataURL) {
-        throw new Error("Failed to capture screenshot");
+        throw new Error("Failed to capture screenshot - no data returned");
       }
 
       // Convert dataURL to blob
@@ -169,21 +175,16 @@ function MoodboardTagResults({
       return true;
     } catch (error) {
       console.error("Error capturing moodboard screenshot:", error);
-      toast.error(
-        "Failed to capture moodboard screenshot. Proceeding with generation anyway..."
+      toast.warning(
+        `Failed to capture moodboard screenshot. Proceeding with generation anyway...`
       );
       return false;
-    } finally {
-      setIsCapturingAndUploading(false);
     }
   };
 
   const handleGenerate = async () => {
     try {
-      // First, capture the moodboard screenshot and add to gallery
-      await captureMoodboardAndUploadToGallery();
-
-      // Prepare selected_moodboard_tags payload
+      // Prepare selected_moodboard_tags payload first
       const selectedTagsPayload: Record<string, string[]> = {};
       for (const [category, tags] of Object.entries(localTags)) {
         selectedTagsPayload[category] = tags
@@ -196,19 +197,37 @@ function MoodboardTagResults({
         selected_moodboard_tags: selectedTagsPayload,
       });
 
-      // Then trigger generation
+      // Try to capture screenshot in parallel (don't wait for it)
+      // This prevents the screenshot from blocking the generation
+      if (
+        galleryGridRef?.current &&
+        galleryActions &&
+        currentCampaign &&
+        selectedBrandId &&
+        moodboardId
+      ) {
+        captureMoodboardAndUploadToGallery().catch((error) => {
+          console.error(
+            "Screenshot capture failed but continuing with generation:",
+            error
+          );
+        });
+      }
+
+      // Start generation immediately
       generateShowboard(undefined, {
         onSuccess: () => {
           toast.success("Concept Visual prompts generated successfully!");
         },
-        onError: () => {
+        onError: (error) => {
+          console.error("Generation failed:", error);
           toast.error(
             "Failed to generate Concept Visual prompts. Please try again."
           );
         },
       });
     } catch (err) {
-      console.error(err);
+      console.error("Error in handleGenerate:", err);
       toast.error("Failed to save selected tags before generation.");
     }
   };
@@ -272,13 +291,10 @@ function MoodboardTagResults({
                 className="w-full"
                 onClick={handleGenerate}
                 disabled={
-                  isPatching ||
-                  isGenerating ||
-                  isGalleryItemsProcessing ||
-                  isCapturingAndUploading
+                  isPatching || isGenerating || isGalleryItemsProcessing
                 }
               >
-                {isPatching || isGenerating || isCapturingAndUploading ? (
+                {isPatching || isGenerating ? (
                   <Loader />
                 ) : (
                   <>
