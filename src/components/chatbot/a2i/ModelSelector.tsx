@@ -119,7 +119,7 @@ export default function ModelSelector({
                       <TooltipContent
                         data-allow-event-propagation="true"
                         side="right"
-                        className="max-w-32"
+                        className="max-w-64"
                       >
                         <ReactMarkdownRender
                           data-allow-event-propagation="true"
