@@ -48,11 +48,6 @@ const useModelPricing = ({
     ? (form.watch(noOfImagesToBeGeneratedName) as number)
     : 1;
   const watchedTriggerValues = form.watch(estimationTriggers);
-  console.log("---------------------------------");
-  console.log("selectedModel", !!selectedModel?.id);
-  console.log("isDynamicPricing", isDynamicPricing);
-  console.log("isQueryEnabled", isDynamicPricing && !!selectedModel?.id);
-  console.log("---------------------------------");
 
   const { data, isPending } = useQuery({
     queryKey: [
@@ -63,7 +58,7 @@ const useModelPricing = ({
     ],
     queryFn: async () => {
       const values = form.getValues();
-      console.log(values);
+
       // There is a small micro delay between model selection and form reset TODO: refactor this hook to be used after form is set
       if (isEmpty(values) || values.model !== selectedModel?.model) return 0;
 
