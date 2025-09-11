@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchTopics, Topic } from "@/services/api/pexels.service";
+import { fetchTopics } from "@/services/api/pexels.service";
 import { createClient, PhotosWithTotalResults, ErrorResponse } from "pexels";
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ import Masonry from "react-masonry-css";
 import { PexelsMasonryImageCard } from "./PexelsMasonryImageCard";
 import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { useInView } from "react-intersection-observer";
+import { PexelsTopicsResponse } from "@/types/pexels.types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const client = createClient(env.NEXT_PUBLIC_PEXELS_API_KEY);
 
@@ -78,13 +81,23 @@ export default function TopicsGrid({
   }, [debouncedSearch]);
 
   // 📡 React Query for Topics (trending)
+  // const {
+  //   data: topics = [],
+  //   isLoading: topicsLoading,
+  //   isError: topicsError,
+  // } = useQuery<Topic[]>({
+  //   queryKey: ["topics"],
+  //   queryFn: () => fetchTopics(),
+  // });
   const {
-    data: topics = [],
+    data: topicsResponse,
     isLoading: topicsLoading,
     isError: topicsError,
-  } = useQuery<Topic[]>({
-    queryKey: ["topics"],
-    queryFn: () => fetchTopics(),
+  } = useQuery<PexelsTopicsResponse>({
+    queryKey: ["topics", selectedBrand?.brand_id, selectedCampaignId],
+    queryFn: () =>
+      fetchTopics(selectedBrand?.brand_id ?? "", selectedCampaignId ?? null),
+    enabled: !!selectedBrand?.brand_id, // only run when brand is selected
   });
 
   // 📡 React Query Infinite Scroll for Search
@@ -282,7 +295,7 @@ export default function TopicsGrid({
   return (
     <div className="p-4 relative">
       {/* 🔍 Search Bar (shadcn input + clear button) */}
-      <div className="mb-4 flex items-center">
+      <div className="mb-4">
         <div className="relative w-full">
           <Input
             type="text"
@@ -301,6 +314,27 @@ export default function TopicsGrid({
             </button>
           )}
         </div>
+        {topicsResponse?.editor_choice && (
+          <div className="mt-3 ml-1 flex items-center gap-2">
+            <Checkbox
+              id="editorChoice"
+              checked={search === topicsResponse.editor_choice}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSearch(topicsResponse.editor_choice);
+                } else {
+                  setSearch(""); // reset search on uncheck
+                }
+              }}
+            />
+            <Label
+              htmlFor="editorChoice"
+              className="font-semibold text-gray-700 cursor-pointer"
+            >
+              Editor&apos;s Choice
+            </Label>
+          </div>
+        )}
       </div>
 
       {/* Grid Section */}
@@ -354,8 +388,27 @@ export default function TopicsGrid({
       ) : topicsError ? (
         <p className="text-center text-red-500">Failed to load topics.</p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {topics.map((t) => (
+        <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* {topics.map((t) => (
+            <div
+              key={t.id}
+              className="relative cursor-pointer overflow-hidden shadow-md group"
+              onClick={() => setSearch(t.topic)}
+            >
+              <img
+                src={t.thumbnail_url || "https://via.placeholder.com/300"}
+                alt={t.topic ?? ""}
+                className="w-full h-40 object-cover transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="text-white text-lg font-semibold">
+                  {t.topic}
+                </span>
+              </div>
+            </div>
+          ))} */}
+
+          {topicsResponse?.topics.map((t) => (
             <div
               key={t.id}
               className="relative cursor-pointer overflow-hidden shadow-md group"

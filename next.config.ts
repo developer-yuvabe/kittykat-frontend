@@ -21,6 +21,11 @@ const nextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**", // Allow all images from Unsplash
       },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+        pathname: "/**", // Allow all images from Pexels
+      },
     ],
   },
 };
