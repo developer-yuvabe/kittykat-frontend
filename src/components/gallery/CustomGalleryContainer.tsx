@@ -32,7 +32,10 @@ type OptimisticCustomGridGalleryProps = {
   onPhotoLike?: (index: number, liked: boolean) => void;
   hasUnsavedChanges?: boolean;
   moodboard: MoodboardInformation;
-  onGallerySelection?: (selectedItems: GalleryItemResponse[]) => void;
+  onGallerySelection?: (
+    selectedItems: GalleryItemResponse[],
+    placeHolderIndex?: number
+  ) => void;
   isPreview?: boolean;
   galleryActions?: GalleryActions;
 };
