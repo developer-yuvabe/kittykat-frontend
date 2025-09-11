@@ -36,7 +36,11 @@ export const upscaleImage = async (
 ) => {
   try {
     await handleApiRequest(
-      axiosInstance.post(`/brands/${brandId}/image-upscaling`, data)
+      axiosInstance.post(`/brands/${brandId}/image-upscaling`, {
+        ...data,
+        model: "magnific/image-upscaler",
+        provider: "magnific",
+      })
     );
   } catch (error) {
     console.error("Error upscaling image:", error);

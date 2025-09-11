@@ -20,6 +20,7 @@ const useModelPricing = ({
   const { isDynamicPricing, estimationTriggers, noOfImagesToBeGeneratedName } =
     useMemo(() => {
       if (!selectedModel) {
+        console.log("Culprit 1");
         return {
           isDynamicPricing: false,
           estimationTriggers: [],
@@ -27,6 +28,9 @@ const useModelPricing = ({
         };
       }
 
+      if (!(selectedModel.pricing?.type === "variable")) {
+        console.log("Culprit 2");
+      }
       return {
         isDynamicPricing: selectedModel.pricing?.type === "variable",
         estimationTriggers:
@@ -38,12 +42,18 @@ const useModelPricing = ({
             (param) => param.type === "image_count"
           )?.id ?? null,
       };
-    }, [selectedModel?.id]);
+    }, [selectedModel]);
 
   const noOfImagesToBeGenerated = noOfImagesToBeGeneratedName
     ? (form.watch(noOfImagesToBeGeneratedName) as number)
     : 1;
   const watchedTriggerValues = form.watch(estimationTriggers);
+  console.log("---------------------------------");
+  console.log("selectedModel", !!selectedModel?.id);
+  console.log("isDynamicPricing", isDynamicPricing);
+  console.log("isQueryEnabled", isDynamicPricing && !!selectedModel?.id);
+  console.log("---------------------------------");
+
   const { data, isPending } = useQuery({
     queryKey: [
       "variable-pricing",
@@ -53,8 +63,9 @@ const useModelPricing = ({
     ],
     queryFn: async () => {
       const values = form.getValues();
+      console.log(values);
       // There is a small micro delay between model selection and form reset TODO: refactor this hook to be used after form is set
-      if (isEmpty(values) || values.model !== selectedModel?.id) return;
+      if (isEmpty(values) || values.model !== selectedModel?.model) return 0;
 
       if (selectedModel?.type === "video") {
         return await estimateVideoGenerationCredits(values);

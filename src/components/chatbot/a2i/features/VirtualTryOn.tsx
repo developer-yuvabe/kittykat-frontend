@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
 import { BrainIcon, Loader2, X } from "lucide-react";
 import React, { useState } from "react";
-import { cn,  PlatformApiError } from "@/lib/utils";
+import { cn, PlatformApiError } from "@/lib/utils";
 import {
   createVtonImage,
   estimateVtonCredits,
@@ -35,7 +35,13 @@ const VirtualTryOn = ({
   const { data: estimatedCredits, isPending } = useQuery({
     queryKey: ["vton-credits", productImage, garmentImage],
     queryFn: async () => {
-      return await estimateVtonCredits(productImage, garmentImage ?? "");
+      return await estimateVtonCredits({
+        model_image: productImage,
+        product_image: garmentImage,
+        campaign_id: campaignId,
+        model: "gpt-image-1",
+        provider: "openai",
+      });
     },
   });
 
@@ -47,9 +53,13 @@ const VirtualTryOn = ({
     try {
       await createVtonImage(
         (brandId ?? selectedBrandId)!,
-        productImage,
-        garmentImage,
-        campaignId ?? undefined
+        {
+          model_image: productImage,
+          product_image: garmentImage,
+          model: "gpt-image-1",
+          provider: "openai",
+        },
+        campaignId
       );
       closeDialog();
     } catch (error) {

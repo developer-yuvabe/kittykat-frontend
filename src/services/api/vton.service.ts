@@ -3,15 +3,13 @@ import { handleApiRequest } from "@/lib/utils";
 
 export const createVtonImage = async (
   brandId: string,
-  modelImage: string,
-  productImage: string,
+  data: Record<string, any>,
   campaignId?: string | null
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/a2i/vton`, {
-        model_image: modelImage,
-        product_image: productImage,
+        ...data,
         campaign_id: campaignId,
       })
     );
@@ -21,15 +19,11 @@ export const createVtonImage = async (
   }
 };
 
-export const estimateVtonCredits = async (
-  modelImage: string,
-  productImage: string | null
-) => {
+export const estimateVtonCredits = async (data: Record<string, any>) => {
   try {
     const credits = await handleApiRequest<number | null>(
       axiosInstance.post(`/credits/estimate/vton`, {
-        model_image: modelImage,
-        product_image: productImage,
+        ...data,
       })
     );
 

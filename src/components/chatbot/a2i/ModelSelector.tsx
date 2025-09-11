@@ -67,7 +67,9 @@ export default function ModelSelector({
         onValueChange={(value) => {
           const model = filteredModels.find((m) => m.id === value);
           if (model) {
-            onModelChange(model);
+            queueMicrotask(() => {
+              onModelChange(model);
+            });
           }
         }}
       >

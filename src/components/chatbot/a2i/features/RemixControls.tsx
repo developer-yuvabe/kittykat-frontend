@@ -29,8 +29,8 @@ import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import {
   BrainIcon,
   Eraser,
+  Images,
   Loader2,
-  Plus,
   Redo,
   Settings2,
   Undo,
@@ -493,13 +493,13 @@ const RemixControls = ({
                     <>
                       <input {...getInputProps()} ref={inputFileRef} />
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
                         className=""
                         type="button"
                         onClick={() => inputFileRef.current?.click()}
                       >
-                        <Plus />
+                        <Images />
                       </Button>
                     </>
                   )}
