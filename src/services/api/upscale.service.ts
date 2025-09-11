@@ -47,7 +47,7 @@ export const upscaleImage = async (
 export const estimateUpscaleCredits = async (data: Record<string, any>) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/upscale/estimate-credits`, data)
+      axiosInstance.post(`/credits/estimate/upscale`, data)
     );
 
     return credits;

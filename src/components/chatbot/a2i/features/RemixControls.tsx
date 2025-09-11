@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
 import useModelPricing from "@/hooks/useModelPricing";
 import { useRemixForm } from "@/hooks/useRemixForm";
-import { canvasToBlob, delay, PlatformApiError } from "@/lib/utils";
+import { canvasToBlob, PlatformApiError } from "@/lib/utils";
 import { remixImageSchema } from "@/schema/remix.schema";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
@@ -75,7 +75,6 @@ const RemixControls = ({
   brushSize,
   onBrushSizeChange,
   brandId,
-  source,
   campaignId,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -308,19 +307,12 @@ const RemixControls = ({
         );
       }
 
-      remixImageService(
+      await remixImageService(
         brandId ?? selectedBrandId!,
         campaignId,
         data,
-        maskUrl,
-        source === "media-gallery"
-      ).catch((error) => {
-        if (error instanceof PlatformApiError && error.statusCode === 403) {
-          setShowInsufficientCreditsModal(true);
-        }
-      });
-
-      await delay(2000);
+        maskUrl
+      );
 
       form.setValue("prompt", "");
       if (referenceImageParam) {
@@ -329,8 +321,13 @@ const RemixControls = ({
       setImageBlocks([]);
 
       closeDialog();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
+
       toast.error("Image remix failed. Please try again later.");
     }
   };

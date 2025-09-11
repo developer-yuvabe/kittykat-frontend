@@ -5,7 +5,6 @@ export const createVtonImage = async (
   brandId: string,
   modelImage: string,
   productImage: string,
-  addToQueue: boolean,
   campaignId?: string | null
 ) => {
   try {
@@ -13,7 +12,6 @@ export const createVtonImage = async (
       axiosInstance.post(`/brands/${brandId}/a2i/vton`, {
         model_image: modelImage,
         product_image: productImage,
-        should_add_to_queue: addToQueue,
         campaign_id: campaignId,
       })
     );
@@ -29,7 +27,7 @@ export const estimateVtonCredits = async (
 ) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/vton/estimate-credits`, {
+      axiosInstance.post(`/credits/estimate/vton`, {
         model_image: modelImage,
         product_image: productImage,
       })

@@ -53,7 +53,8 @@ const useModelPricing = ({
     ],
     queryFn: async () => {
       const values = form.getValues();
-      if (isEmpty(values)) return;
+      // There is a small micro delay between model selection and form reset TODO: refactor this hook to be used after form is set
+      if (isEmpty(values) || values.model !== selectedModel?.id) return;
 
       if (selectedModel?.type === "video") {
         return await estimateVideoGenerationCredits(values);

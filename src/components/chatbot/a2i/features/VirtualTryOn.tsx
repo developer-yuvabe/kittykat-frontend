@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
 import { BrainIcon, Loader2, X } from "lucide-react";
 import React, { useState } from "react";
-import { cn, delay, PlatformApiError } from "@/lib/utils";
+import { cn,  PlatformApiError } from "@/lib/utils";
 import {
   createVtonImage,
   estimateVtonCredits,
@@ -25,7 +25,6 @@ const VirtualTryOn = ({
   productImage,
   closeDialog,
   brandId,
-  source,
   campaignId,
 }: VirtualTryOnProps) => {
   const { selectedBrandId } = useBrandStore();
@@ -46,20 +45,20 @@ const VirtualTryOn = ({
     }
     setLoading(true);
     try {
-      createVtonImage(
+      await createVtonImage(
         (brandId ?? selectedBrandId)!,
         productImage,
         garmentImage,
-        source === "media-gallery",
         campaignId ?? undefined
-      ).catch((error) => {
-        if (error instanceof PlatformApiError && error.statusCode === 403) {
-          setShowInsufficientCreditsModal(true);
-        }
-      });
-      await delay(2000);
+      );
       closeDialog();
-    } catch {
+    } catch (error) {
+      console.error("VTON Generation Error:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
+
       toast.error("Failed to generate VTON image. Please try again.");
     } finally {
       setLoading(false);
