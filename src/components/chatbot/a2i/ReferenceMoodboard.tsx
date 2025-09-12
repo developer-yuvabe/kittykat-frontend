@@ -552,6 +552,7 @@ const ReferenceMoodboard = ({
                     }}
                     hasUnsavedChanges={false}
                     isPreview
+                    overrideNoOfImages={noOfImagesForMoodboard}
                     key={selectedMoodboard?.id}
                   />
                 </div>
