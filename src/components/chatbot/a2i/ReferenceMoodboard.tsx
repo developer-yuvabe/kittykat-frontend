@@ -153,19 +153,15 @@ const ReferenceMoodboard = ({
     if (!referenceMoodboardAssets || referenceMoodboardAssets.length === 0) {
       return MIN_IMAGES_REQUIRED;
     }
-    // Use the maximum position + 1, or minimum required, whichever is larger
+    // For reference moodboards, use the exact count from the database
+    // Use the maximum position + 1 to determine the actual grid size needed
     const maxPosition = Math.max(
       ...referenceMoodboardAssets.map((asset) => asset.position || 0),
       -1
     );
-    const calculatedCount = Math.max(maxPosition + 1, MIN_IMAGES_REQUIRED);
-    // Ensure we have enough positions for proper 3-row layout
-    // Check if we need more items to fill the 3rd row properly
-    if (calculatedCount >= 10 && calculatedCount < 16) {
-      // For moodboards with 10-15 items, ensure we have at least 16 for a complete layout
-      return Math.max(calculatedCount, 16);
-    }
-    return calculatedCount;
+    const calculatedCount = maxPosition + 1;
+    // Ensure minimum of 10 for proper grid layout, but don't force to 16
+    return Math.max(calculatedCount, MIN_IMAGES_REQUIRED);
   }, [referenceMoodboardAssets]);
 
   // Helper function to create a placeholder photo
