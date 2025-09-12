@@ -6,6 +6,7 @@ import { generateA2iShowboard } from "@/services/api/moodboard.service";
 import { galleryService } from "@/services/api/gallery.service";
 import { useBrandStore } from "@/store/brand.store";
 import {
+  MoodboardAsset,
   MoodboardInformation,
   ThreadA2iImage,
   ThreadDetails,
@@ -33,6 +34,7 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 
 type ReferenceMoodboardProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
+  referenceMoodboardAssets: ThreadA2iImage["reference_moodboard_assets"];
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
@@ -42,13 +44,15 @@ type ReferenceMoodboardProps = {
 
 const ReferenceMoodboard = ({
   referenceMoodboardId,
+  referenceMoodboardAssets: referenceMoodboardAssetsProp,
   prompts,
   moodboardInformation,
   formRef,
   campaignInformation,
   selectedCampaignIndex,
 }: ReferenceMoodboardProps) => {
-  const { setReferencePrompt } = useA2iStore();
+  const { setReferencePrompt, isGeneratingPrompts, setIsGeneratingPrompts } =
+    useA2iStore();
   const { setCampaignMoodboardSelection, setSelectedMoodboardId } =
     useBrandStore();
   const [n, setN] = useState<number | "">(prompts?.length || "");
@@ -56,23 +60,36 @@ const ReferenceMoodboard = ({
   const [loading, setLoading] = useState(false);
 
   const { selectedBrandId } = useBrandStore();
-  const { mutate: generateShowboard, isPending } = useMutation({
+  const { mutate: generateShowboard } = useMutation({
     mutationFn: ({
       brandId,
       moodboardId,
       numberOfPrompts,
+      referenceMoodboardAssets,
     }: {
       brandId: string;
       moodboardId: string;
       numberOfPrompts: number;
-    }) => generateA2iShowboard(brandId, moodboardId, numberOfPrompts),
+      referenceMoodboardAssets?: MoodboardAsset[];
+    }) =>
+      generateA2iShowboard(
+        brandId,
+        moodboardId,
+        referenceMoodboardAssets,
+        numberOfPrompts
+      ),
+    onMutate: () => {
+      setIsGeneratingPrompts(true);
+    },
     onSuccess: () => {
       toast.success("Concept Visual prompts generated successfully!");
+      setIsGeneratingPrompts(false);
     },
     onError: () => {
       toast.error(
         "Failed to generate concept Visual prompts. Please try again."
       );
+      setIsGeneratingPrompts(false);
     },
   });
 
@@ -90,14 +107,28 @@ const ReferenceMoodboard = ({
     [moodboardInformation, referenceMoodboardId]
   );
 
-  // Extract gallery item IDs from the effective moodboard assets
+  const referenceMoodboardAssets = useMemo(() => {
+    return referenceMoodboardAssetsProp || [];
+  }, [referenceMoodboardAssetsProp]);
+
+  // Create a stable key for tracking asset changes
+  const assetsKey = useMemo(() => {
+    if (!referenceMoodboardAssets || referenceMoodboardAssets.length === 0) {
+      return "empty";
+    }
+    return referenceMoodboardAssets
+      .map((asset) => `${asset.gallery_item_id}-${asset.position}`)
+      .sort()
+      .join("|");
+  }, [referenceMoodboardAssets]);
+
+  // Extract gallery item IDs from reference moodboard assets only
   const galleryItemIds = useMemo(() => {
-    return (
-      selectedMoodboard?.moodboard_assets?.map(
-        (asset) => asset.gallery_item_id
-      ) || []
-    );
-  }, [selectedMoodboard?.moodboard_assets]);
+    if (referenceMoodboardAssets && referenceMoodboardAssets.length > 0) {
+      return referenceMoodboardAssets.map((asset) => asset.gallery_item_id);
+    }
+    return [];
+  }, [referenceMoodboardAssets]);
 
   // Get only non-placeholder IDs for API call (same as MoodboardLayout)
   const nonPlaceholderIds = useMemo(() => {
@@ -117,18 +148,21 @@ const ReferenceMoodboard = ({
     staleTime: 1000 * 60 * 5, // cache for 5 minutes
   });
 
-  // Calculate the actual number of images for this moodboard (same logic as MoodboardLayout)
+  // Calculate the actual number of images for this moodboard
   const noOfImagesForMoodboard = useMemo(() => {
-    if (!selectedMoodboard?.moodboard_assets) {
+    if (!referenceMoodboardAssets || referenceMoodboardAssets.length === 0) {
       return MIN_IMAGES_REQUIRED;
     }
-    // Use the maximum position + 1, or minimum required, whichever is larger
+    // For reference moodboards, use the exact count from the database
+    // Use the maximum position + 1 to determine the actual grid size needed
     const maxPosition = Math.max(
-      ...selectedMoodboard.moodboard_assets.map((asset) => asset.position || 0),
+      ...referenceMoodboardAssets.map((asset) => asset.position || 0),
       -1
     );
-    return Math.max(maxPosition + 1, MIN_IMAGES_REQUIRED);
-  }, [selectedMoodboard?.moodboard_assets]);
+    const calculatedCount = maxPosition + 1;
+    // Ensure minimum of 10 for proper grid layout, but don't force to 16
+    return Math.max(calculatedCount, MIN_IMAGES_REQUIRED);
+  }, [referenceMoodboardAssets]);
 
   // Helper function to create a placeholder photo
   const createPlaceholderPhoto = useCallback(
@@ -221,27 +255,24 @@ const ReferenceMoodboard = ({
       loadedItems: UnifiedMoodboardItem[],
       targetCount: number
     ): UnifiedMoodboardItem[] => {
-      const result = [...loadedItems];
+      const result: UnifiedMoodboardItem[] = [];
 
-      // Fill missing positions with placeholders up to targetCount
+      // Create array with all positions filled
       for (let i = 0; i < targetCount; i++) {
-        const existingItem = result.find((item, index) => index === i);
-        if (!existingItem) {
-          result.splice(i, 0, createPlaceholderPhoto(`placeholder-${i}`, i));
+        const existingItem = loadedItems.find((item) => item.position === i);
+        if (existingItem) {
+          result.push(existingItem);
+        } else {
+          // Create placeholder for missing position
+          result.push(createPlaceholderPhoto(`placeholder-${i}`, i));
         }
       }
 
-      // Remove any items beyond targetCount
-      if (result.length > targetCount) {
-        return result.slice(0, targetCount);
-      }
-
-      return result;
+      return result.sort((a, b) => (a.position || 0) - (b.position || 0));
     },
     [createPlaceholderPhoto]
   );
 
-  // Load images from ordered gallery items using the same logic as MoodboardLayout
   const loadImagesWithDimensions = useCallback(async () => {
     if (!selectedMoodboard) {
       setItems([]);
@@ -251,31 +282,31 @@ const ReferenceMoodboard = ({
     setLoading(true);
 
     try {
-      const hasMoodboardAssets =
-        selectedMoodboard.moodboard_assets &&
-        selectedMoodboard.moodboard_assets.length > 0;
-
       let loaded: UnifiedMoodboardItem[] = [];
 
-      if (hasMoodboardAssets) {
+      // Always process reference moodboard assets if they exist
+      if (referenceMoodboardAssets && referenceMoodboardAssets.length > 0) {
         loaded = processAssetsToItems(
-          selectedMoodboard.moodboard_assets,
+          referenceMoodboardAssets,
           bulkGalleryItems
         );
       }
 
-      // Fill with placeholders using the same logic as MoodboardLayout
+      // Always fill with placeholders to ensure proper grid layout
       loaded = fillWithPlaceholders(loaded, noOfImagesForMoodboard);
 
       setItems(loaded);
     } catch (error) {
       console.error("Failed to load reference images:", error);
-      setItems([]);
+      // Still create placeholders even if loading fails
+      const placeholders = fillWithPlaceholders([], noOfImagesForMoodboard);
+      setItems(placeholders);
     } finally {
       setLoading(false);
     }
   }, [
     selectedMoodboard,
+    referenceMoodboardAssets,
     bulkGalleryItems,
     noOfImagesForMoodboard,
     processAssetsToItems,
@@ -297,23 +328,35 @@ const ReferenceMoodboard = ({
     }
   };
 
-  // Load images when selected moodboard or bulk gallery items change
+  // Create a ref for the loadImagesWithDimensions function to avoid dependency issues
+  const loadImagesRef = useRef<(() => Promise<void>) | null>(null);
+
+  // Update the ref whenever the function changes
   useEffect(() => {
-    if (selectedMoodboard && bulkGalleryItems.length > 0) {
+    loadImagesRef.current = loadImagesWithDimensions;
+  }, [loadImagesWithDimensions]);
+
+  useEffect(() => {
+    if (selectedMoodboard && loadImagesRef.current) {
+      console.log(
+        "Loading images for moodboard:",
+        selectedMoodboard.id,
+        "with assets key:",
+        assetsKey
+      );
       const timeoutId = setTimeout(() => {
-        loadImagesWithDimensions();
+        loadImagesRef.current?.();
       }, 50);
       return () => clearTimeout(timeoutId);
     } else {
-      // Clear items if no moodboard
       setItems([]);
     }
-  }, [selectedMoodboard?.id, bulkGalleryItems.length, noOfImagesForMoodboard]);
-
-  // Display logic - show gallery if we have items and not loading
-  const showGallery = useMemo(() => {
-    return items.length > 0 && !loading && !isBulkFetching && !isBulkLoading;
-  }, [items.length, loading, isBulkFetching, isBulkLoading]);
+  }, [
+    selectedMoodboard?.id,
+    assetsKey, // Use assetsKey instead of the full arrays to track content changes
+    bulkGalleryItems.length,
+    noOfImagesForMoodboard,
+  ]);
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
@@ -335,44 +378,75 @@ const ReferenceMoodboard = ({
 
   // Handle the case where the reference moodboard is deleted
   useEffect(() => {
-    if (referenceMoodboardId && moodboardInformation && !selectedMoodboard) {
+    // Only run this effect if we have a reference moodboard ID but no selected moodboard
+    if (
+      referenceMoodboardId &&
+      moodboardInformation &&
+      !selectedMoodboard &&
+      selectedBrandId
+    ) {
       // The reference moodboard ID exists but the moodboard is not found (deleted)
-      updateA2iRefernceMoodboard(selectedBrandId!, null);
+      // Only call this once to avoid infinite loops
+      const timeoutId = setTimeout(() => {
+        updateA2iRefernceMoodboard(selectedBrandId, null);
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [
     referenceMoodboardId,
-    selectedMoodboard,
-    moodboardInformation,
+    selectedMoodboard?.id, // Use id instead of the whole object
+    moodboardInformation?.length, // Use length instead of the whole array
     selectedBrandId,
   ]);
 
   // Handle moodboard selection change - this will propagate to other sections
-  const handleMoodboardSelectionChange = async (
-    moodboard: MoodboardInformation | null
-  ) => {
-    if (!moodboard) {
-      // Handle case where moodboard is set to null (e.g., when deleted)
-      setSelectedMoodboardId(null);
-      await updateA2iRefernceMoodboard(selectedBrandId!, null);
-      return;
-    }
+  const handleMoodboardSelectionChange = useCallback(
+    async (moodboard: MoodboardInformation | null) => {
+      try {
+        if (!moodboard) {
+          // Handle case where moodboard is set to null (e.g., when deleted)
+          console.log("Setting moodboard to null");
+          setSelectedMoodboardId(null);
+          if (selectedBrandId) {
+            await updateA2iRefernceMoodboard(selectedBrandId, null, []);
+          }
+          return;
+        }
 
-    setSelectedMoodboardId(moodboard.id!);
-    if (moodboard && selectedMoodboard?.campaign_id) {
-      setCampaignMoodboardSelection(
-        selectedMoodboard.campaign_id,
-        moodboard.id
-      );
-    }
-    await updateA2iRefernceMoodboard(selectedBrandId!, moodboard.id!);
+        console.log("Selecting new moodboard:", moodboard.id);
+        setSelectedMoodboardId(moodboard.id!);
 
-    // Use the mutation for consistency and proper error handling
-    generateShowboard({
-      brandId: selectedBrandId!,
-      moodboardId: moodboard.id!,
-      numberOfPrompts: Number(n) || 1,
-    });
-  };
+        // Set campaign moodboard selection if we have a campaign
+        if (moodboard.campaign_id) {
+          setCampaignMoodboardSelection(moodboard.campaign_id, moodboard.id);
+        }
+
+        console.log("moodboard assets", moodboard.moodboard_assets);
+
+        // Use the mutation for consistency and proper error handling
+        // Only generate if we're not already generating
+        if (selectedBrandId && moodboard.id && !isGeneratingPrompts) {
+          generateShowboard({
+            brandId: selectedBrandId,
+            moodboardId: moodboard.id,
+            referenceMoodboardAssets: moodboard.moodboard_assets,
+            numberOfPrompts: Number(n) || 1,
+          });
+        }
+      } catch (error) {
+        console.error("Error in handleMoodboardSelectionChange:", error);
+      }
+    },
+    [
+      selectedBrandId,
+      setCampaignMoodboardSelection,
+      setSelectedMoodboardId,
+      generateShowboard,
+      n,
+      isGeneratingPrompts,
+    ]
+  );
 
   return (
     <ContentSection
@@ -453,17 +527,28 @@ const ReferenceMoodboard = ({
                   />
                 )}
               </div>
-              {/* Show skeleton when switching */}
-              {!showGallery || !selectedMoodboard ? (
+              {/* Show skeleton when loading or no selectedMoodboard */}
+              {loading ||
+              isBulkFetching ||
+              isBulkLoading ||
+              !selectedMoodboard ? (
                 <ManualMoodboardSkeleton shimmer showButton={false} />
               ) : (
                 <div className="mx-auto max-w-7xl w-full px-2">
                   <CustomGalleryContainer
                     items={items}
                     setItems={setItems}
-                    moodboard={selectedMoodboard}
+                    moodboard={{
+                      ...selectedMoodboard,
+                      // Ensure the moodboard knows how many images it should have
+                      moodboard_assets: items.map((item, index) => ({
+                        gallery_item_id: item.id,
+                        position: index,
+                      })),
+                    }}
                     hasUnsavedChanges={false}
                     isPreview
+                    overrideNoOfImages={noOfImagesForMoodboard}
                     key={selectedMoodboard?.id}
                   />
                 </div>
@@ -489,7 +574,7 @@ const ReferenceMoodboard = ({
                       <Button
                         variant={"outline"}
                         className="text-primary border-primary"
-                        disabled={isPending}
+                        disabled={isGeneratingPrompts}
                         onClick={() => {
                           const hasTags =
                             selectedMoodboard?.moodboard_tags &&
@@ -513,7 +598,7 @@ const ReferenceMoodboard = ({
                         }}
                       >
                         <WandSparkles />
-                        {isPending
+                        {isGeneratingPrompts
                           ? "Generating prompts..."
                           : "Generate Prompts"}
                       </Button>

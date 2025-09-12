@@ -14,7 +14,7 @@ interface MoodboardGalleryViewProps {
   movePhoto: (dragIndex: number, hoverIndex: number) => void;
   onPhotoLike: (index: number, liked: boolean) => void;
   hasUnsavedChanges: boolean;
-  onGallerySelection: (items: any[], placeholderIndex: number) => void;
+  onGallerySelection: (items: any[], placeHolderIndex?: number) => void;
   moodboard: MoodboardInformation;
   galleryActions: GalleryActions;
 }

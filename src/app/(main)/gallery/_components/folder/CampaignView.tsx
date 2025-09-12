@@ -13,6 +13,7 @@ import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
 } from "@/types/gallery.types";
+import { FolderTabs } from "./FolderTabs";
 
 interface CampaignViewProps {
   selectedBrand: BrandCampaignListResponse["brands"][number];
@@ -25,6 +26,7 @@ interface CampaignViewProps {
   searchQuery?: string;
   favorites?: boolean;
   selectedFilters?: EnhancedSelectedFilters;
+  onTabChange: (value: string) => void;
 }
 
 export function CampaignView({
@@ -38,6 +40,7 @@ export function CampaignView({
   searchQuery = "",
   favorites = false,
   selectedFilters,
+  onTabChange,
 }: CampaignViewProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
@@ -211,6 +214,13 @@ export function CampaignView({
         selectedCampaignId={campaignId}
         selectedMoodboardId={selectedMoodboardId}
         brandsLoading={false}
+      />
+
+      {/* Folder Tabs for campaign view */}
+      <FolderTabs
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+        title="Subfolders"
       />
 
       {/* Gallery Status Display */}

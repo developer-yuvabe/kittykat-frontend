@@ -5,6 +5,13 @@ import { FirebaseError } from "firebase/app";
 import { AxiosResponse } from "axios";
 import { AppConfig } from "@/config/app.config";
 import { toast } from "sonner";
+import { Model } from "@/types/a2i-media.types";
+import {
+  OpenAIIcon,
+  ReplicateIcon,
+  BytePlusIcon,
+  GeminiIcon,
+} from "@/components/ui/custom-icon";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -362,4 +369,19 @@ export const dataURLToBlob = (dataURL: string): Blob => {
     u8arr[n] = bstr.charCodeAt(n);
   }
   return new Blob([u8arr], { type: mime });
+};
+
+export const getProviderIcon = (provider: Model["provider"]) => {
+  switch (provider) {
+    case "openai":
+      return OpenAIIcon;
+    case "replicate":
+      return ReplicateIcon;
+    case "byteplus":
+      return BytePlusIcon;
+    case "gemini":
+      return GeminiIcon;
+    default:
+      return GeminiIcon;
+  }
 };

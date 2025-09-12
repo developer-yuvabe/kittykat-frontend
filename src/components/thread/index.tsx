@@ -4,14 +4,12 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getChatLayoutConfig } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useBrandStore } from "@/store/brand.store";
 import MobileChatPanel from "../chatbot/MobileChatPanel";
 import DesktopChatPanel from "../chatbot/DesktopChatPanel";
 
 export function Thread() {
-  const { selectedBrandId, setSelectedBrandId } = useBrandStore();
-  useBrandUpdates(selectedBrandId);
+  const { setSelectedBrandId } = useBrandStore();
 
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
   // Responsive breakpoints

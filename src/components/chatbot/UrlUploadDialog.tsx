@@ -1,9 +1,8 @@
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { CgAttachment } from "react-icons/cg";
 
-import { Loader2 } from "lucide-react"; // Loader icon
+import { Loader2, PaperclipIcon } from "lucide-react"; // Loader icon
 
 interface FileUploaderProps {
   onUploadComplete: (url: string) => void;
@@ -55,7 +54,7 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
       {uploading ? (
         <Loader2 className="animate-spin text-primary" size={20} />
       ) : (
-        <CgAttachment
+        <PaperclipIcon
           size={20}
           className="text-primary cursor-pointer"
           onClick={() => fileInputRef.current?.click()}

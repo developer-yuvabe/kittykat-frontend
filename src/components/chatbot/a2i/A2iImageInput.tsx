@@ -44,10 +44,10 @@ const A2iImageInput = ({
 }) => {
   const form = useImageGenForm();
   const { setShowInsufficientCreditsModal } = useUserStore();
-  const { selectedModel } = useModelsStore();
+  const { selectedImageGenerationModel } = useModelsStore();
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
-    model: selectedModel,
+    model: selectedImageGenerationModel,
   });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
@@ -75,10 +75,10 @@ const A2iImageInput = ({
   // Reference to the file input element
   const refernceImagesModelInfo = useMemo(
     () =>
-      selectedModel?.parameters?.find(
+      selectedImageGenerationModel?.parameters?.find(
         (param) => param.type === "file"
       ) as FileParam,
-    [selectedModel]
+    [selectedImageGenerationModel]
   );
   const inputFileRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -213,12 +213,12 @@ const A2iImageInput = ({
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
-    if (selectedModel?.prefix) {
-      data.prompt = `${selectedModel.prefix} ${data.prompt}`;
+    if (selectedImageGenerationModel?.prefix) {
+      data.prompt = `${selectedImageGenerationModel.prefix} ${data.prompt}`;
     }
 
-    if (selectedModel?.finetune_id) {
-      data.finetune_id = selectedModel.finetune_id;
+    if (selectedImageGenerationModel?.finetune_id) {
+      data.finetune_id = selectedImageGenerationModel.finetune_id;
     }
 
     const campaignId = currentCampaign?.id || null;
@@ -269,7 +269,7 @@ const A2iImageInput = ({
         shouldTouch: true,
       });
     }
-  }, [selectedModel?.id]);
+  }, [selectedImageGenerationModel?.id]);
 
   // This useEffect is to fetch reference images stored in the session storage and populate the image blocks
   useEffect(() => {
@@ -289,7 +289,7 @@ const A2iImageInput = ({
         );
       }
     }
-  }, [form, selectedModel?.id]);
+  }, [form, selectedImageGenerationModel?.id]);
 
   return (
     <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 pb-4">
@@ -384,7 +384,7 @@ const A2iImageInput = ({
                 </div>
               )}
 
-              {selectedModel?.parameters
+              {selectedImageGenerationModel?.parameters
                 ?.filter((param) => param.category === "initial")
                 .map((param) => {
                   return (
@@ -393,7 +393,7 @@ const A2iImageInput = ({
                       param={param}
                       form={form}
                       type="initial"
-                      rules={selectedModel?.rules}
+                      rules={selectedImageGenerationModel?.rules}
                     />
                   );
                 })}
@@ -414,7 +414,7 @@ const A2iImageInput = ({
                     <FormLabel className="py-0 text-xs">
                       Advance Parameters
                     </FormLabel>
-                    {selectedModel?.parameters
+                    {selectedImageGenerationModel?.parameters
                       ?.filter((param) => param.category === "advanced")
                       .map((param) => {
                         return (
@@ -423,7 +423,7 @@ const A2iImageInput = ({
                             param={param}
                             form={form}
                             type="advanced"
-                            rules={selectedModel?.rules}
+                            rules={selectedImageGenerationModel?.rules}
                           />
                         );
                       })}

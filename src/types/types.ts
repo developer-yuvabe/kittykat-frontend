@@ -161,6 +161,7 @@ export type A2iImageGeneration = {
 export type ThreadA2iImage = {
   generations: A2iImageGeneration[];
   reference_moodboard_id?: string;
+  reference_moodboard_assets?: MoodboardAsset[];
   prompts?: string[];
 };
 

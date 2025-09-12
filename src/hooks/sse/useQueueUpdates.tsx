@@ -20,7 +20,7 @@ export function useQueueUpdates(userId?: string) {
       setData(parsed || []);
     });
 
-    eventSource.onerror = (err) => {};
+    eventSource.onerror = () => {};
 
     return () => {
       eventSource.close();
