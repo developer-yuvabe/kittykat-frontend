@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchTopics, Topic } from "@/services/api/pexels.service";
-import { createClient, PhotosWithTotalResults, ErrorResponse } from "pexels";
+import { fetchTopics } from "@/services/api/pexels.service";
+import { PhotosWithTotalResults, ErrorResponse } from "pexels";
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { env } from "@/config/env";
 import {
   BrandCampaignListResponse,
   BulkGalleryUploadRequest,
@@ -21,8 +20,10 @@ import Masonry from "react-masonry-css";
 import { PexelsMasonryImageCard } from "./PexelsMasonryImageCard";
 import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { useInView } from "react-intersection-observer";
-
-const client = createClient(env.NEXT_PUBLIC_PEXELS_API_KEY);
+import { PexelsTopicsResponse } from "@/types/pexels.types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { searchPexelsPhotos } from "@/services/actions/pexels-client";
 
 interface TopicsGridProps {
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
@@ -64,7 +65,7 @@ export default function TopicsGrid({
     500: 1,
   };
 
-  // ✅ Debounce search (500ms)
+  //Debounce search (500ms)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -72,19 +73,20 @@ export default function TopicsGrid({
     return () => clearTimeout(handler);
   }, [search]);
 
-  // ✅ Clear selection when query changes
+  //Clear selection when query changes
   useEffect(() => {
     setSelected([]);
   }, [debouncedSearch]);
 
-  // 📡 React Query for Topics (trending)
   const {
-    data: topics = [],
+    data: topicsResponse,
     isLoading: topicsLoading,
     isError: topicsError,
-  } = useQuery<Topic[]>({
-    queryKey: ["topics"],
-    queryFn: () => fetchTopics(),
+  } = useQuery<PexelsTopicsResponse>({
+    queryKey: ["topics", selectedBrand?.brand_id, selectedCampaignId],
+    queryFn: () =>
+      fetchTopics(selectedBrand?.brand_id ?? "", selectedCampaignId ?? null),
+    enabled: !!selectedBrand?.brand_id, // only run when brand is selected
   });
 
   // 📡 React Query Infinite Scroll for Search
@@ -93,11 +95,11 @@ export default function TopicsGrid({
       queryKey: ["search", debouncedSearch],
       queryFn: async ({ pageParam = 1 }) => {
         if (!debouncedSearch) throw new Error("No search query provided");
-        const result = await client.photos.search({
-          query: debouncedSearch,
-          per_page: 30,
-          page: pageParam as number,
-        });
+        const result = await searchPexelsPhotos(
+          debouncedSearch,
+          pageParam as number,
+          30
+        );
 
         if ("photos" in result) {
           return result;
@@ -282,7 +284,7 @@ export default function TopicsGrid({
   return (
     <div className="p-4 relative">
       {/* 🔍 Search Bar (shadcn input + clear button) */}
-      <div className="mb-4 flex items-center">
+      <div className="mb-4">
         <div className="relative w-full">
           <Input
             type="text"
@@ -301,6 +303,27 @@ export default function TopicsGrid({
             </button>
           )}
         </div>
+        {topicsResponse?.editor_choice && (
+          <div className="mt-3 ml-1 flex items-center gap-2">
+            <Checkbox
+              id="editorChoice"
+              checked={search === topicsResponse.editor_choice}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSearch(topicsResponse.editor_choice);
+                } else {
+                  setSearch(""); // reset search on uncheck
+                }
+              }}
+            />
+            <Label
+              htmlFor="editorChoice"
+              className="font-semibold text-gray-700 cursor-pointer"
+            >
+              Ask KittyKat – Brand & Campaign Choice
+            </Label>
+          </div>
+        )}
       </div>
 
       {/* Grid Section */}
@@ -354,8 +377,8 @@ export default function TopicsGrid({
       ) : topicsError ? (
         <p className="text-center text-red-500">Failed to load topics.</p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {topics.map((t) => (
+        <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+          {topicsResponse?.topics.map((t) => (
             <div
               key={t.id}
               className="relative cursor-pointer overflow-hidden shadow-md group"
@@ -376,7 +399,7 @@ export default function TopicsGrid({
         </div>
       )}
 
-      {/* Sticky Footer for Add to GAllery */}
+      {/* Sticky Footer for Add to Gallery */}
 
       {selected.length > 0 && isMultiSelect == false && (
         <div className="fixed bottom-0 left-0 right-0 pr-20 bg-white border-t shadow-md p-4 flex items-center justify-end gap-5">
