@@ -79,8 +79,10 @@ const CustomGalleryContainer = forwardRef<
       return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
     }, [items]);
 
-    const { noOfImagesForMoodboard: storeNoOfImages, setNoOfImagesForMoodboard } =
-      useMoodboardStore();
+    const {
+      noOfImagesForMoodboard: storeNoOfImages,
+      setNoOfImagesForMoodboard,
+    } = useMoodboardStore();
 
     // Use override value for reference moodboards, otherwise use store value
     const noOfImagesForMoodboard = overrideNoOfImages ?? storeNoOfImages;
@@ -152,7 +154,9 @@ const CustomGalleryContainer = forwardRef<
           isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
           setItems={setItems}
           minImagesRequired={MIN_IMAGES_REQUIRED}
-          setNoOfImagesForMoodboard={overrideNoOfImages ? () => {} : setNoOfImagesForMoodboard}
+          setNoOfImagesForMoodboard={
+            overrideNoOfImages ? () => {} : setNoOfImagesForMoodboard
+          }
           showLiked={showLiked}
           isPreview={isPreview}
           galleryActions={galleryActions}
@@ -167,7 +171,9 @@ const CustomGalleryContainer = forwardRef<
         {!isPreview && (
           <CustomGalleryControls
             noOfImagesForMoodboard={noOfImagesForMoodboard}
-            setNoOfImagesForMoodboard={overrideNoOfImages ? () => {} : setNoOfImagesForMoodboard}
+            setNoOfImagesForMoodboard={
+              overrideNoOfImages ? () => {} : setNoOfImagesForMoodboard
+            }
             setItems={setItems}
             minImagesRequired={MIN_IMAGES_REQUIRED}
             showLiked={showLiked}

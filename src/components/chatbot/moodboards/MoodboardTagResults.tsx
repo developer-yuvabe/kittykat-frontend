@@ -307,7 +307,10 @@ function MoodboardTagResults({
                 className="w-full"
                 onClick={handleGenerate}
                 disabled={
-                  isPatching || isGeneratingPrompts || isGalleryItemsProcessing
+                  isPatching ||
+                  isGeneratingPrompts ||
+                  isGalleryItemsProcessing ||
+                  isMoodboardSaving
                 }
               >
                 {isPatching || isGeneratingPrompts ? (
