@@ -36,7 +36,11 @@ export const upscaleImage = async (
 ) => {
   try {
     await handleApiRequest(
-      axiosInstance.post(`/brands/${brandId}/image-upscaling`, data)
+      axiosInstance.post(`/brands/${brandId}/image-upscaling`, {
+        ...data,
+        model: "magnific/image-upscaler",
+        provider: "magnific",
+      })
     );
   } catch (error) {
     console.error("Error upscaling image:", error);
@@ -47,7 +51,7 @@ export const upscaleImage = async (
 export const estimateUpscaleCredits = async (data: Record<string, any>) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/upscale/estimate-credits`, data)
+      axiosInstance.post(`/credits/estimate/upscale`, data)
     );
 
     return credits;

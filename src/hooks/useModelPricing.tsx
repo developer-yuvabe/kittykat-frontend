@@ -2,6 +2,7 @@ import { estimatePricing } from "@/services/api/models.service";
 import { estimateRemixCredits } from "@/services/api/remix.service";
 import { estimateUpscaleCredits } from "@/services/api/upscale.service";
 import { estimateVideoGenerationCredits } from "@/services/api/video-gen.service";
+import { estimateVtonCredits } from "@/services/api/vton.service";
 import { Model } from "@/types/a2i-media.types";
 import { useQuery } from "@tanstack/react-query";
 import { isEmpty } from "lodash";
@@ -38,12 +39,13 @@ const useModelPricing = ({
             (param) => param.type === "image_count"
           )?.id ?? null,
       };
-    }, [selectedModel?.id]);
+    }, [selectedModel]);
 
   const noOfImagesToBeGenerated = noOfImagesToBeGeneratedName
     ? (form.watch(noOfImagesToBeGeneratedName) as number)
     : 1;
   const watchedTriggerValues = form.watch(estimationTriggers);
+
   const { data, isPending } = useQuery({
     queryKey: [
       "variable-pricing",
@@ -53,7 +55,9 @@ const useModelPricing = ({
     ],
     queryFn: async () => {
       const values = form.getValues();
-      if (isEmpty(values)) return;
+
+      // There is a small micro delay between model selection and form reset TODO: refactor this hook to be used after form is set
+      if (isEmpty(values) || values.model !== selectedModel?.model) return 0;
 
       if (selectedModel?.type === "video") {
         return await estimateVideoGenerationCredits(values);
@@ -65,6 +69,10 @@ const useModelPricing = ({
 
       if (selectedModel?.type === "image-upscale") {
         return await estimateUpscaleCredits(values);
+      }
+
+      if (selectedModel?.type === "vton") {
+        return await estimateVtonCredits(values);
       }
 
       return await estimatePricing(values);

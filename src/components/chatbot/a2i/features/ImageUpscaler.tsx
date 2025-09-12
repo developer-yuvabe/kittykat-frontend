@@ -53,7 +53,6 @@ const upscalerSchema = z.object({
     "magnific_sparkle",
   ]),
   prompt: z.string().optional(),
-  should_add_to_queue: z.boolean(),
   campaign_id: z.string().nullable().optional(),
 });
 
@@ -68,7 +67,6 @@ type ImageUpscalerProps = {
 const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
   closeDialog,
   brandId,
-  source,
   initialImage,
   campaignId,
 }) => {
@@ -88,7 +86,6 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
       fractality: 0,
       engine: "automatic",
       prompt: "",
-      should_add_to_queue: source === "media-gallery",
       campaign_id: campaignId || null,
     },
   });
@@ -100,7 +97,6 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
       await upscaleImage(brandId || selectedBrandId!, data);
-      toast.success("Image upscaling started successfully!");
       closeDialog();
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {

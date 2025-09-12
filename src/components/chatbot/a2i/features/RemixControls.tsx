@@ -18,8 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
 import useModelPricing from "@/hooks/useModelPricing";
 import { useRemixForm } from "@/hooks/useRemixForm";
-import { canvasToBlob, delay, PlatformApiError } from "@/lib/utils";
-import { remixImageSchema } from "@/schema/remix.schema";
+import { canvasToBlob, PlatformApiError } from "@/lib/utils";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -29,8 +28,8 @@ import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import {
   BrainIcon,
   Eraser,
+  Images,
   Loader2,
-  Plus,
   Redo,
   Settings2,
   Undo,
@@ -39,7 +38,6 @@ import {
 import React, { useCallback, useEffect, useMemo } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { z } from "zod";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 
@@ -75,7 +73,6 @@ const RemixControls = ({
   brushSize,
   onBrushSizeChange,
   brandId,
-  source,
   campaignId,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -267,7 +264,7 @@ const RemixControls = ({
     deleteFile(urlToRemove);
   }
 
-  const onSubmit = async (data: z.infer<typeof remixImageSchema>) => {
+  const onSubmit = async (data: Record<string, any>) => {
     try {
       let maskUrl = null;
 
@@ -308,19 +305,12 @@ const RemixControls = ({
         );
       }
 
-      remixImageService(
+      await remixImageService(
         brandId ?? selectedBrandId!,
         campaignId,
         data,
-        maskUrl,
-        source === "media-gallery"
-      ).catch((error) => {
-        if (error instanceof PlatformApiError && error.statusCode === 403) {
-          setShowInsufficientCreditsModal(true);
-        }
-      });
-
-      await delay(2000);
+        maskUrl
+      );
 
       form.setValue("prompt", "");
       if (referenceImageParam) {
@@ -329,8 +319,13 @@ const RemixControls = ({
       setImageBlocks([]);
 
       closeDialog();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
+
       toast.error("Image remix failed. Please try again later.");
     }
   };
@@ -496,13 +491,13 @@ const RemixControls = ({
                     <>
                       <input {...getInputProps()} ref={inputFileRef} />
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
                         className=""
                         type="button"
                         onClick={() => inputFileRef.current?.click()}
                       >
-                        <Plus />
+                        <Images />
                       </Button>
                     </>
                   )}

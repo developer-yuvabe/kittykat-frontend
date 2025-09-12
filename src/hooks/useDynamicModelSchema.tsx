@@ -57,16 +57,24 @@ export function useDynamicModelSchema(
 
   const baseSchema = z.object(fieldSchemas);
 
-  const extendedSchema = baseSchema.extend({
-    prompt: z.string().trim().min(1),
-    provider: z.string().min(1),
-    model: z.string().min(1),
-  });
+  const extendedSchema =
+    selectedModel.type === "vton"
+      ? baseSchema.extend({
+          model: z.string().min(1),
+          provider: z.string().min(1),
+        })
+      : baseSchema.extend({
+          prompt: z.string().trim().min(1),
+          provider: z.string().min(1),
+          model: z.string().min(1),
+        });
 
   // Add default values for provider and model
   defaultValues.provider = selectedModel.provider;
   defaultValues.model = selectedModel.model;
-  defaultValues.prompt = "";
+  if ("prompt" in extendedSchema.shape) {
+    defaultValues.prompt = "";
+  }
 
   // TODO: Handle superfine for rules
 

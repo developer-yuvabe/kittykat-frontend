@@ -60,7 +60,7 @@ export const estimateVideoGenerationCredits = async (
 ) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/video/estimate-credits`, data)
+      axiosInstance.post(`/credits/estimate/video-generation`, data)
     );
     return credits;
   } catch (error) {

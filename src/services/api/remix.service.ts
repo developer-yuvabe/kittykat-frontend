@@ -5,13 +5,11 @@ export const remixImageService = async (
   brandId: string,
   campaignId: string | null | undefined,
   data: Record<string, any>,
-  maskImageUrl: string | null,
-  addToQueue: boolean
+  maskImageUrl: string | null
 ) => {
   try {
     const payload: Record<string, any> = {
       ...data,
-      should_add_to_queue: addToQueue,
       campaign_id: campaignId,
     };
 
@@ -31,7 +29,7 @@ export const remixImageService = async (
 export const estimateRemixCredits = async (data: Record<string, any>) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/remix/estimate-credits`, data)
+      axiosInstance.post(`/credits/estimate/remix`, data)
     );
 
     return credits;

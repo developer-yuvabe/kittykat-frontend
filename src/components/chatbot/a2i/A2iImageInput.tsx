@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
-import { FileParam } from "@/types/a2i-media.types";
+import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
@@ -73,13 +73,28 @@ const A2iImageInput = ({
   );
 
   // Reference to the file input element
-  const refernceImagesModelInfo = useMemo(
-    () =>
-      selectedImageGenerationModel?.parameters?.find(
-        (param) => param.type === "file"
-      ) as FileParam,
-    [selectedImageGenerationModel]
-  );
+  const { refernceImagesModelInfo, initialParams, advancedParams } =
+    useMemo(() => {
+      let fileParam: FileParam | null = null;
+      const initialParams: ModelParameter[] = [];
+      const advancedParams: ModelParameter[] = [];
+
+      for (const param of selectedImageGenerationModel?.parameters ?? []) {
+        if (param.type === "file") {
+          fileParam = param as FileParam;
+        } else if (param.category === "initial" && param.id !== "prompt") {
+          initialParams.push(param);
+        } else if (param.category === "advanced") {
+          advancedParams.push(param);
+        }
+      }
+
+      return {
+        refernceImagesModelInfo: fileParam,
+        initialParams,
+        advancedParams,
+      };
+    }, [selectedImageGenerationModel]);
   const inputFileRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imageBlocks, setImageBlocks] = useState<
@@ -90,8 +105,9 @@ const A2iImageInput = ({
   >([]);
 
   // Store the current prompt value to preserve it across model changes
-  const remainingUploads =
-    refernceImagesModelInfo?.maxLimit - imageBlocks.length;
+  const remainingUploads = refernceImagesModelInfo
+    ? refernceImagesModelInfo?.maxLimit - imageBlocks.length
+    : 0;
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -110,7 +126,7 @@ const A2iImageInput = ({
           );
       }
 
-      if (acceptedFiles.length === 0) return;
+      if (acceptedFiles.length === 0 || !refernceImagesModelInfo) return;
 
       setIsUploading(true);
 
@@ -179,7 +195,9 @@ const A2iImageInput = ({
 
   const { getInputProps } = useDropzone({
     onDrop,
-    multiple: refernceImagesModelInfo?.maxLimit > 1,
+    multiple: refernceImagesModelInfo
+      ? refernceImagesModelInfo?.maxLimit > 1
+      : false,
     accept: Object.fromEntries(
       (refernceImagesModelInfo?.fileTypes ?? []).map((type) => [type, []])
     ),
@@ -189,12 +207,16 @@ const A2iImageInput = ({
       form.formState.isSubmitting ||
       remainingUploads <= 0 ||
       !refernceImagesModelInfo,
-    maxFiles: refernceImagesModelInfo?.maxLimit - imageBlocks.length,
-    maxSize: refernceImagesModelInfo?.maxFileSizeLimit * 1024 * 1024, // Convert MB to bytes
+    maxFiles: refernceImagesModelInfo
+      ? refernceImagesModelInfo?.maxLimit - imageBlocks.length
+      : 0,
+    maxSize: refernceImagesModelInfo
+      ? refernceImagesModelInfo?.maxFileSizeLimit * 1024 * 1024
+      : 0, // Convert MB to bytes
   });
 
   function removeReferenceImage(urlToRemove: string) {
-    const formName = refernceImagesModelInfo.id;
+    const formName = refernceImagesModelInfo!.id;
     const currentImages = form.getValues(formName);
 
     if (!currentImages) return;
@@ -384,39 +406,36 @@ const A2iImageInput = ({
                 </div>
               )}
 
-              {selectedImageGenerationModel?.parameters
-                ?.filter((param) => param.category === "initial")
-                .map((param) => {
-                  return (
-                    <DynamicFormField
-                      key={param.id}
-                      param={param}
-                      form={form}
-                      type="initial"
-                      rules={selectedImageGenerationModel?.rules}
-                    />
-                  );
-                })}
+              {initialParams.map((param) => {
+                return (
+                  <DynamicFormField
+                    key={param.id}
+                    param={param}
+                    form={form}
+                    type="initial"
+                    rules={selectedImageGenerationModel?.rules}
+                  />
+                );
+              })}
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button size={"icon"} variant={"outline"}>
-                    <Settings2 />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  forceMount
-                  align="center"
-                  side="top"
-                  className="space-y-2 w-64"
-                >
-                  <div className="space-y-4">
-                    <FormLabel className="py-0 text-xs">
-                      Advance Parameters
-                    </FormLabel>
-                    {selectedImageGenerationModel?.parameters
-                      ?.filter((param) => param.category === "advanced")
-                      .map((param) => {
+              {advancedParams.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size={"icon"} variant={"outline"}>
+                      <Settings2 />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    forceMount
+                    align="center"
+                    side="top"
+                    className="space-y-2 w-64"
+                  >
+                    <div className="space-y-4">
+                      <FormLabel className="py-0 text-xs">
+                        Advance Parameters
+                      </FormLabel>
+                      {advancedParams.map((param) => {
                         return (
                           <DynamicFormField
                             key={param.id}
@@ -427,9 +446,10 @@ const A2iImageInput = ({
                           />
                         );
                       })}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
             <div className="flex gap-x-2">
               <Button
