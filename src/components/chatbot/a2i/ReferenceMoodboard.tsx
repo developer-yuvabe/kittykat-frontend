@@ -111,6 +111,17 @@ const ReferenceMoodboard = ({
     return referenceMoodboardAssetsProp || [];
   }, [referenceMoodboardAssetsProp]);
 
+  // Create a stable key for tracking asset changes
+  const assetsKey = useMemo(() => {
+    if (!referenceMoodboardAssets || referenceMoodboardAssets.length === 0) {
+      return "empty";
+    }
+    return referenceMoodboardAssets
+      .map((asset) => `${asset.gallery_item_id}-${asset.position}`)
+      .sort()
+      .join("|");
+  }, [referenceMoodboardAssets]);
+
   // Extract gallery item IDs from reference moodboard assets only
   const galleryItemIds = useMemo(() => {
     if (referenceMoodboardAssets && referenceMoodboardAssets.length > 0) {
@@ -331,22 +342,25 @@ const ReferenceMoodboard = ({
 
   useEffect(() => {
     if (selectedMoodboard && loadImagesRef.current) {
-      console.log("Loading images for moodboard:", selectedMoodboard.id);
+      console.log(
+        "Loading images for moodboard:",
+        selectedMoodboard.id,
+        "with assets key:",
+        assetsKey
+      );
       const timeoutId = setTimeout(() => {
         loadImagesRef.current?.();
       }, 50);
       return () => clearTimeout(timeoutId);
     } else {
-      // Clear items if no moodboard
-      console.log("Clearing items - no moodboard selected");
       setItems([]);
     }
   }, [
     selectedMoodboard?.id,
-    referenceMoodboardAssets?.length, // Use length instead of the whole array
+    assetsKey, // Use assetsKey instead of the full arrays to track content changes
     bulkGalleryItems.length,
     noOfImagesForMoodboard,
-  ]); // Remove loadImagesWithDimensions from deps to prevent infinite loop
+  ]);
 
   useEffect(() => {
     if (prompts && prompts.length > 0) {
