@@ -11,6 +11,7 @@ export const env = createEnv({
     AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS: z.string().min(1),
     USE_SECURE_COOKIES: z.string(),
     LANGSMITH_API_KEY: z.string().min(1),
+    PEXELS_API_KEY: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().min(1),
@@ -26,7 +27,6 @@ export const env = createEnv({
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA: z.string().url(),
-    NEXT_PUBLIC_PEXELS_API_KEY: z.string().min(1),
   },
 
   /*
@@ -65,7 +65,7 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV,
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA:
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA,
-    NEXT_PUBLIC_PEXELS_API_KEY: process.env.NEXT_PUBLIC_PEXELS_API_KEY,
+    PEXELS_API_KEY: process.env.PEXELS_API_KEY,
     LANGSMITH_API_KEY: process.env.LANGSMITH_API_KEY,
   },
 });

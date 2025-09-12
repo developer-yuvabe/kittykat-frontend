@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { fetchTopics } from "@/services/api/pexels.service";
-import { createClient, PhotosWithTotalResults, ErrorResponse } from "pexels";
+import { PhotosWithTotalResults, ErrorResponse } from "pexels";
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { env } from "@/config/env";
 import {
   BrandCampaignListResponse,
   BulkGalleryUploadRequest,
@@ -24,8 +23,7 @@ import { useInView } from "react-intersection-observer";
 import { PexelsTopicsResponse } from "@/types/pexels.types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
-const client = createClient(env.NEXT_PUBLIC_PEXELS_API_KEY);
+import { searchPexelsPhotos } from "@/services/actions/pexels-client";
 
 interface TopicsGridProps {
   selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
@@ -67,7 +65,7 @@ export default function TopicsGrid({
     500: 1,
   };
 
-  // ✅ Debounce search (500ms)
+  //Debounce search (500ms)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -75,20 +73,11 @@ export default function TopicsGrid({
     return () => clearTimeout(handler);
   }, [search]);
 
-  // ✅ Clear selection when query changes
+  //Clear selection when query changes
   useEffect(() => {
     setSelected([]);
   }, [debouncedSearch]);
 
-  // 📡 React Query for Topics (trending)
-  // const {
-  //   data: topics = [],
-  //   isLoading: topicsLoading,
-  //   isError: topicsError,
-  // } = useQuery<Topic[]>({
-  //   queryKey: ["topics"],
-  //   queryFn: () => fetchTopics(),
-  // });
   const {
     data: topicsResponse,
     isLoading: topicsLoading,
@@ -106,11 +95,11 @@ export default function TopicsGrid({
       queryKey: ["search", debouncedSearch],
       queryFn: async ({ pageParam = 1 }) => {
         if (!debouncedSearch) throw new Error("No search query provided");
-        const result = await client.photos.search({
-          query: debouncedSearch,
-          per_page: 30,
-          page: pageParam as number,
-        });
+        const result = await searchPexelsPhotos(
+          debouncedSearch,
+          pageParam as number,
+          30
+        );
 
         if ("photos" in result) {
           return result;
@@ -331,7 +320,7 @@ export default function TopicsGrid({
               htmlFor="editorChoice"
               className="font-semibold text-gray-700 cursor-pointer"
             >
-              Editor&apos;s Choice
+              Ask KittyKat – Brand & Campaign Choice
             </Label>
           </div>
         )}
@@ -389,25 +378,6 @@ export default function TopicsGrid({
         <p className="text-center text-red-500">Failed to load topics.</p>
       ) : (
         <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* {topics.map((t) => (
-            <div
-              key={t.id}
-              className="relative cursor-pointer overflow-hidden shadow-md group"
-              onClick={() => setSearch(t.topic)}
-            >
-              <img
-                src={t.thumbnail_url || "https://via.placeholder.com/300"}
-                alt={t.topic ?? ""}
-                className="w-full h-40 object-cover transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <span className="text-white text-lg font-semibold">
-                  {t.topic}
-                </span>
-              </div>
-            </div>
-          ))} */}
-
           {topicsResponse?.topics.map((t) => (
             <div
               key={t.id}
@@ -429,7 +399,7 @@ export default function TopicsGrid({
         </div>
       )}
 
-      {/* Sticky Footer for Add to GAllery */}
+      {/* Sticky Footer for Add to Gallery */}
 
       {selected.length > 0 && isMultiSelect == false && (
         <div className="fixed bottom-0 left-0 right-0 pr-20 bg-white border-t shadow-md p-4 flex items-center justify-end gap-5">
