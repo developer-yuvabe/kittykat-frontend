@@ -3,8 +3,8 @@ import { handleApiRequest } from "@/lib/utils";
 
 export const createVtonImage = async (
   brandId: string,
-  data: Record<string, any>,
-  campaignId?: string | null
+  campaignId: string | null,
+  data: Record<string, any>
 ) => {
   try {
     await handleApiRequest(

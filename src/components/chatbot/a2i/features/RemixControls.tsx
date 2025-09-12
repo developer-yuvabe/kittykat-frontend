@@ -19,7 +19,6 @@ import { AppConfig } from "@/config/app.config";
 import useModelPricing from "@/hooks/useModelPricing";
 import { useRemixForm } from "@/hooks/useRemixForm";
 import { canvasToBlob, PlatformApiError } from "@/lib/utils";
-import { remixImageSchema } from "@/schema/remix.schema";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -39,7 +38,6 @@ import {
 import React, { useCallback, useEffect, useMemo } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { z } from "zod";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 
@@ -266,7 +264,7 @@ const RemixControls = ({
     deleteFile(urlToRemove);
   }
 
-  const onSubmit = async (data: z.infer<typeof remixImageSchema>) => {
+  const onSubmit = async (data: Record<string, any>) => {
     try {
       let maskUrl = null;
 

@@ -2,6 +2,7 @@ import { estimatePricing } from "@/services/api/models.service";
 import { estimateRemixCredits } from "@/services/api/remix.service";
 import { estimateUpscaleCredits } from "@/services/api/upscale.service";
 import { estimateVideoGenerationCredits } from "@/services/api/video-gen.service";
+import { estimateVtonCredits } from "@/services/api/vton.service";
 import { Model } from "@/types/a2i-media.types";
 import { useQuery } from "@tanstack/react-query";
 import { isEmpty } from "lodash";
@@ -20,7 +21,6 @@ const useModelPricing = ({
   const { isDynamicPricing, estimationTriggers, noOfImagesToBeGeneratedName } =
     useMemo(() => {
       if (!selectedModel) {
-        console.log("Culprit 1");
         return {
           isDynamicPricing: false,
           estimationTriggers: [],
@@ -28,9 +28,6 @@ const useModelPricing = ({
         };
       }
 
-      if (!(selectedModel.pricing?.type === "variable")) {
-        console.log("Culprit 2");
-      }
       return {
         isDynamicPricing: selectedModel.pricing?.type === "variable",
         estimationTriggers:
@@ -72,6 +69,10 @@ const useModelPricing = ({
 
       if (selectedModel?.type === "image-upscale") {
         return await estimateUpscaleCredits(values);
+      }
+
+      if (selectedModel?.type === "vton") {
+        return await estimateVtonCredits(values);
       }
 
       return await estimatePricing(values);

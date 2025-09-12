@@ -40,20 +40,21 @@ export function AskKittykatImageEditingTools({
   item: GalleryItemResponse;
   remixControls: RemixControlsProps;
 }) {
-  const { selectedRemixModel } = useModelsStore();
+  const { selectedRemixModel, selectedVtonModel } = useModelsStore();
   const tools: ToolTab[] = [
     {
       value: "virtual-tryon",
       icon: <Shirt className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Virtual Try-On feature coming soon",
-      customComponent: (
+      customComponent: selectedVtonModel ? (
         <VirtualTryOn
-          productImage={item.asset_url}
+          modelImage={item.asset_url}
           closeDialog={remixControls.closeDialog}
-          brandId={item.brand_id}
           source="media-gallery"
           campaignId={remixControls.campaignId}
         />
+      ) : (
+        <> </>
       ),
     },
     {
