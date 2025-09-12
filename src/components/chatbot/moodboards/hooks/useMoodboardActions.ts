@@ -113,53 +113,104 @@ export const useMoodboardActions = ({
 
   // Handle gallery selection for placeholder replacement
   const handleGallerySelection = useCallback(
-    (selectedItems: GalleryItemResponse[], placeholderIndex: number) => {
+    (selectedItems: GalleryItemResponse[], placeHolderIndex?: number) => {
+      if (!selectedItems || selectedItems.length === 0) return;
+
       setPhotos((prevPhotos) => {
         const updatedPhotos = [...prevPhotos];
 
-        if (selectedItems.length === 0) return updatedPhotos;
+        // If a specific placeholder index is provided, replace that specific placeholder
+        if (placeHolderIndex !== undefined) {
+          // Check if the specified index is valid and is a placeholder
+          if (
+            placeHolderIndex >= 0 &&
+            placeHolderIndex < updatedPhotos.length &&
+            updatedPhotos[placeHolderIndex].is_placeholder
+          ) {
+            // Replace the specific placeholder with the first selected item
+            const item = selectedItems[0];
+            updatedPhotos[placeHolderIndex] = {
+              id: item.id,
+              src: item.asset_url,
+              width: item.dimensions?.width || 300,
+              height: item.dimensions?.height || 300,
+              alt: `Image ${item.id}`,
+              liked: item.is_favourite || false,
+              is_placeholder: false,
+            };
 
-        // Replace the specific placeholder or add to a specific position
-        if (placeholderIndex < updatedPhotos.length) {
-          // Replace placeholder at specific index with first selected item
-          const firstItem = selectedItems[0];
-          updatedPhotos[placeholderIndex] = {
-            id: firstItem.id,
-            src: firstItem.asset_url,
-            width: firstItem.dimensions?.width || 300,
-            height: firstItem.dimensions?.height || 300,
-            alt: `Image ${firstItem.id}`,
-            liked: firstItem.is_favourite || false,
-            is_placeholder: false,
-          };
+            // If there are more selected items, add them to the first available placeholders
+            if (selectedItems.length > 1) {
+              const remainingItems = selectedItems.slice(1);
+              const otherPlaceholderIndices = updatedPhotos
+                .map((photo, index) => ({ photo, index }))
+                .filter(
+                  ({ photo, index }) =>
+                    photo.is_placeholder && index !== placeHolderIndex
+                )
+                .map(({ index }) => index);
 
-          // Handle additional selected items if there are more than one
-          if (selectedItems.length > 1) {
-            const remainingItems = selectedItems.slice(1);
+              remainingItems
+                .slice(0, otherPlaceholderIndices.length)
+                .forEach((remainingItem: GalleryItemResponse, idx: number) => {
+                  const targetIndex = otherPlaceholderIndices[idx];
+                  updatedPhotos[targetIndex] = {
+                    id: remainingItem.id,
+                    src: remainingItem.asset_url,
+                    width: remainingItem.dimensions?.width || 300,
+                    height: remainingItem.dimensions?.height || 300,
+                    alt: `Image ${remainingItem.id}`,
+                    liked: remainingItem.is_favourite || false,
+                    is_placeholder: false,
+                  };
+                });
 
-            // Find all available placeholder positions starting from index 0
-            const availablePlaceholderIndices: number[] = [];
-            for (let i = 0; i < updatedPhotos.length; i++) {
-              if (updatedPhotos[i].is_placeholder && i !== placeholderIndex) {
-                availablePlaceholderIndices.push(i);
+              // If there are still more items than placeholders, append to end
+              if (remainingItems.length > otherPlaceholderIndices.length) {
+                remainingItems
+                  .slice(otherPlaceholderIndices.length)
+                  .forEach((remainingItem: GalleryItemResponse) => {
+                    updatedPhotos.push({
+                      id: remainingItem.id,
+                      src: remainingItem.asset_url,
+                      width: remainingItem.dimensions?.width || 300,
+                      height: remainingItem.dimensions?.height || 300,
+                      alt: `Image ${remainingItem.id}`,
+                      liked: remainingItem.is_favourite || false,
+                      is_placeholder: false,
+                    });
+                  });
               }
             }
+          }
+        } else {
+          // Original logic: Find placeholder items to fill (same simple logic as autofill)
+          const placeholderIndices = updatedPhotos
+            .map((photo, index) => ({ photo, index }))
+            .filter(({ photo }) => photo.is_placeholder)
+            .map(({ index }) => index);
 
-            // Fill available placeholders with remaining items
-            remainingItems.forEach((item, index) => {
-              if (index < availablePlaceholderIndices.length) {
-                const targetIndex = availablePlaceholderIndices[index];
-                updatedPhotos[targetIndex] = {
-                  id: item.id,
-                  src: item.asset_url,
-                  width: item.dimensions?.width || 300,
-                  height: item.dimensions?.height || 300,
-                  alt: `Image ${item.id}`,
-                  liked: item.is_favourite || false,
-                  is_placeholder: false,
-                };
-              } else {
-                // If no more placeholders available, add to the end
+          // Fill placeholders with selected items (same simple logic as autofill)
+          selectedItems
+            .slice(0, placeholderIndices.length)
+            .forEach((item: GalleryItemResponse, idx: number) => {
+              const targetIndex = placeholderIndices[idx];
+              updatedPhotos[targetIndex] = {
+                id: item.id,
+                src: item.asset_url,
+                width: item.dimensions?.width || 300,
+                height: item.dimensions?.height || 300,
+                alt: `Image ${item.id}`,
+                liked: item.is_favourite || false,
+                is_placeholder: false,
+              };
+            });
+
+          // If there are more selected items than placeholders, append to end
+          if (selectedItems.length > placeholderIndices.length) {
+            selectedItems
+              .slice(placeholderIndices.length)
+              .forEach((item: GalleryItemResponse) => {
                 updatedPhotos.push({
                   id: item.id,
                   src: item.asset_url,
@@ -169,25 +220,11 @@ export const useMoodboardActions = ({
                   liked: item.is_favourite || false,
                   is_placeholder: false,
                 });
-              }
-            });
+              });
           }
-        } else {
-          // Add to the end if placeholderIndex is beyond current length
-          selectedItems.forEach((item) => {
-            updatedPhotos.push({
-              id: item.id,
-              src: item.asset_url,
-              width: item.dimensions?.width || 300,
-              height: item.dimensions?.height || 300,
-              alt: `Image ${item.id}`,
-              liked: item.is_favourite || false,
-              is_placeholder: false,
-            });
-          });
         }
 
-        // Check after updating if total exceeds current noOfImagesForMoodboard
+        // Update noOfImagesForMoodboard if needed
         const newTotal = updatedPhotos.filter(
           (photo) => !photo.is_placeholder
         ).length;

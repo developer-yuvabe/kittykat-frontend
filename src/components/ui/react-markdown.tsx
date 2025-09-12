@@ -1,15 +1,20 @@
 import React from "react";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 
 type ReactMarkdownProps = {
   content: string;
+  components?: Components;
 };
 
-const ReactMarkdownRender = ({ content }: ReactMarkdownProps) => {
+const ReactMarkdownRender = ({ content, components }: ReactMarkdownProps) => {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+      components={components}
+    >
       {content}
     </ReactMarkdown>
   );

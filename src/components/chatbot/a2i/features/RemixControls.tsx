@@ -41,7 +41,7 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { z } from "zod";
 import { DynamicFormField } from "../DynamicFormField";
-import RemixModelSelector from "../RemixModelSelector";
+import ModelSelector from "../ModelSelector";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -80,7 +80,7 @@ const RemixControls = ({
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
-  const { selectedRemixModel } = useModelsStore();
+  const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
 
   const {
     initialParams,
@@ -377,7 +377,13 @@ const RemixControls = ({
   return (
     <div className="w-full flex flex-col gap-y-6">
       <div className="mr-auto w-max">
-        <RemixModelSelector />
+        <ModelSelector
+          selectedModel={selectedRemixModel}
+          typeFilter="remix"
+          onModelChange={(m) => {
+            setSelectedRemixModel(m);
+          }}
+        />
       </div>
       {maskImageParam && (
         <div className="flex gap-x-4 w-full">

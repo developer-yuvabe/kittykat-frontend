@@ -14,6 +14,7 @@ import { DraggableCarouselItem } from "./DraggableCarouselItem";
 import { GalleryActions } from "@/hooks/useGallery";
 import { Loader2 } from "lucide-react";
 import { type CarouselApi } from "@/components/ui/carousel";
+import Image from "next/image";
 
 interface MoodboardVisualImagesProps {
   currentMoodboard: MoodboardInformation;
@@ -87,7 +88,11 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
     return (
       <div className="mb-6 mt-3">
         <div className="flex items-center justify-center p-4">
-          <div className="text-sm text-gray-500">Loading images...</div>
+          <div className="text-sm text-gray-500">
+            {galleryActions.isFetching
+              ? "Loading images..."
+              : "No images available. Please add images to your gallery."}
+          </div>
         </div>
       </div>
     );
@@ -120,7 +125,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
                     item={item.galleryItem}
                     className="block w-full select-none"
                   >
-                    <img
+                    <Image
                       onClick={(e) => {
                         if (e.defaultPrevented) return;
                         setExpandedImage(item.url);
@@ -131,6 +136,9 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
                       className="object-cover w-40 mx-auto h-40 rounded-md cursor-pointer hover:scale-105 transition-transform duration-200 select-none"
                       loading="lazy"
                       draggable={false}
+                      quality={20}
+                      width={160}
+                      height={160}
                     />
                   </DraggableCarouselItem>
                 </CarouselItem>
