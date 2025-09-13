@@ -12,6 +12,7 @@ import {
   BytePlusIcon,
   GeminiIcon,
 } from "@/components/ui/custom-icon";
+import { ComponentIcon } from "lucide-react";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -382,6 +383,6 @@ export const getProviderIcon = (provider: Model["provider"]) => {
     case "gemini":
       return GeminiIcon;
     default:
-      return GeminiIcon;
+      return ComponentIcon;
   }
 };

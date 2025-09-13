@@ -370,7 +370,7 @@ const RemixControls = ({
   }, [form, selectedRemixModel?.id]);
 
   return (
-    <div className="w-full flex flex-col gap-y-6">
+    <div className="w-full flex flex-col gap-y-6 p-4">
       <div className="mr-auto w-max">
         <ModelSelector
           selectedModel={selectedRemixModel}
