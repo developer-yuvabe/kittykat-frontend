@@ -326,7 +326,7 @@ const RemixControls = ({
         return;
       }
 
-      toast.error("Image remix failed. Please try again later.");
+      toast.error("Failed to remix image. Please try again.");
     }
   };
 

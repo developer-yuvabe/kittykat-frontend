@@ -104,7 +104,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
       } else {
-        toast.error("Image upscaling failed. Please try again.");
+        toast.error("Failed to upscale image. Please try again.");
       }
     }
   };

@@ -59,7 +59,7 @@ const VirtualTryOn = ({
         return;
       }
 
-      toast.error("Failed to generate VTON image. Please try again.");
+      toast.error("Failed to generate V-TON image. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -28,6 +28,7 @@ import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { SelectIcon } from "@/components/ui/custom-icon";
 import ModelSelector from "../ModelSelector";
+import { toast } from "sonner";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse;
@@ -155,6 +156,8 @@ const VideoGenerationInputControls = ({
         setShowInsufficientCreditsModal(true);
         return;
       }
+
+      toast.error("Failed to generate video. Please try again.");
     } finally {
       form.setValue("prompt", "");
     }
