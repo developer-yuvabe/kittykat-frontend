@@ -161,6 +161,19 @@ const VirtualTryOn = ({
 
             setShowMediaLibrary(false);
           }}
+          filters={{
+            brands: [selectedBrandId!],
+            campaigns: [],
+            product_categories: [],
+            asset_types: ["image"],
+            asset_sources: [],
+            media_format: [],
+            aspect_ratio: [],
+            workflow_status: [],
+            moodboards: [],
+          }}
+          brandId={selectedBrandId!}
+          campaignId={campaignId ?? undefined}
         />
       </form>
     </Form>
