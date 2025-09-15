@@ -681,12 +681,10 @@ export function MediaEditorDialog({
   };
 
   const handleAskKittyKat = async () => {
-    //to uncomment later
-
-    // if (currentItem?.sent_to_human_queue) {
-    //   toast.info("This item is already in the human editing queue");
-    //   return;
-    // }
+    if (currentItem?.sent_to_human_queue) {
+      toast.info("This item is already in the human editing queue");
+      return;
+    }
     setShowConfirmDialog(true);
   };
 

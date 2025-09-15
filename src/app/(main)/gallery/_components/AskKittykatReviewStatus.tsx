@@ -244,23 +244,19 @@ export function AskKittykatReviewStatus({
 
       {/* Action Buttons */}
 
-      {/* 
-      
-      //to uncomment later
-      
       {!isAdmin &&
         !item?.sent_to_human_queue &&
-        currentStatus !== "in_review" && ( */}
-      <Button
-        onClick={onAskKittykat}
-        className="w-full"
-        size="lg"
-        variant="default"
-      >
-        <Lock className="w-5 h-5 mr-2" />
-        Ask KittyKat Expert
-      </Button>
-      {/* )} */}
+        currentStatus !== "in_review" && (
+          <Button
+            onClick={onAskKittykat}
+            className="w-full"
+            size="lg"
+            variant="default"
+          >
+            <Lock className="w-5 h-5 mr-2" />
+            Ask KittyKat Expert
+          </Button>
+        )}
 
       {/* User Review Buttons (when status is in_review and user is not admin) */}
       {!isAdmin && currentStatus === "in_review" && (
