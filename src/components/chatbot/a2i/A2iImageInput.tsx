@@ -235,32 +235,34 @@ const A2iImageInput = ({
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
-    if (selectedImageGenerationModel?.prefix) {
-      data.prompt = `${selectedImageGenerationModel.prefix} ${data.prompt}`;
-    }
-
-    if (selectedImageGenerationModel?.finetune_id) {
-      data.finetune_id = selectedImageGenerationModel.finetune_id;
-    }
-
-    const campaignId = currentCampaign?.id || null;
-
-    data.campaign_id = campaignId;
-
     try {
-      await generateImage(selectedBrandId!, data);
+      if (selectedImageGenerationModel?.prefix) {
+        data.prompt = `${selectedImageGenerationModel.prefix} ${data.prompt}`;
+      }
+
+      if (selectedImageGenerationModel?.finetune_id) {
+        data.finetune_id = selectedImageGenerationModel.finetune_id;
+      }
+
+      await generateImage(selectedBrandId!, {
+        ...data,
+        campaign_id: currentCampaign?.id || null,
+      });
+
+      form.setValue("prompt", "");
+      if (refernceImagesModelInfo) {
+        form.setValue(refernceImagesModelInfo.id, null);
+      }
+      setImageBlocks([]);
+      clearReferencePrompt();
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
+        return;
       }
-    }
 
-    form.setValue("prompt", "");
-    if (refernceImagesModelInfo) {
-      form.setValue(refernceImagesModelInfo.id, null);
+      toast.error("Failed to generate image. Please try again.");
     }
-    setImageBlocks([]);
-    clearReferencePrompt();
   };
 
   // Handle reference prompt changes

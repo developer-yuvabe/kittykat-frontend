@@ -225,11 +225,13 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
 
                     <div className="flex gap-4">
                       {(gen.parameters.start_image ||
-                        gen.parameters.first_frame) && (
+                        gen.parameters.first_frame ||
+                        gen.parameters.image) && (
                         <img
                           src={
                             gen.parameters.start_image ||
-                            gen.parameters.first_frame
+                            gen.parameters.first_frame ||
+                            gen.parameters.image
                           }
                           className="w-12 h-12 object-cover rounded-md"
                         />

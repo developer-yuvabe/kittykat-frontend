@@ -326,7 +326,7 @@ const RemixControls = ({
         return;
       }
 
-      toast.error("Image remix failed. Please try again later.");
+      toast.error("Failed to remix image. Please try again.");
     }
   };
 
@@ -370,7 +370,7 @@ const RemixControls = ({
   }, [form, selectedRemixModel?.id]);
 
   return (
-    <div className="w-full flex flex-col gap-y-6">
+    <div className="w-full flex flex-col gap-y-6 p-4">
       <div className="mr-auto w-max">
         <ModelSelector
           selectedModel={selectedRemixModel}

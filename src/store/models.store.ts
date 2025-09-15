@@ -20,6 +20,9 @@ type Store = {
 
   selectedVtonModel: Model | null;
   setSelectedVtonModel: (model: Model) => void;
+
+  selectedUpscaleModel: Model | null;
+  setSelectedUpscaleModel: (model: Model) => void;
 };
 
 export const useModelsStore = create<Store>()((set) => {
@@ -35,6 +38,7 @@ export const useModelsStore = create<Store>()((set) => {
       );
       const selectedRemixModelId = getSessionItem("a2i-remix-model-id");
       const selectedVtonModelId = getSessionItem("a2i-vton-model-id");
+      const selectedUpscaleModelId = getSessionItem("a2i-upscale-model-id");
 
       const imageModels = models.filter((model) => model.type === "image");
       const selectedImageGenerationModel =
@@ -65,6 +69,16 @@ export const useModelsStore = create<Store>()((set) => {
             vtonModels[0]
           : null;
 
+      const upscaleModels = models.filter(
+        (model) => model.type === "image-upscale"
+      );
+      const selectedUpscaleModel =
+        upscaleModels.length > 0
+          ? upscaleModels.find(
+              (model) => model.id === selectedUpscaleModelId
+            ) || upscaleModels[0]
+          : null;
+
       if (!selectedImageGenerationModel) {
         console.warn("No valid model found, defaulting to first model.");
         removeSessionItem("a2i-image-generation-model-id");
@@ -91,12 +105,20 @@ export const useModelsStore = create<Store>()((set) => {
         removeSessionItem("a2i-vton-model-id");
       }
 
+      if (!selectedUpscaleModel) {
+        console.warn(
+          "No valid Upscale model found, defaulting to first Upscale model."
+        );
+        removeSessionItem("a2i-upscale-model-id");
+      }
+
       set({
         models: models,
         selectedImageGenerationModel: selectedImageGenerationModel,
         selectedVideoGenearationModel: selectedVideoGenearationModel,
         selectedRemixModel: selectedRemixModel,
         selectedVtonModel: selectedVtonModel,
+        selectedUpscaleModel: selectedUpscaleModel,
       });
     },
 
@@ -135,6 +157,14 @@ export const useModelsStore = create<Store>()((set) => {
       setSessionItem("a2i-vton-model-id", model.id);
 
       set({ selectedVtonModel: model });
+    },
+
+    selectedUpscaleModel: getSessionItem("a2i-upscale-model-id") || null,
+    setSelectedUpscaleModel: (model) => {
+      // Save to session storage
+      setSessionItem("a2i-upscale-model-id", model.id);
+
+      set({ selectedUpscaleModel: model });
     },
   };
 });

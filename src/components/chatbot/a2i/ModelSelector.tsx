@@ -125,9 +125,7 @@ export default function ModelSelector({
                       >
                         <ReactMarkdownRender
                           data-allow-event-propagation="true"
-                          content={
-                            model.description || "No description available."
-                          }
+                          content={model.description || model.name}
                           components={{
                             a: ({ href, ...props }) => (
                               <a
