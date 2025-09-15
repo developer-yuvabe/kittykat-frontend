@@ -569,22 +569,115 @@ export function MediaEditorDialog({
   };
 
   const handleAskKittyKat = async () => {
-    if (currentItem?.sent_to_human_queue) {
-      toast.info("This item is already in the human editing queue");
-      return;
-    }
+    //to uncomment later
+
+    // if (currentItem?.sent_to_human_queue) {
+    //   toast.info("This item is already in the human editing queue");
+    //   return;
+    // }
     setShowConfirmDialog(true);
   };
 
-  const handleConfirmAskKittyKat = async () => {
+  const handleConfirmAskKittyKat = async (newComment?: {
+    text: string;
+    attachments?: string[];
+  }) => {
     try {
       if (!currentItem?.id) {
         setIsSubmitting(false);
         return;
       }
-      setCurrentItem((prev) =>
-        prev ? { ...prev, workflow_status: "request_created" } : prev
-      );
+
+      // If there's a new comment, submit it first
+      if (newComment && user) {
+        setIsSubmitting(true);
+
+        // Create a temporary comment for optimistic update
+        const tempCommentId = `temp-${Date.now()}`;
+        const optimisticComment: Comment = {
+          id: tempCommentId,
+          text: newComment.text,
+          added_by: user.id,
+          added_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          attachments:
+            newComment.attachments && newComment.attachments.length > 0
+              ? newComment.attachments
+              : undefined,
+          replies: [],
+          likes: [],
+          added_by_name: user.name,
+          added_by_role: user.role.name,
+        };
+
+        // Optimistically update the UI
+        setCurrentItem((prev) =>
+          prev
+            ? {
+                ...prev,
+                comments: [...(prev.comments || []), optimisticComment],
+              }
+            : prev
+        );
+
+        try {
+          galleryActions.addComment(
+            {
+              itemId: currentItem.id,
+              commentData: {
+                text: newComment.text,
+                attachments:
+                  newComment.attachments && newComment.attachments.length > 0
+                    ? newComment.attachments
+                    : undefined,
+                is_tasklist: true,
+              },
+            },
+            {
+              onSuccess(data) {
+                // Update cache with actual server data
+                revalidateGalleryItemVersions(data);
+                // Replace temporary comment with real comment from server
+                setCurrentItem((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        comments: prev.comments?.map((comment) =>
+                          comment.id === tempCommentId
+                            ? data.comments?.find(
+                                (c: Comment) =>
+                                  c.text === newComment.text &&
+                                  c.added_by_role === user.role.name
+                              ) || comment
+                            : comment
+                        ),
+                      }
+                    : prev
+                );
+              },
+            }
+          );
+        } catch (error) {
+          // Rollback optimistic update on error
+          setCurrentItem((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  comments: prev.comments?.filter(
+                    (comment) => comment.id !== tempCommentId
+                  ),
+                }
+              : prev
+          );
+          toast.error("Failed to add comment");
+          console.error("Add comment error:", error);
+          setIsSubmitting(false);
+          return;
+        }
+
+        setIsSubmitting(false);
+      }
+
       galleryActions.patchItem(
         {
           itemId: currentItem?.id,
@@ -631,7 +724,6 @@ export function MediaEditorDialog({
     galleryActions.hasNextPage,
     galleryActions.isFetchingNextPage,
   ]);
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -952,12 +1044,18 @@ export function MediaEditorDialog({
           </div>
         </DialogContent>
       </Dialog>
-
-      <AskKittyKatConfirmationDialog
-        open={showConfirmDialog}
-        setOpen={setShowConfirmDialog}
-        onConfirm={handleConfirmAskKittyKat}
-      />
+      {currentItem && (
+        <AskKittyKatConfirmationDialog
+          open={showConfirmDialog}
+          setOpen={setShowConfirmDialog}
+          onConfirm={handleConfirmAskKittyKat}
+          comments={currentItem?.comments || []}
+          imageUrl={currentItem?.asset_url || ""}
+          brandId={currentItem?.brand_id}
+          campaignId={currentItem?.campaign_id}
+          imageId={currentItem?.id}
+        />
+      )}
     </>
   );
 }

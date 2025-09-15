@@ -338,12 +338,6 @@ const ReferenceMoodboard = ({
 
   useEffect(() => {
     if (selectedMoodboard && loadImagesRef.current) {
-      console.log(
-        "Loading images for moodboard:",
-        selectedMoodboard.id,
-        "with assets key:",
-        assetsKey
-      );
       const timeoutId = setTimeout(() => {
         loadImagesRef.current?.();
       }, 50);
@@ -406,7 +400,6 @@ const ReferenceMoodboard = ({
       try {
         if (!moodboard) {
           // Handle case where moodboard is set to null (e.g., when deleted)
-          console.log("Setting moodboard to null");
           setSelectedMoodboardId(null);
           if (selectedBrandId) {
             await updateA2iRefernceMoodboard(selectedBrandId, null, []);
@@ -414,15 +407,12 @@ const ReferenceMoodboard = ({
           return;
         }
 
-        console.log("Selecting new moodboard:", moodboard.id);
         setSelectedMoodboardId(moodboard.id!);
 
         // Set campaign moodboard selection if we have a campaign
         if (moodboard.campaign_id) {
           setCampaignMoodboardSelection(moodboard.campaign_id, moodboard.id);
         }
-
-        console.log("moodboard assets", moodboard.moodboard_assets);
 
         // Use the mutation for consistency and proper error handling
         // Only generate if we're not already generating
