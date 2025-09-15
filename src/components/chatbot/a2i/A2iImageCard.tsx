@@ -3,11 +3,13 @@ import { Ripple } from "@/components/magicui/ripple";
 import { ImageModal } from "@/components/shared/ImageModal";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "@/components/ui/custom-icon";
 import { TooltipButton } from "@/components/ui/tooltip-button";
+import { env } from "@/config/env";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
-import { deleteA2iImage } from "@/services/api/a2i.service";
+import { deleteA2iImage, generateImage } from "@/services/api/a2i.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import {
@@ -22,6 +24,7 @@ import {
   PauseCircle,
   PencilIcon,
   PlayCircle,
+  RotateCcw,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -326,27 +329,29 @@ const A2iImageCard = ({
             )}
             {status === "failed" && (
               <div className="flex flex-col gap-y-2 items-center">
-                <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground hover:bg-transparent">
+                <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
                   Failed
                 </Badge>
-                {/* <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    toast.promise(
-                      generateImage(selectedBrandId!, {
-                        ...parameters,
-                        campaign_id: currentCampaign?.id || null,
-                      }),
-                      {
-                        loading: "Retrying image generation...",
-                        error: "Failed to retry image generation.",
-                      }
-                    );
-                  }}
-                >
-                  <RotateCcw />
-                </Button> */}
+                {env.NEXT_PUBLIC_ENVIRONMENT === "dev" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      toast.promise(
+                        generateImage(selectedBrandId!, {
+                          ...parameters,
+                          campaign_id: currentCampaign?.id || null,
+                        }),
+                        {
+                          loading: "Retrying image generation...",
+                          error: "Failed to retry image generation.",
+                        }
+                      );
+                    }}
+                  >
+                    <RotateCcw />
+                  </Button>
+                )}
               </div>
             )}
             {status === "failed" && isNSFW && (
