@@ -29,6 +29,7 @@ type EnumParam = BaseParam & {
   options: {
     optionValue: string;
     optionLabel: string;
+    optionHint?: string;
   }[];
 };
 

@@ -206,7 +206,9 @@ const VideoGenerationInputControls = ({
                             variant="outline"
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() => form.resetField(firstFrameParam.id)}
+                            onClick={() =>
+                              form.setValue(firstFrameParam.id, null)
+                            }
                           >
                             <X />
                           </Button>
@@ -252,7 +254,9 @@ const VideoGenerationInputControls = ({
                             variant="outline"
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() => form.resetField(lastFrameParam.id)}
+                            onClick={() =>
+                              form.setValue(lastFrameParam.id, null)
+                            }
                           >
                             <X />
                           </Button>

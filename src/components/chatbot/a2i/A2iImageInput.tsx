@@ -315,6 +315,24 @@ const A2iImageInput = ({
     }
   }, [form, selectedImageGenerationModel?.id]);
 
+  // For seedream4sequential model, ensure that the total number of images (reference + to generate) does not exceed 15
+  const value = form.watch("max_images");
+  const numberOfReferenceImagesUploaded = refernceImagesModelInfo
+    ? form.watch(refernceImagesModelInfo.id)?.length || 0
+    : 0;
+
+  useEffect(() => {
+    const total = numberOfReferenceImagesUploaded + value;
+
+    if (total > 15) {
+      const newValue = Math.max(1, 15 - numberOfReferenceImagesUploaded);
+      form.setValue("max_images", newValue);
+      toast.info(
+        `The maximum number of images to generate has been adjusted to ${newValue} due to the number of reference images uploaded.`
+      );
+    }
+  }, [numberOfReferenceImagesUploaded, value, form]);
+
   return (
     <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 pb-4">
       <Form {...form}>
