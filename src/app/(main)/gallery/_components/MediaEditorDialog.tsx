@@ -261,37 +261,13 @@ export function MediaEditorDialog({
             // Update cache with actual server data
             revalidateGalleryItemVersions(data);
             // Replace temporary comment with real comment from server
-            setCurrentItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments?.map((comment) =>
-                      comment.id === tempCommentId
-                        ? data.comments?.find(
-                            (c: Comment) =>
-                              c.text === newComment &&
-                              c.added_by_role === user.role.name
-                          ) || comment
-                        : comment
-                    ),
-                  }
-                : prev
-            );
+            setCurrentItem(data);
           },
         }
       );
     } catch (error) {
       // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.filter(
-                (comment) => comment.id !== tempCommentId
-              ),
-            }
-          : prev
-      );
+      setCurrentItem(item);
       toast.error("Failed to add comment");
       console.error("Add comment error:", error);
     } finally {
@@ -359,54 +335,12 @@ export function MediaEditorDialog({
           onSuccess(data) {
             // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-            // Replace temporary reply with real reply from server
-            setCurrentItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments?.map((comment) =>
-                      comment.id === commentId
-                        ? {
-                            ...comment,
-                            replies: comment.replies?.map((reply) =>
-                              reply.id === tempReplyId
-                                ? data.comments
-                                    ?.find((c) => c.id === commentId)
-                                    ?.replies?.find(
-                                      (r: CommentReply) =>
-                                        r.text === replyText &&
-                                        r.added_by_role === user.role.name
-                                    ) || reply
-                                : reply
-                            ),
-                          }
-                        : comment
-                    ),
-                  }
-                : prev
-            );
+            setCurrentItem(data);
           },
         }
       );
     } catch (error) {
-      // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.map((comment) =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: comment.replies?.filter(
-                        (reply) => reply.id !== tempReplyId
-                      ),
-                    }
-                  : comment
-              ),
-            }
-          : prev
-      );
+      setCurrentItem(item);
       toast.error("Failed to add reply");
       console.error("Add reply error:", error);
     } finally {
