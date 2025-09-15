@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +61,21 @@ export function AskKittyKatConfirmationDialog({
   const [newComment, setNewComment] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
+
+  // Reset function to clear all state
+  const resetState = () => {
+    setNewComment("");
+    setAttachments([]);
+    setTasks([]);
+    setIsGeneratingTasks(false);
+  };
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      resetState();
+    }
+  }, [open]);
 
   // Create tasklist mutation
   const createTasklistMutation = useMutation({
@@ -140,6 +155,7 @@ export function AskKittyKatConfirmationDialog({
   const handleCancel = (e: React.MouseEvent) => {
     e.stopPropagation();
     setOpen(false);
+    resetState();
   };
 
   const handleConfirm = async () => {
