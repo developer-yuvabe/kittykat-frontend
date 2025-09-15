@@ -1,33 +1,32 @@
+import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 import { Ripple } from "@/components/magicui/ripple";
+import { ImageModal } from "@/components/shared/ImageModal";
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon } from "@/components/ui/custom-icon";
+import { TooltipButton } from "@/components/ui/tooltip-button";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
+import { deleteA2iImage } from "@/services/api/a2i.service";
+import { deleteA2iVideo } from "@/services/api/video-gen.service";
+import { useBrandStore } from "@/store/brand.store";
 import {
   A2iImageDetail,
   A2iImageGeneration,
   ThreadDetails,
 } from "@/types/types";
 import {
+  CheckIcon,
   CopyIcon,
   HeartIcon,
   PauseCircle,
+  PencilIcon,
   PlayCircle,
   X,
-  PencilIcon,
-  CheckIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { TooltipButton } from "@/components/ui/tooltip-button";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { deleteA2iImage } from "@/services/api/a2i.service";
-import { useBrandStore } from "@/store/brand.store";
-import { CSSProperties } from "react";
-import { deleteA2iVideo } from "@/services/api/video-gen.service";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
-import { ImageModal } from "@/components/shared/ImageModal";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -326,9 +325,29 @@ const A2iImageCard = ({
               </div>
             )}
             {status === "failed" && (
-              <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
-                Failed
-              </Badge>
+              <div className="flex flex-col gap-y-2 items-center">
+                <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground hover:bg-transparent">
+                  Failed
+                </Badge>
+                {/* <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    toast.promise(
+                      generateImage(selectedBrandId!, {
+                        ...parameters,
+                        campaign_id: currentCampaign?.id || null,
+                      }),
+                      {
+                        loading: "Retrying image generation...",
+                        error: "Failed to retry image generation.",
+                      }
+                    );
+                  }}
+                >
+                  <RotateCcw />
+                </Button> */}
+              </div>
             )}
             {status === "failed" && isNSFW && (
               <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground absolute bottom-4">

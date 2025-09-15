@@ -315,7 +315,7 @@ const A2iImageInput = ({
     }
   }, [form, selectedImageGenerationModel?.id]);
 
-  // For seedream4sequential model, ensure that the total number of images (reference + to generate) does not exceed 15
+  // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
   const value = form.watch("max_images");
   const numberOfReferenceImagesUploaded = refernceImagesModelInfo
     ? form.watch(refernceImagesModelInfo.id)?.length || 0

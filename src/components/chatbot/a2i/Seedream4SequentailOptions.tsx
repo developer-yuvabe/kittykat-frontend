@@ -5,11 +5,14 @@ import { DynamicFormLabel } from "./DynamicFormField";
 
 type Seedream4SequentailOptionsProps = {
   form: UseFormReturn<any>;
+  source?: string;
 };
 
 export function Seedream4SequentailOptions({
   form,
+  source,
 }: Seedream4SequentailOptionsProps) {
+  const IMAGE_COUNT = source === "remix" ? 14 : 15;
   const value = form.watch("max_images");
   const numberOfReferenceImagesUploaded = form.watch("image")?.length || 0;
   const isAuto = value === 0;
@@ -33,7 +36,7 @@ export function Seedream4SequentailOptions({
               value={[isAuto ? 0 : value]}
               onValueChange={(val) => form.setValue("max_images", val[0])}
               min={1}
-              max={15 - numberOfReferenceImagesUploaded}
+              max={IMAGE_COUNT - numberOfReferenceImagesUploaded}
               step={1}
               disabled={isAuto}
               className="disabled:opacity-50 disabled:cursor-pointer"
@@ -45,7 +48,8 @@ export function Seedream4SequentailOptions({
 
       {!isAuto && (
         <span className="text-[10px] italic text-muted-foreground">
-          (minimum: {1}, maximum: {15 - numberOfReferenceImagesUploaded})
+          (minimum: {1}, maximum:{" "}
+          {IMAGE_COUNT - numberOfReferenceImagesUploaded})
         </span>
       )}
     </div>

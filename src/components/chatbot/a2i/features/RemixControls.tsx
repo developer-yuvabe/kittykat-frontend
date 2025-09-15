@@ -93,12 +93,14 @@ const RemixControls = ({
     let maskImageParam = null;
 
     for (const param of selectedRemixModel?.parameters || []) {
-      if (["base_image", "image"].includes(param.id)) {
+      console.log();
+      if (["base_image", "image"].includes(param.id) && param.type !== "file") {
+        console.log("Base image param found:", param);
         baseImageParam = param;
         continue;
       }
 
-      if (["reference_images"].includes(param.id)) {
+      if (["reference_images", "image"].includes(param.id)) {
         referenceImageParam = param as FileParam;
         continue;
       }
@@ -108,7 +110,7 @@ const RemixControls = ({
         continue;
       }
 
-      if (param.category === "initial") {
+      if (param.category === "initial" && param.id !== "prompt") {
         initialParams.push(param);
       } else if (param.category === "advanced") {
         advancedParams.push(param);
@@ -369,6 +371,24 @@ const RemixControls = ({
     }
   }, [form, selectedRemixModel?.id]);
 
+  // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
+  const value = form.watch("max_images");
+  const numberOfReferenceImagesUploaded = referenceImageParam
+    ? form.watch(referenceImageParam.id)?.length || 0
+    : 0;
+
+  useEffect(() => {
+    const total = numberOfReferenceImagesUploaded + value;
+
+    if (total > 14) {
+      const newValue = Math.max(1, 14 - numberOfReferenceImagesUploaded);
+      form.setValue("max_images", newValue);
+      toast.info(
+        `The maximum number of images to generate has been adjusted to ${newValue} due to the number of reference images uploaded.`
+      );
+    }
+  }, [numberOfReferenceImagesUploaded, value, form]);
+
   return (
     <div className="w-full flex flex-col gap-y-6 p-4">
       <div className="mr-auto w-max">
@@ -490,15 +510,26 @@ const RemixControls = ({
                   {referenceImageParam && (
                     <>
                       <input {...getInputProps()} ref={inputFileRef} />
-                      <Button
+                      <TooltipIconButton
+                        tooltip={
+                          referenceImageParam.maxLimit - imageBlocks.length <= 0
+                            ? "You’ve reached the maximum upload limit"
+                            : `You can add ${remainingUploads} more image${
+                                remainingUploads > 1 ? "s" : ""
+                              }`
+                        }
+                        className="size-max px-3 py-2"
                         variant="outline"
                         size="icon"
-                        className=""
                         type="button"
                         onClick={() => inputFileRef.current?.click()}
+                        disabled={
+                          referenceImageParam?.maxLimit - imageBlocks.length <=
+                          0
+                        }
                       >
                         <Images />
-                      </Button>
+                      </TooltipIconButton>
                     </>
                   )}
                   {initialParams.map((param) => {
@@ -509,6 +540,7 @@ const RemixControls = ({
                         form={form}
                         type="initial"
                         rules={selectedRemixModel?.rules}
+                        source="remix"
                       />
                     );
                   })}
@@ -538,6 +570,7 @@ const RemixControls = ({
                                 form={form}
                                 type="advanced"
                                 rules={selectedRemixModel?.rules}
+                                source="remix"
                               />
                             );
                           })}

@@ -41,6 +41,7 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   form: UseFormReturn<T>;
   type: "initial" | "advanced";
   sliderSuffix?: string;
+  source?: "remix" | "upscale" | "vton";
 };
 
 export const DynamicFormLabel = ({
@@ -68,6 +69,7 @@ export function DynamicFormField<T extends FieldValues>({
   type = "initial",
   rules,
   sliderSuffix,
+  source,
 }: DynamicFormFieldProps<T>) {
   const watchedValues = useWatch({
     control: form.control,
@@ -98,9 +100,8 @@ export function DynamicFormField<T extends FieldValues>({
     watchedValues?.["model"] === "seedream-4-0-250828" &&
     param.id === "max_images"
   ) {
-    return form.getValues("sequential_image_generation" as keyof T as any) ===
-      true ? (
-      <Seedream4SequentailOptions form={form} />
+    return watchedValues?.["sequential_image_generation"] === true ? (
+      <Seedream4SequentailOptions form={form} source={source} />
     ) : null;
   }
 
