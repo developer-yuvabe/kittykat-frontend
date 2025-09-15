@@ -234,7 +234,13 @@ export function DynamicFormField<T extends FieldValues>({
                   optional={!param.required}
                 />
 
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    field.onChange(v);
+                  }}
+                  value={field.value}
+                >
                   <FormControl>
                     <SelectTrigger
                       className={cn("w-full !gap-0", {

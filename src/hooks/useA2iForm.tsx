@@ -1,7 +1,7 @@
 import { Model } from "@/types/a2i-media.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isEmpty } from "lodash";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { useDynamicModelSchema } from "./useDynamicModelSchema";
@@ -26,41 +26,29 @@ export const useA2iForm = ({
 
   const { setSessionItem } = useSessionStorage();
 
-  const { schema, defaultValues } = useDynamicModelSchema(
-    selectedModel,
-    dynamicDefualtValues || {}
-  );
-
-  const getSavedFormValues = (() => {
-    try {
-      if (!formKey) return {};
-      const data = sessionStorage.getItem(formKey);
-      return data ? (JSON.parse(data) as Record<string, any>) : {};
-    } catch {
-      return {};
-    }
-  })();
+  const { schema, defaultValues } = useMemo(() => {
+    return useDynamicModelSchema(selectedModel, dynamicDefualtValues || {});
+  }, [selectedModel?.id, dynamicDefualtValues]);
 
   const form = useForm<any>({
     resolver: zodResolver(schema as z.ZodTypeAny),
-    defaultValues: {
-      ...defaultValues,
-      ...getSavedFormValues,
-    },
+    defaultValues: defaultValues,
     mode: "onChange",
   });
 
   useEffect(() => {
     // Preserve the previous prompt value when switching models
     const previousPromptValue = form.getValues("prompt") || "";
+
+    console.log("Resetting form with default values:", defaultValues);
     form.reset(
       {
         ...defaultValues,
         prompt: previousPromptValue,
       },
       {
-        keepDefaultValues: true,
-        keepDirty: true,
+        keepValues: false,
+        keepDefaultValues: false,
       }
     );
   }, [selectedModel?.id]);

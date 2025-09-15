@@ -93,9 +93,7 @@ const RemixControls = ({
     let maskImageParam = null;
 
     for (const param of selectedRemixModel?.parameters || []) {
-      console.log();
       if (["base_image", "image"].includes(param.id) && param.type !== "file") {
-        console.log("Base image param found:", param);
         baseImageParam = param;
         continue;
       }

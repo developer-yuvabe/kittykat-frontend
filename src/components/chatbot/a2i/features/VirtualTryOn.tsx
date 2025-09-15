@@ -131,6 +131,7 @@ const VirtualTryOn = ({
                 disabled={
                   form.formState.isSubmitting ||
                   !form.formState.isValid ||
+                  !productImage ||
                   isCalculatingCredits
                 }
                 loading={form.formState.isSubmitting}
