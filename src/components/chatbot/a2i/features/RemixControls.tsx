@@ -17,7 +17,6 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
 import useModelPricing from "@/hooks/useModelPricing";
-import { useRemixForm } from "@/hooks/useRemixForm";
 import { canvasToBlob, PlatformApiError } from "@/lib/utils";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
@@ -40,6 +39,7 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
+import { useA2iForm } from "@/hooks/useA2iForm";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -126,7 +126,9 @@ const RemixControls = ({
     };
   }, [selectedRemixModel]);
 
-  const form = useRemixForm({
+  const form = useA2iForm({
+    selectedModel: selectedRemixModel,
+    formKey: "remixForm",
     dynamicDefualtValues: {
       ...(baseImageParam?.id ? { [baseImageParam.id]: image.url } : {}),
       size: ["1024X1024", "1024x1536", "1536x1024"].includes(image.size)

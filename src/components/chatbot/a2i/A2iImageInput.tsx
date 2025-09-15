@@ -27,11 +27,11 @@ import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
 import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
-import { useImageGenForm } from "@/hooks/useImageGenForm";
 import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
 import { useUserStore } from "@/store/user.store";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { useA2iForm } from "@/hooks/useA2iForm";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -42,9 +42,12 @@ const A2iImageInput = ({
   campaignInformation: ThreadDetails["campaign_information"];
   selectedCampaignIndex: number;
 }) => {
-  const form = useImageGenForm();
-  const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedImageGenerationModel } = useModelsStore();
+  const form = useA2iForm({
+    formKey: "imageGenForm",
+    selectedModel: selectedImageGenerationModel,
+  });
+  const { setShowInsufficientCreditsModal } = useUserStore();
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
     model: selectedImageGenerationModel,
