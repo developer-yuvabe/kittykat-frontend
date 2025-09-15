@@ -146,7 +146,7 @@ jobs:
             --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
             --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
             --set-env-vars=LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}' \
-            --set-env-vars=createEnvPEXELS_API_KEY='${{ secrets.PEXELS_API_KEY }}'
+            --set-env-vars=PEXELS_API_KEY='${{ secrets.PEXELS_API_KEY }}'
         env:
           DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
