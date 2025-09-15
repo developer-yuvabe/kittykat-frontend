@@ -1,5 +1,6 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
+import { MoodboardAsset } from "@/types/types";
 import { z, ZodTypeAny } from "zod";
 
 export const generateImage = async <T extends ZodTypeAny>(
@@ -81,13 +82,15 @@ export const updateA2iImagePositions = async (
 
 export const updateA2iRefernceMoodboard = async (
   brandId: string,
-  moodboardId: string | null
+  moodboardId: string | null,
+  referenceMoodboardAssets?: MoodboardAsset[]
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.patch(`/brands/a2i/reference-moodboard`, {
         moodboard_id: moodboardId,
         brand_id: brandId,
+        reference_moodboard_assets: referenceMoodboardAssets,
       })
     );
   } catch (error) {

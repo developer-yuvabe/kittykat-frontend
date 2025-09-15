@@ -169,7 +169,7 @@ class GalleryService {
    */
   async addCommentToGalleryItem(
     itemId: string,
-    commentData: { text: string }
+    commentData: { text: string; attachments?: string[]; is_tasklist?: boolean }
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.post(`/gallery/${itemId}/comments`, commentData)

@@ -12,6 +12,7 @@ import ZoomableImage from "@/components/ui/zoomable-image";
 import { LikeIcon } from "@/components/ui/custom-icon";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { MarkdownText } from "@/components/thread/markdown-text";
 
 interface AskKittykatCommentItemProps {
   comment: Comment;
@@ -50,20 +51,21 @@ export function AskKittykatCommentItem({
     [UserRoleId.USER]: { variant: "client", label: "Client" },
   };
 
-  const badgeInfo =
-    roleToBadge[comment.added_by_role ?? ""] ??
-    (user?.role.name === "admin"
-      ? { variant: "admin", label: "Kittykat" }
-      : user?.role.name === "user"
-      ? { variant: "client", label: "Client" }
-      : { variant: "secondary", label: user?.role.name ?? "Unknown" });
+  const badgeInfo = comment.is_tasklist
+    ? { variant: "default", label: "Tasklist" }
+    : roleToBadge[comment.added_by_role ?? ""] ??
+      (user?.role.name === "admin"
+        ? { variant: "admin", label: "Kittykat" }
+        : user?.role.name === "user"
+        ? { variant: "client", label: "Client" }
+        : { variant: "secondary", label: user?.role.name ?? "Unknown" });
 
   const isTempComment = comment.id.startsWith("temp-");
 
   return (
     <div className="flex gap-3">
       <Avatar className="w-8 h-8">
-        <AvatarImage src={`/placeholder.svg?height=32&width=32`} />
+        <AvatarImage />
         <AvatarFallback>
           {comment.added_by_name?.slice(0, 1).toUpperCase() ??
             comment.added_by.slice(0, 2).toUpperCase()}
@@ -77,7 +79,7 @@ export function AskKittykatCommentItem({
           </span>
 
           {comment.added_by_role && (
-            <Badge variant={badgeInfo.variant} className="text-xs">
+            <Badge variant={badgeInfo.variant as any} className="text-xs">
               {badgeInfo.label}
             </Badge>
           )}
@@ -117,7 +119,9 @@ export function AskKittykatCommentItem({
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-700 mb-2">{comment.text}</p>
+            <div className="text-sm text-gray-700 mb-2">
+              <MarkdownText>{comment.text}</MarkdownText>
+            </div>
 
             {comment?.attachments && comment?.attachments?.length > 0 && (
               <div className="flex flex-row gap-x-2 mb-2">
@@ -159,9 +163,9 @@ export function AskKittykatCommentItem({
               >
                 <Reply className="w-3 h-3 mr-1" /> Reply
               </Button>
-              {(user &&
-                (user?.role as unknown as UserRoleId) === UserRoleId.ADMIN) ||
-                (comment.added_by === user?.id && (
+              {user &&
+                ((user?.role as unknown as UserRoleId) === UserRoleId.ADMIN ||
+                  (!comment.is_tasklist && comment.added_by === user?.id)) && (
                   <>
                     <Button
                       variant="ghost"
@@ -185,7 +189,7 @@ export function AskKittykatCommentItem({
                       <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>
                   </>
-                ))}
+                )}
             </div>
           </>
         )}
