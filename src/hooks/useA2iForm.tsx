@@ -40,7 +40,6 @@ export const useA2iForm = ({
     // Preserve the previous prompt value when switching models
     const previousPromptValue = form.getValues("prompt") || "";
 
-    console.log("Resetting form with default values:", defaultValues);
     form.reset(
       {
         ...defaultValues,
