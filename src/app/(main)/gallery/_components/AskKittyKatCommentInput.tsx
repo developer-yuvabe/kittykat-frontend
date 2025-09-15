@@ -82,14 +82,13 @@ export function AskKittyKatCommentInput({
   };
 
   return (
-    <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+    <div className="space-y-4">
       <div className="space-y-3">
         <Textarea
           value={comment}
           onChange={(e) => onCommentChange(e.target.value)}
           placeholder={placeholder}
-          className="min-h-[80px] resize-none"
-          onClick={(e) => e.stopPropagation()}
+          className="min-h-[80px] z-50"
         />
 
         <AskKittyKatAttachmentPreview

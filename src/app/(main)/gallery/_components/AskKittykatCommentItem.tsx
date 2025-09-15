@@ -65,7 +65,7 @@ export function AskKittykatCommentItem({
   return (
     <div className="flex gap-3">
       <Avatar className="w-8 h-8">
-        <AvatarImage src={`/placeholder.svg?height=32&width=32`} />
+        <AvatarImage />
         <AvatarFallback>
           {comment.added_by_name?.slice(0, 1).toUpperCase() ??
             comment.added_by.slice(0, 2).toUpperCase()}

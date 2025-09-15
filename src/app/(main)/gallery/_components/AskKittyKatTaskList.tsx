@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { MarkdownText } from "@/components/thread/markdown-text";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Edit3,
+  Save,
+  X,
+} from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
 
@@ -19,8 +27,10 @@ interface AskKittyKatTaskListProps {
   newComment?: string;
   newCommentAttachments?: string[];
   onTasksGenerated?: (tasks: Task[]) => void;
+  onTaskUpdate?: (tasks: Task[]) => void; // Callback to update parent's task state
   showCredits?: boolean;
   autoGenerate?: boolean;
+  tasks?: Task[]; // Allow external tasks to be passed in
 }
 
 export function AskKittyKatTaskList({
@@ -29,22 +39,80 @@ export function AskKittyKatTaskList({
   newComment,
   newCommentAttachments = [],
   onTasksGenerated,
+  onTaskUpdate,
   showCredits = false,
   autoGenerate = false,
+  tasks: externalTasks,
 }: AskKittyKatTaskListProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [totalCredits, setTotalCredits] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
+  const [editingAllText, setEditingAllText] = useState<string>("");
+
+  // Use external tasks if provided, otherwise empty array
+  const tasks = externalTasks || [];
 
   const hasExistingComments = comments && comments.length > 0;
   const hasNewComment = newComment && newComment.trim().length > 0;
+
+  const handleEditAllTasks = () => {
+    // Convert tasks to text format (one task per line)
+    const tasksText = tasks.map((task) => task.task).join("\n");
+    setEditingAllText(tasksText);
+    setIsEditingAll(true);
+  };
+
+  const handleSaveAllTasks = () => {
+    if (editingAllText.trim() === "") return;
+
+    // Split text by lines and filter out empty lines
+    const taskLines = editingAllText
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+
+    // Create updated tasks array, preserving original categories and credits
+    const updatedTasks = taskLines.map((taskText, index) => {
+      const originalTask = tasks[index];
+      return {
+        task: taskText.trim(),
+        task_category: originalTask?.task_category || "General",
+        estimated_credit: originalTask?.estimated_credit || 1,
+      };
+    });
+
+    // Update parent's task state
+    if (onTaskUpdate) {
+      onTaskUpdate(updatedTasks);
+    }
+
+    setIsEditingAll(false);
+    setEditingAllText("");
+
+    if (onTasksGenerated) {
+      onTasksGenerated(updatedTasks);
+    }
+  };
+
+  const handleCancelEditAll = () => {
+    setIsEditingAll(false);
+    setEditingAllText("");
+  };
 
   useEffect(() => {
     if (autoGenerate && (hasExistingComments || hasNewComment)) {
       generateTaskList();
     }
   }, [imageUrl, comments, newComment, autoGenerate]);
+
+  // Calculate total credits whenever tasks change
+  useEffect(() => {
+    const newTotalCredits = tasks.reduce(
+      (sum, task) => sum + task.estimated_credit,
+      0
+    );
+    setTotalCredits(newTotalCredits);
+  }, [tasks]);
 
   const generateTaskList = async () => {
     try {
@@ -73,7 +141,11 @@ export function AskKittyKatTaskList({
         imageUrl,
         commentsToProcess
       );
-      setTasks(response.tasks);
+
+      // Update parent's task state
+      if (onTaskUpdate) {
+        onTaskUpdate(response.tasks);
+      }
       setTotalCredits(response.total_estimated_credits);
 
       if (onTasksGenerated) {
@@ -83,7 +155,11 @@ export function AskKittyKatTaskList({
       const errorMessage =
         err instanceof Error ? err.message : "Failed to generate task list";
       setError(errorMessage);
-      setTasks([]);
+
+      // Clear tasks on error
+      if (onTaskUpdate) {
+        onTaskUpdate([]);
+      }
       setTotalCredits(0);
     } finally {
       setIsLoading(false);
@@ -133,34 +209,80 @@ export function AskKittyKatTaskList({
               {tasks.length} task{tasks.length !== 1 ? "s" : ""} identified
             </span>
           </div>
-          {showCredits && (
-            <span className="text-sm font-semibold text-purple-600">
-              {totalCredits} credits
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {showCredits && (
+              <span className="text-sm font-semibold text-purple-600">
+                {totalCredits} credits
+              </span>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleEditAllTasks}
+              className="h-7 px-2"
+            >
+              <Edit3 className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+          </div>
         </div>
-        <ul className="space-y-3">
-          {tasks.map((task, index) => (
-            <li key={index} className="flex items-start">
-              <span className="inline-block w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="text-sm text-gray-700 leading-relaxed mb-1">
-                  <MarkdownText>{task.task}</MarkdownText>
-                </div>
-                {showCredits && (
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="bg-gray-200 px-2 py-1 rounded">
-                      {task.task_category}
-                    </span>
-                    <span className="font-medium">
-                      {task.estimated_credit} credits
-                    </span>
+
+        {isEditingAll ? (
+          // Bulk edit mode
+          <div className="space-y-3">
+            <Textarea
+              value={editingAllText}
+              onChange={(e) => setEditingAllText(e.target.value)}
+              className="min-h-[200px] text-sm"
+              placeholder="Edit tasks (one per line)..."
+              autoFocus
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleSaveAllTasks}
+                disabled={editingAllText.trim() === ""}
+                className="h-7 px-2"
+              >
+                <Save className="h-3 w-3 mr-1" />
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelEditAll}
+                className="h-7 px-2"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          // Display mode
+          <ul className="space-y-3">
+            {tasks.map((task, index) => (
+              <li key={index} className="flex items-start">
+                <span className="inline-block w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-sm text-gray-700 leading-relaxed mb-1">
+                    <MarkdownText>{task.task}</MarkdownText>
                   </div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+                  {showCredits && (
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="bg-gray-200 px-2 py-1 rounded">
+                        {task.task_category}
+                      </span>
+                      <span className="font-medium">
+                        {task.estimated_credit} credits
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   }

@@ -2,15 +2,14 @@
 
 import React, { useState } from "react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import type { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
 import type { CreateTasklistRequest } from "@/services/api/tasklist.service";
@@ -77,6 +76,7 @@ export function AskKittyKatConfirmationDialog({
   });
 
   const hasNoComments = !comments || comments.length === 0;
+  const hasTasks = tasks.length > 0;
 
   const handleTasksGenerated = (generatedTasks: TaskListTask[]) => {
     setTasks(generatedTasks);
@@ -220,16 +220,16 @@ export function AskKittyKatConfirmationDialog({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent
         className="max-w-2xl max-h-[80vh] overflow-y-auto z-50"
         onClick={(e) => e.stopPropagation()}
       >
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-semibold">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
             Ready to Ask KittyKat Experts?
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-gray-600 space-y-3">
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600 space-y-3">
             <p>
               Clicking KittyKat Experts will formally trigger the creative team
               to start work.
@@ -239,8 +239,8 @@ export function AskKittyKatConfirmationDialog({
               required images are uploaded — changes after this point may not be
               possible and the request may become chargeable.
             </p>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Task List Section */}
         <div className="my-4">
@@ -251,16 +251,19 @@ export function AskKittyKatConfirmationDialog({
           {hasNoComments ? (
             /* Comment Input Form */
             <div className="space-y-4">
-              <AskKittyKatCommentInput
-                comment={newComment}
-                onCommentChange={setNewComment}
-                attachments={attachments}
-                onAttachmentsChange={setAttachments}
-                onGenerateTasks={generateTasksFromComment}
-                isGeneratingTasks={isGeneratingTasks}
-                brandId={brandId}
-                campaignId={campaignId}
-              />
+              {/* Only show comment input if no tasks have been generated */}
+              {!hasTasks && (
+                <AskKittyKatCommentInput
+                  comment={newComment}
+                  onCommentChange={setNewComment}
+                  attachments={attachments}
+                  onAttachmentsChange={setAttachments}
+                  onGenerateTasks={generateTasksFromComment}
+                  isGeneratingTasks={isGeneratingTasks}
+                  brandId={brandId}
+                  campaignId={campaignId}
+                />
+              )}
 
               {/* Show tasks after generation */}
               <AskKittyKatTaskList
@@ -268,8 +271,10 @@ export function AskKittyKatConfirmationDialog({
                 newComment={newComment}
                 newCommentAttachments={attachments}
                 onTasksGenerated={handleTasksGenerated}
-                showCredits={true}
+                onTaskUpdate={setTasks}
+                showCredits={false}
                 autoGenerate={false}
+                tasks={tasks}
               />
             </div>
           ) : (
@@ -278,20 +283,22 @@ export function AskKittyKatConfirmationDialog({
               imageUrl={imageUrl}
               comments={comments}
               onTasksGenerated={handleTasksGenerated}
+              onTaskUpdate={setTasks}
               showCredits={false}
               autoGenerate={true}
+              tasks={tasks}
             />
           )}
         </div>
 
-        <AlertDialogFooter
+        <DialogFooter
           className="flex gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          <AlertDialogCancel onClick={handleCancel}>
+          <Button variant="outline" onClick={handleCancel}>
             Back to editing
-          </AlertDialogCancel>
-          <AlertDialogAction
+          </Button>
+          <Button
             onClick={handleConfirm}
             disabled={!canConfirm()}
             className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -304,9 +311,9 @@ export function AskKittyKatConfirmationDialog({
             ) : (
               "Confirm"
             )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
