@@ -7,7 +7,7 @@ import { Model } from "@/types/a2i-media.types";
 import { useQuery } from "@tanstack/react-query";
 import { isEmpty } from "lodash";
 import { useMemo } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, useWatch } from "react-hook-form";
 
 type UseModelPricingProps = {
   form: UseFormReturn<any>;
@@ -41,10 +41,16 @@ const useModelPricing = ({
       };
     }, [selectedModel]);
 
-  const noOfImagesToBeGenerated = noOfImagesToBeGeneratedName
-    ? (form.watch(noOfImagesToBeGeneratedName) as number)
-    : 1;
-  const watchedTriggerValues = form.watch(estimationTriggers);
+  const noOfImagesToBeGenerated = useWatch({
+    control: form.control,
+    name: noOfImagesToBeGeneratedName ?? "",
+    defaultValue: 1,
+  });
+  const model = useWatch({
+    control: form.control,
+    name: "model",
+  });
+  const watchedTriggerValues = form.watch(estimationTriggers) ?? [];
 
   const { data, isPending } = useQuery({
     queryKey: [
@@ -57,7 +63,10 @@ const useModelPricing = ({
       const values = form.getValues();
 
       // There is a small micro delay between model selection and form reset TODO: refactor this hook to be used after form is set
-      if (isEmpty(values) || values.model !== selectedModel?.model) return 0;
+      if (isEmpty(values)) {
+        console.log("Skipping pricing estimation as form is not ready");
+        return 0;
+      }
 
       if (selectedModel?.type === "video") {
         return await estimateVideoGenerationCredits(values);
@@ -77,13 +86,14 @@ const useModelPricing = ({
 
       return await estimatePricing(values);
     },
-    enabled: isDynamicPricing && !!selectedModel?.id,
+    enabled:
+      isDynamicPricing && !!selectedModel?.id && model === selectedModel?.model, // only run when dynamic pricing and model is selected and form is updated
   });
 
   return {
     credits: isDynamicPricing
       ? data ?? 0
-      : (selectedModel?.credits ?? 0) * noOfImagesToBeGenerated,
+      : (selectedModel?.credits ?? 0) * (noOfImagesToBeGenerated || 1),
 
     isCalculatingCredits: isDynamicPricing ? isPending : false,
   };

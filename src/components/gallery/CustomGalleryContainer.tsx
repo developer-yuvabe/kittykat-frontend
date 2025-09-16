@@ -32,9 +32,13 @@ type OptimisticCustomGridGalleryProps = {
   onPhotoLike?: (index: number, liked: boolean) => void;
   hasUnsavedChanges?: boolean;
   moodboard: MoodboardInformation;
-  onGallerySelection?: (selectedItems: GalleryItemResponse[]) => void;
+  onGallerySelection?: (
+    selectedItems: GalleryItemResponse[],
+    placeHolderIndex?: number
+  ) => void;
   isPreview?: boolean;
   galleryActions?: GalleryActions;
+  overrideNoOfImages?: number; // Override store value for reference moodboards
 };
 
 const CustomGalleryContainer = forwardRef<
@@ -52,6 +56,7 @@ const CustomGalleryContainer = forwardRef<
       onGallerySelection,
       isPreview = false,
       galleryActions,
+      overrideNoOfImages,
     },
     ref
   ) => {
@@ -74,8 +79,13 @@ const CustomGalleryContainer = forwardRef<
       return [...items].sort((a, b) => (a.position || 0) - (b.position || 0));
     }, [items]);
 
-    const { noOfImagesForMoodboard, setNoOfImagesForMoodboard } =
-      useMoodboardStore();
+    const {
+      noOfImagesForMoodboard: storeNoOfImages,
+      setNoOfImagesForMoodboard,
+    } = useMoodboardStore();
+
+    // Use override value for reference moodboards, otherwise use store value
+    const noOfImagesForMoodboard = overrideNoOfImages ?? storeNoOfImages;
 
     const normalizedItemsArray = normalizedItems();
 
@@ -144,7 +154,9 @@ const CustomGalleryContainer = forwardRef<
           isAtMinimum={photos.length <= MIN_IMAGES_REQUIRED}
           setItems={setItems}
           minImagesRequired={MIN_IMAGES_REQUIRED}
-          setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+          setNoOfImagesForMoodboard={
+            overrideNoOfImages ? () => {} : setNoOfImagesForMoodboard
+          }
           showLiked={showLiked}
           isPreview={isPreview}
           galleryActions={galleryActions}
@@ -159,7 +171,9 @@ const CustomGalleryContainer = forwardRef<
         {!isPreview && (
           <CustomGalleryControls
             noOfImagesForMoodboard={noOfImagesForMoodboard}
-            setNoOfImagesForMoodboard={setNoOfImagesForMoodboard}
+            setNoOfImagesForMoodboard={
+              overrideNoOfImages ? () => {} : setNoOfImagesForMoodboard
+            }
             setItems={setItems}
             minImagesRequired={MIN_IMAGES_REQUIRED}
             showLiked={showLiked}

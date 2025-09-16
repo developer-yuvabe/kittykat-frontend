@@ -10,9 +10,9 @@ import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { useUserStore } from "@/store/user.store";
 import useModelPricing from "@/hooks/useModelPricing";
 import { useModelsStore } from "@/store/models.store";
-import { useVtonForm } from "@/hooks/useVtonForm";
 import { Form } from "@/components/ui/form";
 import ModelSelector from "../ModelSelector";
+import { useA2iForm } from "@/hooks/useA2iForm";
 
 type VirtualTryOnProps = {
   modelImage: string;
@@ -29,7 +29,9 @@ const VirtualTryOn = ({
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
-  const form = useVtonForm({
+  const form = useA2iForm({
+    formKey: "vtonForm",
+    selectedModel: selectedVtonModel,
     dynamicDefualtValues: {
       model_image: modelImage,
     },
@@ -128,7 +130,8 @@ const VirtualTryOn = ({
                 className="w-full"
                 disabled={
                   form.formState.isSubmitting ||
-                  // !form.formState.isValid ||
+                  !form.formState.isValid ||
+                  !productImage ||
                   isCalculatingCredits
                 }
                 loading={form.formState.isSubmitting}
@@ -161,6 +164,19 @@ const VirtualTryOn = ({
 
             setShowMediaLibrary(false);
           }}
+          filters={{
+            brands: [selectedBrandId!],
+            campaigns: [],
+            product_categories: [],
+            asset_types: ["image"],
+            asset_sources: [],
+            media_format: [],
+            aspect_ratio: [],
+            workflow_status: [],
+            moodboards: [],
+          }}
+          brandId={selectedBrandId!}
+          campaignId={campaignId ?? undefined}
         />
       </form>
     </Form>

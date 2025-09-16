@@ -11,6 +11,7 @@ export type Comment = {
   attachments?: string[];
   replies?: CommentReply[];
   likes?: string[];
+  is_tasklist?: boolean;
 };
 
 export type CommentReply = {

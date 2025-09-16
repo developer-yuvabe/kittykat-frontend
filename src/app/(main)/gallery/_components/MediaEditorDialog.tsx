@@ -131,12 +131,21 @@ export function MediaEditorDialog({
   });
 
   useEffect(() => {
-    if (!item) return;
+    if (!item) {
+      setCurrentItem(null);
+      return;
+    }
 
-    setCurrentItem((prev) =>
-      prev ? { ...prev, comments: item.comments } : item
-    );
-  }, [item?.comments]);
+    setCurrentItem((prev) => {
+      if (!prev) return item;
+
+      return {
+        ...item,
+
+        comments: item.comments,
+      };
+    });
+  }, [item]);
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
@@ -211,7 +220,7 @@ export function MediaEditorDialog({
     }
   };
 
-  const handleSubmitComment = async () => {
+  const handleSubmitComment = async (isTasklist = false) => {
     if (!newComment.trim() && attachments.length === 0) return;
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to add a comment");
@@ -256,6 +265,7 @@ export function MediaEditorDialog({
           commentData: {
             text: newComment,
             attachments: attachments.length > 0 ? attachments : undefined,
+            ...(isTasklist && { is_tasklist: true }),
           },
         },
         {
@@ -323,7 +333,7 @@ export function MediaEditorDialog({
     setReplyAttachments([]);
 
     try {
-      await galleryActions.addReply(
+      galleryActions.addReply(
         {
           itemId: currentItem.id,
           commentId,
@@ -358,6 +368,17 @@ export function MediaEditorDialog({
         setIsSubmitting(false);
         return;
       }
+
+      // Optimistic update
+      const previousComments = currentItem.comments || [];
+      const optimisticComments = previousComments.map((comment) =>
+        comment.id === commentId ? { ...comment, text } : comment
+      );
+
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: optimisticComments } : prev
+      );
+
       galleryActions.patchComment(
         {
           itemId: currentItem?.id,
@@ -367,8 +388,17 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
+            setCurrentItem(data);
             toast.info("Comment updated", { id: toastId });
             setEditingComment(null);
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to update comment", { id: toastId });
           },
         }
       );
@@ -390,6 +420,24 @@ export function MediaEditorDialog({
         setIsSubmitting(false);
         return;
       }
+
+      // Optimistic update
+      const previousComments = currentItem.comments || [];
+      const optimisticComments = previousComments.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              replies: (comment.replies || []).map((reply) =>
+                reply.id === replyId ? { ...reply, text } : reply
+              ),
+            }
+          : comment
+      );
+
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: optimisticComments } : prev
+      );
+
       galleryActions.patchReply(
         {
           itemId: currentItem?.id,
@@ -400,8 +448,17 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
+            setCurrentItem(data);
             toast.info("Reply updated", { id: toastId });
             setEditingReply(null);
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to update reply", { id: toastId });
           },
         }
       );
@@ -417,8 +474,18 @@ export function MediaEditorDialog({
       return;
     }
 
+    // Optimistic update - remove comment immediately
+    const previousComments = currentItem.comments || [];
+    const optimisticComments = previousComments.filter(
+      (comment) => comment.id !== commentId
+    );
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: optimisticComments } : prev
+    );
+
     try {
-      await galleryActions.deleteComment(
+      galleryActions.deleteComment(
         {
           itemId: currentItem?.id,
           commentId,
@@ -443,10 +510,23 @@ export function MediaEditorDialog({
                 }
               );
             }
+            toast.success("Comment deleted");
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to delete comment");
           },
         }
       );
     } catch (error) {
+      // Rollback optimistic update
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: previousComments } : prev
+      );
       console.error(error);
       toast.error("Failed to delete comment");
     }
@@ -458,6 +538,23 @@ export function MediaEditorDialog({
       return;
     }
 
+    // Optimistic update - remove reply immediately
+    const previousComments = currentItem.comments || [];
+    const optimisticComments = previousComments.map((comment) =>
+      comment.id === commentId
+        ? {
+            ...comment,
+            replies: (comment.replies || []).filter(
+              (reply) => reply.id !== replyId
+            ),
+          }
+        : comment
+    );
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: optimisticComments } : prev
+    );
+
     try {
       galleryActions.deleteReply(
         {
@@ -468,11 +565,26 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
+            setCurrentItem(data);
+            toast.success("Reply deleted");
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to delete reply");
           },
         }
       );
     } catch (error) {
+      // Rollback optimistic update
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: previousComments } : prev
+      );
       console.error(error);
+      toast.error("Failed to delete reply");
     }
   };
 
@@ -578,15 +690,52 @@ export function MediaEditorDialog({
     setShowConfirmDialog(true);
   };
 
-  const handleConfirmAskKittyKat = async () => {
+  const handleConfirmAskKittyKat = async (newComment?: {
+    text: string;
+    attachments?: string[];
+  }) => {
     try {
       if (!currentItem?.id) {
         setIsSubmitting(false);
         return;
       }
-      setCurrentItem((prev) =>
-        prev ? { ...prev, workflow_status: "request_created" } : prev
-      );
+
+      // If there's a new comment, submit it first
+      if (newComment && user) {
+        setIsSubmitting(true);
+
+        try {
+          galleryActions.addComment(
+            {
+              itemId: currentItem.id,
+              commentData: {
+                text: newComment.text,
+                attachments:
+                  newComment.attachments && newComment.attachments.length > 0
+                    ? newComment.attachments
+                    : undefined,
+                is_tasklist: true,
+              },
+            },
+            {
+              onSuccess(data) {
+                // Update cache with actual server data
+                revalidateGalleryItemVersions(data);
+                // Set the current item to the server response directly
+                setCurrentItem(data);
+              },
+            }
+          );
+        } catch (error) {
+          toast.error("Failed to add comment");
+          console.error("Add comment error:", error);
+          setIsSubmitting(false);
+          return;
+        }
+
+        setIsSubmitting(false);
+      }
+
       galleryActions.patchItem(
         {
           itemId: currentItem?.id,
@@ -633,7 +782,6 @@ export function MediaEditorDialog({
     galleryActions.hasNextPage,
     galleryActions.isFetchingNextPage,
   ]);
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -917,7 +1065,7 @@ export function MediaEditorDialog({
                               </Button>
                             </div>
                             <Button
-                              onClick={handleSubmitComment}
+                              onClick={() => handleSubmitComment()}
                               disabled={
                                 isSubmitting ||
                                 (!newComment.trim() && attachments.length === 0)
@@ -967,12 +1115,18 @@ export function MediaEditorDialog({
           </div>
         </DialogContent>
       </Dialog>
-
-      <AskKittyKatConfirmationDialog
-        open={showConfirmDialog}
-        setOpen={setShowConfirmDialog}
-        onConfirm={handleConfirmAskKittyKat}
-      />
+      {currentItem && (
+        <AskKittyKatConfirmationDialog
+          open={showConfirmDialog}
+          setOpen={setShowConfirmDialog}
+          onConfirm={handleConfirmAskKittyKat}
+          comments={currentItem?.comments || []}
+          imageUrl={currentItem?.asset_url || ""}
+          brandId={currentItem?.brand_id}
+          campaignId={currentItem?.campaign_id}
+          imageId={currentItem?.id}
+        />
+      )}
     </>
   );
 }

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import useModelPricing from "@/hooks/useModelPricing";
-import { useVideoGenForm } from "@/hooks/useVideoGenForm";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -29,6 +28,7 @@ import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { SelectIcon } from "@/components/ui/custom-icon";
 import ModelSelector from "../ModelSelector";
 import { toast } from "sonner";
+import { useA2iForm } from "@/hooks/useA2iForm";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse;
@@ -79,7 +79,9 @@ const VideoGenerationInputControls = ({
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
-  const form = useVideoGenForm({
+  const form = useA2iForm({
+    selectedModel: selectedVideoGenearationModel,
+    formKey: "videoGenForm",
     dynamicDefualtValues: {
       start_image: item.asset_url,
       first_frame: item.asset_url,
@@ -206,7 +208,9 @@ const VideoGenerationInputControls = ({
                             variant="outline"
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() => form.resetField(firstFrameParam.id)}
+                            onClick={() =>
+                              form.setValue(firstFrameParam.id, null)
+                            }
                           >
                             <X />
                           </Button>
@@ -252,7 +256,9 @@ const VideoGenerationInputControls = ({
                             variant="outline"
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() => form.resetField(lastFrameParam.id)}
+                            onClick={() =>
+                              form.setValue(lastFrameParam.id, null)
+                            }
                           >
                             <X />
                           </Button>

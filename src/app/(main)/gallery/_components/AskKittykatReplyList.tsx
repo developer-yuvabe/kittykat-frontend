@@ -80,7 +80,7 @@ export function AskKittykatReplyList({
         return (
           <div key={reply.id} className="flex gap-3">
             <Avatar className="w-6 h-6">
-              <AvatarImage src={`/placeholder.svg?height=24&width=24`} />
+              <AvatarImage />
               <AvatarFallback className="text-xs">
                 {reply.added_by_name?.slice(0, 1).toUpperCase() ??
                   reply.added_by.slice(0, 2).toUpperCase()}
