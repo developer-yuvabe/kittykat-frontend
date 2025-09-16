@@ -254,9 +254,9 @@ export function MediaUploadDropzone({
 
       // If addToGallery is enabled, bulk upload URLs to gallery
       if (addToGallery) {
-        const itemsToUpload: GalleryItem[] = validUrls.map((url) => {
+        const itemsToUploadPromises = validUrls.map(async (url) => {
           const extension = getExtensionFromUrl(url);
-          const assetType = getAssetTypeFromUrl(url);
+          const assetType = await getAssetTypeFromUrl(url);
 
           return {
             brand_id: selectedBrand.brand_id,
@@ -281,11 +281,15 @@ export function MediaUploadDropzone({
           };
         });
 
+        const itemsToUpload = await Promise.all(itemsToUploadPromises);
+
         const bulkUploadPayload: BulkGalleryUploadRequest = {
           gallery_items: itemsToUpload,
           brand_id: selectedBrand.brand_id,
           scrape_only: false,
         };
+
+        console.log(bulkUploadPayload);
 
         await galleryActions.bulkUpload(bulkUploadPayload);
         toast.success(
