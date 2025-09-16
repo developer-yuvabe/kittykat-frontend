@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { LikeIcon } from "@/components/ui/custom-icon";
 import { Textarea } from "@/components/ui/textarea";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import ZoomableVideo from "@/components/ui/zoomable-video";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { CommentReply } from "@/types/gallery.types";
 import { UserRoleId } from "@/types/user.types";
 import { formatDistanceToNow } from "date-fns";
 import { Edit, Trash2 } from "lucide-react";
-
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 import { useState } from "react";
 
 interface EditingReply {
@@ -79,7 +80,7 @@ export function AskKittykatReplyList({
         return (
           <div key={reply.id} className="flex gap-3">
             <Avatar className="w-6 h-6">
-              <AvatarImage src={`/placeholder.svg?height=24&width=24`} />
+              <AvatarImage />
               <AvatarFallback className="text-xs">
                 {reply.added_by_name?.slice(0, 1).toUpperCase() ??
                   reply.added_by.slice(0, 2).toUpperCase()}
@@ -137,16 +138,26 @@ export function AskKittykatReplyList({
                 <>
                   <p className="text-xs text-gray-700 mb-1">{reply.text}</p>
 
-                  {reply.attachments && reply.attachments?.length > 0 && (
+                  {reply.attachments && reply.attachments.length > 0 && (
                     <div className="flex gap-1 mb-1">
-                      {reply.attachments.map((attachment, idx) => (
-                        <ZoomableImage
-                          src={attachment}
-                          key={idx}
-                          className="w-16 h-16 object-cover rounded border cursor-pointer"
-                          variant="download"
-                        />
-                      ))}
+                      {reply.attachments.map((attachment, idx) => {
+                        const mediaType = getAssetTypeFromUrlCooked(attachment);
+
+                        return mediaType === "video" ? (
+                          <ZoomableVideo
+                            key={idx}
+                            src={attachment}
+                            className="w-16 h-16 object-contain rounded border cursor-pointer"
+                          />
+                        ) : (
+                          <ZoomableImage
+                            key={idx}
+                            src={attachment}
+                            className="w-16 h-16 object-cover rounded border cursor-pointer"
+                            variant="download"
+                          />
+                        );
+                      })}
                     </div>
                   )}
 

@@ -67,7 +67,9 @@ export default function ModelSelector({
         onValueChange={(value) => {
           const model = filteredModels.find((m) => m.id === value);
           if (model) {
-            onModelChange(model);
+            queueMicrotask(() => {
+              onModelChange(model);
+            });
           }
         }}
       >
@@ -123,9 +125,7 @@ export default function ModelSelector({
                       >
                         <ReactMarkdownRender
                           data-allow-event-propagation="true"
-                          content={
-                            model.description || "No description available."
-                          }
+                          content={model.description || model.name}
                           components={{
                             a: ({ href, ...props }) => (
                               <a

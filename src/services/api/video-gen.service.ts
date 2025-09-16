@@ -1,5 +1,6 @@
 import axiosInstance from "@/config/axios/api-client.config"; // adjust path as needed
 import { handleApiRequest } from "@/lib/utils"; // adjust path as needed
+import { A2iVideoGenerationResponse } from "@/types/a2i-video.types";
 
 export const videoGenerationService = async (
   brandId: string,
@@ -7,10 +8,7 @@ export const videoGenerationService = async (
   campaignId?: string | null
 ) => {
   try {
-    return await handleApiRequest<{
-      generation_id: string;
-      created_at: string;
-    }>(
+    return await handleApiRequest<A2iVideoGenerationResponse>(
       axiosInstance.post(`/brands/${brandId}/a2i/video-generation`, {
         ...data,
         campaign_id: campaignId,
@@ -60,7 +58,7 @@ export const estimateVideoGenerationCredits = async (
 ) => {
   try {
     const credits = await handleApiRequest<number | null>(
-      axiosInstance.post(`/a2i/video/estimate-credits`, data)
+      axiosInstance.post(`/credits/estimate/video-generation`, data)
     );
     return credits;
   } catch (error) {

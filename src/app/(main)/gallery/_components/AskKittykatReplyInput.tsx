@@ -4,6 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import ZoomableVideo from "@/components/ui/zoomable-video";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 
 interface AskKittykatReplyInputProps {
   replyText: string;
@@ -42,27 +44,39 @@ export function AskKittykatReplyInput({
       {/* Reply Attachments Preview */}
       {replyAttachments.length > 0 && (
         <div className="flex flex-row gap-x-2">
-          {replyAttachments.map((url, idx) => (
-            <div key={idx} className="relative">
-              <ZoomableImage
-                src={url}
-                key={idx}
-                className="w-16 h-16 object-cover rounded border cursor-pointer"
-              />
-              <Button
-                size="sm"
-                variant="destructive"
-                className="absolute -top-2 -right-2 w-5 h-5 p-0"
-                onClick={() =>
-                  setReplyAttachments((prev) =>
-                    prev.filter((_, i) => i !== idx)
-                  )
-                }
-              >
-                <X className="w-2 h-2" />
-              </Button>
-            </div>
-          ))}
+          {replyAttachments.map((url, idx) => {
+            const mediaType = getAssetTypeFromUrlCooked(url);
+            return (
+              <div key={idx} className="relative">
+                {mediaType === "video" ? (
+                  <ZoomableVideo
+                    key={idx}
+                    src={url}
+                    className="w-16 h-16 object-contain rounded border cursor-pointer"
+                  />
+                ) : (
+                  <ZoomableImage
+                    key={idx}
+                    src={url}
+                    className="w-16 h-16 object-cover rounded border cursor-pointer"
+                  />
+                )}
+
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 w-5 h-5 p-0"
+                  onClick={() =>
+                    setReplyAttachments((prev) =>
+                      prev.filter((_, i) => i !== idx)
+                    )
+                  }
+                >
+                  <X className="w-2 h-2" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -72,7 +86,6 @@ export function AskKittykatReplyInput({
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*"
             className="hidden"
             onChange={(e) => onFileUpload(e.target.files, true)}
           />
