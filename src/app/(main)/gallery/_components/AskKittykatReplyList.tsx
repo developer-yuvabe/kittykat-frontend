@@ -12,7 +12,7 @@ import { CommentReply } from "@/types/gallery.types";
 import { UserRoleId } from "@/types/user.types";
 import { formatDistanceToNow } from "date-fns";
 import { Edit, Trash2 } from "lucide-react";
-import { getAssetTypeFromUrl } from "@/lib/gallery.utils";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 import { useState } from "react";
 
 interface EditingReply {
@@ -141,7 +141,7 @@ export function AskKittykatReplyList({
                   {reply.attachments && reply.attachments.length > 0 && (
                     <div className="flex gap-1 mb-1">
                       {reply.attachments.map((attachment, idx) => {
-                        const mediaType = getAssetTypeFromUrl(attachment);
+                        const mediaType = getAssetTypeFromUrlCooked(attachment);
 
                         return mediaType === "video" ? (
                           <ZoomableVideo

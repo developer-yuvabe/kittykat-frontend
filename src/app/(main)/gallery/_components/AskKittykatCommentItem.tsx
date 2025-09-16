@@ -13,9 +13,8 @@ import { LikeIcon } from "@/components/ui/custom-icon";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import ZoomableVideo from "@/components/ui/zoomable-video";
-import { getAssetTypeFromUrl } from "@/lib/gallery.utils";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 import { MarkdownText } from "@/components/thread/markdown-text";
-
 
 interface AskKittykatCommentItemProps {
   comment: Comment;
@@ -129,7 +128,7 @@ export function AskKittykatCommentItem({
             {comment?.attachments && comment.attachments.length > 0 && (
               <div className="flex flex-row gap-x-2 mb-2">
                 {comment.attachments.map((attachment, idx) => {
-                  const mediaType = getAssetTypeFromUrl(attachment);
+                  const mediaType = getAssetTypeFromUrlCooked(attachment);
 
                   return mediaType === "video" ? (
                     <ZoomableVideo

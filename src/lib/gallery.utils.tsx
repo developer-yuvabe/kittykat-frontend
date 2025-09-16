@@ -92,6 +92,15 @@ export const getAssetTypeFromUrl = async (url: string) => {
   return getAssetTypeFromBlob(blob);
 };
 
+export const getAssetTypeFromUrlCooked = (url: string) => {
+  const extension = url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase();
+  if (["mp4", "mov", "avi", "webm"].includes(extension || "")) return "video";
+  if (["png", "jpg", "jpeg", "svg", "gif", "webp"].includes(extension || ""))
+    return "image";
+
+  return "image";
+};
+
 async function getAssetTypeFromBlob(blob: Blob) {
   const mimeType = blob.type;
   if (!mimeType) throw new Error("Unable to determine MIME type from blob");

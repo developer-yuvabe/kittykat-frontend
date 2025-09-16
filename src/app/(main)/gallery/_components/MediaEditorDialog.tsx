@@ -39,7 +39,7 @@ import { useModelsStore } from "@/store/models.store";
 import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import { galleryService } from "@/services/api/gallery.service";
 import ZoomableVideo from "@/components/ui/zoomable-video";
-import { getAssetTypeFromUrl } from "@/lib/gallery.utils";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -1009,7 +1009,8 @@ export function MediaEditorDialog({
                           {attachments.length > 0 && (
                             <div className="flex flex-row gap-x-2">
                               {attachments.map((url, idx) => {
-                                const mediaType = getAssetTypeFromUrl(url);
+                                const mediaType =
+                                  getAssetTypeFromUrlCooked(url);
                                 return (
                                   <div key={idx} className="relative">
                                     {mediaType === "video" ? (

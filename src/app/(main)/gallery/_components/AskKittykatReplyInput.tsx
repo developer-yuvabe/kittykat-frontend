@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import ZoomableVideo from "@/components/ui/zoomable-video";
-import { getAssetTypeFromUrl } from "@/lib/gallery.utils";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 
 interface AskKittykatReplyInputProps {
   replyText: string;
@@ -45,7 +45,7 @@ export function AskKittykatReplyInput({
       {replyAttachments.length > 0 && (
         <div className="flex flex-row gap-x-2">
           {replyAttachments.map((url, idx) => {
-            const mediaType = getAssetTypeFromUrl(url);
+            const mediaType = getAssetTypeFromUrlCooked(url);
             return (
               <div key={idx} className="relative">
                 {mediaType === "video" ? (
