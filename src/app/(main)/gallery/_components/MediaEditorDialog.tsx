@@ -10,7 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { X, Paperclip, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  X,
+  Paperclip,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import type {
@@ -829,6 +836,60 @@ export function MediaEditorDialog({
                     </div>
                   </div>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    // Refetch gallery items
+                    galleryActions.refetchGalleryItems();
+
+                    if (item?.id) {
+                      // Always refetch versions
+                      queryClient.invalidateQueries({
+                        queryKey: ["versions", item.id],
+                      });
+
+                      // Always refetch the main item (version 1)
+                      try {
+                        await galleryService.getGalleryItemById(item.id);
+                      } catch (error) {
+                        console.error(
+                          "Failed to refresh main item data:",
+                          error
+                        );
+                      }
+
+                      // If we're viewing a different version, also refetch that version
+                      if (currentItem?.id && currentItem.id !== item.id) {
+                        try {
+                          const updatedCurrentItem =
+                            await galleryService.getGalleryItemById(
+                              currentItem.id
+                            );
+                          setCurrentItem(updatedCurrentItem);
+                        } catch (error) {
+                          console.error(
+                            "Failed to refresh current version data:",
+                            error
+                          );
+                        }
+                      } else if (currentItem?.id === item.id) {
+                        // If we're viewing version 1, update it with the refetched data
+                        try {
+                          const updatedItem =
+                            await galleryService.getGalleryItemById(item.id);
+                          setCurrentItem(updatedItem);
+                        } catch (error) {
+                          console.error("Failed to refresh item data:", error);
+                        }
+                      }
+                    }
+                  }}
+                  className="p-2 h-8 w-8"
+                  title="Refresh data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
