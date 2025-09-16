@@ -164,7 +164,7 @@ export function AskKittykatCommentItem({
                 <Reply className="w-3 h-3 mr-1" /> Reply
               </Button>
               {user &&
-                ((user?.role as unknown as UserRoleId) === UserRoleId.ADMIN ||
+                (user?.role?.id === UserRoleId.ADMIN ||
                   (!comment.is_tasklist && comment.added_by === user?.id)) && (
                   <>
                     <Button
