@@ -4,7 +4,7 @@ import { GalleryIcon, HomeIcon } from "../ui/custom-icon";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
-import { Users, BadgeInfo } from "lucide-react";
+import { Users } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import NotificationHoverCard from "../notifications/NotificationHoverCard";
 
@@ -37,7 +37,6 @@ export function NavLinks() {
           },
         ]
       : []),
-    { name: "Help", icon: BadgeInfo, path: "/help" },
   ];
 
   return (
