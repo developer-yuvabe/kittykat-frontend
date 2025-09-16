@@ -1,4 +1,5 @@
 import { GalleryItemResponse } from "@/types/gallery.types";
+import { Task } from "@/types/tasklist.types";
 
 /**
  * Gets the client name from the latest comment or falls back to created_by
@@ -28,3 +29,8 @@ export function getClientNameFromComments(item: GalleryItemResponse): string {
   // Fallback to created_by or "Client"
   return item.created_by || "Client";
 }
+
+export const formatTasksAsMarkdown = (tasks: Task[]) => {
+  if (tasks.length === 0) return "";
+  return tasks.map((task) => `- ${task.task}`).join("\n");
+};

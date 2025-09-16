@@ -11,15 +11,14 @@ import {
   Edit3,
   Save,
   X,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
-
-interface Task {
-  task: string;
-  task_category: string;
-  estimated_credit: number;
-}
+import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { Task } from "@/types/tasklist.types";
 
 interface AskKittyKatTaskListProps {
   imageUrl: string;
@@ -45,8 +44,6 @@ export function AskKittyKatTaskList({
   tasks: externalTasks,
 }: AskKittyKatTaskListProps) {
   const [totalCredits, setTotalCredits] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [editingAllText, setEditingAllText] = useState<string>("");
 
@@ -114,10 +111,66 @@ export function AskKittyKatTaskList({
     setTotalCredits(newTotalCredits);
   }, [tasks]);
 
-  const generateTaskList = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // React Query mutation for generating tasks
+  const generateTasksMutation = useMutation({
+    mutationFn: async () => {
+      let commentsToProcess = [...comments];
+
+      // Add new comment if provided
+      if (hasNewComment) {
+        const tempComment: Comment = {
+          id: "temp-comment",
+          text: newComment.trim(),
+          added_by: "current-user",
+          added_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          attachments:
+            newCommentAttachments.length > 0
+              ? newCommentAttachments
+              : undefined,
+        };
+        commentsToProcess = [tempComment];
+      }
+
+      return await taskListService.generateTaskList(
+        imageUrl,
+        commentsToProcess
+      );
+    },
+    onSuccess: (response) => {
+      // Update parent's task state
+      if (onTaskUpdate) {
+        onTaskUpdate(response.tasks);
+      }
+      setTotalCredits(response.total_estimated_credits);
+
+      if (onTasksGenerated) {
+        onTasksGenerated(response.tasks);
+      }
+    },
+    onError: () => {
+      // Clear tasks on error
+      if (onTaskUpdate) {
+        onTaskUpdate([]);
+      }
+      setTotalCredits(0);
+    },
+  });
+
+  const generateTaskList = () => {
+    const generatePromise = generateTasksMutation.mutateAsync();
+
+    toast.promise(generatePromise, {
+      loading: "Generating task list...",
+      success: "Task list generated successfully!",
+      error: (err) => err?.message || "Failed to generate task list",
+    });
+  };
+
+  // React Query mutation for enhancing tasks
+  const enhanceTasksMutation = useMutation({
+    mutationFn: async () => {
+      if (tasks.length === 0) throw new Error("No tasks to enhance");
 
       let commentsToProcess = [...comments];
 
@@ -137,37 +190,34 @@ export function AskKittyKatTaskList({
         commentsToProcess = [tempComment];
       }
 
-      const response = await taskListService.generateTaskList(
+      return await taskListService.generateTaskList(
         imageUrl,
-        commentsToProcess
+        commentsToProcess,
+        true, // enhance = true
+        tasks // existing tasks
       );
+    },
+    onSuccess: (response) => {
+      // Update the editing text with enhanced tasks
+      const enhancedTasksText = response.tasks
+        .map((task) => task.task)
+        .join("\n");
+      setEditingAllText(enhancedTasksText);
+    },
+  });
 
-      // Update parent's task state
-      if (onTaskUpdate) {
-        onTaskUpdate(response.tasks);
-      }
-      setTotalCredits(response.total_estimated_credits);
+  const handleEnhanceTasksInEditMode = () => {
+    const enhancePromise = enhanceTasksMutation.mutateAsync();
 
-      if (onTasksGenerated) {
-        onTasksGenerated(response.tasks);
-      }
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to generate task list";
-      setError(errorMessage);
-
-      // Clear tasks on error
-      if (onTaskUpdate) {
-        onTaskUpdate([]);
-      }
-      setTotalCredits(0);
-    } finally {
-      setIsLoading(false);
-    }
+    toast.promise(enhancePromise, {
+      loading: "Enhancing tasks...",
+      success: "Tasks enhanced! Review and save changes.",
+      error: (err) => err?.message || "Failed to enhance task list",
+    });
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - check if either mutation is pending
+  if (generateTasksMutation.isPending) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin text-purple-600 mr-2" />
@@ -176,12 +226,15 @@ export function AskKittyKatTaskList({
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state - check if either mutation has an error
+  if (generateTasksMutation.error || enhanceTasksMutation.error) {
+    const error = generateTasksMutation.error || enhanceTasksMutation.error;
     return (
       <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
         <AlertCircle className="h-5 w-5 text-red-600 mr-2 flex-shrink-0" />
-        <span className="text-red-700 text-sm">{error}</span>
+        <span className="text-red-700 text-sm">
+          {error?.message || "An error occurred"}
+        </span>
       </div>
     );
   }
@@ -219,6 +272,7 @@ export function AskKittyKatTaskList({
               size="sm"
               variant="outline"
               onClick={handleEditAllTasks}
+              disabled={isEditingAll}
               className="h-7 px-2"
             >
               <Edit3 className="h-3 w-3 mr-1" />
@@ -238,6 +292,20 @@ export function AskKittyKatTaskList({
               autoFocus
             />
             <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleEnhanceTasksInEditMode}
+                disabled={enhanceTasksMutation.isPending}
+                className="h-7 px-2"
+              >
+                {enhanceTasksMutation.isPending ? (
+                  <Zap className="h-3 w-3 mr-1 animate-pulse" />
+                ) : (
+                  <Sparkles className="h-3 w-3 mr-1" />
+                )}
+                Enhance
+              </Button>
               <Button
                 size="sm"
                 onClick={handleSaveAllTasks}
@@ -293,10 +361,10 @@ export function AskKittyKatTaskList({
       <div className="flex justify-center">
         <Button
           onClick={generateTaskList}
-          disabled={isLoading}
+          disabled={generateTasksMutation.isPending}
           className="bg-purple-600 hover:bg-purple-700"
         >
-          {isLoading ? (
+          {generateTasksMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               Generating...
@@ -311,10 +379,3 @@ export function AskKittyKatTaskList({
 
   return null;
 }
-
-// Export utility function for other components
-export { type Task };
-export const formatTasksAsMarkdown = (tasks: Task[]) => {
-  if (tasks.length === 0) return "";
-  return tasks.map((task) => `- ${task.task}`).join("\n");
-};

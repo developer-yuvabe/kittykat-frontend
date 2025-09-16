@@ -12,16 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
-import type { CreateTasklistRequest } from "@/services/api/tasklist.service";
+
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useUserStore } from "@/store/user.store";
 import { AskKittyKatCommentInput } from "./AskKittyKatCommentInput";
-import {
-  AskKittyKatTaskList,
-  formatTasksAsMarkdown,
-} from "./AskKittyKatTaskList";
+import { AskKittyKatTaskList } from "./AskKittyKatTaskList";
+import { CreateTasklistRequest } from "@/types/tasklist.types";
+import { formatTasksAsMarkdown } from "@/lib/askKittykat.utils";
 
 interface AskKittyKatConfirmationDialogProps {
   open: boolean;
