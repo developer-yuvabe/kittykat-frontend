@@ -1,26 +1,9 @@
 import axios from "axios";
 import { auth } from "../firebase.config";
-import { onAuthStateChanged } from "firebase/auth";
 import { AppConfig } from "../app.config";
 
 const getClientSideToken = () => {
-  return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      unsubscribe();
-
-      if (user) {
-        try {
-          const token = await user.getIdToken(true);
-          resolve(token);
-        } catch (error) {
-          console.error("Error fetching token:", error);
-          resolve(null);
-        }
-      } else {
-        resolve(null);
-      }
-    });
-  });
+  return auth.currentUser?.getIdToken();
 };
 
 const axiosInstance = axios.create({
@@ -52,6 +35,8 @@ axiosInstance.interceptors.response.use(
       config.__retry = true; // Track retry status
 
       const newToken = await getClientSideToken(); // Refresh token if needed
+      if (!newToken) console.log("User is not authenticated");
+
       if (newToken) {
         config.headers["Authorization"] = `Bearer ${newToken}`;
         return axiosInstance(config); // Retry request with new token
