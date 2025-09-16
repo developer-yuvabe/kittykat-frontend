@@ -12,6 +12,8 @@ import ZoomableImage from "@/components/ui/zoomable-image";
 import { LikeIcon } from "@/components/ui/custom-icon";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import ZoomableVideo from "@/components/ui/zoomable-video";
+import { getAssetTypeFromUrl } from "@/lib/gallery.utils";
 
 interface AskKittykatCommentItemProps {
   comment: Comment;
@@ -119,16 +121,26 @@ export function AskKittykatCommentItem({
           <>
             <p className="text-sm text-gray-700 mb-2">{comment.text}</p>
 
-            {comment?.attachments && comment?.attachments?.length > 0 && (
+            {comment?.attachments && comment.attachments.length > 0 && (
               <div className="flex flex-row gap-x-2 mb-2">
-                {comment?.attachments.map((attachment, idx) => (
-                  <ZoomableImage
-                    src={attachment}
-                    key={idx}
-                    className="w-16 h-16 object-cover rounded border cursor-pointer"
-                    variant="download"
-                  />
-                ))}
+                {comment.attachments.map((attachment, idx) => {
+                  const mediaType = getAssetTypeFromUrl(attachment);
+
+                  return mediaType === "video" ? (
+                    <ZoomableVideo
+                      key={idx}
+                      src={attachment}
+                      className="w-16 h-16 object-contain rounded border cursor-pointer"
+                    />
+                  ) : (
+                    <ZoomableImage
+                      key={idx}
+                      src={attachment}
+                      className="w-16 h-16 object-cover rounded border cursor-pointer"
+                      variant="download"
+                    />
+                  );
+                })}
               </div>
             )}
 

@@ -38,6 +38,8 @@ import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerat
 import { useModelsStore } from "@/store/models.store";
 import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import { galleryService } from "@/services/api/gallery.service";
+import ZoomableVideo from "@/components/ui/zoomable-video";
+import { getAssetTypeFromUrl } from "@/lib/gallery.utils";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -855,38 +857,51 @@ export function MediaEditorDialog({
                             placeholder="Ask KittyKat Experts for help with editing this image..."
                             className="min-h-[80px] resize-none"
                           />
+
                           {attachments.length > 0 && (
                             <div className="flex flex-row gap-x-2">
-                              {attachments.map((url, idx) => (
-                                <div key={idx} className="relative">
-                                  <ZoomableImage
-                                    src={url}
-                                    key={idx}
-                                    className="w-16 h-16 object-cover rounded border cursor-pointer"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="absolute -top-2 -right-2 w-5 h-5 p-0"
-                                    onClick={() =>
-                                      setAttachments((prev) =>
-                                        prev.filter((_, i) => i !== idx)
-                                      )
-                                    }
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ))}
+                              {attachments.map((url, idx) => {
+                                const mediaType = getAssetTypeFromUrl(url);
+                                return (
+                                  <div key={idx} className="relative">
+                                    {mediaType === "video" ? (
+                                      <ZoomableVideo
+                                        key={idx}
+                                        src={url}
+                                        className="w-16 h-16 object-contain rounded border cursor-pointer"
+                                      />
+                                    ) : (
+                                      <ZoomableImage
+                                        key={idx}
+                                        src={url}
+                                        className="w-16 h-16 object-cover rounded border cursor-pointer"
+                                      />
+                                    )}
+
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="absolute -top-2 -right-2 w-5 h-5 p-0"
+                                      onClick={() =>
+                                        setAttachments((prev) =>
+                                          prev.filter((_, i) => i !== idx)
+                                        )
+                                      }
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <input
                                 ref={fileInputRef}
                                 type="file"
                                 multiple
-                                accept="image/*"
                                 className="hidden"
                                 onChange={(e) =>
                                   handleFileUpload(e.target.files)
