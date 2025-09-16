@@ -332,7 +332,7 @@ const A2iImageCard = ({
                 <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
                   Failed
                 </Badge>
-                {env.NEXT_PUBLIC_ENVIRONMENT === "dev" && (
+                {window.location.hostname === "localhost" && (
                   <Button
                     variant="outline"
                     size="sm"

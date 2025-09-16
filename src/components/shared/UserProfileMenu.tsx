@@ -1,17 +1,19 @@
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/store/user.store";
-import { Separator } from "../ui/separator";
-import { LogoutButton } from "./LogoutButton";
-import QueueProgress from "./QueueProgress";
+import { LifeBuoy, LogOut } from "lucide-react";
 import { CreditIcon } from "../ui/custom-icon";
-
+import QueueProgress from "./QueueProgress";
+import Link from "next/link";
 export function UserProfileMenu({}) {
   const { user, credits } = useUserStore();
 
@@ -27,7 +29,7 @@ export function UserProfileMenu({}) {
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">
       {credits !== null && (
-        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
+        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10">
           <span className="text-xs">{credits}</span>
           <CreditIcon className="w-2 h-2" />
         </div>
@@ -37,54 +39,57 @@ export function UserProfileMenu({}) {
         <QueueProgress />
       </div>
 
-      {/* User Profile with Popover */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <div className="flex flex-col items-center justify-center relative">
-            <Button
-              variant="ghost"
-              className="relative h-10 w-10 rounded-full p-0 cursor-pointer"
-            >
-              <Avatar className="h-10 w-10">
-                <AvatarImage alt={user?.name || "User"} />
-                <AvatarFallback className="bg-purple-100 text-purple-600">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent className="w-72 p-0 overflow-hidden" align="end">
-          {/* User Info Section */}
-          <div className="p-4 flex items-center gap-4">
-            <Avatar className="h-12 w-12">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="relative h-10 w-10 rounded-full p-0 cursor-pointer"
+          >
+            <Avatar className="h-10 w-10">
               <AvatarImage alt={user?.name || "User"} />
               <AvatarFallback className="bg-purple-100 text-purple-600">
                 {getUserInitials()}
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {user?.name || "User"}
-              </p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {user?.email || "No email provided"}
-              </p>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          side="bottom"
+          align="end"
+          sideOffset={4}
+        >
+          <DropdownMenuLabel className="p-0 font-normal">
+            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage alt={user?.name} />
+                <AvatarFallback className="bg-purple-100 text-purple-600">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{user!.name}</span>
+                <span className="truncate text-xs">{user!.email}</span>
+              </div>
             </div>
-          </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
 
-          <Separator />
-
-          {/* Mobile Queue Progress - Only visible on mobile */}
-          <div className="sm:hidden p-4">
-            <QueueProgress />
-          </div>
-
-          <Separator className="sm:hidden" />
-
-          <LogoutButton />
-        </PopoverContent>
-      </Popover>
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link href={"/help"}>
+                <LifeBuoy />
+                Help
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>
+            <LogOut />
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
