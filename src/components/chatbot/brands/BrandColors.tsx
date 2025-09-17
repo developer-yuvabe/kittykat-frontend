@@ -17,7 +17,7 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Color } from "@/types/langgraph.types";
 import { Check, Copy, Pencil } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import React from "react";
 import { Agents } from "@/types/types";
@@ -34,33 +34,23 @@ interface ColorEditForm {
 }
 
 export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
-  const validColors = filterAndNormalizeColors(colors);
+  const [validColors, setValidColors] = useState(
+    filterAndNormalizeColors(colors)
+  );
   const [copied, setCopied] = useState<number | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<ColorEditForm>({
     name: "",
     hex: "",
   });
-  const [isSaving, setIsSaving] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
 
   const stream = useStreamContext();
-  const { isLoading } = useStreamContext();
 
   // Skip rendering if no valid colors
   if (validColors.length === 0) return null;
-
-  useEffect(() => {
-    if (submitted && !isLoading) {
-      setIsSaving(false);
-      setSubmitted(false);
-      setEditingIndex(null);
-      setPopoverOpen(null);
-    }
-  }, [isLoading, submitted]);
 
   const copyToClipboard = (colorHex: string, idx: number) => {
     try {
@@ -99,9 +89,6 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
       setPopoverOpen(null);
       return;
     }
-
-    setIsSaving(true);
-    setSubmitted(true);
 
     try {
       // Determine the color's role/type for better messaging
@@ -148,10 +135,20 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
           currentBrandContextId: selectedBrandId,
         });
       }
+
+      // Update local state immediately for responsiveness
+      const updatedColors = [...validColors];
+      updatedColors[editingIndex] = {
+        name: editForm.name,
+        hex: editForm.hex,
+        label: originalColor.label,
+      };
+
+      setValidColors(updatedColors);
+      setPopoverOpen(null);
+      setEditingIndex(null);
     } catch (err) {
       console.error("Save failed:", err);
-      setIsSaving(false);
-      setSubmitted(false);
     }
   };
 
@@ -257,18 +254,16 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
                         <Button
                           onClick={handleSave}
                           disabled={
-                            isSaving ||
                             !isValidHexColor(editForm.hex) ||
                             !editForm.name.trim()
                           }
                           className="flex-1"
                         >
-                          {isSaving ? "Saving..." : "Save Changes"}
+                          {"Save Changes"}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={() => setPopoverOpen(null)}
-                          disabled={isSaving}
                         >
                           Cancel
                         </Button>

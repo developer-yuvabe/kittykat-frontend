@@ -66,7 +66,6 @@ export const RenderValue: React.FC<{
   ) {
     return (
       <InlineEditableField
-        enableEdit={editable}
         label={path}
         value={String(value)}
         onSave={handleSave}

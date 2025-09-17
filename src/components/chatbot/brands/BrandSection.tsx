@@ -1,36 +1,31 @@
 "use client";
 
+import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { extractAllColors, formatUpdateMessage } from "@/lib/langgraph.utils";
+import {
+  capitalizeKey,
+  extractAllColors,
+  formatUpdateMessage,
+  normalizeJsonToString,
+} from "@/lib/langgraph.utils";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { useBrandStore } from "@/store/brand.store";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import { useUserStore } from "@/store/user.store";
+import { Agents, AnalysisLogDetail, ThreadBrand } from "@/types/types";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight, ChevronUp, CirclePlus } from "lucide-react";
 import React from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
-import { BrandColors } from "./BrandColors";
-import { BrandOverview } from "./BrandOverview";
-import BrandSelector from "./BrandSelector";
-import { BrandTargetAudience } from "./BrandTargetAudience";
-import { Agents, AnalysisLogDetail, ThreadBrand } from "@/types/types";
-import { BrandProducts } from "./BrandProducts";
-import { BrandTypography } from "./BrandTypography";
-import BrandPurpose from "./BrandPurpose";
-import { BrandPhotography } from "./BrandPhotography";
-import { BrandLighting } from "./BrandLightning";
-import { BrandStyling } from "./BrandStyling";
-import { BrandCasting } from "./BrandCasting";
-import { BrandSetting } from "./BrandSetting";
-import { Button } from "@/components/ui/button";
-import { DynamicContentSection } from "../DynamicSection";
-import { AnimatePresence, motion } from "framer-motion";
-import { InlineEditableField } from "@/components/shared/InlineEditableField";
-import { submitOptimisticMessage } from "@/services/api/langgraph.service";
-import { useStreamContext } from "@/providers/langgraph/Stream";
-import { InitialPlaceHolder } from "./InitialPlaceHolder";
-import { useUserStore } from "@/store/user.store";
-import { useBrandStore } from "@/store/brand.store";
+import { DisplayField } from "../DisplayField";
 import { BrandAestheticUploader } from "./BrandAestheticUploader";
+import { BrandColors } from "./BrandColors";
 import { BrandMedia } from "./BrandMedia";
-import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import BrandSelector from "./BrandSelector";
+import { InitialPlaceHolder } from "./InitialPlaceHolder";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -77,9 +72,9 @@ export const renderBrandData = (
   brandMedia: any,
   analysisLogs: AnalysisLogDetail[]
 ) => {
-  const brandName = staticData?.brand?.name || "No Brand Name";
-  const brandInitial = brandName.charAt(0).toUpperCase();
-  const allColors = extractAllColors(staticData);
+  const brandInitial = (staticData?.brand?.name || "No Brand Name")
+    .charAt(0)
+    .toUpperCase();
   const [showDynamicData, setShowDynamicData] = React.useState(false);
   const stream = useStreamContext();
   const { user } = useUserStore();
@@ -87,13 +82,39 @@ export const renderBrandData = (
     useBrandStore();
   const { removePinnedItem } = usePinnedContextStore();
 
-  // Create a ref for the BrandCasting component
-  const brandCastingRef = React.useRef<HTMLDivElement>(null);
+  const handleFieldUpdate = (
+    fieldPath: string,
+    oldValue: any,
+    newVal: any,
+    label?: string
+  ) => {
+    console.log(
+      fieldPath,
+      normalizeJsonToString(oldValue),
+      normalizeJsonToString(newVal),
+      label
+    );
 
-  // Function to scroll to BrandCasting
-  const scrollToBrandCasting = () => {
-    if (brandCastingRef.current) {
-      brandCastingRef.current.scrollIntoView({ behavior: "smooth" });
+    const msg = formatUpdateMessage(
+      fieldPath,
+      normalizeJsonToString(oldValue),
+      normalizeJsonToString(newVal),
+      Agents.BRANDING_AGENT,
+      label ??
+        fieldPath
+          .split(".")
+          .pop()
+          ?.replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase())
+    );
+
+    if (msg) {
+      submitOptimisticMessage({
+        stream,
+        text: msg,
+        userId: user!.id,
+        currentBrandContextId: selectedBrandId,
+      });
     }
   };
 
@@ -220,10 +241,10 @@ export const renderBrandData = (
                   label="Brand"
                   value={staticData?.brand?.name || ""}
                   onSave={async (newVal) => {
-                    const oldVal = staticData?.brand?.name || "";
+                    const oldValue = staticData?.brand?.name || "";
                     const msg = formatUpdateMessage(
                       "staticData.brand.name",
-                      oldVal,
+                      oldValue,
                       newVal,
                       "brandingAgent",
                       "Brand Name"
@@ -267,37 +288,174 @@ export const renderBrandData = (
       {expandedSections.brandOverview && (
         <CardContent className="pt-0 pb-6">
           <div className="mt-1 space-y-6">
-            <BrandOverview
-              tagline={staticData?.brand?.tagline}
-              values={staticData?.brand?.values}
-              name={staticData?.brand?.name}
+            <DisplayField
+              json={{
+                tagline: staticData?.brand?.tagline,
+                values: staticData?.brand?.values,
+              }}
+              title="Brand Overview"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.brand.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
             />
 
-            <BrandPurpose
-              mission={staticData?.brand?.mission}
-              vision={staticData?.brand?.vision}
+            <DisplayField
+              json={{
+                mission: staticData?.brand?.mission,
+                vision: staticData?.brand?.vision,
+              }}
+              title="Brand Purpose"
+              agentId={Agents.BRANDING_AGENT}
+              showKeyAsLabel
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.brand.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
             />
 
-            <BrandColors colors={allColors} />
+            <BrandColors colors={extractAllColors(staticData)} />
 
-            <BrandTypography
-              primaryFont={staticData?.typography?.primaryFont}
-              secondaryFont={staticData?.typography?.secondaryFont}
+            <DisplayField
+              json={{
+                primary_font: {
+                  name: staticData?.typography?.primaryFont?.name,
+                  weights: staticData?.typography?.primaryFont?.weights,
+                },
+                secondary_font: {
+                  name: staticData?.typography?.secondaryFont?.name,
+                  weights: staticData?.typography?.secondaryFont?.weights,
+                },
+              }}
+              title="Brand Typography"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key.split(".").join(" "))}`
+                );
+              }}
+              showKeyAsLabel
             />
 
-            <BrandPhotography {...staticData?.photography} />
-            <BrandLighting {...staticData?.lighting} />
-            <BrandStyling {...staticData?.styling} />
+            <DisplayField
+              json={staticData?.photography || {}}
+              title="Photography"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+              showKeyAsLabel
+            />
 
-            <div ref={brandCastingRef}>
-              <BrandCasting {...staticData?.casting} />
-            </div>
+            <DisplayField
+              json={staticData?.lighting || {}}
+              title="Lighting"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+              showKeyAsLabel
+            />
 
-            <BrandSetting {...staticData?.setting} />
+            <DisplayField
+              json={staticData?.styling || {}}
+              title="Styling"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+              showKeyAsLabel
+            />
 
-            <BrandProducts products={staticData?.products || []} />
+            <DisplayField
+              json={staticData?.casting || {}}
+              title="Casting"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+              showKeyAsLabel
+            />
 
-            <BrandTargetAudience targetAudience={staticData?.target_audience} />
+            <DisplayField
+              json={staticData?.setting || {}}
+              title="Setting"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+              showKeyAsLabel
+            />
+
+            <DisplayField
+              json={{
+                products: staticData?.products || [],
+              }}
+              title="Products"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+            />
+
+            <DisplayField
+              json={{
+                target_audience: staticData?.target_audience,
+              }}
+              title="Target Audience"
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.${key}`,
+                  oldValue,
+                  newValue,
+                  `Brand ${capitalizeKey(key)}`
+                );
+              }}
+            />
+
             {/* Brand Media Upload Section */}
             <BrandAestheticUploader
               brandId={selectedBrandId}
@@ -321,10 +479,28 @@ export const renderBrandData = (
                     exit: { opacity: 0, y: 5 },
                   }}
                 >
-                  <DynamicContentSection
-                    dynamicData={dynamicData ?? {}}
-                    agentId={Agents.BRANDING_AGENT}
-                  />
+                  {Object.keys(dynamicData || {}).length === 0 && (
+                    <div className="text-sm italic text-gray-400">
+                      No dynamic details available.
+                    </div>
+                  )}
+
+                  {Object.keys(dynamicData || {}).map((key) => (
+                    <DisplayField
+                      key={key}
+                      json={{ [key]: dynamicData ? dynamicData[key] : null }}
+                      title={capitalizeKey(key)}
+                      agentId={Agents.BRANDING_AGENT}
+                      onValueChange={(subKey, oldValue, newValue) => {
+                        handleFieldUpdate(
+                          `dynamic.${key}`,
+                          oldValue,
+                          newValue,
+                          `Brand ${capitalizeKey(key)}`
+                        );
+                      }}
+                    />
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -332,10 +508,6 @@ export const renderBrandData = (
             <Button
               onClick={() => {
                 setShowDynamicData(!showDynamicData);
-                // Scroll to BrandCasting when hiding dynamic data
-                if (showDynamicData) {
-                  scrollToBrandCasting();
-                }
               }}
               className="text-primary underline  cursor-pointer h-max w-max hover:bg-transparent p-0 flex ml-auto"
               variant="ghost"
