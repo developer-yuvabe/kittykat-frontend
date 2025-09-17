@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import { MarkdownText } from "@/components/thread/markdown-text";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,15 @@ import {
   X,
   Sparkles,
   Zap,
+  Paperclip,
 } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { Task } from "@/types/tasklist.types";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { AskKittyKatAttachmentPreview } from "./AskKittyKatAttachmentPreview";
 
 interface AskKittyKatTaskListProps {
   imageUrl: string;
@@ -30,6 +33,11 @@ interface AskKittyKatTaskListProps {
   showCredits?: boolean;
   autoGenerate?: boolean;
   tasks?: Task[]; // Allow external tasks to be passed in
+  // Simplified attachment management
+  allAttachments?: string[];
+  onAllAttachmentsChange?: (attachments: string[]) => void;
+  brandId?: string | null;
+  campaignId?: string | null;
 }
 
 export function AskKittyKatTaskList({
@@ -42,16 +50,67 @@ export function AskKittyKatTaskList({
   showCredits = false,
   autoGenerate = false,
   tasks: externalTasks,
+  allAttachments = [],
+  onAllAttachmentsChange,
+  brandId,
+  campaignId,
 }: AskKittyKatTaskListProps) {
   const [totalCredits, setTotalCredits] = useState<number>(0);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [editingAllText, setEditingAllText] = useState<string>("");
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use external tasks if provided, otherwise empty array
   const tasks = externalTasks || [];
 
   const hasExistingComments = comments && comments.length > 0;
   const hasNewComment = newComment && newComment.trim().length > 0;
+
+  // File upload functionality
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !onAllAttachmentsChange) return;
+
+    setIsUploading(true);
+    const toastId = toast.loading("Uploading files...");
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileName = `tasklist-attachment-${Date.now()}-${file.name}`;
+        return await uploadFileAndReturnUrl(
+          fileName,
+          file.type,
+          "ask-kittykat",
+          file,
+          brandId || null,
+          campaignId || null
+        );
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      onAllAttachmentsChange([...allAttachments, ...uploadedUrls]);
+
+      toast.success(`${files.length} file(s) uploaded successfully`, {
+        id: toastId,
+      });
+    } catch (error) {
+      toast.error("Failed to upload files", { id: toastId });
+      console.error("Upload error:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    if (onAllAttachmentsChange) {
+      onAllAttachmentsChange(allAttachments.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleAttachFiles = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
 
   const handleEditAllTasks = () => {
     // Convert tasks to markdown format (using unordered list)
@@ -369,6 +428,57 @@ export function AskKittyKatTaskList({
               </li>
             ))}
           </ul>
+        )}
+
+        {/* Attachment Management Section */}
+        {onAllAttachmentsChange && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-700">
+                Attachments ({allAttachments.length})
+              </h4>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAttachFiles}
+                  disabled={isUploading}
+                  className="h-7 px-2"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Paperclip className="h-3 w-3 mr-1" />
+                  )}
+                  {isUploading ? "Uploading..." : "Add Images"}
+                </Button>
+              </div>
+            </div>
+
+            {allAttachments.length > 0 && (
+              <div className="space-y-3">
+                <AskKittyKatAttachmentPreview
+                  attachments={allAttachments}
+                  onRemoveAttachment={handleRemoveAttachment}
+                />
+              </div>
+            )}
+
+            {allAttachments.length === 0 && (
+              <p className="text-xs text-gray-500">
+                You can upload additional images to provide more context for
+                your tasks.
+              </p>
+            )}
+          </div>
         )}
       </div>
     );

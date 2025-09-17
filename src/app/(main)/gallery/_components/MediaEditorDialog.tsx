@@ -697,6 +697,8 @@ export function MediaEditorDialog({
     setShowConfirmDialog(true);
   };
 
+  const [allAttachments, setAllAttachments] = useState<string[]>([]);
+
   const handleConfirmAskKittyKat = async (newComment?: {
     text: string;
     attachments?: string[];
@@ -1220,6 +1222,8 @@ export function MediaEditorDialog({
           brandId={currentItem?.brand_id}
           campaignId={currentItem?.campaign_id}
           imageId={currentItem?.id}
+          allAttachments={allAttachments}
+          onAllAttachmentsChange={setAllAttachments}
         />
       )}
     </>
