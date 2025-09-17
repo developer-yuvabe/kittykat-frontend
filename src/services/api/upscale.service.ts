@@ -35,6 +35,7 @@ export const upscaleImage = async (
   data: z.infer<typeof upscalerSchema>
 ) => {
   try {
+    console.log("Upscaling image with data:", data);
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/image-upscaling`, {
         ...data,

@@ -24,6 +24,7 @@ import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import { RemixImageHandle } from "../../_components/remix/RemixImage";
 import { AskKittykatImageSection } from "../../gallery/_components/AskKittykatImageSection";
 import RemixControls from "@/components/chatbot/a2i/features/RemixControls";
+import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
 
 type ConceptVisualEditorProps = {
   filters?: EnhancedSelectedFilters;
@@ -44,6 +45,7 @@ export function ConceptVisualEditor({
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     null
   );
+  console.log("Current Item:", currentItem);
 
   const versionsRef = useRef<HTMLDivElement>(null);
   const { selectedBrandId } = useBrandStore();
@@ -97,6 +99,7 @@ export function ConceptVisualEditor({
     selectedFilters,
   });
   // const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
+  // const { selectedRemixModel, selectedVtonModel } = useModelsStore();
 
   const [brushSize, setBrushSize] = useState(50);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -205,6 +208,7 @@ export function ConceptVisualEditor({
                 />
               </TabsContent>
               <TabsContent value="in-paint">
+                {}
                 <RemixControls
                   image={{
                     url: currentItem?.asset_url || "",
@@ -220,6 +224,14 @@ export function ConceptVisualEditor({
                   onUndo={handleUndo}
                   brandId={currentItem?.brand_id}
                   source="media-gallery"
+                  campaignId={campaignId}
+                />
+              </TabsContent>
+              <TabsContent value="upscaler">
+                <ImageUpscaler
+                  brandId={selectedBrandId!}
+                  source="media-gallery"
+                  initialImage={currentItem?.asset_url || ""}
                   campaignId={campaignId}
                 />
               </TabsContent>

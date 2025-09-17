@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -58,7 +58,7 @@ const upscalerSchema = z.object({
 });
 
 type ImageUpscalerProps = {
-  closeDialog: () => void;
+  closeDialog?: () => void;
   brandId?: string;
   source: "a2i" | "media-gallery";
   initialImage?: string;
@@ -95,11 +95,16 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
     form,
     model: models.find((model) => model.type === "image-upscale") || null,
   });
+  useEffect(() => {
+    if (initialImage) {
+      form.setValue("image_url", initialImage);
+    }
+  }, [initialImage, form]);
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
       await upscaleImage(brandId || selectedBrandId!, data);
-      closeDialog();
+      closeDialog?.();
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);

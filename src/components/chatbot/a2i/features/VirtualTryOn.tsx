@@ -26,6 +26,7 @@ const VirtualTryOn = ({
   closeDialog,
   campaignId,
 }: VirtualTryOnProps) => {
+  console.log("Rendering VirtualTryOn with modelImage:", modelImage);
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
@@ -73,6 +74,12 @@ const VirtualTryOn = ({
   const productImage = productImageParam
     ? form.watch(productImageParam?.id)
     : null;
+
+  useEffect(() => {
+    if (modelImage) {
+      form.setValue("model_image", modelImage);
+    }
+  }, [modelImage, form]);
 
   return (
     <Form {...form}>
