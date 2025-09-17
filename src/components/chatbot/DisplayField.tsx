@@ -22,11 +22,17 @@ export const DisplayField = <T extends Record<string, any>>({
   const [data, setData] = React.useState<T>(json);
 
   const handleSave = (key: string, value: any) => {
-    onValueChange(key, data[key], value);
+    const keys = key.split(".");
+    let oldValue: any = data;
+    for (const k of keys) {
+      if (oldValue == null) break;
+      oldValue = oldValue[k];
+    }
+
+    onValueChange(key, oldValue, value);
 
     // If key has nested structure like "a.b.c", we need to update it correctly
     setData((prev) => {
-      const keys = key.split(".");
       const newObj: any = { ...prev };
       let curr: any = newObj;
 
