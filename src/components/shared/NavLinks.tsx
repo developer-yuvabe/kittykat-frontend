@@ -44,7 +44,6 @@ export function NavLinks() {
           },
         ]
       : []),
-    { name: "Help", icon: BadgeInfo, path: "/help" },
   ];
 
   return (

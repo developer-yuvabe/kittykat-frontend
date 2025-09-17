@@ -8,9 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import MDEditor from "@uiw/react-md-editor";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { X, Paperclip, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  X,
+  Paperclip,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import type {
@@ -690,6 +697,8 @@ export function MediaEditorDialog({
     setShowConfirmDialog(true);
   };
 
+  const [allAttachments, setAllAttachments] = useState<string[]>([]);
+
   const handleConfirmAskKittyKat = async (newComment?: {
     text: string;
     attachments?: string[];
@@ -832,6 +841,60 @@ export function MediaEditorDialog({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={async () => {
+                    // Refetch gallery items
+                    galleryActions.refetchGalleryItems();
+
+                    if (item?.id) {
+                      // Always refetch versions
+                      queryClient.invalidateQueries({
+                        queryKey: ["versions", item.id],
+                      });
+
+                      // Always refetch the main item (version 1)
+                      try {
+                        await galleryService.getGalleryItemById(item.id);
+                      } catch (error) {
+                        console.error(
+                          "Failed to refresh main item data:",
+                          error
+                        );
+                      }
+
+                      // If we're viewing a different version, also refetch that version
+                      if (currentItem?.id && currentItem.id !== item.id) {
+                        try {
+                          const updatedCurrentItem =
+                            await galleryService.getGalleryItemById(
+                              currentItem.id
+                            );
+                          setCurrentItem(updatedCurrentItem);
+                        } catch (error) {
+                          console.error(
+                            "Failed to refresh current version data:",
+                            error
+                          );
+                        }
+                      } else if (currentItem?.id === item.id) {
+                        // If we're viewing version 1, update it with the refetched data
+                        try {
+                          const updatedItem =
+                            await galleryService.getGalleryItemById(item.id);
+                          setCurrentItem(updatedItem);
+                        } catch (error) {
+                          console.error("Failed to refresh item data:", error);
+                        }
+                      }
+                    }
+                  }}
+                  className="p-2 h-8 w-8"
+                  title="Refresh data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onOpenChange(false)}
                   className="p-2 h-8 w-8"
                 >
@@ -942,7 +1005,13 @@ export function MediaEditorDialog({
                       className="flex-1 flex flex-col min-h-0"
                     >
                       {/* Comments Section */}
-                      <div className="flex-1 p-4 space-y-4 min-h-0">
+                      <div
+                        className={`${
+                          currentItem.sent_to_human_queue
+                            ? "max-h-[calc(100vh-460px)]"
+                            : "max-h-[calc(100vh-520px)]"
+                        } flex-1 p-4 space-y-4   overflow-y-scroll `}
+                      >
                         <div className="space-y-4">
                           {!hasComments ? (
                             <AskKittykatCommentGuidelines />
@@ -997,14 +1066,41 @@ export function MediaEditorDialog({
                       </div>
 
                       {/* Comment Input Section */}
-                      <div className="border-t bg-white p-4 space-y-3">
+                      <div className="border-t bg-white p-2 space-y-3">
                         <div className="space-y-3">
-                          <Textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Ask KittyKat Experts for help with editing this image..."
-                            className="min-h-[80px] resize-none"
-                          />
+                          <div data-color-mode="light">
+                            <MDEditor
+                              value={newComment}
+                              onChange={(val) => setNewComment(val || "")}
+                              preview="edit"
+                              hideToolbar={false}
+                              visibleDragbar={false}
+                              toolbarHeight={40}
+                              textareaProps={{
+                                style: {
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                  fontFamily:
+                                    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+                                  padding: "12px",
+                                  border: "none",
+                                  outline: "none",
+                                  resize: "none",
+                                },
+                                placeholder:
+                                  "Ask KittyKat Experts for help with editing this image...",
+                              }}
+                              previewOptions={{
+                                style: {
+                                  padding: "12px",
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                },
+                              }}
+                              height={120}
+                              data-testid="comment-markdown-editor"
+                            />
+                          </div>
 
                           {attachments.length > 0 && (
                             <div className="flex flex-row gap-x-2">
@@ -1126,6 +1222,8 @@ export function MediaEditorDialog({
           brandId={currentItem?.brand_id}
           campaignId={currentItem?.campaign_id}
           imageId={currentItem?.id}
+          allAttachments={allAttachments}
+          onAllAttachmentsChange={setAllAttachments}
         />
       )}
     </>

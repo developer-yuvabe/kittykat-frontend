@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import MDEditor from "@uiw/react-md-editor";
 import { MarkdownText } from "@/components/thread/markdown-text";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   CheckCircle2,
   AlertCircle,
@@ -11,15 +11,17 @@ import {
   Edit3,
   Save,
   X,
+  Sparkles,
+  Zap,
+  Paperclip,
 } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
-
-interface Task {
-  task: string;
-  task_category: string;
-  estimated_credit: number;
-}
+import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { Task } from "@/types/tasklist.types";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { AskKittyKatAttachmentPreview } from "./AskKittyKatAttachmentPreview";
 
 interface AskKittyKatTaskListProps {
   imageUrl: string;
@@ -31,6 +33,11 @@ interface AskKittyKatTaskListProps {
   showCredits?: boolean;
   autoGenerate?: boolean;
   tasks?: Task[]; // Allow external tasks to be passed in
+  // Simplified attachment management
+  allAttachments?: string[];
+  onAllAttachmentsChange?: (attachments: string[]) => void;
+  brandId?: string | null;
+  campaignId?: string | null;
 }
 
 export function AskKittyKatTaskList({
@@ -43,12 +50,16 @@ export function AskKittyKatTaskList({
   showCredits = false,
   autoGenerate = false,
   tasks: externalTasks,
+  allAttachments = [],
+  onAllAttachmentsChange,
+  brandId,
+  campaignId,
 }: AskKittyKatTaskListProps) {
   const [totalCredits, setTotalCredits] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [editingAllText, setEditingAllText] = useState<string>("");
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use external tasks if provided, otherwise empty array
   const tasks = externalTasks || [];
@@ -56,26 +67,77 @@ export function AskKittyKatTaskList({
   const hasExistingComments = comments && comments.length > 0;
   const hasNewComment = newComment && newComment.trim().length > 0;
 
+  // File upload functionality
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !onAllAttachmentsChange) return;
+
+    setIsUploading(true);
+    const toastId = toast.loading("Uploading files...");
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileName = `tasklist-attachment-${Date.now()}-${file.name}`;
+        return await uploadFileAndReturnUrl(
+          fileName,
+          file.type,
+          "ask-kittykat",
+          file,
+          brandId || null,
+          campaignId || null
+        );
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      onAllAttachmentsChange([...allAttachments, ...uploadedUrls]);
+
+      toast.success(`${files.length} file(s) uploaded successfully`, {
+        id: toastId,
+      });
+    } catch (error) {
+      toast.error("Failed to upload files", { id: toastId });
+      console.error("Upload error:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    if (onAllAttachmentsChange) {
+      onAllAttachmentsChange(allAttachments.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleAttachFiles = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
   const handleEditAllTasks = () => {
-    // Convert tasks to text format (one task per line)
-    const tasksText = tasks.map((task) => task.task).join("\n");
-    setEditingAllText(tasksText);
+    // Convert tasks to markdown format (using unordered list)
+    const tasksMarkdown = tasks.map((task) => `- ${task.task}`).join("\n");
+    setEditingAllText(tasksMarkdown);
     setIsEditingAll(true);
   };
 
   const handleSaveAllTasks = () => {
     if (editingAllText.trim() === "") return;
 
-    // Split text by lines and filter out empty lines
-    const taskLines = editingAllText
+    // Parse markdown list items and regular lines
+    const lines = editingAllText
       .split("\n")
       .filter((line) => line.trim() !== "");
+    const taskLines = lines
+      .map((line) => {
+        // Remove markdown list syntax (-, *, +) and trim
+        return line.replace(/^[-*+]\s+/, "").trim();
+      })
+      .filter((line) => line !== "");
 
     // Create updated tasks array, preserving original categories and credits
     const updatedTasks = taskLines.map((taskText, index) => {
       const originalTask = tasks[index];
       return {
-        task: taskText.trim(),
+        task: taskText,
         task_category: originalTask?.task_category || "General",
         estimated_credit: originalTask?.estimated_credit || 1,
       };
@@ -114,10 +176,66 @@ export function AskKittyKatTaskList({
     setTotalCredits(newTotalCredits);
   }, [tasks]);
 
-  const generateTaskList = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // React Query mutation for generating tasks
+  const generateTasksMutation = useMutation({
+    mutationFn: async () => {
+      let commentsToProcess = [...comments];
+
+      // Add new comment if provided
+      if (hasNewComment) {
+        const tempComment: Comment = {
+          id: "temp-comment",
+          text: newComment.trim(),
+          added_by: "current-user",
+          added_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          attachments:
+            newCommentAttachments.length > 0
+              ? newCommentAttachments
+              : undefined,
+        };
+        commentsToProcess = [tempComment];
+      }
+
+      return await taskListService.generateTaskList(
+        imageUrl,
+        commentsToProcess
+      );
+    },
+    onSuccess: (response) => {
+      // Update parent's task state
+      if (onTaskUpdate) {
+        onTaskUpdate(response.tasks);
+      }
+      setTotalCredits(response.total_estimated_credits);
+
+      if (onTasksGenerated) {
+        onTasksGenerated(response.tasks);
+      }
+    },
+    onError: () => {
+      // Clear tasks on error
+      if (onTaskUpdate) {
+        onTaskUpdate([]);
+      }
+      setTotalCredits(0);
+    },
+  });
+
+  const generateTaskList = () => {
+    const generatePromise = generateTasksMutation.mutateAsync();
+
+    toast.promise(generatePromise, {
+      loading: "Generating task list...",
+      success: "Task list generated successfully!",
+      error: (err) => err?.message || "Failed to generate task list",
+    });
+  };
+
+  // React Query mutation for enhancing tasks
+  const enhanceTasksMutation = useMutation({
+    mutationFn: async () => {
+      if (tasks.length === 0) throw new Error("No tasks to enhance");
 
       let commentsToProcess = [...comments];
 
@@ -137,37 +255,34 @@ export function AskKittyKatTaskList({
         commentsToProcess = [tempComment];
       }
 
-      const response = await taskListService.generateTaskList(
+      return await taskListService.generateTaskList(
         imageUrl,
-        commentsToProcess
+        commentsToProcess,
+        true, // enhance = true
+        tasks // existing tasks
       );
+    },
+    onSuccess: (response) => {
+      // Update the editing text with enhanced tasks in markdown format
+      const enhancedTasksMarkdown = response.tasks
+        .map((task) => `- ${task.task}`)
+        .join("\n");
+      setEditingAllText(enhancedTasksMarkdown);
+    },
+  });
 
-      // Update parent's task state
-      if (onTaskUpdate) {
-        onTaskUpdate(response.tasks);
-      }
-      setTotalCredits(response.total_estimated_credits);
+  const handleEnhanceTasksInEditMode = () => {
+    const enhancePromise = enhanceTasksMutation.mutateAsync();
 
-      if (onTasksGenerated) {
-        onTasksGenerated(response.tasks);
-      }
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to generate task list";
-      setError(errorMessage);
-
-      // Clear tasks on error
-      if (onTaskUpdate) {
-        onTaskUpdate([]);
-      }
-      setTotalCredits(0);
-    } finally {
-      setIsLoading(false);
-    }
+    toast.promise(enhancePromise, {
+      loading: "Enhancing tasks...",
+      success: "Tasks enhanced! Review and save changes.",
+      error: (err) => err?.message || "Failed to enhance task list",
+    });
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - check if either mutation is pending
+  if (generateTasksMutation.isPending) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin text-purple-600 mr-2" />
@@ -176,12 +291,15 @@ export function AskKittyKatTaskList({
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state - check if either mutation has an error
+  if (generateTasksMutation.error || enhanceTasksMutation.error) {
+    const error = generateTasksMutation.error || enhanceTasksMutation.error;
     return (
       <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
         <AlertCircle className="h-5 w-5 text-red-600 mr-2 flex-shrink-0" />
-        <span className="text-red-700 text-sm">{error}</span>
+        <span className="text-red-700 text-sm">
+          {error?.message || "An error occurred"}
+        </span>
       </div>
     );
   }
@@ -219,6 +337,7 @@ export function AskKittyKatTaskList({
               size="sm"
               variant="outline"
               onClick={handleEditAllTasks}
+              disabled={isEditingAll}
               className="h-7 px-2"
             >
               <Edit3 className="h-3 w-3 mr-1" />
@@ -228,16 +347,43 @@ export function AskKittyKatTaskList({
         </div>
 
         {isEditingAll ? (
-          // Bulk edit mode
+          // Bulk edit mode with react-md-editor
           <div className="space-y-3">
-            <Textarea
-              value={editingAllText}
-              onChange={(e) => setEditingAllText(e.target.value)}
-              className="min-h-[200px] text-sm"
-              placeholder="Edit tasks (one per line)..."
-              autoFocus
-            />
+            <div data-color-mode="light">
+              <MDEditor
+                value={editingAllText}
+                onChange={(val) => setEditingAllText(val || "")}
+                preview="edit"
+                hideToolbar={false}
+                visibleDragbar={false}
+                textareaProps={{
+                  style: {
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    fontFamily:
+                      'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                  },
+                }}
+                height={200}
+                data-testid="markdown-editor"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleEnhanceTasksInEditMode}
+                disabled={enhanceTasksMutation.isPending}
+                className="h-7 px-2"
+              >
+                {enhanceTasksMutation.isPending ? (
+                  <Zap className="h-3 w-3 mr-1 animate-pulse" />
+                ) : (
+                  <Sparkles className="h-3 w-3 mr-1" />
+                )}
+                Enhance
+              </Button>
               <Button
                 size="sm"
                 onClick={handleSaveAllTasks}
@@ -283,6 +429,57 @@ export function AskKittyKatTaskList({
             ))}
           </ul>
         )}
+
+        {/* Attachment Management Section */}
+        {onAllAttachmentsChange && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-700">
+                Attachments ({allAttachments.length})
+              </h4>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAttachFiles}
+                  disabled={isUploading}
+                  className="h-7 px-2"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Paperclip className="h-3 w-3 mr-1" />
+                  )}
+                  {isUploading ? "Uploading..." : "Add Images"}
+                </Button>
+              </div>
+            </div>
+
+            {allAttachments.length > 0 && (
+              <div className="space-y-3">
+                <AskKittyKatAttachmentPreview
+                  attachments={allAttachments}
+                  onRemoveAttachment={handleRemoveAttachment}
+                />
+              </div>
+            )}
+
+            {allAttachments.length === 0 && (
+              <p className="text-xs text-gray-500">
+                You can upload additional images to provide more context for
+                your tasks.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -293,10 +490,10 @@ export function AskKittyKatTaskList({
       <div className="flex justify-center">
         <Button
           onClick={generateTaskList}
-          disabled={isLoading}
+          disabled={generateTasksMutation.isPending}
           className="bg-purple-600 hover:bg-purple-700"
         >
-          {isLoading ? (
+          {generateTasksMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               Generating...
@@ -311,10 +508,3 @@ export function AskKittyKatTaskList({
 
   return null;
 }
-
-// Export utility function for other components
-export { type Task };
-export const formatTasksAsMarkdown = (tasks: Task[]) => {
-  if (tasks.length === 0) return "";
-  return tasks.map((task) => `- ${task.task}`).join("\n");
-};

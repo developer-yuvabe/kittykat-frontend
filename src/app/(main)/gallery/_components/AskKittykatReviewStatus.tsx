@@ -1,28 +1,20 @@
-import { Lock, CheckCircle2, Edit, X, Upload } from "lucide-react";
+import { Lock, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
-import { GalleryItemResponse } from "@/types/gallery.types";
+import { GalleryItemResponse, WorkflowStatus } from "@/types/gallery.types";
 import { GalleryActions } from "@/hooks/useGallery";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useState, useRef, SetStateAction, Dispatch } from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+
+// Import decomposed components
+import { AskKittykartStatusDisplay } from "./AskKittykartStatusDisplay";
+import { AskKittykartAcceptDialog } from "./AskKittykartAcceptDialog";
+import { AskKittykartRejectDialog } from "./AskKittykartRejectDialog";
+import { AskKittykartAcceptAndStartDialog } from "./AskKittykartAcceptAndStartDialog";
+import { getClientNameFromComments } from "@/lib/askKittykat.utils";
 
 interface AskKittykatReviewStatusProps {
   item: GalleryItemResponse;
@@ -31,9 +23,6 @@ interface AskKittykatReviewStatusProps {
   revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
   setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
-
-import { WorkflowStatus } from "@/types/gallery.types";
-import { WORKFLOW_STATUS_MAP } from "@/lib/gallery.utils";
 
 export function AskKittykatReviewStatus({
   item,
@@ -47,8 +36,6 @@ export function AskKittykatReviewStatus({
 
   const currentStatus = item?.workflow_status || "draft";
 
-  const config = WORKFLOW_STATUS_MAP[currentStatus as WorkflowStatus];
-
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -57,25 +44,40 @@ export function AskKittykatReviewStatus({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
   const [isSubmittingAccept, setIsSubmittingAccept] = useState(false);
+  const [showAcceptAndStartDialog, setShowAcceptAndStartDialog] =
+    useState(false);
+  const [isSubmittingAcceptAndStart, setIsSubmittingAcceptAndStart] =
+    useState(false);
 
-  const handleStatusChange = (
-    newStatus:
-      | "draft"
-      | "request_created"
-      | "in_progress"
-      | "in_review"
-      | "approved"
-      | "requested_revision"
-      | "a2i_media_created"
-  ) => {
+  // Get client name from comments
+  const clientName = getClientNameFromComments(item);
+
+  // Helper function to find the latest tasklist comment
+  const findLatestTasklistComment = () => {
+    if (!item?.comments) return null;
+
+    const tasklistComments = item.comments.filter(
+      (comment) => comment.is_tasklist
+    );
+    if (tasklistComments.length === 0) return null;
+
+    // Sort by added_at in descending order to get the latest first
+    const sortedComments = tasklistComments.sort(
+      (a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()
+    );
+
+    return sortedComments[0];
+  };
+
+  const handleStatusChange = (newStatus: WorkflowStatus) => {
     setCurrentItem((prev) =>
-      prev ? { ...prev, workflow_status: newStatus as WorkflowStatus } : prev
+      prev ? { ...prev, workflow_status: newStatus } : prev
     );
 
     galleryActions.patchItem(
       {
         itemId: item.id,
-        data: { workflow_status: newStatus as WorkflowStatus },
+        data: { workflow_status: newStatus },
       },
       {
         onSuccess(data) {
@@ -92,7 +94,78 @@ export function AskKittykatReviewStatus({
   };
 
   const handleAccept = () => {
-    handleStatusChange("approved");
+    setIsSubmittingAccept(true);
+    try {
+      handleStatusChange("approved");
+      setShowAcceptDialog(false);
+    } finally {
+      setIsSubmittingAccept(false);
+    }
+  };
+
+  const handleAcceptAndStartSubmit = async (etaDate: Date) => {
+    setIsSubmittingAcceptAndStart(true);
+
+    try {
+      // Format the ETA date
+      const formattedETA = format(etaDate, "PPPP"); // "Friday, September 15th, 2025"
+
+      // Find the latest tasklist comment to reply to
+      const latestTasklistComment = findLatestTasklistComment();
+      const replyText = `Thanks ${clientName}, our team will start working on this. Estimated delivery: ${formattedETA}.`;
+
+      if (latestTasklistComment) {
+        // Add reply to the latest tasklist comment
+        galleryActions.addReply(
+          {
+            itemId: item.id,
+            commentId: latestTasklistComment.id,
+            replyData: {
+              text: replyText,
+            },
+          },
+          {
+            onSuccess(data) {
+              revalidateGalleryItemVersions(data);
+            },
+            onError() {
+              toast.error("Failed to add reply. Please try again.");
+              return;
+            },
+          }
+        );
+      } else {
+        // Fallback: add as a new comment if no tasklist comment found
+        galleryActions.addComment(
+          {
+            itemId: item.id,
+            commentData: {
+              text: replyText,
+            },
+          },
+          {
+            onSuccess(data) {
+              revalidateGalleryItemVersions(data);
+            },
+            onError() {
+              toast.error("Failed to add comment. Please try again.");
+              return;
+            },
+          }
+        );
+      }
+
+      // Then update the status to in_progress
+      handleStatusChange("in_progress");
+
+      // Close dialog
+      setShowAcceptAndStartDialog(false);
+    } catch (error) {
+      console.error("Error accepting and starting:", error);
+      toast.error("Failed to accept and start. Please try again.");
+    } finally {
+      setIsSubmittingAcceptAndStart(false);
+    }
   };
 
   const handleRejectClick = () => {
@@ -110,10 +183,6 @@ export function AskKittykatReviewStatus({
   const handleRejectDialogClose = () => {
     setShowRejectDialog(false);
     resetRejectForm();
-  };
-
-  const handleAcceptDialogClose = () => {
-    setShowAcceptDialog(false);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,62 +257,17 @@ export function AskKittykatReviewStatus({
   };
 
   return (
-    <div className="space-y-3">
-      {/* Current Status Display with Edit for Admin */}
-      <div className="p-3 flex flex-col gap-2">
-        <h1 className="flex items-center gap-2">
-          Status
-          {isAdmin && !isEditingStatus && (
-            <button
-              type="button"
-              onClick={() => setIsEditingStatus(true)}
-              className="text-gray-500 hover:text-gray-800"
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-          )}
-        </h1>
-
-        {!isEditingStatus && (
-          <div className="flex flex-row gap-x-2 items-center">
-            <div className={`w-2.5 h-2.5 rounded-full ${config.dotColor}`} />
-            <span className="text-sm font-medium">{config.label}</span>
-          </div>
-        )}
-
-        {isAdmin && currentStatus === "draft" && (
-          <div className="text-sm text-gray-500 bg-gray-100 rounded-md px-3 py-2">
-            The client has not requested human edit on this image yet.
-          </div>
-        )}
-
-        {isAdmin && isEditingStatus && (
-          <div className="w-full">
-            <Select value={currentStatus} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(WORKFLOW_STATUS_MAP).map(([status, config]) => {
-                  return (
-                    <SelectItem key={status} value={status}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-2.5 h-2.5 rounded-full ${config.dotColor}`}
-                        />
-                        <span>{config.label}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
+    <div className="space-y-1">
+      {/* Status Display Component */}
+      <AskKittykartStatusDisplay
+        currentStatus={currentStatus}
+        isAdmin={isAdmin}
+        isEditingStatus={isEditingStatus}
+        onEditClick={() => setIsEditingStatus(true)}
+        onStatusChange={handleStatusChange}
+      />
 
       {/* Action Buttons */}
-
       {!isAdmin &&
         !item?.sent_to_human_queue &&
         currentStatus !== "in_review" && (
@@ -261,15 +285,6 @@ export function AskKittykatReviewStatus({
       {/* User Review Buttons (when status is in_review and user is not admin) */}
       {!isAdmin && currentStatus === "in_review" && (
         <div className="flex gap-2">
-          {/* <Button
-            onClick={handleAccept}
-            className="flex-1"
-            size="lg"
-            variant="default"
-          >
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            Accept
-          </Button> */}
           <Button
             onClick={() => setShowAcceptDialog(true)}
             className="flex-1"
@@ -296,159 +311,40 @@ export function AskKittykatReviewStatus({
           className="w-full"
           size="lg"
           variant="default"
-          onClick={() => handleStatusChange("in_progress")}
+          onClick={() => setShowAcceptAndStartDialog(true)}
         >
           <CheckCircle2 className="w-5 h-5 mr-2" />
           Accept and Start
         </Button>
       )}
 
-      {/* Accept Dialog */}
-      <Dialog
-        open={showAcceptDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleAcceptDialogClose();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Approve this image?</DialogTitle>
-            <DialogDescription>
-              By accepting, you give final approval for the image(s).
-              <br />
-              <strong>This action cannot be undone</strong>, and any changes
-              requested afterwards may incur additional charges.
-            </DialogDescription>
-          </DialogHeader>
+      {/* Decomposed Dialog Components */}
+      <AskKittykartAcceptDialog
+        isOpen={showAcceptDialog}
+        isSubmitting={isSubmittingAccept}
+        onClose={() => setShowAcceptDialog(false)}
+        onAccept={handleAccept}
+      />
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleAcceptDialogClose}
-              disabled={isSubmittingAccept}
-            >
-              Back to Review
-            </Button>
-            <Button
-              onClick={async () => {
-                setIsSubmittingAccept(true);
-                try {
-                  handleAccept();
-                  handleAcceptDialogClose();
-                } finally {
-                  setIsSubmittingAccept(false);
-                }
-              }}
-              disabled={isSubmittingAccept}
-              variant="default"
-            >
-              {isSubmittingAccept ? "Approving..." : "Approve"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AskKittykartRejectDialog
+        isOpen={showRejectDialog}
+        isSubmitting={isSubmittingReject}
+        rejectReason={rejectReason}
+        attachedFiles={attachedFiles}
+        onClose={handleRejectDialogClose}
+        onRejectReasonChange={setRejectReason}
+        onFileUpload={handleFileUpload}
+        onRemoveFile={removeFile}
+        onSubmit={handleRejectSubmit}
+      />
 
-      {/* Reject Dialog */}
-      <Dialog
-        open={showRejectDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleRejectDialogClose();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Provide Feedback</DialogTitle>
-            <DialogDescription>
-              Help us improve by sharing what needs to be corrected. Your
-              feedback helps us deliver quality images that meet your
-              expectations.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                What would you like us to improve?
-              </label>
-              <Textarea
-                placeholder="Please describe what needs to be changed or improved..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                className="min-h-[100px] max-w-sm"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Attach reference files (optional)
-              </label>
-              <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Add Files
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  accept="image/*,.pdf,.doc,.docx"
-                />
-
-                {attachedFiles.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
-                    {attachedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-xs"
-                      >
-                        <span className="truncate max-w-[200px]">
-                          {file.name}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleRejectDialogClose}
-              disabled={isSubmittingReject}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleRejectSubmit}
-              disabled={!rejectReason.trim() || isSubmittingReject}
-              variant="destructive"
-            >
-              {isSubmittingReject ? "Submitting..." : "Submit Feedback"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AskKittykartAcceptAndStartDialog
+        isOpen={showAcceptAndStartDialog}
+        isSubmitting={isSubmittingAcceptAndStart}
+        clientName={clientName}
+        onClose={() => setShowAcceptAndStartDialog(false)}
+        onSubmit={handleAcceptAndStartSubmit}
+      />
     </div>
   );
 }

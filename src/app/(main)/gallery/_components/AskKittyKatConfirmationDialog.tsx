@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,16 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
-import type { CreateTasklistRequest } from "@/services/api/tasklist.service";
+
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useUserStore } from "@/store/user.store";
 import { AskKittyKatCommentInput } from "./AskKittyKatCommentInput";
-import {
-  AskKittyKatTaskList,
-  formatTasksAsMarkdown,
-} from "./AskKittyKatTaskList";
+import { AskKittyKatTaskList } from "./AskKittyKatTaskList";
+import { CreateTasklistRequest } from "@/types/tasklist.types";
+import { formatTasksAsMarkdown } from "@/lib/askKittykat.utils";
 
 interface AskKittyKatConfirmationDialogProps {
   open: boolean;
@@ -36,6 +35,8 @@ interface AskKittyKatConfirmationDialogProps {
   brandId?: string | null;
   campaignId?: string | null;
   imageId: string;
+  allAttachments: string[];
+  onAllAttachmentsChange: Dispatch<SetStateAction<string[]>>;
 }
 
 interface TaskListTask {
@@ -53,6 +54,8 @@ export function AskKittyKatConfirmationDialog({
   brandId,
   campaignId,
   imageId,
+  allAttachments,
+  onAllAttachmentsChange,
 }: AskKittyKatConfirmationDialogProps) {
   const { user } = useUserStore();
   const [tasks, setTasks] = useState<TaskListTask[]>([]);
@@ -62,12 +65,32 @@ export function AskKittyKatConfirmationDialog({
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
 
+  // Initialize all attachments when dialog opens or comments change
+  useEffect(() => {
+    if (open) {
+      const initialAttachments: string[] = [];
+
+      // Add existing attachments from comments
+      if (comments && comments.length > 0) {
+        comments.forEach((comment) => {
+          if (comment.attachments && comment.attachments.length > 0) {
+            initialAttachments.push(...comment.attachments);
+          }
+        });
+      }
+
+      // Initialize parent's allAttachments state
+      onAllAttachmentsChange(initialAttachments);
+    }
+  }, [open, comments, onAllAttachmentsChange]);
+
   // Reset function to clear all state
   const resetState = () => {
     setNewComment("");
     setAttachments([]);
     setTasks([]);
     setIsGeneratingTasks(false);
+    onAllAttachmentsChange([]);
   };
 
   // Reset state when dialog closes
@@ -179,9 +202,16 @@ export function AskKittyKatConfirmationDialog({
               const taskListMarkdown = formatTasksAsMarkdown(tasks);
               const commentText = `${newComment.trim()}\n\n**Tasks identified:**\n${taskListMarkdown}`;
 
+              // Combine new comment attachments with all managed attachments
+              const finalAttachments = [
+                ...(attachments.length > 0 ? attachments : []),
+                ...allAttachments,
+              ];
+
               onConfirm({
                 text: commentText,
-                attachments: attachments.length > 0 ? attachments : undefined,
+                attachments:
+                  finalAttachments.length > 0 ? finalAttachments : undefined,
                 is_tasklist: true,
               });
             }
@@ -196,9 +226,16 @@ export function AskKittyKatConfirmationDialog({
         const taskListMarkdown = formatTasksAsMarkdown(tasks);
         const commentText = `${newComment.trim()}\n\n**Tasklist (requested):**\n${taskListMarkdown}`;
 
+        // Combine new comment attachments with all managed attachments
+        const finalAttachments = [
+          ...(attachments.length > 0 ? attachments : []),
+          ...allAttachments,
+        ];
+
         onConfirm({
           text: commentText,
-          attachments: attachments.length > 0 ? attachments : undefined,
+          attachments:
+            finalAttachments.length > 0 ? finalAttachments : undefined,
           is_tasklist: true,
         });
       }
@@ -216,7 +253,7 @@ export function AskKittyKatConfirmationDialog({
 
         onConfirm({
           text: commentText,
-          attachments: undefined,
+          attachments: allAttachments.length > 0 ? allAttachments : undefined,
           is_tasklist: true,
         });
       }
@@ -291,6 +328,10 @@ export function AskKittyKatConfirmationDialog({
                 showCredits={false}
                 autoGenerate={false}
                 tasks={tasks}
+                allAttachments={allAttachments}
+                onAllAttachmentsChange={onAllAttachmentsChange}
+                brandId={brandId}
+                campaignId={campaignId}
               />
             </div>
           ) : (
@@ -303,6 +344,10 @@ export function AskKittyKatConfirmationDialog({
               showCredits={false}
               autoGenerate={true}
               tasks={tasks}
+              allAttachments={allAttachments}
+              onAllAttachmentsChange={onAllAttachmentsChange}
+              brandId={brandId}
+              campaignId={campaignId}
             />
           )}
         </div>
