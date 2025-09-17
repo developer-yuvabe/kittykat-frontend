@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import MDEditor from "@uiw/react-md-editor";
 import { MarkdownText } from "@/components/thread/markdown-text";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   CheckCircle2,
   AlertCircle,
@@ -54,25 +54,31 @@ export function AskKittyKatTaskList({
   const hasNewComment = newComment && newComment.trim().length > 0;
 
   const handleEditAllTasks = () => {
-    // Convert tasks to text format (one task per line)
-    const tasksText = tasks.map((task) => task.task).join("\n");
-    setEditingAllText(tasksText);
+    // Convert tasks to markdown format (using unordered list)
+    const tasksMarkdown = tasks.map((task) => `- ${task.task}`).join("\n");
+    setEditingAllText(tasksMarkdown);
     setIsEditingAll(true);
   };
 
   const handleSaveAllTasks = () => {
     if (editingAllText.trim() === "") return;
 
-    // Split text by lines and filter out empty lines
-    const taskLines = editingAllText
+    // Parse markdown list items and regular lines
+    const lines = editingAllText
       .split("\n")
       .filter((line) => line.trim() !== "");
+    const taskLines = lines
+      .map((line) => {
+        // Remove markdown list syntax (-, *, +) and trim
+        return line.replace(/^[-*+]\s+/, "").trim();
+      })
+      .filter((line) => line !== "");
 
     // Create updated tasks array, preserving original categories and credits
     const updatedTasks = taskLines.map((taskText, index) => {
       const originalTask = tasks[index];
       return {
-        task: taskText.trim(),
+        task: taskText,
         task_category: originalTask?.task_category || "General",
         estimated_credit: originalTask?.estimated_credit || 1,
       };
@@ -198,11 +204,11 @@ export function AskKittyKatTaskList({
       );
     },
     onSuccess: (response) => {
-      // Update the editing text with enhanced tasks
-      const enhancedTasksText = response.tasks
-        .map((task) => task.task)
+      // Update the editing text with enhanced tasks in markdown format
+      const enhancedTasksMarkdown = response.tasks
+        .map((task) => `- ${task.task}`)
         .join("\n");
-      setEditingAllText(enhancedTasksText);
+      setEditingAllText(enhancedTasksMarkdown);
     },
   });
 
@@ -282,15 +288,28 @@ export function AskKittyKatTaskList({
         </div>
 
         {isEditingAll ? (
-          // Bulk edit mode
+          // Bulk edit mode with react-md-editor
           <div className="space-y-3">
-            <Textarea
-              value={editingAllText}
-              onChange={(e) => setEditingAllText(e.target.value)}
-              className="min-h-[200px] text-sm"
-              placeholder="Edit tasks (one per line)..."
-              autoFocus
-            />
+            <div data-color-mode="light">
+              <MDEditor
+                value={editingAllText}
+                onChange={(val) => setEditingAllText(val || "")}
+                preview="edit"
+                hideToolbar={false}
+                visibleDragbar={false}
+                textareaProps={{
+                  style: {
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    fontFamily:
+                      'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                  },
+                }}
+                height={200}
+                data-testid="markdown-editor"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
