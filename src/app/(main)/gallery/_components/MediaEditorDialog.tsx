@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import MDEditor from "@uiw/react-md-editor";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   X,
@@ -697,6 +697,8 @@ export function MediaEditorDialog({
     setShowConfirmDialog(true);
   };
 
+  const [allAttachments, setAllAttachments] = useState<string[]>([]);
+
   const handleConfirmAskKittyKat = async (newComment?: {
     text: string;
     attachments?: string[];
@@ -1003,7 +1005,13 @@ export function MediaEditorDialog({
                       className="flex-1 flex flex-col min-h-0"
                     >
                       {/* Comments Section */}
-                      <div className="flex-1 p-4 space-y-4 min-h-0">
+                      <div
+                        className={`${
+                          currentItem.sent_to_human_queue
+                            ? "max-h-[calc(100vh-460px)]"
+                            : "max-h-[calc(100vh-520px)]"
+                        } flex-1 p-4 space-y-4   overflow-y-scroll `}
+                      >
                         <div className="space-y-4">
                           {!hasComments ? (
                             <AskKittykatCommentGuidelines />
@@ -1058,14 +1066,41 @@ export function MediaEditorDialog({
                       </div>
 
                       {/* Comment Input Section */}
-                      <div className="border-t bg-white p-4 space-y-3">
+                      <div className="border-t bg-white p-2 space-y-3">
                         <div className="space-y-3">
-                          <Textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Ask KittyKat Experts for help with editing this image..."
-                            className="min-h-[80px] resize-none"
-                          />
+                          <div data-color-mode="light">
+                            <MDEditor
+                              value={newComment}
+                              onChange={(val) => setNewComment(val || "")}
+                              preview="edit"
+                              hideToolbar={false}
+                              visibleDragbar={false}
+                              toolbarHeight={40}
+                              textareaProps={{
+                                style: {
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                  fontFamily:
+                                    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+                                  padding: "12px",
+                                  border: "none",
+                                  outline: "none",
+                                  resize: "none",
+                                },
+                                placeholder:
+                                  "Ask KittyKat Experts for help with editing this image...",
+                              }}
+                              previewOptions={{
+                                style: {
+                                  padding: "12px",
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                },
+                              }}
+                              height={120}
+                              data-testid="comment-markdown-editor"
+                            />
+                          </div>
 
                           {attachments.length > 0 && (
                             <div className="flex flex-row gap-x-2">
@@ -1187,6 +1222,8 @@ export function MediaEditorDialog({
           brandId={currentItem?.brand_id}
           campaignId={currentItem?.campaign_id}
           imageId={currentItem?.id}
+          allAttachments={allAttachments}
+          onAllAttachmentsChange={setAllAttachments}
         />
       )}
     </>

@@ -21,7 +21,7 @@ export function AskKittyKatAttachmentPreview({
   return (
     <div className="flex flex-row gap-x-2">
       {attachments.map((url, idx) => (
-        <div key={idx} className="relative">
+        <div key={idx} className="relative group">
           <ZoomableImage
             src={url}
             className="w-16 h-16 object-cover rounded border cursor-pointer"
@@ -30,7 +30,7 @@ export function AskKittyKatAttachmentPreview({
             <Button
               size="sm"
               variant="destructive"
-              className="absolute -top-2 -right-2 w-5 h-5 p-0"
+              className="absolute -top-2 -right-2 w-5 h-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
               onClick={() => onRemoveAttachment(idx)}
             >
               <X className="w-3 h-3" />
