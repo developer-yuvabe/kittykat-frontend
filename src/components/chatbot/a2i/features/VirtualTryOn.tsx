@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
 import { BrainIcon, Loader2, X } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { createVtonImage } from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -15,8 +15,8 @@ import ModelSelector from "../ModelSelector";
 import { useA2iForm } from "@/hooks/useA2iForm";
 
 type VirtualTryOnProps = {
-  modelImage: string;
-  closeDialog: () => void;
+  modelImage?: string;
+  closeDialog?: () => void;
   source: "a2i" | "media-gallery";
   campaignId?: string | null;
 };
@@ -51,9 +51,12 @@ const VirtualTryOn = ({
 
   const onSubmit = async (data: Record<string, any>) => {
     setLoading(true);
+    console.log("Submitting VTON with data:", data);
     try {
       await createVtonImage(selectedBrandId!, campaignId || null, data);
-      closeDialog();
+      if (closeDialog) {
+        closeDialog();
+      }
     } catch (error) {
       console.error("VTON Generation Error:", error);
       if (error instanceof PlatformApiError && error.statusCode === 403) {

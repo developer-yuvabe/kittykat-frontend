@@ -4,7 +4,7 @@ import { GalleryIcon, HomeIcon } from "../ui/custom-icon";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
-import { Users, BadgeInfo } from "lucide-react";
+import { Users, BadgeInfo, ImageIcon } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import NotificationHoverCard from "../notifications/NotificationHoverCard";
 
@@ -27,6 +27,13 @@ export function NavLinks() {
 
   const allLinks = [
     ...LINKS,
+    {
+      name: "Concept Visual",
+      icon: ImageIcon,
+      path: "/concept-visual",
+      disabled: false,
+    },
+
     ...(user?.role.id === "KK-ADMIN"
       ? [
           {

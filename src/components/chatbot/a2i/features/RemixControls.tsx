@@ -51,7 +51,7 @@ export type RemixControlsProps = {
     url: string;
     size: string;
   };
-  closeDialog: () => void;
+  closeDialog?: () => void;
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   // Add brush size props
   brushSize: number;
@@ -320,7 +320,9 @@ const RemixControls = ({
       }
       setImageBlocks([]);
 
-      closeDialog();
+      if (closeDialog) {
+        closeDialog();
+      }
     } catch (error) {
       console.error(error);
       if (error instanceof PlatformApiError && error.statusCode === 403) {

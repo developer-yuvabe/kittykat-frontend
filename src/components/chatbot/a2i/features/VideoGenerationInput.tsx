@@ -31,7 +31,7 @@ import { toast } from "sonner";
 import { useA2iForm } from "@/hooks/useA2iForm";
 
 interface VideoGenerationInputProps {
-  item: GalleryItemResponse;
+  item: GalleryItemResponse | null;
   campaignId?: string | null;
 }
 
@@ -61,7 +61,7 @@ const VideoGenerationInput = ({
         <VideoGenerationInputControls
           item={item}
           campaignId={campaignId}
-          key={item.id}
+          key={item?.id}
         />
       )}
     </div>
@@ -83,9 +83,9 @@ const VideoGenerationInputControls = ({
     selectedModel: selectedVideoGenearationModel,
     formKey: "videoGenForm",
     dynamicDefualtValues: {
-      start_image: item.asset_url,
-      first_frame: item.asset_url,
-      image: item.asset_url,
+      start_image: item?.asset_url,
+      first_frame: item?.asset_url,
+      image: item?.asset_url,
     },
   });
   const { credits, isCalculatingCredits } = useModelPricing({
@@ -142,11 +142,11 @@ const VideoGenerationInputControls = ({
 
   const onSubmit = async (data: Record<string, any>) => {
     try {
-      if (!selectedBrandId && !item.brand_id) {
+      if (!selectedBrandId && !item?.brand_id) {
         throw new Error("Brand ID is missing.");
       }
       const { generation_id } = await videoGenerationService(
-        selectedBrandId || item.brand_id,
+        selectedBrandId || item?.brand_id || "",
         data,
         campaignId ?? undefined
       );

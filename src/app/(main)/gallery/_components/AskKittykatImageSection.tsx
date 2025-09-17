@@ -11,8 +11,13 @@ import {
   HeartIcon,
   CopyIcon,
   Check,
+  X,
 } from "lucide-react";
-import { DownloadIcon, ExpandIcon } from "@/components/ui/custom-icon";
+import {
+  DownloadIcon,
+  ExpandIcon,
+  SelectIcon,
+} from "@/components/ui/custom-icon";
 import type { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import RemixImage, {
   type RemixImageHandle,
@@ -20,9 +25,12 @@ import RemixImage, {
 import { toast } from "sonner";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { cn, handleDownloadVideo } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import { useBrandStore } from "@/store/brand.store";
 
 interface AskKittykatImageSectionProps {
-  item: GalleryItemResponse;
+  item: GalleryItemResponse | null;
   galleryActions: GalleryActions;
   isRemixEnabled: boolean;
   imageRef?: React.RefObject<HTMLImageElement | null>;
@@ -31,8 +39,9 @@ interface AskKittykatImageSectionProps {
   remixHistory?: ReturnType<typeof useUndoRedoRemix>;
   brushSize?: number;
   remixImageRef?: React.RefObject<RemixImageHandle | null>;
-  revalidateGalleryItemVersions: (data: GalleryItemResponse) => Promise<void>;
+  revalidateGalleryItemVersions?: (data: GalleryItemResponse) => Promise<void>;
   setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
+  conceptVisualMedia?: boolean;
 }
 
 const VideoPlayer: React.FC<{
@@ -224,16 +233,19 @@ export const AskKittykatImageSection: React.FC<
   remixImageRef,
   revalidateGalleryItemVersions,
   setCurrentItem,
+  conceptVisualMedia = false,
 }) => {
-  const isVideo = item.asset_type === "video";
+  const { selectedBrandId } = useBrandStore();
+  const isVideo = item?.asset_type === "video";
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
 
   // Centralized like handler
   const handleLike = () => {
-    const newFavoriteState = !item.is_favourite;
+    const newFavoriteState = !item?.is_favourite;
 
     // Optimistically update the UI immediately
     setCurrentItem((prev) => {
-      if (!prev || prev.id !== item.id) return prev;
+      if (!prev || prev.id !== item?.id) return prev;
       return { ...prev, is_favourite: newFavoriteState };
     });
 
@@ -245,7 +257,7 @@ export const AskKittykatImageSection: React.FC<
     // Update on server
     galleryActions.patchItem(
       {
-        itemId: item.id,
+        itemId: item?.id || "",
         data: { is_favourite: newFavoriteState },
       },
       {
@@ -265,12 +277,12 @@ export const AskKittykatImageSection: React.FC<
           });
 
           // Update the versions cache
-          revalidateGalleryItemVersions(updatedItem);
+          revalidateGalleryItemVersions?.(updatedItem);
         },
         onError: (error) => {
           // Rollback optimistic update on error
           setCurrentItem((prev) => {
-            if (!prev || prev.id !== item.id) return prev;
+            if (!prev || prev.id !== item?.id) return prev;
             return { ...prev, is_favourite: !newFavoriteState }; // Revert to opposite of what we set
           });
 
@@ -279,6 +291,172 @@ export const AskKittykatImageSection: React.FC<
         },
       }
     );
+  };
+
+  //   const renderMedia = () => {
+  //     if (isVideo) {
+  //       return (
+  //         <VideoPlayer
+  //           src={item.asset_url}
+  //           isLiked={item.is_favourite ?? false}
+  //           onLike={handleLike}
+  //           prompt={item.input_prompt}
+  //         />
+  //       );
+  //     }
+
+  //     // For images, check if remix is enabled
+  //     if (
+  //       isRemixEnabled &&
+  //       remixHistory &&
+  //       imageRef &&
+  //       canvasRef &&
+  //       offScreenCanvasRef
+  //     ) {
+  //       return (
+  //         <RemixImage
+  //           ref={remixImageRef}
+  //           imageRef={imageRef}
+  //           canvasRef={canvasRef}
+  //           offScreenCanvasRef={offScreenCanvasRef}
+  //           url={item?.asset_url || ""}
+  //           remixHistory={remixHistory}
+  //           brushSize={brushSize}
+  //         />
+  //       );
+  //     }
+
+  // // Default image rendering with copy prompt functionality
+  // const getPromptText = () => {
+  //   return item?.input_prompt;
+  // };
+
+  //     // return (
+  //     //   <ZoomableImage
+  //     //     src={item.asset_url}
+  //     //     key={item.asset_url}
+  //     //     className="object-contain rounded-lg max-h-[80vh]"
+  //     //     variant="overlay"
+  //     //     isLiked={item.is_favourite}
+  //     //     onLike={handleLike}
+  //     //     prompt={getPromptText()}
+  //     //   />
+  //     // );
+  //     return conceptVisualMedia ? (
+  //       <div className="relative w-full h-[80%] bg-muted rounded-lg flex items-center justify-center">
+  //         {/* Placeholder if no image */}
+  //         {!item && (
+  //           <button
+  //             onClick={() => setGalleryPickerOpen(true)}
+  //             className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors rounded-lg"
+  //           >
+  //             <SelectIcon size={20} />
+  //             <span>Choose from Gallery</span>
+  //           </button>
+  //         )}
+
+  //         {/* Plain image preview */}
+  //         {item && (
+  //           <img
+  //             src={item.asset_url}
+  //             alt="Selected"
+  //             className="absolute inset-0 w-full h-full object-contain rounded-lg"
+  //           />
+  //         )}
+
+  //         {/* Remove button */}
+  //         {item && (
+  //           <Button
+  //             variant="outline"
+  //             size="icon"
+  //             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+  //             onClick={() => setCurrentItem(null)}
+  //           >
+  //             <X />
+  //           </Button>
+  //         )}
+  //       </div>
+  //     ) : (
+  //       item && (
+  //         <ZoomableImage
+  //           src={item.asset_url}
+  //           key={item.asset_url}
+  //           className="object-contain rounded-lg max-h-[80vh]"
+  //           variant="overlay"
+  //           isLiked={item.is_favourite}
+  //           onLike={handleLike}
+  //           prompt={getPromptText()}
+  //         />
+  //       )
+  //     );
+  //   };
+
+  //   return (
+  //     <div className="flex-1 p-6 relative flex items-center justify-center min-h-0">
+  //       <div className="w-full h-[80%] flex items-center justify-center">
+  //         {renderMedia()}
+  //       </div>
+
+  //       {/* Media Library Dialog */}
+  //       <MediaLibraryDialog
+  //         open={galleryPickerOpen}
+  //         onOpenChange={setGalleryPickerOpen}
+  //         onFullMediaItemSelected={(mediaItem) => {
+  //           setCurrentItem(mediaItem);
+  //           setGalleryPickerOpen(false);
+  //         }}
+  //         filters={{
+  //           brands: [selectedBrandId!],
+  //           campaigns: [],
+  //           product_categories: [],
+  //           asset_types: ["image"],
+  //           asset_sources: [],
+  //           media_format: [],
+  //           aspect_ratio: [],
+  //           workflow_status: [],
+  //           moodboards: [],
+  //         }}
+  //         brandId={selectedBrandId!}
+  //         isMultiSelect={false}
+  //         maxSelectionCount={1}
+  //       />
+  //     </div>
+  //   );
+  // };
+  const renderPlaceholder = () => (
+    <div className="relative w-full h-[80%] bg-muted rounded-lg flex items-center justify-center">
+      {!item && (
+        <button
+          onClick={() => setGalleryPickerOpen(true)}
+          className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors rounded-lg"
+        >
+          <SelectIcon size={20} />
+          <span>Choose from Gallery</span>
+        </button>
+      )}
+      {item && (
+        <>
+          <img
+            src={item.asset_url}
+            alt="Selected"
+            className="absolute inset-0 w-full h-full object-contain rounded-lg"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+            onClick={() => setCurrentItem(null)}
+          >
+            <X />
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
+  // Default image rendering with copy prompt functionality
+  const getPromptText = () => {
+    return item?.input_prompt;
   };
 
   const renderMedia = () => {
@@ -293,7 +471,6 @@ export const AskKittykatImageSection: React.FC<
       );
     }
 
-    // For images, check if remix is enabled
     if (
       isRemixEnabled &&
       remixHistory &&
@@ -301,34 +478,38 @@ export const AskKittykatImageSection: React.FC<
       canvasRef &&
       offScreenCanvasRef
     ) {
+      if (!item) {
+        return renderPlaceholder();
+      }
       return (
         <RemixImage
           ref={remixImageRef}
           imageRef={imageRef}
           canvasRef={canvasRef}
           offScreenCanvasRef={offScreenCanvasRef}
-          url={item.asset_url}
+          url={item?.asset_url || ""}
           remixHistory={remixHistory}
           brushSize={brushSize}
         />
       );
     }
 
-    // Default image rendering with copy prompt functionality
-    const getPromptText = () => {
-      return item.input_prompt;
-    };
+    if (conceptVisualMedia) {
+      return renderPlaceholder();
+    }
 
     return (
-      <ZoomableImage
-        src={item.asset_url}
-        key={item.asset_url}
-        className="object-contain rounded-lg max-h-[80vh]"
-        variant="overlay"
-        isLiked={item.is_favourite}
-        onLike={handleLike}
-        prompt={getPromptText()}
-      />
+      item && (
+        <ZoomableImage
+          src={item.asset_url}
+          key={item.asset_url}
+          className="object-contain rounded-lg max-h-[80vh]"
+          variant="overlay"
+          isLiked={item.is_favourite}
+          onLike={handleLike}
+          prompt={getPromptText()}
+        />
+      )
     );
   };
 
@@ -337,6 +518,29 @@ export const AskKittykatImageSection: React.FC<
       <div className="w-full h-[80%] flex items-center justify-center">
         {renderMedia()}
       </div>
+
+      <MediaLibraryDialog
+        open={galleryPickerOpen}
+        onOpenChange={setGalleryPickerOpen}
+        onFullMediaItemSelected={(mediaItem) => {
+          setCurrentItem(mediaItem);
+          setGalleryPickerOpen(false);
+        }}
+        filters={{
+          brands: [selectedBrandId!],
+          campaigns: [],
+          product_categories: [],
+          asset_types: ["image"],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          moodboards: [],
+        }}
+        brandId={selectedBrandId!}
+        isMultiSelect={false}
+        maxSelectionCount={1}
+      />
     </div>
   );
 };
