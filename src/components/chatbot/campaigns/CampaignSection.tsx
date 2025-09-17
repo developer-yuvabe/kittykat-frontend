@@ -6,7 +6,6 @@ import {
   CirclePlus,
   MegaphoneIcon,
 } from "lucide-react";
-import { DynamicContentSection } from "../DynamicSection";
 import { Agents, ThreadDetails } from "@/types/types";
 import { CampaignColors } from "./CampaignColors";
 import CampaignSelector from "./CampaignSelector";
@@ -14,7 +13,6 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
-import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import {
   capitalizeKey,
   formatUpdateMessage,
@@ -133,28 +131,6 @@ export const CampaignSection: React.FC<{
     setFadeKey((prev) => prev + 1);
     setSelectedCampaignIndex(index);
   }, []);
-
-  const handleTitleSave = useCallback(
-    async (newVal: string) => {
-      const oldVal = currentCampaign?.campaign?.title || "Unnamed Campaign";
-      const msg = formatUpdateMessage(
-        "campaign.title",
-        oldVal,
-        newVal,
-        "campaignAgent",
-        "Campaign Title"
-      );
-      if (msg && user) {
-        submitOptimisticMessage({
-          stream,
-          text: msg,
-          userId: user.id,
-          currentBrandContextId: selectedBrandId,
-        });
-      }
-    },
-    [currentCampaign, user, selectedBrandId]
-  );
 
   const toggleExpanded = useCallback(() => {
     setExpandedSections((prev) => ({
@@ -307,16 +283,21 @@ export const CampaignSection: React.FC<{
                   </span>
                 </div>
                 <div>
-                  <InlineEditableField
-                    key={currentCampaign?.campaign?.title}
-                    label="Campaign"
-                    value={
-                      currentCampaign?.campaign?.title || "Unnamed Campaign"
-                    }
-                    onSave={handleTitleSave}
-                    textClassName="font-bold  break-words max-w-xs"
-                    showLabel={true}
-                    isTextarea={false}
+                  <DisplayField
+                    json={{
+                      Campaign: `${
+                        currentCampaign?.campaign?.title || "Unnamed Campaign"
+                      }`,
+                    }}
+                    agentId={Agents.BRANDING_AGENT}
+                    onValueChange={(key, oldValue, newValue) => {
+                      handleFieldUpdate(
+                        "campaign.title",
+                        oldValue,
+                        newValue,
+                        "Campaign Title"
+                      );
+                    }}
                   />
                 </div>
               </div>
@@ -419,14 +400,6 @@ export const CampaignSection: React.FC<{
                       showKeyAsLabel
                     />
 
-                    <DynamicContentSection
-                      dynamicData={{
-                        content_campaign_ideas:
-                          currentCampaign.content_campaign_ideas,
-                      }}
-                      pathPrefix=""
-                      agentId={Agents.CAMPAIGN_AGENT}
-                    />
                     <AnimatePresence>
                       {showDynamicData && (
                         <motion.div
@@ -442,10 +415,35 @@ export const CampaignSection: React.FC<{
                             exit: { opacity: 0, y: 5 },
                           }}
                         >
-                          <DynamicContentSection
-                            dynamicData={currentCampaign.dynamic ?? {}}
-                            agentId={Agents.CAMPAIGN_AGENT}
-                          />
+                          {Object.keys(currentCampaign.dynamic || {}).length ===
+                            0 && (
+                            <div className="text-sm italic text-gray-400">
+                              No dynamic details available.
+                            </div>
+                          )}
+
+                          {Object.keys(currentCampaign.dynamic || {}).map(
+                            (key) => (
+                              <DisplayField
+                                key={key}
+                                json={{
+                                  [key]: currentCampaign.dynamic
+                                    ? currentCampaign.dynamic[key]
+                                    : null,
+                                }}
+                                title={capitalizeKey(key)}
+                                agentId={Agents.BRANDING_AGENT}
+                                onValueChange={(subKey, oldValue, newValue) => {
+                                  handleFieldUpdate(
+                                    `dynamic.${key}`,
+                                    oldValue,
+                                    newValue,
+                                    `Brand ${capitalizeKey(key)}`
+                                  );
+                                }}
+                              />
+                            )
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>

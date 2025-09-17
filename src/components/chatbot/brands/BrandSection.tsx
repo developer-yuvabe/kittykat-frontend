@@ -1,6 +1,5 @@
 "use client";
 
-import { InlineEditableField } from "@/components/shared/InlineEditableField";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -236,31 +235,17 @@ export const renderBrandData = (
                     <span className="text-white font-bold">{brandInitial}</span>
                   </AvatarFallback>
                 </Avatar>
-                <InlineEditableField
-                  key={staticData?.brand?.name}
-                  label="Brand"
-                  value={staticData?.brand?.name || ""}
-                  onSave={async (newVal) => {
-                    const oldValue = staticData?.brand?.name || "";
-                    const msg = formatUpdateMessage(
-                      "staticData.brand.name",
+                <DisplayField
+                  json={{ Brand: `${staticData?.brand?.name}` }}
+                  agentId={Agents.BRANDING_AGENT}
+                  onValueChange={(key, oldValue, newValue) => {
+                    handleFieldUpdate(
+                      `static.brand.Name`,
                       oldValue,
-                      newVal,
-                      "brandingAgent",
-                      "Brand Name"
+                      newValue,
+                      `Brand Name`
                     );
-                    if (msg) {
-                      submitOptimisticMessage({
-                        stream,
-                        text: msg,
-                        userId: user!.id,
-                        currentBrandContextId: selectedBrandId,
-                      });
-                    }
                   }}
-                  textClassName="font-bold"
-                  showLabel={true}
-                  isTextarea={false}
                 />
 
                 <div className="absolute right-3 top-7">

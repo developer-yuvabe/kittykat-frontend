@@ -3,9 +3,10 @@ import { ContentSection } from "../shared/ContentSection";
 import { InlineEditableBadges } from "../shared/InlineEditableBadges";
 import { InlineEditableField } from "../shared/InlineEditableField";
 import { Agents } from "@/types/types";
+import { cn } from "@/lib/utils";
 
 interface DisplayFieldProps<T extends Record<string, any>> {
-  title: string;
+  title?: string;
   agentId: Agents;
   json: T;
   onValueChange: (key: keyof T, oldValue: any, value: any) => void;
@@ -50,7 +51,12 @@ export const DisplayField = <T extends Record<string, any>>({
   };
 
   const renderField = useCallback(
-    (key: string, value: any, showKey: boolean = false) => {
+    (
+      key: string,
+      value: any,
+      showKey: boolean = false,
+      textClassName?: string
+    ) => {
       const withWrap = (children: React.ReactNode) =>
         showKey ? (
           <div>
@@ -71,7 +77,7 @@ export const DisplayField = <T extends Record<string, any>>({
       // Null / Undefined
       if (value == null) {
         return withWrap(
-          <div key={key} className="text-sm italic text-gray-400">
+          <div key={key} className={`text-sm italic text-gray-400`}>
             None
           </div>
         );
@@ -85,8 +91,11 @@ export const DisplayField = <T extends Record<string, any>>({
             label={key}
             value={String(value)}
             onSave={async (newVal) => handleSave(key, newVal as any)}
-            textClassName="text-sm text-gray-700"
-            isTextarea={key.toLowerCase().includes("tagline")}
+            textClassName={cn("text-sm text-gray-700", textClassName)}
+            showLabel={!title}
+            isTextarea={
+              typeof value === "string" && (value as string).length > 50
+            }
           />
         );
       }
@@ -95,7 +104,7 @@ export const DisplayField = <T extends Record<string, any>>({
       if (Array.isArray(value)) {
         if (value.length === 0) {
           return withWrap(
-            <div key={key} className="text-sm italic text-gray-400">
+            <div key={key} className={`text-sm italic text-gray-400`}>
               Empty list
             </div>
           );
@@ -156,6 +165,12 @@ export const DisplayField = <T extends Record<string, any>>({
     },
     [handleSave]
   );
+
+  if (!title) {
+    return Object.entries(data || {}).map(([key, value]) =>
+      renderField(key, value, showKeyAsLabel, "font-bold text-base")
+    );
+  }
 
   return (
     <ContentSection
