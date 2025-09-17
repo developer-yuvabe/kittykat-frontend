@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Pencil, Plus, X } from "lucide-react";
-import { useStreamContext } from "@/providers/langgraph/Stream";
 
 type InlineEditableBadgesProps = {
   label?: string;
@@ -22,31 +20,12 @@ export function InlineEditableBadges({
 }: InlineEditableBadgesProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newBadge, setNewBadge] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingValues, setEditingValues] = useState<string[]>([]);
-  const { isLoading } = useStreamContext();
-
-  useEffect(() => {
-    if (submitted && !isLoading) {
-      setIsSaving(false);
-      setSubmitted(false);
-      setIsEditing(false);
-      setIsAddingNew(false);
-    }
-  }, [isLoading, submitted]);
 
   const handleSave = async () => {
-    setIsSaving(true);
-    setSubmitted(true);
-    try {
-      await onSave(editingValues);
-    } catch (err) {
-      console.error("Failed to save badges", err);
-      setIsSaving(false);
-      setSubmitted(false);
-    }
+    onSave(editingValues);
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
@@ -88,17 +67,6 @@ export function InlineEditableBadges({
     const updated = editingValues.filter((_, i) => i !== index);
     setEditingValues(updated);
   };
-
-  if (isSaving) {
-    return (
-      <div className="flex flex-col gap-2 w-full">
-        {showLabel && label && (
-          <span className="text-sm font-medium text-gray-700">{label}:</span>
-        )}
-        <Skeleton className="h-8 w-full rounded-md" />
-      </div>
-    );
-  }
 
   const currentValues = isEditing ? editingValues : values;
 

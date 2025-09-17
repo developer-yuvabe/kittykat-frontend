@@ -197,6 +197,29 @@ export const capitalizeKey = (key: string) => {
     .join(" ");
 };
 
+export function normalizeJsonToString(input: unknown): string {
+  if (input === null || input === undefined) return "None";
+
+  if (typeof input === "string") return input;
+  if (typeof input === "number" || typeof input === "boolean")
+    return String(input);
+
+  if (Array.isArray(input)) {
+    if (input.length === 0) return "Empty list";
+    return input.map(normalizeJsonToString).join(", ");
+  }
+
+  if (typeof input === "object") {
+    const entries = Object.entries(input as Record<string, unknown>);
+    if (entries.length === 0) return "Empty object";
+    return entries
+      .map(([, val]) => `${normalizeJsonToString(val)}`)
+      .join(" | ");
+  }
+
+  return String(input);
+}
+
 export function addFileWrappers(
   url: string,
   setFileList: Dispatch<SetStateAction<MessageContentFiles[]>>
