@@ -14,8 +14,21 @@ import { LifeBuoy, LogOut } from "lucide-react";
 import { CreditIcon } from "../ui/custom-icon";
 import QueueProgress from "./QueueProgress";
 import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { auth } from "@/config/firebase.config";
+
 export function UserProfileMenu({}) {
   const { user, credits } = useUserStore();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await signOut(auth);
+    await fetch("/api/logout");
+    // reload the page to ensure the user is logged out
+    window.location.reload();
+    router.push("/login");
+  }
 
   const getUserInitials = () => {
     if (!user?.name) return "U";
@@ -84,7 +97,7 @@ export function UserProfileMenu({}) {
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>
             <LogOut />
             Log out
           </DropdownMenuItem>
