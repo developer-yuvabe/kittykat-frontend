@@ -257,7 +257,7 @@ export function AskKittykatReviewStatus({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       {/* Status Display Component */}
       <AskKittykartStatusDisplay
         currentStatus={currentStatus}
