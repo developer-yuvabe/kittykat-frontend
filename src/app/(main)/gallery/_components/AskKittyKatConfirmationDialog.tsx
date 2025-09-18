@@ -200,7 +200,7 @@ export function AskKittyKatConfirmationDialog({
             const success = await createTasklistRecord();
             if (success) {
               const taskListMarkdown = formatTasksAsMarkdown(tasks);
-              const commentText = `${newComment.trim()}\n\n**Tasks identified:**\n${taskListMarkdown}`;
+              const commentText = `**Tasks identified:**\n${taskListMarkdown}`;
 
               // Combine new comment attachments with all managed attachments
               const finalAttachments = [
@@ -224,7 +224,7 @@ export function AskKittyKatConfirmationDialog({
       const success = await createTasklistRecord();
       if (success) {
         const taskListMarkdown = formatTasksAsMarkdown(tasks);
-        const commentText = `${newComment.trim()}\n\n**Tasklist (requested):**\n${taskListMarkdown}`;
+        const commentText = `**Tasklist (requested):**\n${taskListMarkdown}`;
 
         // Combine new comment attachments with all managed attachments
         const finalAttachments = [

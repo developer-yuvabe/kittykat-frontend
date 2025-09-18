@@ -255,11 +255,31 @@ export function AskKittyKatTaskList({
         commentsToProcess = [tempComment];
       }
 
+      // Parse the current editing text into tasks
+      const lines = editingAllText
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+      const taskLines = lines
+        .map((line) => {
+          return line.replace(/^[-*+]\s+/, "").trim();
+        })
+        .filter((line) => line !== "");
+
+      // Create tasks array from current editor content
+      const currentTasks = taskLines.map((taskText, index) => {
+        const originalTask = tasks[index];
+        return {
+          task: taskText,
+          task_category: originalTask?.task_category || "General",
+          estimated_credit: originalTask?.estimated_credit || 1,
+        };
+      });
+
       return await taskListService.generateTaskList(
         imageUrl,
         commentsToProcess,
         true, // enhance = true
-        tasks // existing tasks
+        currentTasks // use current tasks from editor
       );
     },
     onSuccess: (response) => {
@@ -305,7 +325,7 @@ export function AskKittyKatTaskList({
   }
 
   // No tasks found
-  if (tasks.length === 0 && (hasExistingComments || hasNewComment)) {
+  if (tasks.length === 0 && hasExistingComments) {
     return (
       <div className="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <AlertCircle className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
@@ -435,7 +455,8 @@ export function AskKittyKatTaskList({
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-medium text-gray-700">
-                Attachments ({allAttachments.length})
+                Attachments (
+                {allAttachments.length + newCommentAttachments.length})
               </h4>
               <div className="flex items-center gap-2">
                 <input
@@ -463,21 +484,29 @@ export function AskKittyKatTaskList({
               </div>
             </div>
 
-            {allAttachments.length > 0 && (
+            {(allAttachments.length > 0 ||
+              newCommentAttachments.length > 0) && (
               <div className="space-y-3">
                 <AskKittyKatAttachmentPreview
-                  attachments={allAttachments}
-                  onRemoveAttachment={handleRemoveAttachment}
+                  attachments={[...allAttachments, ...newCommentAttachments]}
+                  onRemoveAttachment={(index) => {
+                    // Handle removal - if index is within allAttachments, remove from there
+                    // If beyond, it's from newCommentAttachments (but we don't allow removal of newCommentAttachments here)
+                    if (index < allAttachments.length) {
+                      handleRemoveAttachment(index);
+                    }
+                  }}
                 />
               </div>
             )}
 
-            {allAttachments.length === 0 && (
-              <p className="text-xs text-gray-500">
-                You can upload additional images to provide more context for
-                your tasks.
-              </p>
-            )}
+            {allAttachments.length === 0 &&
+              newCommentAttachments.length === 0 && (
+                <p className="text-xs text-gray-500">
+                  You can upload additional images to provide more context for
+                  your tasks.
+                </p>
+              )}
           </div>
         )}
       </div>
@@ -485,26 +514,6 @@ export function AskKittyKatTaskList({
   }
 
   // Generate button for manual generation
-  if (!autoGenerate && (hasExistingComments || hasNewComment)) {
-    return (
-      <div className="flex justify-center">
-        <Button
-          onClick={generateTaskList}
-          disabled={generateTasksMutation.isPending}
-          className="bg-purple-600 hover:bg-purple-700"
-        >
-          {generateTasksMutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Generating...
-            </>
-          ) : (
-            "Generate Task List"
-          )}
-        </Button>
-      </div>
-    );
-  }
 
   return null;
 }
