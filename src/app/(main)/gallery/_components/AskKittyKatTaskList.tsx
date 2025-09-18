@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import MDEditor from "@uiw/react-md-editor";
 import { MarkdownText } from "@/components/thread/markdown-text";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   CheckCircle2,
   AlertCircle,
@@ -13,12 +13,15 @@ import {
   X,
   Sparkles,
   Zap,
+  Paperclip,
 } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { Task } from "@/types/tasklist.types";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { AskKittyKatAttachmentPreview } from "./AskKittyKatAttachmentPreview";
 
 interface AskKittyKatTaskListProps {
   imageUrl: string;
@@ -30,6 +33,11 @@ interface AskKittyKatTaskListProps {
   showCredits?: boolean;
   autoGenerate?: boolean;
   tasks?: Task[]; // Allow external tasks to be passed in
+  // Simplified attachment management
+  allAttachments?: string[];
+  onAllAttachmentsChange?: (attachments: string[]) => void;
+  brandId?: string | null;
+  campaignId?: string | null;
 }
 
 export function AskKittyKatTaskList({
@@ -42,10 +50,16 @@ export function AskKittyKatTaskList({
   showCredits = false,
   autoGenerate = false,
   tasks: externalTasks,
+  allAttachments = [],
+  onAllAttachmentsChange,
+  brandId,
+  campaignId,
 }: AskKittyKatTaskListProps) {
   const [totalCredits, setTotalCredits] = useState<number>(0);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [editingAllText, setEditingAllText] = useState<string>("");
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use external tasks if provided, otherwise empty array
   const tasks = externalTasks || [];
@@ -53,26 +67,77 @@ export function AskKittyKatTaskList({
   const hasExistingComments = comments && comments.length > 0;
   const hasNewComment = newComment && newComment.trim().length > 0;
 
+  // File upload functionality
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !onAllAttachmentsChange) return;
+
+    setIsUploading(true);
+    const toastId = toast.loading("Uploading files...");
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileName = `tasklist-attachment-${Date.now()}-${file.name}`;
+        return await uploadFileAndReturnUrl(
+          fileName,
+          file.type,
+          "ask-kittykat",
+          file,
+          brandId || null,
+          campaignId || null
+        );
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      onAllAttachmentsChange([...allAttachments, ...uploadedUrls]);
+
+      toast.success(`${files.length} file(s) uploaded successfully`, {
+        id: toastId,
+      });
+    } catch (error) {
+      toast.error("Failed to upload files", { id: toastId });
+      console.error("Upload error:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    if (onAllAttachmentsChange) {
+      onAllAttachmentsChange(allAttachments.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleAttachFiles = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
   const handleEditAllTasks = () => {
-    // Convert tasks to text format (one task per line)
-    const tasksText = tasks.map((task) => task.task).join("\n");
-    setEditingAllText(tasksText);
+    // Convert tasks to markdown format (using unordered list)
+    const tasksMarkdown = tasks.map((task) => `- ${task.task}`).join("\n");
+    setEditingAllText(tasksMarkdown);
     setIsEditingAll(true);
   };
 
   const handleSaveAllTasks = () => {
     if (editingAllText.trim() === "") return;
 
-    // Split text by lines and filter out empty lines
-    const taskLines = editingAllText
+    // Parse markdown list items and regular lines
+    const lines = editingAllText
       .split("\n")
       .filter((line) => line.trim() !== "");
+    const taskLines = lines
+      .map((line) => {
+        // Remove markdown list syntax (-, *, +) and trim
+        return line.replace(/^[-*+]\s+/, "").trim();
+      })
+      .filter((line) => line !== "");
 
     // Create updated tasks array, preserving original categories and credits
     const updatedTasks = taskLines.map((taskText, index) => {
       const originalTask = tasks[index];
       return {
-        task: taskText.trim(),
+        task: taskText,
         task_category: originalTask?.task_category || "General",
         estimated_credit: originalTask?.estimated_credit || 1,
       };
@@ -190,19 +255,39 @@ export function AskKittyKatTaskList({
         commentsToProcess = [tempComment];
       }
 
+      // Parse the current editing text into tasks
+      const lines = editingAllText
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+      const taskLines = lines
+        .map((line) => {
+          return line.replace(/^[-*+]\s+/, "").trim();
+        })
+        .filter((line) => line !== "");
+
+      // Create tasks array from current editor content
+      const currentTasks = taskLines.map((taskText, index) => {
+        const originalTask = tasks[index];
+        return {
+          task: taskText,
+          task_category: originalTask?.task_category || "General",
+          estimated_credit: originalTask?.estimated_credit || 1,
+        };
+      });
+
       return await taskListService.generateTaskList(
         imageUrl,
         commentsToProcess,
         true, // enhance = true
-        tasks // existing tasks
+        currentTasks // use current tasks from editor
       );
     },
     onSuccess: (response) => {
-      // Update the editing text with enhanced tasks
-      const enhancedTasksText = response.tasks
-        .map((task) => task.task)
+      // Update the editing text with enhanced tasks in markdown format
+      const enhancedTasksMarkdown = response.tasks
+        .map((task) => `- ${task.task}`)
         .join("\n");
-      setEditingAllText(enhancedTasksText);
+      setEditingAllText(enhancedTasksMarkdown);
     },
   });
 
@@ -240,7 +325,7 @@ export function AskKittyKatTaskList({
   }
 
   // No tasks found
-  if (tasks.length === 0 && (hasExistingComments || hasNewComment)) {
+  if (tasks.length === 0 && hasExistingComments) {
     return (
       <div className="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <AlertCircle className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
@@ -282,15 +367,28 @@ export function AskKittyKatTaskList({
         </div>
 
         {isEditingAll ? (
-          // Bulk edit mode
+          // Bulk edit mode with react-md-editor
           <div className="space-y-3">
-            <Textarea
-              value={editingAllText}
-              onChange={(e) => setEditingAllText(e.target.value)}
-              className="min-h-[200px] text-sm"
-              placeholder="Edit tasks (one per line)..."
-              autoFocus
-            />
+            <div data-color-mode="light">
+              <MDEditor
+                value={editingAllText}
+                onChange={(val) => setEditingAllText(val || "")}
+                preview="edit"
+                hideToolbar={false}
+                visibleDragbar={false}
+                textareaProps={{
+                  style: {
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    fontFamily:
+                      'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                  },
+                }}
+                height={200}
+                data-testid="markdown-editor"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
@@ -351,31 +449,71 @@ export function AskKittyKatTaskList({
             ))}
           </ul>
         )}
+
+        {/* Attachment Management Section */}
+        {onAllAttachmentsChange && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-700">
+                Attachments (
+                {allAttachments.length + newCommentAttachments.length})
+              </h4>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAttachFiles}
+                  disabled={isUploading}
+                  className="h-7 px-2"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Paperclip className="h-3 w-3 mr-1" />
+                  )}
+                  {isUploading ? "Uploading..." : "Add Images"}
+                </Button>
+              </div>
+            </div>
+
+            {(allAttachments.length > 0 ||
+              newCommentAttachments.length > 0) && (
+              <div className="space-y-3">
+                <AskKittyKatAttachmentPreview
+                  attachments={[...allAttachments, ...newCommentAttachments]}
+                  onRemoveAttachment={(index) => {
+                    // Handle removal - if index is within allAttachments, remove from there
+                    // If beyond, it's from newCommentAttachments (but we don't allow removal of newCommentAttachments here)
+                    if (index < allAttachments.length) {
+                      handleRemoveAttachment(index);
+                    }
+                  }}
+                />
+              </div>
+            )}
+
+            {allAttachments.length === 0 &&
+              newCommentAttachments.length === 0 && (
+                <p className="text-xs text-gray-500">
+                  You can upload additional images to provide more context for
+                  your tasks.
+                </p>
+              )}
+          </div>
+        )}
       </div>
     );
   }
 
   // Generate button for manual generation
-  if (!autoGenerate && (hasExistingComments || hasNewComment)) {
-    return (
-      <div className="flex justify-center">
-        <Button
-          onClick={generateTaskList}
-          disabled={generateTasksMutation.isPending}
-          className="bg-purple-600 hover:bg-purple-700"
-        >
-          {generateTasksMutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Generating...
-            </>
-          ) : (
-            "Generate Task List"
-          )}
-        </Button>
-      </div>
-    );
-  }
 
   return null;
 }

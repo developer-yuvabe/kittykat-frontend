@@ -52,6 +52,23 @@ export function AskKittykatReviewStatus({
   // Get client name from comments
   const clientName = getClientNameFromComments(item);
 
+  // Helper function to find the latest tasklist comment
+  const findLatestTasklistComment = () => {
+    if (!item?.comments) return null;
+
+    const tasklistComments = item.comments.filter(
+      (comment) => comment.is_tasklist
+    );
+    if (tasklistComments.length === 0) return null;
+
+    // Sort by added_at in descending order to get the latest first
+    const sortedComments = tasklistComments.sort(
+      (a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()
+    );
+
+    return sortedComments[0];
+  };
+
   const handleStatusChange = (newStatus: WorkflowStatus) => {
     setCurrentItem((prev) =>
       prev ? { ...prev, workflow_status: newStatus } : prev
@@ -93,26 +110,50 @@ export function AskKittykatReviewStatus({
       // Format the ETA date
       const formattedETA = format(etaDate, "PPPP"); // "Friday, September 15th, 2025"
 
-      // First, add the auto-comment
-      const commentText = `Thanks ${clientName}, our team will start working on this. Estimated delivery: ${formattedETA}.`;
+      // Find the latest tasklist comment to reply to
+      const latestTasklistComment = findLatestTasklistComment();
+      const replyText = `Thanks ${clientName}, our team will start working on this. Estimated delivery: ${formattedETA}.`;
 
-      galleryActions.addComment(
-        {
-          itemId: item.id,
-          commentData: {
-            text: commentText,
+      if (latestTasklistComment) {
+        // Add reply to the latest tasklist comment
+        galleryActions.addReply(
+          {
+            itemId: item.id,
+            commentId: latestTasklistComment.id,
+            replyData: {
+              text: replyText,
+            },
           },
-        },
-        {
-          onSuccess(data) {
-            revalidateGalleryItemVersions(data);
+          {
+            onSuccess(data) {
+              revalidateGalleryItemVersions(data);
+            },
+            onError() {
+              toast.error("Failed to add reply. Please try again.");
+              return;
+            },
+          }
+        );
+      } else {
+        // Fallback: add as a new comment if no tasklist comment found
+        galleryActions.addComment(
+          {
+            itemId: item.id,
+            commentData: {
+              text: replyText,
+            },
           },
-          onError() {
-            toast.error("Failed to add comment. Please try again.");
-            return;
-          },
-        }
-      );
+          {
+            onSuccess(data) {
+              revalidateGalleryItemVersions(data);
+            },
+            onError() {
+              toast.error("Failed to add comment. Please try again.");
+              return;
+            },
+          }
+        );
+      }
 
       // Then update the status to in_progress
       handleStatusChange("in_progress");
@@ -216,7 +257,7 @@ export function AskKittykatReviewStatus({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       {/* Status Display Component */}
       <AskKittykartStatusDisplay
         currentStatus={currentStatus}
@@ -227,19 +268,17 @@ export function AskKittykatReviewStatus({
       />
 
       {/* Action Buttons */}
-      {!isAdmin &&
-        !item?.sent_to_human_queue &&
-        currentStatus !== "in_review" && (
-          <Button
-            onClick={onAskKittykat}
-            className="w-full"
-            size="lg"
-            variant="default"
-          >
-            <Lock className="w-5 h-5 mr-2" />
-            Ask KittyKat Expert
-          </Button>
-        )}
+      {!item?.sent_to_human_queue && currentStatus !== "in_review" && (
+        <Button
+          onClick={onAskKittykat}
+          className="w-full"
+          size="lg"
+          variant="default"
+        >
+          <Lock className="w-5 h-5 mr-2" />
+          Ask KittyKat Expert
+        </Button>
+      )}
 
       {/* User Review Buttons (when status is in_review and user is not admin) */}
       {!isAdmin && currentStatus === "in_review" && (
