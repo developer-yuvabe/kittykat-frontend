@@ -135,6 +135,12 @@ const RemixControls = ({
     },
   });
 
+  useEffect(() => {
+    if (image.url && baseImageParam) {
+      form.setValue("base_image", image.url);
+    }
+  }, [image.url, form]);
+
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
     model: selectedRemixModel,

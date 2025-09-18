@@ -8,6 +8,7 @@ export const remixImageService = async (
   maskImageUrl: string | null
 ) => {
   console.log("Remix Image Service called with data:", data);
+  console.log("Mask Image URL:", maskImageUrl);
   try {
     const payload: Record<string, any> = {
       ...data,

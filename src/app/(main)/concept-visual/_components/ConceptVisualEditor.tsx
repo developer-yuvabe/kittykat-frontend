@@ -39,9 +39,6 @@ export function ConceptVisualEditor({
 }: ConceptVisualEditorProps) {
   const [activeTab, setActiveTab] = useState("virtual-tryon");
   const { selectedRemixModel } = useModelsStore();
-  //   const [currentItem, setCurrentItem] = useState<
-  //     GalleryItemResponse | undefined
-  //   >(undefined);
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     null
   );
@@ -192,7 +189,7 @@ export function ConceptVisualEditor({
               onValueChange={setActiveTab}
               className="flex-1 flex flex-col min-h-0"
             >
-              <AskKittykatTabs />
+              <AskKittykatTabs isConceptVisualEditor={true} />
 
               <TabsContent
                 value="video-gen"
