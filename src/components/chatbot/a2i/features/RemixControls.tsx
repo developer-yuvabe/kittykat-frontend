@@ -129,9 +129,6 @@ const RemixControls = ({
     formKey: "remixForm",
     dynamicDefualtValues: {
       ...(baseImageParam?.id ? { [baseImageParam.id]: image.url } : {}),
-      size: ["1024X1024", "1024x1536", "1536x1024"].includes(image.size)
-        ? image.size
-        : "1024x1024",
     },
   });
 
@@ -554,7 +551,7 @@ const RemixControls = ({
                       </PopoverTrigger>
                       <PopoverContent
                         forceMount
-                        align="center"
+                        align="start"
                         side="top"
                         className="space-y-2 w-64"
                       >
