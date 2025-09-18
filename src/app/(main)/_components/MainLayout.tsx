@@ -5,6 +5,7 @@ import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
 import { useUserBrands } from "@/hooks/sse/useUserBrands";
 import { useUserCredits } from "@/hooks/sse/useUserCredits";
+import { StreamProvider } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
 import { User } from "@/types/user.types";
 import React, { useEffect } from "react";
@@ -37,11 +38,13 @@ const MainLayout = ({
   }
 
   return (
-    <main>
-      <TopNavigation />
-      {children}
-      <InsufficientCreditsModal />
-    </main>
+    <StreamProvider>
+      <main>
+        <TopNavigation />
+        {children}
+        <InsufficientCreditsModal />
+      </main>
+    </StreamProvider>
   );
 };
 

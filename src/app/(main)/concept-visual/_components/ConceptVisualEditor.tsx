@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import type {
   BrandCampaignListResponse,
   EnhancedSelectedFilters,
@@ -14,15 +14,31 @@ import { AskKittykatTabs } from "../../gallery/_components/AskKittykatTabs";
 import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
 import VirtualTryOn from "@/components/chatbot/a2i/features/VirtualTryOn";
-import { Loader } from "lucide-react";
+import { Loader, X } from "lucide-react";
 import { useModelsStore } from "@/store/models.store";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import { RemixImageHandle } from "../../_components/remix/RemixImage";
 import { AskKittykatImageSection } from "../../gallery/_components/AskKittykatImageSection";
 import RemixControls from "@/components/chatbot/a2i/features/RemixControls";
 import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-export function ConceptVisualEditor() {
+interface ConceptVisualEditorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ConceptVisualEditor({
+  open,
+  onOpenChange,
+}: ConceptVisualEditorProps) {
   const [activeTab, setActiveTab] = useState("virtual-tryon");
   const { selectedRemixModel, isModelsFetched } = useModelsStore();
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
@@ -36,7 +52,7 @@ export function ConceptVisualEditor() {
     string | undefined
   >(undefined);
 
-  // Create basic filters for gallery query first
+  // filters
   const basicFilters = useMemo(
     () => ({
       brands: [],
@@ -60,13 +76,11 @@ export function ConceptVisualEditor() {
   const [selectedFilters, setSelectedFilters] =
     useState<EnhancedSelectedFilters>(basicFilters);
 
-  // Only create galleryActions when brands are fetched
   const galleryActions = useGalleryQuery({
     selectedFilters: isBrandsFetched ? selectedFilters : basicFilters,
   });
 
-  // Update selectedFilters when brands are loaded or when props change
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isBrandsFetched) return;
 
     const availableBrands = galleryActions.brandsData?.brands || [];
@@ -74,26 +88,13 @@ export function ConceptVisualEditor() {
       selectedBrandId ||
       (availableBrands.length > 0 ? availableBrands[0].brand_id : null);
 
-    // Auto-select the first brand if none is selected and brands are available
     if (!selectedBrandId && validBrandId) {
       setSelectedBrandId(validBrandId);
     }
 
     const newFilters = {
+      ...basicFilters,
       brands: validBrandId ? [validBrandId] : [],
-      campaigns: [],
-      product_categories: [],
-      asset_types: [],
-      asset_sources: [],
-      media_format: [],
-      aspect_ratio: [],
-      workflow_status: [],
-      has_product: undefined,
-      has_people: undefined,
-      has_lifestyle_context: undefined,
-      is_favourite: undefined,
-      is_archived: undefined,
-      moodboards: [],
     };
 
     setSelectedFilters(newFilters);
@@ -102,12 +103,14 @@ export function ConceptVisualEditor() {
     galleryActions.brandsData?.brands,
     isBrandsFetched,
     setSelectedBrandId,
+    basicFilters,
   ]);
 
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
   >(null);
 
+  // remix state
   const [brushSize, setBrushSize] = useState(50);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -137,7 +140,6 @@ export function ConceptVisualEditor() {
       remixImageRef.current.clearCanvas();
     }
   };
-
   const handleBrushSizeChange = (size: number) => {
     setBrushSize(size);
     if (remixImageRef.current?.setBrushSize && isRemixEnabled) {
@@ -145,29 +147,62 @@ export function ConceptVisualEditor() {
     }
   };
 
+  const router = useRouter();
+  const handleDialogChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setCurrentItem(null); // reset item on close
+    }
+    onOpenChange(isOpen);
+    router.push("/");
+  };
+
+  const handleManualClose = () => {
+    setCurrentItem(null);
+    onOpenChange(false);
+  };
+
   return (
-    <div className=" w-full border-b border-gray-200">
-      {/* Header */}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="p-0 h-[100dvh] w-[100dvw] max-w-[100dvw]! min-w-full rounded-none shadow-xl overflow-hidden flex flex-col"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        {/* Header */}
+        <DialogHeader className="px-6 py-4 bg-white border-b flex-shrink-0 z-10">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl font-semibold">
+              Concept Visual Editor
+            </DialogTitle>
+            <div className="flex items-center gap-4">
+              <MediaUploadBrandSelector
+                selectedBrand={selectedBrand}
+                setSelectedBrand={setSelectedBrand}
+                brands={galleryActions.brandsData?.brands || []}
+                brandsLoading={galleryActions.brandsLoading}
+                setSelectedCampaignId={setSelectedCampaignId}
+                selectedCampaignId={selectedCampaignId}
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                preSelectedBrandId={selectedBrandId}
+                setInitialWorkflowStatus={async () => new URLSearchParams()}
+                setInitialBrandId={async () => new URLSearchParams()}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleManualClose()}
+                className="p-2 h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogHeader>
 
-      <div className="flex-1 min-h-0">
-        {/* Main content wrapper must fill viewport height minus header */}
-        <div className="flex h-[calc(100vh-100px)] gap-x-3 p-4">
-          {/* Left Panel */}
-
+        {/* Body */}
+        <div className="flex flex-1 gap-x-3 p-4 min-h-0">
+          {/* Left panel */}
           <div className="w-[35%] min-w-[280px] flex flex-col gap-y-4">
-            <MediaUploadBrandSelector
-              selectedBrand={selectedBrand}
-              setSelectedBrand={setSelectedBrand}
-              brands={galleryActions.brandsData?.brands || []}
-              brandsLoading={galleryActions.brandsLoading}
-              setSelectedCampaignId={setSelectedCampaignId}
-              selectedCampaignId={selectedCampaignId}
-              selectedFilters={selectedFilters}
-              setSelectedFilters={setSelectedFilters}
-              preSelectedBrandId={selectedBrandId}
-              setInitialWorkflowStatus={async () => new URLSearchParams()}
-              setInitialBrandId={async () => new URLSearchParams()}
-            />
             {activeTab === "video-gen" ? (
               !isBrandsFetched ? (
                 <div className="flex justify-center items-center h-full">
@@ -177,6 +212,7 @@ export function ConceptVisualEditor() {
                 <VideoGenerationInput
                   item={currentItem}
                   campaignId={selectedCampaignId}
+                  handleDialogChange={handleDialogChange}
                 />
               )
             ) : !isBrandsFetched ? (
@@ -200,7 +236,7 @@ export function ConceptVisualEditor() {
             )}
           </div>
 
-          {/* Right Panel */}
+          {/* Right panel */}
           <div className="flex-1 w-[65%] flex flex-col min-h-0">
             <Tabs
               value={activeTab}
@@ -228,6 +264,7 @@ export function ConceptVisualEditor() {
                     modelImage={currentItem?.asset_url}
                     source="media-gallery"
                     campaignId={selectedCampaignId}
+                    handleDialogChange={handleDialogChange}
                   />
                 )}
               </TabsContent>
@@ -253,6 +290,7 @@ export function ConceptVisualEditor() {
                     brandId={currentItem?.brand_id}
                     source="media-gallery"
                     campaignId={selectedCampaignId}
+                    handleDialogChange={handleDialogChange}
                   />
                 )}
               </TabsContent>
@@ -271,14 +309,15 @@ export function ConceptVisualEditor() {
                     source="media-gallery"
                     initialImage={currentItem?.asset_url || ""}
                     campaignId={selectedCampaignId}
+                    handleDialogChange={handleDialogChange}
                   />
                 )}
               </TabsContent>
             </Tabs>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

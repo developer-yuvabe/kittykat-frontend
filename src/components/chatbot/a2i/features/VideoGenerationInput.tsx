@@ -33,11 +33,13 @@ import { useA2iForm } from "@/hooks/useA2iForm";
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 }
 
 const VideoGenerationInput = ({
   item,
   campaignId,
+  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
@@ -62,6 +64,7 @@ const VideoGenerationInput = ({
           item={item}
           campaignId={campaignId}
           key={item?.id}
+          handleDialogChange={handleDialogChange}
         />
       )}
     </div>
@@ -71,6 +74,7 @@ const VideoGenerationInput = ({
 const VideoGenerationInputControls = ({
   item,
   campaignId,
+  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -152,6 +156,11 @@ const VideoGenerationInputControls = ({
       );
 
       addCurrentSessionGenerationId(generation_id);
+
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
+      }
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {

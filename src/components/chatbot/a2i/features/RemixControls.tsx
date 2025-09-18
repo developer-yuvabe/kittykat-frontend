@@ -59,6 +59,7 @@ export type RemixControlsProps = {
   brandId?: string;
   source: "a2i" | "media-gallery";
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const RemixControls = ({
@@ -74,6 +75,7 @@ const RemixControls = ({
   onBrushSizeChange,
   brandId,
   campaignId,
+  handleDialogChange,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
@@ -328,6 +330,11 @@ const RemixControls = ({
 
       if (closeDialog) {
         closeDialog();
+      }
+
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
       }
     } catch (error) {
       console.error(error);

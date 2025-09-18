@@ -63,6 +63,7 @@ type ImageUpscalerProps = {
   source: "a2i" | "media-gallery";
   initialImage?: string;
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
@@ -70,6 +71,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
   brandId,
   initialImage,
   campaignId,
+  handleDialogChange,
 }) => {
   const { selectedUpscaleModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
@@ -105,6 +107,10 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
     try {
       await upscaleImage(brandId || selectedBrandId!, data);
       closeDialog?.();
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
+      }
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);

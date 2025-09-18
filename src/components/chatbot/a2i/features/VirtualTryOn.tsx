@@ -19,14 +19,15 @@ type VirtualTryOnProps = {
   closeDialog?: () => void;
   source: "a2i" | "media-gallery";
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const VirtualTryOn = ({
   modelImage,
   closeDialog,
   campaignId,
+  handleDialogChange,
 }: VirtualTryOnProps) => {
-  console.log("Rendering VirtualTryOn with modelImage:", modelImage);
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
@@ -52,11 +53,14 @@ const VirtualTryOn = ({
 
   const onSubmit = async (data: Record<string, any>) => {
     setLoading(true);
-    console.log("Submitting VTON with data:", data);
     try {
       await createVtonImage(selectedBrandId!, campaignId || null, data);
       if (closeDialog) {
         closeDialog();
+      }
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
       }
     } catch (error) {
       console.error("VTON Generation Error:", error);
