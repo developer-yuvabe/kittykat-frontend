@@ -2,11 +2,11 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Paperclip, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { AskKittyKatAttachmentPreview } from "./AskKittyKatAttachmentPreview";
+import MDEditor from "@uiw/react-md-editor";
 
 interface AskKittyKatCommentInputProps {
   comment: string;
@@ -84,12 +84,26 @@ export function AskKittyKatCommentInput({
   return (
     <div className="space-y-4">
       <div className="space-y-3">
-        <Textarea
-          value={comment}
-          onChange={(e) => onCommentChange(e.target.value)}
-          placeholder={placeholder}
-          className="min-h-[80px] z-50"
-        />
+        <div data-color-mode="light">
+          <MDEditor
+            value={comment}
+            onChange={(val) => onCommentChange(val || "")}
+            preview="edit"
+            hideToolbar={false}
+            visibleDragbar={false}
+            textareaProps={{
+              placeholder: placeholder,
+              style: {
+                fontSize: 14,
+                lineHeight: 1.5,
+                fontFamily:
+                  'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+              },
+            }}
+            height={120}
+            data-testid="comment-editor"
+          />
+        </div>
 
         <AskKittyKatAttachmentPreview
           attachments={attachments}
