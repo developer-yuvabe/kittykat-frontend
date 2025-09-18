@@ -235,7 +235,7 @@ export const AskKittykatImageSection: React.FC<
   setCurrentItem,
   conceptVisualMedia = false,
 }) => {
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const isVideo = item?.asset_type === "video";
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
 
@@ -293,142 +293,17 @@ export const AskKittykatImageSection: React.FC<
     );
   };
 
-  //   const renderMedia = () => {
-  //     if (isVideo) {
-  //       return (
-  //         <VideoPlayer
-  //           src={item.asset_url}
-  //           isLiked={item.is_favourite ?? false}
-  //           onLike={handleLike}
-  //           prompt={item.input_prompt}
-  //         />
-  //       );
-  //     }
-
-  //     // For images, check if remix is enabled
-  //     if (
-  //       isRemixEnabled &&
-  //       remixHistory &&
-  //       imageRef &&
-  //       canvasRef &&
-  //       offScreenCanvasRef
-  //     ) {
-  //       return (
-  //         <RemixImage
-  //           ref={remixImageRef}
-  //           imageRef={imageRef}
-  //           canvasRef={canvasRef}
-  //           offScreenCanvasRef={offScreenCanvasRef}
-  //           url={item?.asset_url || ""}
-  //           remixHistory={remixHistory}
-  //           brushSize={brushSize}
-  //         />
-  //       );
-  //     }
-
-  // // Default image rendering with copy prompt functionality
-  // const getPromptText = () => {
-  //   return item?.input_prompt;
-  // };
-
-  //     // return (
-  //     //   <ZoomableImage
-  //     //     src={item.asset_url}
-  //     //     key={item.asset_url}
-  //     //     className="object-contain rounded-lg max-h-[80vh]"
-  //     //     variant="overlay"
-  //     //     isLiked={item.is_favourite}
-  //     //     onLike={handleLike}
-  //     //     prompt={getPromptText()}
-  //     //   />
-  //     // );
-  //     return conceptVisualMedia ? (
-  //       <div className="relative w-full h-[80%] bg-muted rounded-lg flex items-center justify-center">
-  //         {/* Placeholder if no image */}
-  //         {!item && (
-  //           <button
-  //             onClick={() => setGalleryPickerOpen(true)}
-  //             className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors rounded-lg"
-  //           >
-  //             <SelectIcon size={20} />
-  //             <span>Choose from Gallery</span>
-  //           </button>
-  //         )}
-
-  //         {/* Plain image preview */}
-  //         {item && (
-  //           <img
-  //             src={item.asset_url}
-  //             alt="Selected"
-  //             className="absolute inset-0 w-full h-full object-contain rounded-lg"
-  //           />
-  //         )}
-
-  //         {/* Remove button */}
-  //         {item && (
-  //           <Button
-  //             variant="outline"
-  //             size="icon"
-  //             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-  //             onClick={() => setCurrentItem(null)}
-  //           >
-  //             <X />
-  //           </Button>
-  //         )}
-  //       </div>
-  //     ) : (
-  //       item && (
-  //         <ZoomableImage
-  //           src={item.asset_url}
-  //           key={item.asset_url}
-  //           className="object-contain rounded-lg max-h-[80vh]"
-  //           variant="overlay"
-  //           isLiked={item.is_favourite}
-  //           onLike={handleLike}
-  //           prompt={getPromptText()}
-  //         />
-  //       )
-  //     );
-  //   };
-
-  //   return (
-  //     <div className="flex-1 p-6 relative flex items-center justify-center min-h-0">
-  //       <div className="w-full h-[80%] flex items-center justify-center">
-  //         {renderMedia()}
-  //       </div>
-
-  //       {/* Media Library Dialog */}
-  //       <MediaLibraryDialog
-  //         open={galleryPickerOpen}
-  //         onOpenChange={setGalleryPickerOpen}
-  //         onFullMediaItemSelected={(mediaItem) => {
-  //           setCurrentItem(mediaItem);
-  //           setGalleryPickerOpen(false);
-  //         }}
-  //         filters={{
-  //           brands: [selectedBrandId!],
-  //           campaigns: [],
-  //           product_categories: [],
-  //           asset_types: ["image"],
-  //           asset_sources: [],
-  //           media_format: [],
-  //           aspect_ratio: [],
-  //           workflow_status: [],
-  //           moodboards: [],
-  //         }}
-  //         brandId={selectedBrandId!}
-  //         isMultiSelect={false}
-  //         maxSelectionCount={1}
-  //       />
-  //     </div>
-  //   );
-  // };
   const renderPlaceholder = () => (
     <div className="relative w-full h-[80%] bg-muted rounded-lg flex items-center justify-center">
       {!item && (
         <button
-          onClick={() => setGalleryPickerOpen(true)}
+          onClick={() => {
+            if (isBrandsFetched && selectedBrandId) {
+              setGalleryPickerOpen(true);
+            }
+          }}
           className="w-full h-full border-2 border-dashed flex items-center justify-center text-muted-foreground cursor-pointer flex-col gap-y-2 hover:bg-muted transition-colors rounded-lg"
+          disabled={!isBrandsFetched || !selectedBrandId}
         >
           <SelectIcon size={20} />
           <span>Choose from Gallery</span>

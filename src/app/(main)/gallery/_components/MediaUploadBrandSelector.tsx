@@ -70,7 +70,7 @@ export function MediaUploadBrandSelector({
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const { setSelectedBrandId } = useBrandStore();
+  const { setSelectedBrandId, isBrandsFetched } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
@@ -235,6 +235,7 @@ export function MediaUploadBrandSelector({
                   role="combobox"
                   aria-expanded={open}
                   className="w-full justify-between text-sm h-10 hover:bg-white bg-[#F3F4F6FF] shadow-sm"
+                  disabled={!isBrandsFetched}
                 >
                   <div className="flex items-center min-w-0 flex-1">
                     {getDisplayText()}
