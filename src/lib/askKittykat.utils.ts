@@ -5,28 +5,34 @@ import { Task } from "@/types/tasklist.types";
  * Gets the client name from the latest comment or falls back to created_by
  */
 export function getClientNameFromComments(item: GalleryItemResponse): string {
-  // First, try to get name from the latest comment
   if (item.comments && item.comments.length > 0) {
-    // Sort comments by added_at date (most recent first)
+    // Sort comments by added_at (most recent first)
     const sortedComments = [...item.comments].sort(
       (a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()
     );
 
-    // Look for the latest comment that has a name and is not a system comment
+    // ✅ Step 1: Find the latest is_tasklist = true comment with a valid name
+    for (const comment of sortedComments) {
+      if (comment.is_tasklist && comment.added_by_name) {
+        return comment.added_by_name;
+      }
+    }
+
+    // ✅ Step 2: Find the latest "normal" (non-system) comment with a valid name
     for (const comment of sortedComments) {
       if (comment.added_by_name && !comment.text.startsWith("[")) {
         return comment.added_by_name;
       }
     }
 
-    // If no name found in comments, try to get from any comment
+    // ✅ Step 3: Fallback to the very latest comment’s name (if available)
     const latestComment = sortedComments[0];
     if (latestComment?.added_by_name) {
       return latestComment.added_by_name;
     }
   }
 
-  // Fallback to created_by or "Client"
+  // ✅ Step 4: Final fallback
   return item.created_by || "Client";
 }
 
