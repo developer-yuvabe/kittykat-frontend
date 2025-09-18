@@ -289,7 +289,7 @@ export const CampaignSection: React.FC<{
                         currentCampaign?.campaign?.title || "Unnamed Campaign"
                       }`,
                     }}
-                    agentId={Agents.BRANDING_AGENT}
+                    agentId={Agents.CAMPAIGN_AGENT}
                     onValueChange={(key, oldValue, newValue) => {
                       handleFieldUpdate(
                         "campaign.title",
