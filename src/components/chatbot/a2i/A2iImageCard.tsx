@@ -3,13 +3,12 @@ import { Ripple } from "@/components/magicui/ripple";
 import { ImageModal } from "@/components/shared/ImageModal";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "@/components/ui/custom-icon";
 import { TooltipButton } from "@/components/ui/tooltip-button";
-import { env } from "@/config/env";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
-import { deleteA2iImage, generateImage } from "@/services/api/a2i.service";
+import { deleteA2iImage } from "@/services/api/a2i.service";
+import { retryGeneration } from "@/services/api/genration.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import {
@@ -78,6 +77,7 @@ const A2iImageCard = ({
   const [showEditFeatures, setShowEditFeatures] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const { selectedBrandId } = useBrandStore();
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -184,6 +184,20 @@ const A2iImageCard = ({
       setIsDeleting(false);
     });
   };
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+
+    toast.promise(retryGeneration(generationId, selectedBrandId!), {
+      loading: "Retrying generation...",
+      success: "Generation retried successfully!",
+      error: "Failed to retry generation. Please try again.",
+      finally: () => {
+        setIsRetrying(false);
+      },
+    });
+  };
+
   useEffect(() => {
     setIsLiked(galleryItem?.data?.is_favourite || false);
   }, [galleryItem?.data?.is_favourite]);
@@ -332,26 +346,6 @@ const A2iImageCard = ({
                 <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
                   Failed
                 </Badge>
-                {window.location.hostname === "localhost" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      toast.promise(
-                        generateImage(selectedBrandId!, {
-                          ...parameters,
-                          campaign_id: currentCampaign?.id || null,
-                        }),
-                        {
-                          loading: "Retrying image generation...",
-                          error: "Failed to retry image generation.",
-                        }
-                      );
-                    }}
-                  >
-                    <RotateCcw />
-                  </Button>
-                )}
               </div>
             )}
             {status === "failed" && isNSFW && (
@@ -379,7 +373,21 @@ const A2iImageCard = ({
 
         {/* Delete Button - Top Right */}
         {status !== "processing" && (
-          <div className="absolute top-2 right-2 z-30 pointer-events-auto">
+          <div className="absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-2">
+            {status === "failed" && (
+              <TooltipButton
+                tooltip="Retry generation"
+                size="sm"
+                className={cn(isRetrying && "opacity-50 cursor-not-allowed")}
+                onClick={handleRetry}
+                icon={
+                  <RotateCcw
+                    size={12}
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
             <TooltipButton
               tooltip={`Delete ${
                 image ? "image" : video ? "video" : "generation"
