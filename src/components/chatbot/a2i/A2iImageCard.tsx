@@ -112,6 +112,16 @@ const A2iImageCard = ({
   const id = video?.id ?? image?.id;
   const galleryItem = id ? galleryActions.useGalleryItem(id) : undefined;
 
+  // Memoize the item prop to prevent unnecessary re-renders in MediaEditorDialog
+  const stableItem = useMemo(() => {
+    if (!galleryItem?.data) return null;
+    return {
+      ...galleryItem.data,
+      // Ensure input_prompt is populated from parameters.prompt if missing
+      input_prompt: galleryItem.data.input_prompt || parameters.prompt,
+    };
+  }, [galleryItem?.data, parameters.prompt]);
+
   const [isLiked, setIsLiked] = useState(
     galleryItem?.data?.is_favourite || false
   );
@@ -487,14 +497,10 @@ const A2iImageCard = ({
         )}
       </div>
 
-      {galleryItem?.data && !galleryItem.isFetching && (
+      {stableItem && !galleryItem?.isFetching && (
         <MediaEditorDialog
           galleryActions={galleryActions}
-          item={{
-            ...galleryItem.data,
-            // Ensure input_prompt is populated from parameters.prompt if missing
-            input_prompt: galleryItem.data.input_prompt || parameters.prompt,
-          }}
+          item={stableItem}
           open={showEditFeatures}
           onOpenChange={setShowEditFeatures}
           totalItems={1}
