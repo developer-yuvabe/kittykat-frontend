@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { ContentSection } from "../shared/ContentSection";
 import { InlineEditableBadges } from "../shared/InlineEditableBadges";
 import { InlineEditableField } from "../shared/InlineEditableField";
@@ -14,12 +14,13 @@ interface DisplayFieldProps<T extends Record<string, any>> {
 }
 
 export const DisplayField = <T extends Record<string, any>>({
-  title,
+  title: initialTitle,
   agentId,
   json,
   onValueChange,
   showKeyAsLabel = false,
 }: DisplayFieldProps<T>) => {
+  const [title, setTitle] = React.useState<string | undefined>(initialTitle);
   const [data, setData] = React.useState<T>(json);
 
   const handleSave = (key: string, value: any) => {
@@ -165,6 +166,10 @@ export const DisplayField = <T extends Record<string, any>>({
     },
     [handleSave]
   );
+
+  useEffect(() => {
+    setTitle(initialTitle);
+  }, [initialTitle]);
 
   if (!title) {
     return Object.entries(data || {}).map(([key, value]) =>
