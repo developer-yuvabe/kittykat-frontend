@@ -1,11 +1,12 @@
 import { Client } from "@langchain/langgraph-sdk";
 
-export function createClient(apiUrl: string) {
+export function createClient() {
+  if (typeof window === "undefined") {
+    return null;
+  }
   return new Client({
-    apiUrl,
+    apiUrl: new URL("/api/langgraph", window.location.href).href,
   });
 }
 
-export const client = createClient(
-  new URL("/api/langgraph", window.location.href).href
-);
+export const client = createClient();

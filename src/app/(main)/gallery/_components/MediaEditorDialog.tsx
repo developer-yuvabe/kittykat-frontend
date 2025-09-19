@@ -107,11 +107,23 @@ export function MediaEditorDialog({
 
   const revalidateGalleryItemVersions = async (data: GalleryItemResponse) => {
     if (item?.id) {
+      // Update the versions cache for any version that matches
       queryClient.setQueryData(["versions", item.id], (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.map((version: GalleryItemResponse) =>
           version.id === data.id ? data : version
         );
+      });
+
+      if (data.id === item.id) {
+        queryClient.setQueryData(["gallery-item", item.id], data);
+      }
+
+      setCurrentItem((prev) => {
+        if (!prev || prev.id !== data.id) {
+          return prev; // Don't update if it's not the current version
+        }
+        return data; // Update if it's the current version
       });
     }
   };
@@ -144,11 +156,19 @@ export function MediaEditorDialog({
     }
 
     setCurrentItem((prev) => {
+      // If no previous item, set the initial item
       if (!prev) return item;
+
+      // If the item ID changed (navigating to different item), update
+      if (prev.id !== item.id) {
+        return item;
+      }
+      if (prev.id === item.id) {
+        return prev;
+      }
 
       return {
         ...item,
-
         comments: item.comments,
       };
     });
@@ -279,14 +299,22 @@ export function MediaEditorDialog({
           onSuccess(data) {
             // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-            // Replace temporary comment with real comment from server
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
           },
         }
       );
     } catch (error) {
       // Rollback optimistic update on error
-      setCurrentItem(item);
+      setCurrentItem((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comments: prev.comments?.filter((c) => c.id !== tempCommentId) || [],
+        };
+      });
       toast.error("Failed to add comment");
       console.error("Add comment error:", error);
     } finally {
@@ -297,7 +325,6 @@ export function MediaEditorDialog({
   const handleSubmitReply = async (commentId: string) => {
     if (!replyText.trim() && replyAttachments.length === 0) return;
     if (!currentItem?.id || !user?.id) {
-      toast.error("Please log in to add a reply");
       return;
     }
 
@@ -354,12 +381,15 @@ export function MediaEditorDialog({
           onSuccess(data) {
             // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
           },
         }
       );
     } catch (error) {
-      setCurrentItem(item);
+      // Don't reset currentItem on error - preserve the current version
       toast.error("Failed to add reply");
       console.error("Add reply error:", error);
     } finally {
@@ -395,7 +425,10 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             toast.info("Comment updated", { id: toastId });
             setEditingComment(null);
           },
@@ -455,7 +488,10 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             toast.info("Reply updated", { id: toastId });
             setEditingReply(null);
           },
@@ -572,7 +608,10 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             toast.success("Reply deleted");
           },
           onError(error) {
@@ -730,8 +769,10 @@ export function MediaEditorDialog({
               onSuccess(data) {
                 // Update cache with actual server data
                 revalidateGalleryItemVersions(data);
-                // Set the current item to the server response directly
-                setCurrentItem(data);
+                // Only update currentItem if the response is for the current version
+                if (data.id === currentItem?.id) {
+                  setCurrentItem(data);
+                }
               },
             }
           );
@@ -755,11 +796,15 @@ export function MediaEditorDialog({
         },
         {
           onSuccess(data) {
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             revalidateGalleryItemVersions(data);
           },
           onError() {
-            setCurrentItem(item);
+            // Don't reset currentItem on error - preserve the current version
+            // The user should stay on the version they were working on
           },
         }
       );
@@ -953,7 +998,16 @@ export function MediaEditorDialog({
                     item={item}
                     currentVersion={currentItem}
                     onVersionChange={(updatedItem) => {
-                      setCurrentItem(updatedItem);
+                      // If switching to Version 1 (base item), get the latest data from cache
+                      if (updatedItem.id === item.id) {
+                        const cachedItem = queryClient.getQueryData([
+                          "gallery-item",
+                          item.id,
+                        ]) as GalleryItemResponse | undefined;
+                        setCurrentItem(cachedItem || updatedItem);
+                      } else {
+                        setCurrentItem(updatedItem);
+                      }
                     }}
                     ref={versionsRef}
                     versions={versions}

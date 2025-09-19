@@ -87,13 +87,6 @@ export const renderBrandData = (
     newVal: any,
     label?: string
   ) => {
-    console.log(
-      fieldPath,
-      normalizeJsonToString(oldValue),
-      normalizeJsonToString(newVal),
-      label
-    );
-
     const msg = formatUpdateMessage(
       fieldPath,
       normalizeJsonToString(oldValue),

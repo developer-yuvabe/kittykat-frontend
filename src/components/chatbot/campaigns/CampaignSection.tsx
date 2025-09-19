@@ -149,13 +149,6 @@ export const CampaignSection: React.FC<{
     newVal: any,
     label?: string
   ) => {
-    console.log(
-      fieldPath,
-      normalizeJsonToString(oldValue),
-      normalizeJsonToString(newVal),
-      label
-    );
-
     const msg = formatUpdateMessage(
       fieldPath,
       normalizeJsonToString(oldValue),

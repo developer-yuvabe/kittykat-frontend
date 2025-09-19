@@ -81,11 +81,14 @@ export function AskKittykatReviewStatus({
       },
       {
         onSuccess(data) {
-          setCurrentItem(data);
+          // Only update if the response is for the current version
+          if (data.id === item?.id) {
+            setCurrentItem(data);
+          }
           revalidateGalleryItemVersions(data);
         },
         onError() {
-          setCurrentItem(item);
+          // Don't reset currentItem on error - preserve the current version
         },
       }
     );
