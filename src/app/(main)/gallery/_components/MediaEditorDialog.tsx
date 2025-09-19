@@ -1082,6 +1082,9 @@ export function MediaEditorDialog({
                                     onUpdateComment={handleUpdateComment}
                                     onDeleteComment={handleDeleteComment}
                                     onLikeComment={handleLikeComment}
+                                    isDeletingReply={
+                                      galleryActions.isDeletingReply
+                                    }
                                   />
                                   <AskKittykatReplyList
                                     replies={comment.replies}

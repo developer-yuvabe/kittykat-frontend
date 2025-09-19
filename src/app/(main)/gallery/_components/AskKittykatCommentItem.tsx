@@ -25,6 +25,7 @@ interface AskKittykatCommentItemProps {
   onUpdateComment: (commentId: string, text: string) => void;
   onDeleteComment: (commentId: string) => void;
   onLikeComment: (comment: Comment, itemId: string) => void;
+  isDeletingReply?: boolean;
 }
 
 export function AskKittykatCommentItem({
@@ -36,11 +37,14 @@ export function AskKittykatCommentItem({
   onUpdateComment,
   onDeleteComment,
   onLikeComment,
+  isDeletingReply = false,
 }: AskKittykatCommentItemProps) {
   const [editText, setEditText] = useState(comment.text);
   const isEditing = editingCommentId === comment.id;
 
   const { user } = useUserStore();
+
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
 
   const isLiked = (comment?.likes ?? []).includes(user?.id ?? "");
   const likeCount = comment?.likes?.length || 0;
@@ -151,10 +155,10 @@ export function AskKittykatCommentItem({
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <div
                 onClick={() => onLikeComment(comment, itemId)}
-                aria-disabled={isTempComment}
+                aria-disabled={isTempComment || isDeletingComment}
                 className={cn(
                   "flex items-center space-x-1 cursor-pointer transition-opacity",
-                  isTempComment
+                  isTempComment || isDeletingComment
                     ? "opacity-50 cursor-not-allowed pointer-events-none"
                     : ""
                 )}
@@ -171,7 +175,7 @@ export function AskKittykatCommentItem({
                 size="sm"
                 className="h-auto p-0"
                 onClick={() => setReplyingTo(comment.id)}
-                disabled={isTempComment}
+                disabled={isTempComment || isDeletingComment || isDeletingReply}
               >
                 <Reply className="w-3 h-3 mr-1" /> Reply
               </Button>
@@ -187,7 +191,7 @@ export function AskKittykatCommentItem({
                         setEditingComment(comment.id);
                         setEditText(comment.text);
                       }}
-                      disabled={isTempComment}
+                      disabled={isTempComment || isDeletingComment || isDeletingReply}
                     >
                       <Edit className="w-3 h-3 mr-1" /> Edit
                     </Button>
@@ -195,8 +199,11 @@ export function AskKittykatCommentItem({
                       variant="ghost"
                       size="sm"
                       className="h-auto p-0 text-red-600 hover:text-red-700"
-                      onClick={() => onDeleteComment(comment.id)}
-                      disabled={isTempComment}
+                      onClick={() => {
+                        setIsDeletingComment(true);
+                        onDeleteComment(comment.id);
+                      }}
+                      disabled={isTempComment || isDeletingComment || isDeletingReply}
                     >
                       <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>

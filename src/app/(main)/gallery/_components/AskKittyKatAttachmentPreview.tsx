@@ -28,8 +28,8 @@ export function AskKittyKatAttachmentPreview({
             <ZoomableVideo
               src={url}
               className="w-16 h-16 object-cover rounded border cursor-pointer"
-              variant="default" // Use default variant for small previews (includes play/pause button)
-              muted // Ensure videos are muted for previews
+              variant="default"
+              muted
             />
           ) : (
             <ZoomableImage
