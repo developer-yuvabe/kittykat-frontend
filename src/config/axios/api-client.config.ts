@@ -8,7 +8,7 @@ const getClientSideToken = () => {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const token = await user.getIdToken(true);
+          const token = await user.getIdToken();
           resolve(token);
         } catch (error) {
           console.error("Error fetching token:", error);

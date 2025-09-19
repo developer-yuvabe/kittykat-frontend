@@ -113,7 +113,14 @@ const A2iImageInput = ({
     : 0;
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+    async (
+      acceptedFiles: File[],
+      fileRejections: FileRejection[],
+      event: any
+    ) => {
+      if (event?.target) {
+        event.target.value = null;
+      }
       if (fileRejections.length > 0) {
         if (remainingUploads === 0)
           toast.error(
