@@ -191,7 +191,9 @@ export function AskKittykatCommentItem({
                         setEditingComment(comment.id);
                         setEditText(comment.text);
                       }}
-                      disabled={isTempComment || isDeletingComment || isDeletingReply}
+                      disabled={
+                        isTempComment || isDeletingComment || isDeletingReply
+                      }
                     >
                       <Edit className="w-3 h-3 mr-1" /> Edit
                     </Button>
@@ -203,7 +205,9 @@ export function AskKittykatCommentItem({
                         setIsDeletingComment(true);
                         onDeleteComment(comment.id);
                       }}
-                      disabled={isTempComment || isDeletingComment || isDeletingReply}
+                      disabled={
+                        isTempComment || isDeletingComment || isDeletingReply
+                      }
                     >
                       <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>
