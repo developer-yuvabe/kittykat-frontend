@@ -51,7 +51,7 @@ export type RemixControlsProps = {
     url: string;
     size: string;
   };
-  closeDialog: () => void;
+  closeDialog?: () => void;
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   // Add brush size props
   brushSize: number;
@@ -59,6 +59,7 @@ export type RemixControlsProps = {
   brandId?: string;
   source: "a2i" | "media-gallery";
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const RemixControls = ({
@@ -74,6 +75,7 @@ const RemixControls = ({
   onBrushSizeChange,
   brandId,
   campaignId,
+  handleDialogChange,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
@@ -131,6 +133,12 @@ const RemixControls = ({
       ...(baseImageParam?.id ? { [baseImageParam.id]: image.url } : {}),
     },
   });
+
+  useEffect(() => {
+    if (image.url && baseImageParam) {
+      form.setValue("base_image", image.url);
+    }
+  }, [image.url, form]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -317,7 +325,14 @@ const RemixControls = ({
       }
       setImageBlocks([]);
 
-      closeDialog();
+      if (closeDialog) {
+        closeDialog();
+      }
+
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
+      }
     } catch (error) {
       console.error(error);
       if (error instanceof PlatformApiError && error.statusCode === 403) {

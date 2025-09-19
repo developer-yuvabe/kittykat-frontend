@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
 import { BrainIcon, Loader2, X } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { createVtonImage } from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -15,16 +15,18 @@ import ModelSelector from "../ModelSelector";
 import { useA2iForm } from "@/hooks/useA2iForm";
 
 type VirtualTryOnProps = {
-  modelImage: string;
-  closeDialog: () => void;
+  modelImage?: string;
+  closeDialog?: () => void;
   source: "a2i" | "media-gallery";
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const VirtualTryOn = ({
   modelImage,
   closeDialog,
   campaignId,
+  handleDialogChange,
 }: VirtualTryOnProps) => {
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
@@ -53,7 +55,13 @@ const VirtualTryOn = ({
     setLoading(true);
     try {
       await createVtonImage(selectedBrandId!, campaignId || null, data);
-      closeDialog();
+      if (closeDialog) {
+        closeDialog();
+      }
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
+      }
     } catch (error) {
       console.error("VTON Generation Error:", error);
       if (error instanceof PlatformApiError && error.statusCode === 403) {
@@ -70,6 +78,12 @@ const VirtualTryOn = ({
   const productImage = productImageParam
     ? form.watch(productImageParam?.id)
     : null;
+
+  useEffect(() => {
+    if (modelImage) {
+      form.setValue("model_image", modelImage);
+    }
+  }, [modelImage, form]);
 
   return (
     <Form {...form}>

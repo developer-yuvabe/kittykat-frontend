@@ -31,13 +31,15 @@ import { toast } from "sonner";
 import { useA2iForm } from "@/hooks/useA2iForm";
 
 interface VideoGenerationInputProps {
-  item: GalleryItemResponse;
+  item: GalleryItemResponse | null;
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 }
 
 const VideoGenerationInput = ({
   item,
   campaignId,
+  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
@@ -61,7 +63,8 @@ const VideoGenerationInput = ({
         <VideoGenerationInputControls
           item={item}
           campaignId={campaignId}
-          key={item.id}
+          key={item?.id}
+          handleDialogChange={handleDialogChange}
         />
       )}
     </div>
@@ -71,6 +74,7 @@ const VideoGenerationInput = ({
 const VideoGenerationInputControls = ({
   item,
   campaignId,
+  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -83,9 +87,9 @@ const VideoGenerationInputControls = ({
     selectedModel: selectedVideoGenearationModel,
     formKey: "videoGenForm",
     dynamicDefualtValues: {
-      start_image: item.asset_url,
-      first_frame: item.asset_url,
-      image: item.asset_url,
+      start_image: item?.asset_url,
+      first_frame: item?.asset_url,
+      image: item?.asset_url,
     },
   });
   const { credits, isCalculatingCredits } = useModelPricing({
@@ -142,16 +146,21 @@ const VideoGenerationInputControls = ({
 
   const onSubmit = async (data: Record<string, any>) => {
     try {
-      if (!selectedBrandId && !item.brand_id) {
+      if (!selectedBrandId && !item?.brand_id) {
         throw new Error("Brand ID is missing.");
       }
       const { generation_id } = await videoGenerationService(
-        selectedBrandId || item.brand_id,
+        selectedBrandId || item?.brand_id || "",
         data,
         campaignId ?? undefined
       );
 
       addCurrentSessionGenerationId(generation_id);
+
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
+      }
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
