@@ -344,7 +344,7 @@ const A2iImageInput = ({
   }, [numberOfReferenceImagesUploaded, value, form]);
 
   return (
-    <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 pb-4">
+    <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {imageBlocks.length > 0 && (

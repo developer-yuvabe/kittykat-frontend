@@ -87,14 +87,10 @@ const VideoGenerationInputControls = ({
     selectedModel: selectedVideoGenearationModel,
     formKey: "videoGenForm",
     dynamicDefualtValues: {
-      start_image: item?.asset_url,
-      first_frame: item?.asset_url,
-      image: item?.asset_url,
+      start_image: item?.asset_url || null,
+      first_frame: item?.asset_url || null,
+      image: item?.asset_url || null,
     },
-  });
-  const { credits, isCalculatingCredits } = useModelPricing({
-    form,
-    model: selectedVideoGenearationModel,
   });
 
   const {
@@ -143,6 +139,14 @@ const VideoGenerationInputControls = ({
       advancedParams,
     };
   }, [selectedVideoGenearationModel]);
+
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: selectedVideoGenearationModel,
+    enabled: firstFrameParam?.required
+      ? !!form.getValues(firstFrameParam?.id ?? "")
+      : true,
+  });
 
   const onSubmit = async (data: Record<string, any>) => {
     try {
@@ -383,11 +387,10 @@ const VideoGenerationInputControls = ({
                     <div className="flex gap-x-1 items-center text-sm">
                       <p>Generate</p>
                       <p>
-                        {isCalculatingCredits ? (
+                        {isCalculatingCredits && (
                           <Loader2 className="animate-spin h-4 w-4" />
-                        ) : (
-                          `(${credits} credits)`
                         )}
+                        {credits > 0 && `(${credits} credits)`}
                       </p>
                     </div>
                   )}
