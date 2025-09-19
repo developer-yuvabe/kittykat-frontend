@@ -160,7 +160,7 @@ export const CampaignSection: React.FC<{
       fieldPath,
       normalizeJsonToString(oldValue),
       normalizeJsonToString(newVal),
-      Agents.BRANDING_AGENT,
+      Agents.CAMPAIGN_AGENT,
       label ??
         fieldPath
           .split(".")
@@ -432,7 +432,7 @@ export const CampaignSection: React.FC<{
                                     : null,
                                 }}
                                 title={capitalizeKey(key)}
-                                agentId={Agents.BRANDING_AGENT}
+                                agentId={Agents.CAMPAIGN_AGENT}
                                 onValueChange={(subKey, oldValue, newValue) => {
                                   handleFieldUpdate(
                                     `dynamic.${key}`,
