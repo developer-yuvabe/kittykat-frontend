@@ -124,8 +124,6 @@ function MoodboardTagResults({
     }
 
     try {
-      console.log("Starting screenshot capture...");
-
       // Add a timeout wrapper for the entire screenshot operation
       const screenshotPromise = galleryGridRef.current.captureScreenshot();
       const timeoutPromise = new Promise<string | null>((_, reject) => {

@@ -289,8 +289,6 @@ export function MediaUploadDropzone({
           scrape_only: false,
         };
 
-        console.log(bulkUploadPayload);
-
         await galleryActions.bulkUpload(bulkUploadPayload);
         toast.success(
           `${validUrls.length} URL(s) uploaded to gallery successfully!`

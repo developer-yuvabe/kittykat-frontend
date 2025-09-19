@@ -135,7 +135,6 @@ export default function ModelSelector({
                                 rel="noreferrer"
                                 href={href}
                                 onPointerDown={(e) => {
-                                  console.log(href);
                                   window.open(href, "_blank");
 
                                   e.preventDefault();
