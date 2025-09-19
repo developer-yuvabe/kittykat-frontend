@@ -171,7 +171,7 @@ export function ConceptVisualEditor({
         <DialogHeader className="px-6 py-4 bg-white border-b flex-shrink-0 z-10">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-semibold">
-              Concept Visual Editor
+              Visual Editor
             </DialogTitle>
             <div className="flex items-center gap-4">
               <MediaUploadBrandSelector
