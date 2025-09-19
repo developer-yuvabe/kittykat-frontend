@@ -16,6 +16,8 @@ const getClientSideToken = () => {
         }
       } else {
         console.error("No user is signed in.");
+        await fetch("/api/logout");
+        window.location.href = "/login";
         resolve(null);
       }
     });
