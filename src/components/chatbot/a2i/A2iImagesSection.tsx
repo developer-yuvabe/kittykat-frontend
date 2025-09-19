@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
+import { useQueryState } from "nuqs";
 
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
@@ -25,6 +26,7 @@ const A2iImagesSection = function A2iImagesSection({
 
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTo, setScrollTo] = useQueryState("scrollTo");
 
   useEffect(() => {
     if (
@@ -34,6 +36,19 @@ const A2iImagesSection = function A2iImagesSection({
       setGenerations(a2iImageInformation.generations);
     }
   }, [a2iImageInformation?.generations]);
+
+  // 👇 scroll on mount if query param matches
+  useEffect(() => {
+    if (scrollTo === "a2i" && formRef.current) {
+      formRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      // reset so it doesn’t scroll again unnecessarily
+      setScrollTo(null);
+    }
+  }, [scrollTo, setScrollTo]);
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
