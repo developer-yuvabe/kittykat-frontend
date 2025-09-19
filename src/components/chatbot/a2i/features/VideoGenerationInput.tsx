@@ -74,7 +74,6 @@ const VideoGenerationInput = ({
 const VideoGenerationInputControls = ({
   item,
   campaignId,
-  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -159,12 +158,11 @@ const VideoGenerationInputControls = ({
         campaignId ?? undefined
       );
 
+      console.log(generation_id + " video generation started");
+
       addCurrentSessionGenerationId(generation_id);
 
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
-      }
+      form.reset();
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
