@@ -331,7 +331,7 @@ const A2iImageCard = ({
             {remixParameters && (
               <div className="flex gap-6">
                 <img
-                  src={remixParameters.base_image}
+                  src={remixParameters.base_image || remixParameters.image}
                   alt="Base"
                   className="w-16 h-16 object-cover rounded-md"
                 />

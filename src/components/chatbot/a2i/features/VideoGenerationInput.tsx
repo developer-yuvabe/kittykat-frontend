@@ -74,7 +74,6 @@ const VideoGenerationInput = ({
 const VideoGenerationInputControls = ({
   item,
   campaignId,
-  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -87,14 +86,10 @@ const VideoGenerationInputControls = ({
     selectedModel: selectedVideoGenearationModel,
     formKey: "videoGenForm",
     dynamicDefualtValues: {
-      start_image: item?.asset_url,
-      first_frame: item?.asset_url,
-      image: item?.asset_url,
+      start_image: item?.asset_url || null,
+      first_frame: item?.asset_url || null,
+      image: item?.asset_url || null,
     },
-  });
-  const { credits, isCalculatingCredits } = useModelPricing({
-    form,
-    model: selectedVideoGenearationModel,
   });
 
   const {
@@ -144,6 +139,14 @@ const VideoGenerationInputControls = ({
     };
   }, [selectedVideoGenearationModel]);
 
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: selectedVideoGenearationModel,
+    enabled: firstFrameParam?.required
+      ? !!form.getValues(firstFrameParam?.id ?? "")
+      : true,
+  });
+
   const onSubmit = async (data: Record<string, any>) => {
     try {
       if (!selectedBrandId && !item?.brand_id) {
@@ -155,12 +158,11 @@ const VideoGenerationInputControls = ({
         campaignId ?? undefined
       );
 
+      console.log(generation_id + " video generation started");
+
       addCurrentSessionGenerationId(generation_id);
 
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
-      }
+      form.reset();
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
@@ -383,11 +385,10 @@ const VideoGenerationInputControls = ({
                     <div className="flex gap-x-1 items-center text-sm">
                       <p>Generate</p>
                       <p>
-                        {isCalculatingCredits ? (
+                        {isCalculatingCredits && (
                           <Loader2 className="animate-spin h-4 w-4" />
-                        ) : (
-                          `(${credits} credits)`
                         )}
+                        {credits > 0 && `(${credits} credits)`}
                       </p>
                     </div>
                   )}

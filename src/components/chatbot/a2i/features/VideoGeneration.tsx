@@ -56,7 +56,8 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
   useEffect(() => {
     const filteredGenerations = generations.filter(
       (gen) =>
-        gen.type === "video" && currentSessionGenerationIds.includes(gen.id)
+        gen.type === "video_generation" &&
+        currentSessionGenerationIds.includes(gen.id)
     );
     setCurrentSessionGenerations((prev) => {
       // Find a generation that was "processing" before but now is "completed"
