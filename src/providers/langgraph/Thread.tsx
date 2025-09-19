@@ -31,6 +31,9 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
 
   const getThreads = useCallback(async (): Promise<Thread[]> => {
     try {
+      if (!client) {
+        return [];
+      }
       const threads = await client.threads.search({
         metadata: {
           ...getThreadSearchMetadata(KITTYKAT_AGENT_ID),
