@@ -29,11 +29,10 @@ interface AskKittyKatTaskListProps {
   newComment?: string;
   newCommentAttachments?: string[];
   onTasksGenerated?: (tasks: Task[]) => void;
-  onTaskUpdate?: (tasks: Task[]) => void; // Callback to update parent's task state
+  onTaskUpdate?: (tasks: Task[]) => void;
   showCredits?: boolean;
   autoGenerate?: boolean;
-  tasks?: Task[]; // Allow external tasks to be passed in
-  // Simplified attachment management
+  tasks?: Task[];
   allAttachments?: string[];
   onAllAttachmentsChange?: (attachments: string[]) => void;
   brandId?: string | null;
@@ -61,7 +60,6 @@ export function AskKittyKatTaskList({
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Use external tasks if provided, otherwise empty array
   const tasks = externalTasks || [];
 
   const hasExistingComments = comments && comments.length > 0;
@@ -490,8 +488,6 @@ export function AskKittyKatTaskList({
                 <AskKittyKatAttachmentPreview
                   attachments={[...allAttachments, ...newCommentAttachments]}
                   onRemoveAttachment={(index) => {
-                    // Handle removal - if index is within allAttachments, remove from there
-                    // If beyond, it's from newCommentAttachments (but we don't allow removal of newCommentAttachments here)
                     if (index < allAttachments.length) {
                       handleRemoveAttachment(index);
                     }
@@ -512,8 +508,5 @@ export function AskKittyKatTaskList({
       </div>
     );
   }
-
-  // Generate button for manual generation
-
   return null;
 }
