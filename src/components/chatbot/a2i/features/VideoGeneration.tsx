@@ -211,10 +211,15 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
                   )}
                 </>
               ) : gen.status === "failed" ? (
-                <div className="bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none w-32 h-32 flex items-center justify-center">
+                <div className="bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 animate-none w-32 h-32 flex flex-col space-y-4 items-center justify-center">
                   <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
                     Failed
                   </Badge>
+                  {gen.is_nsfw_detected && (
+                    <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
+                      NSFW detected
+                    </Badge>
+                  )}
                 </div>
               ) : gen.status === "processing" ? (
                 <div className="w-32 h-32 relative">
