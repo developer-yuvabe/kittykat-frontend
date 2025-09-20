@@ -38,7 +38,7 @@ export function useDynamicModelSchema(
     }
 
     if (!isRequired) {
-      schema = schema.optional();
+      schema = schema.optional().nullable();
     }
 
     fieldSchemas[id] = schema;
