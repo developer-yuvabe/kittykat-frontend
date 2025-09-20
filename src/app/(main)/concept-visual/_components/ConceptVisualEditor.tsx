@@ -186,6 +186,7 @@ export function ConceptVisualEditor({
                 preSelectedBrandId={selectedBrandId}
                 setInitialWorkflowStatus={async () => new URLSearchParams()}
                 setInitialBrandId={async () => new URLSearchParams()}
+                isConceptVisualEditor={true}
               />
               <Button
                 variant="ghost"

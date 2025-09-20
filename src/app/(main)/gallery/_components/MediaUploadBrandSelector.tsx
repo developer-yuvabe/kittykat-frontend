@@ -54,6 +54,7 @@ interface BrandSelectorProps {
     value: string | ((old: string | null) => string | null) | null,
     options?: Options
   ) => Promise<URLSearchParams>;
+  isConceptVisualEditor?: boolean;
 }
 
 export function MediaUploadBrandSelector({
@@ -67,6 +68,7 @@ export function MediaUploadBrandSelector({
   preSelectedBrandId,
   setInitialBrandId,
   setInitialWorkflowStatus,
+  isConceptVisualEditor = false,
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -216,7 +218,11 @@ export function MediaUploadBrandSelector({
   return (
     <div className="" onClick={(e) => e.stopPropagation()}>
       <div className="w-80">
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={open}
+          onOpenChange={setOpen}
+          modal={isConceptVisualEditor}
+        >
           <div className="relative inline-block w-full">
             {/* Label positioned above the selector */}
             <span
