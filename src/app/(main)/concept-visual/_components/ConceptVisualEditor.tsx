@@ -153,7 +153,7 @@ export function ConceptVisualEditor({
       setCurrentItem(null); // reset item on close
     }
     onOpenChange(isOpen);
-    router.push("/");
+    router.push("/?scrollTo=a2i");
   };
 
   const handleManualClose = () => {
