@@ -152,7 +152,8 @@ export type A2iImageGeneration = {
     product_image: string;
   };
   remix_parameters?: {
-    base_image: string;
+    base_image?: string;
+    image?: string;
     reference_images: string[];
   };
   upscale_parameters?: {

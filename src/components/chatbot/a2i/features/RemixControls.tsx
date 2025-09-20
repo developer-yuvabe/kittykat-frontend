@@ -130,15 +130,19 @@ const RemixControls = ({
     selectedModel: selectedRemixModel,
     formKey: "remixForm",
     dynamicDefualtValues: {
-      ...(baseImageParam?.id ? { [baseImageParam.id]: image.url } : {}),
+      ...(baseImageParam?.id && image.url
+        ? { [baseImageParam.id]: image.url }
+        : {}),
     },
   });
 
   useEffect(() => {
+    console.log(image);
+    console.log(baseImageParam);
     if (image.url && baseImageParam) {
-      form.setValue("base_image", image.url);
+      form.setValue(baseImageParam.id, image.url);
     }
-  }, [image.url, form]);
+  }, [image]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,

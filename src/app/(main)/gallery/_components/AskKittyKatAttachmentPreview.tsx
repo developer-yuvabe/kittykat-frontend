@@ -4,6 +4,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import { isVideoUrl } from "@/types/gallery.types";
+import ZoomableVideo from "@/components/ui/zoomable-video";
 
 interface AskKittyKatAttachmentPreviewProps {
   attachments: string[];
@@ -22,10 +24,19 @@ export function AskKittyKatAttachmentPreview({
     <div className="flex flex-row gap-x-2">
       {attachments.map((url, idx) => (
         <div key={idx} className="relative group">
-          <ZoomableImage
-            src={url}
-            className="w-16 h-16 object-cover rounded border cursor-pointer"
-          />
+          {isVideoUrl(url) ? (
+            <ZoomableVideo
+              src={url}
+              className="w-16 h-16 object-cover rounded border cursor-pointer"
+              variant="default"
+              muted
+            />
+          ) : (
+            <ZoomableImage
+              src={url}
+              className="w-16 h-16 object-cover rounded border cursor-pointer"
+            />
+          )}
           {!readonly && (
             <Button
               size="sm"

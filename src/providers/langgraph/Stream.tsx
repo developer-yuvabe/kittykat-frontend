@@ -101,7 +101,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     const initializeParams = async () => {
       try {
-        if (user?.thread_id) {
+        if (user?.thread_id && client) {
           try {
             const threadData = await client.threads.get<StateType>(
               user.thread_id
