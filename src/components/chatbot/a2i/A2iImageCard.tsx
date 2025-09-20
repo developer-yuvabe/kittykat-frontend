@@ -1,33 +1,34 @@
+import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 import { Ripple } from "@/components/magicui/ripple";
+import { ImageModal } from "@/components/shared/ImageModal";
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon } from "@/components/ui/custom-icon";
+import { TooltipButton } from "@/components/ui/tooltip-button";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
+import { deleteA2iImage } from "@/services/api/a2i.service";
+import { retryGeneration } from "@/services/api/genration.service";
+import { deleteA2iVideo } from "@/services/api/video-gen.service";
+import { useBrandStore } from "@/store/brand.store";
 import {
   A2iImageDetail,
   A2iImageGeneration,
   ThreadDetails,
 } from "@/types/types";
 import {
+  CheckIcon,
   CopyIcon,
   HeartIcon,
   PauseCircle,
-  PlayCircle,
-  X,
   PencilIcon,
-  CheckIcon,
+  PlayCircle,
+  RotateCcw,
+  X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { TooltipButton } from "@/components/ui/tooltip-button";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { deleteA2iImage } from "@/services/api/a2i.service";
-import { useBrandStore } from "@/store/brand.store";
-import { CSSProperties } from "react";
-import { deleteA2iVideo } from "@/services/api/video-gen.service";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
-import { ImageModal } from "@/components/shared/ImageModal";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -76,6 +77,7 @@ const A2iImageCard = ({
   const [showEditFeatures, setShowEditFeatures] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const { selectedBrandId } = useBrandStore();
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -109,6 +111,16 @@ const A2iImageCard = ({
 
   const id = video?.id ?? image?.id;
   const galleryItem = id ? galleryActions.useGalleryItem(id) : undefined;
+
+  // Memoize the item prop to prevent unnecessary re-renders in MediaEditorDialog
+  const stableItem = useMemo(() => {
+    if (!galleryItem?.data) return null;
+    return {
+      ...galleryItem.data,
+      // Ensure input_prompt is populated from parameters.prompt if missing
+      input_prompt: galleryItem.data.input_prompt || parameters.prompt,
+    };
+  }, [galleryItem?.data, parameters.prompt]);
 
   const [isLiked, setIsLiked] = useState(
     galleryItem?.data?.is_favourite || false
@@ -182,6 +194,20 @@ const A2iImageCard = ({
       setIsDeleting(false);
     });
   };
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+
+    toast.promise(retryGeneration(generationId, selectedBrandId!), {
+      loading: "Retrying generation...",
+      success: "Generation retried successfully!",
+      error: "Failed to retry generation. Please try again.",
+      finally: () => {
+        setIsRetrying(false);
+      },
+    });
+  };
+
   useEffect(() => {
     setIsLiked(galleryItem?.data?.is_favourite || false);
   }, [galleryItem?.data?.is_favourite]);
@@ -305,7 +331,7 @@ const A2iImageCard = ({
             {remixParameters && (
               <div className="flex gap-6">
                 <img
-                  src={remixParameters.base_image}
+                  src={remixParameters.base_image || remixParameters.image}
                   alt="Base"
                   className="w-16 h-16 object-cover rounded-md"
                 />
@@ -326,9 +352,11 @@ const A2iImageCard = ({
               </div>
             )}
             {status === "failed" && (
-              <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
-                Failed
-              </Badge>
+              <div className="flex flex-col gap-y-2 items-center">
+                <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground">
+                  Failed
+                </Badge>
+              </div>
             )}
             {status === "failed" && isNSFW && (
               <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground absolute bottom-4">
@@ -355,7 +383,21 @@ const A2iImageCard = ({
 
         {/* Delete Button - Top Right */}
         {status !== "processing" && (
-          <div className="absolute top-2 right-2 z-30 pointer-events-auto">
+          <div className="absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-2">
+            {status === "failed" && (
+              <TooltipButton
+                tooltip="Retry generation"
+                size="sm"
+                className={cn(isRetrying && "opacity-50 cursor-not-allowed")}
+                onClick={handleRetry}
+                icon={
+                  <RotateCcw
+                    size={12}
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
             <TooltipButton
               tooltip={`Delete ${
                 image ? "image" : video ? "video" : "generation"
@@ -455,14 +497,10 @@ const A2iImageCard = ({
         )}
       </div>
 
-      {galleryItem?.data && !galleryItem.isFetching && (
+      {stableItem && !galleryItem?.isFetching && (
         <MediaEditorDialog
           galleryActions={galleryActions}
-          item={{
-            ...galleryItem.data,
-            // Ensure input_prompt is populated from parameters.prompt if missing
-            input_prompt: galleryItem.data.input_prompt || parameters.prompt,
-          }}
+          item={stableItem}
           open={showEditFeatures}
           onOpenChange={setShowEditFeatures}
           totalItems={1}

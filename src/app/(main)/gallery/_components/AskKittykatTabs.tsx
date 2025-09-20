@@ -43,10 +43,12 @@ const tabItems = [
 
 interface AskKittykatTabsProps {
   isVideoAsset?: boolean;
+  isConceptVisualEditor?: boolean;
 }
 
 export function AskKittykatTabs({
   isVideoAsset = false,
+  isConceptVisualEditor = false,
 }: AskKittykatTabsProps) {
   return (
     <TabsList
@@ -54,7 +56,10 @@ export function AskKittykatTabs({
       variant="icon-grid"
     >
       {tabItems.map((item) => {
-        const isDisabled = isVideoAsset && item.imageOnly;
+        const isDisabled =
+          (isVideoAsset && item.imageOnly) ||
+          (isConceptVisualEditor && item.key === "ask-kittykat");
+
         return (
           <TabsTrigger
             key={item.key}
@@ -63,7 +68,11 @@ export function AskKittykatTabs({
             disabled={isDisabled}
             className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
             title={
-              isDisabled ? "This feature is only available for images" : ""
+              isDisabled
+                ? item.key === "ask-kittykat"
+                  ? "Kittykat Experts is disabled in Concept Visual Editor"
+                  : "This feature is only available for images"
+                : ""
             }
           >
             <div className="transition-colors">{item.icon}</div>

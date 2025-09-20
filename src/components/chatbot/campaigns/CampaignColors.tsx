@@ -37,7 +37,9 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
   const stream = useStreamContext();
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
-  const validColors = colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color));
+  const [validColors, setValidColors] = useState(
+    colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color))
+  );
   if (validColors.length === 0) return null;
 
   const handleEditClick = (idx: number) => {
@@ -64,6 +66,8 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
 
     const newColorArray = [...validColors];
     newColorArray[editingIndex] = newColor;
+
+    setValidColors(newColorArray);
 
     const msg = formatUpdateArrayMessage(
       "colors",

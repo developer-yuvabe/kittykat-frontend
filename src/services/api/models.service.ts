@@ -11,19 +11,14 @@ export const getModels = async (): Promise<Model[]> => {
   }
 };
 
-export const estimatePricing = async (
-  model_data: Record<string, string>
-): Promise<number> => {
+export const estimatePricing = async (model_data: Record<string, string>) => {
   try {
-    const data = await handleApiRequest<{
-      credits: number;
-    }>(
-      axiosInstance.post(`/models/estimate-credits`, {
+    const credits = await handleApiRequest<number | null>(
+      axiosInstance.post(`/credits/estimate/image-generation`, {
         ...model_data,
       })
     );
-
-    return data.credits;
+    return credits;
   } catch (error) {
     console.error("Error estimating pricing:", error);
     throw error;

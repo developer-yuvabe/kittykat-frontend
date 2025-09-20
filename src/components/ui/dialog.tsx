@@ -9,6 +9,11 @@ import { cn } from "@/lib/utils";
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  React.useEffect(() => {
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
@@ -58,6 +63,8 @@ function DialogContent({
   hideCloseIcon = false,
   ...props
 }: DialogContentProps) {
+  // Safety cleanup on unmount
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />

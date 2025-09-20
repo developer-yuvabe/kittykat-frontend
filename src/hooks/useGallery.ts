@@ -596,7 +596,11 @@ export const useGalleryQuery = (
       commentData,
     }: {
       itemId: string;
-      commentData: { text: string; attachments?: string[] };
+      commentData: {
+        text: string;
+        attachments?: string[];
+        is_tasklist?: boolean;
+      };
     }) => galleryService.addCommentToGalleryItem(itemId, commentData),
 
     onSuccess: (updatedItem) => {
@@ -797,9 +801,9 @@ export const useGalleryQuery = (
 
     onMutate: async (reorderData) => {
       const queryKey = getGalleryQueryKey();
-      
+
       await queryClient.cancelQueries({ queryKey });
-      
+
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
         if (!old) return old;
@@ -808,17 +812,22 @@ export const useGalleryQuery = (
           ...old,
           pages: old.pages.map((page: any) => ({
             ...page,
-            gallery_items: page.gallery_items.map((item: GalleryItemResponse) => {
-              const reorderItem = reorderData.find(r => r.id === item.id);
-              if (reorderItem) {
-                return { ...item, brand_sort_order: reorderItem.brand_sort_order };
-              }
-              return item;
-            })
-            // Sort by brand_sort_order after update
-            .sort((a: GalleryItemResponse, b: GalleryItemResponse) => 
-              (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
-            ),
+            gallery_items: page.gallery_items
+              .map((item: GalleryItemResponse) => {
+                const reorderItem = reorderData.find((r) => r.id === item.id);
+                if (reorderItem) {
+                  return {
+                    ...item,
+                    brand_sort_order: reorderItem.brand_sort_order,
+                  };
+                }
+                return item;
+              })
+              // Sort by brand_sort_order after update
+              .sort(
+                (a: GalleryItemResponse, b: GalleryItemResponse) =>
+                  (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
+              ),
           })),
         };
 

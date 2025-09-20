@@ -81,13 +81,35 @@ export const getAssetTypeFromFile = (file: File): string => {
 };
 
 // Helper function to determine asset type from URL
-export const getAssetTypeFromUrl = (url: string): string => {
+export const getAssetTypeFromUrl = async (url: string) => {
   const extension = url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase();
   if (["mp4", "mov", "avi", "webm"].includes(extension || "")) return "video";
   if (["png", "jpg", "jpeg", "svg", "gif", "webp"].includes(extension || ""))
     return "image";
-  return "image"; // fallback
+
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return getAssetTypeFromBlob(blob);
 };
+
+export const getAssetTypeFromUrlCooked = (url: string) => {
+  const extension = url.split(".").pop()?.split(/#|\?/)[0]?.toLowerCase();
+  if (["mp4", "mov", "avi", "webm"].includes(extension || "")) return "video";
+  if (["png", "jpg", "jpeg", "svg", "gif", "webp"].includes(extension || ""))
+    return "image";
+
+  return "image";
+};
+
+async function getAssetTypeFromBlob(blob: Blob) {
+  const mimeType = blob.type;
+  if (!mimeType) throw new Error("Unable to determine MIME type from blob");
+
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+
+  throw new Error("Unsupported MIME type: " + mimeType);
+}
 
 // Helper function to create gallery item from uploaded file
 export const createGalleryItemFromFile = async (

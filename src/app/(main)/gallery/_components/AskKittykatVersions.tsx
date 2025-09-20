@@ -12,6 +12,7 @@ import { RefObject, useEffect, useState } from "react";
 type VersionState = {
   itemId: string;
   hasInitialized: boolean;
+  lastSelectedVersionId: string | null;
 };
 
 type AskKittykatVersionsProps = {
@@ -33,6 +34,7 @@ const AskKittykatVersions = ({
   const [versionState, setVersionState] = useState<VersionState>({
     itemId: item.id,
     hasInitialized: false,
+    lastSelectedVersionId: null,
   });
 
   useEffect(() => {
@@ -41,19 +43,25 @@ const AskKittykatVersions = ({
       setVersionState({
         itemId: item.id,
         hasInitialized: false,
+        lastSelectedVersionId: null,
       });
       return;
     }
 
-    // Initialize with latest version when data loads
+    // Initialize with latest version when data loads for the first time
     if (
       versions?.data?.length &&
       !versionState.hasInitialized &&
-      !versions.isFetching
+      !versions.isFetching &&
+      !currentVersion // Only initialize if no version is currently selected
     ) {
       const latestVersion = versions.data[versions.data.length - 1];
       onVersionChange(latestVersion);
-      setVersionState((prev) => ({ ...prev, hasInitialized: true }));
+      setVersionState((prev) => ({
+        ...prev,
+        hasInitialized: true,
+        lastSelectedVersionId: latestVersion.id,
+      }));
       return;
     }
 
@@ -63,6 +71,14 @@ const AskKittykatVersions = ({
       versionState.hasInitialized &&
       currentVersion
     ) {
+      // Track if the user manually selected a different version
+      if (currentVersion.id !== versionState.lastSelectedVersionId) {
+        setVersionState((prev) => ({
+          ...prev,
+          lastSelectedVersionId: currentVersion.id,
+        }));
+      }
+
       const updatedVersion =
         versions.data.find((v) => v.id === currentVersion.id) ||
         versions.data.find((v) => v.id === item.id); // fallback to original item

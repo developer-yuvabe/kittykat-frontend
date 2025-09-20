@@ -17,9 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
 import useModelPricing from "@/hooks/useModelPricing";
-import { useRemixForm } from "@/hooks/useRemixForm";
-import { canvasToBlob, delay, PlatformApiError } from "@/lib/utils";
-import { remixImageSchema } from "@/schema/remix.schema";
+import { canvasToBlob, PlatformApiError } from "@/lib/utils";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -29,8 +27,8 @@ import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import {
   BrainIcon,
   Eraser,
+  Images,
   Loader2,
-  Plus,
   Redo,
   Settings2,
   Undo,
@@ -39,9 +37,9 @@ import {
 import React, { useCallback, useEffect, useMemo } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { z } from "zod";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
+import { useA2iForm } from "@/hooks/useA2iForm";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -53,7 +51,7 @@ export type RemixControlsProps = {
     url: string;
     size: string;
   };
-  closeDialog: () => void;
+  closeDialog?: () => void;
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   // Add brush size props
   brushSize: number;
@@ -61,6 +59,7 @@ export type RemixControlsProps = {
   brandId?: string;
   source: "a2i" | "media-gallery";
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const RemixControls = ({
@@ -75,8 +74,8 @@ const RemixControls = ({
   brushSize,
   onBrushSizeChange,
   brandId,
-  source,
   campaignId,
+  handleDialogChange,
 }: RemixControlsProps) => {
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { selectedBrandId } = useBrandStore();
@@ -96,12 +95,12 @@ const RemixControls = ({
     let maskImageParam = null;
 
     for (const param of selectedRemixModel?.parameters || []) {
-      if (["base_image", "image"].includes(param.id)) {
+      if (["base_image", "image"].includes(param.id) && param.type !== "file") {
         baseImageParam = param;
         continue;
       }
 
-      if (["reference_images"].includes(param.id)) {
+      if (["reference_images", "image"].includes(param.id)) {
         referenceImageParam = param as FileParam;
         continue;
       }
@@ -111,7 +110,7 @@ const RemixControls = ({
         continue;
       }
 
-      if (param.category === "initial") {
+      if (param.category === "initial" && param.id !== "prompt") {
         initialParams.push(param);
       } else if (param.category === "advanced") {
         advancedParams.push(param);
@@ -127,14 +126,23 @@ const RemixControls = ({
     };
   }, [selectedRemixModel]);
 
-  const form = useRemixForm({
+  const form = useA2iForm({
+    selectedModel: selectedRemixModel,
+    formKey: "remixForm",
     dynamicDefualtValues: {
-      ...(baseImageParam?.id ? { [baseImageParam.id]: image.url } : {}),
-      size: ["1024X1024", "1024x1536", "1536x1024"].includes(image.size)
-        ? image.size
-        : "1024x1024",
+      ...(baseImageParam?.id && image.url
+        ? { [baseImageParam.id]: image.url }
+        : {}),
     },
   });
+
+  useEffect(() => {
+    console.log(image);
+    console.log(baseImageParam);
+    if (image.url && baseImageParam) {
+      form.setValue(baseImageParam.id, image.url);
+    }
+  }, [image]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -154,7 +162,15 @@ const RemixControls = ({
     (referenceImageParam?.maxLimit || 0) - imageBlocks.length;
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+    async (
+      acceptedFiles: File[],
+      fileRejections: FileRejection[],
+      event: any
+    ) => {
+      // Reset file input value to allow re-uploading the same file
+      if (event?.target) {
+        event.target.value = null;
+      }
       if (fileRejections.length > 0) {
         if (remainingUploads === 0)
           toast.error(
@@ -267,7 +283,7 @@ const RemixControls = ({
     deleteFile(urlToRemove);
   }
 
-  const onSubmit = async (data: z.infer<typeof remixImageSchema>) => {
+  const onSubmit = async (data: Record<string, any>) => {
     try {
       let maskUrl = null;
 
@@ -308,19 +324,12 @@ const RemixControls = ({
         );
       }
 
-      remixImageService(
+      await remixImageService(
         brandId ?? selectedBrandId!,
         campaignId,
         data,
-        maskUrl,
-        source === "media-gallery"
-      ).catch((error) => {
-        if (error instanceof PlatformApiError && error.statusCode === 403) {
-          setShowInsufficientCreditsModal(true);
-        }
-      });
-
-      await delay(2000);
+        maskUrl
+      );
 
       form.setValue("prompt", "");
       if (referenceImageParam) {
@@ -328,10 +337,22 @@ const RemixControls = ({
       }
       setImageBlocks([]);
 
-      closeDialog();
-    } catch (err) {
-      console.error(err);
-      toast.error("Image remix failed. Please try again later.");
+      if (closeDialog) {
+        closeDialog();
+      }
+
+      if (handleDialogChange) {
+        form.reset();
+        handleDialogChange(false);
+      }
+    } catch (error) {
+      console.error(error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
+
+      toast.error("Failed to remix image. Please try again.");
     }
   };
 
@@ -374,8 +395,26 @@ const RemixControls = ({
     }
   }, [form, selectedRemixModel?.id]);
 
+  // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
+  const value = form.watch("max_images");
+  const numberOfReferenceImagesUploaded = referenceImageParam
+    ? form.watch(referenceImageParam.id)?.length || 0
+    : 0;
+
+  useEffect(() => {
+    const total = numberOfReferenceImagesUploaded + value;
+
+    if (total > 14) {
+      const newValue = Math.max(1, 14 - numberOfReferenceImagesUploaded);
+      form.setValue("max_images", newValue);
+      toast.info(
+        `The maximum number of images to generate has been adjusted to ${newValue} due to the number of reference images uploaded.`
+      );
+    }
+  }, [numberOfReferenceImagesUploaded, value, form]);
+
   return (
-    <div className="w-full flex flex-col gap-y-6">
+    <div className="w-full flex flex-col gap-y-6 p-4">
       <div className="mr-auto w-max">
         <ModelSelector
           selectedModel={selectedRemixModel}
@@ -495,15 +534,26 @@ const RemixControls = ({
                   {referenceImageParam && (
                     <>
                       <input {...getInputProps()} ref={inputFileRef} />
-                      <Button
-                        variant="ghost"
+                      <TooltipIconButton
+                        tooltip={
+                          referenceImageParam.maxLimit - imageBlocks.length <= 0
+                            ? "You’ve reached the maximum upload limit"
+                            : `You can add ${remainingUploads} more image${
+                                remainingUploads > 1 ? "s" : ""
+                              }`
+                        }
+                        className="size-max px-3 py-2"
+                        variant="outline"
                         size="icon"
-                        className=""
                         type="button"
                         onClick={() => inputFileRef.current?.click()}
+                        disabled={
+                          referenceImageParam?.maxLimit - imageBlocks.length <=
+                          0
+                        }
                       >
-                        <Plus />
-                      </Button>
+                        <Images />
+                      </TooltipIconButton>
                     </>
                   )}
                   {initialParams.map((param) => {
@@ -514,6 +564,7 @@ const RemixControls = ({
                         form={form}
                         type="initial"
                         rules={selectedRemixModel?.rules}
+                        source="remix"
                       />
                     );
                   })}
@@ -527,7 +578,7 @@ const RemixControls = ({
                       </PopoverTrigger>
                       <PopoverContent
                         forceMount
-                        align="center"
+                        align="start"
                         side="top"
                         className="space-y-2 w-64"
                       >
@@ -543,6 +594,7 @@ const RemixControls = ({
                                 form={form}
                                 type="advanced"
                                 rules={selectedRemixModel?.rules}
+                                source="remix"
                               />
                             );
                           })}

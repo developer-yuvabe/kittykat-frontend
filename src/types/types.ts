@@ -136,7 +136,13 @@ export type A2iVideoDetail = {
 export type A2iImageGeneration = {
   id: string;
   status: "processing" | "completed" | "failed";
-  type: "a2i" | "vton" | "remix" | "video" | "upscale";
+  type:
+    | "image_generation"
+    | "vton"
+    | "remix"
+    | "video"
+    | "upscale"
+    | "video_generation";
   created_at: string;
   updated_at: string;
   parameters: Record<string, any>;
@@ -146,7 +152,8 @@ export type A2iImageGeneration = {
     product_image: string;
   };
   remix_parameters?: {
-    base_image: string;
+    base_image?: string;
+    image?: string;
     reference_images: string[];
   };
   upscale_parameters?: {
