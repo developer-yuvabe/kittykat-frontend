@@ -162,7 +162,15 @@ const RemixControls = ({
     (referenceImageParam?.maxLimit || 0) - imageBlocks.length;
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+    async (
+      acceptedFiles: File[],
+      fileRejections: FileRejection[],
+      event: any
+    ) => {
+      // Reset file input value to allow re-uploading the same file
+      if (event?.target) {
+        event.target.value = null;
+      }
       if (fileRejections.length > 0) {
         if (remainingUploads === 0)
           toast.error(
