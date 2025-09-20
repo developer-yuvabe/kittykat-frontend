@@ -186,7 +186,6 @@ export function ConceptVisualEditor({
                 preSelectedBrandId={selectedBrandId}
                 setInitialWorkflowStatus={async () => new URLSearchParams()}
                 setInitialBrandId={async () => new URLSearchParams()}
-                isConceptVisualEditor={true}
               />
               <Button
                 variant="ghost"
@@ -244,7 +243,7 @@ export function ConceptVisualEditor({
               onValueChange={setActiveTab}
               className="flex-1 flex flex-col bg-none"
             >
-              <AskKittykatTabs isConceptVisualEditor={true} />
+              <AskKittykatTabs />
 
               <TabsContent value="video-gen">
                 {!isModelsFetched ? (
