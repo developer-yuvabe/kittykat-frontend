@@ -1,3 +1,4 @@
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { ModelParameter, Rule } from "@/types/a2i-media.types";
 import { InfoIcon } from "lucide-react";
 import { FieldValues, UseFormReturn, useWatch } from "react-hook-form";
+import Seedream4SequentailOptions from "./Seedream4SequentailOptions";
 
 type DynamicFormFieldProps<T extends FieldValues> = {
   param: ModelParameter;
@@ -39,6 +41,7 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   form: UseFormReturn<T>;
   type: "initial" | "advanced";
   sliderSuffix?: string;
+  source?: "remix" | "upscale" | "vton";
 };
 
 export const DynamicFormLabel = ({
@@ -66,6 +69,7 @@ export function DynamicFormField<T extends FieldValues>({
   type = "initial",
   rules,
   sliderSuffix,
+  source,
 }: DynamicFormFieldProps<T>) {
   const watchedValues = useWatch({
     control: form.control,
@@ -91,6 +95,15 @@ export function DynamicFormField<T extends FieldValues>({
       hintText: shouldDisable ? matchingRule.hintText : undefined,
     };
   };
+
+  if (
+    watchedValues?.["model"] === "seedream-4-0-250828" &&
+    param.id === "max_images"
+  ) {
+    return watchedValues?.["sequential_image_generation"] === true ? (
+      <Seedream4SequentailOptions form={form} source={source} />
+    ) : null;
+  }
 
   return (
     <FormField
@@ -166,7 +179,7 @@ export function DynamicFormField<T extends FieldValues>({
                     onChange={(value) => field.onChange(value)}
                     min={param.min}
                     max={param.max}
-                    className="w-24"
+                    className="w-full"
                   />
                 </FormControl>
               </FormItem>
@@ -221,7 +234,13 @@ export function DynamicFormField<T extends FieldValues>({
                   optional={!param.required}
                 />
 
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    field.onChange(v);
+                  }}
+                  value={field.value}
+                >
                   <FormControl>
                     <SelectTrigger
                       className={cn("w-full !gap-0", {
@@ -249,49 +268,62 @@ export function DynamicFormField<T extends FieldValues>({
                       "w-max": type === "initial",
                     })}
                   >
-                    {param.options?.map(({ optionValue, optionLabel }) => {
-                      const { disabled, hintText } = getShouldDisableOption(
-                        param.id,
-                        optionValue.toString()
-                      );
+                    {param.options?.map(
+                      ({ optionValue, optionLabel, optionHint }) => {
+                        const { disabled, hintText } = getShouldDisableOption(
+                          param.id,
+                          optionValue.toString()
+                        );
 
-                      if (disabled) {
+                        if (disabled) {
+                          return (
+                            <div
+                              key={optionValue.toString()}
+                              className="focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none pointer-events-auto opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+                            >
+                              <FormLabel className="font-normal">
+                                {optionLabel}
+
+                                {hintText && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger className="cursor-not-allowed self-end">
+                                        <InfoIcon className="w-3 h-3" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {hintText}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </FormLabel>
+                            </div>
+                          );
+                        }
+
                         return (
-                          <div
+                          <SelectItem
                             key={optionValue.toString()}
-                            className="focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none pointer-events-auto opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+                            value={optionValue.toString()}
+                            className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
+                            title={hintText}
                           >
                             <FormLabel className="font-normal">
                               {optionLabel}
-
-                              {hintText && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger className="cursor-not-allowed self-end">
-                                      <InfoIcon className="w-3 h-3" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>{hintText}</TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
                             </FormLabel>
-                          </div>
+                            {optionHint && (
+                              <TooltipIconButton
+                                side="right"
+                                tooltipClassName="max-w-44"
+                                tooltip={optionHint}
+                              >
+                                <InfoIcon />
+                              </TooltipIconButton>
+                            )}
+                          </SelectItem>
                         );
                       }
-
-                      return (
-                        <SelectItem
-                          key={optionValue.toString()}
-                          value={optionValue.toString()}
-                          className="flex items-center gap-3 justify-between px-2 py-3 rounded-md hover:bg-muted w-full"
-                          title={hintText}
-                        >
-                          <FormLabel className="font-normal">
-                            {optionLabel}
-                          </FormLabel>
-                        </SelectItem>
-                      );
-                    })}
+                    )}
                   </SelectContent>
                 </Select>
               </FormItem>

@@ -110,36 +110,48 @@ export default function ZoomableVideo({
     }
   };
 
+  const handleVideoClick = () => {
+    if (videoRef && videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      } else if ((videoRef.current as any).webkitRequestFullscreen) {
+        (videoRef.current as any).webkitRequestFullscreen();
+      } else if ((videoRef.current as any).msRequestFullscreen) {
+        (videoRef.current as any).msRequestFullscreen();
+      }
+    }
+  };
+
   // Render based on variant
   const renderVideo = () => {
     const baseVideoProps = {
       ref: videoRef,
       src: videoUrl,
-      className: cn(
-        "object-contain rounded w-full",
-        variant === "download" && "select-none",
-        className
-      ),
+      className: className,
       muted: true,
       autoPlay: false,
       loop: true,
-      playsInline: true,
-      ...videoProps,
     };
 
     if (variant === "default") {
       return (
         <div className="relative">
-          <video {...baseVideoProps} onClick={togglePlayPause} />
+          {/* Clicking the video itself → fullscreen */}
+          <video {...baseVideoProps} onClick={handleVideoClick} />
+
+          {/* Play/Pause button → only icon in the center, not full overlay */}
           <button
-            className="absolute inset-0 flex items-center justify-center"
-            onClick={togglePlayPause}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            onClick={(e) => {
+              e.stopPropagation(); // prevent fullscreen
+              togglePlayPause();
+            }}
             aria-label={isPlaying ? "Pause video" : "Play video"}
           >
             {isPlaying ? (
-              <PauseCircle className="w-16 h-16 text-white hover:scale-105 transition-transform opacity-0 hover:opacity-100" />
+              <PauseCircle className="w-5 h-5 text-white hover:scale-110 transition-transform" />
             ) : (
-              <PlayCircle className="w-16 h-16 text-white hover:scale-105 transition-transform" />
+              <PlayCircle className="w-5 h-5 text-white hover:scale-110 transition-transform" />
             )}
           </button>
         </div>

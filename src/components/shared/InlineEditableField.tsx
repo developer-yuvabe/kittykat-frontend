@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Check, X, Pencil, Loader2 } from "lucide-react";
-import { useStreamContext } from "@/providers/langgraph/Stream";
+import { Check, Pencil, X } from "lucide-react";
+import { useState } from "react";
 import { TooltipIconButton } from "../thread/tooltip-icon-button";
 
 type InlineEditableFieldProps = {
@@ -14,7 +12,6 @@ type InlineEditableFieldProps = {
   textClassName?: string;
   showLabel?: boolean;
   isTextarea?: boolean;
-  enableEdit?: boolean;
 };
 
 export function InlineEditableField({
@@ -24,32 +21,18 @@ export function InlineEditableField({
   textClassName = "",
   showLabel = false,
   isTextarea = true,
-  enableEdit = true,
 }: InlineEditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputVal, setInputVal] = useState(value);
-  const [isSaving, setIsSaving] = useState(false);
-  const { isLoading } = useStreamContext();
-  const [submitted, setSubmitted] = useState(false);
 
   const handleSave = async () => {
-    setIsSaving(true);
-    setSubmitted(true);
-
     try {
-      await onSave(inputVal);
+      onSave(inputVal);
       setIsEditing(false);
     } catch (err) {
       console.error("Save failed:", err);
     }
   };
-
-  useEffect(() => {
-    if (submitted && !isLoading) {
-      setIsSaving(false);
-      setSubmitted(false);
-    }
-  }, [isLoading, submitted]);
 
   const handleCancel = () => {
     setInputVal(value);
@@ -57,11 +40,11 @@ export function InlineEditableField({
   };
 
   const handleDoubleClick = () => {
-    if (!isSaving) setIsEditing(true);
+    setIsEditing(true);
   };
 
   const handleEditClick = () => {
-    if (!isSaving) setIsEditing(true);
+    setIsEditing(true);
   };
 
   return (
@@ -70,9 +53,7 @@ export function InlineEditableField({
         <span className="font-bold whitespace-nowrap">{label}:</span>
       )}
 
-      {isSaving && isTextarea ? (
-        <Skeleton className="h-9 w-full rounded-md" />
-      ) : isEditing ? (
+      {isEditing ? (
         <div className="flex flex-col sm:flex-row gap-2 w-full">
           {isTextarea ? (
             <Textarea
@@ -97,7 +78,6 @@ export function InlineEditableField({
                 e.stopPropagation();
                 handleSave();
               }}
-              disabled={isSaving}
             >
               <Check className="w-4 h-4" />
             </Button>
@@ -120,12 +100,7 @@ export function InlineEditableField({
         >
           <span className={textClassName}>{value}</span>
           <div className="relative w-4 h-4">
-            {isSaving && !isTextarea ? (
-              <Loader2
-                className="animate-spin mt-[2px] text-purple-700"
-                size={16}
-              />
-            ) : (
+            {
               <TooltipIconButton
                 tooltip="Edit"
                 size={"xs"}
@@ -137,7 +112,7 @@ export function InlineEditableField({
               >
                 <Pencil />
               </TooltipIconButton>
-            )}
+            }
           </div>
         </div>
       )}

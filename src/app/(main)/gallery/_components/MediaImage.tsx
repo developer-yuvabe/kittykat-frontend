@@ -75,8 +75,7 @@ export function MediaImage({
   const handleVideoToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (videoRef.current) {
+    if (videoRef && videoRef.current) {
       if (videoRef.current.paused) {
         videoRef.current.play();
       } else {
@@ -119,37 +118,33 @@ export function MediaImage({
 
   if (isVideo && !videoError) {
     return (
-      <div className="absolute inset-0 w-full h-full group">
+      <div
+        className="relative w-full h-full cursor-pointer"
+        onClick={handleVideoClick}
+        title="Click to fullscreen"
+      >
         <video
           ref={videoRef}
           src={item.preview_url || item.asset_url}
-          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          className="object-contain w-full h-full"
           muted
-          autoPlay={false}
+          autoPlay
           loop
-          playsInline
-          onClick={handleVideoClick}
           style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
             display: videoLoaded ? "block" : "none",
           }}
         />
-
-        {/* Play/Pause button overlay */}
         {videoLoaded && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors pointer-events-auto z-10">
-            <button
-              onClick={handleVideoToggle}
-              aria-label={isVideoPlaying ? "Pause video" : "Play video"}
-            >
-              {isVideoPlaying ? (
-                <PauseCircle className="w-16 h-16 text-white hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
-              ) : (
-                <PlayCircle className="w-16 h-16 text-white hover:scale-105 transition-transform" />
-              )}
-            </button>
-          </div>
+          <button
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"
+            onClick={handleVideoToggle}
+          >
+            {isVideoPlaying ? (
+              <PauseCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
+            ) : (
+              <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
+            )}
+          </button>
         )}
       </div>
     );

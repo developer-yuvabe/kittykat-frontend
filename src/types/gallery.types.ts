@@ -11,6 +11,7 @@ export type Comment = {
   attachments?: string[];
   replies?: CommentReply[];
   likes?: string[];
+  is_tasklist?: boolean;
 };
 
 export type CommentReply = {
@@ -288,3 +289,30 @@ export const VIDEO_FILE_TYPES: Record<string, string[]> = {
   "video/quicktime": [".mov"],
   "video/x-msvideo": [".avi"],
 };
+
+/**
+ * Extracts the file extension from a URL (e.g., ".mp4" from "https://example.com/video.mp4").
+ * Returns null if no extension is found.
+ */
+export function getFileExtension(url: string): string | null {
+  const parts = url.split(".");
+  return parts.length > 1 ? `.${parts.pop()?.toLowerCase()}` : null;
+}
+
+/**
+ * Checks if a URL's extension matches any image file type.
+ */
+export function isImageUrl(url: string): boolean {
+  const ext = getFileExtension(url);
+  if (!ext) return false;
+  return Object.values(IMAGE_FILE_TYPES).some((exts) => exts.includes(ext));
+}
+
+/**
+ * Checks if a URL's extension matches any video file type.
+ */
+export function isVideoUrl(url: string): boolean {
+  const ext = getFileExtension(url);
+  if (!ext) return false;
+  return Object.values(VIDEO_FILE_TYPES).some((exts) => exts.includes(ext));
+}

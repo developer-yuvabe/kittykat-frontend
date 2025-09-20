@@ -5,18 +5,19 @@ import { AppConfig } from "../app.config";
 
 const getClientSideToken = () => {
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      unsubscribe();
-
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const token = await user.getIdToken(true);
+          const token = await user.getIdToken();
           resolve(token);
         } catch (error) {
           console.error("Error fetching token:", error);
           resolve(null);
         }
       } else {
+        console.error("No user is signed in.");
+        await fetch("/api/logout");
+        window.location.href = "/login";
         resolve(null);
       }
     });
@@ -33,6 +34,8 @@ axiosInstance.interceptors.request.use(
     const token = await getClientSideToken();
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+    } else {
+      console.error("No token available for request.");
     }
     return config;
   },

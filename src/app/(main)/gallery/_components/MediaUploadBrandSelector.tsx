@@ -70,7 +70,7 @@ export function MediaUploadBrandSelector({
 }: BrandSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const { setSelectedBrandId } = useBrandStore();
+  const { setSelectedBrandId, isBrandsFetched } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
@@ -216,7 +216,7 @@ export function MediaUploadBrandSelector({
   return (
     <div className="" onClick={(e) => e.stopPropagation()}>
       <div className="w-80">
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal={true}>
           <div className="relative inline-block w-full">
             {/* Label positioned above the selector */}
             <span
@@ -235,6 +235,7 @@ export function MediaUploadBrandSelector({
                   role="combobox"
                   aria-expanded={open}
                   className="w-full justify-between text-sm h-10 hover:bg-white bg-[#F3F4F6FF] shadow-sm"
+                  disabled={!isBrandsFetched}
                 >
                   <div className="flex items-center min-w-0 flex-1">
                     {getDisplayText()}

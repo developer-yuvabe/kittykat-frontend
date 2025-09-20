@@ -8,9 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import MDEditor from "@uiw/react-md-editor";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { X, Paperclip, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  X,
+  Paperclip,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import type {
@@ -38,6 +45,8 @@ import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerat
 import { useModelsStore } from "@/store/models.store";
 import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import { galleryService } from "@/services/api/gallery.service";
+import ZoomableVideo from "@/components/ui/zoomable-video";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 
 interface MediaEditorDialogProps {
   open: boolean;
@@ -98,11 +107,23 @@ export function MediaEditorDialog({
 
   const revalidateGalleryItemVersions = async (data: GalleryItemResponse) => {
     if (item?.id) {
+      // Update the versions cache for any version that matches
       queryClient.setQueryData(["versions", item.id], (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.map((version: GalleryItemResponse) =>
           version.id === data.id ? data : version
         );
+      });
+
+      if (data.id === item.id) {
+        queryClient.setQueryData(["gallery-item", item.id], data);
+      }
+
+      setCurrentItem((prev) => {
+        if (!prev || prev.id !== data.id) {
+          return prev; // Don't update if it's not the current version
+        }
+        return data; // Update if it's the current version
       });
     }
   };
@@ -129,12 +150,29 @@ export function MediaEditorDialog({
   });
 
   useEffect(() => {
-    if (!item) return;
+    if (!item) {
+      setCurrentItem(null);
+      return;
+    }
 
-    setCurrentItem((prev) =>
-      prev ? { ...prev, comments: item.comments } : item
-    );
-  }, [item?.comments]);
+    setCurrentItem((prev) => {
+      // If no previous item, set the initial item
+      if (!prev) return item;
+
+      // If the item ID changed (navigating to different item), update
+      if (prev.id !== item.id) {
+        return item;
+      }
+      if (prev.id === item.id) {
+        return prev;
+      }
+
+      return {
+        ...item,
+        comments: item.comments,
+      };
+    });
+  }, [item]);
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
@@ -209,7 +247,7 @@ export function MediaEditorDialog({
     }
   };
 
-  const handleSubmitComment = async () => {
+  const handleSubmitComment = async (isTasklist = false) => {
     if (!newComment.trim() && attachments.length === 0) return;
     if (!currentItem?.id || !user?.id) {
       toast.error("Please log in to add a comment");
@@ -254,44 +292,29 @@ export function MediaEditorDialog({
           commentData: {
             text: newComment,
             attachments: attachments.length > 0 ? attachments : undefined,
+            ...(isTasklist && { is_tasklist: true }),
           },
         },
         {
           onSuccess(data) {
             // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-            // Replace temporary comment with real comment from server
-            setCurrentItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments?.map((comment) =>
-                      comment.id === tempCommentId
-                        ? data.comments?.find(
-                            (c: Comment) =>
-                              c.text === newComment &&
-                              c.added_by_role === user.role.name
-                          ) || comment
-                        : comment
-                    ),
-                  }
-                : prev
-            );
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
           },
         }
       );
     } catch (error) {
       // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.filter(
-                (comment) => comment.id !== tempCommentId
-              ),
-            }
-          : prev
-      );
+      setCurrentItem((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comments: prev.comments?.filter((c) => c.id !== tempCommentId) || [],
+        };
+      });
       toast.error("Failed to add comment");
       console.error("Add comment error:", error);
     } finally {
@@ -302,7 +325,6 @@ export function MediaEditorDialog({
   const handleSubmitReply = async (commentId: string) => {
     if (!replyText.trim() && replyAttachments.length === 0) return;
     if (!currentItem?.id || !user?.id) {
-      toast.error("Please log in to add a reply");
       return;
     }
 
@@ -345,7 +367,7 @@ export function MediaEditorDialog({
     setReplyAttachments([]);
 
     try {
-      await galleryActions.addReply(
+      galleryActions.addReply(
         {
           itemId: currentItem.id,
           commentId,
@@ -359,54 +381,15 @@ export function MediaEditorDialog({
           onSuccess(data) {
             // Update cache with actual server data
             revalidateGalleryItemVersions(data);
-            // Replace temporary reply with real reply from server
-            setCurrentItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments?.map((comment) =>
-                      comment.id === commentId
-                        ? {
-                            ...comment,
-                            replies: comment.replies?.map((reply) =>
-                              reply.id === tempReplyId
-                                ? data.comments
-                                    ?.find((c) => c.id === commentId)
-                                    ?.replies?.find(
-                                      (r: CommentReply) =>
-                                        r.text === replyText &&
-                                        r.added_by_role === user.role.name
-                                    ) || reply
-                                : reply
-                            ),
-                          }
-                        : comment
-                    ),
-                  }
-                : prev
-            );
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
           },
         }
       );
     } catch (error) {
-      // Rollback optimistic update on error
-      setCurrentItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: prev.comments?.map((comment) =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: comment.replies?.filter(
-                        (reply) => reply.id !== tempReplyId
-                      ),
-                    }
-                  : comment
-              ),
-            }
-          : prev
-      );
+      // Don't reset currentItem on error - preserve the current version
       toast.error("Failed to add reply");
       console.error("Add reply error:", error);
     } finally {
@@ -422,6 +405,17 @@ export function MediaEditorDialog({
         setIsSubmitting(false);
         return;
       }
+
+      // Optimistic update
+      const previousComments = currentItem.comments || [];
+      const optimisticComments = previousComments.map((comment) =>
+        comment.id === commentId ? { ...comment, text } : comment
+      );
+
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: optimisticComments } : prev
+      );
+
       galleryActions.patchComment(
         {
           itemId: currentItem?.id,
@@ -431,8 +425,20 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             toast.info("Comment updated", { id: toastId });
             setEditingComment(null);
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to update comment", { id: toastId });
           },
         }
       );
@@ -454,6 +460,24 @@ export function MediaEditorDialog({
         setIsSubmitting(false);
         return;
       }
+
+      // Optimistic update
+      const previousComments = currentItem.comments || [];
+      const optimisticComments = previousComments.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              replies: (comment.replies || []).map((reply) =>
+                reply.id === replyId ? { ...reply, text } : reply
+              ),
+            }
+          : comment
+      );
+
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: optimisticComments } : prev
+      );
+
       galleryActions.patchReply(
         {
           itemId: currentItem?.id,
@@ -464,8 +488,20 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             toast.info("Reply updated", { id: toastId });
             setEditingReply(null);
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to update reply", { id: toastId });
           },
         }
       );
@@ -481,8 +517,18 @@ export function MediaEditorDialog({
       return;
     }
 
+    // Optimistic update - remove comment immediately
+    const previousComments = currentItem.comments || [];
+    const optimisticComments = previousComments.filter(
+      (comment) => comment.id !== commentId
+    );
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: optimisticComments } : prev
+    );
+
     try {
-      await galleryActions.deleteComment(
+      galleryActions.deleteComment(
         {
           itemId: currentItem?.id,
           commentId,
@@ -507,10 +553,23 @@ export function MediaEditorDialog({
                 }
               );
             }
+            toast.success("Comment deleted");
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to delete comment");
           },
         }
       );
     } catch (error) {
+      // Rollback optimistic update
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: previousComments } : prev
+      );
       console.error(error);
       toast.error("Failed to delete comment");
     }
@@ -522,6 +581,23 @@ export function MediaEditorDialog({
       return;
     }
 
+    // Optimistic update - remove reply immediately
+    const previousComments = currentItem.comments || [];
+    const optimisticComments = previousComments.map((comment) =>
+      comment.id === commentId
+        ? {
+            ...comment,
+            replies: (comment.replies || []).filter(
+              (reply) => reply.id !== replyId
+            ),
+          }
+        : comment
+    );
+
+    setCurrentItem((prev) =>
+      prev ? { ...prev, comments: optimisticComments } : prev
+    );
+
     try {
       galleryActions.deleteReply(
         {
@@ -532,11 +608,29 @@ export function MediaEditorDialog({
         {
           onSuccess(data) {
             revalidateGalleryItemVersions(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
+            toast.success("Reply deleted");
+          },
+          onError(error) {
+            // Rollback optimistic update
+            setCurrentItem((prev) =>
+              prev ? { ...prev, comments: previousComments } : prev
+            );
+            console.error(error);
+            toast.error("Failed to delete reply");
           },
         }
       );
     } catch (error) {
+      // Rollback optimistic update
+      setCurrentItem((prev) =>
+        prev ? { ...prev, comments: previousComments } : prev
+      );
       console.error(error);
+      toast.error("Failed to delete reply");
     }
   };
 
@@ -642,15 +736,56 @@ export function MediaEditorDialog({
     setShowConfirmDialog(true);
   };
 
-  const handleConfirmAskKittyKat = async () => {
+  const [allAttachments, setAllAttachments] = useState<string[]>([]);
+
+  const handleConfirmAskKittyKat = async (newComment?: {
+    text: string;
+    attachments?: string[];
+  }) => {
     try {
       if (!currentItem?.id) {
         setIsSubmitting(false);
         return;
       }
-      setCurrentItem((prev) =>
-        prev ? { ...prev, workflow_status: "request_created" } : prev
-      );
+
+      // If there's a new comment, submit it first
+      if (newComment && user) {
+        setIsSubmitting(true);
+
+        try {
+          galleryActions.addComment(
+            {
+              itemId: currentItem.id,
+              commentData: {
+                text: newComment.text,
+                attachments:
+                  newComment.attachments && newComment.attachments.length > 0
+                    ? newComment.attachments
+                    : undefined,
+                is_tasklist: true,
+              },
+            },
+            {
+              onSuccess(data) {
+                // Update cache with actual server data
+                revalidateGalleryItemVersions(data);
+                // Only update currentItem if the response is for the current version
+                if (data.id === currentItem?.id) {
+                  setCurrentItem(data);
+                }
+              },
+            }
+          );
+        } catch (error) {
+          toast.error("Failed to add comment");
+          console.error("Add comment error:", error);
+          setIsSubmitting(false);
+          return;
+        }
+
+        setIsSubmitting(false);
+      }
+
       galleryActions.patchItem(
         {
           itemId: currentItem?.id,
@@ -661,11 +796,15 @@ export function MediaEditorDialog({
         },
         {
           onSuccess(data) {
-            setCurrentItem(data);
+            // Only update currentItem if the response is for the current version
+            if (data.id === currentItem?.id) {
+              setCurrentItem(data);
+            }
             revalidateGalleryItemVersions(data);
           },
           onError() {
-            setCurrentItem(item);
+            // Don't reset currentItem on error - preserve the current version
+            // The user should stay on the version they were working on
           },
         }
       );
@@ -697,7 +836,6 @@ export function MediaEditorDialog({
     galleryActions.hasNextPage,
     galleryActions.isFetchingNextPage,
   ]);
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -745,6 +883,60 @@ export function MediaEditorDialog({
                     </div>
                   </div>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    // Refetch gallery items
+                    galleryActions.refetchGalleryItems();
+
+                    if (item?.id) {
+                      // Always refetch versions
+                      queryClient.invalidateQueries({
+                        queryKey: ["versions", item.id],
+                      });
+
+                      // Always refetch the main item (version 1)
+                      try {
+                        await galleryService.getGalleryItemById(item.id);
+                      } catch (error) {
+                        console.error(
+                          "Failed to refresh main item data:",
+                          error
+                        );
+                      }
+
+                      // If we're viewing a different version, also refetch that version
+                      if (currentItem?.id && currentItem.id !== item.id) {
+                        try {
+                          const updatedCurrentItem =
+                            await galleryService.getGalleryItemById(
+                              currentItem.id
+                            );
+                          setCurrentItem(updatedCurrentItem);
+                        } catch (error) {
+                          console.error(
+                            "Failed to refresh current version data:",
+                            error
+                          );
+                        }
+                      } else if (currentItem?.id === item.id) {
+                        // If we're viewing version 1, update it with the refetched data
+                        try {
+                          const updatedItem =
+                            await galleryService.getGalleryItemById(item.id);
+                          setCurrentItem(updatedItem);
+                        } catch (error) {
+                          console.error("Failed to refresh item data:", error);
+                        }
+                      }
+                    }
+                  }}
+                  className="p-2 h-8 w-8"
+                  title="Refresh data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -806,7 +998,16 @@ export function MediaEditorDialog({
                     item={item}
                     currentVersion={currentItem}
                     onVersionChange={(updatedItem) => {
-                      setCurrentItem(updatedItem);
+                      // If switching to Version 1 (base item), get the latest data from cache
+                      if (updatedItem.id === item.id) {
+                        const cachedItem = queryClient.getQueryData([
+                          "gallery-item",
+                          item.id,
+                        ]) as GalleryItemResponse | undefined;
+                        setCurrentItem(cachedItem || updatedItem);
+                      } else {
+                        setCurrentItem(updatedItem);
+                      }
                     }}
                     ref={versionsRef}
                     versions={versions}
@@ -858,7 +1059,13 @@ export function MediaEditorDialog({
                       className="flex-1 flex flex-col min-h-0"
                     >
                       {/* Comments Section */}
-                      <div className="flex-1 p-4 space-y-4 min-h-0">
+                      <div
+                        className={`${
+                          currentItem.sent_to_human_queue
+                            ? "max-h-[calc(100vh-460px)]"
+                            : "max-h-[calc(100vh-520px)]"
+                        } flex-1 p-4 space-y-4   overflow-y-scroll `}
+                      >
                         <div className="space-y-4">
                           {!hasComments ? (
                             <AskKittykatCommentGuidelines />
@@ -875,6 +1082,9 @@ export function MediaEditorDialog({
                                     onUpdateComment={handleUpdateComment}
                                     onDeleteComment={handleDeleteComment}
                                     onLikeComment={handleLikeComment}
+                                    isDeletingReply={
+                                      galleryActions.isDeletingReply
+                                    }
                                   />
                                   <AskKittykatReplyList
                                     replies={comment.replies}
@@ -913,46 +1123,87 @@ export function MediaEditorDialog({
                       </div>
 
                       {/* Comment Input Section */}
-                      <div className="border-t bg-white p-4 space-y-3">
+                      <div className="border-t bg-white p-2 space-y-3">
                         <div className="space-y-3">
-                          <Textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Ask KittyKat Experts for help with editing this image..."
-                            className="min-h-[80px] resize-none"
-                          />
+                          <div data-color-mode="light">
+                            <MDEditor
+                              value={newComment}
+                              onChange={(val) => setNewComment(val || "")}
+                              preview="edit"
+                              hideToolbar={false}
+                              visibleDragbar={false}
+                              toolbarHeight={40}
+                              textareaProps={{
+                                style: {
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                  fontFamily:
+                                    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+                                  padding: "12px",
+                                  border: "none",
+                                  outline: "none",
+                                  resize: "none",
+                                },
+                                placeholder:
+                                  "Ask KittyKat Experts for help with editing this image...",
+                              }}
+                              previewOptions={{
+                                style: {
+                                  padding: "12px",
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                },
+                              }}
+                              height={120}
+                              data-testid="comment-markdown-editor"
+                            />
+                          </div>
+
                           {attachments.length > 0 && (
                             <div className="flex flex-row gap-x-2">
-                              {attachments.map((url, idx) => (
-                                <div key={idx} className="relative">
-                                  <ZoomableImage
-                                    src={url}
-                                    key={idx}
-                                    className="w-16 h-16 object-cover rounded border cursor-pointer"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="absolute -top-2 -right-2 w-5 h-5 p-0"
-                                    onClick={() =>
-                                      setAttachments((prev) =>
-                                        prev.filter((_, i) => i !== idx)
-                                      )
-                                    }
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ))}
+                              {attachments.map((url, idx) => {
+                                const mediaType =
+                                  getAssetTypeFromUrlCooked(url);
+                                return (
+                                  <div key={idx} className="relative">
+                                    {mediaType === "video" ? (
+                                      <ZoomableVideo
+                                        key={idx}
+                                        src={url}
+                                        className="w-16 h-16 object-contain rounded border cursor-pointer"
+                                      />
+                                    ) : (
+                                      <ZoomableImage
+                                        key={idx}
+                                        src={url}
+                                        className="w-16 h-16 object-cover rounded border cursor-pointer"
+                                      />
+                                    )}
+
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="absolute -top-2 -right-2 w-5 h-5 p-0"
+                                      onClick={() =>
+                                        setAttachments((prev) =>
+                                          prev.filter((_, i) => i !== idx)
+                                        )
+                                      }
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <input
                                 ref={fileInputRef}
                                 type="file"
                                 multiple
-                                accept="image/*"
                                 className="hidden"
                                 onChange={(e) =>
                                   handleFileUpload(e.target.files)
@@ -968,7 +1219,7 @@ export function MediaEditorDialog({
                               </Button>
                             </div>
                             <Button
-                              onClick={handleSubmitComment}
+                              onClick={() => handleSubmitComment()}
                               disabled={
                                 isSubmitting ||
                                 (!newComment.trim() && attachments.length === 0)
@@ -1018,12 +1269,20 @@ export function MediaEditorDialog({
           </div>
         </DialogContent>
       </Dialog>
-
-      <AskKittyKatConfirmationDialog
-        open={showConfirmDialog}
-        setOpen={setShowConfirmDialog}
-        onConfirm={handleConfirmAskKittyKat}
-      />
+      {currentItem && (
+        <AskKittyKatConfirmationDialog
+          open={showConfirmDialog}
+          setOpen={setShowConfirmDialog}
+          onConfirm={handleConfirmAskKittyKat}
+          comments={currentItem?.comments || []}
+          imageUrl={currentItem?.asset_url || ""}
+          brandId={currentItem?.brand_id}
+          campaignId={currentItem?.campaign_id}
+          imageId={currentItem?.id}
+          allAttachments={allAttachments}
+          onAllAttachmentsChange={setAllAttachments}
+        />
+      )}
     </>
   );
 }

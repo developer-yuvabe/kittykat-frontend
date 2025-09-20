@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import useModelPricing from "@/hooks/useModelPricing";
-import { useVideoGenForm } from "@/hooks/useVideoGenForm";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
@@ -28,15 +27,19 @@ import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { SelectIcon } from "@/components/ui/custom-icon";
 import ModelSelector from "../ModelSelector";
+import { toast } from "sonner";
+import { useA2iForm } from "@/hooks/useA2iForm";
 
 interface VideoGenerationInputProps {
-  item: GalleryItemResponse;
+  item: GalleryItemResponse | null;
   campaignId?: string | null;
+  handleDialogChange?: (isOpen: boolean) => void;
 }
 
 const VideoGenerationInput = ({
   item,
   campaignId,
+  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
@@ -60,7 +63,8 @@ const VideoGenerationInput = ({
         <VideoGenerationInputControls
           item={item}
           campaignId={campaignId}
-          key={item.id}
+          key={item?.id}
+          handleDialogChange={handleDialogChange}
         />
       )}
     </div>
@@ -78,28 +82,29 @@ const VideoGenerationInputControls = ({
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
-  const form = useVideoGenForm({
+  const form = useA2iForm({
+    selectedModel: selectedVideoGenearationModel,
+    formKey: "videoGenForm",
     dynamicDefualtValues: {
-      start_image: item.asset_url,
-      first_frame: item.asset_url,
+      start_image: item?.asset_url || null,
+      first_frame: item?.asset_url || null,
+      image: item?.asset_url || null,
     },
-  });
-  const { credits, isCalculatingCredits } = useModelPricing({
-    form,
-    model: selectedVideoGenearationModel,
   });
 
   const {
     negativePromptParam,
     firstFrameParam,
     lastFrameParam,
-    filteredParams,
+    initalParams,
+    advancedParams,
   } = useMemo(() => {
     const params = selectedVideoGenearationModel?.parameters ?? [];
 
     let negativePromptParam, firstFrameParam;
     let lastFrameParam: FileParam | undefined;
-    const filteredParams: typeof params = [];
+    const initalParams: typeof params = [];
+    const advancedParams: typeof params = [];
 
     for (const param of params) {
       switch (param.id) {
@@ -108,6 +113,7 @@ const VideoGenerationInputControls = ({
           break;
         case "first_frame":
         case "start_image":
+        case "image": // some models use "image" as the param for the first frame
           firstFrameParam = param;
           break;
         case "last_frame":
@@ -115,7 +121,12 @@ const VideoGenerationInputControls = ({
           lastFrameParam = param as FileParam;
           break;
         default:
-          filteredParams.push(param);
+          if (param.id === "prompt") continue;
+          if (param.category === "initial") {
+            initalParams.push(param);
+          } else {
+            advancedParams.push(param);
+          }
       }
     }
 
@@ -123,28 +134,43 @@ const VideoGenerationInputControls = ({
       negativePromptParam,
       firstFrameParam,
       lastFrameParam,
-      filteredParams,
+      initalParams,
+      advancedParams,
     };
   }, [selectedVideoGenearationModel]);
 
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: selectedVideoGenearationModel,
+    enabled: firstFrameParam?.required
+      ? !!form.getValues(firstFrameParam?.id ?? "")
+      : true,
+  });
+
   const onSubmit = async (data: Record<string, any>) => {
     try {
-      if (!selectedBrandId && !item.brand_id) {
+      if (!selectedBrandId && !item?.brand_id) {
         throw new Error("Brand ID is missing.");
       }
       const { generation_id } = await videoGenerationService(
-        selectedBrandId || item.brand_id,
+        selectedBrandId || item?.brand_id || "",
         data,
         campaignId ?? undefined
       );
 
+      console.log(generation_id + " video generation started");
+
       addCurrentSessionGenerationId(generation_id);
+
+      form.reset();
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
         setShowInsufficientCreditsModal(true);
         return;
       }
+
+      toast.error("Failed to generate video. Please try again.");
     } finally {
       form.setValue("prompt", "");
     }
@@ -193,7 +219,9 @@ const VideoGenerationInputControls = ({
                             variant="outline"
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() => form.resetField(firstFrameParam.id)}
+                            onClick={() =>
+                              form.setValue(firstFrameParam.id, null)
+                            }
                           >
                             <X />
                           </Button>
@@ -239,7 +267,9 @@ const VideoGenerationInputControls = ({
                             variant="outline"
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() => form.resetField(lastFrameParam.id)}
+                            onClick={() =>
+                              form.setValue(lastFrameParam.id, null)
+                            }
                           >
                             <X />
                           </Button>
@@ -296,39 +326,36 @@ const VideoGenerationInputControls = ({
             />
             <div className="flex flex-wrap gap-2 justify-between items-center px-4 flex-1">
               <div className="flex items-center gap-2">
-                {filteredParams
-                  ?.filter((param) => param.category === "initial")
-                  .map((param) => {
-                    return (
-                      <DynamicFormField
-                        key={param.id}
-                        param={param}
-                        form={form}
-                        type="initial"
-                        rules={selectedVideoGenearationModel?.rules}
-                        sliderSuffix={param.id === "duration" ? "s" : undefined}
-                      />
-                    );
-                  })}
+                {initalParams.map((param) => {
+                  return (
+                    <DynamicFormField
+                      key={param.id}
+                      param={param}
+                      form={form}
+                      type="initial"
+                      rules={selectedVideoGenearationModel?.rules}
+                      sliderSuffix={param.id === "duration" ? "s" : undefined}
+                    />
+                  );
+                })}
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button size={"icon"} variant={"outline"}>
-                      <Settings2 />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="center"
-                    side="top"
-                    className="space-y-2 w-64"
-                  >
-                    <div className="space-y-4">
-                      <FormLabel className="py-0 text-xs">
-                        Advance Parameters
-                      </FormLabel>
-                      {filteredParams
-                        ?.filter((param) => param.category === "advanced")
-                        .map((param) => {
+                {advancedParams.length > 0 && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button size={"icon"} variant={"outline"}>
+                        <Settings2 />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="center"
+                      side="top"
+                      className="space-y-2 w-64"
+                    >
+                      <div className="space-y-4">
+                        <FormLabel className="py-0 text-xs">
+                          Advance Parameters
+                        </FormLabel>
+                        {advancedParams.map((param) => {
                           return (
                             <DynamicFormField
                               key={param.id}
@@ -339,9 +366,10 @@ const VideoGenerationInputControls = ({
                             />
                           );
                         })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
               <div>
                 <Button
@@ -357,11 +385,10 @@ const VideoGenerationInputControls = ({
                     <div className="flex gap-x-1 items-center text-sm">
                       <p>Generate</p>
                       <p>
-                        {isCalculatingCredits ? (
+                        {isCalculatingCredits && (
                           <Loader2 className="animate-spin h-4 w-4" />
-                        ) : (
-                          `(${credits} credits)`
                         )}
+                        {credits > 0 && `(${credits} credits)`}
                       </p>
                     </div>
                   )}
