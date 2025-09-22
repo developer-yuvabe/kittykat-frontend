@@ -165,6 +165,7 @@ export function AskKittyKatConfirmationDialog({
         submitted_by: user.id,
         tasks: tasks,
         notes: hasNoComments ? newComment.trim() : undefined,
+        submitted_by_name: user.name,
       };
 
       await createTasklistMutation.mutateAsync(createRequest);
@@ -325,7 +326,7 @@ export function AskKittyKatConfirmationDialog({
                 newCommentAttachments={attachments}
                 onTasksGenerated={handleTasksGenerated}
                 onTaskUpdate={setTasks}
-                showCredits={false}
+                showCredits={true}
                 autoGenerate={false}
                 tasks={tasks}
                 allAttachments={allAttachments}
@@ -341,7 +342,7 @@ export function AskKittyKatConfirmationDialog({
               comments={comments}
               onTasksGenerated={handleTasksGenerated}
               onTaskUpdate={setTasks}
-              showCredits={false}
+              showCredits={true}
               autoGenerate={true}
               tasks={tasks}
               allAttachments={allAttachments}

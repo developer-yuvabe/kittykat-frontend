@@ -13,6 +13,8 @@ import {
   TasklistListResponse,
   TasklistRecord,
   UpdateTasklistRequest,
+  TaskCreditEstimateRequest,
+  TaskCreditEstimateResponse,
 } from "@/types/tasklist.types";
 
 // --- Interfaces ---
@@ -33,6 +35,15 @@ class TaskListService {
     };
     return await handleApiRequest<TaskListGenerateResponse>(
       axiosInstance.post("/ask-kittykat/tasklist/generate", request)
+    );
+  }
+
+  /** Estimate credit cost for a single task */
+  async estimateTaskCredit(
+    request: TaskCreditEstimateRequest
+  ): Promise<TaskCreditEstimateResponse> {
+    return await handleApiRequest<TaskCreditEstimateResponse>(
+      axiosInstance.post("/ask-kittykat/task/estimate-credits", request)
     );
   }
 

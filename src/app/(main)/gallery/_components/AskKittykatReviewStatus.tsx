@@ -5,6 +5,7 @@ import { UserRoleId } from "@/types/user.types";
 import { GalleryItemResponse, WorkflowStatus } from "@/types/gallery.types";
 import { GalleryActions } from "@/hooks/useGallery";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import taskListService from "@/services/api/tasklist.service";
 import { useState, useRef, SetStateAction, Dispatch } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -156,6 +157,29 @@ export function AskKittykatReviewStatus({
             },
           }
         );
+      }
+
+      // Update tasklist status to estimated
+      if (item.tasklist_id) {
+        try {
+          // Get tasklist details to get estimated_credits
+          const tasklistDetail = await taskListService.getTasklistDetail(
+            item.tasklist_id
+          );
+          const logMessage = `Tasklist requested is accepted by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()} with estimated credit ${
+            tasklistDetail.tasklist.estimated_credits
+          }`;
+          await taskListService.updateTasklist(
+            item.tasklist_id,
+            { status: "estimated", log: logMessage },
+            user?.id || ""
+          );
+        } catch (error) {
+          console.error("Error updating tasklist:", error);
+          // Don't fail the whole process for tasklist update error
+        }
       }
 
       // Then update the status to in_progress

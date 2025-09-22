@@ -53,6 +53,7 @@ export interface TasklistRecord {
   asset_url: string;
   submitted_by: string;
   submitted_at: string;
+  submitted_by_name?: string;
   status: TasklistStatus;
   initial_deduction_credits: number;
   estimated_credits: number;
@@ -71,11 +72,13 @@ export interface CreateTasklistRequest {
   submitted_by: string;
   tasks: Task[];
   notes?: string;
+  submitted_by_name?: string;
 }
 
 export interface UpdateTasklistRequest {
   status?: TasklistStatus;
   notes?: string;
+  log?: string;
 }
 
 export interface AdjustCreditsRequest {
@@ -106,4 +109,16 @@ export interface TasklistFilters {
   search?: string;
   page?: number;
   page_size?: number;
+}
+
+export interface TaskCreditEstimateRequest {
+  task: string;
+  image_url?: string;
+}
+
+export interface TaskCreditEstimateResponse {
+  task: string;
+  task_category: string;
+  estimated_credit: number;
+  category_description: string;
 }

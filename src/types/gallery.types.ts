@@ -117,6 +117,7 @@ export type GalleryItem = {
 
   // 🔁 Workflow & Collaboration
   workflow_status?: WorkflowStatus;
+  tasklist_id?: string;
 
   comments?: Comment[];
   last_commented_at?: string;
