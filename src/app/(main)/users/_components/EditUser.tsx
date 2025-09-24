@@ -235,13 +235,7 @@ export function EditUser({
                               }
                             />
                           </MultiSelectTrigger>
-                        </FormControl>
-                        <MultiSelectContent
-                          search={{
-                            placeholder: "Search brands...",
-                            emptyMessage: "No brands found",
-                          }}
-                        >
+                          <MultiSelectContent>
                           <MultiSelectGroup>
                             {brands.map((brand) => (
                               <MultiSelectItem
