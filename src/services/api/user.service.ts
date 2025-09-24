@@ -10,6 +10,23 @@ import {
 } from "@/types/user.types";
 import { z } from "zod";
 
+export const createUser = async (userData: {
+  uid: string;
+  email: string;
+  name: string;
+}) => {
+  try {
+    const updatedUser = await handleApiRequest<UserListItem>(
+      axiosInstance.post(`/users`, userData)
+    );
+
+    return updatedUser;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+};
+
 export const updateUser = async (
   userId: string,
   userData: Pick<User, "thread_id"> & {

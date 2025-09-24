@@ -1,13 +1,13 @@
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from "axios";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
-import { clientConfig, serverConfig } from "../firebase.config";
 import { AppConfig } from "../app.config";
+import { serverConfig } from "../firebase-server.config";
 
 const getServerSideToken = async () => {
   try {
     const tokens = await getTokens(await cookies(), {
-      apiKey: clientConfig.apiKey,
+      apiKey: serverConfig.apiKey,
       cookieName: serverConfig.cookieName,
       cookieSignatureKeys: serverConfig.cookieSignatureKeys,
       serviceAccount: serverConfig.serviceAccount,

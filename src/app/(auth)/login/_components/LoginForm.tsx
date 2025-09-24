@@ -3,6 +3,7 @@
 import ErrorMessage from "@/components/shared/ErrorMessage";
 import Logo from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -23,47 +24,33 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { processAuthError } from "@/lib/utils";
-import { invitationAcceptSchema } from "@/schema/inviation.schema";
-import { acceptInvitation } from "@/services/api/user.service";
+import { loginSchema } from "@/schema/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const InvitationForm = ({
-  email,
-  invitationId,
-}: {
-  email: string;
-  invitationId: string;
-}) => {
+const LoginForm = () => {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
-  const form = useForm<z.infer<typeof invitationAcceptSchema>>({
-    resolver: zodResolver(invitationAcceptSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
+      email: "",
       password: "",
-      username: "",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof invitationAcceptSchema>) => {
-    let credential: UserCredential | null = null;
-
+  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
       setFormError(null);
-      credential = await createUserWithEmailAndPassword(
+      const credential = await signInWithEmailAndPassword(
         auth,
-        email,
+        data.email,
         data.password
       );
-
-      // Accept the invitation
-      await acceptInvitation(invitationId, credential.user.uid, data.username);
-
-      // Sign in the user with the provided email and password
       const idToken = await credential.user.getIdToken();
 
       await fetch("/api/login", {
@@ -74,12 +61,8 @@ const InvitationForm = ({
 
       router.push(AppConfig.HOME_ROUTE);
     } catch (e) {
-      if (credential?.user) {
-        // If user creation was successful but invitation acceptance failed, delete the created user to avoid orphan accounts.
-        await credential.user.delete();
-      }
-
       const errorMsg = processAuthError(e);
+
       setFormError(errorMsg);
     }
   };
@@ -89,38 +72,22 @@ const InvitationForm = ({
       <Card className="shadow-none border-0 w-sm md:w-[28rem]">
         <CardHeader className="flex flex-col items-center md:items-start">
           <Logo />
-          <CardTitle className="text-xl">
-            You have been invited to join the platform.
-          </CardTitle>
+          <CardTitle className="text-xl">Welcome back!</CardTitle>
           <CardDescription className="text-center md:text-left">
-            Please fill in your details to create an account and accept the
-            invitation.
+            Please enter your credentials to login to agents platform.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    disabled
-                    placeholder="john@kittykat.ai"
-                    value={email}
-                  />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Jon Doe" {...field} />
+                      <Input placeholder="john@kittykat.ai" {...field} />
                     </FormControl>
 
                     <FormMessage />
@@ -133,11 +100,18 @@ const InvitationForm = ({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <Link
+                        href="/forgot-password"
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
                     <FormControl>
                       <PasswordInput placeholder="********" {...field} />
                     </FormControl>
-
                     <FormMessage />
                   </FormItem>
                 )}
@@ -153,6 +127,16 @@ const InvitationForm = ({
               >
                 Login
               </Button>
+
+              <p className="text-sm text-center">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/signup"
+                  className="text-primary font-medium hover:underline italic"
+                >
+                  Sign Up
+                </Link>
+              </p>
             </form>
           </Form>
         </CardContent>
@@ -161,4 +145,4 @@ const InvitationForm = ({
   );
 };
 
-export default InvitationForm;
+export default LoginForm;
