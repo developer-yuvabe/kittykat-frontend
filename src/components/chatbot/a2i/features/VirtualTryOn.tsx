@@ -1,18 +1,18 @@
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { Button } from "@/components/ui/button";
 import { UploadIcon } from "@/components/ui/custom-icon";
-import { BrainIcon, Loader2, X } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { Form } from "@/components/ui/form";
+import { useA2iForm } from "@/hooks/useA2iForm";
+import useModelPricing from "@/hooks/useModelPricing";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { createVtonImage } from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
-import { toast } from "sonner";
-import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
-import { useUserStore } from "@/store/user.store";
-import useModelPricing from "@/hooks/useModelPricing";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { Form } from "@/components/ui/form";
+import { BrainIcon, Loader2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import ModelSelector from "../ModelSelector";
-import { useA2iForm } from "@/hooks/useA2iForm";
 
 type VirtualTryOnProps = {
   modelImage?: string;
@@ -29,7 +29,7 @@ const VirtualTryOn = ({
   handleDialogChange,
 }: VirtualTryOnProps) => {
   const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
   const form = useA2iForm({
     formKey: "vtonForm",

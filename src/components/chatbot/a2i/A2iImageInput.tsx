@@ -29,9 +29,9 @@ import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
-import { useUserStore } from "@/store/user.store";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
+import { useCreditsStore } from "@/store/credits.store";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -47,7 +47,7 @@ const A2iImageInput = ({
     formKey: "imageGenForm",
     selectedModel: selectedImageGenerationModel,
   });
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
     model: selectedImageGenerationModel,
