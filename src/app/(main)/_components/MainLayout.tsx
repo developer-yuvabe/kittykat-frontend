@@ -1,6 +1,5 @@
 "use client";
 
-import InsufficientCreditsModal from "@/components/shared/InsufficientCreditsModal";
 import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
 import { useUserBrands } from "@/hooks/sse/useUserBrands";
@@ -42,7 +41,6 @@ const MainLayout = ({
       <main>
         <TopNavigation />
         {children}
-        <InsufficientCreditsModal />
       </main>
     </StreamProvider>
   );

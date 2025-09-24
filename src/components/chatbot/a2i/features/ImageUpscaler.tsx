@@ -1,4 +1,3 @@
-import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,17 +15,18 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
+import useModelPricing from "@/hooks/useModelPricing";
+import { PlatformApiError } from "@/lib/utils";
 import { upscaleImage } from "@/services/api/upscale.service";
 import { useBrandStore } from "@/store/brand.store";
-import { useUserStore } from "@/store/user.store";
-import { PlatformApiError } from "@/lib/utils";
-import useModelPricing from "@/hooks/useModelPricing";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import ModelSelector from "../ModelSelector";
 
 const upscalerSchema = z.object({
@@ -75,7 +75,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
 }) => {
   const { selectedUpscaleModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { models } = useModelsStore();
 
   const form = useForm<z.infer<typeof upscalerSchema>>({

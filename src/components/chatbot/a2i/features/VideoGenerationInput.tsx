@@ -1,4 +1,6 @@
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { Button } from "@/components/ui/button";
+import { SelectIcon } from "@/components/ui/custom-icon";
 import {
   Form,
   FormControl,
@@ -12,23 +14,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useUserStore } from "@/store/user.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Loader2, Settings2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
-import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
-import { SelectIcon } from "@/components/ui/custom-icon";
-import ModelSelector from "../ModelSelector";
 import { toast } from "sonner";
-import { useA2iForm } from "@/hooks/useA2iForm";
+import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
+import ModelSelector from "../ModelSelector";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
@@ -81,7 +81,7 @@ const VideoGenerationInputControls = ({
   const { addCurrentSessionGenerationId } = useVideoGenStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
     formKey: "videoGenForm",
