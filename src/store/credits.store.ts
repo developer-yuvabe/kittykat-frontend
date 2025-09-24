@@ -13,7 +13,7 @@ export const useCreditsStore = create<Store>((set) => ({
   setShowInsufficientCreditsModal: (show) =>
     set({ showInsufficientCreditsModal: show }),
 
-  showPurchaseCreditsModal: true,
+  showPurchaseCreditsModal: false,
   setShowPurchaseCreditsModal: (show) =>
     set({ showPurchaseCreditsModal: show }),
 }));
