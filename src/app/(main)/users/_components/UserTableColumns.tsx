@@ -2,7 +2,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UserListItem, UserListResponse, UserStatus } from "@/types/user.types";
+import {
+  User,
+  UserListItem,
+  UserListResponse,
+  UserStatus,
+} from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisIcon } from "lucide-react";
@@ -22,7 +27,8 @@ import { EditUser } from "./EditUser";
 export const getUserTableColumns = (
   page: number,
   limit: number,
-  searchTerm: string | undefined = ""
+  searchTerm: string | undefined = "",
+  currentUser?: User // Add currentUser as a parameter
 ): ColumnDef<UserListItem>[] => [
   {
     header: "#",
@@ -111,6 +117,18 @@ export const getUserTableColumns = (
     ),
   },
   {
+    header: "Credits",
+    accessorKey: "credits",
+    cell: ({ row }) => {
+      // Show credits to all admins, hide from regular users
+      if (currentUser?.role?.id !== "KK-ADMIN") {
+        return <p className="text-muted-foreground">-</p>;
+      }
+
+      return <p className="font-medium">{row.original.credits ?? 0}</p>;
+    },
+  },
+  {
     header: "Brand Access",
     accessorKey: "brand_access",
     cell: ({ row }) => {
@@ -143,6 +161,46 @@ export const getUserTableColumns = (
               {showAllBrands
                 ? "Show Less"
                 : `Show all (${row.original.brand_access!.length})`}
+            </Button>
+          )}
+        </div>
+      ) : (
+        "—"
+      );
+    },
+  },
+  {
+    header: "Model Access",
+    accessorKey: "model_access",
+    cell: ({ row }) => {
+      const INIT_MODELS_TO_SHOW = 3;
+      const [showAllModels, setShowAllModels] = useState(false);
+      const role = row.original.role?.id;
+
+      if (role === "KK-ADMIN") {
+        return <p className="italic">All models</p>;
+      }
+
+      return row.original.model_access &&
+        row.original.model_access.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {row.original.model_access
+            .slice(0, showAllModels ? undefined : INIT_MODELS_TO_SHOW)
+            .map((model) => (
+              <Badge key={model.id} className="border">
+                {model.name}
+              </Badge>
+            ))}
+          {row.original.model_access.length > INIT_MODELS_TO_SHOW && (
+            <Button
+              variant="link"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowAllModels((p) => !p)}
+            >
+              {showAllModels
+                ? "Show Less"
+                : `Show all (${row.original.model_access.length})`}
             </Button>
           )}
         </div>

@@ -26,8 +26,10 @@ import { getUserTableColumns } from "./UserTableColumns";
 import { debounce } from "lodash";
 import { InviteUser } from "./InviteUser";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/store/user.store";
 
 export const UsersTable = () => {
+  const { user: currentUser } = useUserStore();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,8 +39,9 @@ export const UsersTable = () => {
     queryFn: () => fetchAllUsers(page, AppConfig.TABLE_VIEW_LIMIT, searchTerm),
   });
   const columns = useMemo(
-    () => getUserTableColumns(page, limit, searchTerm),
-    [page, limit]
+    () =>
+      getUserTableColumns(page, limit, searchTerm, currentUser ?? undefined), // Pass undefined if currentUser is null
+    [page, limit, currentUser] // ADD currentUser to dependencies
   );
 
   const debouncedSearch = useCallback(

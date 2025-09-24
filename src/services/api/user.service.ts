@@ -15,7 +15,9 @@ export const updateUser = async (
   userData: Pick<User, "thread_id"> & {
     roleId?: string;
     brand_access?: string[];
+    model_access?: string[];
     contentFilterDisabled?: boolean;
+    credits?: number;
   }
 ): Promise<UserListItem> => {
   try {
@@ -23,7 +25,9 @@ export const updateUser = async (
       role_id: userData.roleId,
       thread_id: userData.thread_id,
       brand_access: userData.brand_access,
+      model_access: userData.model_access,
       content_filter_disabled: userData.contentFilterDisabled,
+      credits: userData.credits,
     };
 
     const updatedUser = await handleApiRequest<UserListItem>(
@@ -93,6 +97,7 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
         email: data.email,
         role: data.role,
         brand_access: data.brandAccess,
+        model_access: data.modelAccess,
         base_url: window.location.origin,
         content_filter_disabled: data.contentFilterDisabled,
       })

@@ -19,4 +19,10 @@ export const AppConfig = {
   }[env.NEXT_PUBLIC_ENVIRONMENT],
   MAX_FILE_SIZE: 32 * 1024 * 1024, // 32 MB
   TABLE_VIEW_LIMIT: 50,
+  // Credits validation constants
+  CREDITS: {
+    MIN: 0,
+    MAX: Number.MAX_SAFE_INTEGER, // 9,007,199,254,740,991 - Maximum safe integer in JavaScript (within MongoDB's 64-bit range)
+    DEFAULT_INVITE: 10000,
+  },
 };

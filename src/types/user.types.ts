@@ -6,8 +6,10 @@ export type User = {
   email: string;
   thread_id?: string | null;
   brand_access?: UserBrand[];
+  model_access?: UserModel[];
   role: UserRole;
   is_default_admin?: boolean;
+  credits?: number;
 };
 
 export type UserListItem = {
@@ -19,6 +21,7 @@ export type UserListItem = {
   status: UserStatus;
   invitation_link?: string;
   is_default_admin?: boolean;
+  credits?: number;
   content_filter_disabled?: boolean;
   brand_access?: {
     id: string;
@@ -28,6 +31,11 @@ export type UserListItem = {
       name: string;
       email: string;
     };
+  }[];
+  model_access?: {
+    id: string;
+    name: string;
+    type: string;
   }[];
 };
 
@@ -60,4 +68,10 @@ export type UserBrand = {
     name: string;
     email: string;
   };
+};
+
+export type UserModel = {
+  id: string;
+  name: string;
+  type: string;
 };
