@@ -158,9 +158,11 @@ const VideoGenerationInputControls = ({
         campaignId ?? undefined
       );
 
-      console.log(generation_id + " video generation started");
-
-      addCurrentSessionGenerationId(generation_id);
+      if (Array.isArray(generation_id)) {
+        generation_id.forEach((id) => addCurrentSessionGenerationId(id));
+      } else if (typeof generation_id === "string") {
+        addCurrentSessionGenerationId(generation_id);
+      }
 
       form.reset();
     } catch (err) {
