@@ -16,8 +16,8 @@ import {
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
-import { Loader2 } from "lucide-react";
 import { client } from "./langgraph.client";
+import Splash from "@/components/shared/Splash";
 
 export type StateType = {
   messages: Message[];
@@ -130,11 +130,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center w-full h-[85vh]">
-        <Loader2 className="text-primary animate-spin" size={40} />
-      </div>
-    );
+    return <Splash />;
   }
 
   return (

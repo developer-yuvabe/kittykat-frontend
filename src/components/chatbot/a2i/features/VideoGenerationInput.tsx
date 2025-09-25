@@ -1,4 +1,6 @@
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { Button } from "@/components/ui/button";
+import { SelectIcon } from "@/components/ui/custom-icon";
 import {
   Form,
   FormControl,
@@ -12,23 +14,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useUserStore } from "@/store/user.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Loader2, Settings2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
-import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
-import { SelectIcon } from "@/components/ui/custom-icon";
-import ModelSelector from "../ModelSelector";
 import { toast } from "sonner";
-import { useA2iForm } from "@/hooks/useA2iForm";
+import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
+import ModelSelector from "../ModelSelector";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
@@ -74,7 +74,6 @@ const VideoGenerationInput = ({
 const VideoGenerationInputControls = ({
   item,
   campaignId,
-  handleDialogChange,
 }: VideoGenerationInputProps) => {
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -82,19 +81,15 @@ const VideoGenerationInputControls = ({
   const { addCurrentSessionGenerationId } = useVideoGenStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
     formKey: "videoGenForm",
     dynamicDefualtValues: {
-      start_image: item?.asset_url,
-      first_frame: item?.asset_url,
-      image: item?.asset_url,
+      start_image: item?.asset_url || null,
+      first_frame: item?.asset_url || null,
+      image: item?.asset_url || null,
     },
-  });
-  const { credits, isCalculatingCredits } = useModelPricing({
-    form,
-    model: selectedVideoGenearationModel,
   });
 
   const {
@@ -144,6 +139,14 @@ const VideoGenerationInputControls = ({
     };
   }, [selectedVideoGenearationModel]);
 
+  const { credits, isCalculatingCredits } = useModelPricing({
+    form,
+    model: selectedVideoGenearationModel,
+    enabled: firstFrameParam?.required
+      ? !!form.getValues(firstFrameParam?.id ?? "")
+      : true,
+  });
+
   const onSubmit = async (data: Record<string, any>) => {
     try {
       if (!selectedBrandId && !item?.brand_id) {
@@ -155,12 +158,13 @@ const VideoGenerationInputControls = ({
         campaignId ?? undefined
       );
 
-      addCurrentSessionGenerationId(generation_id);
-
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
+      if (Array.isArray(generation_id)) {
+        generation_id.forEach((id) => addCurrentSessionGenerationId(id));
+      } else if (typeof generation_id === "string") {
+        addCurrentSessionGenerationId(generation_id);
       }
+
+      form.reset();
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
@@ -383,11 +387,10 @@ const VideoGenerationInputControls = ({
                     <div className="flex gap-x-1 items-center text-sm">
                       <p>Generate</p>
                       <p>
-                        {isCalculatingCredits ? (
+                        {isCalculatingCredits && (
                           <Loader2 className="animate-spin h-4 w-4" />
-                        ) : (
-                          `(${credits} credits)`
                         )}
+                        {credits > 0 && `(${credits} credits)`}
                       </p>
                     </div>
                   )}

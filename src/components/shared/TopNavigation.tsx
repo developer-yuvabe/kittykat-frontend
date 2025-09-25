@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { LogoSection } from "./LogoSection";
 import { NavLinks } from "./NavLinks";
 import { UserProfileMenu } from "./UserProfileMenu";
+import InsufficientCreditsModal from "./InsufficientCreditsModal";
+import PurchaseCreditsModal from "./PurchaseCreditsModal";
 
 export function TopNavigation() {
   const { setModels, setIsModelsFetched } = useModelsStore();
@@ -38,6 +40,8 @@ export function TopNavigation() {
         open={isConceptVisualOpened}
         onOpenChange={setIsConceptVisualOpened}
       />
+      <PurchaseCreditsModal />
+      <InsufficientCreditsModal />
     </>
   );
 }

@@ -16,13 +16,14 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
+import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
 import { canvasToBlob, PlatformApiError } from "@/lib/utils";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useUserStore } from "@/store/user.store";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import {
   BrainIcon,
@@ -39,7 +40,6 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
-import { useA2iForm } from "@/hooks/useA2iForm";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -77,7 +77,7 @@ const RemixControls = ({
   campaignId,
   handleDialogChange,
 }: RemixControlsProps) => {
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedBrandId } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
 
@@ -130,15 +130,19 @@ const RemixControls = ({
     selectedModel: selectedRemixModel,
     formKey: "remixForm",
     dynamicDefualtValues: {
-      ...(baseImageParam?.id ? { [baseImageParam.id]: image.url } : {}),
+      ...(baseImageParam?.id && image.url
+        ? { [baseImageParam.id]: image.url }
+        : {}),
     },
   });
 
   useEffect(() => {
+    console.log(image);
+    console.log(baseImageParam);
     if (image.url && baseImageParam) {
-      form.setValue("base_image", image.url);
+      form.setValue(baseImageParam.id, image.url);
     }
-  }, [image.url, form]);
+  }, [image]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -158,7 +162,15 @@ const RemixControls = ({
     (referenceImageParam?.maxLimit || 0) - imageBlocks.length;
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+    async (
+      acceptedFiles: File[],
+      fileRejections: FileRejection[],
+      event: any
+    ) => {
+      // Reset file input value to allow re-uploading the same file
+      if (event?.target) {
+        event.target.value = null;
+      }
       if (fileRejections.length > 0) {
         if (remainingUploads === 0)
           toast.error(

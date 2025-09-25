@@ -153,7 +153,7 @@ export function ConceptVisualEditor({
       setCurrentItem(null); // reset item on close
     }
     onOpenChange(isOpen);
-    router.push("/");
+    router.push("/?scrollTo=a2i");
   };
 
   const handleManualClose = () => {
@@ -243,7 +243,7 @@ export function ConceptVisualEditor({
               onValueChange={setActiveTab}
               className="flex-1 flex flex-col bg-none"
             >
-              <AskKittykatTabs isConceptVisualEditor={true} />
+              <AskKittykatTabs />
 
               <TabsContent value="video-gen">
                 {!isModelsFetched ? (

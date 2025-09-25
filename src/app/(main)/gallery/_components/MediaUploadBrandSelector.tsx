@@ -216,7 +216,7 @@ export function MediaUploadBrandSelector({
   return (
     <div className="" onClick={(e) => e.stopPropagation()}>
       <div className="w-80">
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal={true}>
           <div className="relative inline-block w-full">
             {/* Label positioned above the selector */}
             <span

@@ -12,11 +12,13 @@ import { UseFormReturn, useWatch } from "react-hook-form";
 type UseModelPricingProps = {
   form: UseFormReturn<any>;
   model: Model | null;
+  enabled?: boolean /* Whether to enable the model pricing endpoint */;
 };
 
 const useModelPricing = ({
   form,
   model: selectedModel,
+  enabled = true,
 }: UseModelPricingProps) => {
   const { isDynamicPricing, estimationTriggers, noOfImagesToBeGeneratedName } =
     useMemo(() => {
@@ -24,7 +26,7 @@ const useModelPricing = ({
         return {
           isDynamicPricing: false,
           estimationTriggers: [],
-          noOfImagesToBeGeneratedName: null,
+          noOfImagesToBeGeneratedName: [],
         };
       }
 
@@ -34,17 +36,18 @@ const useModelPricing = ({
           selectedModel.pricing?.type === "variable"
             ? selectedModel.pricing.estimationTriggers ?? []
             : [],
+        // There can be multiple image count parameters, e.g. for seedream 4 model max images and number of images are both image count parameters
         noOfImagesToBeGeneratedName:
-          selectedModel.parameters?.find(
-            (param) => param.type === "image_count"
-          )?.id ?? null,
+          selectedModel.parameters
+            ?.filter((p) => p.type === "image_count")
+            .map((p) => p.id) || [],
       };
     }, [selectedModel]);
 
   const noOfImagesToBeGenerated = useWatch({
     control: form.control,
-    name: noOfImagesToBeGeneratedName ?? "",
-    defaultValue: 1,
+    name: noOfImagesToBeGeneratedName,
+    defaultValue: [1],
   });
   const model = useWatch({
     control: form.control,
@@ -52,7 +55,7 @@ const useModelPricing = ({
   });
   const watchedTriggerValues = form.watch(estimationTriggers) ?? [];
 
-  const { data, isPending } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: [
       "variable-pricing",
       selectedModel?.id,
@@ -87,15 +90,24 @@ const useModelPricing = ({
       return await estimatePricing(values);
     },
     enabled:
-      isDynamicPricing && !!selectedModel?.id && model === selectedModel?.model, // only run when dynamic pricing and model is selected and form is updated
+      isDynamicPricing &&
+      enabled &&
+      !!selectedModel?.id &&
+      model === selectedModel?.model, // only run when dynamic pricing and model is selected and form is updated
   });
 
   return {
     credits: isDynamicPricing
       ? data ?? 0
-      : (selectedModel?.credits ?? 0) * (noOfImagesToBeGenerated || 1),
+      : (selectedModel?.credits ?? 0) *
+        (Array.isArray(noOfImagesToBeGenerated)
+          ? noOfImagesToBeGenerated.reduce(
+              (acc, val) => acc * (Number(val) || 1),
+              1
+            )
+          : 1),
 
-    isCalculatingCredits: isDynamicPricing ? isPending : false,
+    isCalculatingCredits: isDynamicPricing ? isLoading : false,
   };
 };
 
