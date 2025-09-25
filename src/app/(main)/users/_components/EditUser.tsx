@@ -36,7 +36,7 @@ import { UserListItem, UserListResponse, UserRoleId } from "@/types/user.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Info, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -67,6 +67,18 @@ export function EditUser({
   const { brands } = useBrandStore();
   const { models } = useModelsStore();
   const queryClient = useQueryClient();
+
+  // Get base models (models without finetune_id) and sort models
+  const { baseModelIds, sortedModels } = useMemo(() => {
+    const baseModels = models.filter((model) => !model.finetune_id);
+    const finetunedModels = models.filter((model) => model.finetune_id);
+
+    return {
+      baseModelIds: baseModels.map((model) => model.id),
+      sortedModels: [...baseModels, ...finetunedModels],
+    };
+  }, [models]);
+
   const form = useForm<EditUserFormData>({
     resolver: zodResolver(updateInvitedUserSchema),
     defaultValues: {
@@ -76,7 +88,7 @@ export function EditUser({
         : undefined,
       modelAccess: user.model_access
         ? user.model_access.map((model) => model.id)
-        : undefined,
+        : baseModelIds, // Default to base models if no access defined
       contentFilterDisabled: user.content_filter_disabled || false,
       credits: user.credits || 0,
     },
@@ -86,19 +98,23 @@ export function EditUser({
   // Reset form values when user prop changes or dialog opens
   useEffect(() => {
     if (isOpen && user) {
+      // Ensure base models are always included in model access
+      const userModelAccess = user.model_access?.map((model) => model.id) || [];
+      const combinedModelAccess = [
+        ...new Set([...baseModelIds, ...userModelAccess]),
+      ];
+
       form.reset({
         role: user.role.id,
         brandAccess: user.brand_access
           ? user.brand_access.map((brand) => brand.id)
           : undefined,
-        modelAccess: user.model_access
-          ? user.model_access.map((model) => model.id)
-          : undefined,
+        modelAccess: combinedModelAccess,
         contentFilterDisabled: user.content_filter_disabled ?? false,
         credits: user.credits ?? 0,
       });
     }
-  }, [isOpen, user, form]);
+  }, [isOpen, user, form, baseModelIds]);
 
   const onSubmit = async (data: EditUserFormData) => {
     setIsOpen(false);
@@ -138,7 +154,7 @@ export function EditUser({
     } else {
       // Only reset to original brand access if currently empty or was admin
       const currentBrandAccess = form.getValues("brandAccess");
-      const currentModelAccess = form.getValues("modelAccess");
+      const currentModelAccess = form.getValues("modelAccess") || [];
 
       if (!currentBrandAccess || currentBrandAccess.length === 0) {
         form.setValue(
@@ -147,14 +163,13 @@ export function EditUser({
         );
       }
 
-      if (!currentModelAccess || currentModelAccess.length === 0) {
-        form.setValue(
-          "modelAccess",
-          user.model_access?.map((model) => model.id) || []
-        );
-      }
+      // Always ensure base models are included
+      const combinedModelAccess = [
+        ...new Set([...baseModelIds, ...currentModelAccess]),
+      ];
+      form.setValue("modelAccess", combinedModelAccess);
     }
-  }, [selectedRole, form, user.brand_access, user.model_access]);
+  }, [selectedRole, form, user.brand_access, user.model_access, baseModelIds]);
 
   const handleClose = () => {
     form.reset(); // Reset form when closing
@@ -235,7 +250,7 @@ export function EditUser({
                   )}
                 />
 
-                {/* Brand Access and Model Access Grid - Updated to match InviteUser */}
+                {/* Brand Access and Model Access Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Brand Access */}
                   <FormField
@@ -310,7 +325,7 @@ export function EditUser({
                     )}
                   />
 
-                  {/* Model Access - Updated to match Brand Access UI exactly */}
+                  {/* Model Access - Updated with filtering and tooltips */}
                   <FormField
                     control={form.control}
                     name="modelAccess"
@@ -319,7 +334,13 @@ export function EditUser({
                         <FormLabel>Model Access</FormLabel>
                         <MultiSelect
                           values={field.value}
-                          onValuesChange={field.onChange}
+                          onValuesChange={(newValues) => {
+                            // Ensure base models are always included
+                            const combinedValues = [
+                              ...new Set([...baseModelIds, ...newValues]),
+                            ];
+                            field.onChange(combinedValues);
+                          }}
                         >
                           <FormControl>
                             <MultiSelectTrigger
@@ -358,8 +379,8 @@ export function EditUser({
                                         models.map((model) => model.id)
                                       );
                                     } else {
-                                      // Deselect all models
-                                      field.onChange([]);
+                                      // Keep only base models (cannot deselect them)
+                                      field.onChange(baseModelIds);
                                     }
                                   }}
                                   disabled={selectedRole === UserRoleId.ADMIN}
@@ -374,34 +395,88 @@ export function EditUser({
                             </div>
 
                             <MultiSelectGroup>
-                              {models.map((model) => (
-                                <MultiSelectItem
-                                  key={model.id}
-                                  value={model.id}
-                                  badgeLabel={model.name}
-                                  disabled={selectedRole === UserRoleId.ADMIN}
-                                >
-                                  <div className="flex items-start justify-between group gap-0">
-                                    <div className="flex items-start min-w-0 w-full">
-                                      <Avatar className="h-6 w-6 mr-2">
-                                        <AvatarFallback className="bg-green-500 text-white">
-                                          {model.name
-                                            ?.charAt(0)
-                                            .toUpperCase() || "M"}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="flex flex-col space-y-1">
-                                        <span className="line-clamp- break-words">
-                                          {model.name}
-                                        </span>
-                                        <span className="italic text-xs">
-                                          Use Case: {model.type}
-                                        </span>
+                              {sortedModels.map((model) => {
+                                const isBaseModel = !model.finetune_id;
+                                const isSelected =
+                                  field.value?.includes(model.id) || false;
+
+                                if (isBaseModel) {
+                                  return (
+                                    <TooltipProvider key={model.id}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="relative">
+                                            <MultiSelectItem
+                                              value={model.id}
+                                              badgeLabel={model.name}
+                                              disabled={
+                                                selectedRole ===
+                                                  UserRoleId.ADMIN ||
+                                                isBaseModel
+                                              }
+                                              className="pointer-events-none"
+                                            >
+                                              <div className="flex items-start justify-between group gap-0 w-full">
+                                                <div className="flex items-start min-w-0 w-full">
+                                                  <Avatar className="h-6 w-6 mr-2">
+                                                    <AvatarFallback className="bg-green-500 text-white opacity-60">
+                                                      {model.name
+                                                        ?.charAt(0)
+                                                        .toUpperCase() || "M"}
+                                                    </AvatarFallback>
+                                                  </Avatar>
+                                                  <div className="flex flex-col space-y-1">
+                                                    <span className="line-clamp- break-words text-muted-foreground">
+                                                      {model.name}
+                                                    </span>
+                                                    <span className="italic text-xs text-muted-foreground">
+                                                      Use Case: {model.type}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </MultiSelectItem>
+                                            {/* Invisible overlay for hover events */}
+                                            <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right">
+                                          Cannot unselect base models
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                }
+
+                                return (
+                                  <MultiSelectItem
+                                    key={model.id}
+                                    value={model.id}
+                                    badgeLabel={model.name}
+                                    disabled={selectedRole === UserRoleId.ADMIN}
+                                  >
+                                    <div className="flex items-start justify-between group gap-0 w-full">
+                                      <div className="flex items-start min-w-0 w-full">
+                                        <Avatar className="h-6 w-6 mr-2">
+                                          <AvatarFallback className="bg-green-500 text-white">
+                                            {model.name
+                                              ?.charAt(0)
+                                              .toUpperCase() || "M"}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col space-y-1">
+                                          <span className="line-clamp- break-words">
+                                            {model.name}
+                                          </span>
+                                          <span className="italic text-xs">
+                                            Use Case: {model.type}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </MultiSelectItem>
-                              ))}
+                                  </MultiSelectItem>
+                                );
+                              })}
                             </MultiSelectGroup>
                           </MultiSelectContent>
                         </MultiSelect>
@@ -459,7 +534,7 @@ export function EditUser({
                     )}
                   />
 
-                  {/* Credits - Show to all admins, with proper spacing for alignment */}
+                  {/* Credits */}
                   {currentLoggedInUser?.role?.id === "KK-ADMIN" ? (
                     <FormField
                       control={form.control}
@@ -533,7 +608,7 @@ export function EditUser({
                                 </TooltipProvider>
                               )}
 
-                              {/* Quick add buttons with digit validation */}
+                              {/* Quick add buttons */}
                               {currentLoggedInUser?.is_default_admin && (
                                 <div className="flex gap-2">
                                   <Button

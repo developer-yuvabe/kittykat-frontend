@@ -120,11 +120,6 @@ export const getUserTableColumns = (
     header: "Credits",
     accessorKey: "credits",
     cell: ({ row }) => {
-      // Show credits to all admins, hide from regular users
-      if (currentUser?.role?.id !== "KK-ADMIN") {
-        return <p className="text-muted-foreground">-</p>;
-      }
-
       return <p className="font-medium">{row.original.credits ?? 0}</p>;
     },
   },

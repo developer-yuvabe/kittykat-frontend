@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -58,18 +58,41 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const { models } = useModelsStore();
   const { user } = useUserStore();
   const queryClient = useQueryClient();
+
+  // Get base models (models without finetune_id) and sort models
+  const { baseModelIds, sortedModels } = useMemo(() => {
+    const baseModels = models.filter((model) => !model.finetune_id);
+    const finetunedModels = models.filter((model) => model.finetune_id);
+
+    return {
+      baseModelIds: baseModels.map((model) => model.id),
+      sortedModels: [...baseModels, ...finetunedModels],
+    };
+  }, [models]);
+
   const form = useForm<InviteUserFormData>({
     resolver: zodResolver(inviationSchema),
     defaultValues: {
       email: "",
       role: UserRoleId.USER,
       brandAccess: [],
-      modelAccess: [],
+      modelAccess: baseModelIds, // Default select base models
       contentFilterDisabled: false,
-      credits: AppConfig.CREDITS.DEFAULT_INVITE, // Use default credits constant
+      credits: AppConfig.CREDITS.DEFAULT_INVITE,
     },
     mode: "onSubmit",
   });
+
+  // Update default selection when models change
+  useEffect(() => {
+    if (baseModelIds.length > 0) {
+      const currentSelection = form.getValues("modelAccess") || [];
+      const combinedSelection = [
+        ...new Set([...baseModelIds, ...currentSelection]),
+      ];
+      form.setValue("modelAccess", combinedSelection);
+    }
+  }, [baseModelIds, form]);
 
   const onSubmit = async (data: InviteUserFormData) => {
     const emailExists = await checkIfEmailExists(data.email);
@@ -110,8 +133,15 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     if (selectedRole === UserRoleId.ADMIN) {
       form.setValue("brandAccess", []);
       form.setValue("modelAccess", []);
+    } else {
+      // Ensure base models are included when switching to user role
+      const currentSelection = form.getValues("modelAccess") || [];
+      const combinedSelection = [
+        ...new Set([...baseModelIds, ...currentSelection]),
+      ];
+      form.setValue("modelAccess", combinedSelection);
     }
-  }, [selectedRole]);
+  }, [selectedRole, baseModelIds]);
 
   const addCredits = (amount: number) => {
     const currentValue = form.getValues("credits") || 0;
@@ -206,7 +236,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                       )}
                     />
                   </div>
-                  {/* ⭐ UPDATED: Brand Access and Model Access Grid */}
+
+                  {/* Updated Brand Access and Model Access Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Brand Access */}
                     <FormField
@@ -280,7 +311,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                       )}
                     />
 
-                    {/* ⭐ NEW: Model Access */}
+                    {/* Model Access - Updated to match EditUser */}
                     <FormField
                       control={form.control}
                       name="modelAccess"
@@ -289,7 +320,13 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                           <FormLabel>Model Access</FormLabel>
                           <MultiSelect
                             values={field.value}
-                            onValuesChange={field.onChange}
+                            onValuesChange={(newValues) => {
+                              // Ensure base models are always included
+                              const combinedValues = [
+                                ...new Set([...baseModelIds, ...newValues]),
+                              ];
+                              field.onChange(combinedValues);
+                            }}
                           >
                             <FormControl>
                               <MultiSelectTrigger
@@ -316,7 +353,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               <div className="px-2 py-2 border-b border-border">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
-                                    id="select-all-models-edit"
+                                    id="select-all-models-invite"
                                     checked={
                                       field.value?.length === models.length &&
                                       models.length > 0
@@ -328,49 +365,106 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                           models.map((model) => model.id)
                                         );
                                       } else {
-                                        // Deselect all models
-                                        field.onChange([]);
+                                        // Keep only base models (cannot deselect them)
+                                        field.onChange(baseModelIds);
                                       }
                                     }}
                                     disabled={selectedRole === UserRoleId.ADMIN}
                                   />
                                   <label
-                                    htmlFor="select-all-models-edit"
+                                    htmlFor="select-all-models-invite"
                                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                   >
                                     Select All
                                   </label>
                                 </div>
                               </div>
+
                               <MultiSelectGroup>
-                                {models.map((model) => (
-                                  <MultiSelectItem
-                                    key={model.id}
-                                    value={model.id}
-                                    badgeLabel={model.name}
-                                    disabled={selectedRole === UserRoleId.ADMIN}
-                                  >
-                                    <div className="flex items-start justify-between group gap-0">
-                                      <div className="flex items-start min-w-0 w-full">
-                                        <Avatar className="h-6 w-6 mr-2">
-                                          <AvatarFallback className="bg-green-500 text-white">
-                                            {model.name
-                                              ?.charAt(0)
-                                              .toUpperCase() || "M"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col space-y-1">
-                                          <span className="line-clamp- break-words">
-                                            {model.name}
-                                          </span>
-                                          <span className="italic text-xs">
-                                            Use case: {model.type}
-                                          </span>
+                                {sortedModels.map((model) => {
+                                  const isBaseModel = !model.finetune_id;
+                                  const isSelected =
+                                    field.value?.includes(model.id) || false;
+
+                                  if (isBaseModel) {
+                                    return (
+                                      <TooltipProvider key={model.id}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div className="relative">
+                                              <MultiSelectItem
+                                                value={model.id}
+                                                badgeLabel={model.name}
+                                                disabled={
+                                                  selectedRole ===
+                                                    UserRoleId.ADMIN ||
+                                                  isBaseModel
+                                                }
+                                                className="pointer-events-none"
+                                              >
+                                                <div className="flex items-start justify-between group gap-0 w-full">
+                                                  <div className="flex items-start min-w-0 w-full">
+                                                    <Avatar className="h-6 w-6 mr-2">
+                                                      <AvatarFallback className="bg-green-500 text-white opacity-60">
+                                                        {model.name
+                                                          ?.charAt(0)
+                                                          .toUpperCase() || "M"}
+                                                      </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col space-y-1">
+                                                      <span className="line-clamp- break-words text-muted-foreground">
+                                                        {model.name}
+                                                      </span>
+                                                      <span className="italic text-xs text-muted-foreground">
+                                                        Use Case: {model.type}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </MultiSelectItem>
+                                              {/* Invisible overlay for hover events */}
+                                              <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
+                                            </div>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="right">
+                                            Cannot unselect base models
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    );
+                                  }
+
+                                  return (
+                                    <MultiSelectItem
+                                      key={model.id}
+                                      value={model.id}
+                                      badgeLabel={model.name}
+                                      disabled={
+                                        selectedRole === UserRoleId.ADMIN
+                                      }
+                                    >
+                                      <div className="flex items-start justify-between group gap-0 w-full">
+                                        <div className="flex items-start min-w-0 w-full">
+                                          <Avatar className="h-6 w-6 mr-2">
+                                            <AvatarFallback className="bg-green-500 text-white">
+                                              {model.name
+                                                ?.charAt(0)
+                                                .toUpperCase() || "M"}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex flex-col space-y-1">
+                                            <span className="line-clamp- break-words">
+                                              {model.name}
+                                            </span>
+                                            <span className="italic text-xs">
+                                              Use Case: {model.type}
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  </MultiSelectItem>
-                                ))}
+                                    </MultiSelectItem>
+                                  );
+                                })}
                               </MultiSelectGroup>
                             </MultiSelectContent>
                           </MultiSelect>

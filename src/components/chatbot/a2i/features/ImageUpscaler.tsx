@@ -73,8 +73,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
   campaignId,
   handleDialogChange,
 }) => {
-  // Fix: Add setSelectedUpscaleModel to destructuring
-  const { selectedUpscaleModel, setSelectedUpscaleModel } = useModelsStore();
+  const { selectedUpscaleModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useUserStore();
   const { models } = useModelsStore();
@@ -94,15 +93,10 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
       campaign_id: campaignId || null,
     },
   });
-
-  // Fix: Use selectedUpscaleModel instead of models.find()
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
-    model: selectedUpscaleModel || null,
+    model: models.find((model) => model.type === "image-upscale") || null,
   });
-
-  const hasUpscaleAccess = selectedUpscaleModel !== null;
-
   useEffect(() => {
     if (initialImage) {
       form.setValue("image_url", initialImage);
@@ -126,16 +120,11 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
     }
   };
 
-  if (!hasUpscaleAccess) {
-    return null;
-  }
-
   return (
     <div className="p-4 space-y-6 h-full">
       <ModelSelector
         typeFilter="image-upscale"
-        // Fix: Correct onModelChange callback
-        onModelChange={(model) => setSelectedUpscaleModel(model)}
+        onModelChange={() => form.reset()}
         selectedModel={selectedUpscaleModel}
       />
       <Form {...form}>
@@ -366,11 +355,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
           <Button
             type="submit"
             className="w-full"
-            disabled={
-              form.formState.isSubmitting ||
-              isCalculatingCredits ||
-              !hasUpscaleAccess
-            }
+            disabled={form.formState.isSubmitting || isCalculatingCredits}
           >
             {form.formState.isSubmitting ? (
               <>
