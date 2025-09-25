@@ -3,13 +3,11 @@ import React from "react";
 import MainLayout from "./_components/MainLayout";
 import { redirect } from "next/navigation";
 import Splash from "@/components/shared/Splash";
-import { getServerSideToken } from "@/config/axios/api-server.config";
 
 const layout = async ({ children }: { children: React.ReactNode }) => {
   const { error, user } = await fetchUser();
-  const tokens = await getServerSideToken();
 
-  if (error || !tokens) {
+  if (error) {
     return <Splash showRetry={true} />;
   }
 
@@ -17,11 +15,7 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
     redirect("/unauthorized");
   }
 
-  return (
-    <MainLayout user={user} session={tokens.decodedToken}>
-      {children}
-    </MainLayout>
-  );
+  return <MainLayout user={user}>{children}</MainLayout>;
 };
 
 export default layout;

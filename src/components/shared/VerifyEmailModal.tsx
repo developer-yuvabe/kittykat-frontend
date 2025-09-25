@@ -12,9 +12,16 @@ import Logo from "@/components/shared/Logo";
 import { toast } from "sonner";
 import { sendEmailVerificationLink } from "@/services/api/user.service";
 import { Mail } from "lucide-react";
-import { revalidatePath } from "@/services/actions/revalidatePath";
+import { reload, User } from "firebase/auth";
+import { auth } from "@/config/firebase.config";
 
-const VerifyEmailModal = ({ email }: { email: string }) => {
+const VerifyEmailModal = ({
+  email,
+  setFirebaseUser,
+}: {
+  email: string;
+  setFirebaseUser: (user: User) => void;
+}) => {
   const [isSending, setIsSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
@@ -33,22 +40,26 @@ const VerifyEmailModal = ({ email }: { email: string }) => {
   };
 
   useEffect(() => {
-    const handleFocus = () => {
-      revalidatePath("/", "layout");
-      console.log("Window focused - check verification here");
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, []);
-
-  useEffect(() => {
     if (cooldown <= 0) return;
     const interval = setInterval(() => {
       setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
   }, [cooldown]);
+
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (auth.currentUser) {
+        await reload(auth.currentUser);
+        setFirebaseUser(auth.currentUser);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   return (
     <Dialog open={true} modal>

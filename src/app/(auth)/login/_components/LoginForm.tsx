@@ -59,6 +59,7 @@ const LoginForm = () => {
         },
       });
 
+      router.refresh();
       router.push(AppConfig.HOME_ROUTE);
     } catch (e) {
       const errorMsg = processAuthError(e);

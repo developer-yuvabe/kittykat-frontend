@@ -3,25 +3,31 @@
 import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
 import VerifyEmailModal from "@/components/shared/VerifyEmailModal";
+import { auth } from "@/config/firebase.config";
 import { StreamProvider } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
 import { User } from "@/types/user.types";
-import { DecodedIdToken } from "next-firebase-auth-edge/auth";
-import React, { useEffect } from "react";
+import { User as FirebaeUser } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import React, { useEffect, useState } from "react";
 
 const MainLayout = ({
   user: userProfile,
-  session,
   children,
 }: {
   children: React.ReactNode;
   user: User;
-  session: DecodedIdToken;
 }) => {
   const { setUser } = useUserStore();
+  const [firebaseUser, setFirebaseUser] = useState<FirebaeUser | null>(null);
 
-  const isEmailVerified = session.email_verified;
-  console.log(userProfile.email, "email's verified:", isEmailVerified);
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setFirebaseUser(u);
+    });
+
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setUser({
@@ -32,9 +38,9 @@ const MainLayout = ({
       role: userProfile.role,
       is_default_admin: userProfile.is_default_admin,
     });
-  }, [userProfile, session]);
+  }, [userProfile]);
 
-  if (!userProfile) {
+  if (!userProfile || !firebaseUser) {
     return <Splash />;
   }
 
@@ -45,7 +51,12 @@ const MainLayout = ({
         {children}
 
         {/* Verify Email Modal */}
-        {!isEmailVerified && <VerifyEmailModal email={userProfile.email} />}
+        {!firebaseUser.emailVerified && (
+          <VerifyEmailModal
+            email={userProfile.email}
+            setFirebaseUser={setFirebaseUser}
+          />
+        )}
       </main>
     </StreamProvider>
   );

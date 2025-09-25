@@ -68,6 +68,7 @@ const SignUpForm = () => {
         },
       });
 
+      router.refresh();
       router.push(AppConfig.HOME_ROUTE);
     } catch (e) {
       if (credential?.user) {
