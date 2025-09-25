@@ -54,7 +54,7 @@ const MainLayout = ({
         {!firebaseUser.emailVerified && (
           <VerifyEmailModal
             email={userProfile.email}
-            setFirebaseUser={setFirebaseUser}
+            setFirebaseUser={(u) => setFirebaseUser(u)}
           />
         )}
       </main>

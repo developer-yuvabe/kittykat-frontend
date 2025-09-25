@@ -51,7 +51,7 @@ const VerifyEmailModal = ({
     const handleFocus = async () => {
       if (auth.currentUser) {
         await reload(auth.currentUser);
-        setFirebaseUser(auth.currentUser);
+        setFirebaseUser({ ...auth.currentUser! });
       }
     };
 
