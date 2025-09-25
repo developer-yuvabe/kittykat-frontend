@@ -72,15 +72,13 @@ export const DisplayField = <T extends Record<string, any>>({
             {children}
           </div>
         ) : (
-          <>{children}</>
+          children
         );
 
       // Null / Undefined
       if (value == null) {
         return withWrap(
-          <div key={key} className={`text-sm italic text-gray-400`}>
-            None
-          </div>
+          <div className={`text-sm italic text-gray-400`}>None</div>
         );
       }
 
@@ -88,7 +86,6 @@ export const DisplayField = <T extends Record<string, any>>({
       if (["string", "number", "boolean"].includes(typeof value)) {
         return withWrap(
           <InlineEditableField
-            key={key}
             label={key}
             value={String(value)}
             onSave={async (newVal) => handleSave(key, newVal as any)}
@@ -105,9 +102,7 @@ export const DisplayField = <T extends Record<string, any>>({
       if (Array.isArray(value)) {
         if (value.length === 0) {
           return withWrap(
-            <div key={key} className={`text-sm italic text-gray-400`}>
-              Empty list
-            </div>
+            <div className={`text-sm italic text-gray-400`}>Empty list</div>
           );
         }
 
@@ -118,7 +113,6 @@ export const DisplayField = <T extends Record<string, any>>({
         if (isPrimitiveArray) {
           return withWrap(
             <InlineEditableBadges
-              key={key}
               label={key}
               values={value.map(String)}
               onSave={async (newVals) => handleSave(key, newVals as any)}
@@ -129,15 +123,17 @@ export const DisplayField = <T extends Record<string, any>>({
 
         // Array of objects → recurse
         return withWrap(
-          <div key={key} className="space-y-2">
+          <div className="space-y-2">
             {value.map((item, idx) => (
               <div
                 key={`${key}-${idx}`}
                 className="ml-4 rounded-md border p-2 space-y-2"
               >
-                {Object.entries(item || {}).map(([subKey, subVal]) =>
-                  renderField(`${key}[${idx}].${subKey}`, subVal)
-                )}
+                {Object.entries(item || {}).map(([subKey, subVal]) => (
+                  <React.Fragment key={`${key}.${subKey}`}>
+                    {renderField(`${key}[${idx}].${subKey}`, subVal)}
+                  </React.Fragment>
+                ))}
               </div>
             ))}
           </div>
@@ -147,22 +143,20 @@ export const DisplayField = <T extends Record<string, any>>({
       // Objects
       if (typeof value === "object") {
         return withWrap(
-          <div key={key} className="space-y-2">
+          <div className="space-y-2">
             <div>
-              {Object.entries(value).map(([subKey, subVal]) =>
-                renderField(`${key}.${subKey}`, subVal)
-              )}
+              {Object.entries(value).map(([subKey, subVal]) => (
+                <React.Fragment key={`${key}.${subKey}`}>
+                  {renderField(`${key}.${subKey}`, subVal)}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         );
       }
 
       // Fallback
-      return withWrap(
-        <div key={key} className="text-sm">
-          {String(value)}
-        </div>
-      );
+      return withWrap(<div className="text-sm">{String(value)}</div>);
     },
     [handleSave]
   );
@@ -172,8 +166,14 @@ export const DisplayField = <T extends Record<string, any>>({
   }, [initialTitle]);
 
   if (!title) {
-    return Object.entries(data || {}).map(([key, value]) =>
-      renderField(key, value, showKeyAsLabel, "font-bold text-base")
+    return (
+      <>
+        {Object.entries(data || {}).map(([key, value]) => (
+          <React.Fragment key={key}>
+            {renderField(key, value, showKeyAsLabel, "font-bold text-base")}
+          </React.Fragment>
+        ))}
+      </>
     );
   }
 
@@ -182,9 +182,11 @@ export const DisplayField = <T extends Record<string, any>>({
       title={title}
       content={
         <div className="space-y-3">
-          {Object.entries(data || {}).map(([key, value]) =>
-            renderField(key, value, showKeyAsLabel)
-          )}
+          {Object.entries(data || {}).map(([key, value]) => (
+            <React.Fragment key={key}>
+              {renderField(key, value, showKeyAsLabel)}
+            </React.Fragment>
+          ))}
         </div>
       }
       context={{

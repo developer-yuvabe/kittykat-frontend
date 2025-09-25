@@ -3,7 +3,13 @@ import { env } from "./env";
 export const AppConfig = {
   APP_NAME: "KittyKat",
 
-  PUBLIC_PATHS: ["/login", "/forgot-password", /^\/invitations\/[^\/]+$/],
+  PUBLIC_PATHS: [
+    "/login",
+    "/forgot-password",
+    /^\/invitations\/[^\/]+$/,
+    "/signup",
+    "/verify-email",
+  ],
   HOME_ROUTE: "/",
   API_BASE_URL: {
     prod: env.NEXT_PUBLIC_API_BASE_URL_PROD,
@@ -16,6 +22,12 @@ export const AppConfig = {
     stg: env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG,
     dev: env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV,
     beta: env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA,
+  }[env.NEXT_PUBLIC_ENVIRONMENT],
+  AUTH_TENANT_ID: {
+    prod: env.NEXT_PUBLIC_TENANT_ID_PROD,
+    stg: env.NEXT_PUBLIC_TENANT_ID_STG,
+    dev: env.NEXT_PUBLIC_TENANT_ID_DEV,
+    beta: env.NEXT_PUBLIC_TENANT_ID_BETA,
   }[env.NEXT_PUBLIC_ENVIRONMENT],
   MAX_FILE_SIZE: 32 * 1024 * 1024, // 32 MB
   TABLE_VIEW_LIMIT: 50,

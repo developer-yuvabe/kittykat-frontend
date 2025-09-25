@@ -43,6 +43,9 @@ export const processAuthError = (e: unknown) => {
       case "auth/invalid-credential":
         errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
         break;
+      case "auth/wrong-password":
+        errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
+        break;
       case "":
         errorMsg = ERROR_MESSAGES.ACCOUNT_CREATION_FAILED;
         break;

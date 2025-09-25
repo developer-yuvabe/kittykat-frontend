@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 
-export const useUserBrands = (userId?: string) => {
+export const useUserBrands = () => {
   const {
     setBrands,
     addBrand,
@@ -20,6 +20,7 @@ export const useUserBrands = (userId?: string) => {
   const { data, error } = useQuery({
     queryKey: ["brands"],
     queryFn: () => fetchUserBrands(user!.id),
+    enabled: !!user,
   });
 
   const { brandsRefetch } = useGalleryQuery(
@@ -41,15 +42,15 @@ export const useUserBrands = (userId?: string) => {
   }, [data, error]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
 
     const eventSource = new EventSource(
-      `${getSSEBaseUrl()}/users/${userId}/brands`
+      `${getSSEBaseUrl()}/users/${user.id}/brands`
     );
 
     eventSource.addEventListener("brand_insert", (event) => {
       const brand = JSON.parse(event.data) as UserBrand;
-      if (brand.created_by.id === userId) {
+      if (brand.created_by.id === user.id) {
         setSelectedBrandId(brand.id);
       }
       addBrand(brand);
@@ -67,7 +68,7 @@ export const useUserBrands = (userId?: string) => {
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
     };
-  }, [userId]);
+  }, [user]);
 
   return null;
 };

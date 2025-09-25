@@ -10,6 +10,23 @@ import {
 } from "@/types/user.types";
 import { z } from "zod";
 
+export const createUser = async (userData: {
+  uid: string;
+  email: string;
+  name: string;
+}) => {
+  try {
+    const updatedUser = await handleApiRequest<UserListItem>(
+      axiosInstance.post(`/users`, userData)
+    );
+
+    return updatedUser;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+};
+
 export const updateUser = async (
   userId: string,
   userData: Pick<User, "thread_id"> & {
@@ -151,5 +168,19 @@ export const checkIfEmailExists = async (email: string): Promise<boolean> => {
   } catch (error) {
     console.error("Email check failed:", error);
     return false; // fail safe
+  }
+};
+
+export const sendEmailVerificationLink = async (email: string) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.post("/users/email-verification", {
+        email,
+        base_url: `${window.location.origin}`,
+      })
+    );
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw error;
   }
 };

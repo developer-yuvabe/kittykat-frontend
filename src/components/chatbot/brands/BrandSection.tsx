@@ -45,7 +45,7 @@ export const BrandSection: React.FC<{
 
   return (
     <div className="flex flex-col gap-4">
-      <div key={`brand-message-${brandingInformation?.static?.name}`}>
+      <div>
         {renderBrandData(
           expandedSections,
           (section) =>
@@ -463,9 +463,9 @@ export const renderBrandData = (
                     </div>
                   )}
 
-                  {Object.keys(dynamicData || {}).map((key) => (
+                  {Object.keys(dynamicData || {}).map((key, idx) => (
                     <DisplayField
-                      key={key}
+                      key={idx}
                       json={{ [key]: dynamicData ? dynamicData[key] : null }}
                       title={capitalizeKey(key)}
                       agentId={Agents.BRANDING_AGENT}

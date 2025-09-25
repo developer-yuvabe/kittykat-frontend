@@ -72,7 +72,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     if (emailExists) {
       form.setError("email", {
         type: "manual",
-        message: "Email already invited. Please use a different email.",
+        message: "Email already exists/invited. Please use a different email.",
       });
       return;
     }
