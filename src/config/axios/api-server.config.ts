@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { AppConfig } from "../app.config";
 import { serverConfig } from "../firebase-server.config";
 
-const getServerSideToken = async () => {
+export const getServerSideToken = async () => {
   try {
     const tokens = await getTokens(await cookies(), {
       apiKey: serverConfig.apiKey,
@@ -13,7 +13,7 @@ const getServerSideToken = async () => {
       serviceAccount: serverConfig.serviceAccount,
     });
 
-    return tokens!.token;
+    return tokens;
   } catch (error) {
     console.error("Error getting tokens:", error);
     return null;
@@ -30,7 +30,7 @@ axiosInstance.interceptors.request.use(
     if (authToken) {
       config.headers = new AxiosHeaders({
         ...config.headers,
-        Authorization: `Bearer ${authToken}`,
+        Authorization: `Bearer ${authToken.token}`,
         ContentType: "application/json",
       });
     }

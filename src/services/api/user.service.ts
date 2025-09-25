@@ -170,3 +170,17 @@ export const checkIfEmailExists = async (email: string): Promise<boolean> => {
     return false; // fail safe
   }
 };
+
+export const sendEmailVerificationLink = async (email: string) => {
+  try {
+    await handleApiRequest(
+      axiosInstance.post("/users/email-verification", {
+        email,
+        base_url: `${window.location.origin}`,
+      })
+    );
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw error;
+  }
+};

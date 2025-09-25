@@ -20,7 +20,11 @@ export async function middleware(request: NextRequest) {
     debug: process.env.NODE_ENV === "production" ? false : true,
     serviceAccount: serverConfig.serviceAccount,
     handleValidToken: async ({}, headers) => {
-      if (AppConfig.PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
+      if (
+        AppConfig.PUBLIC_PATHS.filter((p) => p !== "/verify-email").includes(
+          request.nextUrl.pathname
+        )
+      ) {
         return redirectToHome(request, {
           path: AppConfig.HOME_ROUTE,
         });

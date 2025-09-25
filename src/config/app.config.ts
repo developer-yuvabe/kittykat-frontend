@@ -8,6 +8,7 @@ export const AppConfig = {
     "/forgot-password",
     /^\/invitations\/[^\/]+$/,
     "/signup",
+    "/verify-email",
   ],
   HOME_ROUTE: "/",
   API_BASE_URL: {
