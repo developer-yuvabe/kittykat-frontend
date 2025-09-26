@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/store/user.store";
-import { CreditCard, LifeBuoy, LogOut } from "lucide-react";
+import { CreditCard, GemIcon, LifeBuoy, LogOut } from "lucide-react";
 import { CreditIcon } from "../ui/custom-icon";
 import QueueProgress from "./QueueProgress";
 import Link from "next/link";
@@ -19,7 +19,7 @@ import { auth } from "@/config/firebase.config";
 import { useCreditsStore } from "@/store/credits.store";
 
 export function UserProfileMenu({}) {
-  const { user, credits } = useUserStore();
+  const { user, credits, kittykatExpertCredits } = useUserStore();
   const router = useRouter();
   const { setShowPurchaseCreditsModal } = useCreditsStore();
 
@@ -42,6 +42,18 @@ export function UserProfileMenu({}) {
 
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">
+      {kittykatExpertCredits !== null && (
+        <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
+          <span className="text-xs">{kittykatExpertCredits}</span>
+          <GemIcon className="w-6 h-4" />
+        </div>
+      )}
+      {credits !== null && (
+        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
+          <span className="text-xs">{credits}</span>
+          <CreditIcon className="w-2 h-2" />
+        </div>
+      )}
       <div className="hidden sm:block">
         <QueueProgress />
       </div>
@@ -54,12 +66,6 @@ export function UserProfileMenu({}) {
               {getUserInitials()}
             </AvatarFallback>
           </Avatar>
-          {credits !== null && (
-            <div className="flex items-center gap-2  text-primary px-3 py-2 rounded-full h-10">
-              <span className="text-xs">{credits}</span>
-              <CreditIcon className="w-2 h-2" />
-            </div>
-          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"

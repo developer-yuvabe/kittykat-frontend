@@ -9,6 +9,9 @@ type Store = {
 
   credits: number | null;
   setCredits: (credits: number) => void;
+
+  kittykatExpertCredits: number | null;
+  setKittykatExpertCredits: (credits: number) => void;
 };
 
 export const useUserStore = create<Store>()((set) => ({
@@ -17,4 +20,8 @@ export const useUserStore = create<Store>()((set) => ({
 
   credits: null,
   setCredits: (credits) => set({ credits }),
+
+  kittykatExpertCredits: null,
+  setKittykatExpertCredits: (credits) =>
+    set({ kittykatExpertCredits: credits }),
 }));

@@ -16,6 +16,7 @@ import { AskKittykartAcceptDialog } from "./AskKittykartAcceptDialog";
 import { AskKittykartRejectDialog } from "./AskKittykartRejectDialog";
 import { AskKittykartAcceptAndStartDialog } from "./AskKittykartAcceptAndStartDialog";
 import { getClientNameFromComments } from "@/lib/askKittykat.utils";
+import { useTaskList } from "@/hooks/useTaskList";
 
 interface AskKittykatReviewStatusProps {
   item: GalleryItemResponse;
@@ -33,6 +34,7 @@ export function AskKittykatReviewStatus({
   setCurrentItem,
 }: AskKittykatReviewStatusProps) {
   const { user } = useUserStore();
+  const { updateTaskListMutation } = useTaskList();
   const isAdmin = user?.role?.id === UserRoleId.ADMIN;
 
   const currentStatus = item?.workflow_status || "draft";
@@ -95,6 +97,19 @@ export function AskKittykatReviewStatus({
     );
 
     setIsEditingStatus(false);
+  };
+
+  const handleTasklistStateChange = (
+    newStatus: WorkflowStatus,
+    logMessage: string
+  ) => {
+    if (item.tasklist_id) {
+      updateTaskListMutation.mutate({
+        tasklistId: item.tasklist_id,
+        data: { asset_expert_status: newStatus, log: logMessage },
+        userId: user?.id || "",
+      });
+    }
   };
 
   const handleAccept = () => {
@@ -171,11 +186,7 @@ export function AskKittykatReviewStatus({
           } at ${new Date().toLocaleDateString()} with estimated credit ${
             tasklistDetail.tasklist.estimated_credits
           }`;
-          await taskListService.updateTasklist(
-            item.tasklist_id,
-            { status: "estimated", log: logMessage },
-            user?.id || ""
-          );
+          handleTasklistStateChange("in_progress", logMessage);
         } catch (error) {
           console.error("Error updating tasklist:", error);
           // Don't fail the whole process for tasklist update error

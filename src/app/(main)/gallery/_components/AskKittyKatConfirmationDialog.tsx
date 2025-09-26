@@ -10,17 +10,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { Comment } from "@/types/gallery.types";
+import type { BrandCampaignResponse, Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
-
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation } from "@tanstack/react-query";
 import { useUserStore } from "@/store/user.store";
 import { AskKittyKatCommentInput } from "./AskKittyKatCommentInput";
 import { AskKittyKatTaskList } from "./AskKittyKatTaskList";
 import { CreateTasklistRequest } from "@/types/tasklist.types";
 import { formatTasksAsMarkdown } from "@/lib/askKittykat.utils";
+import { useTaskList } from "@/hooks/useTaskList";
 
 interface AskKittyKatConfirmationDialogProps {
   open: boolean;
@@ -37,6 +36,7 @@ interface AskKittyKatConfirmationDialogProps {
   imageId: string;
   allAttachments: string[];
   onAllAttachmentsChange: Dispatch<SetStateAction<string[]>>;
+  brandsWithCampaigns: BrandCampaignResponse[];
 }
 
 interface TaskListTask {
@@ -56,15 +56,27 @@ export function AskKittyKatConfirmationDialog({
   imageId,
   allAttachments,
   onAllAttachmentsChange,
+  brandsWithCampaigns,
 }: AskKittyKatConfirmationDialogProps) {
   const { user } = useUserStore();
   const [tasks, setTasks] = useState<TaskListTask[]>([]);
+  const { createTaskListMutation } = useTaskList();
 
   // New comment input state
   const [newComment, setNewComment] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
 
+  // Brand and campaign names for record creation
+  const brandName = brandId
+    ? brandsWithCampaigns.find((b) => b.brand_id === brandId)?.brand_name
+    : undefined;
+
+  const campaignName = campaignId
+    ? brandsWithCampaigns
+        .flatMap((b) => b.campaigns)
+        .find((c) => c.id === campaignId)?.title
+    : undefined;
   // Initialize all attachments when dialog opens or comments change
   useEffect(() => {
     if (open) {
@@ -101,17 +113,6 @@ export function AskKittyKatConfirmationDialog({
   }, [open]);
 
   // Create tasklist mutation
-  const createTasklistMutation = useMutation({
-    mutationFn: (request: CreateTasklistRequest) =>
-      taskListService.createTasklist(request),
-    onSuccess: () => {
-      toast.success("Tasklist created successfully!");
-    },
-    onError: (error) => {
-      toast.error("Failed to create tasklist");
-      console.error("Error creating tasklist:", error);
-    },
-  });
 
   const hasNoComments = !comments || comments.length === 0;
   const hasTasks = tasks.length > 0;
@@ -158,7 +159,7 @@ export function AskKittyKatConfirmationDialog({
 
     try {
       const createRequest: CreateTasklistRequest = {
-        image_id: imageId,
+        asset_id: imageId,
         brand_id: brandId,
         campaign_id: campaignId || undefined,
         asset_url: imageUrl,
@@ -166,9 +167,11 @@ export function AskKittyKatConfirmationDialog({
         tasks: tasks,
         notes: hasNoComments ? newComment.trim() : undefined,
         submitted_by_name: user.name,
+        brand_name: brandName,
+        campaign_name: campaignName,
       };
 
-      await createTasklistMutation.mutateAsync(createRequest);
+      await createTaskListMutation.mutateAsync(createRequest);
       return true;
     } catch (error) {
       console.error("Error creating tasklist:", error);
@@ -183,7 +186,7 @@ export function AskKittyKatConfirmationDialog({
   };
 
   const handleConfirm = async () => {
-    if (isGeneratingTasks || createTasklistMutation.isPending) return;
+    if (isGeneratingTasks || createTaskListMutation.isPending) return;
 
     if (hasNoComments) {
       // For new comments, need to add comment first and generate tasks if not done
@@ -262,7 +265,7 @@ export function AskKittyKatConfirmationDialog({
   };
 
   const canConfirm = () => {
-    if (isGeneratingTasks || createTasklistMutation.isPending) return false;
+    if (isGeneratingTasks || createTaskListMutation.isPending) return false;
 
     if (hasNoComments) {
       // For new comments, require a comment text
@@ -365,7 +368,7 @@ export function AskKittyKatConfirmationDialog({
             disabled={!canConfirm()}
             className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            {isGeneratingTasks || createTasklistMutation.isPending ? (
+            {isGeneratingTasks || createTaskListMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 {isGeneratingTasks ? "Processing..." : "Creating tasklist..."}
