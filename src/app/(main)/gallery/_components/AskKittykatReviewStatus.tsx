@@ -5,6 +5,7 @@ import { UserRoleId } from "@/types/user.types";
 import { GalleryItemResponse, WorkflowStatus } from "@/types/gallery.types";
 import { GalleryActions } from "@/hooks/useGallery";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import taskListService from "@/services/api/tasklist.service";
 import { useState, useRef, SetStateAction, Dispatch } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -15,6 +16,7 @@ import { AskKittykartAcceptDialog } from "./AskKittykartAcceptDialog";
 import { AskKittykartRejectDialog } from "./AskKittykartRejectDialog";
 import { AskKittykartAcceptAndStartDialog } from "./AskKittykartAcceptAndStartDialog";
 import { getClientNameFromComments } from "@/lib/askKittykat.utils";
+import { useTaskList } from "@/hooks/useTaskList";
 
 interface AskKittykatReviewStatusProps {
   item: GalleryItemResponse;
@@ -32,6 +34,7 @@ export function AskKittykatReviewStatus({
   setCurrentItem,
 }: AskKittykatReviewStatusProps) {
   const { user } = useUserStore();
+  const { updateTaskListMutation } = useTaskList();
   const isAdmin = user?.role?.id === UserRoleId.ADMIN;
 
   const currentStatus = item?.workflow_status || "draft";
@@ -96,6 +99,19 @@ export function AskKittykatReviewStatus({
     setIsEditingStatus(false);
   };
 
+  const handleTasklistStateChange = (
+    newStatus: WorkflowStatus,
+    logMessage: string
+  ) => {
+    if (item.tasklist_id) {
+      updateTaskListMutation.mutate({
+        tasklistId: item.tasklist_id,
+        data: { asset_expert_status: newStatus, log: logMessage },
+        userId: user?.id || "",
+      });
+    }
+  };
+
   const handleAccept = () => {
     setIsSubmittingAccept(true);
     try {
@@ -156,6 +172,25 @@ export function AskKittykatReviewStatus({
             },
           }
         );
+      }
+
+      // Update tasklist status to estimated
+      if (item.tasklist_id) {
+        try {
+          // Get tasklist details to get estimated_credits
+          const tasklistDetail = await taskListService.getTasklistDetail(
+            item.tasklist_id
+          );
+          const logMessage = `Tasklist requested is accepted by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()} with estimated credit ${
+            tasklistDetail.tasklist.estimated_credits
+          }`;
+          handleTasklistStateChange("in_progress", logMessage);
+        } catch (error) {
+          console.error("Error updating tasklist:", error);
+          // Don't fail the whole process for tasklist update error
+        }
       }
 
       // Then update the status to in_progress

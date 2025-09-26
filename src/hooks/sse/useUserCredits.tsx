@@ -2,8 +2,10 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { useEffect } from "react";
 
+
 export const useUserCredits = () => {
-  const { setCredits, user } = useUserStore();
+  const { setCredits, setKittykatExpertCredits,user } = useUserStore();
+ 
   useEffect(() => {
     if (!user) return;
 
@@ -12,9 +14,13 @@ export const useUserCredits = () => {
     );
 
     eventSource.addEventListener("credits", (event) => {
-      const { credits } = JSON.parse(event.data) as { credits: number };
+      const { credits, kittykat_expert_credits } = JSON.parse(event.data) as {
+        credits: number;
+        kittykat_expert_credits: number;
+      };
 
       setCredits(credits);
+      setKittykatExpertCredits(kittykat_expert_credits);
     });
 
     eventSource.onerror = (err) => {

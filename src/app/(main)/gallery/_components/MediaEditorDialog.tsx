@@ -1281,6 +1281,7 @@ export function MediaEditorDialog({
           imageId={currentItem?.id}
           allAttachments={allAttachments}
           onAllAttachmentsChange={setAllAttachments}
+          brandsWithCampaigns={galleryActions.brandsData?.brands || []}
         />
       )}
     </>

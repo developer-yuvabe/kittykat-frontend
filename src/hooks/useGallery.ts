@@ -62,7 +62,8 @@ export const useGalleryQuery = (
     enabled:
       enabled &&
       brandsQuery.isSuccess &&
-      (filters.selectedFilters?.brands?.length ?? 0) > 0,
+      (filters.selectedFilters?.brands?.length ?? 0) > 0 &&
+      filters.selectedFilters?.brands?.every((brand) => brand != null),
     queryFn: async ({ pageParam = 0 }) => {
       try {
         if (filters.searchQuery) {
