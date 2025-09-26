@@ -2,7 +2,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UserListItem, UserListResponse, UserStatus } from "@/types/user.types";
+import {
+  User,
+  UserListItem,
+  UserListResponse,
+  UserStatus,
+} from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisIcon } from "lucide-react";
@@ -18,6 +23,7 @@ import { deleteUser, resendInvitation } from "@/services/api/user.service";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditUser } from "./EditUser";
+import { useModelsStore } from "@/store/models.store";
 
 export const getUserTableColumns = (
   page: number,
@@ -111,6 +117,13 @@ export const getUserTableColumns = (
     ),
   },
   {
+    header: "Credits",
+    accessorKey: "credits",
+    cell: ({ row }) => {
+      return <p className="font-medium">{row.original.credits ?? 0}</p>;
+    },
+  },
+  {
     header: "Brand Access",
     accessorKey: "brand_access",
     cell: ({ row }) => {
@@ -148,6 +161,55 @@ export const getUserTableColumns = (
         </div>
       ) : (
         "—"
+      );
+    },
+  },
+  {
+    header: "Model Access",
+    accessorKey: "model_access",
+    cell: ({ row }) => {
+      const INIT_MODELS_TO_SHOW = 3;
+      const [showAllModels, setShowAllModels] = useState(false);
+      const { models } = useModelsStore(); // Add this line
+      const role = row.original.role?.id;
+
+      if (role === "KK-ADMIN") {
+        return <p className="italic">All models</p>;
+      }
+
+      const modelAccess = row.original.model_access || [];
+
+      if (modelAccess.length === 0) {
+        return "—";
+      }
+
+      // Helper function to get model name from ID
+      const getModelName = (modelId: string) => {
+        const model = models.find((m) => m.id === modelId);
+        return model?.name || modelId;
+      };
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {modelAccess
+            .slice(0, showAllModels ? undefined : INIT_MODELS_TO_SHOW)
+            .map((modelId) => (
+              <Badge key={modelId} className="border">
+                {getModelName(modelId)}{" "}
+                {/* Changed from model.name to getModelName(modelId) */}
+              </Badge>
+            ))}
+          {modelAccess.length > INIT_MODELS_TO_SHOW && (
+            <Button
+              variant="link"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowAllModels((p) => !p)}
+            >
+              {showAllModels ? "Show Less" : `Show all (${modelAccess.length})`}
+            </Button>
+          )}
+        </div>
       );
     },
   },
