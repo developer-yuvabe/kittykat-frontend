@@ -86,9 +86,7 @@ export function EditUser({
       brandAccess: user.brand_access
         ? user.brand_access.map((brand) => brand.id)
         : undefined,
-      modelAccess: user.model_access
-        ? user.model_access.map((model) => model.id)
-        : baseModelIds, // Default to base models if no access defined
+      modelAccess: user.model_access || baseModelIds, // Default to base models if no access defined
       contentFilterDisabled: user.content_filter_disabled || false,
       credits: user.credits || 0,
     },
@@ -99,7 +97,7 @@ export function EditUser({
   useEffect(() => {
     if (isOpen && user) {
       // Ensure base models are always included in model access
-      const userModelAccess = user.model_access?.map((model) => model.id) || [];
+      const userModelAccess = user.model_access || [];
       const combinedModelAccess = [
         ...new Set([...baseModelIds, ...userModelAccess]),
       ];

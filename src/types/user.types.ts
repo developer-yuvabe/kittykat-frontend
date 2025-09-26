@@ -6,7 +6,7 @@ export type User = {
   email: string;
   thread_id?: string | null;
   brand_access?: UserBrand[];
-  model_access?: UserModel[];
+  model_access?: string[];
   role: UserRole;
   is_default_admin?: boolean;
   credits?: number;
@@ -32,11 +32,7 @@ export type UserListItem = {
       email: string;
     };
   }[];
-  model_access?: {
-    id: string;
-    name: string;
-    type: string;
-  }[];
+  model_access?: string[];
 };
 
 export type UserListResponse = {
@@ -68,10 +64,4 @@ export type UserBrand = {
     name: string;
     email: string;
   };
-};
-
-export type UserModel = {
-  id: string;
-  name: string;
-  type: string;
 };

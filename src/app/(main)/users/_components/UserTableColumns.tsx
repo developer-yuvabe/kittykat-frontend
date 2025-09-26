@@ -23,12 +23,12 @@ import { deleteUser, resendInvitation } from "@/services/api/user.service";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditUser } from "./EditUser";
+import { useModelsStore } from "@/store/models.store";
 
 export const getUserTableColumns = (
   page: number,
   limit: number,
-  searchTerm: string | undefined = "",
-  currentUser?: User // Add currentUser as a parameter
+  searchTerm: string | undefined = ""
 ): ColumnDef<UserListItem>[] => [
   {
     header: "#",
@@ -170,37 +170,46 @@ export const getUserTableColumns = (
     cell: ({ row }) => {
       const INIT_MODELS_TO_SHOW = 3;
       const [showAllModels, setShowAllModels] = useState(false);
+      const { models } = useModelsStore(); // Add this line
       const role = row.original.role?.id;
 
       if (role === "KK-ADMIN") {
         return <p className="italic">All models</p>;
       }
 
-      return row.original.model_access &&
-        row.original.model_access.length > 0 ? (
+      const modelAccess = row.original.model_access || [];
+
+      if (modelAccess.length === 0) {
+        return "—";
+      }
+
+      // Helper function to get model name from ID
+      const getModelName = (modelId: string) => {
+        const model = models.find((m) => m.id === modelId);
+        return model?.name || modelId;
+      };
+
+      return (
         <div className="flex flex-wrap gap-2">
-          {row.original.model_access
+          {modelAccess
             .slice(0, showAllModels ? undefined : INIT_MODELS_TO_SHOW)
-            .map((model) => (
-              <Badge key={model.id} className="border">
-                {model.name}
+            .map((modelId) => (
+              <Badge key={modelId} className="border">
+                {getModelName(modelId)}{" "}
+                {/* Changed from model.name to getModelName(modelId) */}
               </Badge>
             ))}
-          {row.original.model_access.length > INIT_MODELS_TO_SHOW && (
+          {modelAccess.length > INIT_MODELS_TO_SHOW && (
             <Button
               variant="link"
               size="sm"
               className="text-muted-foreground"
               onClick={() => setShowAllModels((p) => !p)}
             >
-              {showAllModels
-                ? "Show Less"
-                : `Show all (${row.original.model_access.length})`}
+              {showAllModels ? "Show Less" : `Show all (${modelAccess.length})`}
             </Button>
           )}
         </div>
-      ) : (
-        "—"
       );
     },
   },

@@ -93,7 +93,7 @@ export default function ModelSelector({
         <SelectContent>
           {models.length > 0 ? (
             <SelectGroup onPointerDown={(e) => e.stopPropagation()}>
-              {/* <SelectLabel>Available Models</SelectLabel> */}
+              <SelectLabel>Available Models</SelectLabel>
               {filteredModels.map((model) => {
                 const ProviderIcon = getProviderIcon(model.provider);
                 return (
