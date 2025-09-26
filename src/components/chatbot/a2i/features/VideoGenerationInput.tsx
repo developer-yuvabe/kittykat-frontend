@@ -46,26 +46,27 @@ const VideoGenerationInput = ({
     selectedVideoGenearationModel,
     setSelectedVideoGenearationModel,
   } = useModelsStore();
-
   return (
     <div className="w-full flex-1 flex flex-col gap-y-4">
       {/* Model Chooser */}
-      <div className="ml-auto w-max">
-        <ModelSelector
-          typeFilter="video"
-          selectedModel={selectedVideoGenearationModel}
-          onModelChange={(m) => {
-            setSelectedVideoGenearationModel(m);
-          }}
-        />
-      </div>
       {isModelsFetched && selectedVideoGenearationModel && (
-        <VideoGenerationInputControls
-          item={item}
-          campaignId={campaignId}
-          key={item?.id}
-          handleDialogChange={handleDialogChange}
-        />
+        <>
+          <div className="ml-auto w-max">
+            <ModelSelector
+              typeFilter="video"
+              selectedModel={selectedVideoGenearationModel}
+              onModelChange={(m) => {
+                setSelectedVideoGenearationModel(m);
+              }}
+            />
+          </div>
+          <VideoGenerationInputControls
+            item={item}
+            campaignId={campaignId}
+            key={item?.id}
+            handleDialogChange={handleDialogChange}
+          />
+        </>
       )}
     </div>
   );

@@ -2,13 +2,15 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { useEffect } from "react";
 
-export const useUserCredits = (userId?: string) => {
-  const { setCredits, setKittykatExpertCredits } = useUserStore();
+
+export const useUserCredits = () => {
+  const { setCredits, setKittykatExpertCredits,user } = useUserStore();
+ 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
 
     const eventSource = new EventSource(
-      `${getSSEBaseUrl()}/users/${userId}/credits`
+      `${getSSEBaseUrl()}/users/${user.id}/credits`
     );
 
     eventSource.addEventListener("credits", (event) => {
@@ -24,7 +26,7 @@ export const useUserCredits = (userId?: string) => {
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
     };
-  }, [userId]);
+  }, [user]);
 
   return null;
 };

@@ -40,7 +40,8 @@ export function AskKittykatImageEditingTools({
   item: GalleryItemResponse;
   remixControls: RemixControlsProps;
 }) {
-  const { selectedRemixModel, selectedVtonModel } = useModelsStore();
+  const { selectedRemixModel, selectedVtonModel, selectedUpscaleModel } =
+    useModelsStore();
   const tools: ToolTab[] = [
     {
       value: "virtual-tryon",
@@ -85,7 +86,7 @@ export function AskKittykatImageEditingTools({
       value: "upscaler",
       icon: <ArrowUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Image Upscaler feature coming soon",
-      customComponent: (
+      customComponent: selectedUpscaleModel ? (
         <ImageUpscaler
           closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
@@ -93,6 +94,8 @@ export function AskKittykatImageEditingTools({
           initialImage={item.asset_url}
           campaignId={remixControls.campaignId}
         />
+      ) : (
+        <> </>
       ),
     },
   ];
