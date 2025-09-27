@@ -32,13 +32,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { MediaUploadBrandSelector } from "./MediaUploadBrandSelector";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
-import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
+import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -64,8 +63,6 @@ export function MediaLibrary({
   onFullMediaItemSelected,
   onMultipleMediaItemsSelected,
   filters,
-  brandId,
-  campaignId,
   moodboardId,
   inSelectionGalleryIds = [],
   isMultiSelect = false,
@@ -83,7 +80,6 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
-  const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId);
   const [initialWorkflowStatus, setInitialWorkflowStatus] = useQueryState<
     string[]
   >("status", {
@@ -92,17 +88,17 @@ export function MediaLibrary({
     serialize: (value) => value.join(","),
     history: "push",
   });
+  const { selectedBrandId, selectedCampaignId, brands } = useBrandStore();
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
     "brandId",
     {
       defaultValue: undefined,
-      parse: (value) => (value ? value : undefined),
+      parse: (value) =>
+        brands.find((b) => b.id === value) ? value : undefined,
       serialize: (value) => value || "",
       history: "push",
     }
   );
-
-  const { selectedBrandId } = useBrandStore();
 
   // Priority logic: initialBrandId takes precedence over selectedBrandId
   const effectiveBrandId = useMemo(() => {
@@ -136,9 +132,6 @@ export function MediaLibrary({
   const [selectedBrand, setSelectedBrand] = useState<
     BrandCampaignListResponse["brands"][number] | null
   >(null);
-
-  if (!isMediaSelectDialog)
-    useBrandUpdates(effectiveBrandId || selectedBrand?.brand_id);
 
   const queryClient = useQueryClient();
 
@@ -405,18 +398,20 @@ export function MediaLibrary({
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
             {!hasNoBrands && galleryView === "grid" && (
-              <MediaUploadBrandSelector
-                selectedBrand={selectedBrand}
-                setSelectedBrand={setSelectedBrand}
-                brands={galleryActions.brandsData?.brands || []}
-                brandsLoading={galleryActions.brandsLoading}
-                setSelectedCampaignId={setSelectedCampaignId}
-                selectedCampaignId={selectedCampaignId}
-                selectedFilters={selectedFilters}
-                setSelectedFilters={setSelectedFilters}
-                preSelectedBrandId={brandId || effectiveBrandId}
-                setInitialWorkflowStatus={setInitialWorkflowStatus}
-                setInitialBrandId={setInitialBrandId}
+              <BrandSelector
+                showCampaigns
+                showSelectedValue
+                className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+                onBrandSelect={(brandId) => {
+                  setSelectedFilters((prev) => ({
+                    ...prev,
+                    brandId: [brandId],
+                    campaigns: [],
+                  }));
+
+                  setInitialWorkflowStatus(null);
+                  setInitialBrandId(null);
+                }}
               />
             )}
           </div>
@@ -465,7 +460,7 @@ export function MediaLibrary({
                 setSelectedBrand={setSelectedBrand}
                 brands={galleryActions.brandsData?.brands || []}
                 brandsLoading={galleryActions.brandsLoading}
-                selectedCampaignId={selectedCampaignId}
+                selectedCampaignId={selectedCampaignId ?? undefined}
                 selecteMoodboardId={moodboardId}
                 galleryView={galleryView}
                 brandName={selectedBrandName}
@@ -514,7 +509,7 @@ export function MediaLibrary({
                       setSelectedBrand={setSelectedBrand}
                       brands={galleryActions.brandsData?.brands || []}
                       brandsLoading={galleryActions.brandsLoading}
-                      selectedCampaignId={selectedCampaignId}
+                      selectedCampaignId={selectedCampaignId ?? undefined}
                       selecteMoodboardId={moodboardId}
                     />
                   )}
@@ -522,7 +517,7 @@ export function MediaLibrary({
                 {activeTab === "pexels" ? (
                   <TopicsGrid
                     selectedBrand={selectedBrand}
-                    selectedCampaignId={selectedCampaignId}
+                    selectedCampaignId={selectedCampaignId ?? undefined}
                     selecteMoodboardId={moodboardId}
                     setActiveTab={setActiveTab}
                     isMultiSelect={isMultiSelect}

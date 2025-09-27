@@ -59,6 +59,10 @@ export enum UserStatus {
 export type UserBrand = {
   id: string;
   name: string;
+  campaigns: {
+    id: string;
+    title: string;
+  }[];
   created_by: {
     id: string;
     name: string;

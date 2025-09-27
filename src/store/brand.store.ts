@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { UserBrand } from "@/types/user.types";
-import { ThreadCampaign, MoodboardInformation } from "@/types/types";
+import { MoodboardInformation } from "@/types/types";
 
 type Store = {
   isBrandsFetched: boolean;
@@ -11,14 +11,14 @@ type Store = {
   addBrand: (brand: UserBrand) => void;
   removeBrand: (brandId: string) => void;
 
-  campaigns: ThreadCampaign[];
-  setCampaigns: (campaigns: ThreadCampaign[]) => void;
+  campaigns: UserBrand["campaigns"];
+  setCampaigns: (campaigns: UserBrand["campaigns"]) => void;
 
   moodboards: MoodboardInformation[];
   setMoodboards: (moodboards: MoodboardInformation[]) => void;
 
   selectedBrandId: string | null;
-  setSelectedBrandId: (brand: string | null) => void;
+  setSelectedBrandId: (brand: string | null, validate?: boolean) => void;
 
   selectedCampaignId: string | null;
   setSelectedCampaignId: (campaignId: string | null) => void;
@@ -47,6 +47,10 @@ type Store = {
   getSelectedBrandName: () => string | null;
   getSelectedCampaignName: () => string | null;
   getSelectedMoodboardName: () => string | null;
+
+  // This is to remember the last selected brand when user tries to create a new brand and then cancels it
+  previousSelectedBrandId: string | null;
+  setPreviousSelectedBrandId: (brandId: string | null) => void;
 };
 
 export const useBrandStore = create<Store>((set, get) => ({
@@ -55,7 +59,10 @@ export const useBrandStore = create<Store>((set, get) => ({
     set({ isBrandsFetched: isFetched }),
 
   brands: [],
-  setBrands: (brands: UserBrand[]) => set({ brands }),
+  setBrands: (brands: UserBrand[]) => {
+    const campaigns = brands.flatMap((brand) => brand.campaigns || []);
+    set({ brands, campaigns });
+  },
   addBrand: (brand: UserBrand) =>
     set((state) => ({ brands: [...state.brands, brand] })),
   removeBrand: (brandId: string) =>
@@ -64,13 +71,23 @@ export const useBrandStore = create<Store>((set, get) => ({
     })),
 
   campaigns: [],
-  setCampaigns: (campaigns: ThreadCampaign[]) => set({ campaigns }),
+  setCampaigns: (campaigns: UserBrand["campaigns"]) => set({ campaigns }),
 
   moodboards: [],
   setMoodboards: (moodboards: MoodboardInformation[]) => set({ moodboards }),
 
   selectedBrandId: null,
-  setSelectedBrandId: (brand: string | null) => set({ selectedBrandId: brand }),
+  setSelectedBrandId: (brandId: string | null, validate?: boolean) =>
+    set((state) => {
+      if (validate && brandId) {
+        const brandExists = state.brands.some((brand) => brand.id === brandId);
+        if (!brandExists) {
+          brandId = null; // Reset to null if brand doesn't exist because I don't want to have an invalid brand selected :)
+        }
+      }
+
+      return { selectedBrandId: brandId };
+    }),
 
   selectedCampaignId: null,
   setSelectedCampaignId: (campaignId: string | null) =>
@@ -78,7 +95,12 @@ export const useBrandStore = create<Store>((set, get) => ({
 
   isCreatingBrand: false,
   setIsCreatingBrand: (isCreating: boolean) =>
-    set({ isCreatingBrand: isCreating }),
+    set((state) => {
+      return {
+        isCreatingBrand: isCreating,
+        previousSelectedBrandId: state.selectedBrandId,
+      };
+    }),
 
   isCampaignCreating: false,
   setIsCampaignCreating: (isCreating: boolean) =>
@@ -123,7 +145,7 @@ export const useBrandStore = create<Store>((set, get) => ({
     const selectedCampaign = state.campaigns.find(
       (campaign) => campaign.id === state.selectedCampaignId
     );
-    return selectedCampaign?.campaign?.title || null;
+    return selectedCampaign?.title || null;
   },
 
   getSelectedMoodboardName: () => {
@@ -134,4 +156,8 @@ export const useBrandStore = create<Store>((set, get) => ({
     );
     return selectedMoodboard?.title || null;
   },
+
+  previousSelectedBrandId: null,
+  setPreviousSelectedBrandId: (brandId: string | null) =>
+    set({ previousSelectedBrandId: brandId }),
 }));
