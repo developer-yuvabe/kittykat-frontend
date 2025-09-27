@@ -2,7 +2,6 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 import { useVideoGenStore } from "@/store/video-gen.store";
 
 export function useBrandUpdates() {
@@ -11,12 +10,7 @@ export function useBrandUpdates() {
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
   const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
-  const { brandsRefetch } = useGalleryQuery(
-    {},
-    ITEMS_PER_PAGE,
-    false,
-    "useBrandUpdates"
-  );
+  const { setBrands, brands } = useBrandStore();
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -39,7 +33,20 @@ export function useBrandUpdates() {
 
       if (newCampaign !== prevCampaign) {
         setIsCampaignCreating(false); // <-- mark creation as done
-        brandsRefetch(); // <-- refresh gallery when campaign changes
+
+        setBrands(
+          brands.map((brand) =>
+            brand.id === selectedBrandId
+              ? {
+                  ...brand,
+                  campaigns: (parsed.campaign_information || []).map((c) => ({
+                    id: c.id,
+                    title: c.campaign?.title || "Untitled Campaign",
+                  })),
+                }
+              : brand
+          )
+        );
       }
 
       previousCampaignInfo.current = parsed.campaign_information;
