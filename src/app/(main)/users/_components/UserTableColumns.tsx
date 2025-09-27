@@ -18,7 +18,6 @@ import { deleteUser, resendInvitation } from "@/services/api/user.service";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditUser } from "./EditUser";
-import { CreditIcon } from "@/components/ui/custom-icon";
 
 export const getUserTableColumns = (
   page: number,
@@ -112,12 +111,7 @@ export const getUserTableColumns = (
     ),
   },
   {
-    header: () => (
-      <div className="flex items-center gap-1">
-        Tokens
-        <CreditIcon size={14} />
-      </div>
-    ),
+    header: "Tokens",
     accessorKey: "credits",
     cell: ({ row }) => (
       <p className="font-medium">
@@ -195,7 +189,7 @@ export const getUserTableColumns = (
           {modelAccess
             .slice(0, showAllModels ? undefined : INIT_MODELS_TO_SHOW)
             .map((model) => (
-              <Badge key={model._id} className="border">
+              <Badge key={model.id} className="border">
                 {model.name}
               </Badge>
             ))}

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useBrandStore } from "@/store/brand.store";
 import { useModelsStore } from "@/store/models.store";
-import { Info, Plus, X } from "lucide-react";
+import { GemIcon, Info, Plus, X } from "lucide-react";
 import { inviationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
 import {
@@ -49,6 +49,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CreditIcon } from "@/components/ui/custom-icon";
+import { NumberInput } from "@/components/ui/number-input";
 
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
@@ -78,8 +79,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       brandAccess: [],
       modelAccess: [],
       contentFilterDisabled: false,
-      credits: AppConfig.CREDITS.DEFAULT_INVITE,
-      kittykat_expert_credits: AppConfig.CREDITS.DEFAULT_INVITE,
+      credits: AppConfig.DEFAULT_CREDITS,
+      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
     },
     mode: "onSubmit",
   });
@@ -114,8 +115,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       brandAccess: [],
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
-      credits: AppConfig.CREDITS.DEFAULT_INVITE,
-      kittykatExpertCredits: AppConfig.CREDITS.DEFAULT_INVITE,
+      credits: AppConfig.DEFAULT_CREDITS,
+      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
     };
     form.reset(defaultValues);
   };
@@ -185,8 +186,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       brandAccess: [],
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
-      credits: AppConfig.CREDITS.DEFAULT_INVITE,
-      kittykat_expert_credits: AppConfig.CREDITS.DEFAULT_INVITE,
+      credits: AppConfig.DEFAULT_CREDITS,
+      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
     });
   };
 
@@ -524,171 +525,99 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
 
                   {/* Content Filter and Credits */}
                   <div className="flex flex-col md:flex-row gap-4">
-                    {/* Content Filter */}
                     <FormField
                       control={form.control}
-                      name="contentFilterDisabled"
+                      name="credits"
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <div className="flex items-center gap-2 h-6">
-                            <FormLabel>Content Filter</FormLabel>
-                            <TooltipIconButton
-                              tooltipClassName="max-w-36"
-                              tooltip="Disabling content filter allows the user to access all types of content without restrictions. This setting should be used with caution as it may expose users to inappropriate or harmful content."
-                            >
-                              <Info />
-                            </TooltipIconButton>
+                            <FormLabel>Tokens</FormLabel>
                           </div>
-                          <FormControl className="-mt-7">
-                            {user?.is_default_admin ? (
-                              <Checkbox
-                                variant="toggle"
-                                checked={!field.value}
-                                onCheckedChange={(checked) => {
-                                  field.onChange(!checked);
-                                }}
-                              />
-                            ) : (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger className="w-max">
-                                    <Checkbox
-                                      disabled
-                                      variant="toggle"
-                                      checked={!field.value}
-                                    />
-                                  </TooltipTrigger>
-                                  <TooltipContent side={"right"}>
-                                    You do not have permission to change this
-                                    setting.
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
+                          <FormControl>
+                            <div className="space-y-3">
+                              {user?.is_default_admin ? (
+                                <NumberInput
+                                  min={AppConfig.CREDITS.MIN}
+                                  max={AppConfig.CREDITS.MAX}
+                                  {...field}
+                                  onChange={field.onChange}
+                                  placeholder="Enter tokens"
+                                  className="w-full"
+                                />
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="w-full"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onSubmit={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        <Input
+                                          type="number"
+                                          value={field.value}
+                                          disabled
+                                          className="bg-muted w-full pointer-events-none"
+                                          placeholder="Enter tokens"
+                                          tabIndex={-1}
+                                        />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side={"bottom"}>
+                                      You do not have permission to edit Tokens.
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+
+                              {/* Quick add buttons with proper validation */}
+                              {user?.is_default_admin && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addCredits(5000)}
+                                  >
+                                    +5000
+                                    <CreditIcon size={14} className="ml-1" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addCredits(10000)}
+                                  >
+                                    +10000
+                                    <CreditIcon size={14} className="ml-1" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addCredits(50000)}
+                                  >
+                                    +50000
+                                    <CreditIcon size={14} className="ml-1" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    {/* Credits - Show to all admins */}
-                    {user?.role?.id === "KK-ADMIN" ? (
-                      <FormField
-                        control={form.control}
-                        name="credits"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <div className="flex items-center gap-2 h-6">
-                              <FormLabel>Tokens</FormLabel>
-                            </div>
-                            <FormControl>
-                              <div className="space-y-3">
-                                {user?.is_default_admin ? (
-                                  <Input
-                                    type="number"
-                                    min={AppConfig.CREDITS.MIN}
-                                    max={AppConfig.CREDITS.MAX}
-                                    {...field}
-                                    value={field.value || ""}
-                                    onChange={(e) => {
-                                      const value = e.target.value;
-                                      if (value === "") {
-                                        field.onChange(0);
-                                      } else {
-                                        const numValue = parseInt(value, 10);
-                                        if (
-                                          !isNaN(numValue) &&
-                                          numValue >= AppConfig.CREDITS.MIN &&
-                                          numValue <= AppConfig.CREDITS.MAX
-                                        ) {
-                                          field.onChange(numValue);
-                                        }
-                                      }
-                                    }}
-                                    placeholder="Enter credits amount"
-                                    className="w-full"
-                                  />
-                                ) : (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div
-                                          className="w-full"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                          }}
-                                          onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                          }}
-                                          onSubmit={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                          }}
-                                        >
-                                          <Input
-                                            type="number"
-                                            value={field.value}
-                                            disabled
-                                            className="bg-muted w-full pointer-events-none"
-                                            placeholder="Enter tokens amount"
-                                            tabIndex={-1}
-                                          />
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent side={"bottom"}>
-                                        You do not have permission to edit
-                                        Tokens.
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-
-                                {/* Quick add buttons with proper validation */}
-                                {user?.is_default_admin && (
-                                  <div className="flex gap-2">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => addCredits(5000)}
-                                    >
-                                      +5000
-                                      <CreditIcon size={14} className="ml-1" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => addCredits(10000)}
-                                    >
-                                      +10000
-                                      <CreditIcon size={14} className="ml-1" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => addCredits(50000)}
-                                    >
-                                      +50000
-                                      <CreditIcon size={14} className="ml-1" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    ) : (
-                      <div className="flex-1"></div>
-                    )}
-                  </div>
-                  {/* Credits - Show to all admins */}
-                  {user?.role?.id === "KK-ADMIN" ? (
                     <FormField
                       control={form.control}
                       name="kittykat_expert_credits"
@@ -700,28 +629,12 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                           <FormControl>
                             <div className="space-y-3">
                               {user?.is_default_admin ? (
-                                <Input
-                                  type="number"
+                                <NumberInput
                                   min={AppConfig.CREDITS.MIN}
                                   max={AppConfig.CREDITS.MAX}
                                   {...field}
-                                  value={field.value || ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === "") {
-                                      field.onChange(0);
-                                    } else {
-                                      const numValue = parseInt(value, 10);
-                                      if (
-                                        !isNaN(numValue) &&
-                                        numValue >= AppConfig.CREDITS.MIN &&
-                                        numValue <= AppConfig.CREDITS.MAX
-                                      ) {
-                                        field.onChange(numValue);
-                                      }
-                                    }
-                                  }}
-                                  placeholder="Enter credits amount"
+                                  onChange={field.onChange}
+                                  placeholder="Enter credits"
                                   className="w-full"
                                 />
                               ) : (
@@ -773,26 +686,29 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                     }
                                   >
                                     +500
+                                    <GemIcon size={14} className="ml-1" />
                                   </Button>
                                   <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
                                     onClick={() =>
-                                      addKittyKatExpertCredits(500)
+                                      addKittyKatExpertCredits(1000)
                                     }
                                   >
                                     +1000
+                                    <GemIcon size={14} className="ml-1" />
                                   </Button>
                                   <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
                                     onClick={() =>
-                                      addKittyKatExpertCredits(500)
+                                      addKittyKatExpertCredits(5000)
                                     }
                                   >
                                     +5000
+                                    <GemIcon size={14} className="ml-1" />
                                   </Button>
                                 </div>
                               )}
@@ -802,9 +718,54 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         </FormItem>
                       )}
                     />
-                  ) : (
-                    <div className="flex-1"></div>
-                  )}
+                  </div>
+
+                  {/* Content Filter */}
+                  <FormField
+                    control={form.control}
+                    name="contentFilterDisabled"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <div className="flex items-center gap-2 h-6">
+                          <FormLabel>Content Filter</FormLabel>
+                          <TooltipIconButton
+                            tooltipClassName="max-w-36"
+                            tooltip="Disabling content filter allows the user to access all types of content without restrictions. This setting should be used with caution as it may expose users to inappropriate or harmful content."
+                          >
+                            <Info />
+                          </TooltipIconButton>
+                        </div>
+                        <FormControl>
+                          {user?.is_default_admin ? (
+                            <Checkbox
+                              variant="toggle"
+                              checked={!field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(!checked);
+                              }}
+                            />
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="w-max">
+                                  <Checkbox
+                                    disabled
+                                    variant="toggle"
+                                    checked={!field.value}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side={"right"}>
+                                  You do not have permission to change this
+                                  setting.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <div className="flex justify-end gap-2">
                     <Button

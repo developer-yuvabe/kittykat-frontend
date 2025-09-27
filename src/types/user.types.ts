@@ -37,7 +37,7 @@ export type UserListItem = {
   model_access?: ModelAccess[];
 };
 export type ModelAccess = {
-  _id: string;
+  id: string;
   name: string;
   type: string;
 };
