@@ -10,6 +10,7 @@ export const updateInvitedUserSchema = z
     brandAccess: z.array(z.string()).optional(),
     modelAccess: z.array(z.string()).optional(),
     credits: z.number().min(0, "Credits must be a positive number"),
+    kittykat_expert_credits: z.number().min(0).optional(),
   })
   .refine(
     (data) => {

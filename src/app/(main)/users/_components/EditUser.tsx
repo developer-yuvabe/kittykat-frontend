@@ -86,18 +86,26 @@ export function EditUser({
       brandAccess: user.brand_access
         ? user.brand_access.map((brand) => brand.id)
         : undefined,
-      modelAccess: user.model_access || baseModelIds, // Default to base models if no access defined
+      modelAccess: user.model_access?.map((model) => model._id) || baseModelIds, // Default to base models if no access defined
       contentFilterDisabled: user.content_filter_disabled || false,
       credits: user.credits || 0,
+      kittykat_expert_credits: user.kittykat_expert_credits || 0,
     },
     mode: "onSubmit",
   });
-
+  const typeLabelMap: Record<string, string> = {
+    vton: "Virtual try-on",
+    image: "Image generation",
+    video: "Video generation",
+    remix: "In painting",
+    "image-upscale": "Image upscale",
+  };
   // Reset form values when user prop changes or dialog opens
   useEffect(() => {
     if (isOpen && user) {
       // Ensure base models are always included in model access
-      const userModelAccess = user.model_access || [];
+      const userModelAccess =
+        user.model_access?.map((model) => model._id) || [];
       const combinedModelAccess = [
         ...new Set([...baseModelIds, ...userModelAccess]),
       ];
@@ -107,9 +115,11 @@ export function EditUser({
         brandAccess: user.brand_access
           ? user.brand_access.map((brand) => brand.id)
           : undefined,
-        modelAccess: combinedModelAccess,
+        modelAccess:
+          user.role.id === UserRoleId.ADMIN ? [] : combinedModelAccess, // ✅ FIXED SYNTAX ERROR
         contentFilterDisabled: user.content_filter_disabled ?? false,
         credits: user.credits ?? 0,
+        kittykat_expert_credits: user.kittykat_expert_credits ?? 0, // ✅ ADDED
       });
     }
   }, [isOpen, user, form, baseModelIds]);
@@ -124,15 +134,21 @@ export function EditUser({
         model_access: data.modelAccess,
         contentFilterDisabled: data.contentFilterDisabled,
         credits: data.credits,
+        kittykat_expert_credits: data.kittykat_expert_credits,
       }),
       {
         loading: "Updating user...",
         success: (updatedUser) => {
-          queryClient.invalidateQueries({
-            queryKey: ["users"], // This will refetch all user queries
+          // Optimistic update - use setQueryData instead of invalidateQueries
+          queryClient.setQueryData<UserListResponse>(queryKey, (oldData) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              users: oldData.users.map((u) =>
+                u.id === user.id ? updatedUser : u
+              ),
+            };
           });
-
-          setIsOpen(false); // Move this to success callback
           return "User updated successfully!";
         },
         error: () => {
@@ -323,7 +339,7 @@ export function EditUser({
                     )}
                   />
 
-                  {/* Model Access - Updated with filtering and tooltips */}
+                  {/* Model Access */}
                   <FormField
                     control={form.control}
                     name="modelAccess"
@@ -331,7 +347,7 @@ export function EditUser({
                       <FormItem className="pb-2">
                         <FormLabel>Model Access</FormLabel>
                         <MultiSelect
-                          values={field.value}
+                          values={field.value || []}
                           onValuesChange={(newValues) => {
                             // Ensure base models are always included
                             const combinedValues = [
@@ -350,6 +366,8 @@ export function EditUser({
                                 placeholder={
                                   selectedRole === UserRoleId.ADMIN
                                     ? "Admin has access to all models"
+                                    : sortedModels.length === 0
+                                    ? "Loading models..."
                                     : "Select models"
                                 }
                               />
@@ -358,124 +376,139 @@ export function EditUser({
                           <MultiSelectContent
                             search={{
                               placeholder: "Search models...",
-                              emptyMessage: "No models found",
+                              emptyMessage:
+                                sortedModels.length === 0
+                                  ? "Loading models..."
+                                  : "No models found",
                             }}
                           >
-                            {/* Select All Checkbox */}
-                            <div className="px-2 py-2 border-b border-border">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id="select-all-models-edit"
-                                  checked={
-                                    field.value?.length === models.length &&
-                                    models.length > 0
-                                  }
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      // Select all models
-                                      field.onChange(
-                                        models.map((model) => model.id)
-                                      );
-                                    } else {
-                                      // Keep only base models (cannot deselect them)
-                                      field.onChange(baseModelIds);
-                                    }
-                                  }}
-                                  disabled={selectedRole === UserRoleId.ADMIN}
-                                />
-                                <label
-                                  htmlFor="select-all-models-edit"
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  Select All
-                                </label>
-                              </div>
-                            </div>
+                            {sortedModels.length > 0 && (
+                              <>
+                                {/* Select All Checkbox */}
+                                <div className="px-2 py-2 border-b border-border">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="select-all-models-edit"
+                                      checked={
+                                        field.value?.length === models.length &&
+                                        models.length > 0
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          // Select all models
+                                          field.onChange(
+                                            models.map((model) => model.id)
+                                          );
+                                        } else {
+                                          // Keep only base models (cannot deselect them)
+                                          field.onChange(baseModelIds);
+                                        }
+                                      }}
+                                      disabled={
+                                        selectedRole === UserRoleId.ADMIN
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="select-all-models-edit"
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                      Select All
+                                    </label>
+                                  </div>
+                                </div>
 
-                            <MultiSelectGroup>
-                              {sortedModels.map((model) => {
-                                const isBaseModel = !model.finetune_id;
-                                const isSelected =
-                                  field.value?.includes(model.id) || false;
+                                <MultiSelectGroup>
+                                  {sortedModels.map((model) => {
+                                    const isBaseModel = !model.finetune_id;
 
-                                if (isBaseModel) {
-                                  return (
-                                    <TooltipProvider key={model.id}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="relative">
-                                            <MultiSelectItem
-                                              value={model.id}
-                                              badgeLabel={model.name}
-                                              disabled={
-                                                selectedRole ===
-                                                  UserRoleId.ADMIN ||
-                                                isBaseModel
-                                              }
-                                              className="pointer-events-none"
-                                            >
-                                              <div className="flex items-start justify-between group gap-0 w-full">
-                                                <div className="flex items-start min-w-0 w-full">
-                                                  <Avatar className="h-6 w-6 mr-2">
-                                                    <AvatarFallback className="bg-green-500 text-white opacity-60">
-                                                      {model.name
-                                                        ?.charAt(0)
-                                                        .toUpperCase() || "M"}
-                                                    </AvatarFallback>
-                                                  </Avatar>
-                                                  <div className="flex flex-col space-y-1">
-                                                    <span className="line-clamp- break-words text-muted-foreground">
-                                                      {model.name}
-                                                    </span>
-                                                    <span className="italic text-xs text-muted-foreground">
-                                                      Use Case: {model.type}
-                                                    </span>
+                                    if (isBaseModel) {
+                                      return (
+                                        <TooltipProvider key={model.id}>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div className="relative">
+                                                <MultiSelectItem
+                                                  value={model.id}
+                                                  badgeLabel={model.name}
+                                                  disabled={
+                                                    selectedRole ===
+                                                      UserRoleId.ADMIN ||
+                                                    isBaseModel
+                                                  }
+                                                  className="pointer-events-none"
+                                                >
+                                                  <div className="flex items-start justify-between group gap-0 w-full">
+                                                    <div className="flex items-start min-w-0 w-full">
+                                                      <Avatar className="h-6 w-6 mr-2">
+                                                        <AvatarFallback className="bg-green-500 text-white opacity-60">
+                                                          {model.name
+                                                            ?.charAt(0)
+                                                            .toUpperCase() ||
+                                                            "M"}
+                                                        </AvatarFallback>
+                                                      </Avatar>
+                                                      <div className="flex flex-col space-y-1">
+                                                        <span className="line-clamp- break-words text-muted-foreground">
+                                                          {model.name}
+                                                        </span>
+                                                        <span className="italic text-xs text-muted-foreground">
+                                                          Use Case:{" "}
+                                                          {typeLabelMap[
+                                                            model.type
+                                                          ] ?? model.type}
+                                                        </span>
+                                                      </div>
+                                                    </div>
                                                   </div>
-                                                </div>
+                                                </MultiSelectItem>
+                                                {/* Invisible overlay for hover events */}
+                                                <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
                                               </div>
-                                            </MultiSelectItem>
-                                            {/* Invisible overlay for hover events */}
-                                            <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right">
-                                          Cannot unselect base models
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  );
-                                }
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right">
+                                              Cannot unselect base models
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      );
+                                    }
 
-                                return (
-                                  <MultiSelectItem
-                                    key={model.id}
-                                    value={model.id}
-                                    badgeLabel={model.name}
-                                    disabled={selectedRole === UserRoleId.ADMIN}
-                                  >
-                                    <div className="flex items-start justify-between group gap-0 w-full">
-                                      <div className="flex items-start min-w-0 w-full">
-                                        <Avatar className="h-6 w-6 mr-2">
-                                          <AvatarFallback className="bg-green-500 text-white">
-                                            {model.name
-                                              ?.charAt(0)
-                                              .toUpperCase() || "M"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col space-y-1">
-                                          <span className="line-clamp- break-words">
-                                            {model.name}
-                                          </span>
-                                          <span className="italic text-xs">
-                                            Use Case: {model.type}
-                                          </span>
+                                    return (
+                                      <MultiSelectItem
+                                        key={model.id}
+                                        value={model.id}
+                                        badgeLabel={model.name}
+                                        disabled={
+                                          selectedRole === UserRoleId.ADMIN
+                                        }
+                                      >
+                                        <div className="flex items-start justify-between group gap-0 w-full">
+                                          <div className="flex items-start min-w-0 w-full">
+                                            <Avatar className="h-6 w-6 mr-2">
+                                              <AvatarFallback className="bg-green-500 text-white">
+                                                {model.name
+                                                  ?.charAt(0)
+                                                  .toUpperCase() || "M"}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col space-y-1">
+                                              <span className="line-clamp- break-words">
+                                                {model.name}
+                                              </span>
+                                              <span className="italic text-xs">
+                                                Use Case:{" "}
+                                                {typeLabelMap[model.type] ??
+                                                  model.type}
+                                              </span>
+                                            </div>
+                                          </div>
                                         </div>
-                                      </div>
-                                    </div>
-                                  </MultiSelectItem>
-                                );
-                              })}
-                            </MultiSelectGroup>
+                                      </MultiSelectItem>
+                                    );
+                                  })}
+                                </MultiSelectGroup>
+                              </>
+                            )}
                           </MultiSelectContent>
                         </MultiSelect>
                         <FormMessage />
@@ -540,7 +573,7 @@ export function EditUser({
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <div className="flex items-center gap-2 h-6">
-                            <FormLabel>Credits</FormLabel>
+                            <FormLabel>Tokens</FormLabel>
                           </div>
                           <FormControl>
                             <div className="space-y-3">
@@ -566,7 +599,7 @@ export function EditUser({
                                       }
                                     }
                                   }}
-                                  placeholder="Enter credits amount"
+                                  placeholder="Enter tokens amount"
                                   className="w-full"
                                 />
                               ) : (
@@ -593,14 +626,13 @@ export function EditUser({
                                           value={field.value}
                                           disabled
                                           className="bg-muted w-full pointer-events-none"
-                                          placeholder="Enter credits amount"
+                                          placeholder="Enter tokens amount"
                                           tabIndex={-1}
                                         />
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent side={"bottom"}>
-                                      You do not have permission to edit
-                                      Credits.
+                                      You do not have permission to edit Tokens.
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -609,36 +641,6 @@ export function EditUser({
                               {/* Quick add buttons */}
                               {currentLoggedInUser?.is_default_admin && (
                                 <div className="flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      const currentValue = field.value || 0;
-                                      const newValue = currentValue + 500;
-                                      if (newValue <= AppConfig.CREDITS.MAX) {
-                                        field.onChange(newValue);
-                                      }
-                                    }}
-                                  >
-                                    +500
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      const currentValue = field.value || 0;
-                                      const newValue = currentValue + 1000;
-                                      if (newValue <= AppConfig.CREDITS.MAX) {
-                                        field.onChange(newValue);
-                                      }
-                                    }}
-                                  >
-                                    +1000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -654,6 +656,36 @@ export function EditUser({
                                     +5000
                                     <CreditIcon size={14} className="ml-1" />
                                   </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const currentValue = field.value || 0;
+                                      const newValue = currentValue + 10000;
+                                      if (newValue <= AppConfig.CREDITS.MAX) {
+                                        field.onChange(newValue);
+                                      }
+                                    }}
+                                  >
+                                    +10000
+                                    <CreditIcon size={14} className="ml-1" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const currentValue = field.value || 0;
+                                      const newValue = currentValue + 50000;
+                                      if (newValue <= AppConfig.CREDITS.MAX) {
+                                        field.onChange(newValue);
+                                      }
+                                    }}
+                                  >
+                                    +50000
+                                    <CreditIcon size={14} className="ml-1" />
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -667,6 +699,136 @@ export function EditUser({
                     <div className="flex-1"></div>
                   )}
                 </div>
+
+                {currentLoggedInUser?.role?.id === "KK-ADMIN" ? (
+                  <FormField
+                    control={form.control}
+                    name="kittykat_expert_credits"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <div className="flex items-center gap-2 h-6">
+                          <FormLabel>Kittykat Expert Credits</FormLabel>
+                        </div>
+                        <FormControl>
+                          <div className="space-y-3">
+                            {currentLoggedInUser?.is_default_admin ? (
+                              <Input
+                                type="number"
+                                min={AppConfig.CREDITS.MIN}
+                                max={AppConfig.CREDITS.MAX}
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === "") {
+                                    field.onChange(0);
+                                  } else {
+                                    const numValue = parseInt(value, 10);
+                                    if (
+                                      !isNaN(numValue) &&
+                                      numValue >= AppConfig.CREDITS.MIN &&
+                                      numValue <= AppConfig.CREDITS.MAX
+                                    ) {
+                                      field.onChange(numValue);
+                                    }
+                                  }
+                                }}
+                                placeholder="Enter credits amount"
+                                className="w-full"
+                              />
+                            ) : (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className="w-full"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      onSubmit={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                      <Input
+                                        type="number"
+                                        value={field.value}
+                                        disabled
+                                        className="bg-muted w-full pointer-events-none"
+                                        placeholder="Enter credits amount"
+                                        tabIndex={-1}
+                                      />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side={"bottom"}>
+                                    You do not have permission to edit credits.
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+
+                            {/* Quick add buttons */}
+                            {currentLoggedInUser?.is_default_admin && (
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const currentValue = field.value || 0;
+                                    const newValue = currentValue + 500;
+                                    if (newValue <= AppConfig.CREDITS.MAX) {
+                                      field.onChange(newValue);
+                                    }
+                                  }}
+                                >
+                                  +500
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const currentValue = field.value || 0;
+                                    const newValue = currentValue + 1000;
+                                    if (newValue <= AppConfig.CREDITS.MAX) {
+                                      field.onChange(newValue);
+                                    }
+                                  }}
+                                >
+                                  +1000
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const currentValue = field.value || 0;
+                                    const newValue = currentValue + 5000;
+                                    if (newValue <= AppConfig.CREDITS.MAX) {
+                                      field.onChange(newValue);
+                                    }
+                                  }}
+                                >
+                                  +5000
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  // Empty div to maintain layout when credits field is not shown
+                  <div className="flex-1"></div>
+                )}
 
                 {/* Actions */}
                 <div className="flex justify-end gap-2">

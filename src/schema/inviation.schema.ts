@@ -12,6 +12,7 @@ export const inviationSchema = z.object({
   modelAccess: z.array(z.string()),
   contentFilterDisabled: z.boolean(),
   credits: z.number().min(0, "Credits must be a positive number"),
+  kittykat_expert_credits: z.number().min(0).optional(),
 });
 
 export const invitationAcceptSchema = z.object({

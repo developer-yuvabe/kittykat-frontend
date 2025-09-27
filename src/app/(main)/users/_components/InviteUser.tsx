@@ -76,23 +76,49 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       email: "",
       role: UserRoleId.USER,
       brandAccess: [],
-      modelAccess: baseModelIds, // Default select base models
+      modelAccess: [],
       contentFilterDisabled: false,
       credits: AppConfig.CREDITS.DEFAULT_INVITE,
+      kittykat_expert_credits: AppConfig.CREDITS.DEFAULT_INVITE,
     },
     mode: "onSubmit",
   });
-
-  // Update default selection when models change
+  const typeLabelMap: Record<string, string> = {
+    vton: "Virtual try-on",
+    image: "Image generation",
+    video: "Video generation",
+    remix: "In painting",
+    "image-upscale": "Image upscale",
+  };
+  const addKittyKatExpertCredits = (amount: number) => {
+    const currentValue = form.getValues("kittykat_expert_credits") || 0;
+    const newValue = currentValue + amount;
+    if (newValue <= AppConfig.CREDITS.MAX) {
+      form.setValue("kittykat_expert_credits", newValue);
+    }
+  };
+  // Initialize base models when component mounts or models load
   useEffect(() => {
     if (baseModelIds.length > 0) {
-      const currentSelection = form.getValues("modelAccess") || [];
-      const combinedSelection = [
-        ...new Set([...baseModelIds, ...currentSelection]),
-      ];
-      form.setValue("modelAccess", combinedSelection);
+      form.setValue("modelAccess", baseModelIds);
     }
   }, [baseModelIds, form]);
+
+  // Reset form with base models when dialog opens
+  const handleOpen = () => {
+    setOpen(true);
+    // Reset form with default values including base models
+    const defaultValues = {
+      email: "",
+      role: UserRoleId.USER,
+      brandAccess: [],
+      modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
+      contentFilterDisabled: false,
+      credits: AppConfig.CREDITS.DEFAULT_INVITE,
+      kittykatExpertCredits: AppConfig.CREDITS.DEFAULT_INVITE,
+    };
+    form.reset(defaultValues);
+  };
 
   const onSubmit = async (data: InviteUserFormData) => {
     const emailExists = await checkIfEmailExists(data.email);
@@ -141,7 +167,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       ];
       form.setValue("modelAccess", combinedSelection);
     }
-  }, [selectedRole, baseModelIds]);
+  }, [selectedRole, baseModelIds, form]);
 
   const addCredits = (amount: number) => {
     const currentValue = form.getValues("credits") || 0;
@@ -151,9 +177,22 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     }
   };
 
+  const handleClose = () => {
+    setOpen(false);
+    form.reset({
+      email: "",
+      role: UserRoleId.USER,
+      brandAccess: [],
+      modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
+      contentFilterDisabled: false,
+      credits: AppConfig.CREDITS.DEFAULT_INVITE,
+      kittykat_expert_credits: AppConfig.CREDITS.DEFAULT_INVITE,
+    });
+  };
+
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
+      <Button onClick={handleOpen}>
         <Plus />
         Invite user
       </Button>
@@ -166,10 +205,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
             )}
           >
             <button
-              onClick={() => {
-                setOpen(false);
-                form.reset();
-              }}
+              onClick={handleClose}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition"
               aria-label="Close"
             >
@@ -210,7 +246,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                           <FormLabel>Role</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value}
                           >
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -220,7 +256,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                             <SelectContent
                               className="w-full flex-1"
                               onClick={(e) => {
-                                e.stopPropagation(); // Prevent clicks from bubbling to modal
+                                e.stopPropagation();
                               }}
                             >
                               <SelectItem value={UserRoleId.ADMIN}>
@@ -311,7 +347,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                       )}
                     />
 
-                    {/* Model Access - Updated to match EditUser */}
+                    {/* Model Access */}
                     <FormField
                       control={form.control}
                       name="modelAccess"
@@ -319,7 +355,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         <FormItem className="pb-2">
                           <FormLabel>Model Access</FormLabel>
                           <MultiSelect
-                            values={field.value}
+                            values={field.value || []}
                             onValuesChange={(newValues) => {
                               // Ensure base models are always included
                               const combinedValues = [
@@ -338,6 +374,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                   placeholder={
                                     selectedRole === UserRoleId.ADMIN
                                       ? "Admin has access to all models"
+                                      : sortedModels.length === 0
+                                      ? "Loading models..."
                                       : "Select models"
                                   }
                                 />
@@ -346,126 +384,136 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                             <MultiSelectContent
                               search={{
                                 placeholder: "Search models...",
-                                emptyMessage: "No models found",
+                                emptyMessage:
+                                  sortedModels.length === 0
+                                    ? "Loading models..."
+                                    : "No models found",
                               }}
                             >
-                              {/* Select All Checkbox */}
-                              <div className="px-2 py-2 border-b border-border">
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id="select-all-models-invite"
-                                    checked={
-                                      field.value?.length === models.length &&
-                                      models.length > 0
-                                    }
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        // Select all models
-                                        field.onChange(
-                                          models.map((model) => model.id)
-                                        );
-                                      } else {
-                                        // Keep only base models (cannot deselect them)
-                                        field.onChange(baseModelIds);
-                                      }
-                                    }}
-                                    disabled={selectedRole === UserRoleId.ADMIN}
-                                  />
-                                  <label
-                                    htmlFor="select-all-models-invite"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                  >
-                                    Select All
-                                  </label>
-                                </div>
-                              </div>
+                              {sortedModels.length > 0 && (
+                                <>
+                                  {/* Select All Checkbox */}
+                                  <div className="px-2 py-2 border-b border-border">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="select-all-models-invite"
+                                        checked={
+                                          field.value?.length ===
+                                            models.length && models.length > 0
+                                        }
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            field.onChange(
+                                              models.map((model) => model.id)
+                                            );
+                                          } else {
+                                            field.onChange(baseModelIds);
+                                          }
+                                        }}
+                                        disabled={
+                                          selectedRole === UserRoleId.ADMIN
+                                        }
+                                      />
+                                      <label
+                                        htmlFor="select-all-models-invite"
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                      >
+                                        Select All
+                                      </label>
+                                    </div>
+                                  </div>
 
-                              <MultiSelectGroup>
-                                {sortedModels.map((model) => {
-                                  const isBaseModel = !model.finetune_id;
-                                  const isSelected =
-                                    field.value?.includes(model.id) || false;
+                                  <MultiSelectGroup>
+                                    {sortedModels.map((model) => {
+                                      const isBaseModel = !model.finetune_id;
 
-                                  if (isBaseModel) {
-                                    return (
-                                      <TooltipProvider key={model.id}>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <div className="relative">
-                                              <MultiSelectItem
-                                                value={model.id}
-                                                badgeLabel={model.name}
-                                                disabled={
-                                                  selectedRole ===
-                                                    UserRoleId.ADMIN ||
-                                                  isBaseModel
-                                                }
-                                                className="pointer-events-none"
-                                              >
-                                                <div className="flex items-start justify-between group gap-0 w-full">
-                                                  <div className="flex items-start min-w-0 w-full">
-                                                    <Avatar className="h-6 w-6 mr-2">
-                                                      <AvatarFallback className="bg-green-500 text-white opacity-60">
-                                                        {model.name
-                                                          ?.charAt(0)
-                                                          .toUpperCase() || "M"}
-                                                      </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex flex-col space-y-1">
-                                                      <span className="line-clamp- break-words text-muted-foreground">
-                                                        {model.name}
-                                                      </span>
-                                                      <span className="italic text-xs text-muted-foreground">
-                                                        Use Case: {model.type}
-                                                      </span>
+                                      if (isBaseModel) {
+                                        return (
+                                          <TooltipProvider key={model.id}>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <div className="relative">
+                                                  <MultiSelectItem
+                                                    value={model.id}
+                                                    badgeLabel={model.name}
+                                                    disabled={
+                                                      selectedRole ===
+                                                        UserRoleId.ADMIN ||
+                                                      isBaseModel
+                                                    }
+                                                    className="pointer-events-none"
+                                                  >
+                                                    <div className="flex items-start justify-between group gap-0 w-full">
+                                                      <div className="flex items-start min-w-0 w-full">
+                                                        <Avatar className="h-6 w-6 mr-2">
+                                                          <AvatarFallback className="bg-green-500 text-white opacity-60">
+                                                            {model.name
+                                                              ?.charAt(0)
+                                                              .toUpperCase() ||
+                                                              "M"}
+                                                          </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col space-y-1">
+                                                          <span className="line-clamp- break-words text-muted-foreground">
+                                                            {model.name}
+                                                          </span>
+                                                          <span className="italic text-xs text-muted-foreground">
+                                                            Use Case:{" "}
+                                                            {typeLabelMap[
+                                                              model.type
+                                                            ] ?? model.type}
+                                                          </span>
+                                                        </div>
+                                                      </div>
                                                     </div>
-                                                  </div>
+                                                  </MultiSelectItem>
+                                                  <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
                                                 </div>
-                                              </MultiSelectItem>
-                                              {/* Invisible overlay for hover events */}
-                                              <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
-                                            </div>
-                                          </TooltipTrigger>
-                                          <TooltipContent side="right">
-                                            Cannot unselect base models
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    );
-                                  }
-
-                                  return (
-                                    <MultiSelectItem
-                                      key={model.id}
-                                      value={model.id}
-                                      badgeLabel={model.name}
-                                      disabled={
-                                        selectedRole === UserRoleId.ADMIN
+                                              </TooltipTrigger>
+                                              <TooltipContent side="right">
+                                                Cannot unselect base models
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
                                       }
-                                    >
-                                      <div className="flex items-start justify-between group gap-0 w-full">
-                                        <div className="flex items-start min-w-0 w-full">
-                                          <Avatar className="h-6 w-6 mr-2">
-                                            <AvatarFallback className="bg-green-500 text-white">
-                                              {model.name
-                                                ?.charAt(0)
-                                                .toUpperCase() || "M"}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <div className="flex flex-col space-y-1">
-                                            <span className="line-clamp- break-words">
-                                              {model.name}
-                                            </span>
-                                            <span className="italic text-xs">
-                                              Use Case: {model.type}
-                                            </span>
+
+                                      return (
+                                        <MultiSelectItem
+                                          key={model.id}
+                                          value={model.id}
+                                          badgeLabel={model.name}
+                                          disabled={
+                                            selectedRole === UserRoleId.ADMIN
+                                          }
+                                        >
+                                          <div className="flex items-start justify-between group gap-0 w-full">
+                                            <div className="flex items-start min-w-0 w-full">
+                                              <Avatar className="h-6 w-6 mr-2">
+                                                <AvatarFallback className="bg-green-500 text-white">
+                                                  {model.name
+                                                    ?.charAt(0)
+                                                    .toUpperCase() || "M"}
+                                                </AvatarFallback>
+                                              </Avatar>
+                                              <div className="flex flex-col space-y-1">
+                                                <span className="line-clamp- break-words">
+                                                  {model.name}
+                                                </span>
+                                                <span className="italic text-xs">
+                                                  Use Case:{" "}
+                                                  {typeLabelMap[model.type] ??
+                                                    model.type}
+                                                </span>
+                                              </div>
+                                            </div>
                                           </div>
-                                        </div>
-                                      </div>
-                                    </MultiSelectItem>
-                                  );
-                                })}
-                              </MultiSelectGroup>
+                                        </MultiSelectItem>
+                                      );
+                                    })}
+                                  </MultiSelectGroup>
+                                </>
+                              )}
                             </MultiSelectContent>
                           </MultiSelect>
                           <FormMessage />
@@ -531,7 +579,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <div className="flex items-center gap-2 h-6">
-                              <FormLabel>Credits</FormLabel>
+                              <FormLabel>Tokens</FormLabel>
                             </div>
                             <FormControl>
                               <div className="space-y-3">
@@ -584,14 +632,14 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                             value={field.value}
                                             disabled
                                             className="bg-muted w-full pointer-events-none"
-                                            placeholder="Enter credits amount"
+                                            placeholder="Enter tokens amount"
                                             tabIndex={-1}
                                           />
                                         </div>
                                       </TooltipTrigger>
                                       <TooltipContent side={"bottom"}>
                                         You do not have permission to edit
-                                        Credits.
+                                        Tokens.
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -604,27 +652,27 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => addCredits(500)}
-                                    >
-                                      +500
-                                      <CreditIcon size={14} className="ml-1" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => addCredits(1000)}
-                                    >
-                                      +1000
-                                      <CreditIcon size={14} className="ml-1" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
                                       onClick={() => addCredits(5000)}
                                     >
                                       +5000
+                                      <CreditIcon size={14} className="ml-1" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => addCredits(10000)}
+                                    >
+                                      +10000
+                                      <CreditIcon size={14} className="ml-1" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => addCredits(50000)}
+                                    >
+                                      +50000
                                       <CreditIcon size={14} className="ml-1" />
                                     </Button>
                                   </div>
@@ -636,19 +684,133 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         )}
                       />
                     ) : (
-                      // Empty div to maintain layout when credits field is not shown
                       <div className="flex-1"></div>
                     )}
                   </div>
+                  {/* Credits - Show to all admins */}
+                  {user?.role?.id === "KK-ADMIN" ? (
+                    <FormField
+                      control={form.control}
+                      name="kittykat_expert_credits"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <div className="flex items-center gap-2 h-6">
+                            <FormLabel>Kittykat Expert Credits</FormLabel>
+                          </div>
+                          <FormControl>
+                            <div className="space-y-3">
+                              {user?.is_default_admin ? (
+                                <Input
+                                  type="number"
+                                  min={AppConfig.CREDITS.MIN}
+                                  max={AppConfig.CREDITS.MAX}
+                                  {...field}
+                                  value={field.value || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === "") {
+                                      field.onChange(0);
+                                    } else {
+                                      const numValue = parseInt(value, 10);
+                                      if (
+                                        !isNaN(numValue) &&
+                                        numValue >= AppConfig.CREDITS.MIN &&
+                                        numValue <= AppConfig.CREDITS.MAX
+                                      ) {
+                                        field.onChange(numValue);
+                                      }
+                                    }
+                                  }}
+                                  placeholder="Enter credits amount"
+                                  className="w-full"
+                                />
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="w-full"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onSubmit={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        <Input
+                                          type="number"
+                                          value={field.value}
+                                          disabled
+                                          className="bg-muted w-full pointer-events-none"
+                                          placeholder="Enter credits amount"
+                                          tabIndex={-1}
+                                        />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side={"bottom"}>
+                                      You do not have permission to edit
+                                      kittykat expert credits.
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+
+                              {/* Quick add buttons with proper validation */}
+                              {user?.is_default_admin && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      addKittyKatExpertCredits(500)
+                                    }
+                                  >
+                                    +500
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      addKittyKatExpertCredits(500)
+                                    }
+                                  >
+                                    +1000
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      addKittyKatExpertCredits(500)
+                                    }
+                                  >
+                                    +5000
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <div className="flex-1"></div>
+                  )}
 
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
                       type="button"
-                      onClick={() => {
-                        setOpen(false);
-                        form.reset();
-                      }}
+                      onClick={handleClose}
                     >
                       Cancel
                     </Button>
