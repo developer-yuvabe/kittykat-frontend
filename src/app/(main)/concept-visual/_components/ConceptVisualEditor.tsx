@@ -1,34 +1,33 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useEffect } from "react";
-import type {
-  BrandCampaignListResponse,
-  EnhancedSelectedFilters,
-  GalleryItemResponse,
-} from "@/types/gallery.types";
-import { useBrandStore } from "@/store/brand.store";
-import { MediaUploadBrandSelector } from "../../gallery/_components/MediaUploadBrandSelector";
-import { useGalleryQuery } from "@/hooks/useGallery";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { AskKittykatTabs } from "../../gallery/_components/AskKittykatTabs";
+import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
+import RemixControls from "@/components/chatbot/a2i/features/RemixControls";
 import VideoGeneration from "@/components/chatbot/a2i/features/VideoGeneration";
 import VideoGenerationInput from "@/components/chatbot/a2i/features/VideoGenerationInput";
 import VirtualTryOn from "@/components/chatbot/a2i/features/VirtualTryOn";
-import { Loader, X } from "lucide-react";
-import { useModelsStore } from "@/store/models.store";
-import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
-import { RemixImageHandle } from "../../_components/remix/RemixImage";
-import { AskKittykatImageSection } from "../../gallery/_components/AskKittykatImageSection";
-import RemixControls from "@/components/chatbot/a2i/features/RemixControls";
-import ImageUpscaler from "@/components/chatbot/a2i/features/ImageUpscaler";
-import { useRouter } from "next/navigation";
+import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { useGalleryQuery } from "@/hooks/useGallery";
+import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
+import { useBrandStore } from "@/store/brand.store";
+import { useModelsStore } from "@/store/models.store";
+import type {
+  EnhancedSelectedFilters,
+  GalleryItemResponse,
+} from "@/types/gallery.types";
+import { Loader, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useRef, useState } from "react";
+import { RemixImageHandle } from "../../_components/remix/RemixImage";
+import { AskKittykatImageSection } from "../../gallery/_components/AskKittykatImageSection";
+import { AskKittykatTabs } from "../../gallery/_components/AskKittykatTabs";
 
 interface ConceptVisualEditorProps {
   open: boolean;
@@ -45,12 +44,8 @@ export function ConceptVisualEditor({
     null
   );
   const versionsRef = useRef<HTMLDivElement>(null);
-  const { selectedBrandId, isBrandsFetched, setSelectedBrandId } =
+  const { selectedBrandId, isBrandsFetched, selectedCampaignId } =
     useBrandStore();
-
-  const [selectedCampaignId, setSelectedCampaignId] = useState<
-    string | undefined
-  >(undefined);
 
   // filters
   const basicFilters = useMemo(
@@ -79,36 +74,6 @@ export function ConceptVisualEditor({
   const galleryActions = useGalleryQuery({
     selectedFilters: isBrandsFetched ? selectedFilters : basicFilters,
   });
-
-  useEffect(() => {
-    if (!isBrandsFetched) return;
-
-    const availableBrands = galleryActions.brandsData?.brands || [];
-    const validBrandId =
-      selectedBrandId ||
-      (availableBrands.length > 0 ? availableBrands[0].brand_id : null);
-
-    if (!selectedBrandId && validBrandId) {
-      setSelectedBrandId(validBrandId);
-    }
-
-    const newFilters = {
-      ...basicFilters,
-      brands: validBrandId ? [validBrandId] : [],
-    };
-
-    setSelectedFilters(newFilters);
-  }, [
-    selectedBrandId,
-    galleryActions.brandsData?.brands,
-    isBrandsFetched,
-    setSelectedBrandId,
-    basicFilters,
-  ]);
-
-  const [selectedBrand, setSelectedBrand] = useState<
-    BrandCampaignListResponse["brands"][number] | null
-  >(null);
 
   // remix state
   const [brushSize, setBrushSize] = useState(50);
@@ -174,18 +139,18 @@ export function ConceptVisualEditor({
               Visual Editor
             </DialogTitle>
             <div className="flex items-center gap-4">
-              <MediaUploadBrandSelector
-                selectedBrand={selectedBrand}
-                setSelectedBrand={setSelectedBrand}
-                brands={galleryActions.brandsData?.brands || []}
-                brandsLoading={galleryActions.brandsLoading}
-                setSelectedCampaignId={setSelectedCampaignId}
-                selectedCampaignId={selectedCampaignId}
-                selectedFilters={selectedFilters}
-                setSelectedFilters={setSelectedFilters}
-                preSelectedBrandId={selectedBrandId}
-                setInitialWorkflowStatus={async () => new URLSearchParams()}
-                setInitialBrandId={async () => new URLSearchParams()}
+              <BrandSelector
+                showCampaigns
+                showSelectedValue
+                modal
+                className="bg-background w-80"
+                onBrandSelect={(brandId) => {
+                  setSelectedFilters((prev) => ({
+                    ...prev,
+                    brandId: [brandId],
+                    campaigns: [],
+                  }));
+                }}
               />
               <Button
                 variant="ghost"

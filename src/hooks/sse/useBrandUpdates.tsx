@@ -5,14 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 import { useVideoGenStore } from "@/store/video-gen.store";
 
-export function useBrandUpdates(brandId?: string | null) {
+export function useBrandUpdates() {
   const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
   const [data, setData] = useState<ThreadDetails | null>(null);
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
-
-  const { setIsCampaignCreating } = useBrandStore();
-
+  const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
   const { brandsRefetch } = useGalleryQuery(
     {},
     ITEMS_PER_PAGE,
@@ -23,12 +21,14 @@ export function useBrandUpdates(brandId?: string | null) {
   useEffect(() => {
     setIsFetchingBrandInfo(true);
 
-    if (!brandId) {
+    if (!selectedBrandId) {
       setIsFetchingBrandInfo(false);
       return;
     }
 
-    const eventSource = new EventSource(`${getSSEBaseUrl()}/brands/${brandId}`);
+    const eventSource = new EventSource(
+      `${getSSEBaseUrl()}/brands/${selectedBrandId}`
+    );
 
     eventSource.addEventListener("brand_info", (event) => {
       const parsed: ThreadDetails = JSON.parse(event.data);
@@ -64,7 +64,7 @@ export function useBrandUpdates(brandId?: string | null) {
       setData(null);
       previousCampaignInfo.current = undefined;
     };
-  }, [brandId]);
+  }, [selectedBrandId]);
 
   return {
     data,
