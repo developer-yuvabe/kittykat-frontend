@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 const upscalerSchema = z.object({
   image_url: z.string().min(1, "Image URL is required"),

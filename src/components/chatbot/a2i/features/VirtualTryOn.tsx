@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 type VirtualTryOnProps = {
   modelImage?: string;

@@ -41,7 +41,7 @@ import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 export type RemixControlsProps = {
   canUndo: boolean;
