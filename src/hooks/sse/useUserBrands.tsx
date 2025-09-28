@@ -5,7 +5,6 @@ import { useUserStore } from "@/store/user.store";
 import { UserBrand } from "@/types/user.types";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 
 export const useUserBrands = () => {
   const {
@@ -17,29 +16,18 @@ export const useUserBrands = () => {
     setIsCreatingBrand,
   } = useBrandStore();
   const { user } = useUserStore();
-  const { data, error } = useQuery({
+  useQuery({
     queryKey: ["brands"],
-    queryFn: () => fetchUserBrands(user!.id),
+    queryFn: async () => {
+      const brands = await fetchUserBrands(user!.id);
+
+      if (brands) setBrands(brands);
+      setIsBrandsFetched(true);
+
+      return brands;
+    },
     enabled: !!user,
   });
-
-  const { brandsRefetch } = useGalleryQuery(
-    {},
-    ITEMS_PER_PAGE,
-    false,
-    "useUserBrands"
-  );
-
-  useEffect(() => {
-    if (data) {
-      setBrands(data);
-      setIsBrandsFetched(true);
-    }
-
-    if (error) {
-      console.error("Error fetching user brands:", error);
-    }
-  }, [data, error]);
 
   useEffect(() => {
     if (!user) return;
@@ -55,7 +43,6 @@ export const useUserBrands = () => {
       }
       addBrand(brand);
 
-      brandsRefetch();
       // Set isCreatingBrand to false when a new brand is successfully created
       setIsCreatingBrand(false);
     });

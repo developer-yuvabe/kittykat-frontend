@@ -3,14 +3,15 @@ import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { useVideoGenStore } from "@/store/video-gen.store";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function useBrandUpdates() {
+  const queryClient = useQueryClient();
   const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
   const [data, setData] = useState<ThreadDetails | null>(null);
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
   const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
-  const { setBrands, brands } = useBrandStore();
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -32,21 +33,8 @@ export function useBrandUpdates() {
       const prevCampaign = JSON.stringify(previousCampaignInfo.current || []);
 
       if (newCampaign !== prevCampaign) {
+        queryClient.invalidateQueries({ queryKey: ["brands"] });
         setIsCampaignCreating(false); // <-- mark creation as done
-
-        setBrands(
-          brands.map((brand) =>
-            brand.id === selectedBrandId
-              ? {
-                  ...brand,
-                  campaigns: (parsed.campaign_information || []).map((c) => ({
-                    id: c.id,
-                    title: c.campaign?.title || "Untitled Campaign",
-                  })),
-                }
-              : brand
-          )
-        );
       }
 
       previousCampaignInfo.current = parsed.campaign_information;
