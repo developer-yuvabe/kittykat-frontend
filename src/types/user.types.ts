@@ -6,10 +6,11 @@ export type User = {
   email: string;
   thread_id?: string | null;
   brand_access?: UserBrand[];
-  model_access?: string[];
+  model_access?: ModelAccess[];
   role: UserRole;
   is_default_admin?: boolean;
   credits?: number;
+  kittykat_expert_credits?: number;
 };
 
 export type UserListItem = {
@@ -22,6 +23,7 @@ export type UserListItem = {
   invitation_link?: string;
   is_default_admin?: boolean;
   credits?: number;
+  kittykat_expert_credits?: number;
   content_filter_disabled?: boolean;
   brand_access?: {
     id: string;
@@ -32,9 +34,13 @@ export type UserListItem = {
       email: string;
     };
   }[];
-  model_access?: string[];
+  model_access?: ModelAccess[];
 };
-
+export type ModelAccess = {
+  id: string;
+  name: string;
+  type: string;
+};
 export type UserListResponse = {
   users: UserListItem[];
   pagination: PaginationMeta;

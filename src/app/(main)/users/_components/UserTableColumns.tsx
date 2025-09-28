@@ -2,12 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  User,
-  UserListItem,
-  UserListResponse,
-  UserStatus,
-} from "@/types/user.types";
+import { UserListItem, UserListResponse, UserStatus } from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisIcon } from "lucide-react";
@@ -23,7 +18,6 @@ import { deleteUser, resendInvitation } from "@/services/api/user.service";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditUser } from "./EditUser";
-import { useModelsStore } from "@/store/models.store";
 
 export const getUserTableColumns = (
   page: number,
@@ -117,12 +111,24 @@ export const getUserTableColumns = (
     ),
   },
   {
-    header: "Credits",
+    header: "Tokens",
     accessorKey: "credits",
-    cell: ({ row }) => {
-      return <p className="font-medium">{row.original.credits ?? 0}</p>;
-    },
+    cell: ({ row }) => (
+      <p className="font-medium">
+        {Number(row.original.credits ?? 0).toLocaleString()}
+      </p>
+    ),
   },
+  {
+    header: "KittyKat Expert Credits",
+    accessorKey: "kittykat_expert_credits",
+    cell: ({ row }) => (
+      <div className="font-medium">
+        {Number(row.original.kittykat_expert_credits ?? 0).toLocaleString()}
+      </div>
+    ),
+  },
+
   {
     header: "Brand Access",
     accessorKey: "brand_access",
@@ -170,7 +176,6 @@ export const getUserTableColumns = (
     cell: ({ row }) => {
       const INIT_MODELS_TO_SHOW = 3;
       const [showAllModels, setShowAllModels] = useState(false);
-      const { models } = useModelsStore(); // Add this line
       const role = row.original.role?.id;
 
       if (role === "KK-ADMIN") {
@@ -179,24 +184,13 @@ export const getUserTableColumns = (
 
       const modelAccess = row.original.model_access || [];
 
-      if (modelAccess.length === 0) {
-        return "—";
-      }
-
-      // Helper function to get model name from ID
-      const getModelName = (modelId: string) => {
-        const model = models.find((m) => m.id === modelId);
-        return model?.name || modelId;
-      };
-
-      return (
+      return modelAccess.length ? (
         <div className="flex flex-wrap gap-2">
           {modelAccess
             .slice(0, showAllModels ? undefined : INIT_MODELS_TO_SHOW)
-            .map((modelId) => (
-              <Badge key={modelId} className="border">
-                {getModelName(modelId)}{" "}
-                {/* Changed from model.name to getModelName(modelId) */}
+            .map((model) => (
+              <Badge key={model.id} className="border">
+                {model.name}
               </Badge>
             ))}
           {modelAccess.length > INIT_MODELS_TO_SHOW && (
@@ -210,9 +204,12 @@ export const getUserTableColumns = (
             </Button>
           )}
         </div>
+      ) : (
+        "—"
       );
     },
   },
+
   {
     id: "actions",
     cell: ({ row }) => {

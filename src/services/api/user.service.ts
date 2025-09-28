@@ -35,6 +35,7 @@ export const updateUser = async (
     model_access?: string[];
     contentFilterDisabled?: boolean;
     credits?: number;
+    kittykat_expert_credits?: number;
   }
 ): Promise<UserListItem> => {
   try {
@@ -45,6 +46,7 @@ export const updateUser = async (
       model_access: userData.model_access,
       content_filter_disabled: userData.contentFilterDisabled,
       credits: userData.credits,
+      kittykat_expert_credits: userData.kittykat_expert_credits,
     };
 
     const updatedUser = await handleApiRequest<UserListItem>(
@@ -117,6 +119,8 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
         model_access: data.modelAccess,
         base_url: window.location.origin,
         content_filter_disabled: data.contentFilterDisabled,
+        credits: data.credits,
+        kittykat_expert_credits: data.kittykat_expert_credits,
       })
     );
 
