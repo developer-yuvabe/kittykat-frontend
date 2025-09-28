@@ -7,7 +7,7 @@ import { auth } from "@/config/firebase.config";
 import { StreamProvider } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
 import { User } from "@/types/user.types";
-import { User as FirebaeUser } from "firebase/auth";
+import { User as FirebaeUser, signOut } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 
@@ -22,8 +22,17 @@ const MainLayout = ({
   const [firebaseUser, setFirebaseUser] = useState<FirebaeUser | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setFirebaseUser(u);
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        setFirebaseUser(u);
+      } else {
+        // User is signed out, redirect to login
+        await signOut(auth);
+        await fetch("/api/logout");
+        // reload the page to ensure the user is logged out
+        window.location.href = "/login";
+        window.location.reload();
+      }
     });
 
     return () => unsub();
