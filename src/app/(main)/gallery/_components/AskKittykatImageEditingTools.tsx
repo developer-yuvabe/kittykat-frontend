@@ -48,12 +48,7 @@ export function AskKittykatImageEditingTools({
       icon: <Shirt className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Virtual Try-On feature coming soon",
       customComponent: selectedVtonModel ? (
-        <VirtualTryOn
-          modelImage={item.asset_url}
-          closeDialog={remixControls.closeDialog}
-          source="media-gallery"
-          campaignId={remixControls.campaignId}
-        />
+        <VirtualTryOn modelImage={item.asset_url} />
       ) : (
         <> </>
       ),
@@ -73,10 +68,7 @@ export function AskKittykatImageEditingTools({
           onClear={remixControls.onClear}
           onRedo={remixControls.onRedo}
           onUndo={remixControls.onUndo}
-          closeDialog={remixControls.closeDialog}
           brandId={item.brand_id}
-          source="media-gallery"
-          campaignId={remixControls.campaignId}
         />
       ) : (
         <> </>
@@ -87,13 +79,7 @@ export function AskKittykatImageEditingTools({
       icon: <ArrowUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />,
       message: "Image Upscaler feature coming soon",
       customComponent: selectedUpscaleModel ? (
-        <ImageUpscaler
-          closeDialog={remixControls.closeDialog}
-          brandId={item.brand_id}
-          source="media-gallery"
-          initialImage={item.asset_url}
-          campaignId={remixControls.campaignId}
-        />
+        <ImageUpscaler initialImage={item.asset_url} />
       ) : (
         <> </>
       ),

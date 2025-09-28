@@ -25,7 +25,6 @@ import type {
   Comment,
   CommentReply,
 } from "@/types/gallery.types";
-import { AskKittykatImageSection } from "./AskKittykatImageSection";
 import { AskKittykatCommentGuidelines } from "./AskKittykatCommentGuidelines";
 import { AskKittykatTabs } from "./AskKittykatTabs";
 import type { GalleryActions } from "@/hooks/useGallery";
@@ -67,8 +66,11 @@ export function MediaEditorDialog({
   currentIndex = 0,
   onNavigate,
   totalItems = 0,
-  campaignId,
 }: MediaEditorDialogProps) {
+  throw new Error(
+    "MediaEditorDialog is deprecated, please use ConceptVisualEditor instead"
+  );
+
   const [currentItem, setCurrentItem] = useState<GalleryItemResponse | null>(
     null
   );
@@ -92,16 +94,14 @@ export function MediaEditorDialog({
   const { user } = useUserStore();
 
   const [brushSize, setBrushSize] = useState(50);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const offScreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
   const remixImageRef = useRef<RemixImageHandle>(null);
   const remixHistory = useUndoRedoRemix();
 
   const isRemixEnabled =
     activeTab === "in-paint" &&
     !!selectedRemixModel &&
-    selectedRemixModel.provider === "openai";
+    selectedRemixModel?.provider === "openai";
 
   const queryClient = useQueryClient();
 
@@ -176,8 +176,6 @@ export function MediaEditorDialog({
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
-
-  const campaign_id = campaignId || null;
 
   const handleNavigate = (direction: "next" | "prev") => {
     if (onNavigate) {
@@ -818,7 +816,8 @@ export function MediaEditorDialog({
     }
   };
 
-  const hasComments = currentItem?.comments && currentItem.comments.length > 0;
+  const hasComments =
+    currentItem?.comments && currentItem!.comments!.length > 0;
 
   useEffect(() => {
     const prefetchThreshold = 2;
@@ -970,39 +969,36 @@ export function MediaEditorDialog({
                   </div>
                 ) : currentItem ? (
                   activeTab === "video-gen" &&
-                  currentItem.asset_type === "image" ? (
-                    <VideoGenerationInput
-                      item={currentItem}
-                      campaignId={campaignId}
-                    />
+                  currentItem!.asset_type === "image" ? (
+                    <VideoGenerationInput item={currentItem} />
                   ) : (
-                    <AskKittykatImageSection
-                      item={currentItem}
-                      galleryActions={galleryActions}
-                      isRemixEnabled={isRemixEnabled}
-                      imageRef={imageRef}
-                      canvasRef={canvasRef}
-                      offScreenCanvasRef={offScreenCanvasRef}
-                      remixHistory={remixHistory}
-                      brushSize={brushSize}
-                      remixImageRef={remixImageRef}
-                      revalidateGalleryItemVersions={
-                        revalidateGalleryItemVersions
-                      }
-                      setCurrentItem={setCurrentItem}
-                    />
+                    <>
+                      {/* // <AskKittykatImageSection
+                    //   item={currentItem}
+                    //   galleryActions={galleryActions}
+                    //   canvasRef={canvasRef}
+                    //   offScreenCanvasRef={offScreenCanvasRef}
+                    //   remixHistory={remixHistory}
+                    //   brushSize={brushSize}
+                    //   remixImageRef={remixImageRef}
+                    //   revalidateGalleryItemVersions={
+                    //     revalidateGalleryItemVersions
+                    //   }
+                    //   setCurrentItem={setCurrentItem}
+                    // /> */}
+                    </>
                   )
                 ) : null}
                 {item && (
                   <AskKittykatVersions
-                    item={item}
+                    item={item!}
                     currentVersion={currentItem}
                     onVersionChange={(updatedItem) => {
                       // If switching to Version 1 (base item), get the latest data from cache
-                      if (updatedItem.id === item.id) {
+                      if (updatedItem.id === item!.id) {
                         const cachedItem = queryClient.getQueryData([
                           "gallery-item",
-                          item.id,
+                          item!.id,
                         ]) as GalleryItemResponse | undefined;
                         setCurrentItem(cachedItem || updatedItem);
                       } else {
@@ -1023,19 +1019,16 @@ export function MediaEditorDialog({
                     onValueChange={setActiveTab}
                     className="flex-1 flex flex-col bg-none"
                   >
-                    <AskKittykatTabs
-                      isVideoAsset={currentItem.asset_type === "video"}
-                    />
+                    <AskKittykatTabs />
 
-                    {currentItem.asset_type !== "video" && (
+                    {currentItem!.asset_type !== "video" && (
                       <AskKittykatImageEditingTools
-                        item={currentItem}
+                        item={currentItem!}
                         remixControls={{
                           image: {
-                            url: currentItem.asset_url,
-                            size: currentItem.size || "original",
+                            url: currentItem!.asset_url,
+                            size: currentItem!.size || "original",
                           },
-                          source: "media-gallery",
                           canUndo: remixHistory.canUndo,
                           canRedo: remixHistory.canRedo,
                           onUndo: handleUndo,
@@ -1044,8 +1037,6 @@ export function MediaEditorDialog({
                           offScreenCanvasRef,
                           brushSize,
                           onBrushSizeChange: handleBrushSizeChange,
-                          closeDialog: () => onOpenChange(false),
-                          campaignId: campaign_id,
                         }}
                       />
                     )}
@@ -1061,7 +1052,7 @@ export function MediaEditorDialog({
                       {/* Comments Section */}
                       <div
                         className={`${
-                          currentItem.sent_to_human_queue
+                          currentItem!.sent_to_human_queue
                             ? "max-h-[calc(100vh-460px)]"
                             : "max-h-[calc(100vh-520px)]"
                         } flex-1 p-4 space-y-4   overflow-y-scroll `}
@@ -1071,11 +1062,11 @@ export function MediaEditorDialog({
                             <AskKittykatCommentGuidelines />
                           ) : (
                             <div className="space-y-4">
-                              {currentItem.comments?.map((comment) => (
+                              {currentItem!.comments?.map((comment) => (
                                 <div key={comment.id} className="space-y-3">
                                   <AskKittykatCommentItem
                                     comment={comment}
-                                    itemId={currentItem.id}
+                                    itemId={currentItem!.id}
                                     editingCommentId={editingComment}
                                     setEditingComment={setEditingComment}
                                     setReplyingTo={setReplyingTo}
@@ -1089,7 +1080,7 @@ export function MediaEditorDialog({
                                   <AskKittykatReplyList
                                     replies={comment.replies}
                                     commentId={comment.id}
-                                    itemId={currentItem.id}
+                                    itemId={currentItem!.id}
                                     editingReply={editingReply}
                                     setEditingReply={setEditingReply}
                                     onUpdateReply={handleUpdateReply}
@@ -1239,7 +1230,7 @@ export function MediaEditorDialog({
                           onAskKittykat={handleAskKittyKat}
                           galleryActions={galleryActions}
                           // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
-                          item={currentItem}
+                          item={currentItem!}
                           revalidateGalleryItemVersions={
                             revalidateGalleryItemVersions
                           }
@@ -1278,7 +1269,7 @@ export function MediaEditorDialog({
           imageUrl={currentItem?.asset_url || ""}
           brandId={currentItem?.brand_id}
           campaignId={currentItem?.campaign_id}
-          imageId={currentItem?.id}
+          imageId={currentItem!.id}
           allAttachments={allAttachments}
           onAllAttachmentsChange={setAllAttachments}
           brandsWithCampaigns={galleryActions.brandsData?.brands || []}

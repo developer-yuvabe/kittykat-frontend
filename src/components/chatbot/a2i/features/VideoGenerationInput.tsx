@@ -32,15 +32,9 @@ import ModelSelector from "../ModelSelector";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 }
 
-const VideoGenerationInput = ({
-  item,
-  campaignId,
-  handleDialogChange,
-}: VideoGenerationInputProps) => {
+const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
     selectedVideoGenearationModel,
@@ -60,22 +54,15 @@ const VideoGenerationInput = ({
               }}
             />
           </div>
-          <VideoGenerationInputControls
-            item={item}
-            campaignId={campaignId}
-            key={item?.id}
-            handleDialogChange={handleDialogChange}
-          />
+          <VideoGenerationInputControls item={item} key={item?.id} />
         </>
       )}
     </div>
   );
 };
 
-const VideoGenerationInputControls = ({
-  item,
-  campaignId,
-}: VideoGenerationInputProps) => {
+const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
+  const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );

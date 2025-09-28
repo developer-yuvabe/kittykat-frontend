@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 import type { TimelineEvent } from "@/types/tasklist.types";
 import { useTaskList } from "@/hooks/useTaskList";
 import { format } from "date-fns";
@@ -34,6 +33,7 @@ import { useState } from "react";
 import { TaskListAdjustCreditsDialog } from "./TaskListAdjustCreditsDialog";
 import { TaskListEditNotesDialog } from "./TaskListEditNotesDialog";
 import { WorkflowStatusDialog } from "./TaskListStatusDialog";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
 
 interface TaskListDetailsDrawerProps {
   tasklistId: string | null;
@@ -88,11 +88,10 @@ export const TaskListDetailsDrawer = ({
   brandId,
 }: TaskListDetailsDrawerProps) => {
   const { useTaskListDetail, useTaskListTimeline, isAdmin } = useTaskList();
-
+  const { opneConceptVisual } = useConceptVisualStore();
   // Dialog states
   const [showAdjustCreditsDialog, setShowAdjustCreditsDialog] = useState(false);
   const [showEditNotesDialog, setShowEditNotesDialog] = useState(false);
-  const [showMediaEditor, setShowMediaEditor] = useState(false);
   const [showWorkflowStatusDialog, setShowWorkflowStatusDialog] =
     useState(false);
 
@@ -129,7 +128,14 @@ export const TaskListDetailsDrawer = ({
     e.preventDefault();
     e.stopPropagation();
     if (tasklist?.asset_id && galleryItem?.data && !galleryItem.isError) {
-      setShowMediaEditor(true);
+      opneConceptVisual({
+        source: "media-gallery",
+        assetItems: [galleryItem.data],
+        asset: {
+          galleryActions,
+          currentAsset: galleryItem.data,
+        },
+      });
     } else {
       // Fallback to opening in new tab
       window.open(tasklist?.asset_url, "_blank");
@@ -529,19 +535,6 @@ export const TaskListDetailsDrawer = ({
               onClose={() => setShowWorkflowStatusDialog(false)}
             />
           </>
-        )}
-
-        {/* Media Editor Dialog */}
-        {tasklist?.asset_id && galleryItem?.data && !galleryItem.isError && (
-          <MediaEditorDialog
-            galleryActions={galleryActions}
-            item={galleryItem.data}
-            open={showMediaEditor}
-            onOpenChange={setShowMediaEditor}
-            totalItems={1}
-            currentIndex={0}
-            campaignId={tasklist.campaign_id || null}
-          />
         )}
       </SheetContent>
     </Sheet>

@@ -40,6 +40,8 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useRouter } from "next/router";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -51,15 +53,11 @@ export type RemixControlsProps = {
     url: string;
     size: string;
   };
-  closeDialog?: () => void;
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   // Add brush size props
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
   brandId?: string;
-  source: "a2i" | "media-gallery";
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const RemixControls = ({
@@ -70,15 +68,14 @@ const RemixControls = ({
   onRedo,
   onClear,
   canUndo,
-  closeDialog,
   brushSize,
   onBrushSizeChange,
   brandId,
-  campaignId,
-  handleDialogChange,
 }: RemixControlsProps) => {
+  const router = useRouter();
+  const { closeConceptVisual, source } = useConceptVisualStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
 
   const {
@@ -137,8 +134,6 @@ const RemixControls = ({
   });
 
   useEffect(() => {
-    console.log(image);
-    console.log(baseImageParam);
     if (image.url && baseImageParam) {
       form.setValue(baseImageParam.id, image.url);
     }
@@ -337,13 +332,9 @@ const RemixControls = ({
       }
       setImageBlocks([]);
 
-      if (closeDialog) {
-        closeDialog();
-      }
-
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
+      closeConceptVisual();
+      if (source === "blanket") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error(error);

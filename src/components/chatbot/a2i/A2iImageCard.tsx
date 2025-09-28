@@ -1,4 +1,3 @@
-import { MediaEditorDialog } from "@/app/(main)/gallery/_components/MediaEditorDialog";
 import { Ripple } from "@/components/magicui/ripple";
 import { ImageModal } from "@/components/shared/ImageModal";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
@@ -11,6 +10,7 @@ import { deleteA2iImage } from "@/services/api/a2i.service";
 import { retryGeneration } from "@/services/api/genration.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
 import {
   A2iImageDetail,
   A2iImageGeneration,
@@ -68,27 +68,16 @@ const A2iImageCard = ({
   disableDrag,
   video,
   isNSFW,
-  campaignInformation,
-  selectedCampaignIndex,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
+  const { opneConceptVisual } = useConceptVisualStore();
   const [showImageModal, setShowImageModal] = useState(false);
-
-  const [showEditFeatures, setShowEditFeatures] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const { selectedBrandId } = useBrandStore();
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-
-  const currentCampaign = useMemo(
-    () =>
-      campaignInformation && campaignInformation[selectedCampaignIndex]
-        ? campaignInformation[selectedCampaignIndex]
-        : null,
-    [campaignInformation, selectedCampaignIndex]
-  );
 
   const galleryActions = useGalleryQuery(
     {
@@ -370,7 +359,7 @@ const A2iImageCard = ({
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
 
-        {status === "completed" && !showEditFeatures && (
+        {status === "completed" && (
           <div
             className={cn(
               "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-30 pointer-events-auto",
@@ -423,7 +412,14 @@ const A2iImageCard = ({
               tooltip="Concept Visual Editor"
               onClick={(e) => {
                 e.stopPropagation();
-                setShowEditFeatures((prev) => !prev);
+                opneConceptVisual({
+                  source: "concept-visual-media",
+                  assetItems: stableItem ? [stableItem] : [],
+                  asset: {
+                    currentAsset: stableItem!,
+                    galleryActions: galleryActions,
+                  },
+                });
               }}
               icon={
                 <PencilIcon
@@ -496,18 +492,6 @@ const A2iImageCard = ({
           </div>
         )}
       </div>
-
-      {stableItem && !galleryItem?.isFetching && (
-        <MediaEditorDialog
-          galleryActions={galleryActions}
-          item={stableItem}
-          open={showEditFeatures}
-          onOpenChange={setShowEditFeatures}
-          totalItems={1}
-          currentIndex={0}
-          campaignId={currentCampaign?.id || null}
-        />
-      )}
 
       <ReusableAlertDialog
         open={showDeleteDialog}
