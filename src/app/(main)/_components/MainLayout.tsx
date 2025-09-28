@@ -3,6 +3,7 @@
 import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
 import VerifyEmailModal from "@/components/shared/VerifyEmailModal";
+import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { StreamProvider } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
@@ -23,15 +24,18 @@ const MainLayout = ({
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        setFirebaseUser(u);
-      } else {
-        // User is signed out, redirect to login
+      const logout = async () => {
         await signOut(auth);
         await fetch("/api/logout");
         // reload the page to ensure the user is logged out
         window.location.href = "/login";
         window.location.reload();
+      };
+
+      if (!u || u.tenantId !== AppConfig.AUTH_TENANT_ID) {
+        logout();
+      } else {
+        setFirebaseUser(u);
       }
     });
 
