@@ -13,7 +13,7 @@ import { FileTextIcon, Music, Video, Image } from "lucide-react";
 import { Color, MessageContentFiles } from "@/types/langgraph.types";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
-import { PinnedItem } from "@/store/usePinnedContextStore";
+import { PinnedItem, PinnedMoodboardItem } from "@/store/usePinnedContextStore";
 import type {
   Base64ContentBlock,
   MessageContentComplex,
@@ -570,3 +570,62 @@ Updated Array: ${JSON.stringify(newArray)}
 ${extraInfo ? `\n${extraInfo}` : ""}
 </kittykat-do-not-render>`;
 }
+
+/**
+ * Get pinned moodboard context message for chat input
+ */
+export const getPinnedMoodboardContextMessage = (
+  pinnedMoodboard: PinnedMoodboardItem
+) => {
+  const { title, moodboard } = pinnedMoodboard;
+
+  const screenshotInfo = moodboard.screenshot_url
+    ? `\n- Screenshot: ${moodboard.screenshot_url}`
+    : "";
+
+  return `<kittykat-do-not-render>
+Focus only on analyzing "${title}".${screenshotInfo}
+
+Moodboard Data:
+- Moodboard ID: ${moodboard.moodboard_id}
+- Campaign ID: ${moodboard.campaign_id}
+
+Please analyze this moodboard and provide creative feedback as a professional creative director would. Include:
+1. Overall impression and style summary
+2. Strengths of the current selection
+3. Gaps or missing elements
+4. Concrete next steps with specific recommendations
+
+Please ignore <kittykat-do-not-render> tag.
+</kittykat-do-not-render>`;
+};
+
+/**
+ * Format moodboard assets for message content
+ */
+export const formatMoodboardAssetsMessage = (
+  moodboard: PinnedMoodboardItem["moodboard"]
+): string => {
+  if (!moodboard.assets) {
+    return `Moodboard: ${moodboard.title || "Untitled"} (Campaign ID: ${
+      moodboard.campaign_id
+    }, Moodboard ID: ${moodboard.moodboard_id})`;
+  }
+
+  const visibleAssets = moodboard.assets.filter(
+    (asset) => !asset.is_placeholder && asset.asset_url
+  );
+
+  if (visibleAssets.length === 0) {
+    return "No valid assets found in this moodboard.";
+  }
+
+  const assetsText = visibleAssets
+    .map((asset, index) => `[Asset ${index + 1}]: ${asset.asset_url}`)
+    .join("\n");
+
+  return `Moodboard: ${moodboard.title || "Untitled"} (${
+    visibleAssets.length
+  } images)
+${assetsText}`;
+};

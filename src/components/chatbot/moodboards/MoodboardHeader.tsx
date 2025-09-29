@@ -4,6 +4,8 @@ import { patchMoodboard } from "@/services/api/moodboard.service";
 import EditableInput from "./EditableInput";
 import MoodboardSaveIndicator from "./MoodboardSaveIndicator";
 import MoodboardControls from "./MoodboardControls";
+import { Button } from "@/components/ui/button";
+import { Pin, LoaderCircle } from "lucide-react";
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
@@ -16,6 +18,9 @@ interface MoodboardHeaderProps {
   photos: SortablePhoto<Photo>[];
   isAutoFillLoading: boolean;
   autoFillPlaceholders: () => void;
+  onPinMoodboard?: () => void;
+  isPinned?: boolean;
+  isScreenshotLoading?: boolean;
 }
 
 function MoodboardHeader({
@@ -26,6 +31,9 @@ function MoodboardHeader({
   photos,
   isAutoFillLoading,
   autoFillPlaceholders,
+  onPinMoodboard,
+  isPinned = false,
+  isScreenshotLoading = false,
 }: MoodboardHeaderProps) {
   return (
     <div className="w-full flex flex-col gap-3">
@@ -50,11 +58,33 @@ function MoodboardHeader({
         </div>
 
         {/* Right side - Action Buttons */}
-        <MoodboardControls
-          photos={photos}
-          isAutoFillLoading={isAutoFillLoading}
-          autoFillPlaceholders={autoFillPlaceholders}
-        />
+        <div className="flex items-center gap-2">
+          {onPinMoodboard && (
+            <Button
+              onClick={onPinMoodboard}
+              variant={isPinned ? "default" : "outline"}
+              size="sm"
+              className="flex items-center gap-2"
+              disabled={isPinned || isScreenshotLoading}
+            >
+              {isScreenshotLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Pin className={`h-4 w-4 ${isPinned ? "text-white" : ""}`} />
+              )}
+              {isScreenshotLoading
+                ? "Capturing..."
+                : isPinned
+                ? "Pinned"
+                : "Pin to Chat"}
+            </Button>
+          )}
+          <MoodboardControls
+            photos={photos}
+            isAutoFillLoading={isAutoFillLoading}
+            autoFillPlaceholders={autoFillPlaceholders}
+          />
+        </div>
       </div>
     </div>
   );

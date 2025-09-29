@@ -20,6 +20,7 @@ import {
   addFileWrappers,
   removeFileWrappers,
   getPinnedItemContextMessage,
+  getPinnedMoodboardContextMessage,
   ensureToolCallsHaveResponses,
 } from "@/lib/langgraph.utils";
 import { scrollToBottom } from "@/lib/scroll.utils"; // Import your utility function
@@ -29,6 +30,7 @@ import { PinIcon, SendIcon } from "../ui/custom-icon";
 import { ChatFilePreview } from "./ChatFilePreview";
 import { FileUploadPopover } from "./FileUploadPopover";
 import { useFileUpload } from "@/hooks/useFileUploadToAgent";
+
 import { Message } from "@langchain/langgraph-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { useUserStore } from "@/store/user.store";
@@ -98,7 +100,12 @@ const FileThumbnail = ({
 export const ChatInput: React.FC<ChatInputProps> = ({
   setFirstTokenReceived,
 }) => {
-  const { removePinnedItem, pinnedItem } = usePinnedContextStore();
+  const {
+    removePinnedItem,
+    removePinnedMoodboard,
+    pinnedItem,
+    pinnedMoodboard,
+  } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId } = useBrandStore();
   const stream = useStreamContext();
@@ -216,11 +223,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     contentBlocks,
     setContentBlocks,
     handleFileUpload,
-    dropRef,
+
     removeBlock,
     handlePaste,
     isUploading,
   } = useFileUpload({ brandId: user?.thread_id || "" });
+
+  // Combined drop zone for both files and moodboards
+  const combinedDropRef = useRef<HTMLDivElement>(null);
 
   const handleAddFile = useCallback((url: string) => {
     addFileWrappers(url, setFileList);
@@ -238,6 +248,45 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setContentBlocks([]);
   }, [setContentBlocks]);
 
+  // Add screenshot to contentBlocks when moodboard is pinned
+  useEffect(() => {
+    if (pinnedMoodboard?.moodboard.screenshot_url) {
+      const screenshotBlock = {
+        type: "image" as const,
+        source_type: "url" as const,
+        url: pinnedMoodboard.moodboard.screenshot_url,
+        mime_type: "image/png",
+        metadata: { name: "moodboard-screenshot.png" },
+      };
+      setContentBlocks((prev) => {
+        // Check if already exists
+        if (
+          prev.some(
+            (block) =>
+              block.type === "image" &&
+              "url" in block &&
+              block.url === screenshotBlock.url
+          )
+        ) {
+          return prev;
+        }
+        return [...prev, screenshotBlock];
+      });
+    } else {
+      // Remove screenshot if no longer pinned
+      setContentBlocks((prev) =>
+        prev.filter(
+          (block) =>
+            !(
+              block.type === "image" &&
+              "url" in block &&
+              block.url?.includes("moodboard-screenshot")
+            )
+        )
+      );
+    }
+  }, [pinnedMoodboard?.moodboard.screenshot_url, setContentBlocks]);
+
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -247,6 +296,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       const pinnedContextMessage: string | null = pinnedItem
         ? getPinnedItemContextMessage(pinnedItem)
+        : pinnedMoodboard
+        ? getPinnedMoodboardContextMessage(pinnedMoodboard)
         : null;
 
       const newHumanMessage: Message = {
@@ -259,6 +310,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               ? `${pinnedContextMessage}${input.trimEnd()}`
               : input.trimEnd(),
           },
+          ...(pinnedMoodboard?.moodboard.screenshot_url
+            ? [
+                {
+                  type: "image_url" as const,
+                  image_url: { url: pinnedMoodboard.moodboard.screenshot_url },
+                },
+              ]
+            : []),
           ...contentBlocks,
         ] as Message["content"],
       };
@@ -297,6 +356,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       // Reset local state after submission
       setInput("");
       resetFiles();
+      removePinnedMoodboard();
 
       // Scroll to bottom after sending message using your utility function
       scrollToBottom(100);
@@ -306,6 +366,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       isLoading,
       setFirstTokenReceived,
       pinnedItem,
+      pinnedMoodboard,
       contentBlocks,
       fileList,
       resetFiles,
@@ -337,10 +398,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div
-      ref={dropRef}
-      className="relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col"
+      ref={combinedDropRef}
+      className={`relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col  
+      `}
     >
-      {pinnedItem && (
+      {(pinnedItem || pinnedMoodboard) && (
         <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
           <div className="flex gap-2 flex-wrap items-center">
             <PinIcon className="text-gray-700" />
@@ -348,11 +410,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <span className="text-xs text-gray-500">Focused only on</span>
               <div className="relative group flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {pinnedItem.title}
+                  {pinnedItem?.title || pinnedMoodboard?.title}
                 </span>
               </div>
               <button
-                onClick={() => removePinnedItem()}
+                onClick={() => {
+                  if (pinnedItem) removePinnedItem();
+                  if (pinnedMoodboard) removePinnedMoodboard();
+                }}
                 className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
               >
                 <X size={16} />

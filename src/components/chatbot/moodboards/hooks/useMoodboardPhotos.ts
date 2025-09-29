@@ -111,7 +111,7 @@ export const useMoodboardPhotos = ({
 
           return {
             id: asset.gallery_item_id,
-            src: galleryItem.asset_url || "",
+            src: galleryItem.preview_url || galleryItem.asset_url || "",
             position: asset.position || 0,
             width: galleryItem.dimensions?.width || 300,
             height: galleryItem.dimensions?.height || 300,
