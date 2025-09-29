@@ -1,5 +1,5 @@
+import ImageWithMetadataModal from "@/components/image-metadata/ImageWithMetadataModal";
 import { Ripple } from "@/components/magicui/ripple";
-import { ImageModal } from "@/components/shared/ImageModal";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon } from "@/components/ui/custom-icon";
@@ -485,7 +485,7 @@ const A2iImageCard = ({
                 />
               }
               isActive={isLiked}
-              normalColor="text-white hover:text-red-300"
+              normalColor="text-white"
               activeColor="text-red-500"
               className="transition-all duration-300"
             />
@@ -507,11 +507,11 @@ const A2iImageCard = ({
         danger
       />
 
-      {image && (
-        <ImageModal
-          imageUrl={image.url}
-          alt={parameters.prompt}
+      {showImageModal && stableItem && (
+        <ImageWithMetadataModal
           isOpen={showImageModal}
+          parameters={parameters}
+          galleryItem={stableItem}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}
           onLike={() => {
