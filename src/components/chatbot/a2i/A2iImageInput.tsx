@@ -32,6 +32,8 @@ import useModelPricing from "@/hooks/useModelPricing";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import { useCreditsStore } from "@/store/credits.store";
+import { useQueryState } from "nuqs";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -42,9 +44,13 @@ const A2iImageInput = ({
   campaignInformation: ThreadDetails["campaign_information"];
   selectedCampaignIndex: number;
 }) => {
+  const inputContainerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTo, setScrollTo] = useQueryState("scrollTo");
+  const { parameters, setParameters } = useMetadataActionsStore();
   const { selectedImageGenerationModel } = useModelsStore();
   const form = useA2iForm({
-    formKey: "imageGenForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `image-generation-${selectedImageGenerationModel!.id}`,
     selectedModel: selectedImageGenerationModel,
   });
   const { setShowInsufficientCreditsModal } = useCreditsStore();
@@ -325,6 +331,28 @@ const A2iImageInput = ({
     }
   }, [form, selectedImageGenerationModel?.id]);
 
+  useEffect(() => {
+    if (scrollTo === "a2i-input" && inputContainerRef.current) {
+      inputContainerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+
+      // reset so it doesn’t scroll again unnecessarily
+      setScrollTo(null);
+    }
+  }, [scrollTo, setScrollTo]);
+
+  useEffect(() => {
+    if (parameters.imageGeneationParameters) {
+      form.reset({
+        ...form.getValues(),
+        ...parameters.imageGeneationParameters,
+      });
+      setParameters("imageGeneationParameters", null);
+    }
+  }, [parameters]);
+
   // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
   const value = form.watch("max_images");
   const numberOfReferenceImagesUploaded = refernceImagesModelInfo
@@ -344,7 +372,10 @@ const A2iImageInput = ({
   }, [numberOfReferenceImagesUploaded, value, form]);
 
   return (
-    <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4">
+    <div
+      ref={inputContainerRef}
+      className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4"
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {imageBlocks.length > 0 && (

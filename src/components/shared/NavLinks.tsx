@@ -19,7 +19,7 @@ const LINKS = [
 export function NavLinks() {
   const pathname = usePathname();
   const { user } = useUserStore();
-  const { setIsConceptVisualOpened } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -74,7 +74,22 @@ export function NavLinks() {
             })}
             <NotificationHoverCard />
             <div
-              onClick={() => setIsConceptVisualOpened(true)}
+              onClick={() => {}}
+              className={cn(
+                `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787]`
+              )}
+            >
+              <Image size={ICON_SIZE} color="#6e7787" />
+              <span>Visual Editor Old</span>
+            </div>
+            <div
+              onClick={() =>
+                openConceptVisual({
+                  source: "blanket",
+                  assetItems: [],
+                  asset: null,
+                })
+              }
               className={cn(
                 `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787]`
               )}
@@ -141,7 +156,13 @@ export function NavLinks() {
             })}
             <NotificationHoverCard />
             <div
-              onClick={() => setIsConceptVisualOpened(true)}
+              onClick={() =>
+                openConceptVisual({
+                  source: "blanket",
+                  assetItems: [],
+                  asset: null,
+                })
+              }
               className={cn(
                 `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787] hover:text-primary`
               )}

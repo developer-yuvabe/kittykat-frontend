@@ -32,15 +32,9 @@ import ModelSelector from "../ModelSelector";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 }
 
-const VideoGenerationInput = ({
-  item,
-  campaignId,
-  handleDialogChange,
-}: VideoGenerationInputProps) => {
+const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
     selectedVideoGenearationModel,
@@ -60,22 +54,15 @@ const VideoGenerationInput = ({
               }}
             />
           </div>
-          <VideoGenerationInputControls
-            item={item}
-            campaignId={campaignId}
-            key={item?.id}
-            handleDialogChange={handleDialogChange}
-          />
+          <VideoGenerationInputControls item={item} key={item?.id} />
         </>
       )}
     </div>
   );
 };
 
-const VideoGenerationInputControls = ({
-  item,
-  campaignId,
-}: VideoGenerationInputProps) => {
+const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
+  const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );
@@ -85,7 +72,8 @@ const VideoGenerationInputControls = ({
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
-    formKey: "videoGenForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `video-generation-${selectedVideoGenearationModel!.id}`,
     dynamicDefualtValues: {
       start_image: item?.asset_url || null,
       first_frame: item?.asset_url || null,
@@ -164,8 +152,6 @@ const VideoGenerationInputControls = ({
       } else if (typeof generation_id === "string") {
         addCurrentSessionGenerationId(generation_id);
       }
-
-      form.reset();
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {

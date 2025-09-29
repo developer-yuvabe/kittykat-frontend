@@ -5,6 +5,8 @@ import { TopNavigation } from "@/components/shared/TopNavigation";
 import VerifyEmailModal from "@/components/shared/VerifyEmailModal";
 import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
+import { useUserBrands } from "@/hooks/sse/useUserBrands";
+import { useUserCredits } from "@/hooks/sse/useUserCredits";
 import { StreamProvider } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
 import { User } from "@/types/user.types";
@@ -21,6 +23,8 @@ const MainLayout = ({
 }) => {
   const { setUser } = useUserStore();
   const [firebaseUser, setFirebaseUser] = useState<FirebaeUser | null>(null);
+  useUserBrands();
+  useUserCredits();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {

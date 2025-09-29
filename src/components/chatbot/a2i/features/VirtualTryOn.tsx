@@ -13,26 +13,22 @@ import { BrainIcon, Loader2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ModelSelector from "../ModelSelector";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useRouter } from "next/navigation";
 
 type VirtualTryOnProps = {
   modelImage?: string;
-  closeDialog?: () => void;
-  source: "a2i" | "media-gallery";
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 };
 
-const VirtualTryOn = ({
-  modelImage,
-  closeDialog,
-  campaignId,
-  handleDialogChange,
-}: VirtualTryOnProps) => {
-  const { selectedBrandId } = useBrandStore();
+const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
+  const router = useRouter();
+  const { closeConceptVisual, source } = useConceptVisualStore();
+  const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
   const form = useA2iForm({
-    formKey: "vtonForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `vton-${selectedVtonModel!.id}`,
     selectedModel: selectedVtonModel,
     dynamicDefualtValues: {
       model_image: modelImage,
@@ -55,12 +51,10 @@ const VirtualTryOn = ({
     setLoading(true);
     try {
       await createVtonImage(selectedBrandId!, campaignId || null, data);
-      if (closeDialog) {
-        closeDialog();
-      }
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
+      closeConceptVisual();
+
+      if (source === "blanket") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error("VTON Generation Error:", error);

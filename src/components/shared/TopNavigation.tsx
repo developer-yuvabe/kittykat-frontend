@@ -1,4 +1,3 @@
-import ConceptVisualEditor from "@/app/(main)/concept-visual/_components/ConceptVisualEditor";
 import { getModels } from "@/services/api/models.service";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useModelsStore } from "@/store/models.store";
@@ -8,15 +7,11 @@ import { NavLinks } from "./NavLinks";
 import { UserProfileMenu } from "./UserProfileMenu";
 import InsufficientCreditsModal from "./InsufficientCreditsModal";
 import PurchaseCreditsModal from "./PurchaseCreditsModal";
-import { useUserBrands } from "@/hooks/sse/useUserBrands";
-import { useUserCredits } from "@/hooks/sse/useUserCredits";
+import ConceptVisualEditor from "../concept-visual-editor/ConceptVisualEditor";
 
 export function TopNavigation() {
   const { setModels, setIsModelsFetched } = useModelsStore();
-  const { isConceptVisualOpened, setIsConceptVisualOpened } =
-    useConceptVisualStore();
-  useUserBrands();
-  useUserCredits();
+  const { isConceptVisualOpened } = useConceptVisualStore();
   useQuery({
     queryKey: ["models"],
     queryFn: async () => {
@@ -39,10 +34,8 @@ export function TopNavigation() {
       </div>
 
       {/* Keep editor at the root level */}
-      <ConceptVisualEditor
-        open={isConceptVisualOpened}
-        onOpenChange={setIsConceptVisualOpened}
-      />
+      {isConceptVisualOpened && <ConceptVisualEditor />}
+
       <PurchaseCreditsModal />
       <InsufficientCreditsModal />
     </>

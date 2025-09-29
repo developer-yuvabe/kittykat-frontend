@@ -28,6 +28,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import ModelSelector from "../ModelSelector";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useRouter } from "next/navigation";
 
 const upscalerSchema = z.object({
   image_url: z.string().min(1, "Image URL is required"),
@@ -58,23 +60,15 @@ const upscalerSchema = z.object({
 });
 
 type ImageUpscalerProps = {
-  closeDialog?: () => void;
-  brandId?: string;
-  source: "a2i" | "media-gallery";
   initialImage?: string;
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 };
 
-const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
-  closeDialog,
-  brandId,
-  initialImage,
-  campaignId,
-  handleDialogChange,
-}) => {
+const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
+  const router = useRouter();
+  const { closeConceptVisual, source } = useConceptVisualStore();
   const { selectedUpscaleModel } = useModelsStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId: brandId, selectedCampaignId: campaignId } =
+    useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { models } = useModelsStore();
 
@@ -105,11 +99,11 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
-      await upscaleImage(brandId || selectedBrandId!, data);
-      closeDialog?.();
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
+      await upscaleImage(brandId!, data);
+
+      closeConceptVisual();
+      if (source === "blanket") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
@@ -124,7 +118,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
     <div className="p-4 space-y-6 h-full">
       <ModelSelector
         typeFilter="image-upscale"
-        onModelChange={() => form.reset()}
+        onModelChange={() => {}}
         selectedModel={selectedUpscaleModel}
       />
       <Form {...form}>
