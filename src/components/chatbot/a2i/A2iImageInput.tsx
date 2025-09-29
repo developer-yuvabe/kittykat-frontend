@@ -44,7 +44,8 @@ const A2iImageInput = ({
 }) => {
   const { selectedImageGenerationModel } = useModelsStore();
   const form = useA2iForm({
-    formKey: "imageGenForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `image-generation-${selectedImageGenerationModel!.id}`,
     selectedModel: selectedImageGenerationModel,
   });
   const { setShowInsufficientCreditsModal } = useCreditsStore();

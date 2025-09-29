@@ -118,7 +118,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
     <div className="p-4 space-y-6 h-full">
       <ModelSelector
         typeFilter="image-upscale"
-        onModelChange={() => form.reset()}
+        onModelChange={() => {}}
         selectedModel={selectedUpscaleModel}
       />
       <Form {...form}>

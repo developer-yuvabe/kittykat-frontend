@@ -38,7 +38,7 @@ const ConceptVisualEditor = () => {
     galleryActions,
   } = useConceptVisualStore();
   const { isModelsFetched } = useModelsStore();
-  const { isBrandsFetched } = useBrandStore();
+  const { isBrandsFetched, selectedBrandId } = useBrandStore();
   const [currentAssetVersion, setCurrentAssetVersion] = useState(currentAsset);
   const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>("vton");
 
@@ -172,6 +172,7 @@ const ConceptVisualEditor = () => {
           </DialogHeader>
 
           <div className="flex flex-1 gap-x-3 p-4 min-h-0">
+            {/* Loading State until brands and models are fetched */}
             {!isBrandsFetched || !isModelsFetched ? (
               <>
                 <div className="w-[35%] min-w-[280px] flex flex-col gap-y-4">
@@ -184,6 +185,18 @@ const ConceptVisualEditor = () => {
                     ))}
                   </div>
                   <Skeleton className="flex-1 h-full w-full" />
+                </div>
+              </>
+            ) : !selectedBrandId ? (
+              <>
+                <div className="flex h-[85vh] flex-col items-center justify-center text-center space-y-4 px-4 w-full">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    No brand selected
+                  </h2>
+                  <p className="text-gray-600 max-w-md">
+                    You haven&apos;t selected a brand yet. Please choose a brand
+                    to continue and start creating amazing concept visuals!
+                  </p>
                 </div>
               </>
             ) : (

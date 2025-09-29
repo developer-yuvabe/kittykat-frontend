@@ -72,7 +72,8 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
-    formKey: "videoGenForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `video-generation-${selectedVideoGenearationModel!.id}`,
     dynamicDefualtValues: {
       start_image: item?.asset_url || null,
       first_frame: item?.asset_url || null,
@@ -151,8 +152,6 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
       } else if (typeof generation_id === "string") {
         addCurrentSessionGenerationId(generation_id);
       }
-
-      form.reset();
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {
