@@ -70,7 +70,7 @@ const A2iImageCard = ({
   isNSFW,
 }: A2iImageCardProps) => {
   const [copied, setCopied] = useState(false);
-  const { opneConceptVisual } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
   const [showImageModal, setShowImageModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -412,7 +412,7 @@ const A2iImageCard = ({
               tooltip="Concept Visual Editor"
               onClick={(e) => {
                 e.stopPropagation();
-                opneConceptVisual({
+                openConceptVisual({
                   source: "concept-visual-media",
                   assetItems: stableItem ? [stableItem] : [],
                   asset: {

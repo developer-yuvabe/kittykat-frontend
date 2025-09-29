@@ -19,7 +19,7 @@ const LINKS = [
 export function NavLinks() {
   const pathname = usePathname();
   const { user } = useUserStore();
-  const { opneConceptVisual } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -84,7 +84,7 @@ export function NavLinks() {
             </div>
             <div
               onClick={() =>
-                opneConceptVisual({
+                openConceptVisual({
                   source: "blanket",
                   assetItems: [],
                   asset: null,
@@ -157,7 +157,7 @@ export function NavLinks() {
             <NotificationHoverCard />
             <div
               onClick={() =>
-                opneConceptVisual({
+                openConceptVisual({
                   source: "blanket",
                   assetItems: [],
                   asset: null,

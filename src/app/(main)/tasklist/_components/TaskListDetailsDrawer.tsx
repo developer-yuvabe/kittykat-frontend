@@ -88,7 +88,7 @@ export const TaskListDetailsDrawer = ({
   brandId,
 }: TaskListDetailsDrawerProps) => {
   const { useTaskListDetail, useTaskListTimeline, isAdmin } = useTaskList();
-  const { opneConceptVisual } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
   // Dialog states
   const [showAdjustCreditsDialog, setShowAdjustCreditsDialog] = useState(false);
   const [showEditNotesDialog, setShowEditNotesDialog] = useState(false);
@@ -128,7 +128,7 @@ export const TaskListDetailsDrawer = ({
     e.preventDefault();
     e.stopPropagation();
     if (tasklist?.asset_id && galleryItem?.data && !galleryItem.isError) {
-      opneConceptVisual({
+      openConceptVisual({
         source: "media-gallery",
         assetItems: [galleryItem.data],
         asset: {

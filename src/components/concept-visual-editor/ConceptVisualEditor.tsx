@@ -36,11 +36,14 @@ const ConceptVisualEditor = () => {
     setCurrentAsset,
     assetItems,
     galleryActions,
+    defaultActiveTab,
   } = useConceptVisualStore();
   const { isModelsFetched } = useModelsStore();
   const { isBrandsFetched, selectedBrandId } = useBrandStore();
   const [currentAssetVersion, setCurrentAssetVersion] = useState(currentAsset);
-  const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>("vton");
+  const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>(
+    defaultActiveTab ?? (source === "blanket" ? "vton" : "ask-kittykat")
+  );
 
   const queryClient = useQueryClient();
   const versionsRef = useRef<HTMLDivElement>(null);

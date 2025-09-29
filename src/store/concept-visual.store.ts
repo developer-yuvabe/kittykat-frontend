@@ -1,4 +1,5 @@
 import { GalleryActions } from "@/hooks/useGallery";
+import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { create } from "zustand";
 
@@ -7,16 +8,17 @@ type OpenConceptVisualArguments = {
   source: ConceptVisualSource;
   assetItems: GalleryItemResponse[];
   asset: {
-    galleryActions: GalleryActions;
+    galleryActions: GalleryActions | null;
     currentAsset: GalleryItemResponse;
   } | null;
+  defaultActiveTab?: ConceptVisualTabs;
 };
 
 type Store = {
   source: ConceptVisualSource;
 
   isConceptVisualOpened: boolean;
-  opneConceptVisual: ({
+  openConceptVisual: ({
     source,
     assetItems,
     asset,
@@ -30,18 +32,21 @@ type Store = {
   setAssetItems: (items: GalleryItemResponse[]) => void;
 
   galleryActions: GalleryActions | null;
+
+  defaultActiveTab: ConceptVisualTabs | null;
 };
 
 export const useConceptVisualStore = create<Store>((set) => ({
   source: "blanket",
   isConceptVisualOpened: false,
-  opneConceptVisual: ({ source, assetItems, asset }) =>
+  openConceptVisual: ({ source, assetItems, asset, defaultActiveTab }) =>
     set({
       isConceptVisualOpened: true,
       source,
       assetItems,
       galleryActions: asset?.galleryActions,
       currentAsset: asset?.currentAsset,
+      defaultActiveTab: defaultActiveTab || null,
     }),
   closeConceptVisual: () =>
     set({
@@ -55,4 +60,5 @@ export const useConceptVisualStore = create<Store>((set) => ({
   setAssetItems: (items) => set({ assetItems: items }),
 
   galleryActions: null,
+  defaultActiveTab: null,
 }));

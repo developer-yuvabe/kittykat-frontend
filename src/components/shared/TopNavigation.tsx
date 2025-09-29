@@ -7,15 +7,11 @@ import { NavLinks } from "./NavLinks";
 import { UserProfileMenu } from "./UserProfileMenu";
 import InsufficientCreditsModal from "./InsufficientCreditsModal";
 import PurchaseCreditsModal from "./PurchaseCreditsModal";
-import { useUserBrands } from "@/hooks/sse/useUserBrands";
-import { useUserCredits } from "@/hooks/sse/useUserCredits";
 import ConceptVisualEditor from "../concept-visual-editor/ConceptVisualEditor";
 
 export function TopNavigation() {
   const { setModels, setIsModelsFetched } = useModelsStore();
   const { isConceptVisualOpened } = useConceptVisualStore();
-  useUserBrands();
-  useUserCredits();
   useQuery({
     queryKey: ["models"],
     queryFn: async () => {

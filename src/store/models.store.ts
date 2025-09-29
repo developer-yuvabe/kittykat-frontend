@@ -11,9 +11,11 @@ type Store = {
 
   selectedImageGenerationModel: Model | null;
   setSelectedImageGenerationModel: (model: Model) => void;
+  setSelectedImageGenerationModelById: (id: string) => void;
 
   selectedVideoGenearationModel: Model | null;
   setSelectedVideoGenearationModel: (model: Model) => void;
+  setSelectedVideoGenearationModelById: (id: string) => void;
 
   selectedRemixModel: Model | null;
   setSelectedRemixModel: (model: Model) => void;
@@ -25,7 +27,7 @@ type Store = {
   setSelectedUpscaleModel: (model: Model) => void;
 };
 
-export const useModelsStore = create<Store>()((set) => {
+export const useModelsStore = create<Store>()((set, get) => {
   const { getSessionItem, setSessionItem, removeSessionItem } =
     useSessionStorage();
 
@@ -127,6 +129,16 @@ export const useModelsStore = create<Store>()((set) => {
 
     selectedImageGenerationModel:
       getSessionItem("a2i-image-generation-model-id") || null,
+    setSelectedImageGenerationModelById: (id) => {
+      const models = get().models;
+      const model = models.find((model) => model.id === id);
+      if (model) {
+        // Save to session storage
+        setSessionItem("a2i-image-generation-model-id", model.id);
+
+        set({ selectedImageGenerationModel: model });
+      }
+    },
     setSelectedImageGenerationModel: (model) => {
       // Save to session storage
       setSessionItem("a2i-image-generation-model-id", model.id);
@@ -136,6 +148,15 @@ export const useModelsStore = create<Store>()((set) => {
 
     selectedVideoGenearationModel:
       getSessionItem("a2i-video-generation-model-id") || null,
+    setSelectedVideoGenearationModelById: (id) => {
+      const models = get().models;
+      const model = models.find((model) => model.id === id);
+      if (model) {
+        // Save to session storage
+        setSessionItem("a2i-video-generation-model-id", model.id);
+        set({ selectedVideoGenearationModel: model });
+      }
+    },
     setSelectedVideoGenearationModel: (model) => {
       // Save to session storage
       setSessionItem("a2i-video-generation-model-id", model.id);

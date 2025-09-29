@@ -13,7 +13,7 @@ export const TaskListAssetCell = ({
   assetUrl: string;
   assetId?: string;
 }) => {
-  const { opneConceptVisual } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
   const { selectedBrandId } = useBrandStore();
 
   const galleryActions = useGalleryQuery(
@@ -43,7 +43,7 @@ export const TaskListAssetCell = ({
     e.stopPropagation();
     e.preventDefault();
     if (galleryItem && galleryItem.data)
-      opneConceptVisual({
+      openConceptVisual({
         source: "media-gallery",
         assetItems: [galleryItem.data],
         asset: {

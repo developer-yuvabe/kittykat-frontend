@@ -47,7 +47,7 @@ export function SortableMediaGrid({
 }: SortableMediaGridProps) {
   const router = useRouter();
   const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
-  const { opneConceptVisual } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export function SortableMediaGrid({
 
   // New function to handle opening editor
   const handleEditClick = (item: GalleryItemResponse) => {
-    opneConceptVisual({
+    openConceptVisual({
       source: "media-gallery",
       assetItems: galleryItems,
       asset: {
