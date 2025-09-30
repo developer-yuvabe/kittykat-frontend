@@ -1,4 +1,3 @@
-import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,18 +15,21 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
+import useModelPricing from "@/hooks/useModelPricing";
+import { PlatformApiError } from "@/lib/utils";
 import { upscaleImage } from "@/services/api/upscale.service";
 import { useBrandStore } from "@/store/brand.store";
-import { useUserStore } from "@/store/user.store";
-import { PlatformApiError } from "@/lib/utils";
-import useModelPricing from "@/hooks/useModelPricing";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import ModelSelector from "../ModelSelector";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useRouter } from "next/navigation";
 
 const upscalerSchema = z.object({
   image_url: z.string().min(1, "Image URL is required"),
@@ -58,24 +60,16 @@ const upscalerSchema = z.object({
 });
 
 type ImageUpscalerProps = {
-  closeDialog?: () => void;
-  brandId?: string;
-  source: "a2i" | "media-gallery";
   initialImage?: string;
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 };
 
-const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
-  closeDialog,
-  brandId,
-  initialImage,
-  campaignId,
-  handleDialogChange,
-}) => {
+const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
+  const router = useRouter();
+  const { closeConceptVisual, source } = useConceptVisualStore();
   const { selectedUpscaleModel } = useModelsStore();
-  const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { selectedBrandId: brandId, selectedCampaignId: campaignId } =
+    useBrandStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { models } = useModelsStore();
 
   const form = useForm<z.infer<typeof upscalerSchema>>({
@@ -105,11 +99,11 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
-      await upscaleImage(brandId || selectedBrandId!, data);
-      closeDialog?.();
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
+      await upscaleImage(brandId!, data);
+
+      closeConceptVisual();
+      if (source === "blanket") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
@@ -124,7 +118,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({
     <div className="p-4 space-y-6 h-full">
       <ModelSelector
         typeFilter="image-upscale"
-        onModelChange={() => form.reset()}
+        onModelChange={() => {}}
         selectedModel={selectedUpscaleModel}
       />
       <Form {...form}>

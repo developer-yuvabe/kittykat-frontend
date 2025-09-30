@@ -1,30 +1,30 @@
 "use client";
 
-import type React from "react";
-import { useState, useMemo, useCallback } from "react";
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
+import { GalleryActions } from "@/hooks/useGallery";
+import { useBrandStore } from "@/store/brand.store";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import type { GalleryItemResponse } from "@/types/gallery.types";
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
-  rectSortingStrategy,
 } from "@dnd-kit/sortable";
-import Masonry from "react-masonry-css";
-import type { GalleryItemResponse } from "@/types/gallery.types";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
-import { SortableMediaItem } from "./SortableMediaItem";
-import { MediaEditorDialog } from "./MediaEditorDialog";
-import { GalleryActions } from "@/hooks/useGallery";
 import { useRouter } from "next/navigation";
-import { useBrandStore } from "@/store/brand.store";
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
+import Masonry from "react-masonry-css";
+import { SortableMediaItem } from "./SortableMediaItem";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
@@ -47,15 +47,10 @@ export function SortableMediaGrid({
 }: SortableMediaGridProps) {
   const router = useRouter();
   const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
-
+  const { openConceptVisual } = useConceptVisualStore();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-
-  // New state for MediaEditor carousel
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [currentEditorItem, setCurrentEditorItem] =
-    useState<GalleryItemResponse | null>(null);
 
   // Get the gallery items and sort them by brand_sort_order
   const galleryItems = useMemo(() => {
@@ -102,8 +97,14 @@ export function SortableMediaGrid({
 
   // New function to handle opening editor
   const handleEditClick = (item: GalleryItemResponse) => {
-    setCurrentEditorItem(item);
-    setEditorOpen(true);
+    openConceptVisual({
+      source: "media-gallery",
+      assetItems: galleryItems,
+      asset: {
+        galleryActions,
+        currentAsset: item,
+      },
+    });
   };
 
   // Handle editing moodboard for moodboard assets
@@ -118,22 +119,6 @@ export function SortableMediaGrid({
       router.push(
         `/?campaignId=${item.campaign_id}&moodboardId=${item.moodboard_id}`
       );
-    }
-  };
-
-  const currentEditorIndex = useMemo(() => {
-    if (!currentEditorItem) return -1;
-    return galleryItems.findIndex((item) => item.id === currentEditorItem.id);
-  }, [currentEditorItem, galleryItems]);
-
-  // Handle carousel navigation
-  const handleEditorNavigate = (direction: "next" | "prev") => {
-    const totalItems = galleryItems.length;
-
-    if (direction === "next" && currentEditorIndex < totalItems - 1) {
-      setCurrentEditorItem(galleryItems[currentEditorIndex + 1] || null);
-    } else if (direction === "prev" && currentEditorIndex > 0) {
-      setCurrentEditorItem(galleryItems[currentEditorIndex - 1] || null);
     }
   };
 
@@ -169,17 +154,6 @@ export function SortableMediaGrid({
             />
           ))}
         </Masonry>
-
-        {/* Dialogs */}
-        <MediaEditorDialog
-          open={editorOpen}
-          onOpenChange={setEditorOpen}
-          item={currentEditorItem}
-          galleryActions={galleryActions}
-          onNavigate={handleEditorNavigate}
-          totalItems={galleryItems.length}
-          currentIndex={currentEditorIndex}
-        />
 
         <ReusableAlertDialog
           open={showDeleteDialog}
@@ -262,17 +236,6 @@ export function SortableMediaGrid({
           </Masonry>
         </SortableContext>
       </DndContext>
-
-      {/* Media Editor Dialog with Carousel */}
-      <MediaEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        item={currentEditorItem}
-        galleryActions={galleryActions}
-        onNavigate={handleEditorNavigate}
-        totalItems={galleryItems.length}
-        currentIndex={currentEditorIndex}
-      />
 
       {/* Delete confirmation dialog */}
       <ReusableAlertDialog

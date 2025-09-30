@@ -7,6 +7,9 @@ import { z } from "zod";
 import { useDynamicModelSchema } from "./useDynamicModelSchema";
 import { useSessionStorage } from "./useSessionStorage";
 
+/**
+ * @property {string} formKey - Unique key to identify the form in session storage
+ */
 type UseA2iFormProps = {
   formKey: string; // Unique key to identify the form in session storage
   selectedModel: Model | null; // The currently selected model, it can be image generation, video generation, remix, etc.
@@ -23,16 +26,28 @@ export const useA2iForm = ({
       "No model selected. Please select a model before using this reusable form. Cheers!"
     );
   }
-
-  const { setSessionItem } = useSessionStorage();
+  const { setSessionItem, getSessionItem } = useSessionStorage();
+  const localStoredValues = getSessionItem(formKey);
 
   const { schema, defaultValues } = useMemo(() => {
     return useDynamicModelSchema(selectedModel, dynamicDefualtValues || {});
   }, [selectedModel?.id, dynamicDefualtValues]);
 
+  // Merge local values with schema defaults
+  const mergedDefaultValues = useMemo(() => {
+    return {
+      ...defaultValues,
+      ...(localStoredValues || {}),
+    };
+  }, [defaultValues, localStoredValues]);
+
+  // console.log("defaultValues", defaultValues);
+  // console.log("localStoredValues", localStoredValues);
+  // console.log("mergedDefaultValues", mergedDefaultValues);
+
   const form = useForm<any>({
     resolver: zodResolver(schema as z.ZodTypeAny),
-    defaultValues: defaultValues,
+    defaultValues: mergedDefaultValues,
     mode: "onChange",
   });
 
@@ -42,7 +57,7 @@ export const useA2iForm = ({
 
     form.reset(
       {
-        ...defaultValues,
+        ...mergedDefaultValues,
         prompt: previousPromptValue,
       },
       {

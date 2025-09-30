@@ -16,7 +16,9 @@ import {
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
-import { Loader2 } from "lucide-react";
+import Splash from "@/components/shared/Splash";
+import { fetchThreadState } from "@/services/api/langgraph.service";
+import { useBrandStore } from "@/store/brand.store";
 import { client } from "./langgraph.client";
 
 export type StateType = {
@@ -94,6 +96,7 @@ const StreamSession = ({
 export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const { setSelectedBrandId } = useBrandStore();
   const { user, setUser } = useUserStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const [cahedData, setCachedData] = useState<StateType | null>(null);
@@ -103,10 +106,10 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
       try {
         if (user?.thread_id && client) {
           try {
-            const threadData = await client.threads.get<StateType>(
-              user.thread_id
-            );
-            setCachedData(threadData.values);
+            const threadData = await fetchThreadState(user.thread_id);
+            setCachedData(threadData);
+            /* This initialization ensures that the brand context is in sync with the thread state */
+            setSelectedBrandId(threadData.currentBrandContextId);
           } catch (error: any) {
             if (error?.status === 404 || error?.response?.status === 404) {
               updateUser(user!.id, {
@@ -130,11 +133,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center w-full h-[85vh]">
-        <Loader2 className="text-primary animate-spin" size={40} />
-      </div>
-    );
+    return <Splash />;
   }
 
   return (

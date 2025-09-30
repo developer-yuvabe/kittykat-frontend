@@ -20,14 +20,9 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true, campaignInformation: true });
-  const {
-    selectedBrandId,
-    isBrandsFetched,
-    isCreatingBrand,
-    setSelectedCampaignId,
-    setCampaigns,
-  } = useBrandStore();
-  const { isFetchingBrandInfo, data } = useBrandUpdates(selectedBrandId);
+  const { isBrandsFetched, isCreatingBrand, setSelectedCampaignId } =
+    useBrandStore();
+  const { isFetchingBrandInfo, data } = useBrandUpdates();
 
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information?.filter(
@@ -60,7 +55,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   useEffect(() => {
     const updateCampaigns = async () => {
-      setCampaigns(campaignInformation ?? []);
       if (currentCampaignId) {
         setSelectedCampaignId(currentCampaignId);
       }

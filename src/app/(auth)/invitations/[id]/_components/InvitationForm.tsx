@@ -26,10 +26,7 @@ import { processAuthError } from "@/lib/utils";
 import { invitationAcceptSchema } from "@/schema/inviation.schema";
 import { acceptInvitation } from "@/services/api/user.service";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -53,39 +50,16 @@ const InvitationForm = ({
   });
 
   const onSubmit = async (data: z.infer<typeof invitationAcceptSchema>) => {
+    let credential: UserCredential | null = null;
+
     try {
       setFormError(null);
+      credential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        data.password
+      );
 
-      let credential;
-
-      /*
-    Why this logic?
-
-    Since the Firebase project supports multiple platforms, the user might already 
-    have an existing account with the same email.
-
-    - If the user already exists, we sign them in using their existing credentials.
-    - If not, we create a new account with the provided email and password.
-
-    This ensures the user can accept the invitation and log in seamlessly,
-    regardless of whether their account already exists.
-    */
-
-      try {
-        credential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          data.password
-        );
-      } catch (error: any) {
-        if (error.code === "auth/email-already-in-use") {
-          credential = await signInWithEmailAndPassword(
-            auth,
-            email,
-            data.password
-          );
-        } else throw error;
-      }
       // Accept the invitation
       await acceptInvitation(invitationId, credential.user.uid, data.username);
 
@@ -98,10 +72,14 @@ const InvitationForm = ({
         },
       });
 
+      router.refresh();
       router.push(AppConfig.HOME_ROUTE);
     } catch (e) {
-      // await signOut(auth);
-      // await fetch("/api/logout");
+      if (credential?.user) {
+        // If user creation was successful but invitation acceptance failed, delete the created user to avoid orphan accounts.
+        await credential.user.delete();
+      }
+
       const errorMsg = processAuthError(e);
       setFormError(errorMsg);
     }

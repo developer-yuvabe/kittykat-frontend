@@ -66,3 +66,20 @@ export const estimateVideoGenerationCredits = async (
     throw error;
   }
 };
+
+export const generateAnimationPrompt = async (
+  preset: "smooth" | "dynamic",
+  prompt?: string
+) => {
+  try {
+    return await handleApiRequest<string>(
+      axiosInstance.post(`/a2i/actions/animate`, {
+        preset,
+        input_prompt: prompt,
+      })
+    );
+  } catch (error) {
+    console.error("Error generating video:", error);
+    throw error;
+  }
+};

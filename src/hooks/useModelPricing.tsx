@@ -26,7 +26,7 @@ const useModelPricing = ({
         return {
           isDynamicPricing: false,
           estimationTriggers: [],
-          noOfImagesToBeGeneratedName: null,
+          noOfImagesToBeGeneratedName: [],
         };
       }
 
@@ -36,17 +36,18 @@ const useModelPricing = ({
           selectedModel.pricing?.type === "variable"
             ? selectedModel.pricing.estimationTriggers ?? []
             : [],
+        // There can be multiple image count parameters, e.g. for seedream 4 model max images and number of images are both image count parameters
         noOfImagesToBeGeneratedName:
-          selectedModel.parameters?.find(
-            (param) => param.type === "image_count"
-          )?.id ?? null,
+          selectedModel.parameters
+            ?.filter((p) => p.type === "image_count")
+            .map((p) => p.id) || [],
       };
     }, [selectedModel]);
 
   const noOfImagesToBeGenerated = useWatch({
     control: form.control,
-    name: noOfImagesToBeGeneratedName ?? "",
-    defaultValue: 1,
+    name: noOfImagesToBeGeneratedName,
+    defaultValue: [1],
   });
   const model = useWatch({
     control: form.control,
@@ -98,7 +99,13 @@ const useModelPricing = ({
   return {
     credits: isDynamicPricing
       ? data ?? 0
-      : (selectedModel?.credits ?? 0) * (noOfImagesToBeGenerated || 1),
+      : (selectedModel?.credits ?? 0) *
+        (Array.isArray(noOfImagesToBeGenerated)
+          ? noOfImagesToBeGenerated.reduce(
+              (acc, val) => acc * (Number(val) || 1),
+              1
+            )
+          : 1),
 
     isCalculatingCredits: isDynamicPricing ? isLoading : false,
   };

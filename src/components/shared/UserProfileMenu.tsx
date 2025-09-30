@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,17 +9,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/store/user.store";
-import { LifeBuoy, LogOut } from "lucide-react";
+import { CreditCard, GemIcon, LifeBuoy, LogOut } from "lucide-react";
 import { CreditIcon } from "../ui/custom-icon";
 import QueueProgress from "./QueueProgress";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/config/firebase.config";
+import { useCreditsStore } from "@/store/credits.store";
 
 export function UserProfileMenu({}) {
-  const { user, credits } = useUserStore();
+  const { user, credits, kittykatExpertCredits } = useUserStore();
   const router = useRouter();
+  const { setShowPurchaseCreditsModal } = useCreditsStore();
 
   async function handleLogout() {
     await signOut(auth);
@@ -41,30 +42,30 @@ export function UserProfileMenu({}) {
 
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">
+      {kittykatExpertCredits !== null && (
+        <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
+          <span className="text-xs">{kittykatExpertCredits}</span>
+          <GemIcon className="w-6 h-4" />
+        </div>
+      )}
       {credits !== null && (
-        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10">
+        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
           <span className="text-xs">{credits}</span>
           <CreditIcon className="w-2 h-2" />
         </div>
       )}
-
       <div className="hidden sm:block">
         <QueueProgress />
       </div>
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative h-10 w-10 rounded-full p-0 cursor-pointer"
-          >
-            <Avatar className="h-10 w-10">
-              <AvatarImage alt={user?.name || "User"} />
-              <AvatarFallback className="bg-purple-100 text-purple-600">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
+        <DropdownMenuTrigger className="flex items-center rounded-full bg-primary/20 cursor-pointer">
+          <Avatar className="h-10 w-10 rounded-l-full">
+            <AvatarImage alt={user?.name || "User"} />
+            <AvatarFallback className="bg-purple-100 text-purple-600">
+              {getUserInitials()}
+            </AvatarFallback>
+          </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
@@ -87,7 +88,10 @@ export function UserProfileMenu({}) {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-
+          <DropdownMenuItem onClick={() => setShowPurchaseCreditsModal(true)}>
+            <CreditCard />
+            Purchase Credits
+          </DropdownMenuItem>
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
               <Link href={"/help"}>

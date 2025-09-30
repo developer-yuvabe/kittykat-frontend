@@ -9,7 +9,12 @@ export const inviationSchema = z.object({
     errorMap: () => ({ message: "Please select a role" }),
   }),
   brandAccess: z.array(z.string()),
+  modelAccess: z.array(z.string()),
   contentFilterDisabled: z.boolean(),
+  credits: z.number().min(0, "Tokens must be a positive number"),
+  kittykat_expert_credits: z
+    .number()
+    .min(0, "KittyKat Expert Credits must be a positive number"),
 });
 
 export const invitationAcceptSchema = z.object({

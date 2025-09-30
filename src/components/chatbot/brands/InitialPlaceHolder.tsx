@@ -111,7 +111,12 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
 }) => {
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { setIsCreatingBrand, setIsCampaignCreating } = useBrandStore();
+  const {
+    setIsCreatingBrand,
+    setIsCampaignCreating,
+    previousSelectedBrandId,
+    setSelectedBrandId,
+  } = useBrandStore();
 
   return (
     <>
@@ -195,6 +200,11 @@ export const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsCreatingBrand(false);
+
+                      // Restore previous selected brand if exists
+                      if (previousSelectedBrandId) {
+                        setSelectedBrandId(previousSelectedBrandId);
+                      }
                     }}
                   >
                     <X className="size-5" />

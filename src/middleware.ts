@@ -4,7 +4,8 @@ import {
   redirectToHome,
   redirectToLogin,
 } from "next-firebase-auth-edge";
-import { clientConfig, serverConfig } from "@/config/firebase.config";
+import { clientConfig } from "@/config/firebase.config";
+import { serverConfig } from "./config/firebase-server.config";
 import { AppConfig } from "./config/app.config";
 
 export async function middleware(request: NextRequest) {
@@ -12,13 +13,18 @@ export async function middleware(request: NextRequest) {
     loginPath: "/api/login",
     logoutPath: "/api/logout",
     apiKey: clientConfig.apiKey,
+    tenantId: clientConfig.tenantId,
     cookieName: serverConfig.cookieName,
     cookieSignatureKeys: serverConfig.cookieSignatureKeys,
     cookieSerializeOptions: serverConfig.cookieSerializeOptions,
     debug: process.env.NODE_ENV === "production" ? false : true,
     serviceAccount: serverConfig.serviceAccount,
     handleValidToken: async ({}, headers) => {
-      if (AppConfig.PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
+      if (
+        AppConfig.PUBLIC_PATHS.filter((p) => p !== "/verify-email").includes(
+          request.nextUrl.pathname
+        )
+      ) {
         return redirectToHome(request, {
           path: AppConfig.HOME_ROUTE,
         });

@@ -4,13 +4,10 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getChatLayoutConfig } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useBrandStore } from "@/store/brand.store";
 import MobileChatPanel from "../chatbot/MobileChatPanel";
 import DesktopChatPanel from "../chatbot/DesktopChatPanel";
 
 export function Thread() {
-  const { setSelectedBrandId } = useBrandStore();
-
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
   // Responsive breakpoints
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
@@ -47,12 +44,6 @@ export function Thread() {
     }
     prevMessageLength.current = messages.length;
   }, [messages]);
-
-  useEffect(() => {
-    if (stream.values.currentBrandContextId) {
-      setSelectedBrandId(stream.values.currentBrandContextId);
-    }
-  }, [stream.values.currentBrandContextId]);
 
   const chatStarted = useMemo(() => !!messages.length, [messages.length]);
 
