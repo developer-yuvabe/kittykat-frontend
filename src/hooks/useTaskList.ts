@@ -196,8 +196,19 @@ export const useTaskList = ({
       return { toastId };
     },
     onSuccess: (data, _variables, context) => {
+      // Invalidate all tasklist related queries
       queryClient.invalidateQueries({
         queryKey: ["tasklists"],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasklist"],
+        exact: false,
+      });
+      // Force refetch to ensure immediate update
+      queryClient.refetchQueries({
+        queryKey: ["tasklists"],
+        exact: false,
       });
       toast.success("Tasklist created successfully", { id: context?.toastId });
       return data;
