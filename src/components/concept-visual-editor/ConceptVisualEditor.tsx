@@ -236,12 +236,12 @@ const ConceptVisualEditor = () => {
                       item={currentAsset}
                       currentVersion={currentAssetVersion}
                       onVersionChange={(updatedItem) => {
-                        // If switching to Version 1 (base item), get the latest data from cache
-                        const cachedItem = queryClient.getQueryData([
+                        // Always try to get the latest data for the selected version from cache
+                        const cachedVersion = queryClient.getQueryData([
                           "gallery-item",
-                          currentAsset.id,
+                          updatedItem.id,
                         ]) as GalleryItemResponse | undefined;
-                        setCurrentAssetVersion(cachedItem || updatedItem);
+                        setCurrentAssetVersion(cachedVersion || updatedItem);
                       }}
                       ref={versionsRef}
                       versions={versions}
