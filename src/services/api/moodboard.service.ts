@@ -4,6 +4,7 @@ import {
   AddMoodboardImageRequest,
   AutoFillSuggestedImage,
   CreateMoodboardRequest,
+  GenerateMoodboardScreenshotRequest,
   MoodboardCreateRequest,
   MoodboardImageAnalysisRequest,
   MoodboardPatchRequest,
@@ -257,6 +258,29 @@ export async function getAutoFillMoodboardSuggestedImages(
       {
         params: { count },
       }
+    )
+  );
+}
+
+/**
+ * Generate a screenshot of the moodboard and return the URL.
+ *
+ * @param brandId - Brand ID
+ * @param campaignId - Campaign ID
+ * @param moodboardId - Moodboard ID
+ * @param payload - Screenshot generation payload
+ * @returns Object containing the screenshot URL
+ */
+export async function generateMoodboardScreenshot(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string,
+  payload: GenerateMoodboardScreenshotRequest
+): Promise<{ url: string }> {
+  return handleApiRequest<{ url: string }>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/moodboard/${moodboardId}/screenshot`,
+      payload
     )
   );
 }

@@ -4,6 +4,8 @@ import { patchMoodboard } from "@/services/api/moodboard.service";
 import EditableInput from "./EditableInput";
 import MoodboardSaveIndicator from "./MoodboardSaveIndicator";
 import MoodboardControls from "./MoodboardControls";
+import { Button } from "@/components/ui/button";
+import { LoaderCircle, SparklesIcon } from "lucide-react";
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
@@ -16,6 +18,8 @@ interface MoodboardHeaderProps {
   photos: SortablePhoto<Photo>[];
   isAutoFillLoading: boolean;
   autoFillPlaceholders: () => void;
+  onPinMoodboard?: () => void;
+  isScreenshotLoading: boolean;
 }
 
 function MoodboardHeader({
@@ -26,6 +30,8 @@ function MoodboardHeader({
   photos,
   isAutoFillLoading,
   autoFillPlaceholders,
+  onPinMoodboard,
+  isScreenshotLoading,
 }: MoodboardHeaderProps) {
   return (
     <div className="w-full flex flex-col gap-3">
@@ -50,11 +56,27 @@ function MoodboardHeader({
         </div>
 
         {/* Right side - Action Buttons */}
-        <MoodboardControls
-          photos={photos}
-          isAutoFillLoading={isAutoFillLoading}
-          autoFillPlaceholders={autoFillPlaceholders}
-        />
+        <div className="flex items-center gap-2">
+          {onPinMoodboard && (
+            <Button
+              onClick={onPinMoodboard}
+              size="lg"
+              className="flex items-center gap-2"
+            >
+              {isScreenshotLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <SparklesIcon className="h-4 w-4" />
+              )}
+              {isScreenshotLoading ? "Analyzing..." : "Ask Kittykat"}
+            </Button>
+          )}
+          <MoodboardControls
+            photos={photos}
+            isAutoFillLoading={isAutoFillLoading}
+            autoFillPlaceholders={autoFillPlaceholders}
+          />
+        </div>
       </div>
     </div>
   );
