@@ -1,11 +1,9 @@
 "use client";
 
 import type { MoodboardInformation } from "@/types/types";
-import { MoodboardAgentData } from "@/types/moodboard-agent.types";
 import MoodboardHeader from "./MoodboardHeader";
 import MoodboardGalleryView from "./MoodboardGalleryView";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import {
   useMoodboardData,
   useMoodboardPhotos,
@@ -17,9 +15,15 @@ import { useBrandStore } from "@/store/brand.store";
 import { CarouselDndProvider } from "@/contexts/CarouselDndContext";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { toast } from "sonner";
-import { forwardRef, useState, useCallback, useRef } from "react";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { forwardRef, useState, useCallback } from "react";
 import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
+import type { Message } from "@langchain/langgraph-sdk";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
+import { scrollToBottom } from "@/lib/scroll.utils";
+import { getPinnedMoodboardContextMessage } from "@/lib/langgraph.utils";
+import { generateMoodboardScreenshot } from "@/services/api/moodboard.service";
+import type { GenerateMoodboardScreenshotRequest } from "@/types/moodboard.types";
 
 interface MoodboardContentProps {
   moodboard: MoodboardInformation;
@@ -32,13 +36,11 @@ const MoodboardContent = forwardRef<
   MoodboardContentProps
 >(({ moodboard, brandId, carouselHeader }, ref) => {
   const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
-  const { addPinnedMoodboard, pinnedMoodboard } = usePinnedContextStore();
+  const stream = useStreamContext();
+  const { user } = useUserStore();
 
   // State to force re-render of CarouselDndProvider when gallery selection happens
   const [gallerySelectionKey, setGallerySelectionKey] = useState(0);
-
-  // Loading state for screenshot capture and upload
-  const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
 
   // Use the data hook to get moodboard data
   const {
@@ -106,6 +108,8 @@ const MoodboardContent = forwardRef<
     isAutoFillLoading,
   });
 
+  const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
+
   // Wrapper for handleGallerySelection to force re-render of CarouselDndProvider
   const handleGallerySelection = useCallback(
     (selectedItems: GalleryItemResponse[], placeHolderIndex?: number) => {
@@ -156,96 +160,107 @@ const MoodboardContent = forwardRef<
     toast.success(`Added image to your moodboard!`);
   };
 
-  // Pin moodboard function with campaign and moodboard IDs only
+  // Analyze moodboard function - sends automatic message like brand creation
   const handlePinMoodboard = useCallback(async () => {
     if (!photos || photos.length === 0) {
-      toast.error("No images available to pin");
-      return;
-    }
-
-    // Filter out placeholder and empty photos
-    const validPhotos = photos.filter(
-      (photo) => photo && photo.src && !photo.is_placeholder
-    );
-
-    if (validPhotos.length === 0) {
-      toast.error("No valid images to pin");
+      toast.error("No images available to analyze");
+      setIsScreenshotLoading(false);
       return;
     }
 
     setIsScreenshotLoading(true);
 
     try {
-      // Capture screenshot
-      const screenshotDataUrl =
-        ref && "current" in ref && ref.current?.captureScreenshot
-          ? await ref.current.captureScreenshot()
-          : null;
-      if (!screenshotDataUrl) {
-        toast.error("Failed to capture moodboard screenshot");
-        return;
-      }
+      // Prepare screenshot payload
+      const assets = photos.map((photo) => ({
+        url: photo.src!,
+        position: photo.position!,
+        is_placeholder: photo.is_placeholder ?? false,
+      }));
 
-      // Convert data URL to blob
-      const response = await fetch(screenshotDataUrl);
-      const blob = await response.blob();
-      const file = new File(
-        [blob],
-        `moodboard-${moodboard.id}-screenshot.png`,
+      const payload: GenerateMoodboardScreenshotRequest = {
+        title: moodboard.title,
+        assets,
+        show_logo: false,
+        show_title: false,
+        show_footer: false,
+      };
+
+      console.log("Screenshot payload:", payload);
+
+      // Generate screenshot using backend API
+      const result = await generateMoodboardScreenshot(
+        brandId,
+        moodboard.campaign_id,
+        moodboard.id,
+        payload
+      );
+
+      const screenshotUrl = result.url;
+
+      // Submit optimistic message with screenshot attachment
+      const newMessage: Message = {
+        id: `message-${Date.now()}`,
+        type: "human",
+        content: [
+          {
+            type: "text",
+            text: `Analyze and provide feedback on my moodboard${getPinnedMoodboardContextMessage(
+              {
+                title: moodboard.title,
+                moodboard: {
+                  moodboard_id: moodboard.id,
+                  campaign_id: moodboard.campaign_id,
+                  title: moodboard.title,
+                  no_of_images_in_moodboard: photos.length,
+                  screenshot_url: screenshotUrl,
+                },
+              }
+            )}`,
+          },
+          {
+            type: "image_url",
+            image_url: { url: screenshotUrl },
+          },
+        ],
+      };
+
+      stream.submit(
         {
-          type: "image/png",
+          messages: [newMessage],
+          userId: user!.id,
+          currentBrandContextId: brandId,
+          previousBrandContextId: stream.values.previousBrandContextId,
+        },
+        {
+          streamMode: ["values"],
+          optimisticValues: (prev: any) => ({
+            ...prev,
+            messages: [...(prev.messages ?? []), newMessage],
+          }),
         }
       );
 
-      // Upload screenshot
-      const screenshotUrl = await uploadFileAndReturnUrl(
-        `moodboard-${moodboard.id}-screenshot`,
-        "image/png",
-        "ask-kittykat",
-        file,
-        brandId,
-        moodboard.campaign_id
-      );
+      // Scroll to bottom after sending message
+      scrollToBottom(100);
 
-      // Simplified moodboard data with screenshot URL
-      const moodboardData: MoodboardAgentData = {
-        moodboard_id: moodboard.id,
-        campaign_id: moodboard.campaign_id,
-        screenshot_url: screenshotUrl,
-      };
-
-      addPinnedMoodboard({
-        title: moodboard.title || `Moodboard (${validPhotos.length} images)`,
-        moodboard: moodboardData,
-      });
-
-      toast.success(
-        `Moodboard "${
-          moodboard.title || `Moodboard (${validPhotos.length} images)`
-        }" pinned to chat!`
-      );
+      toast.success(`Moodboard analysis requested!`);
     } catch (error) {
-      console.error("Failed to pin moodboard with screenshot:", error);
-      toast.error("Failed to pin moodboard. Please try again.");
+      console.error("Failed to analyze moodboard:", error);
+      toast.error(
+        `Failed to analyze moodboard: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsScreenshotLoading(false);
     }
-  }, [
-    photos,
-    moodboard.id,
-    moodboard.title,
-    moodboard.campaign_id,
-    addPinnedMoodboard,
-    ref,
-    brandId,
-  ]);
+  }, [photos, moodboard.id, moodboard.campaign_id, brandId, user?.id]);
 
   // Don't render if still loading or generation in progress
   if (loading || moodboardGenerationInProgress) {
     return null;
   }
-
-  const isPinned = pinnedMoodboard?.moodboard.moodboard_id === moodboard.id;
 
   return (
     <CarouselDndProvider
@@ -266,7 +281,6 @@ const MoodboardContent = forwardRef<
           isAutoFillLoading={isAutoFillLoading}
           autoFillPlaceholders={autoFillPlaceholders}
           onPinMoodboard={handlePinMoodboard}
-          isPinned={isPinned}
           isScreenshotLoading={isScreenshotLoading}
         />
 

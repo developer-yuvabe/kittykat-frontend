@@ -64,6 +64,7 @@ export const useMoodboardPhotos = ({
         alt: `Placeholder ${position + 1}`,
         liked: false,
         is_placeholder: true,
+        position,
       };
     },
     []
@@ -131,6 +132,7 @@ export const useMoodboardPhotos = ({
           alt: `Image ${item.id}`,
           liked: item.is_liked,
           is_placeholder: item.is_placeholder,
+          position: item.position,
         }));
     },
     []

@@ -155,6 +155,13 @@ const TOOL_LOADING_MESSAGES: Record<
       duration: 5,
     },
   ],
+  "analyze-moodboard": [
+    { message: "Analyzing moodboard content...", duration: 3 },
+    { message: "Extracting visual elements...", duration: 4 },
+    { message: "Identifying key themes...", duration: 4 },
+    { message: "Generating insights...", duration: 5 },
+    { message: "Finalizing moodboard analysis...", duration: 20 },
+  ],
 };
 
 // Helper function to get loading messages for a tool
@@ -577,18 +584,15 @@ ${extraInfo ? `\n${extraInfo}` : ""}
 export const getPinnedMoodboardContextMessage = (
   pinnedMoodboard: PinnedMoodboardItem
 ) => {
-  const { title, moodboard } = pinnedMoodboard;
-
-  const screenshotInfo = moodboard.screenshot_url
-    ? `\n- Screenshot: ${moodboard.screenshot_url}`
-    : "";
+  const { moodboard } = pinnedMoodboard;
 
   return `<kittykat-do-not-render>
-Focus only on analyzing "${title}".${screenshotInfo}
+ 
 
 Moodboard Data:
 - Moodboard ID: ${moodboard.moodboard_id}
 - Campaign ID: ${moodboard.campaign_id}
+- Moodboard Preview: ${moodboard.screenshot_url}
 
 Please analyze this moodboard and provide creative feedback as a professional creative director would. Include:
 1. Overall impression and style summary
@@ -596,36 +600,8 @@ Please analyze this moodboard and provide creative feedback as a professional cr
 3. Gaps or missing elements
 4. Concrete next steps with specific recommendations
 
+Make sure to trigger analyze-moodboard toolcall in the MoodboardAgent always even its not explicitly asked in the user prompt or its triggered in previous messages.
+
 Please ignore <kittykat-do-not-render> tag.
 </kittykat-do-not-render>`;
-};
-
-/**
- * Format moodboard assets for message content
- */
-export const formatMoodboardAssetsMessage = (
-  moodboard: PinnedMoodboardItem["moodboard"]
-): string => {
-  if (!moodboard.assets) {
-    return `Moodboard: ${moodboard.title || "Untitled"} (Campaign ID: ${
-      moodboard.campaign_id
-    }, Moodboard ID: ${moodboard.moodboard_id})`;
-  }
-
-  const visibleAssets = moodboard.assets.filter(
-    (asset) => !asset.is_placeholder && asset.asset_url
-  );
-
-  if (visibleAssets.length === 0) {
-    return "No valid assets found in this moodboard.";
-  }
-
-  const assetsText = visibleAssets
-    .map((asset, index) => `[Asset ${index + 1}]: ${asset.asset_url}`)
-    .join("\n");
-
-  return `Moodboard: ${moodboard.title || "Untitled"} (${
-    visibleAssets.length
-  } images)
-${assetsText}`;
 };

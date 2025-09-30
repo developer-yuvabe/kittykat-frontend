@@ -5,7 +5,7 @@ import EditableInput from "./EditableInput";
 import MoodboardSaveIndicator from "./MoodboardSaveIndicator";
 import MoodboardControls from "./MoodboardControls";
 import { Button } from "@/components/ui/button";
-import { Pin, LoaderCircle } from "lucide-react";
+import { LoaderCircle, SparklesIcon } from "lucide-react";
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
@@ -19,8 +19,7 @@ interface MoodboardHeaderProps {
   isAutoFillLoading: boolean;
   autoFillPlaceholders: () => void;
   onPinMoodboard?: () => void;
-  isPinned?: boolean;
-  isScreenshotLoading?: boolean;
+  isScreenshotLoading: boolean;
 }
 
 function MoodboardHeader({
@@ -32,8 +31,7 @@ function MoodboardHeader({
   isAutoFillLoading,
   autoFillPlaceholders,
   onPinMoodboard,
-  isPinned = false,
-  isScreenshotLoading = false,
+  isScreenshotLoading,
 }: MoodboardHeaderProps) {
   return (
     <div className="w-full flex flex-col gap-3">
@@ -62,21 +60,15 @@ function MoodboardHeader({
           {onPinMoodboard && (
             <Button
               onClick={onPinMoodboard}
-              variant={isPinned ? "default" : "outline"}
-              size="sm"
+              size="lg"
               className="flex items-center gap-2"
-              disabled={isPinned || isScreenshotLoading}
             >
               {isScreenshotLoading ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
-                <Pin className={`h-4 w-4 ${isPinned ? "text-white" : ""}`} />
+                <SparklesIcon className="h-4 w-4" />
               )}
-              {isScreenshotLoading
-                ? "Capturing..."
-                : isPinned
-                ? "Pinned"
-                : "Pin to Chat"}
+              {isScreenshotLoading ? "Analyzing..." : "Ask Kittykat"}
             </Button>
           )}
           <MoodboardControls

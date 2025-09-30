@@ -5,7 +5,6 @@ export interface MoodboardAgentData {
   moodboard_id: string;
   campaign_id: string;
   title?: string;
-  assets?: MoodboardAgentAsset[];
   no_of_images_in_moodboard?: number;
   screenshot_url?: string;
 }
