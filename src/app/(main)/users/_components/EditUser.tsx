@@ -791,7 +791,7 @@ export function EditUser({
                           <Info />
                         </TooltipIconButton>
                       </div>
-                      <FormControl className="-mt-7">
+                      <FormControl>
                         {currentLoggedInUser?.is_default_admin ? (
                           <Checkbox
                             variant="toggle"
