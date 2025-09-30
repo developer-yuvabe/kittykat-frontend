@@ -200,13 +200,7 @@ const ImageWithMetadataModal = ({
         onEscapeKeyDown={onClose}
       >
         <div className="flex items- justify-center items-stretch  flex-1 min-w-[80vw] max-w-[80vw] max-h-[80vh]">
-          <div className="relative rounded-l-lg shadow-2xl group flex items-center justify-center w-[70%] overflow-hidden">
-            <img
-              src={galleryItem.preview_url ?? galleryItem.asset_url}
-              alt="blurred background"
-              className="absolute inset-0 w-full h-full object-cover rounded-l-lg filter blur-xl z-0"
-            />
-
+          <div className="relative rounded-l-lg  group flex items-center justify-center w-[70%] h-[80vh] overflow-hidden bg-white border-r">
             <img
               src={galleryItem.asset_url}
               alt={
@@ -214,7 +208,7 @@ const ImageWithMetadataModal = ({
                 galleryItem.input_prompt ??
                 "Expanded image"
               }
-              className="object-contain w-full z-10"
+              className="w-full h-full object-contain relative"
             />
 
             {/* Hover Overlay */}
