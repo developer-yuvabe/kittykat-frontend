@@ -317,3 +317,8 @@ export function isVideoUrl(url: string): boolean {
   if (!ext) return false;
   return Object.values(VIDEO_FILE_TYPES).some((exts) => exts.includes(ext));
 }
+
+export type GalleryImageParametersResponse = {
+  parameters: Record<string, any>;
+  type: string;
+};

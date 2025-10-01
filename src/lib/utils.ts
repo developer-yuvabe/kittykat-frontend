@@ -394,25 +394,15 @@ export function getDimensionAndAspectRatioFromParameters(
   parameters: Record<string, any>
 ): string {
   const size = parameters.size || parameters.image_size;
-  const aspectRatio = parameters.aspect_ratio;
+  const ar = parameters.aspect_ratio;
 
-  let dimension: string | undefined = size;
-  let ar: string | undefined = aspectRatio;
-
-  // If no aspect_ratio is explicitly provided, try to calculate it from dimension
-  if (!ar && typeof dimension === "string" && dimension.includes("x")) {
-    const [w, h] = dimension.split("x").map(Number);
-    if (!isNaN(w) && !isNaN(h)) {
-      const gcd = (a: number, b: number): number =>
-        b === 0 ? a : gcd(b, a % b);
-      const g = gcd(w, h);
-      ar = `${w / g}:${h / g}`;
-    }
+  if (size && ar) {
+    return `${size} - AR ${ar}`;
+  } else if (size) {
+    return `Size: ${size}`;
+  } else if (ar) {
+    return `AR ${ar}`;
+  } else {
+    return "";
   }
-
-  // Fallbacks
-  if (!dimension) dimension = "Unknown";
-  if (!ar) ar = "Unknown";
-
-  return `${dimension} - AR ${ar}`;
 }

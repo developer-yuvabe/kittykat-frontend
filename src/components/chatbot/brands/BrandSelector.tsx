@@ -225,7 +225,7 @@ export default function BrandSelector({
                       <span className="break-words">
                         {brand.name}
                         {showCampaigns && (
-                          <span className="italic text-xs">{` (${brand.campaigns.length} campaigns)`}</span>
+                          <span className="italic text-xs">{` (${brand?.campaigns?.length} campaigns)`}</span>
                         )}
                       </span>
                       <span className="italic text-xs">

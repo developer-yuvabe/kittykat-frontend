@@ -39,6 +39,10 @@ export const useMoodboardActions = ({
           updated[newIndex],
           updated[oldIndex],
         ];
+        // Update positions to match new indices
+        updated.forEach((photo, index) => {
+          photo.position = index;
+        });
         return updated;
       });
     },
@@ -137,6 +141,7 @@ export const useMoodboardActions = ({
               alt: `Image ${item.id}`,
               liked: item.is_favourite || false,
               is_placeholder: false,
+              position: placeHolderIndex,
             };
 
             // If there are more selected items, add them to the first available placeholders
@@ -162,6 +167,7 @@ export const useMoodboardActions = ({
                     alt: `Image ${remainingItem.id}`,
                     liked: remainingItem.is_favourite || false,
                     is_placeholder: false,
+                    position: targetIndex,
                   };
                 });
 
@@ -178,6 +184,7 @@ export const useMoodboardActions = ({
                       alt: `Image ${remainingItem.id}`,
                       liked: remainingItem.is_favourite || false,
                       is_placeholder: false,
+                      position: updatedPhotos.length,
                     });
                   });
               }
@@ -203,6 +210,7 @@ export const useMoodboardActions = ({
                 alt: `Image ${item.id}`,
                 liked: item.is_favourite || false,
                 is_placeholder: false,
+                position: targetIndex,
               };
             });
 
@@ -219,6 +227,7 @@ export const useMoodboardActions = ({
                   alt: `Image ${item.id}`,
                   liked: item.is_favourite || false,
                   is_placeholder: false,
+                  position: updatedPhotos.length,
                 });
               });
           }
@@ -290,6 +299,7 @@ export const useMoodboardActions = ({
             alt: `Image ${item.id}`,
             liked: item.is_favourite || false,
             is_placeholder: false,
+            position: targetIndex,
           };
         });
 

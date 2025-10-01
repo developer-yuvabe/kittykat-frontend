@@ -64,6 +64,7 @@ export const useMoodboardPhotos = ({
         alt: `Placeholder ${position + 1}`,
         liked: false,
         is_placeholder: true,
+        position,
       };
     },
     []
@@ -111,7 +112,7 @@ export const useMoodboardPhotos = ({
 
           return {
             id: asset.gallery_item_id,
-            src: galleryItem.asset_url || "",
+            src: galleryItem.preview_url || galleryItem.asset_url || "",
             position: asset.position || 0,
             width: galleryItem.dimensions?.width || 300,
             height: galleryItem.dimensions?.height || 300,
@@ -131,6 +132,7 @@ export const useMoodboardPhotos = ({
           alt: `Image ${item.id}`,
           liked: item.is_liked,
           is_placeholder: item.is_placeholder,
+          position: item.position,
         }));
     },
     []

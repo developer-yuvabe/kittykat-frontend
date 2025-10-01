@@ -283,6 +283,10 @@ export interface MoodboardInformation {
     | "failed";
   moodboard_tags?: Record<string, string[]>;
   selected_moodboard_tags?: Record<string, string[]>;
+
+  moodboard_preview: {
+    url: string;
+  };
 }
 
 export interface VisualImage {

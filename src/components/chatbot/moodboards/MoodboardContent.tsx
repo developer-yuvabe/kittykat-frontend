@@ -17,6 +17,13 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 import { toast } from "sonner";
 import { forwardRef, useState, useCallback } from "react";
 import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
+import type { Message } from "@langchain/langgraph-sdk";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { useUserStore } from "@/store/user.store";
+import { scrollToBottom } from "@/lib/scroll.utils";
+import { getPinnedMoodboardContextMessage } from "@/lib/langgraph.utils";
+import { generateMoodboardScreenshot } from "@/services/api/moodboard.service";
+import type { GenerateMoodboardScreenshotRequest } from "@/types/moodboard.types";
 
 interface MoodboardContentProps {
   moodboard: MoodboardInformation;
@@ -29,6 +36,8 @@ const MoodboardContent = forwardRef<
   MoodboardContentProps
 >(({ moodboard, brandId, carouselHeader }, ref) => {
   const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
+  const stream = useStreamContext();
+  const { user } = useUserStore();
 
   // State to force re-render of CarouselDndProvider when gallery selection happens
   const [gallerySelectionKey, setGallerySelectionKey] = useState(0);
@@ -99,6 +108,8 @@ const MoodboardContent = forwardRef<
     isAutoFillLoading,
   });
 
+  const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
+
   // Wrapper for handleGallerySelection to force re-render of CarouselDndProvider
   const handleGallerySelection = useCallback(
     (selectedItems: GalleryItemResponse[], placeHolderIndex?: number) => {
@@ -149,6 +160,103 @@ const MoodboardContent = forwardRef<
     toast.success(`Added image to your moodboard!`);
   };
 
+  // Analyze moodboard function - sends automatic message like brand creation
+  const handlePinMoodboard = useCallback(async () => {
+    if (!photos || photos.length === 0) {
+      toast.error("No images available to analyze");
+      setIsScreenshotLoading(false);
+      return;
+    }
+
+    setIsScreenshotLoading(true);
+
+    try {
+      // Prepare screenshot payload
+      const assets = photos.map((photo) => ({
+        url: photo.src!,
+        position: photo.position!,
+        is_placeholder: photo.is_placeholder ?? false,
+      }));
+
+      const payload: GenerateMoodboardScreenshotRequest = {
+        title: moodboard.title,
+        assets,
+        show_logo: false,
+        show_title: false,
+        show_footer: false,
+      };
+
+      console.log("Screenshot payload:", payload);
+
+      // Generate screenshot using backend API
+      const result = await generateMoodboardScreenshot(
+        brandId,
+        moodboard.campaign_id,
+        moodboard.id,
+        payload
+      );
+
+      const screenshotUrl = result.url;
+
+      // Submit optimistic message with screenshot attachment
+      const newMessage: Message = {
+        id: `message-${Date.now()}`,
+        type: "human",
+        content: [
+          {
+            type: "text",
+            text: `Analyze and provide feedback on my moodboard${getPinnedMoodboardContextMessage(
+              {
+                title: moodboard.title,
+                moodboard: {
+                  moodboard_id: moodboard.id,
+                  campaign_id: moodboard.campaign_id,
+                  title: moodboard.title,
+                  no_of_images_in_moodboard: photos.length,
+                  screenshot_url: screenshotUrl,
+                },
+              }
+            )}`,
+          },
+          {
+            type: "image_url",
+            image_url: { url: screenshotUrl },
+          },
+        ],
+      };
+
+      stream.submit(
+        {
+          messages: [newMessage],
+          userId: user!.id,
+          currentBrandContextId: brandId,
+          previousBrandContextId: stream.values.previousBrandContextId,
+        },
+        {
+          streamMode: ["values"],
+          optimisticValues: (prev: any) => ({
+            ...prev,
+            messages: [...(prev.messages ?? []), newMessage],
+          }),
+        }
+      );
+
+      // Scroll to bottom after sending message
+      scrollToBottom(100);
+
+      toast.success(`Moodboard analysis requested!`);
+    } catch (error) {
+      console.error("Failed to analyze moodboard:", error);
+      toast.error(
+        `Failed to analyze moodboard: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsScreenshotLoading(false);
+    }
+  }, [photos, moodboard.id, moodboard.campaign_id, brandId, user?.id]);
+
   // Don't render if still loading or generation in progress
   if (loading || moodboardGenerationInProgress) {
     return null;
@@ -172,6 +280,8 @@ const MoodboardContent = forwardRef<
           photos={photos}
           isAutoFillLoading={isAutoFillLoading}
           autoFillPlaceholders={autoFillPlaceholders}
+          onPinMoodboard={handlePinMoodboard}
+          isScreenshotLoading={isScreenshotLoading}
         />
 
         <MoodboardGalleryView
