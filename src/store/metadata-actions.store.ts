@@ -6,13 +6,15 @@ type MetadataActionsParameters = {
   vtonParameters: Record<string, any> | null;
   videoParameters: Record<string, any> | null;
   upscaleParameters: Record<string, any> | null;
+  referenceImageParameterArray: string[] | null;
+  referenceImageParameterString: string | null;
 };
 
 type Store = {
   parameters: MetadataActionsParameters;
-  setParameters: (
-    key: keyof MetadataActionsParameters,
-    params: Record<string, any> | null
+  setParameters: <K extends keyof MetadataActionsParameters>(
+    key: K,
+    params: MetadataActionsParameters[K]
   ) => void;
 };
 
@@ -23,6 +25,8 @@ export const useMetadataActionsStore = create<Store>((set) => ({
     vtonParameters: null,
     videoParameters: null,
     upscaleParameters: null,
+    referenceImageParameterArray: null,
+    referenceImageParameterString: null,
   },
 
   setParameters: (key, params) =>
