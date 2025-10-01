@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DownloadIcon } from "../ui/custom-icon";
-import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, HeartIcon, Loader2 } from "lucide-react";
 import { cn, getDimensionAndAspectRatioFromParameters } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Textarea } from "../ui/textarea";
@@ -26,10 +26,12 @@ import {
   videoGenerationService,
 } from "@/services/api/video-gen.service";
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
+import { GetGalleryImageParameters } from "@/services/api/gallery.service";
+import { useQuery } from "@tanstack/react-query";
 
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
-  parameters: Record<string, any> | null;
+  parameters?: Record<string, any> | null;
   isOpen: boolean;
   onClose: () => void;
   onDownload?: () => void;
@@ -44,7 +46,7 @@ const ImageWithMetadataModal = ({
   onDownload,
   onLike,
   isLiked,
-  parameters,
+  parameters: propParameters,
 }: ImageWithMetadataModalProps) => {
   const { setParameters } = useMetadataActionsStore();
   const [loading, setLoading] = useState<string | null>(null);
@@ -57,6 +59,16 @@ const ImageWithMetadataModal = ({
     models,
   } = useModelsStore();
   const router = useRouter();
+  // ✅ Fetch parameters only if not provided
+  const { data, isLoading: isFetchingParams } = useQuery({
+    queryKey: ["image-parameters", galleryItem.brand_id, galleryItem.id],
+    queryFn: () =>
+      GetGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
+    enabled: !propParameters,
+  });
+
+  // ✅ Final parameters (prop takes precedence, else fetched)
+  const parameters = propParameters ?? data?.parameters ?? null;
 
   const handleCopyPrompt = () => {
     if (parameters?.prompt) {
@@ -80,6 +92,9 @@ const ImageWithMetadataModal = ({
       });
 
       onClose();
+      if (!propParameters) {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.error("Error generating image:", error);
       toast.error("Error generating a varied image. Please try again.");
@@ -128,6 +143,9 @@ const ImageWithMetadataModal = ({
       });
 
       onClose();
+      if (!propParameters) {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.error("Error upscaling the image:", error);
       toast.error("Error upscaling the image. Please try again.");
@@ -176,6 +194,9 @@ const ImageWithMetadataModal = ({
         model: model!.id,
       });
       onClose();
+      if (!propParameters) {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.error("Error animating the image:", error);
       toast.error("Error animating the image. Please try again.");
@@ -200,13 +221,7 @@ const ImageWithMetadataModal = ({
         onEscapeKeyDown={onClose}
       >
         <div className="flex items- justify-center items-stretch  flex-1 min-w-[80vw] max-w-[80vw] max-h-[80vh]">
-          <div className="relative rounded-l-lg shadow-2xl group flex items-center justify-center w-[70%] overflow-hidden">
-            <img
-              src={galleryItem.preview_url ?? galleryItem.asset_url}
-              alt="blurred background"
-              className="absolute inset-0 w-full h-full object-cover rounded-l-lg filter blur-xl z-0"
-            />
-
+          <div className="relative rounded-l-lg  group flex items-center justify-center w-[70%] h-[80vh] overflow-hidden bg-white border-r">
             <img
               src={galleryItem.asset_url}
               alt={
@@ -214,7 +229,7 @@ const ImageWithMetadataModal = ({
                 galleryItem.input_prompt ??
                 "Expanded image"
               }
-              className="object-contain w-full z-10"
+              className="w-full h-full object-contain relative"
             />
 
             {/* Hover Overlay */}
@@ -259,98 +274,119 @@ const ImageWithMetadataModal = ({
               )}
             </div>
           </div>
-          {parameters && (
-            <div className="rounded-r-lg bg-background h-auto w-[30%] p-4 flex flex-col gap-y-4 overflow-y-auto">
-              <div className="space-y-2">
-                <p>Prompt</p>
-                <div className="relative">
-                  <Textarea
-                    value={parameters.prompt}
-                    className="h-40 lg:h-60  focus:outline-none resize-none"
-                    readOnly
-                  />
-                  <TooltipButton
-                    className="absolute top-3 right-1 text-muted-foreground"
-                    tooltip={copied ? "Copied!" : "Copy Prompt"}
-                    onClick={() => {
-                      handleCopyPrompt();
-                    }}
-                    icon={
-                      copied ? (
-                        <CheckIcon
-                          size={14}
-                          className="text-muted-foreground"
-                        />
-                      ) : (
-                        <CopyIcon size={14} className="text-muted-foreground" />
-                      )
-                    }
-                  />
-                </div>
+          {/* {parameters && ( */}
+          <div className="rounded-r-lg bg-background h-auto w-[30%] p-4 flex flex-col gap-y-4 overflow-y-auto">
+            {isFetchingParams ? (
+              // Loading State
+              <div className="flex items-center justify-center flex-col gap-2 h-full">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">
+                  Loading parameters...
+                </p>
               </div>
-              <p className="text-muted-foreground">
-                {parameters.model} -{" "}
-                {getDimensionAndAspectRatioFromParameters(parameters)}
+            ) : parameters ? (
+              <>
+                {/* Prompt */}
+                <div className="space-y-2">
+                  <p>Prompt</p>
+                  <div className="relative">
+                    <Textarea
+                      value={parameters.prompt}
+                      className="h-40 lg:h-60  focus:outline-none resize-none"
+                      readOnly
+                    />
+                    <TooltipButton
+                      className="absolute top-3 right-1 text-muted-foreground"
+                      tooltip={copied ? "Copied!" : "Copy Prompt"}
+                      onClick={() => {
+                        handleCopyPrompt();
+                      }}
+                      icon={
+                        copied ? (
+                          <CheckIcon
+                            size={14}
+                            className="text-muted-foreground"
+                          />
+                        ) : (
+                          <CopyIcon
+                            size={14}
+                            className="text-muted-foreground"
+                          />
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+                <p className="text-muted-foreground">
+                  {parameters.model} -{" "}
+                  {getDimensionAndAspectRatioFromParameters(parameters)}
+                </p>
+
+                <div className="space-y-6 mt-6">
+                  <div className="flex justify-between items-center">
+                    <p className="w-24">Vary</p>
+                    <div className="flex flex-1 gap-x-2 items-start">
+                      <Button
+                        onClick={handleVaryAuto}
+                        disabled={loading === "vary-auto"}
+                        loading={loading === "vary-auto"}
+                      >
+                        Auto
+                      </Button>
+                      <Button onClick={handleVaryManual}>Manual</Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="w-24">Upscale</p>
+                    <div className="flex flex-1 gap-2 items-start flex-wrap">
+                      <Button
+                        disabled={loading === "upscale-auto"}
+                        loading={loading === "upscale-auto"}
+                        onClick={handleUpscaleAuto}
+                      >
+                        Auto
+                      </Button>
+                      <Button onClick={handleUpscaleManual}>Manual</Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="w-24">Modify</p>
+                    <div className="flex flex-1 gap-2 items-start flex-wrap">
+                      <Button onClick={handleModifyEdit}>Edit</Button>
+                      <Button>Reference</Button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <p className="w-24">Animate</p>
+                    <div className="flex flex-1 gap-2 items-start flex-wrap">
+                      <Button
+                        onClick={() => handleAnimatePreset("dynamic")}
+                        disabled={loading === "animate-dynamic"}
+                        loading={loading === "animate-dynamic"}
+                      >
+                        Dynamic
+                      </Button>
+                      <Button
+                        onClick={() => handleAnimatePreset("smooth")}
+                        disabled={loading === "animate-smooth"}
+                        loading={loading === "animate-smooth"}
+                      >
+                        Smooth
+                      </Button>
+                      <Button onClick={handleAnimateManual}>Manual</Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No parameters available.
               </p>
+            )}
+          </div>
 
-              <div className="space-y-6 mt-6">
-                <div className="flex justify-between items-center">
-                  <p className="w-24">Vary</p>
-                  <div className="flex flex-1 gap-x-2 items-start">
-                    <Button
-                      onClick={handleVaryAuto}
-                      disabled={loading === "vary-auto"}
-                      loading={loading === "vary-auto"}
-                    >
-                      Auto
-                    </Button>
-                    <Button onClick={handleVaryManual}>Manual</Button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className="w-24">Upscale</p>
-                  <div className="flex flex-1 gap-2 items-start flex-wrap">
-                    <Button
-                      disabled={loading === "upscale-auto"}
-                      loading={loading === "upscale-auto"}
-                      onClick={handleUpscaleAuto}
-                    >
-                      Auto
-                    </Button>
-                    <Button onClick={handleUpscaleManual}>Manual</Button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className="w-24">Modify</p>
-                  <div className="flex flex-1 gap-2 items-start flex-wrap">
-                    <Button onClick={handleModifyEdit}>Edit</Button>
-                    <Button>Reference</Button>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <p className="w-24">Animate</p>
-                  <div className="flex flex-1 gap-2 items-start flex-wrap">
-                    <Button
-                      onClick={() => handleAnimatePreset("dynamic")}
-                      disabled={loading === "animate-dynamic"}
-                      loading={loading === "animate-dynamic"}
-                    >
-                      Dynamic
-                    </Button>
-                    <Button
-                      onClick={() => handleAnimatePreset("smooth")}
-                      disabled={loading === "animate-smooth"}
-                      loading={loading === "animate-smooth"}
-                    >
-                      Smooth
-                    </Button>
-                    <Button onClick={handleAnimateManual}>Manual</Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* )} */}
         </div>
       </DialogContent>
     </Dialog>
