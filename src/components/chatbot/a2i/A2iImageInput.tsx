@@ -278,6 +278,8 @@ const A2iImageInput = ({
       }
 
       toast.error("Failed to generate image. Please try again.");
+    } finally {
+      form.trigger();
     }
   };
 
@@ -349,7 +351,46 @@ const A2iImageInput = ({
         ...form.getValues(),
         ...parameters.imageGeneationParameters,
       });
+      form.trigger();
       setParameters("imageGeneationParameters", null);
+    }
+    if (parameters.referenceImageParameterArray) {
+      const paramName = refernceImagesModelInfo?.id;
+      if (paramName) {
+        form.reset({
+          ...form.getValues(),
+          [paramName]: parameters.referenceImageParameterArray,
+        });
+        form.trigger();
+
+        setImageBlocks(
+          parameters.referenceImageParameterArray.map((url) => ({
+            previewUrl: url,
+            url: url,
+          }))
+        );
+
+        setParameters("referenceImageParameterArray", null);
+      }
+    }
+    if (parameters.referenceImageParameterString) {
+      const paramName = refernceImagesModelInfo?.id;
+      if (paramName) {
+        form.reset({
+          ...form.getValues(),
+          [paramName]: parameters.referenceImageParameterString,
+        });
+        form.trigger();
+
+        setImageBlocks([
+          {
+            previewUrl: parameters.referenceImageParameterString,
+            url: parameters.referenceImageParameterString,
+          },
+        ]);
+
+        setParameters("referenceImageParameterString", null);
+      }
     }
   }, [parameters]);
 

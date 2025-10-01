@@ -57,6 +57,7 @@ const A2iImageCard = ({
   image,
   status,
   parameters,
+  type,
   generationId,
   remixParameters,
   upscaleParameters,
@@ -511,6 +512,7 @@ const A2iImageCard = ({
         <ImageWithMetadataModal
           isOpen={showImageModal}
           parameters={parameters}
+          type={type}
           galleryItem={stableItem}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}

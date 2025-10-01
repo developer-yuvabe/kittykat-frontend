@@ -320,4 +320,5 @@ export function isVideoUrl(url: string): boolean {
 
 export type GalleryImageParametersResponse = {
   parameters: Record<string, any>;
+  type: string;
 };

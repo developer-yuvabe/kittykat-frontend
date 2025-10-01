@@ -32,6 +32,7 @@ import { useQuery } from "@tanstack/react-query";
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
   parameters?: Record<string, any> | null;
+  type?: string;
   isOpen: boolean;
   onClose: () => void;
   onDownload?: () => void;
@@ -47,6 +48,7 @@ const ImageWithMetadataModal = ({
   onLike,
   isLiked,
   parameters: propParameters,
+  type: propType,
 }: ImageWithMetadataModalProps) => {
   const { setParameters } = useMetadataActionsStore();
   const [loading, setLoading] = useState<string | null>(null);
@@ -69,6 +71,16 @@ const ImageWithMetadataModal = ({
 
   // ✅ Final parameters (prop takes precedence, else fetched)
   const parameters = propParameters ?? data?.parameters ?? null;
+  const type = propType ?? data?.type ?? null;
+  const isDisabledType =
+    type === "vton" || type === "remix" || type === "upscale";
+
+  const MODELS_WITHOUT_REFERENCE_IMAGE = [
+    "imagen-4.0-ultra-generate-001",
+    "imagen-4.0-generate-001",
+    "imagen-4.0-fast-generate-001",
+    "seedream-3-0-t2i-250415",
+  ];
 
   const handleCopyPrompt = () => {
     if (parameters?.prompt) {
@@ -165,6 +177,29 @@ const ImageWithMetadataModal = ({
       },
       defaultActiveTab: "remix",
     });
+  };
+
+  const handleModifyReference = () => {
+    if (!parameters) return;
+
+    if (
+      MODELS_WITHOUT_REFERENCE_IMAGE.includes(parameters.model) ||
+      parameters.model === "seedream-4-0-250828"
+    ) {
+      setSelectedImageGenerationModelById("seedream-4-0-250828");
+      setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
+    } else if (
+      parameters.model === "gpt-image-1" ||
+      parameters.model === "gemini-2.5-flash-image-preview"
+    ) {
+      setSelectedImageGenerationModelById(parameters.model);
+      setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
+    } else {
+      setSelectedImageGenerationModelById(parameters.model);
+      setParameters("referenceImageParameterString", galleryItem.asset_url);
+    }
+    onClose();
+    router.push("/?scrollTo=a2i-input");
   };
 
   const handleAnimateManual = () => {
@@ -328,12 +363,17 @@ const ImageWithMetadataModal = ({
                     <div className="flex flex-1 gap-x-2 items-start">
                       <Button
                         onClick={handleVaryAuto}
-                        disabled={loading === "vary-auto"}
+                        disabled={loading === "vary-auto" || isDisabledType}
                         loading={loading === "vary-auto"}
                       >
                         Auto
                       </Button>
-                      <Button onClick={handleVaryManual}>Manual</Button>
+                      <Button
+                        onClick={handleVaryManual}
+                        disabled={isDisabledType}
+                      >
+                        Manual
+                      </Button>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
@@ -353,7 +393,12 @@ const ImageWithMetadataModal = ({
                     <p className="w-24">Modify</p>
                     <div className="flex flex-1 gap-2 items-start flex-wrap">
                       <Button onClick={handleModifyEdit}>Edit</Button>
-                      <Button>Reference</Button>
+                      <Button
+                        onClick={handleModifyReference}
+                        disabled={isDisabledType}
+                      >
+                        Reference
+                      </Button>
                     </div>
                   </div>
 
