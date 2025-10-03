@@ -94,6 +94,13 @@ const ConceptVisualEditor = () => {
     setCurrentAssetVersion(currentAsset);
   }, [currentAsset]);
 
+  useEffect(() => {
+    if (versions.data && versions.data.length > 1) {
+      // Always set to the latest version when versions change
+      setCurrentAssetVersion(versions.data[versions.data.length - 1]);
+    }
+  }, [versions.data]);
+
   return (
     <Dialog
       open={isConceptVisualOpened}
