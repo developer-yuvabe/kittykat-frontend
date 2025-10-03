@@ -531,17 +531,22 @@ export function EditUser({
                           <div className="space-y-3">
                             {currentLoggedInUser?.is_default_admin ? (
                               <Input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 min={AppConfig.CREDITS.MIN}
                                 max={AppConfig.CREDITS.MAX}
                                 {...field}
-                                value={field.value || ""}
+                                value={
+                                  typeof field.value === "number"
+                                    ? field.value.toLocaleString()
+                                    : field.value || ""
+                                }
                                 onChange={(e) => {
-                                  const value = e.target.value;
-                                  if (value === "") {
+                                  const raw = e.target.value.replace(/,/g, "");
+                                  if (raw === "") {
                                     field.onChange(0);
                                   } else {
-                                    const numValue = parseInt(value, 10);
+                                    const numValue = parseInt(raw, 10);
                                     if (
                                       !isNaN(numValue) &&
                                       numValue >= AppConfig.CREDITS.MIN &&
@@ -659,17 +664,22 @@ export function EditUser({
                           <div className="space-y-3">
                             {currentLoggedInUser?.is_default_admin ? (
                               <Input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 min={AppConfig.CREDITS.MIN}
                                 max={AppConfig.CREDITS.MAX}
                                 {...field}
-                                value={field.value || ""}
+                                value={
+                                  typeof field.value === "number"
+                                    ? field.value.toLocaleString()
+                                    : field.value || ""
+                                }
                                 onChange={(e) => {
-                                  const value = e.target.value;
-                                  if (value === "") {
+                                  const raw = e.target.value.replace(/,/g, "");
+                                  if (raw === "") {
                                     field.onChange(0);
                                   } else {
-                                    const numValue = parseInt(value, 10);
+                                    const numValue = parseInt(raw, 10);
                                     if (
                                       !isNaN(numValue) &&
                                       numValue >= AppConfig.CREDITS.MIN &&

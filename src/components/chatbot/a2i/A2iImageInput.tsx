@@ -600,7 +600,7 @@ const A2iImageInput = ({
                       {isCalculatingCredits ? (
                         <Loader2 className="animate-spin h-4 w-4" />
                       ) : (
-                        `(${credits} credits)`
+                        `(${credits.toLocaleString()} credits)`
                       )}
                     </p>
                   </div>
