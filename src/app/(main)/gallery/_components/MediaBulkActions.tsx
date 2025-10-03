@@ -48,6 +48,8 @@ import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { toast } from "sonner";
 import JSZip from "jszip";
+// Bulk dialog component for Ask KittyKat
+import { MediaBulkAskKittyKatDialog } from "./MediaBulkAskKittyKatDialog";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
@@ -69,6 +71,7 @@ export function MediaBulkActions({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [isBulkAskKittyKatOpen, setIsBulkAskKittyKatOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<WorkflowStatus | null>(
     null
   );
@@ -846,7 +849,7 @@ export function MediaBulkActions({
                           disabled={!canClientRequest}
                           onClick={() =>
                             canClientRequest
-                              ? setIsCommentDialogOpen(true)
+                              ? setIsBulkAskKittyKatOpen(true)
                               : null
                           }
                         >
@@ -1081,6 +1084,18 @@ export function MediaBulkActions({
         onConfirm={handleBulkComment}
         isLoading={isAddingComment}
         confirmDisabled={!comment.trim()}
+      />
+
+      {/* Bulk Ask KittyKat Dialog */}
+      <MediaBulkAskKittyKatDialog
+        open={isBulkAskKittyKatOpen}
+        onOpenChange={setIsBulkAskKittyKatOpen}
+        selectedItems={selectedItems}
+        brandName={brandName}
+        onSuccess={() => {
+          onUnselectAll();
+          galleryActions.refetchGalleryItems();
+        }}
       />
     </TooltipProvider>
   );

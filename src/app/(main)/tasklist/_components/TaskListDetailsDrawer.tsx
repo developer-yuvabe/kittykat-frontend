@@ -122,12 +122,14 @@ export const TaskListDetailsDrawer = ({
   );
 
   // Always call the hook but with empty string if no asset_id
-  const galleryItem = galleryActions.useGalleryItem(tasklist?.asset_id || "");
+  // For multiple assets, use the first one
+  const firstAssetId = tasklist?.asset_ids?.[0] || "";
+  const galleryItem = galleryActions.useGalleryItem(firstAssetId);
 
   const handleViewFullAsset = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (tasklist?.asset_id && galleryItem?.data && !galleryItem.isError) {
+    if (firstAssetId && galleryItem?.data && !galleryItem.isError) {
       openConceptVisual({
         source: "media-gallery",
         assetItems: [galleryItem.data],
@@ -137,8 +139,11 @@ export const TaskListDetailsDrawer = ({
         },
       });
     } else {
-      // Fallback to opening in new tab
-      window.open(tasklist?.asset_url, "_blank");
+      // Fallback to opening in new tab (first URL)
+      const firstUrl = tasklist?.asset_urls?.[0];
+      if (firstUrl) {
+        window.open(firstUrl, "_blank");
+      }
     }
   };
 
@@ -249,27 +254,52 @@ export const TaskListDetailsDrawer = ({
                   {/* Asset Preview */}
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">
-                      Asset
+                      {tasklist.asset_urls?.length > 1 ? "Assets" : "Asset"}
+                      {tasklist.is_bulk_request && (
+                        <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                          Bulk Request
+                        </span>
+                      )}
                     </p>
                     <div className="flex items-center gap-3">
                       <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted">
-                        <Image
-                          src={tasklist.asset_url}
-                          alt="Asset preview"
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
+                        {tasklist.asset_urls?.[0] && (
+                          <Image
+                            src={tasklist.asset_urls[0]}
+                            alt="Asset preview"
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        )}
+                        {tasklist.asset_urls &&
+                          tasklist.asset_urls.length > 1 && (
+                            <div className="absolute bottom-0 right-0 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-tl">
+                              +{tasklist.asset_urls.length - 1}
+                            </div>
+                          )}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleViewFullAsset}
-                        className="gap-2"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        View Full Asset
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleViewFullAsset}
+                          className="gap-2"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          View {tasklist.asset_urls?.length > 1
+                            ? "First"
+                            : ""}{" "}
+                          Asset
+                        </Button>
+                        {tasklist.asset_urls &&
+                          tasklist.asset_urls.length > 1 && (
+                            <p className="text-xs text-muted-foreground">
+                              {tasklist.asset_urls.length} assets in this
+                              tasklist
+                            </p>
+                          )}
+                      </div>
                     </div>
                   </div>
                   {/* Admin Actions */}

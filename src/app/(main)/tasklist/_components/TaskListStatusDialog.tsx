@@ -70,7 +70,7 @@ export const WorkflowStatusDialog = ({
   );
 
   const galleryItem = tasklist
-    ? galleryActions.useGalleryItem(tasklist.asset_id)
+    ? galleryActions.useGalleryItem(tasklist.asset_ids[0])
     : undefined;
 
   const handleSubmit = async () => {
@@ -88,7 +88,7 @@ export const WorkflowStatusDialog = ({
       // Update the gallery item with new workflow status if gallery item exists
       if (galleryItem?.data) {
         galleryActions.patchItem({
-          itemId: tasklist.asset_id,
+          itemId: tasklist.asset_ids[0],
           data: { workflow_status: selectedStatus },
         });
       }
@@ -151,7 +151,7 @@ export const WorkflowStatusDialog = ({
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
             <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted">
               <img
-                src={tasklist.asset_url}
+                src={tasklist.asset_urls[0]}
                 alt="Asset"
                 className="w-full h-full object-cover"
               />

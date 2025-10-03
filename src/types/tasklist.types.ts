@@ -48,10 +48,10 @@ export interface AdjustmentLog {
 
 export interface TasklistRecord {
   id?: string;
-  asset_id: string;
+  asset_ids: string[]; // Array of asset IDs (single: [id], bulk: [id1, id2, ...])
   brand_id: string;
   campaign_id?: string;
-  asset_url: string;
+  asset_urls: string[]; // Array of asset URLs (single: [url], bulk: [url1, url2, ...])
   submitted_by: string;
   submitted_at: string;
   submitted_by_name?: string;
@@ -65,19 +65,21 @@ export interface TasklistRecord {
   campaign_name?: string;
   audit_logs: any[];
   asset_expert_status?: TasklistStatus;
+  is_bulk_request?: boolean; // New: Flag to indicate bulk tasklist
 }
 
 export interface CreateTasklistRequest {
-  asset_id: string;
+  asset_ids: string[]; // Array of asset IDs (single: [id], bulk: [id1, id2, ...])
   brand_id: string;
   campaign_id?: string;
-  asset_url: string;
+  asset_urls: string[]; // Array of asset URLs (single: [url], bulk: [url1, url2, ...])
   submitted_by: string;
-  tasks: Task[];
+  tasks?: Task[]; // Optional for bulk requests (manual generation)
   notes?: string;
   submitted_by_name?: string;
   brand_name?: string;
   campaign_name?: string;
+  is_bulk_request?: boolean; // Flag to indicate bulk tasklist
 }
 
 export interface UpdateTasklistRequest {

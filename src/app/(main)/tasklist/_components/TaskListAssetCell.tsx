@@ -7,11 +7,11 @@ import Image from "next/image";
 
 // Asset cell component with MediaEditor dialog functionality
 export const TaskListAssetCell = ({
-  assetUrl,
-  assetId,
+  assetUrls,
+  assetIds,
 }: {
-  assetUrl: string;
-  assetId?: string;
+  assetUrls: string[]; // Array of URLs
+  assetIds: string[]; // Array of IDs
 }) => {
   const { openConceptVisual } = useConceptVisualStore();
   const { selectedBrandId } = useBrandStore();
@@ -35,8 +35,10 @@ export const TaskListAssetCell = ({
     "TaskListAssetCell"
   );
 
-  const galleryItem = assetId
-    ? galleryActions.useGalleryItem(assetId)
+  // Get the first gallery item for display
+  const firstAssetId = assetIds[0];
+  const galleryItem = firstAssetId
+    ? galleryActions.useGalleryItem(firstAssetId)
     : undefined;
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -57,13 +59,20 @@ export const TaskListAssetCell = ({
     <>
       <div className="flex items-center gap-2 overflow-hidden justify-center text-center">
         <div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted">
-          <Image
-            src={assetUrl}
-            alt="Asset thumbnail"
-            fill
-            className="object-cover"
-            sizes="40px"
-          />
+          {assetUrls[0] && (
+            <Image
+              src={assetUrls[0]}
+              alt="Asset thumbnail"
+              fill
+              className="object-cover"
+              sizes="40px"
+            />
+          )}
+          {assetUrls.length > 1 && (
+            <div className="absolute bottom-0 right-0 bg-black/70 text-white text-[10px] px-1 rounded-tl">
+              +{assetUrls.length - 1}
+            </div>
+          )}
         </div>
         <Button
           variant="ghost"
