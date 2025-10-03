@@ -159,16 +159,17 @@ export function AskKittyKatConfirmationDialog({
 
     try {
       const createRequest: CreateTasklistRequest = {
-        asset_id: imageId,
+        asset_ids: [imageId], // Changed to array for consistency
         brand_id: brandId,
         campaign_id: campaignId || undefined,
-        asset_url: imageUrl,
+        asset_urls: [imageUrl], // Changed to array for consistency
         submitted_by: user.id,
         tasks: tasks,
         notes: hasNoComments ? newComment.trim() : undefined,
         submitted_by_name: user.name,
         brand_name: brandName,
         campaign_name: campaignName,
+        is_bulk_request: false, // Single asset request
       };
 
       await createTaskListMutation.mutateAsync(createRequest);

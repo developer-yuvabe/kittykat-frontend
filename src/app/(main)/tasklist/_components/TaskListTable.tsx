@@ -91,7 +91,7 @@ export const TaskListTable = ({
     (assetId: string, brandId: string) => {
       // Find the tasklist that matches the asset and brand
       const tasklist = taskListQuery.data?.tasklists.find(
-        (t) => t.asset_id === assetId && t.brand_id === brandId
+        (t) => t.asset_ids?.includes(assetId) && t.brand_id === brandId
       );
       if (tasklist) {
         setSelectedTasklistForStatus(tasklist);

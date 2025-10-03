@@ -61,11 +61,11 @@ export const getTaskListColumns = ({
           Asset
         </span>
       ),
-      accessorKey: "asset_url",
+      accessorKey: "asset_urls",
       cell: ({ row }) => (
         <TaskListAssetCell
-          assetUrl={row.original.asset_url}
-          assetId={row.original.asset_id}
+          assetUrls={row.original.asset_urls}
+          assetIds={row.original.asset_ids}
         />
       ),
       size: 80,
@@ -139,11 +139,11 @@ export const getTaskListColumns = ({
           Kittykat Asset Status
         </span>
       ),
-      accessorKey: "asset_id",
+      accessorKey: "asset_ids",
       cell: ({ row }) => (
         <TaskListStatusCell
           status={row.original.asset_expert_status}
-          assetId={row.original.asset_id}
+          assetId={row.original.asset_ids?.[0]} // Use first asset ID
           brandId={row.original.brand_id}
           isAdmin={isAdmin}
           onUpdateWorkflowStatus={onUpdateWorkflowStatus}
@@ -278,10 +278,13 @@ export const getTaskListColumns = ({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  onUpdateWorkflowStatus?.(
-                    row.original.asset_id,
-                    row.original.brand_id
-                  );
+                  const firstAssetId = row.original.asset_ids?.[0];
+                  if (firstAssetId) {
+                    onUpdateWorkflowStatus?.(
+                      firstAssetId,
+                      row.original.brand_id
+                    );
+                  }
                 }}
               >
                 Update Workflow Status
