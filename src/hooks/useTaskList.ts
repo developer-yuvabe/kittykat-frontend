@@ -234,8 +234,12 @@ export const useTaskList = ({
       const toastId = toast.loading("Updating tasklist...");
       return { toastId };
     },
-    onSuccess: (updatedTasklist, _variables, context) => {
+    onSuccess: (updatedTasklist, variables, context) => {
       updateTaskListInCache(updatedTasklist);
+      // Invalidate timeline query to show new status/notes update event
+      queryClient.invalidateQueries({
+        queryKey: ["tasklist-timeline", variables.tasklistId],
+      });
       toast.success("Tasklist updated successfully", { id: context?.toastId });
     },
     onError: (_error, _variables, context) => {
@@ -260,8 +264,12 @@ export const useTaskList = ({
       const toastId = toast.loading("Adjusting credits...");
       return { toastId };
     },
-    onSuccess: (updatedTasklist, _variables, context) => {
+    onSuccess: (updatedTasklist, variables, context) => {
       updateTaskListInCache(updatedTasklist);
+      // Invalidate timeline query to show new credit adjustment event
+      queryClient.invalidateQueries({
+        queryKey: ["tasklist-timeline", variables.tasklistId],
+      });
       toast.success("Credits adjusted successfully", { id: context?.toastId });
     },
     onError: (_error, _variables, context) => {

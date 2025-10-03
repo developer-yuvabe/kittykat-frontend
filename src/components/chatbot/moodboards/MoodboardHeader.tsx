@@ -9,6 +9,7 @@ import { LoaderCircle, SparklesIcon } from "lucide-react";
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
+import { useStreamContext } from "@/providers/langgraph/Stream";
 
 interface MoodboardHeaderProps {
   moodboard: MoodboardInformation;
@@ -33,6 +34,8 @@ function MoodboardHeader({
   onPinMoodboard,
   isScreenshotLoading,
 }: MoodboardHeaderProps) {
+  const { isLoading } = useStreamContext();
+
   return (
     <div className="w-full flex flex-col gap-3">
       {/* Top row - Title, Save Indicator, and Action Buttons */}
@@ -59,6 +62,7 @@ function MoodboardHeader({
         <div className="flex items-center gap-2">
           {onPinMoodboard && (
             <Button
+              disabled={isLoading || isScreenshotLoading}
               onClick={onPinMoodboard}
               size="lg"
               className="flex items-center gap-2"

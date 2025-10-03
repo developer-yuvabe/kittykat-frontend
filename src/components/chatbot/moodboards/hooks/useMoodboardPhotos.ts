@@ -79,13 +79,19 @@ export const useMoodboardPhotos = ({
       if (!assets || assets.length === 0) return [];
 
       const imagesToLoad = assets
-        .map((asset) => {
+        .map((asset, index) => {
+          // Ensure position is always defined - use asset.position or fallback to array index
+          const position =
+            asset.position !== undefined && asset.position !== null
+              ? asset.position
+              : index;
+
           // Check if this is a placeholder
           if (String(asset.gallery_item_id).startsWith("placeholder")) {
             return {
               id: asset.gallery_item_id,
               src: "",
-              position: asset.position || 0,
+              position,
               width: 300,
               height: 300,
               is_placeholder: true,
@@ -100,9 +106,9 @@ export const useMoodboardPhotos = ({
           // If gallery item is not found, render as placeholder
           if (!galleryItem) {
             return {
-              id: `placeholder-${asset.position || 0}`,
+              id: `placeholder-${position}`,
               src: "",
-              position: asset.position || 0,
+              position,
               width: 300,
               height: 300,
               is_placeholder: true,
@@ -113,7 +119,7 @@ export const useMoodboardPhotos = ({
           return {
             id: asset.gallery_item_id,
             src: galleryItem.preview_url || galleryItem.asset_url || "",
-            position: asset.position || 0,
+            position,
             width: galleryItem.dimensions?.width || 300,
             height: galleryItem.dimensions?.height || 300,
             is_placeholder: false,

@@ -171,15 +171,22 @@ const MoodboardContent = forwardRef<
     setIsScreenshotLoading(true);
 
     try {
-      // Prepare screenshot payload
+      // Prepare screenshot payload - all photos should have positions populated from DB
       const assets = photos.map((photo) => ({
-        url: photo.src!,
-        position: photo.position!,
+        url: photo.src || "",
+        position: photo.position ?? 0,
         is_placeholder: photo.is_placeholder ?? false,
       }));
 
+      // Validate that we have assets to analyze
+      if (assets.length === 0) {
+        toast.error("No images available to analyze");
+        setIsScreenshotLoading(false);
+        return;
+      }
+
       const payload: GenerateMoodboardScreenshotRequest = {
-        title: moodboard.title,
+        title: moodboard.title || "Untitled Moodboard",
         assets,
         show_logo: false,
         show_title: false,
