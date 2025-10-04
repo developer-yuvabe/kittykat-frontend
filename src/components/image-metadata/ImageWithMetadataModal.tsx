@@ -58,6 +58,7 @@ const ImageWithMetadataModal = ({
   const {
     setSelectedImageGenerationModelById,
     setSelectedVideoGenearationModelById,
+    setSelectedRemixModelById,
     models,
   } = useModelsStore();
   const router = useRouter();
@@ -66,14 +67,15 @@ const ImageWithMetadataModal = ({
     queryKey: ["image-parameters", galleryItem.brand_id, galleryItem.id],
     queryFn: () =>
       GetGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
-    enabled: !propParameters,
+    enabled: !propParameters && galleryItem.asset_source == "showboard-media",
   });
 
-  // ✅ Final parameters (prop takes precedence, else fetched)
+  // Final parameters (prop takes precedence, else fetched)
   const parameters = propParameters ?? data?.parameters ?? null;
   const type = propType ?? data?.type ?? null;
   const isDisabledType =
-    type === "vton" || type === "remix" || type === "upscale";
+    type === "vton" || type === "remix" || type === "upscale" || type === null;
+  console.log("isDisabledType", isDisabledType);
 
   const MODELS_WITHOUT_REFERENCE_IMAGE = [
     "imagen-4.0-ultra-generate-001",
@@ -120,6 +122,7 @@ const ImageWithMetadataModal = ({
 
     if (parameters.model) {
       setSelectedImageGenerationModelById(parameters.model);
+      setParameters("imageGeneationParameters", null);
       setParameters("imageGeneationParameters", parameters);
       onClose();
       router.push("/?scrollTo=a2i-input");
@@ -168,6 +171,7 @@ const ImageWithMetadataModal = ({
 
   const handleModifyEdit = () => {
     onClose();
+    setSelectedRemixModelById("gemini-2.5-flash-image-preview-remix");
     openConceptVisual({
       source: "blanket",
       assetItems: [galleryItem],
@@ -180,22 +184,21 @@ const ImageWithMetadataModal = ({
   };
 
   const handleModifyReference = () => {
-    if (!parameters) return;
-
     if (
-      MODELS_WITHOUT_REFERENCE_IMAGE.includes(parameters.model) ||
-      parameters.model === "seedream-4-0-250828"
+      MODELS_WITHOUT_REFERENCE_IMAGE.includes(parameters?.model) ||
+      parameters?.model === "seedream-4-0-250828" ||
+      isDisabledType
     ) {
       setSelectedImageGenerationModelById("seedream-4-0-250828");
       setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
     } else if (
-      parameters.model === "gpt-image-1" ||
-      parameters.model === "gemini-2.5-flash-image-preview"
+      parameters?.model === "gpt-image-1" ||
+      parameters?.model === "gemini-2.5-flash-image-preview"
     ) {
       setSelectedImageGenerationModelById(parameters.model);
       setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
     } else {
-      setSelectedImageGenerationModelById(parameters.model);
+      setSelectedImageGenerationModelById(parameters?.model);
       setParameters("referenceImageParameterString", galleryItem.asset_url);
     }
     onClose();
@@ -309,7 +312,6 @@ const ImageWithMetadataModal = ({
               )}
             </div>
           </div>
-          {/* {parameters && ( */}
           <div className="rounded-r-lg bg-background h-auto w-[30%] p-4 flex flex-col gap-y-4 overflow-y-auto">
             {isFetchingParams ? (
               // Loading State
@@ -319,44 +321,49 @@ const ImageWithMetadataModal = ({
                   Loading parameters...
                 </p>
               </div>
-            ) : parameters ? (
+            ) : (
               <>
-                {/* Prompt */}
-                <div className="space-y-2">
-                  <p>Prompt</p>
-                  <div className="relative">
-                    <Textarea
-                      value={parameters.prompt}
-                      className="h-40 lg:h-60  focus:outline-none resize-none"
-                      readOnly
-                    />
-                    <TooltipButton
-                      className="absolute top-3 right-1 text-muted-foreground"
-                      tooltip={copied ? "Copied!" : "Copy Prompt"}
-                      onClick={() => {
-                        handleCopyPrompt();
-                      }}
-                      icon={
-                        copied ? (
-                          <CheckIcon
-                            size={14}
-                            className="text-muted-foreground"
+                {parameters && (
+                  <>
+                    {/* Prompt */}
+                    {parameters?.prompt && (
+                      <div className="space-y-2">
+                        <p>Prompt</p>
+                        <div className="relative">
+                          <Textarea
+                            value={parameters.prompt}
+                            className="h-40 lg:h-60 focus:outline-none resize-none"
+                            readOnly
                           />
-                        ) : (
-                          <CopyIcon
-                            size={14}
-                            className="text-muted-foreground"
+                          <TooltipButton
+                            className="absolute top-3 right-1 text-muted-foreground"
+                            tooltip={copied ? "Copied!" : "Copy Prompt"}
+                            onClick={handleCopyPrompt}
+                            icon={
+                              copied ? (
+                                <CheckIcon
+                                  size={14}
+                                  className="text-muted-foreground"
+                                />
+                              ) : (
+                                <CopyIcon
+                                  size={14}
+                                  className="text-muted-foreground"
+                                />
+                              )
+                            }
                           />
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-                <p className="text-muted-foreground">
-                  {parameters.model} -{" "}
-                  {getDimensionAndAspectRatioFromParameters(parameters)}
-                </p>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-muted-foreground">
+                      {parameters.model}
+                      {getDimensionAndAspectRatioFromParameters(parameters)}
+                    </p>
+                  </>
+                )}
 
+                {/* Metadata Action Buttons (always visible) */}
                 <div className="space-y-6 mt-6">
                   <div className="flex justify-between items-center">
                     <p className="w-24">Vary</p>
@@ -376,6 +383,7 @@ const ImageWithMetadataModal = ({
                       </Button>
                     </div>
                   </div>
+
                   <div className="flex justify-between items-center">
                     <p className="w-24">Upscale</p>
                     <div className="flex flex-1 gap-2 items-start flex-wrap">
@@ -389,16 +397,12 @@ const ImageWithMetadataModal = ({
                       <Button onClick={handleUpscaleManual}>Manual</Button>
                     </div>
                   </div>
+
                   <div className="flex justify-between items-center">
                     <p className="w-24">Modify</p>
                     <div className="flex flex-1 gap-2 items-start flex-wrap">
                       <Button onClick={handleModifyEdit}>Edit</Button>
-                      <Button
-                        onClick={handleModifyReference}
-                        disabled={isDisabledType}
-                      >
-                        Reference
-                      </Button>
+                      <Button onClick={handleModifyReference}>Reference</Button>
                     </div>
                   </div>
 
@@ -424,14 +428,8 @@ const ImageWithMetadataModal = ({
                   </div>
                 </div>
               </>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                No parameters available.
-              </p>
             )}
           </div>
-
-          {/* )} */}
         </div>
       </DialogContent>
     </Dialog>
