@@ -19,6 +19,7 @@ type Store = {
 
   selectedRemixModel: Model | null;
   setSelectedRemixModel: (model: Model) => void;
+  setSelectedRemixModelById: (id: string) => void;
 
   selectedVtonModel: Model | null;
   setSelectedVtonModel: (model: Model) => void;
@@ -165,6 +166,16 @@ export const useModelsStore = create<Store>()((set, get) => {
     },
 
     selectedRemixModel: getSessionItem("a2i-remix-model-id") || null,
+    setSelectedRemixModelById: (id) => {
+      const models = get().models;
+      const model = models.find((model) => model.id === id);
+      if (model) {
+        // Save to session storage
+        setSessionItem("a2i-remix-model-id", model.id);
+
+        set({ selectedRemixModel: model });
+      }
+    },
     setSelectedRemixModel: (model) => {
       // Save to session storage
       setSessionItem("a2i-remix-model-id", model.id);

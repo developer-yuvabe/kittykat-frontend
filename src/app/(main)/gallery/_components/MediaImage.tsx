@@ -2,7 +2,6 @@ import { GalleryItemResponse } from "@/types/gallery.types";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { PlayCircle, PauseCircle } from "lucide-react";
-import { ImageModal } from "@/components/shared/ImageModal";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import ImageWithMetadataModal from "@/components/image-metadata/ImageWithMetadataModal";
@@ -172,27 +171,16 @@ export function MediaImage({
         draggable={false} // Prevent native HTML drag
       />
 
-      {showImageModal &&
-        (item.asset_source === "showboard-media" ? (
-          <ImageWithMetadataModal
-            isOpen={showImageModal}
-            galleryItem={item}
-            onClose={() => setShowImageModal(false)}
-            onDownload={handleDownload}
-            onLike={handleFavoriteClick}
-            isLiked={item.is_favourite || false}
-          />
-        ) : (
-          <ImageModal
-            imageUrl={item.preview_url || item.asset_url}
-            alt={item.asset_title}
-            isOpen={showImageModal}
-            onClose={() => setShowImageModal(false)}
-            onDownload={handleDownload}
-            onLike={handleFavoriteClick}
-            isLiked={item.is_favourite || false}
-          />
-        ))}
+      {showImageModal && (
+        <ImageWithMetadataModal
+          isOpen={showImageModal}
+          galleryItem={item}
+          onClose={() => setShowImageModal(false)}
+          onDownload={handleDownload}
+          onLike={handleFavoriteClick}
+          isLiked={item.is_favourite || false}
+        />
+      )}
     </>
   );
 }
