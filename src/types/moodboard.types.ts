@@ -91,3 +91,17 @@ export interface UnifiedMoodboardItem {
   position: number;
   isUploading?: boolean;
 }
+
+export interface MoodboardScreenshotAsset {
+  url: string;
+  position: number;
+  is_placeholder?: boolean;
+}
+
+export interface GenerateMoodboardScreenshotRequest {
+  title: string;
+  assets: MoodboardScreenshotAsset[];
+  show_logo?: boolean;
+  show_title?: boolean;
+  show_footer?: boolean;
+}

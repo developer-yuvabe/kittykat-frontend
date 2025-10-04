@@ -1,27 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import MDEditor from "@uiw/react-md-editor";
-import { MarkdownText } from "@/components/thread/markdown-text";
-import { Button } from "@/components/ui/button";
-import {
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Edit3,
-  Save,
-  X,
-  Sparkles,
-  Zap,
-  Paperclip,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
-import { Task } from "@/types/tasklist.types";
+import { Task, TaskCreditEstimateRequest } from "@/types/tasklist.types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { AskKittyKatAttachmentPreview } from "./AskKittyKatAttachmentPreview";
+import { AskKittyKatTaskDisplay } from "./AskKittyKatTaskDisplay";
+import { AskKittyKatBulkEditor } from "./AskKittyKatBulkEditor";
+import { AskKittyKatAttachmentSection } from "./AskKittyKatAttachmentSection";
 
 interface AskKittyKatTaskListProps {
   imageUrl: string;
@@ -58,7 +47,9 @@ export function AskKittyKatTaskList({
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [editingAllText, setEditingAllText] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [estimatingTasks, setEstimatingTasks] = useState<Set<number>>(
+    new Set()
+  );
 
   const tasks = externalTasks || [];
 
@@ -105,11 +96,6 @@ export function AskKittyKatTaskList({
     }
   };
 
-  const handleAttachFiles = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    fileInputRef.current?.click();
-  };
-
   const handleEditAllTasks = () => {
     // Convert tasks to markdown format (using unordered list)
     const tasksMarkdown = tasks.map((task) => `- ${task.task}`).join("\n");
@@ -117,7 +103,7 @@ export function AskKittyKatTaskList({
     setIsEditingAll(true);
   };
 
-  const handleSaveAllTasks = () => {
+  const handleSaveAllTasks = async () => {
     if (editingAllText.trim() === "") return;
 
     // Parse markdown list items and regular lines
@@ -131,26 +117,68 @@ export function AskKittyKatTaskList({
       })
       .filter((line) => line !== "");
 
-    // Create updated tasks array, preserving original categories and credits
-    const updatedTasks = taskLines.map((taskText, index) => {
+    // Identify new tasks (those not in original tasks)
+    const newTaskIndices: number[] = [];
+    const updatedTasks: Task[] = taskLines.map((taskText, index) => {
       const originalTask = tasks[index];
-      return {
-        task: taskText,
-        task_category: originalTask?.task_category || "General",
-        estimated_credit: originalTask?.estimated_credit || 1,
-      };
+      if (originalTask && originalTask.task === taskText) {
+        // Existing task, keep original data
+        return originalTask;
+      } else {
+        // New or modified task, mark for estimation
+        newTaskIndices.push(index);
+        return {
+          task: taskText,
+          task_category: "General", // Temporary
+          estimated_credit: 0, // Will be estimated
+        };
+      }
     });
 
-    // Update parent's task state
-    if (onTaskUpdate) {
-      onTaskUpdate(updatedTasks);
+    if (newTaskIndices.length === 0) {
+      // No new tasks, save immediately
+      if (onTaskUpdate) {
+        onTaskUpdate(updatedTasks);
+      }
+      setIsEditingAll(false);
+      setEditingAllText("");
+      if (onTasksGenerated) {
+        onTasksGenerated(updatedTasks);
+      }
+      return;
     }
 
-    setIsEditingAll(false);
-    setEditingAllText("");
+    // Estimate credits for new tasks
+    setEstimatingTasks(new Set(newTaskIndices));
 
-    if (onTasksGenerated) {
-      onTasksGenerated(updatedTasks);
+    try {
+      const estimationPromises = newTaskIndices.map(async (index) => {
+        const taskText = taskLines[index];
+        const result = await estimateTaskCreditMutation.mutateAsync(taskText);
+        updatedTasks[index] = {
+          task: taskText,
+          task_category: result.task_category,
+          estimated_credit: result.estimated_credit,
+        };
+      });
+
+      await Promise.all(estimationPromises);
+
+      // Update parent's task state
+      if (onTaskUpdate) {
+        onTaskUpdate(updatedTasks);
+      }
+      setIsEditingAll(false);
+      setEditingAllText("");
+
+      if (onTasksGenerated) {
+        onTasksGenerated(updatedTasks);
+      }
+    } catch (error) {
+      toast.error("Failed to estimate credits for some tasks");
+      console.error("Estimation error:", error);
+    } finally {
+      setEstimatingTasks(new Set());
     }
   };
 
@@ -289,6 +317,17 @@ export function AskKittyKatTaskList({
     },
   });
 
+  // React Query mutation for estimating task credits
+  const estimateTaskCreditMutation = useMutation({
+    mutationFn: async (taskText: string) => {
+      const request: TaskCreditEstimateRequest = {
+        task: taskText,
+        image_url: imageUrl,
+      };
+      return await taskListService.estimateTaskCredit(request);
+    },
+  });
+
   const handleEnhanceTasksInEditMode = () => {
     const enhancePromise = enhanceTasksMutation.mutateAsync();
 
@@ -338,172 +377,35 @@ export function AskKittyKatTaskList({
   if (tasks.length > 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <CheckCircle2 className="h-5 w-5 text-green-600 mr-2" />
-            <span className="text-sm font-medium text-gray-700">
-              {tasks.length} task{tasks.length !== 1 ? "s" : ""} identified
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {showCredits && (
-              <span className="text-sm font-semibold text-purple-600">
-                {totalCredits} credits
-              </span>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleEditAllTasks}
-              disabled={isEditingAll}
-              className="h-7 px-2"
-            >
-              <Edit3 className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-          </div>
-        </div>
-
         {isEditingAll ? (
-          // Bulk edit mode with react-md-editor
-          <div className="space-y-3">
-            <div data-color-mode="light">
-              <MDEditor
-                value={editingAllText}
-                onChange={(val) => setEditingAllText(val || "")}
-                preview="edit"
-                hideToolbar={false}
-                visibleDragbar={false}
-                textareaProps={{
-                  style: {
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                  },
-                }}
-                height={200}
-                data-testid="markdown-editor"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleEnhanceTasksInEditMode}
-                disabled={enhanceTasksMutation.isPending}
-                className="h-7 px-2"
-              >
-                {enhanceTasksMutation.isPending ? (
-                  <Zap className="h-3 w-3 mr-1 animate-pulse" />
-                ) : (
-                  <Sparkles className="h-3 w-3 mr-1" />
-                )}
-                Enhance
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveAllTasks}
-                disabled={editingAllText.trim() === ""}
-                className="h-7 px-2"
-              >
-                <Save className="h-3 w-3 mr-1" />
-                Save
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancelEditAll}
-                className="h-7 px-2"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Cancel
-              </Button>
-            </div>
-          </div>
+          <AskKittyKatBulkEditor
+            editingText={editingAllText}
+            onTextChange={setEditingAllText}
+            onEnhance={handleEnhanceTasksInEditMode}
+            onSave={handleSaveAllTasks}
+            onCancel={handleCancelEditAll}
+            isEnhancing={enhanceTasksMutation.isPending}
+            isSaving={estimatingTasks.size > 0}
+          />
         ) : (
-          // Display mode
-          <ul className="space-y-3">
-            {tasks.map((task, index) => (
-              <li key={index} className="flex items-start">
-                <span className="inline-block w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="text-sm text-gray-700 leading-relaxed mb-1">
-                    <MarkdownText>{task.task}</MarkdownText>
-                  </div>
-                  {showCredits && (
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span className="bg-gray-200 px-2 py-1 rounded">
-                        {task.task_category}
-                      </span>
-                      <span className="font-medium">
-                        {task.estimated_credit} credits
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <AskKittyKatTaskDisplay
+            tasks={tasks}
+            showCredits={showCredits}
+            totalCredits={totalCredits}
+            onEditAll={handleEditAllTasks}
+            isEditing={isEditingAll}
+          />
         )}
 
         {/* Attachment Management Section */}
         {onAllAttachmentsChange && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium text-gray-700">
-                Attachments (
-                {allAttachments.length + newCommentAttachments.length})
-              </h4>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files)}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAttachFiles}
-                  disabled={isUploading}
-                  className="h-7 px-2"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                  ) : (
-                    <Paperclip className="h-3 w-3 mr-1" />
-                  )}
-                  {isUploading ? "Uploading..." : "Add Images"}
-                </Button>
-              </div>
-            </div>
-
-            {(allAttachments.length > 0 ||
-              newCommentAttachments.length > 0) && (
-              <div className="space-y-3">
-                <AskKittyKatAttachmentPreview
-                  attachments={[...allAttachments, ...newCommentAttachments]}
-                  onRemoveAttachment={(index) => {
-                    if (index < allAttachments.length) {
-                      handleRemoveAttachment(index);
-                    }
-                  }}
-                />
-              </div>
-            )}
-
-            {allAttachments.length === 0 &&
-              newCommentAttachments.length === 0 && (
-                <p className="text-xs text-gray-500">
-                  You can upload additional images to provide more context for
-                  your tasks.
-                </p>
-              )}
-          </div>
+          <AskKittyKatAttachmentSection
+            allAttachments={allAttachments}
+            newCommentAttachments={newCommentAttachments}
+            onRemoveAttachment={handleRemoveAttachment}
+            onFileUpload={handleFileUpload}
+            isUploading={isUploading}
+          />
         )}
       </div>
     );

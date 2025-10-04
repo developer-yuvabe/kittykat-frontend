@@ -8,6 +8,9 @@ export const updateInvitedUserSchema = z
       errorMap: () => ({ message: "Please select a role" }),
     }),
     brandAccess: z.array(z.string()).optional(),
+    modelAccess: z.array(z.string()).optional(),
+    credits: z.number().min(0, "Credits must be a positive number"),
+    kittykat_expert_credits: z.number().min(0).optional(),
   })
   .refine(
     (data) => {
@@ -19,5 +22,17 @@ export const updateInvitedUserSchema = z
     {
       message: "Brand access is required when role is USER",
       path: ["brandAccess"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.role === UserRoleId.USER) {
+        return data.modelAccess !== undefined;
+      }
+      return true;
+    },
+    {
+      message: "Model access is required when role is USER",
+      path: ["modelAccess"],
     }
   );

@@ -43,6 +43,9 @@ export const processAuthError = (e: unknown) => {
       case "auth/invalid-credential":
         errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
         break;
+      case "auth/wrong-password":
+        errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
+        break;
       case "":
         errorMsg = ERROR_MESSAGES.ACCOUNT_CREATION_FAILED;
         break;
@@ -386,3 +389,20 @@ export const getProviderIcon = (provider: Model["provider"]) => {
       return ComponentIcon;
   }
 };
+
+export function getDimensionAndAspectRatioFromParameters(
+  parameters: Record<string, any>
+): string {
+  const size = parameters.size || parameters.image_size;
+  const ar = parameters.aspect_ratio;
+
+  if (size && ar) {
+    return ` - Size: ${size} - AR ${ar}`;
+  } else if (size) {
+    return ` - Size: ${size}`;
+  } else if (ar) {
+    return ` - AR ${ar}`;
+  } else {
+    return "";
+  }
+}

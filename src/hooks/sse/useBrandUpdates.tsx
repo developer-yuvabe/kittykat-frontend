@@ -2,33 +2,28 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 import { useVideoGenStore } from "@/store/video-gen.store";
+import { useQueryClient } from "@tanstack/react-query";
 
-export function useBrandUpdates(brandId?: string | null) {
+export function useBrandUpdates() {
+  const queryClient = useQueryClient();
   const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
   const [data, setData] = useState<ThreadDetails | null>(null);
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
-
-  const { setIsCampaignCreating } = useBrandStore();
-
-  const { brandsRefetch } = useGalleryQuery(
-    {},
-    ITEMS_PER_PAGE,
-    false,
-    "useBrandUpdates"
-  );
+  const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
 
-    if (!brandId) {
+    if (!selectedBrandId) {
       setIsFetchingBrandInfo(false);
       return;
     }
 
-    const eventSource = new EventSource(`${getSSEBaseUrl()}/brands/${brandId}`);
+    const eventSource = new EventSource(
+      `${getSSEBaseUrl()}/brands/${selectedBrandId}`
+    );
 
     eventSource.addEventListener("brand_info", (event) => {
       const parsed: ThreadDetails = JSON.parse(event.data);
@@ -38,8 +33,8 @@ export function useBrandUpdates(brandId?: string | null) {
       const prevCampaign = JSON.stringify(previousCampaignInfo.current || []);
 
       if (newCampaign !== prevCampaign) {
+        queryClient.invalidateQueries({ queryKey: ["brands"] });
         setIsCampaignCreating(false); // <-- mark creation as done
-        brandsRefetch(); // <-- refresh gallery when campaign changes
       }
 
       previousCampaignInfo.current = parsed.campaign_information;
@@ -64,7 +59,7 @@ export function useBrandUpdates(brandId?: string | null) {
       setData(null);
       previousCampaignInfo.current = undefined;
     };
-  }, [brandId]);
+  }, [selectedBrandId]);
 
   return {
     data,

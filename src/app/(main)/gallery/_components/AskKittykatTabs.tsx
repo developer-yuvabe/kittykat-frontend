@@ -7,49 +7,44 @@ import {
   VideoIcon,
 } from "@/components/ui/custom-icon";
 import { Shirt, CatIcon } from "lucide-react";
+import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
+import React from "react";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
 
-const tabItems = [
+const tabItems: {
+  key: ConceptVisualTabs;
+  icon: React.ReactNode;
+  label: string;
+}[] = [
   {
-    key: "virtual-tryon",
+    key: "vton",
     icon: <Shirt className="w-6 h-6" />,
     label: "Virtual Try-On",
-    imageOnly: true,
   },
   {
-    key: "in-paint",
+    key: "remix",
     icon: <PaintBrushIcon className="w-6 h-6" />,
     label: "In-Paint Editing",
-    imageOnly: true,
   },
   {
-    key: "video-gen",
+    key: "video-generation",
     icon: <VideoIcon className="w-6 h-6" />,
     label: "Video Generation",
-    imageOnly: true,
   },
   {
     key: "upscaler",
     icon: <ImageIcon2 className="w-6 h-6" />,
     label: "Image Upscaler",
-    imageOnly: true,
   },
   {
     key: "ask-kittykat",
     icon: <CatIcon className="w-6 h-6" />,
     label: "Kittykat Experts",
-    imageOnly: false,
   },
 ];
 
-interface AskKittykatTabsProps {
-  isVideoAsset?: boolean;
-  isConceptVisualEditor?: boolean;
-}
-
-export function AskKittykatTabs({
-  isVideoAsset = false,
-  isConceptVisualEditor = false,
-}: AskKittykatTabsProps) {
+export function AskKittykatTabs() {
+  const { source, currentAsset } = useConceptVisualStore();
   return (
     <TabsList
       className="grid grid-cols-5 w-full bg-transparent h-max mb-0.5"
@@ -57,8 +52,9 @@ export function AskKittykatTabs({
     >
       {tabItems.map((item) => {
         const isDisabled =
-          (isVideoAsset && item.imageOnly) ||
-          (isConceptVisualEditor && item.key === "ask-kittykat");
+          (currentAsset?.asset_type === "video" &&
+            item.key === "video-generation") ||
+          (source === "blanket" && item.key === "ask-kittykat");
 
         return (
           <TabsTrigger

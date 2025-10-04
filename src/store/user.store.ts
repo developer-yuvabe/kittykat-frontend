@@ -10,8 +10,8 @@ type Store = {
   credits: number | null;
   setCredits: (credits: number) => void;
 
-  showInsufficientCreditsModal: boolean;
-  setShowInsufficientCreditsModal: (show: boolean) => void;
+  kittykatExpertCredits: number | null;
+  setKittykatExpertCredits: (credits: number) => void;
 };
 
 export const useUserStore = create<Store>()((set) => ({
@@ -21,7 +21,7 @@ export const useUserStore = create<Store>()((set) => ({
   credits: null,
   setCredits: (credits) => set({ credits }),
 
-  showInsufficientCreditsModal: false,
-  setShowInsufficientCreditsModal: (show) =>
-    set({ showInsufficientCreditsModal: show }),
+  kittykatExpertCredits: null,
+  setKittykatExpertCredits: (credits) =>
+    set({ kittykatExpertCredits: credits }),
 }));

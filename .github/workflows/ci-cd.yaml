@@ -20,6 +20,10 @@ env:
   NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}
   NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}
   NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA: ${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}
+  NEXT_PUBLIC_TENANT_ID_DEV: ${{ secrets.NEXT_PUBLIC_TENANT_ID_DEV }}
+  NEXT_PUBLIC_TENANT_ID_STG: ${{ secrets.NEXT_PUBLIC_TENANT_ID_STG }}
+  NEXT_PUBLIC_TENANT_ID_PROD: ${{ secrets.NEXT_PUBLIC_TENANT_ID_PROD }}
+  NEXT_PUBLIC_TENANT_ID_BETA: ${{ secrets.NEXT_PUBLIC_TENANT_ID_BETA}}
   LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
   PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
 on:
@@ -86,26 +90,30 @@ jobs:
         run: |-
           docker build -f "./Dockerfile" . --tag "$DOCKER_IMAGE_URL/$SERVICE_NAME:latest" \
             --build-arg NEXT_PUBLIC_ENVIRONMENT=$STAGE_TYPE \
-            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
-            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY='${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
-            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
-            --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}' \
-            --build-arg NEXT_PUBLIC_API_BASE_URL_PROD='${{ secrets.NEXT_PUBLIC_API_BASE_URL_PROD }}' \
-            --build-arg NEXT_PUBLIC_API_BASE_URL_STG='${{ secrets.NEXT_PUBLIC_API_BASE_URL_STG }}' \
-            --build-arg NEXT_PUBLIC_API_BASE_URL_DEV='${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}' \
-            --build-arg NEXT_PUBLIC_API_BASE_URL_BETA='${{ secrets.NEXT_PUBLIC_API_BASE_URL_BETA }}' \
-            --build-arg FIREBASE_ADMIN_CLIENT_EMAIL='${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}' \
-            --build-arg FIREBASE_ADMIN_PRIVATE_KEY='${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}' \
-            --build-arg AUTH_COOKIE_NAME='${{ secrets.AUTH_COOKIE_NAME }}' \
-            --build-arg AUTH_COOKIE_SIGNATURE_KEY_CURRENT='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}' \
-            --build-arg AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
-            --build-arg USE_SECURE_COOKIES='${{ secrets.USE_SECURE_COOKIES }}' \
-            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
-            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
-            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
-            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
-            --build-arg LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}' \
-            --build-arg PEXELS_API_KEY='${{ secrets.PEXELS_API_KEY }}'
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ env.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY='${{ env.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
+            --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID='${{ env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}' \
+            --build-arg NEXT_PUBLIC_API_BASE_URL_PROD='${{ env.NEXT_PUBLIC_API_BASE_URL_PROD }}' \
+            --build-arg NEXT_PUBLIC_API_BASE_URL_STG='${{ env.NEXT_PUBLIC_API_BASE_URL_STG }}' \
+            --build-arg NEXT_PUBLIC_API_BASE_URL_DEV='${{ env.NEXT_PUBLIC_API_BASE_URL_DEV }}' \
+            --build-arg NEXT_PUBLIC_API_BASE_URL_BETA='${{ env.NEXT_PUBLIC_API_BASE_URL_BETA }}' \
+            --build-arg FIREBASE_ADMIN_CLIENT_EMAIL='${{ env.FIREBASE_ADMIN_CLIENT_EMAIL }}' \
+            --build-arg FIREBASE_ADMIN_PRIVATE_KEY='${{ env.FIREBASE_ADMIN_PRIVATE_KEY }}' \
+            --build-arg AUTH_COOKIE_NAME='${{ env.AUTH_COOKIE_NAME }}' \
+            --build-arg AUTH_COOKIE_SIGNATURE_KEY_CURRENT='${{ env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}' \
+            --build-arg AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
+            --build-arg USE_SECURE_COOKIES='${{ env.USE_SECURE_COOKIES }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
+            --build-arg NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
+            --build-arg NEXT_PUBLIC_TENANT_ID_DEV='${{ env.NEXT_PUBLIC_TENANT_ID_DEV }}' \
+            --build-arg NEXT_PUBLIC_TENANT_ID_STG='${{ env.NEXT_PUBLIC_TENANT_ID_STG }}' \
+            --build-arg NEXT_PUBLIC_TENANT_ID_PROD='${{ env.NEXT_PUBLIC_TENANT_ID_PROD }}' \
+            --build-arg NEXT_PUBLIC_TENANT_ID_BETA='${{ env.NEXT_PUBLIC_TENANT_ID_BETA }}' \
+            --build-arg LANGSMITH_API_KEY='${{ env.LANGSMITH_API_KEY }}' \
+            --build-arg PEXELS_API_KEY='${{ env.PEXELS_API_KEY }}'
         env:
           DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
@@ -127,26 +135,30 @@ jobs:
             --region us-central1 \
             --allow-unauthenticated \
             --set-env-vars=NEXT_PUBLIC_ENVIRONMENT=$STAGE_TYPE \
-            --set-env-vars=NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
-            --set-env-vars=NEXT_PUBLIC_FIREBASE_API_KEY='${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
-            --set-env-vars=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
-            --set-env-vars=NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID='${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}' \
-            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_PROD='${{ secrets.NEXT_PUBLIC_API_BASE_URL_PROD }}' \
-            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_STG='${{ secrets.NEXT_PUBLIC_API_BASE_URL_STG }}' \
-            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_DEV='${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}' \
-            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_BETA='${{ secrets.NEXT_PUBLIC_API_BASE_URL_BETA }}' \
-            --set-env-vars=FIREBASE_ADMIN_CLIENT_EMAIL='${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}' \
-            --set-env-vars=FIREBASE_ADMIN_PRIVATE_KEY='${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}' \
-            --set-env-vars=AUTH_COOKIE_NAME='${{ secrets.AUTH_COOKIE_NAME }}' \
-            --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_CURRENT='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}' \
-            --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ secrets.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
-            --set-env-vars=USE_SECURE_COOKIES='${{ secrets.USE_SECURE_COOKIES }}' \
-            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
-            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
-            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
-            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ secrets.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
-            --set-env-vars=LANGSMITH_API_KEY='${{ secrets.LANGSMITH_API_KEY }}' \
-            --set-env-vars=PEXELS_API_KEY='${{ secrets.PEXELS_API_KEY }}'
+            --set-env-vars=NEXT_PUBLIC_FIREBASE_PROJECT_ID='${{ env.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}' \
+            --set-env-vars=NEXT_PUBLIC_FIREBASE_API_KEY='${{ env.NEXT_PUBLIC_FIREBASE_API_KEY }}' \
+            --set-env-vars=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN='${{ env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}' \
+            --set-env-vars=NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID='${{ env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}' \
+            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_PROD='${{ env.NEXT_PUBLIC_API_BASE_URL_PROD }}' \
+            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_STG='${{ env.NEXT_PUBLIC_API_BASE_URL_STG }}' \
+            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_DEV='${{ env.NEXT_PUBLIC_API_BASE_URL_DEV }}' \
+            --set-env-vars=NEXT_PUBLIC_API_BASE_URL_BETA='${{ env.NEXT_PUBLIC_API_BASE_URL_BETA }}' \
+            --set-env-vars=FIREBASE_ADMIN_CLIENT_EMAIL='${{ env.FIREBASE_ADMIN_CLIENT_EMAIL }}' \
+            --set-env-vars=FIREBASE_ADMIN_PRIVATE_KEY='${{ env.FIREBASE_ADMIN_PRIVATE_KEY }}' \
+            --set-env-vars=AUTH_COOKIE_NAME='${{ env.AUTH_COOKIE_NAME }}' \
+            --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_CURRENT='${{ env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT }}' \
+            --set-env-vars=AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS='${{ env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS }}' \
+            --set-env-vars=USE_SECURE_COOKIES='${{ env.USE_SECURE_COOKIES }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_PROD }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV }}' \
+            --set-env-vars=NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA='${{ env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA }}' \
+            --set-env-vars=NEXT_PUBLIC_TENANT_ID_DEV='${{ env.NEXT_PUBLIC_TENANT_ID_DEV }}' \
+            --set-env-vars=NEXT_PUBLIC_TENANT_ID_STG='${{ env.NEXT_PUBLIC_TENANT_ID_STG }}' \
+            --set-env-vars=NEXT_PUBLIC_TENANT_ID_PROD='${{ env.NEXT_PUBLIC_TENANT_ID_PROD }}' \
+            --set-env-vars=NEXT_PUBLIC_TENANT_ID_BETA='${{ env.NEXT_PUBLIC_TENANT_ID_BETA}}' \
+            --set-env-vars=LANGSMITH_API_KEY='${{ env.LANGSMITH_API_KEY }}' \
+            --set-env-vars=PEXELS_API_KEY='${{ env.PEXELS_API_KEY }}'
         env:
           DOCKER_IMAGE_URL: ${{ env.DOCKER_IMAGE_URL }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}

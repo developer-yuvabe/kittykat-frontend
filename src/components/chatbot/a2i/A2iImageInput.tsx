@@ -14,7 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
-import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
 import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,9 +29,11 @@ import { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
-import { useUserStore } from "@/store/user.store";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
+import { useCreditsStore } from "@/store/credits.store";
+import { useQueryState } from "nuqs";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -42,12 +44,16 @@ const A2iImageInput = ({
   campaignInformation: ThreadDetails["campaign_information"];
   selectedCampaignIndex: number;
 }) => {
+  const inputContainerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTo, setScrollTo] = useQueryState("scrollTo");
+  const { parameters, setParameters } = useMetadataActionsStore();
   const { selectedImageGenerationModel } = useModelsStore();
   const form = useA2iForm({
-    formKey: "imageGenForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `image-generation-${selectedImageGenerationModel!.id}`,
     selectedModel: selectedImageGenerationModel,
   });
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
     model: selectedImageGenerationModel,
@@ -239,9 +245,6 @@ const A2iImageInput = ({
 
     // Remove from imageBlocks
     setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
-
-    // delete the file from GCS
-    deleteFile(urlToRemove);
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
@@ -272,6 +275,8 @@ const A2iImageInput = ({
       }
 
       toast.error("Failed to generate image. Please try again.");
+    } finally {
+      form.trigger();
     }
   };
 
@@ -288,13 +293,6 @@ const A2iImageInput = ({
 
   // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
-    // Clean up uploaded files when model changes
-    for (const block of imageBlocks) {
-      if (block.url) {
-        deleteFile(block.url);
-      }
-    }
-
     setImageBlocks([]);
     if (refernceImagesModelInfo) {
       form.setValue(refernceImagesModelInfo.id, null, {
@@ -325,6 +323,71 @@ const A2iImageInput = ({
     }
   }, [form, selectedImageGenerationModel?.id]);
 
+  useEffect(() => {
+    if (scrollTo === "a2i-input" && inputContainerRef.current) {
+      inputContainerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+
+      // reset so it doesn’t scroll again unnecessarily
+      setScrollTo(null);
+    }
+  }, [scrollTo, setScrollTo]);
+
+  useEffect(() => {
+    if (parameters.imageGeneationParameters) {
+      const paramName = refernceImagesModelInfo?.id;
+
+      form.reset({
+        ...form.getValues(),
+        ...parameters.imageGeneationParameters,
+        ...(paramName ? { [paramName]: null } : {}),
+      });
+
+      form.trigger();
+      setParameters("imageGeneationParameters", null);
+    }
+    if (parameters.referenceImageParameterArray) {
+      const paramName = refernceImagesModelInfo?.id;
+      if (paramName) {
+        form.reset({
+          ...form.getValues(),
+          [paramName]: parameters.referenceImageParameterArray,
+        });
+        form.trigger();
+
+        setImageBlocks(
+          parameters.referenceImageParameterArray.map((url) => ({
+            previewUrl: url,
+            url: url,
+          }))
+        );
+
+        setParameters("referenceImageParameterArray", null);
+      }
+    }
+    if (parameters.referenceImageParameterString) {
+      const paramName = refernceImagesModelInfo?.id;
+      if (paramName) {
+        form.reset({
+          ...form.getValues(),
+          [paramName]: parameters.referenceImageParameterString,
+        });
+        form.trigger();
+
+        setImageBlocks([
+          {
+            previewUrl: parameters.referenceImageParameterString,
+            url: parameters.referenceImageParameterString,
+          },
+        ]);
+
+        setParameters("referenceImageParameterString", null);
+      }
+    }
+  }, [parameters]);
+
   // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
   const value = form.watch("max_images");
   const numberOfReferenceImagesUploaded = refernceImagesModelInfo
@@ -344,7 +407,10 @@ const A2iImageInput = ({
   }, [numberOfReferenceImagesUploaded, value, form]);
 
   return (
-    <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4">
+    <div
+      ref={inputContainerRef}
+      className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4"
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {imageBlocks.length > 0 && (
@@ -528,7 +594,7 @@ const A2iImageInput = ({
                       {isCalculatingCredits ? (
                         <Loader2 className="animate-spin h-4 w-4" />
                       ) : (
-                        `(${credits} credits)`
+                        `(${credits.toLocaleString()} credits)`
                       )}
                     </p>
                   </div>

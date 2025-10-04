@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { BranchSwitcher, CommandBar } from "./shared";
 import { FilePreview } from "@/components/chatbot/FilePreview";
+import ZoomableImage from "@/components/ui/zoomable-image";
 import {
   FileIcon,
   FileTextIcon,
@@ -236,6 +237,25 @@ export function HumanMessage({
                       <FilePreview key={idx} block={block} size="md" />
                     )
                 )}
+                {message.content
+                  .filter(
+                    (
+                      block
+                    ): block is {
+                      type: "image_url";
+                      image_url: { url: string };
+                    } => block?.type === "image_url"
+                  )
+                  .map((block, idx) => (
+                    <div key={`image-${idx}`} className="relative inline-block">
+                      <ZoomableImage
+                        src={block.image_url.url}
+                        alt="Screenshot"
+                        className="rounded-md object-cover h-16 w-16"
+                        variant="default"
+                      />
+                    </div>
+                  ))}
               </div>
             )}
 

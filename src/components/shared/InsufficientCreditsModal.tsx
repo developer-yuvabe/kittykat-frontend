@@ -8,11 +8,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useUserStore } from "@/store/user.store";
+import { useCreditsStore } from "@/store/credits.store";
 
 const InsufficientCreditsModal = () => {
-  const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
-    useUserStore();
+  const {
+    showInsufficientCreditsModal,
+    setShowInsufficientCreditsModal,
+    setShowPurchaseCreditsModal,
+  } = useCreditsStore();
   return (
     <AlertDialog
       open={showInsufficientCreditsModal}
@@ -41,7 +44,13 @@ const InsufficientCreditsModal = () => {
         </div>
         <AlertDialogFooter className="flex flex-col sm:flex-col ">
           <AlertDialogCancel className="w-full">Back</AlertDialogCancel>
-          <AlertDialogAction className="w-full">
+          <AlertDialogAction
+            className="w-full"
+            onClick={() => {
+              setShowInsufficientCreditsModal(false);
+              setShowPurchaseCreditsModal(true);
+            }}
+          >
             Purchase Credits
           </AlertDialogAction>
         </AlertDialogFooter>

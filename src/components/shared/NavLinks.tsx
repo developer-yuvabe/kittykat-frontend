@@ -2,11 +2,10 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useUserStore } from "@/store/user.store";
-import { Image, Users } from "lucide-react";
+import { Image, ListTodo, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationHoverCard from "../notifications/NotificationHoverCard";
-import { Button } from "../ui/button";
 import { GalleryIcon, HomeIcon } from "../ui/custom-icon";
 
 export const ICON_SIZE = 24;
@@ -14,12 +13,13 @@ export const ICON_SIZE = 24;
 const LINKS = [
   { name: "Home", icon: HomeIcon, path: "/", disabled: true },
   { name: "Gallery", icon: GalleryIcon, path: "/gallery" },
+  { name: "Task Lists", icon: ListTodo, path: "/tasklist" },
 ];
 
 export function NavLinks() {
   const pathname = usePathname();
   const { user } = useUserStore();
-  const { setIsConceptVisualOpened } = useConceptVisualStore();
+  const { openConceptVisual } = useConceptVisualStore();
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -74,7 +74,22 @@ export function NavLinks() {
             })}
             <NotificationHoverCard />
             <div
-              onClick={() => setIsConceptVisualOpened(true)}
+              onClick={() => {}}
+              className={cn(
+                `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787]`
+              )}
+            >
+              <Image size={ICON_SIZE} color="#6e7787" />
+              <span>Visual Editor Old</span>
+            </div>
+            <div
+              onClick={() =>
+                openConceptVisual({
+                  source: "blanket",
+                  assetItems: [],
+                  asset: null,
+                })
+              }
               className={cn(
                 `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787]`
               )}
@@ -141,7 +156,13 @@ export function NavLinks() {
             })}
             <NotificationHoverCard />
             <div
-              onClick={() => setIsConceptVisualOpened(true)}
+              onClick={() =>
+                openConceptVisual({
+                  source: "blanket",
+                  assetItems: [],
+                  asset: null,
+                })
+              }
               className={cn(
                 `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787] hover:text-primary`
               )}

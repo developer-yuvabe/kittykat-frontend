@@ -12,7 +12,10 @@ import {
   TaskListGenerateResponse,
   TasklistListResponse,
   TasklistRecord,
+  TasklistTimelineResponse,
   UpdateTasklistRequest,
+  TaskCreditEstimateRequest,
+  TaskCreditEstimateResponse,
 } from "@/types/tasklist.types";
 
 // --- Interfaces ---
@@ -36,6 +39,15 @@ class TaskListService {
     );
   }
 
+  /** Estimate credit cost for a single task */
+  async estimateTaskCredit(
+    request: TaskCreditEstimateRequest
+  ): Promise<TaskCreditEstimateResponse> {
+    return await handleApiRequest<TaskCreditEstimateResponse>(
+      axiosInstance.post("/ask-kittykat/task/estimate-credits", request)
+    );
+  }
+
   /** Get the complete price list of task categories and their credit costs */
   async getTaskPriceList(): Promise<PriceListResponse> {
     return await handleApiRequest<PriceListResponse>(
@@ -55,7 +67,7 @@ class TaskListService {
   /** Get a paginated list of tasklists with filtering capabilities */
   async listTasklists(filters: TasklistFilters): Promise<TasklistListResponse> {
     return await handleApiRequest<TasklistListResponse>(
-      axiosInstance.get("/ask-kittykat/tasklists", { params: filters })
+      axiosInstance.post("/ask-kittykat/tasklists/search", filters)
     );
   }
 
@@ -109,8 +121,8 @@ class TaskListService {
   /** Get the timeline of events for a specific tasklist */
   async getTasklistTimeline(
     tasklist_id: string
-  ): Promise<{ timeline: any[]; total_events: number }> {
-    return await handleApiRequest<{ timeline: any[]; total_events: number }>(
+  ): Promise<TasklistTimelineResponse> {
+    return await handleApiRequest<TasklistTimelineResponse>(
       axiosInstance.get(`/ask-kittykat/tasklists/${tasklist_id}/timeline`)
     );
   }
@@ -124,10 +136,10 @@ class TaskListService {
 
   /** Export tasklists to CSV format with filtering */
   async exportTasklistsCsv(filters: TasklistFilters): Promise<Blob> {
-    const response = await axiosInstance.get(
-      "/ask-kittykat/tasklists/export/csv",
+    const response = await axiosInstance.post(
+      "/ask-kittykat/tasklists/export/excel",
+      filters,
       {
-        params: filters,
         responseType: "blob",
       }
     );

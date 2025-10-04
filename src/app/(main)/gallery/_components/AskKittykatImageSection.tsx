@@ -1,47 +1,42 @@
 "use client";
 
-import type React from "react";
-import { useRef, useState, useEffect, SetStateAction, Dispatch } from "react";
-import ZoomableImage from "@/components/ui/zoomable-image";
-import type { GalleryItemResponse } from "@/types/gallery.types";
-import type { GalleryActions } from "@/hooks/useGallery";
-import {
-  PlayCircle,
-  PauseCircle,
-  HeartIcon,
-  CopyIcon,
-  Check,
-  X,
-} from "lucide-react";
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { Button } from "@/components/ui/button";
 import {
   DownloadIcon,
   ExpandIcon,
   SelectIcon,
 } from "@/components/ui/custom-icon";
-import type { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
-import RemixImage, {
-  type RemixImageHandle,
-} from "../../_components/remix/RemixImage";
-import { toast } from "sonner";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import ZoomableImage from "@/components/ui/zoomable-image";
+import { useRemixCanvas } from "@/contexts/RemixCanvasContext";
+import type { GalleryActions } from "@/hooks/useGallery";
 import { cn, handleDownloadVideo } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { useBrandStore } from "@/store/brand.store";
+import { useModelsStore } from "@/store/models.store";
+import type { GalleryItemResponse } from "@/types/gallery.types";
+import {
+  Check,
+  CopyIcon,
+  HeartIcon,
+  PauseCircle,
+  PlayCircle,
+  X,
+} from "lucide-react";
+import type React from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import RemixImage from "../../_components/remix/RemixImage";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 
 interface AskKittykatImageSectionProps {
   item: GalleryItemResponse | null;
   galleryActions: GalleryActions;
-  isRemixEnabled: boolean;
-  imageRef?: React.RefObject<HTMLImageElement | null>;
-  canvasRef?: React.RefObject<HTMLCanvasElement | null>;
-  offScreenCanvasRef?: React.RefObject<HTMLCanvasElement | null>;
-  remixHistory?: ReturnType<typeof useUndoRedoRemix>;
-  brushSize?: number;
-  remixImageRef?: React.RefObject<RemixImageHandle | null>;
   revalidateGalleryItemVersions?: (data: GalleryItemResponse) => Promise<void>;
   setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
   conceptVisualMedia?: boolean;
+  currentTab: ConceptVisualTabs;
 }
 
 const VideoPlayer: React.FC<{
@@ -224,17 +219,25 @@ export const AskKittykatImageSection: React.FC<
 > = ({
   item,
   galleryActions,
-  isRemixEnabled,
-  imageRef,
-  canvasRef,
-  offScreenCanvasRef,
-  remixHistory,
-  brushSize = 20,
-  remixImageRef,
   revalidateGalleryItemVersions,
   setCurrentItem,
-  conceptVisualMedia = false,
+  currentTab,
 }) => {
+  const {
+    brushSize,
+    imageRef,
+    canvasRef,
+    remixImageRef,
+    remixHistory,
+    offScreenCanvasRef,
+  } = useRemixCanvas();
+  const { selectedRemixModel } = useModelsStore();
+  const { source } = useConceptVisualStore();
+
+  const isRemixEnabled =
+    currentTab === "remix" &&
+    !!selectedRemixModel &&
+    selectedRemixModel.provider === "openai";
   const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const isVideo = item?.asset_type === "video";
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
@@ -369,7 +372,7 @@ export const AskKittykatImageSection: React.FC<
       );
     }
 
-    if (conceptVisualMedia) {
+    if (source === "blanket") {
       return renderPlaceholder();
     }
 

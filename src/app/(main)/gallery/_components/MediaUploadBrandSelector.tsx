@@ -68,6 +68,9 @@ export function MediaUploadBrandSelector({
   setInitialBrandId,
   setInitialWorkflowStatus,
 }: BrandSelectorProps) {
+  throw new Error(
+    "MediaUploadBrandSelector is deprecated, use BrandSelector instead."
+  );
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const { setSelectedBrandId, isBrandsFetched } = useBrandStore();
