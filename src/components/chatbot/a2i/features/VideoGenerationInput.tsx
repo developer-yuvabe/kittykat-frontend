@@ -1,4 +1,6 @@
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { Button } from "@/components/ui/button";
+import { SelectIcon } from "@/components/ui/custom-icon";
 import {
   Form,
   FormControl,
@@ -12,79 +14,66 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useUserStore } from "@/store/user.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Loader2, Settings2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
-import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
-import { SelectIcon } from "@/components/ui/custom-icon";
-import ModelSelector from "../ModelSelector";
 import { toast } from "sonner";
-import { useA2iForm } from "@/hooks/useA2iForm";
+import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
+import ModelSelector from "../ModelSelector";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 }
 
-const VideoGenerationInput = ({
-  item,
-  campaignId,
-  handleDialogChange,
-}: VideoGenerationInputProps) => {
+const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
     selectedVideoGenearationModel,
     setSelectedVideoGenearationModel,
   } = useModelsStore();
-
   return (
     <div className="w-full flex-1 flex flex-col gap-y-4">
       {/* Model Chooser */}
-      <div className="ml-auto w-max">
-        <ModelSelector
-          typeFilter="video"
-          selectedModel={selectedVideoGenearationModel}
-          onModelChange={(m) => {
-            setSelectedVideoGenearationModel(m);
-          }}
-        />
-      </div>
       {isModelsFetched && selectedVideoGenearationModel && (
-        <VideoGenerationInputControls
-          item={item}
-          campaignId={campaignId}
-          key={item?.id}
-          handleDialogChange={handleDialogChange}
-        />
+        <>
+          <div className="ml-auto w-max">
+            <ModelSelector
+              typeFilter="video"
+              selectedModel={selectedVideoGenearationModel}
+              onModelChange={(m) => {
+                setSelectedVideoGenearationModel(m);
+              }}
+            />
+          </div>
+          <VideoGenerationInputControls item={item} key={item?.id} />
+        </>
       )}
     </div>
   );
 };
 
-const VideoGenerationInputControls = ({
-  item,
-  campaignId,
-}: VideoGenerationInputProps) => {
+const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
+  const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );
   const { addCurrentSessionGenerationId } = useVideoGenStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
-  const { setShowInsufficientCreditsModal } = useUserStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
-    formKey: "videoGenForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `video-generation-${selectedVideoGenearationModel!.id}`,
     dynamicDefualtValues: {
       start_image: item?.asset_url || null,
       first_frame: item?.asset_url || null,
@@ -158,11 +147,11 @@ const VideoGenerationInputControls = ({
         campaignId ?? undefined
       );
 
-      console.log(generation_id + " video generation started");
-
-      addCurrentSessionGenerationId(generation_id);
-
-      form.reset();
+      if (Array.isArray(generation_id)) {
+        generation_id.forEach((id) => addCurrentSessionGenerationId(id));
+      } else if (typeof generation_id === "string") {
+        addCurrentSessionGenerationId(generation_id);
+      }
     } catch (err) {
       console.error("Failed to generate video:", err);
       if (err instanceof PlatformApiError && err.statusCode == 403) {

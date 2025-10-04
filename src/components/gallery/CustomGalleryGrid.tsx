@@ -1,5 +1,5 @@
 import type React from "react";
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useRef, useEffect, useCallback } from "react";
 import type { Photo } from "react-photo-album";
 import type { MoodboardInformation } from "@/types/types";
 import type { GalleryItemResponse } from "@/types/gallery.types";
@@ -11,6 +11,7 @@ import { GalleryActions } from "@/hooks/useGallery";
 import html2canvas from "html2canvas-pro";
 import { useBrandStore } from "@/store/brand.store";
 import Logo from "../shared/Logo";
+import { useScreenshot } from "@/contexts/ScreenshotContext";
 
 // Ref interface for screenshot functionality
 export interface CustomGalleryGridRef {
@@ -50,128 +51,136 @@ export const CustomGalleryGrid = forwardRef<
   CustomGalleryGridRef,
   CustomGalleryGridProps<any>
 >(
-  (
-    {
-      allItems,
-      photos,
-      layout,
-      containerHeight,
-      noOfImagesForMoodboard,
-      moodboard,
-      onGallerySelection,
-      onPhotoLike,
-      hasUnsavedChanges,
-      handleExpandImage,
-      isDraggable,
-      setItems,
-      minImagesRequired,
-      setNoOfImagesForMoodboard,
-      showLiked,
-      isPreview,
-      galleryActions,
-    },
-    ref
-  ) => {
+  ({
+    allItems,
+    photos,
+    layout,
+    containerHeight,
+    noOfImagesForMoodboard,
+    moodboard,
+    onGallerySelection,
+    onPhotoLike,
+    hasUnsavedChanges,
+    handleExpandImage,
+    isDraggable,
+    setItems,
+    minImagesRequired,
+    setNoOfImagesForMoodboard,
+    showLiked,
+    isPreview,
+    galleryActions,
+  }) => {
     const gridRef = useRef<HTMLDivElement>(null);
     const screenshotContainerRef = useRef<HTMLDivElement>(null);
+
+    // Use screenshot context to register capture function
+    const { registerCaptureFunction } = useScreenshot();
 
     // Get brand store data
     const { getSelectedBrandName, getSelectedCampaignName } = useBrandStore();
 
-    // Expose the screenshot function via ref
-    useImperativeHandle(
-      ref,
-      () => ({
-        captureScreenshot: async (): Promise<string | null> => {
+    // Screenshot capture function
+    const captureScreenshot = useCallback(async (): Promise<string | null> => {
+      if (!screenshotContainerRef.current) {
+        console.warn(
+          "CustomGalleryGrid: Screenshot container ref not available for screenshot"
+        );
+        return null;
+      }
+
+      try {
+        // Create a timeout promise for the entire operation
+        const timeoutPromise = new Promise<string | null>((_, reject) => {
+          setTimeout(
+            () => reject(new Error("Screenshot timeout after 10 seconds")),
+            10000
+          );
+        });
+
+        const screenshotPromise = async (): Promise<string | null> => {
+          // Double-check container still exists
           if (!screenshotContainerRef.current) {
-            console.warn(
-              "Screenshot container ref not available for screenshot"
-            );
+            console.warn("Container ref became null during capture");
             return null;
           }
 
-          try {
-            // Create a timeout promise for the entire operation
-            const timeoutPromise = new Promise<string | null>((_, reject) => {
-              setTimeout(
-                () => reject(new Error("Screenshot timeout after 10 seconds")),
-                10000
-              );
-            });
+          // Wait for images to load with individual timeouts
+          const images =
+            screenshotContainerRef.current!.querySelectorAll("img");
 
-            const screenshotPromise = async (): Promise<string | null> => {
-              // Wait for images to load with individual timeouts
-              const images =
-                screenshotContainerRef.current!.querySelectorAll("img");
-
-              const imagePromises = Array.from(images).map(
-                (img) =>
-                  new Promise<void>((resolve) => {
-                    if (img.complete) {
-                      resolve();
-                      return;
-                    }
-
-                    const timeout = setTimeout(() => {
-                      console.warn(
-                        "Image load timeout, proceeding anyway:",
-                        img.src
-                      );
-                      resolve();
-                    }, 3000);
-
-                    const cleanup = () => {
-                      clearTimeout(timeout);
-                      resolve();
-                    };
-
-                    img.onload = cleanup;
-                    img.onerror = cleanup;
-                  })
-              );
-
-              // Wait for all images with timeout
-              await Promise.all(imagePromises);
-
-              // Small delay to ensure rendering is complete
-              await new Promise((resolve) => setTimeout(resolve, 100));
-
-              const canvas = await html2canvas(
-                screenshotContainerRef.current!,
-                {
-                  useCORS: true,
-                  allowTaint: true,
-                  scale: 2,
-                  backgroundColor: "#ffffff",
-                  logging: false,
-                  removeContainer: true,
-                  foreignObjectRendering: false,
-                  imageTimeout: 2000, // 2 second timeout for each image
-                  onclone: (clonedDoc) => {
-                    // Ensure all styles are applied in cloned document
-                    const clonedElement = clonedDoc.querySelector(
-                      "[data-screenshot-container]"
-                    );
-                    if (clonedElement) {
-                      (clonedElement as HTMLElement).style.position = "static";
-                      (clonedElement as HTMLElement).style.top = "auto";
-                      (clonedElement as HTMLElement).style.left = "auto";
-                    }
-                  },
+          const imagePromises = Array.from(images).map(
+            (img) =>
+              new Promise<void>((resolve) => {
+                if (img.complete) {
+                  resolve();
+                  return;
                 }
-              );
 
-              return canvas.toDataURL("image/png");
-            };
-            return await Promise.race([screenshotPromise(), timeoutPromise]);
-          } catch (error) {
-            console.error("Failed to capture screenshot:", error);
+                const timeout = setTimeout(() => {
+                  console.warn(
+                    "Image load timeout, proceeding anyway:",
+                    img.src
+                  );
+                  resolve();
+                }, 3000);
+
+                const cleanup = () => {
+                  clearTimeout(timeout);
+                  resolve();
+                };
+
+                img.onload = cleanup;
+                img.onerror = cleanup;
+              })
+          );
+
+          // Wait for all images with timeout
+          await Promise.all(imagePromises);
+
+          // Small delay to ensure rendering is complete
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Final check before html2canvas
+          if (!screenshotContainerRef.current) {
+            console.warn("Container ref became null before html2canvas");
             return null;
           }
-        },
-      }),
-      [screenshotContainerRef]
-    );
+
+          const canvas = await html2canvas(screenshotContainerRef.current!, {
+            useCORS: true,
+            allowTaint: true,
+            scale: 2,
+            backgroundColor: "#ffffff",
+            logging: false,
+            // removeContainer: true, // Commented out - might cause issues with subsequent captures
+            foreignObjectRendering: false,
+            imageTimeout: 2000, // 2 second timeout for each image
+            onclone: (clonedDoc) => {
+              // Ensure all styles are applied in cloned document
+              const clonedElement = clonedDoc.querySelector(
+                "[data-screenshot-container]"
+              );
+              if (clonedElement) {
+                (clonedElement as HTMLElement).style.position = "static";
+                (clonedElement as HTMLElement).style.top = "auto";
+                (clonedElement as HTMLElement).style.left = "auto";
+              }
+            },
+          });
+
+          return canvas.toDataURL("image/png");
+        };
+        return await Promise.race([screenshotPromise(), timeoutPromise]);
+      } catch (error) {
+        console.error("Failed to capture screenshot:", error);
+        return null;
+      }
+    }, [screenshotContainerRef]);
+
+    // Register capture function with context when component mounts
+    useEffect(() => {
+      registerCaptureFunction(captureScreenshot);
+    }, [registerCaptureFunction, captureScreenshot]);
 
     const handlePhotoLike = async (index: number, liked: boolean) => {
       if (onPhotoLike) {

@@ -127,10 +127,10 @@ export const CampaignSection: React.FC<{
     [user, stream, selectedBrandId, setIsCampaignCreating]
   );
 
-  const handleCampaignIndexChange = useCallback((index: number) => {
+  const handleCampaignIndexChange = (index: number) => {
     setFadeKey((prev) => prev + 1);
     setSelectedCampaignIndex(index);
-  }, []);
+  };
 
   const toggleExpanded = useCallback(() => {
     setExpandedSections((prev) => ({
@@ -277,6 +277,7 @@ export const CampaignSection: React.FC<{
                 </div>
                 <div>
                   <DisplayField
+                    key={currentCampaign?.campaign?.title}
                     json={{
                       Campaign: `${
                         currentCampaign?.campaign?.title || "Unnamed Campaign"

@@ -11,6 +11,7 @@ import {
   CommentReplyUpdate,
   BulkGalleryItemRequest,
   BulkGalleryUploadRequest,
+  GalleryImageParametersResponse,
 } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -319,4 +320,22 @@ export const useBulkGalleryItems = (ids: string[], enabled = true) => {
     enabled: enabled && ids.length > 0,
     staleTime: 1000 * 60 * 5, // optional: 5 min cache
   });
+};
+
+export const GetGalleryImageParameters = async (
+  brandId: string,
+  galleryId: string
+): Promise<GalleryImageParametersResponse | null> => {
+  try {
+    const response = await handleApiRequest(
+      axiosInstance.post(`/gallery/get-image-parameter`, {
+        brand_id: brandId,
+        gallery_id: galleryId,
+      })
+    );
+    return response ? (response as GalleryImageParametersResponse) : null;
+  } catch (error) {
+    console.error("Error fetching gallery image parameters:", error);
+    throw error;
+  }
 };

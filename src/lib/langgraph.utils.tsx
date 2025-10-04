@@ -13,7 +13,7 @@ import { FileTextIcon, Music, Video, Image } from "lucide-react";
 import { Color, MessageContentFiles } from "@/types/langgraph.types";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
-import { PinnedItem } from "@/store/usePinnedContextStore";
+import { PinnedItem, PinnedMoodboardItem } from "@/store/usePinnedContextStore";
 import type {
   Base64ContentBlock,
   MessageContentComplex,
@@ -154,6 +154,13 @@ const TOOL_LOADING_MESSAGES: Record<
       message: "Almost done! Making sure everything looks great...",
       duration: 5,
     },
+  ],
+  "analyze-moodboard": [
+    { message: "Analyzing moodboard content...", duration: 3 },
+    { message: "Extracting visual elements...", duration: 4 },
+    { message: "Identifying key themes...", duration: 4 },
+    { message: "Generating insights...", duration: 5 },
+    { message: "Finalizing moodboard analysis...", duration: 20 },
   ],
 };
 
@@ -570,3 +577,31 @@ Updated Array: ${JSON.stringify(newArray)}
 ${extraInfo ? `\n${extraInfo}` : ""}
 </kittykat-do-not-render>`;
 }
+
+/**
+ * Get pinned moodboard context message for chat input
+ */
+export const getPinnedMoodboardContextMessage = (
+  pinnedMoodboard: PinnedMoodboardItem
+) => {
+  const { moodboard } = pinnedMoodboard;
+
+  return `<kittykat-do-not-render>
+ 
+
+Moodboard Data:
+- Moodboard ID: ${moodboard.moodboard_id}
+- Campaign ID: ${moodboard.campaign_id}
+- Moodboard Preview: ${moodboard.screenshot_url}
+
+Please analyze this moodboard and provide creative feedback as a professional creative director would. Include:
+1. Overall impression and style summary
+2. Strengths of the current selection
+3. Gaps or missing elements
+4. Concrete next steps with specific recommendations
+
+Make sure to trigger analyze-moodboard toolcall in the MoodboardAgent always even its not explicitly asked in the user prompt or its triggered in previous messages.
+
+Please ignore <kittykat-do-not-render> tag.
+</kittykat-do-not-render>`;
+};

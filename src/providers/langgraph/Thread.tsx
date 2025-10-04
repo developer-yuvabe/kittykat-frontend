@@ -1,5 +1,5 @@
 "use client";
-
+// Not used currently but will be used to manage threads in the future
 import { Thread } from "@langchain/langgraph-sdk";
 import React, {
   createContext,

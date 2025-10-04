@@ -1,4 +1,4 @@
-import React, { useState, useEffect, RefObject } from "react";
+import React, { useState, useEffect } from "react";
 import { capitalizeKey } from "@/lib/langgraph.utils";
 import {
   MoodboardAsset,
@@ -25,9 +25,9 @@ import {
 import { GalleryActions } from "@/hooks/useGallery";
 import { GalleryItem, BulkGalleryUploadRequest } from "@/types/gallery.types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
-import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 import { dataURLToBlob } from "@/lib/utils";
 import { useA2iStore } from "@/store/a2i.store";
+import { useScreenshot } from "@/contexts/ScreenshotContext";
 
 type Props = {
   moodboard_tags?: Record<string, string[]>;
@@ -37,7 +37,6 @@ type Props = {
   isGalleryItemsProcessing?: boolean;
   galleryActions?: GalleryActions;
   currentCampaign?: ThreadCampaign | null;
-  galleryGridRef?: RefObject<CustomGalleryGridRef | null>;
   moodboardAssets: MoodboardAsset[];
 };
 
@@ -49,7 +48,6 @@ function MoodboardTagResults({
   isGalleryItemsProcessing = false,
   galleryActions,
   currentCampaign,
-  galleryGridRef,
   moodboardAssets,
 }: Props) {
   const [localTags, setLocalTags] = useState<
@@ -59,6 +57,9 @@ function MoodboardTagResults({
   const { selectedBrandId, isMoodboardSaving } = useBrandStore();
 
   const { isGeneratingPrompts, setIsGeneratingPrompts } = useA2iStore();
+
+  // Use screenshot context
+  const { captureScreenshot } = useScreenshot();
 
   // Mutation for patching
   const { mutateAsync: patchMoodboardMutate, isPending: isPatching } =
@@ -113,7 +114,7 @@ function MoodboardTagResults({
   // Function to capture moodboard screenshot and upload to gallery
   const captureMoodboardAndUploadToGallery = async (): Promise<boolean> => {
     if (
-      !galleryGridRef?.current ||
+      !captureScreenshot ||
       !galleryActions ||
       !currentCampaign ||
       !selectedBrandId ||
@@ -125,7 +126,7 @@ function MoodboardTagResults({
 
     try {
       // Add a timeout wrapper for the entire screenshot operation
-      const screenshotPromise = galleryGridRef.current.captureScreenshot();
+      const screenshotPromise = captureScreenshot();
       const timeoutPromise = new Promise<string | null>((_, reject) => {
         setTimeout(
           () => reject(new Error("Screenshot operation timeout")),
@@ -214,7 +215,7 @@ function MoodboardTagResults({
       // Try to capture screenshot in parallel (don't wait for it)
       // This prevents the screenshot from blocking the generation
       if (
-        galleryGridRef?.current &&
+        captureScreenshot &&
         galleryActions &&
         currentCampaign &&
         selectedBrandId &&

@@ -5,9 +5,8 @@ import { useUserStore } from "@/store/user.store";
 import { UserBrand } from "@/types/user.types";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "../useGallery";
 
-export const useUserBrands = (userId?: string) => {
+export const useUserBrands = () => {
   const {
     setBrands,
     addBrand,
@@ -17,44 +16,33 @@ export const useUserBrands = (userId?: string) => {
     setIsCreatingBrand,
   } = useBrandStore();
   const { user } = useUserStore();
-  const { data, error } = useQuery({
+  useQuery({
     queryKey: ["brands"],
-    queryFn: () => fetchUserBrands(user!.id),
+    queryFn: async () => {
+      const brands = await fetchUserBrands(user!.id);
+
+      if (brands) setBrands(brands);
+      setIsBrandsFetched(true);
+
+      return brands;
+    },
+    enabled: !!user,
   });
 
-  const { brandsRefetch } = useGalleryQuery(
-    {},
-    ITEMS_PER_PAGE,
-    false,
-    "useUserBrands"
-  );
-
   useEffect(() => {
-    if (data) {
-      setBrands(data);
-      setIsBrandsFetched(true);
-    }
-
-    if (error) {
-      console.error("Error fetching user brands:", error);
-    }
-  }, [data, error]);
-
-  useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
 
     const eventSource = new EventSource(
-      `${getSSEBaseUrl()}/users/${userId}/brands`
+      `${getSSEBaseUrl()}/users/${user.id}/brands`
     );
 
     eventSource.addEventListener("brand_insert", (event) => {
       const brand = JSON.parse(event.data) as UserBrand;
-      if (brand.created_by.id === userId) {
+      if (brand.created_by.id === user.id) {
         setSelectedBrandId(brand.id);
       }
       addBrand(brand);
 
-      brandsRefetch();
       // Set isCreatingBrand to false when a new brand is successfully created
       setIsCreatingBrand(false);
     });
@@ -67,7 +55,7 @@ export const useUserBrands = (userId?: string) => {
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
     };
-  }, [userId]);
+  }, [user]);
 
   return null;
 };

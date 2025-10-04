@@ -5,6 +5,7 @@ import { UserRoleId } from "@/types/user.types";
 import { GalleryItemResponse, WorkflowStatus } from "@/types/gallery.types";
 import { GalleryActions } from "@/hooks/useGallery";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import taskListService from "@/services/api/tasklist.service";
 import { useState, useRef, SetStateAction, Dispatch } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -15,6 +16,7 @@ import { AskKittykartAcceptDialog } from "./AskKittykartAcceptDialog";
 import { AskKittykartRejectDialog } from "./AskKittykartRejectDialog";
 import { AskKittykartAcceptAndStartDialog } from "./AskKittykartAcceptAndStartDialog";
 import { getClientNameFromComments } from "@/lib/askKittykat.utils";
+import { useTaskList } from "@/hooks/useTaskList";
 
 interface AskKittykatReviewStatusProps {
   item: GalleryItemResponse;
@@ -32,6 +34,7 @@ export function AskKittykatReviewStatus({
   setCurrentItem,
 }: AskKittykatReviewStatusProps) {
   const { user } = useUserStore();
+  const { updateTaskListMutation } = useTaskList();
   const isAdmin = user?.role?.id === UserRoleId.ADMIN;
 
   const currentStatus = item?.workflow_status || "draft";
@@ -93,7 +96,53 @@ export function AskKittykatReviewStatus({
       }
     );
 
+    //update tasklist status if applicable
+    if (item.tasklist_id) {
+      let logMessage = "";
+      switch (newStatus) {
+        case "requested_revision":
+          logMessage = `Tasklist marked as revision requested by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()}`;
+          break;
+        case "approved":
+          logMessage = `Tasklist marked as approved by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()}`;
+          break;
+        case "in_progress":
+          logMessage = `Tasklist marked as in progress by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()}`;
+          break;
+        case "in_review":
+          logMessage = `Tasklist marked as in review by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()}`;
+          break;
+        default:
+          // No log for other statuses
+          break;
+      }
+
+      if (logMessage) {
+        handleTasklistStateChange(newStatus, logMessage);
+      }
+    }
     setIsEditingStatus(false);
+  };
+
+  const handleTasklistStateChange = (
+    newStatus: WorkflowStatus,
+    logMessage: string
+  ) => {
+    if (item.tasklist_id) {
+      updateTaskListMutation.mutate({
+        tasklistId: item.tasklist_id,
+        data: { asset_expert_status: newStatus, log: logMessage },
+        userId: user?.id || "",
+      });
+    }
   };
 
   const handleAccept = () => {
@@ -156,6 +205,25 @@ export function AskKittykatReviewStatus({
             },
           }
         );
+      }
+
+      // Update tasklist status to estimated
+      if (item.tasklist_id) {
+        try {
+          // Get tasklist details to get estimated_credits
+          const tasklistDetail = await taskListService.getTasklistDetail(
+            item.tasklist_id
+          );
+          const logMessage = `Tasklist requested is accepted by ${
+            user?.name || "Admin"
+          } at ${new Date().toLocaleDateString()} with estimated credit ${
+            tasklistDetail.tasklist.estimated_credits
+          }`;
+          handleTasklistStateChange("in_progress", logMessage);
+        } catch (error) {
+          console.error("Error updating tasklist:", error);
+          // Don't fail the whole process for tasklist update error
+        }
       }
 
       // Then update the status to in_progress

@@ -16,13 +16,14 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { AppConfig } from "@/config/app.config";
+import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
 import { canvasToBlob, PlatformApiError } from "@/lib/utils";
 import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useUserStore } from "@/store/user.store";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import {
   BrainIcon,
@@ -39,7 +40,8 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
-import { useA2iForm } from "@/hooks/useA2iForm";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useRouter } from "next/navigation";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -51,15 +53,11 @@ export type RemixControlsProps = {
     url: string;
     size: string;
   };
-  closeDialog?: () => void;
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   // Add brush size props
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
   brandId?: string;
-  source: "a2i" | "media-gallery";
-  campaignId?: string | null;
-  handleDialogChange?: (isOpen: boolean) => void;
 };
 
 const RemixControls = ({
@@ -70,15 +68,14 @@ const RemixControls = ({
   onRedo,
   onClear,
   canUndo,
-  closeDialog,
   brushSize,
   onBrushSizeChange,
   brandId,
-  campaignId,
-  handleDialogChange,
 }: RemixControlsProps) => {
-  const { setShowInsufficientCreditsModal } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const router = useRouter();
+  const { closeConceptVisual, source } = useConceptVisualStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
+  const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
 
   const {
@@ -128,7 +125,8 @@ const RemixControls = ({
 
   const form = useA2iForm({
     selectedModel: selectedRemixModel,
-    formKey: "remixForm",
+    // How to make this unique {What serice this form is for}-{Selected model id}
+    formKey: `remix-${selectedRemixModel!.id}`,
     dynamicDefualtValues: {
       ...(baseImageParam?.id && image.url
         ? { [baseImageParam.id]: image.url }
@@ -137,8 +135,6 @@ const RemixControls = ({
   });
 
   useEffect(() => {
-    console.log(image);
-    console.log(baseImageParam);
     if (image.url && baseImageParam) {
       form.setValue(baseImageParam.id, image.url);
     }
@@ -337,13 +333,9 @@ const RemixControls = ({
       }
       setImageBlocks([]);
 
-      if (closeDialog) {
-        closeDialog();
-      }
-
-      if (handleDialogChange) {
-        form.reset();
-        handleDialogChange(false);
+      closeConceptVisual();
+      if (source === "blanket") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error(error);

@@ -111,6 +111,25 @@ export const getUserTableColumns = (
     ),
   },
   {
+    header: "Tokens",
+    accessorKey: "credits",
+    cell: ({ row }) => (
+      <p className="font-medium">
+        {Number(row.original.credits ?? 0).toLocaleString()}
+      </p>
+    ),
+  },
+  {
+    header: "KittyKat Expert Credits",
+    accessorKey: "kittykat_expert_credits",
+    cell: ({ row }) => (
+      <div className="font-medium">
+        {Number(row.original.kittykat_expert_credits ?? 0).toLocaleString()}
+      </div>
+    ),
+  },
+
+  {
     header: "Brand Access",
     accessorKey: "brand_access",
     cell: ({ row }) => {
@@ -151,6 +170,46 @@ export const getUserTableColumns = (
       );
     },
   },
+  {
+    header: "Model Access",
+    accessorKey: "model_access",
+    cell: ({ row }) => {
+      const INIT_MODELS_TO_SHOW = 3;
+      const [showAllModels, setShowAllModels] = useState(false);
+      const role = row.original.role?.id;
+
+      if (role === "KK-ADMIN") {
+        return <p className="italic">All models</p>;
+      }
+
+      const modelAccess = row.original.model_access || [];
+
+      return modelAccess.length ? (
+        <div className="flex flex-wrap gap-2">
+          {modelAccess
+            .slice(0, showAllModels ? undefined : INIT_MODELS_TO_SHOW)
+            .map((model) => (
+              <Badge key={model.id} className="border">
+                {model.name}
+              </Badge>
+            ))}
+          {modelAccess.length > INIT_MODELS_TO_SHOW && (
+            <Button
+              variant="link"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowAllModels((p) => !p)}
+            >
+              {showAllModels ? "Show Less" : `Show all (${modelAccess.length})`}
+            </Button>
+          )}
+        </div>
+      ) : (
+        "—"
+      );
+    },
+  },
+
   {
     id: "actions",
     cell: ({ row }) => {
