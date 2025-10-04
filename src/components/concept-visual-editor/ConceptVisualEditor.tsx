@@ -91,15 +91,15 @@ const ConceptVisualEditor = () => {
   };
 
   useEffect(() => {
-    setCurrentAssetVersion(currentAsset);
-  }, [currentAsset]);
-
-  useEffect(() => {
-    if (versions.data && versions.data.length > 1) {
-      // Always set to the latest version when versions change
+    // When currentAsset changes, wait for versions to load
+    // If versions are already loaded, use the latest version
+    // Otherwise, temporarily use currentAsset until versions load
+    if (versions.data && versions.data.length > 0) {
       setCurrentAssetVersion(versions.data[versions.data.length - 1]);
+    } else {
+      setCurrentAssetVersion(currentAsset);
     }
-  }, [versions.data]);
+  }, [currentAsset, versions.data]);
 
   return (
     <Dialog
