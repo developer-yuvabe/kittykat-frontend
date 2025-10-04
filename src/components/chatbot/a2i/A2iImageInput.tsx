@@ -337,7 +337,7 @@ const A2iImageInput = ({
     if (scrollTo === "a2i-input" && inputContainerRef.current) {
       inputContainerRef.current.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
+        block: "end",
       });
 
       // reset so it doesn’t scroll again unnecessarily
@@ -347,10 +347,14 @@ const A2iImageInput = ({
 
   useEffect(() => {
     if (parameters.imageGeneationParameters) {
+      const paramName = refernceImagesModelInfo?.id;
+
       form.reset({
         ...form.getValues(),
         ...parameters.imageGeneationParameters,
+        ...(paramName ? { [paramName]: null } : {}),
       });
+
       form.trigger();
       setParameters("imageGeneationParameters", null);
     }
