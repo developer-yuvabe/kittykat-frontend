@@ -113,6 +113,7 @@ const ImageWithMetadataModal = ({
       toast.error("Error generating a varied image. Please try again.");
     } finally {
       setLoading(null);
+      toast.info("Started Generation of Auto Vary Image.");
     }
   };
 
@@ -126,6 +127,7 @@ const ImageWithMetadataModal = ({
       onClose();
       router.push("/?scrollTo=a2i-input");
     }
+    toast.info("Pre Selected Model and its parameters have been set.");
   };
 
   const handleUpscaleManual = () => {
@@ -165,6 +167,7 @@ const ImageWithMetadataModal = ({
       toast.error("Error upscaling the image. Please try again.");
     } finally {
       setLoading(null);
+      toast.info("Started Upscaling of the Image.");
     }
   };
 
@@ -202,6 +205,7 @@ const ImageWithMetadataModal = ({
     }
     onClose();
     router.push("/?scrollTo=a2i-input");
+    toast.info("Pre Selected Model and Reference Image have been set.");
   };
 
   const handleAnimateManual = () => {
@@ -239,6 +243,7 @@ const ImageWithMetadataModal = ({
       toast.error("Error animating the image. Please try again.");
     } finally {
       setLoading(null);
+      toast.info("Started Video Generation with " + preset + " Animation");
     }
   };
 
