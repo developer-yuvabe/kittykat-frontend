@@ -14,7 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
-import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
 import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -245,9 +245,6 @@ const A2iImageInput = ({
 
     // Remove from imageBlocks
     setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
-
-    // delete the file from GCS
-    deleteFile(urlToRemove);
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
@@ -296,13 +293,6 @@ const A2iImageInput = ({
 
   // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
-    // Clean up uploaded files when model changes
-    for (const block of imageBlocks) {
-      if (block.url) {
-        deleteFile(block.url);
-      }
-    }
-
     setImageBlocks([]);
     if (refernceImagesModelInfo) {
       form.setValue(refernceImagesModelInfo.id, null, {
@@ -337,7 +327,7 @@ const A2iImageInput = ({
     if (scrollTo === "a2i-input" && inputContainerRef.current) {
       inputContainerRef.current.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
+        block: "end",
       });
 
       // reset so it doesn’t scroll again unnecessarily
@@ -347,10 +337,14 @@ const A2iImageInput = ({
 
   useEffect(() => {
     if (parameters.imageGeneationParameters) {
+      const paramName = refernceImagesModelInfo?.id;
+
       form.reset({
         ...form.getValues(),
         ...parameters.imageGeneationParameters,
+        ...(paramName ? { [paramName]: null } : {}),
       });
+
       form.trigger();
       setParameters("imageGeneationParameters", null);
     }

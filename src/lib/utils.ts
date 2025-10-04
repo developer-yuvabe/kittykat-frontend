@@ -397,11 +397,11 @@ export function getDimensionAndAspectRatioFromParameters(
   const ar = parameters.aspect_ratio;
 
   if (size && ar) {
-    return `${size} - AR ${ar}`;
+    return ` - Size: ${size} - AR ${ar}`;
   } else if (size) {
-    return `Size: ${size}`;
+    return ` - Size: ${size}`;
   } else if (ar) {
-    return `AR ${ar}`;
+    return ` - AR ${ar}`;
   } else {
     return "";
   }
