@@ -75,7 +75,6 @@ const ImageWithMetadataModal = ({
   const type = propType ?? data?.type ?? null;
   const isDisabledType =
     type === "vton" || type === "remix" || type === "upscale" || type === null;
-  console.log("isDisabledType", isDisabledType);
 
   const MODELS_WITHOUT_REFERENCE_IMAGE = [
     "imagen-4.0-ultra-generate-001",
