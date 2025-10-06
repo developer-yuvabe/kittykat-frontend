@@ -27,8 +27,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
   const form = useA2iForm({
-    // How to make this unique {What serice this form is for}-{Selected model id}
-    formKey: `vton-${selectedVtonModel!.id}`,
+    formKey: `vton`,
     selectedModel: selectedVtonModel,
     dynamicDefualtValues: {
       model_image: modelImage,

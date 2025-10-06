@@ -26,8 +26,10 @@ export const useA2iForm = ({
       "No model selected. Please select a model before using this reusable form. Cheers!"
     );
   }
+
+  const unqueFormKey = `${formKey}-${selectedModel.id}`;
   const { setSessionItem, getSessionItem } = useSessionStorage();
-  const localStoredValues = getSessionItem(formKey);
+  const localStoredValues = getSessionItem(unqueFormKey);
 
   const { schema, defaultValues } = useMemo(() => {
     return useDynamicModelSchema(selectedModel, dynamicDefualtValues || {});
@@ -40,10 +42,6 @@ export const useA2iForm = ({
       ...(localStoredValues || {}),
     };
   }, [defaultValues, localStoredValues]);
-
-  // console.log("defaultValues", defaultValues);
-  // console.log("localStoredValues", localStoredValues);
-  // console.log("mergedDefaultValues", mergedDefaultValues);
 
   const form = useForm<any>({
     resolver: zodResolver(schema as z.ZodTypeAny),
@@ -65,21 +63,21 @@ export const useA2iForm = ({
         keepDefaultValues: false,
       }
     );
-  }, [selectedModel?.id]);
+  }, [selectedModel.id]);
 
   // Watch form values and persist to sessionStorage
   useEffect(() => {
     const subscription = form.watch(() => {
       try {
         const values = form.getValues();
-        if (!formKey || isEmpty(values)) return;
-        setSessionItem(formKey, values);
+        if (!unqueFormKey || isEmpty(values)) return;
+        setSessionItem(unqueFormKey, values);
       } catch {
         // ignore quota or serialization errors
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [unqueFormKey]);
 
   return form;
 };
