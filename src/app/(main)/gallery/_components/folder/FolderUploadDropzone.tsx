@@ -346,7 +346,7 @@ export function FolderUploadDropzone({
     disabled: isUploading || isUrlDialogOpen,
   });
 
-  const isDisabled = isUploading || !selectedBrandId || isBrandsFetched;
+  const isDisabled = isUploading || !selectedBrandId || !isBrandsFetched;
 
   return (
     <div className="mb-6">

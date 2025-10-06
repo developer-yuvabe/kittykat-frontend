@@ -346,7 +346,7 @@ export function MediaUploadDropzone({
     disabled: isUploading || isUrlDialogOpen,
   });
 
-  const isDisabled = isUploading || brands.length === 0 || isBrandsFetched;
+  const isDisabled = isUploading || brands.length === 0 || !isBrandsFetched;
 
   return (
     <div className="space-y-4 relative">

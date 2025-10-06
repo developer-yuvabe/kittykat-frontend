@@ -161,7 +161,7 @@ export function MediaFolderView({
       />
 
       {/* Gallery Grid View - Show in multiple scenarios */}
-      {!isBrandsFetched && (
+      {isBrandsFetched && (
         <>
           {/* Show for grid view regardless of brand selection */}
           {galleryView === "grid" && (

@@ -147,22 +147,26 @@ export function MediaLibrary({
     if (initialBrandId) {
       setSelectedBrandId(initialBrandId);
     }
+  }, [initialBrandId]);
 
-    setSelectedFilters((prev) => {
-      const newFilters = {
-        ...prev,
-        workflow_status:
-          initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
-        brands: initialBrandId ? [initialBrandId] : prev.brands,
-      };
+  useEffect(() => {
+    if (selectedBrandId) {
+      setSelectedFilters((prev) => {
+        const newFilters = {
+          ...prev,
+          workflow_status:
+            initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
+          brands: [selectedBrandId],
+        };
 
-      // Only update if something actually changed
-      if (JSON.stringify(newFilters) !== JSON.stringify(prev)) {
-        return newFilters;
-      }
-      return prev;
-    });
-  }, [initialWorkflowStatus, initialBrandId]);
+        // Only update if something actually changed
+        if (JSON.stringify(newFilters) !== JSON.stringify(prev)) {
+          return newFilters;
+        }
+        return prev;
+      });
+    }
+  }, [selectedBrandId, initialWorkflowStatus]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -396,7 +400,7 @@ export function MediaLibrary({
       )}
 
       {/* Show no brands message */}
-      {hasNoBrands && !isBrandsFetched ? (
+      {hasNoBrands && isBrandsFetched ? (
         <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
           <h2 className="text-xl font-semibold text-gray-800">
             No brand access or onboarded brands
@@ -407,6 +411,16 @@ export function MediaLibrary({
             begin uploading your media.
           </p>
           <Button onClick={handleOnboardBrand}>Onboard Brand</Button>
+        </div>
+      ) : !selectedBrandId && isBrandsFetched ? (
+        <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            No brand selected
+          </h2>
+          <p className="text-gray-600 max-w-md">
+            You haven&apos;t selected a brand yet. Please choose a brand to view
+            the media gallery assets.
+          </p>
         </div>
       ) : (
         <>
