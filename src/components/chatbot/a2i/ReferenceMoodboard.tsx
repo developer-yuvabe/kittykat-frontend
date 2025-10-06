@@ -578,6 +578,8 @@ const ReferenceMoodboard = ({
                             generateShowboard({
                               brandId: selectedBrandId!,
                               moodboardId: referenceMoodboardId!,
+                              referenceMoodboardAssets:
+                                referenceMoodboardAssets,
                               numberOfPrompts: Number(n),
                             });
                           } else {
