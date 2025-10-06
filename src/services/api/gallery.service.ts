@@ -5,7 +5,6 @@ import {
   GalleryItem,
   GalleryItemResponse,
   GalleryItemsListResponse,
-  BrandCampaignListResponse,
   CommentReplyCreate,
   CommentUpdate,
   CommentReplyUpdate,
@@ -124,15 +123,6 @@ class GalleryService {
         limit,
       },
     };
-  }
-
-  /**
-   * Get all brands with their associated campaigns
-   */
-  async getBrandsWithCampaigns(): Promise<BrandCampaignListResponse> {
-    return handleApiRequest<BrandCampaignListResponse>(
-      axiosInstance.get("/gallery/brands-campaigns")
-    );
   }
 
   /**

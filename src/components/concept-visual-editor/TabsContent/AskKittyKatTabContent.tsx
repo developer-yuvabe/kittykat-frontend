@@ -898,7 +898,6 @@ const AskKittyKatTabContent = ({
           imageId={currentAssetVersion?.id}
           allAttachments={allAttachments}
           onAllAttachmentsChange={setAllAttachments}
-          brandsWithCampaigns={galleryActions.brandsData?.brands || []}
         />
       )}
     </>

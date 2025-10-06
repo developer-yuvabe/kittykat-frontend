@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import JSZip from "jszip";
 // Bulk dialog component for Ask KittyKat
 import { MediaBulkAskKittyKatDialog } from "./MediaBulkAskKittyKatDialog";
+import { useBrandStore } from "@/store/brand.store";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
@@ -66,6 +67,7 @@ export function MediaBulkActions({
   galleryActions,
   brandName,
 }: MediaBulkActionsProps) {
+  const { brands } = useBrandStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -410,12 +412,11 @@ export function MediaBulkActions({
         } else {
           updateData.campaign_id = targetCampaignId;
           // When moving to a campaign, also update the brand to match the campaign's brand
-          const campaignWithBrand = galleryActions.brandsData?.brands.find(
-            (brand) =>
-              brand.campaigns.some((camp) => camp.id === targetCampaignId)
+          const campaignWithBrand = brands.find((brand) =>
+            brand.campaigns.some((camp) => camp.id === targetCampaignId)
           );
           if (campaignWithBrand) {
-            updateData.brand_id = campaignWithBrand.brand_id;
+            updateData.brand_id = campaignWithBrand.id;
           }
         }
       } else if (moveAction === "source" && targetSource) {
@@ -434,10 +435,8 @@ export function MediaBulkActions({
       // Success toast notification
       const getMovementDescription = () => {
         if (moveAction === "brand") {
-          const targetBrand = galleryActions.brandsData?.brands.find(
-            (b) => b.brand_id === targetBrandId
-          );
-          return `to brand "${targetBrand?.brand_name}"`;
+          const targetBrand = brands.find((b) => b.id === targetBrandId);
+          return `to brand "${targetBrand?.name}"`;
         } else if (moveAction === "campaign") {
           if (targetCampaignId === "none") {
             return "and removed from campaigns";
@@ -500,24 +499,24 @@ export function MediaBulkActions({
       if (fromSameBrand) {
         // Show only campaigns from the current brand
         const currentBrandId = uniqueBrands[0];
-        const currentBrand = galleryActions.brandsData?.brands.find(
-          (brand) => brand.brand_id === currentBrandId
+        const currentBrand = brands.find(
+          (brand) => brand.id === currentBrandId
         );
         return (
           currentBrand?.campaigns.map((campaign) => ({
             ...campaign,
-            brand_name: currentBrand.brand_name,
-            brand_id: currentBrand.brand_id,
+            brand_name: currentBrand.name,
+            brand_id: currentBrand.id,
           })) || []
         );
       } else {
         // Show all campaigns from all brands (moving between brands)
         return (
-          galleryActions.brandsData?.brands.flatMap((brand) =>
+          brands.flatMap((brand) =>
             brand.campaigns.map((campaign) => ({
               ...campaign,
-              brand_name: brand.brand_name,
-              brand_id: brand.brand_id,
+              brand_name: brand.name,
+              brand_id: brand.id,
             }))
           ) || []
         );
@@ -579,9 +578,9 @@ export function MediaBulkActions({
                 <SelectValue placeholder="Select target brand" />
               </SelectTrigger>
               <SelectContent>
-                {galleryActions.brandsData?.brands.map((brand) => (
-                  <SelectItem key={brand.brand_id} value={brand.brand_id}>
-                    {brand.brand_name}
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -681,11 +680,7 @@ export function MediaBulkActions({
               Moving {selectedCount} item(s) to{" "}
               {moveAction === "brand" && (
                 <>
-                  {
-                    galleryActions.brandsData?.brands.find(
-                      (b) => b.brand_id === targetBrandId
-                    )?.brand_name
-                  }
+                  {brands.find((b) => b.id === targetBrandId)?.name}
                   <span className="block text-xs mt-1 text-blue-600">
                     Note: Items will be removed from their current campaigns
                   </span>
@@ -752,7 +747,7 @@ export function MediaBulkActions({
               <Button
                 variant="ghost"
                 size="default"
-                disabled={!galleryActions.brandsData?.brands?.length}
+                disabled={!brands?.length}
                 className="bg-[#9095A0] hover:bg-[#9095A0] text-white hover:text-white"
               >
                 Move to... <LibraryIcon />

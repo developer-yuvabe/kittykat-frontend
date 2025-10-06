@@ -10,6 +10,7 @@ import {
 } from "./_components/TaskListActions";
 import type { TasklistFilters, TasklistRecord } from "@/types/tasklist.types";
 import { useTaskList } from "@/hooks/useTaskList";
+import { useBrandStore } from "@/store/brand.store";
 
 // Initial filters with reasonable defaults
 const initialFilters: TasklistFilters = {
@@ -22,7 +23,7 @@ export default function TaskListPage() {
   const [selectedTasklist, setSelectedTasklist] =
     useState<TasklistRecord | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
+  const { brands } = useBrandStore();
   // Action modal states
   const [adjustCreditsOpen, setAdjustCreditsOpen] = useState(false);
   const [editNotesOpen, setEditNotesOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function TaskListPage() {
     null
   );
 
-  const { isAdmin, brands } = useTaskList();
+  const { isAdmin } = useTaskList();
 
   const handleTasklistSelect = (tasklist: TasklistRecord) => {
     setSelectedTasklist(tasklist);
@@ -69,14 +70,14 @@ export default function TaskListPage() {
         onFiltersChange={setFilters}
         isAdmin={isAdmin}
         availableBrands={brands.map((brand) => ({
-          id: brand.brand_id,
-          name: brand.brand_name,
+          id: brand.id,
+          name: brand.name,
         }))}
         availableCampaigns={brands.flatMap((brand) =>
           brand.campaigns.map((campaign) => ({
             id: campaign.id,
             name: campaign.title,
-            brand_id: brand.brand_id,
+            brand_id: brand.id,
           }))
         )}
       />

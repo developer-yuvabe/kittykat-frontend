@@ -10,9 +10,7 @@ import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { useQueryClient } from "@tanstack/react-query";
 import type {
-  BrandCampaignListResponse,
   EnhancedSelectedFilters,
   GalleryItemResponse,
 } from "@/types/gallery.types";
@@ -67,7 +65,7 @@ export function MediaLibrary({
   inSelectionGalleryIds = [],
   isMultiSelect = false,
   maxSelectionCount,
-  hideHeader = false, // 👈 Added default value
+  hideHeader = false,
   closeDialog,
 }: MediaLibraryProps) {
   const router = useRouter();
@@ -88,7 +86,15 @@ export function MediaLibrary({
     serialize: (value) => value.join(","),
     history: "push",
   });
-  const { selectedBrandId, selectedCampaignId, brands } = useBrandStore();
+  const {
+    selectedBrandId,
+    setSelectedBrandId,
+    selectedCampaignId,
+    brands,
+    isBrandsFetched,
+    getSelectedBrand,
+  } = useBrandStore();
+  // Get brandId from URL query params
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
     "brandId",
     {
@@ -99,11 +105,6 @@ export function MediaLibrary({
       history: "push",
     }
   );
-
-  // Priority logic: initialBrandId takes precedence over selectedBrandId
-  const effectiveBrandId = useMemo(() => {
-    return initialBrandId || selectedBrandId;
-  }, [initialBrandId, selectedBrandId]);
 
   const initialFilters = useMemo(() => {
     return (
@@ -129,12 +130,6 @@ export function MediaLibrary({
   const [selectedFilters, setSelectedFilters] =
     useState<EnhancedSelectedFilters>(initialFilters);
 
-  const [selectedBrand, setSelectedBrand] = useState<
-    BrandCampaignListResponse["brands"][number] | null
-  >(null);
-
-  const queryClient = useQueryClient();
-
   // Use our custom hook for data fetching and mutations
   const galleryActions = useGalleryQuery({
     assetType: activeTab,
@@ -148,22 +143,20 @@ export function MediaLibrary({
   const galleryItems = galleryActions.getGalleryItems();
 
   useEffect(() => {
-    if (effectiveBrandId || initialWorkflowStatus.length > 0) {
-      // Find the brand from the brands data using the effective brand ID
-      const brandToSelect = galleryActions.brandsData?.brands.find(
-        (b) => b.brand_id === effectiveBrandId
-      );
+    // Update the selected brand if brandId is provided via URL
+    if (initialBrandId) {
+      setSelectedBrandId(initialBrandId);
+    }
+  }, [initialBrandId]);
 
-      if (brandToSelect && brandToSelect.brand_id !== selectedBrand?.brand_id) {
-        setSelectedBrand(brandToSelect);
-      }
-
+  useEffect(() => {
+    if (selectedBrandId) {
       setSelectedFilters((prev) => {
         const newFilters = {
           ...prev,
           workflow_status:
             initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
-          brands: effectiveBrandId ? [effectiveBrandId] : prev.brands,
+          brands: [selectedBrandId],
         };
 
         // Only update if something actually changed
@@ -173,42 +166,7 @@ export function MediaLibrary({
         return prev;
       });
     }
-  }, [
-    initialWorkflowStatus,
-    effectiveBrandId,
-    galleryActions.brandsData?.brands,
-    selectedBrand?.brand_id, // Add this dependency
-  ]);
-
-  const selectedBrandName = selectedBrand?.brand_name || "brand";
-
-  // Function to refresh brand data and update selectedBrand
-  const handleRefreshBrandData = async () => {
-    try {
-      // Invalidate and refetch brands query to bypass cache
-      await queryClient.invalidateQueries({
-        queryKey: ["brands-campaigns"],
-      });
-
-      // Small delay to ensure invalidation is processed
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Refetch brands data and get the result
-      const { data: freshBrandsData } = await galleryActions.brandsRefetch();
-
-      // Update selectedBrand with fresh data immediately
-      if (selectedBrand?.brand_id && freshBrandsData?.brands) {
-        const updatedBrand = freshBrandsData.brands.find(
-          (b) => b.brand_id === selectedBrand.brand_id
-        );
-        if (updatedBrand) {
-          setSelectedBrand(updatedBrand);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to refresh brand data:", error);
-    }
-  };
+  }, [selectedBrandId, initialWorkflowStatus]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -386,9 +344,14 @@ export function MediaLibrary({
   };
 
   // Check if there are no brands available
-  const hasNoBrands = (galleryActions.brandsData?.brands?.length ?? 0) === 0;
+  const hasNoBrands = brands.length === 0;
 
   const { user } = useUserStore();
+
+  const selectedBrandName = useMemo(
+    () => getSelectedBrand()?.name ?? "Brand Name",
+    [brands, selectedBrandId]
+  );
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">
@@ -437,7 +400,7 @@ export function MediaLibrary({
       )}
 
       {/* Show no brands message */}
-      {hasNoBrands && !galleryActions.brandsLoading ? (
+      {hasNoBrands && isBrandsFetched ? (
         <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
           <h2 className="text-xl font-semibold text-gray-800">
             No brand access or onboarded brands
@@ -449,6 +412,16 @@ export function MediaLibrary({
           </p>
           <Button onClick={handleOnboardBrand}>Onboard Brand</Button>
         </div>
+      ) : !selectedBrandId && isBrandsFetched ? (
+        <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            No brand selected
+          </h2>
+          <p className="text-gray-600 max-w-md">
+            You haven&apos;t selected a brand yet. Please choose a brand to view
+            the media gallery assets.
+          </p>
+        </div>
       ) : (
         <>
           {/* Only show folder view if header is not hidden */}
@@ -456,10 +429,6 @@ export function MediaLibrary({
             <div>
               <MediaFolderView
                 activeTab={activeTab}
-                selectedBrand={selectedBrand}
-                setSelectedBrand={setSelectedBrand}
-                brands={galleryActions.brandsData?.brands || []}
-                brandsLoading={galleryActions.brandsLoading}
                 selectedCampaignId={selectedCampaignId ?? undefined}
                 selecteMoodboardId={moodboardId}
                 galleryView={galleryView}
@@ -474,8 +443,6 @@ export function MediaLibrary({
                 setSelectedFilters={setSelectedFilters}
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
-                selectedBrandId={effectiveBrandId!}
-                onRefreshData={handleRefreshBrandData}
               />
             </div>
           )}
@@ -505,10 +472,7 @@ export function MediaLibrary({
                         searchQuery,
                         selectedFilters,
                       }}
-                      selectedBrand={selectedBrand}
-                      setSelectedBrand={setSelectedBrand}
-                      brands={galleryActions.brandsData?.brands || []}
-                      brandsLoading={galleryActions.brandsLoading}
+                      selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId ?? undefined}
                       selecteMoodboardId={moodboardId}
                     />
@@ -516,7 +480,7 @@ export function MediaLibrary({
 
                 {activeTab === "pexels" ? (
                   <TopicsGrid
-                    selectedBrand={selectedBrand}
+                    selectedBrandId={selectedBrandId}
                     selectedCampaignId={selectedCampaignId ?? undefined}
                     selecteMoodboardId={moodboardId}
                     setActiveTab={setActiveTab}
@@ -547,12 +511,7 @@ export function MediaLibrary({
                       <MediaFilterSidebar
                         selectedFilters={selectedFilters}
                         onApply={handleApplyFilters}
-                        brandsWithCampaigns={
-                          galleryActions.brandsData?.brands || []
-                        }
-                        product_categories={
-                          galleryActions.brandsData?.product_categories || []
-                        }
+                        product_categories={[]}
                         setShowFilter={setShowFilters}
                       />
                     </div>
@@ -596,7 +555,7 @@ export function MediaLibrary({
                       {galleryActions.galleryStatus === "success" &&
                         galleryItems.length > 0 && (
                           <div>
-                            {selectedBrand && (
+                            {selectedBrandId && (
                               <SortableMediaGrid
                                 galleryActions={galleryActions}
                                 selectedItems={currentlySelectedItems}
