@@ -43,6 +43,9 @@ type Store = {
   isMoodboardSaving: boolean;
   setIsMoodboardSaving: (isSaving: boolean) => void;
 
+  // Get a detailed brand information
+  getSelectedBrand: () => UserBrand | null;
+
   // Getters for selected names
   getSelectedBrandName: () => string | null;
   getSelectedCampaignName: () => string | null;
@@ -129,6 +132,11 @@ export const useBrandStore = create<Store>((set, get) => ({
   isMoodboardSaving: false,
   setIsMoodboardSaving: (isSaving: boolean) =>
     set({ isMoodboardSaving: isSaving }),
+
+  getSelectedBrand: () => {
+    const state = get();
+    return state.brands.find((b) => b.id == state.selectedBrandId) ?? null;
+  },
 
   // Getters for selected names
   getSelectedBrandName: () => {

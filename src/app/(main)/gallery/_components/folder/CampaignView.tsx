@@ -9,14 +9,13 @@ import { SortableMediaGrid } from "../SortableMediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import { FolderUploadDropzone } from "./FolderUploadDropzone";
-import type {
-  BrandCampaignListResponse,
-  EnhancedSelectedFilters,
-} from "@/types/gallery.types";
+import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { FolderTabs } from "./FolderTabs";
+import { useBrandStore } from "@/store/brand.store";
 
 interface CampaignViewProps {
-  selectedBrand: BrandCampaignListResponse["brands"][number];
+  selectedBrandId: string;
+  brandName: string;
   campaignId: string;
   activeTab: string;
   onBackToCampaigns: () => void;
@@ -30,7 +29,8 @@ interface CampaignViewProps {
 }
 
 export function CampaignView({
-  selectedBrand,
+  selectedBrandId,
+  brandName,
   campaignId,
   activeTab,
   onBackToCampaigns,
@@ -42,12 +42,13 @@ export function CampaignView({
   selectedFilters,
   onTabChange,
 }: CampaignViewProps) {
+  const { campaigns } = useBrandStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   // Find current campaign from the brand's campaigns
   const currentCampaign = useMemo(() => {
-    return selectedBrand.campaigns.find((c) => c.id === campaignId);
-  }, [selectedBrand.campaigns, campaignId]);
+    return campaigns.find((c) => c.id === campaignId);
+  }, [campaignId]);
 
   // If campaign is not found, it might be because data is stale - let's give some time for refresh
   const [retryCount, setRetryCount] = useState(0);
@@ -87,7 +88,7 @@ export function CampaignView({
           is_archived: undefined,
         }),
         // Force the brand and campaign filters to match the current selection
-        brands: [selectedBrand.brand_id],
+        brands: [selectedBrandId],
         campaigns: [campaignId],
       },
     },
@@ -185,8 +186,8 @@ export function CampaignView({
               {currentCampaign.title}
             </h2>
             <p className="text-xs text-gray-500">
-              {selectedBrand.brand_name} •{" "}
-              {galleryActions.getGalleryItems().length} media items
+              {brandName} • {galleryActions.getGalleryItems().length} media
+              items
             </p>
           </div>
         </div>
@@ -199,7 +200,7 @@ export function CampaignView({
         addToGallery={addToGallery}
         galleryFilters={{
           selectedFilters: {
-            brands: [selectedBrand.brand_id],
+            brands: [selectedBrandId],
             campaigns: [campaignId],
             moodboards: [],
             product_categories: [],
@@ -210,7 +211,7 @@ export function CampaignView({
             workflow_status: [],
           },
         }}
-        selectedBrand={selectedBrand}
+        selectedBrandId={selectedBrandId}
         selectedCampaignId={campaignId}
         selectedMoodboardId={selectedMoodboardId}
         brandsLoading={false}
@@ -269,7 +270,7 @@ export function CampaignView({
           selectedItems={selectedItemsData}
           onUnselectAll={handleUnselectAll}
           galleryActions={galleryActions}
-          brandName={selectedBrand.brand_name}
+          brandName={brandName}
         />
       )}
     </div>

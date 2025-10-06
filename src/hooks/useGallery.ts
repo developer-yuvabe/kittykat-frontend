@@ -29,13 +29,6 @@ export const useGalleryQuery = (
 ) => {
   const queryClient = useQueryClient();
 
-  // Fetch brands and campaigns for filters
-  const brandsQuery = useQuery({
-    queryKey: ["brands-campaigns"],
-    queryFn: () => galleryService.getBrandsWithCampaigns(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
   // Map asset type for filtering
   const getAssetTypesFromFilter = () => {
     if (!filters.assetType || filters.assetType === "all-media")
@@ -61,7 +54,6 @@ export const useGalleryQuery = (
     queryKey: getGalleryQueryKey(),
     enabled:
       enabled &&
-      brandsQuery.isSuccess &&
       (filters.selectedFilters?.brands?.length ?? 0) > 0 &&
       filters.selectedFilters?.brands?.every((brand) => brand != null),
     queryFn: async ({ pageParam = 0 }) => {
@@ -874,11 +866,6 @@ export const useGalleryQuery = (
   const totalItems = galleryQuery.data?.pages[0]?.pagination.total ?? 0;
 
   return {
-    // Queries
-    brandsData: brandsQuery.data,
-    brandsLoading: brandsQuery.isLoading,
-    brandsRefetch: brandsQuery.refetch,
-
     // Gallery items
     getGalleryItems,
     isGalleryItemsProcessing,
