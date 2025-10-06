@@ -258,12 +258,13 @@ const ImageWithMetadataModal = ({
         </DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden w-[80vw] max-h-[80vh] max-w-screen-xl flex items-center justify-center focus:outline-none"
+        className="p-0 border-none bg-transparent shadow-none w-[80vw] max-h-[80vh] max-w-screen-xl flex items-center justify-center focus:outline-none"
         onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
+        hideCloseIcon
       >
         <div className="flex items- justify-center items-stretch  flex-1 min-w-[80vw] max-w-[80vw] max-h-[80vh]">
-          <div className="relative rounded-l-lg  group flex items-center justify-center w-[70%] h-[80vh] overflow-hidden bg-white border-r">
+          <div className="relative rounded-l-lg  group flex items-center justify-center  h-[80vh] overflow-hidden bg-white border-r">
             <img
               src={galleryItem.asset_url}
               alt={
