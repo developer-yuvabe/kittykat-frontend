@@ -92,6 +92,7 @@ export function MediaLibrary({
     selectedCampaignId,
     brands,
     isBrandsFetched,
+    getSelectedBrand,
   } = useBrandStore();
   // Get brandId from URL query params
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
@@ -343,11 +344,10 @@ export function MediaLibrary({
 
   const { user } = useUserStore();
 
-  const selectedBrandName = useMemo(() => {
-    return selectedBrandId
-      ? brands.find((b) => b.id === selectedBrandId)?.name ?? "Brand Name"
-      : "Brand Name";
-  }, [brands, selectedBrandId]);
+  const selectedBrandName = useMemo(
+    () => getSelectedBrand()?.name ?? "Brand Name",
+    [brands, selectedBrandId]
+  );
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto relative">

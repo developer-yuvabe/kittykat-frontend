@@ -214,7 +214,6 @@ export function CampaignView({
         selectedBrandId={selectedBrandId}
         selectedCampaignId={campaignId}
         selectedMoodboardId={selectedMoodboardId}
-        brandsLoading={false}
       />
 
       {/* Folder Tabs for campaign view */}
