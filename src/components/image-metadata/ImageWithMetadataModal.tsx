@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DownloadIcon } from "../ui/custom-icon";
-import { CheckIcon, CopyIcon, HeartIcon, Loader2 } from "lucide-react";
+import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
 import { cn, getDimensionAndAspectRatioFromParameters } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Textarea } from "../ui/textarea";
@@ -28,6 +28,13 @@ import {
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
 import { GetGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
+import { Spinner } from "../ui/spinner";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipContent,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -73,7 +80,7 @@ const ImageWithMetadataModal = ({
   // Final parameters (prop takes precedence, else fetched)
   const parameters = propParameters ?? data?.parameters ?? null;
   const type = propType ?? data?.type ?? null;
-  const isDisabledType =
+  const isDisabled =
     type === "vton" || type === "remix" || type === "upscale" || type === null;
 
   const MODELS_WITHOUT_REFERENCE_IMAGE = [
@@ -189,7 +196,7 @@ const ImageWithMetadataModal = ({
     if (
       MODELS_WITHOUT_REFERENCE_IMAGE.includes(parameters?.model) ||
       parameters?.model === "seedream-4-0-250828" ||
-      isDisabledType
+      isDisabled
     ) {
       setSelectedImageGenerationModelById("seedream-4-0-250828");
       setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
@@ -327,10 +334,7 @@ const ImageWithMetadataModal = ({
             {isFetchingParams ? (
               // Loading State
               <div className="flex items-center justify-center flex-col gap-2 h-full">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground text-sm">
-                  Loading parameters...
-                </p>
+                <Spinner className="size-8 text-muted-foreground" />
               </div>
             ) : (
               <>
@@ -375,66 +379,109 @@ const ImageWithMetadataModal = ({
                 )}
 
                 {/* Metadata Action Buttons (always visible) */}
-                <div className="space-y-6 mt-6">
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Vary</p>
-                    <div className="flex flex-1 gap-x-2 items-start">
-                      <Button
-                        onClick={handleVaryAuto}
-                        disabled={loading === "vary-auto" || isDisabledType}
-                        loading={loading === "vary-auto"}
-                      >
-                        Auto
-                      </Button>
-                      <Button
-                        onClick={handleVaryManual}
-                        disabled={isDisabledType}
-                      >
-                        Manual
-                      </Button>
-                    </div>
-                  </div>
+                <div className="space-y-4 mt-4">
+                  <h2 className="text-lg border-b pb-2">Creative Actions</h2>
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Vary</p>
+                      <div className="flex flex-1 gap-x-2 items-start">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              <Button
+                                onClick={
+                                  !isDisabled ? handleVaryAuto : undefined
+                                }
+                                disabled={isDisabled || loading === "vary-auto"}
+                                loading={!isDisabled && loading === "vary-auto"}
+                                className={isDisabled ? "opacity-50" : ""}
+                              >
+                                Auto
+                              </Button>
+                            </TooltipTrigger>
 
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Upscale</p>
-                    <div className="flex flex-1 gap-2 items-start flex-wrap">
-                      <Button
-                        disabled={loading === "upscale-auto"}
-                        loading={loading === "upscale-auto"}
-                        onClick={handleUpscaleAuto}
-                      >
-                        Auto
-                      </Button>
-                      <Button onClick={handleUpscaleManual}>Manual</Button>
-                    </div>
-                  </div>
+                            {isDisabled && (
+                              <TooltipContent className="w-40">
+                                The variation feature is available exclusively
+                                for images produced using image generation
+                                models.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              <Button
+                                onClick={
+                                  !isDisabled ? handleVaryManual : undefined
+                                }
+                                disabled={isDisabled}
+                                className={isDisabled ? "opacity-50" : ""}
+                              >
+                                Manual
+                              </Button>
+                            </TooltipTrigger>
 
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Modify</p>
-                    <div className="flex flex-1 gap-2 items-start flex-wrap">
-                      <Button onClick={handleModifyEdit}>Edit</Button>
-                      <Button onClick={handleModifyReference}>Reference</Button>
+                            {isDisabled && (
+                              <TooltipContent className="w-40">
+                                The variation feature is available exclusively
+                                for images produced using image generation
+                                models.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Animate</p>
-                    <div className="flex flex-1 gap-2 items-start flex-wrap">
-                      <Button
-                        onClick={() => handleAnimatePreset("dynamic")}
-                        disabled={loading === "animate-dynamic"}
-                        loading={loading === "animate-dynamic"}
-                      >
-                        Dynamic
-                      </Button>
-                      <Button
-                        onClick={() => handleAnimatePreset("smooth")}
-                        disabled={loading === "animate-smooth"}
-                        loading={loading === "animate-smooth"}
-                      >
-                        Smooth
-                      </Button>
-                      <Button onClick={handleAnimateManual}>Manual</Button>
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Upscale</p>
+                      <div className="flex flex-1 gap-2 items-start flex-wrap">
+                        <Button
+                          disabled={loading === "upscale-auto"}
+                          loading={loading === "upscale-auto"}
+                          onClick={handleUpscaleAuto}
+                        >
+                          Auto
+                        </Button>
+                        <Button onClick={handleUpscaleManual}>Manual</Button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Modify</p>
+                      <div className="flex flex-1 gap-2 items-start flex-wrap">
+                        <Button onClick={handleModifyEdit}>Edit</Button>
+                        <Button onClick={handleModifyReference}>
+                          Reference
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Animate</p>
+                      <div className="flex flex-1 gap-2 items-start flex-wrap">
+                        <Button
+                          onClick={() => handleAnimatePreset("dynamic")}
+                          disabled={loading === "animate-dynamic"}
+                          loading={loading === "animate-dynamic"}
+                        >
+                          Dynamic
+                        </Button>
+                        <Button
+                          onClick={() => handleAnimatePreset("smooth")}
+                          disabled={loading === "animate-smooth"}
+                          loading={loading === "animate-smooth"}
+                        >
+                          Smooth
+                        </Button>
+                        <Button onClick={handleAnimateManual}>Manual</Button>
+                      </div>
                     </div>
                   </div>
                 </div>
