@@ -31,6 +31,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
     selectedModel: selectedVtonModel,
     dynamicDefualtValues: {
       model_image: modelImage,
+      product_image: "",
     },
   });
   const { credits, isCalculatingCredits } = useModelPricing({
@@ -112,7 +113,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
                 className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
-                  form.setValue("product_image", null);
+                  form.setValue("product_image", "");
                 }}
               >
                 <X />

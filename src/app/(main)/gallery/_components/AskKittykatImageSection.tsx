@@ -298,8 +298,8 @@ export const AskKittykatImageSection: React.FC<
 
   const renderPlaceholder = () => (
     <div
-      className={cn("relative max-h-[80vh]", {
-        "w-full h-[80%] bg-muted rounded-lg flex items-center justify-center":
+      className={cn("relative", {
+        "w-full h-[80vh]  bg-muted rounded-lg flex items-center justify-center":
           !item,
       })}
     >
@@ -343,7 +343,7 @@ export const AskKittykatImageSection: React.FC<
             <img
               src={item.asset_url}
               alt="Selected"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain max-h-[80vh]"
             />
             <Button
               variant="outline"
