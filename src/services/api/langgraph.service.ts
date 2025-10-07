@@ -1,3 +1,4 @@
+import { scrollToBottom } from "@/lib/scroll.utils";
 import { client } from "@/providers/langgraph/langgraph.client";
 import { StateType, StreamContextType } from "@/providers/langgraph/Stream";
 import { Message } from "@langchain/langgraph-sdk";
@@ -42,6 +43,7 @@ export function submitOptimisticMessage({
       }),
     }
   );
+  scrollToBottom(100);
 }
 
 export const fetchThreadState = async (threadId: string) => {
