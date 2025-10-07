@@ -249,7 +249,7 @@ const ConceptVisualEditor = () => {
                 </div>
 
                 {/* Right Side */}
-                <div className="flex-1 w-[65%] flex flex-col min-h-0 gap-y-6">
+                <div className=" w-[65%] flex flex-col min-h-0 gap-y-6">
                   <Tabs
                     value={currentTab}
                     onValueChange={(v) => setCurrentTab(v as ConceptVisualTabs)}
