@@ -1,6 +1,5 @@
 "use client";
 
-import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 import { useBrandStore } from "@/store/brand.store";
 import React, { useEffect, useMemo, useState } from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
@@ -9,6 +8,7 @@ import { BrandSection } from "./brands/BrandSection";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { MoodboardSection } from "./moodboards/MoodboardSection";
 import { useQueryState } from "nuqs";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -22,7 +22,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   }>({ brandOverview: true, campaignInformation: true });
   const { isBrandsFetched, isCreatingBrand, setSelectedCampaignId } =
     useBrandStore();
-  const { isFetchingBrandInfo, data } = useBrandUpdates();
+  const { isFetchingBrandInfo, data } = useBrandUpdatesStore();
 
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information?.filter(

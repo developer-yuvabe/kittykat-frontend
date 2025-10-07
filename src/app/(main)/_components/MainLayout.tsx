@@ -13,6 +13,7 @@ import { User } from "@/types/user.types";
 import { User as FirebaeUser, signOut } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
+import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
 
 const MainLayout = ({
   user: userProfile,
@@ -25,6 +26,7 @@ const MainLayout = ({
   const [firebaseUser, setFirebaseUser] = useState<FirebaeUser | null>(null);
   useUserBrands();
   useUserCredits();
+  useBrandUpdates();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
