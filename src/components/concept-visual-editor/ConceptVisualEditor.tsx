@@ -123,7 +123,6 @@ const ConceptVisualEditor = () => {
               <div className="flex items-center gap-4">
                 {source === "blanket" && (
                   <BrandSelector
-                    showCampaigns
                     showSelectedValue
                     modal
                     className="bg-background w-80"

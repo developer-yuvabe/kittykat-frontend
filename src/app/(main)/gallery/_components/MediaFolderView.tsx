@@ -10,7 +10,6 @@ import { FolderGalleryView } from "./folder/FolderGalleryView";
 import { MediaSearchFilters } from "./MediaSearchFilters";
 import { FolderTabs } from "./folder/FolderTabs";
 import { useBrandStore } from "@/store/brand.store";
-import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -104,14 +103,6 @@ export function MediaFolderView({
 
   return (
     <div className="w-full max-w-full  overflow-hidden">
-      {/* Brand Selector */}
-      <div className="my-4">
-        <BrandSelector
-          className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
-          showSelectedValue
-        />
-      </div>
-
       {/* Upload Dropzone */}
       <FolderUploadDropzone
         activeTab={activeTab}
