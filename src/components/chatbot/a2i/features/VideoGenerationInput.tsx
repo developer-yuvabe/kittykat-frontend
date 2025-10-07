@@ -72,8 +72,7 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
-    // How to make this unique {What serice this form is for}-{Selected model id}
-    formKey: `video-generation-${selectedVideoGenearationModel!.id}`,
+    formKey: `video-generation`,
     dynamicDefualtValues: {
       start_image: item?.asset_url || null,
       first_frame: item?.asset_url || null,

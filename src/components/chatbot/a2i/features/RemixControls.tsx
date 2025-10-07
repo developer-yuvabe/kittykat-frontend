@@ -125,8 +125,7 @@ const RemixControls = ({
 
   const form = useA2iForm({
     selectedModel: selectedRemixModel,
-    // How to make this unique {What serice this form is for}-{Selected model id}
-    formKey: `remix-${selectedRemixModel!.id}`,
+    formKey: `remix`,
     dynamicDefualtValues: {
       ...(baseImageParam?.id && image.url
         ? { [baseImageParam.id]: image.url }

@@ -1,29 +1,21 @@
 "use client";
 
 import React from "react";
-import type {
-  BrandCampaignListResponse,
-  EnhancedSelectedFilters,
-} from "@/types/gallery.types";
+import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { useFolderState } from "@/hooks/useFolderState";
-import { FolderBrandSelector } from "./folder/FolderBrandSelector";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
 import { CampaignsList } from "./folder/CampaignsList";
 import { CampaignView } from "./folder/CampaignView";
 import { FolderGalleryView } from "./folder/FolderGalleryView";
 import { MediaSearchFilters } from "./MediaSearchFilters";
 import { FolderTabs } from "./folder/FolderTabs";
+import { useBrandStore } from "@/store/brand.store";
+import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 
 interface MediaFolderViewProps {
   activeTab: string;
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
-  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
-  setSelectedBrand: React.Dispatch<
-    React.SetStateAction<BrandCampaignListResponse["brands"][number] | null>
-  >;
-  brands: BrandCampaignListResponse["brands"];
-  brandsLoading: boolean;
   selectedCampaignId: string | undefined;
   selecteMoodboardId: string | undefined;
   galleryView: "folder" | "grid";
@@ -45,7 +37,6 @@ interface MediaFolderViewProps {
   ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
-  selectedBrandId?: string;
   onRefreshData?: () => void;
 }
 
@@ -53,10 +44,7 @@ export function MediaFolderView({
   activeTab,
   onUploadComplete,
   addToGallery = true,
-  selectedBrand,
-  setSelectedBrand,
-  brands,
-  brandsLoading,
+  brandName,
   selectedCampaignId,
   selecteMoodboardId,
   galleryView = "grid",
@@ -70,6 +58,7 @@ export function MediaFolderView({
   onTabChange,
   onRefreshData,
 }: MediaFolderViewProps) {
+  const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const {
     selectedCampaignFromUrl,
     handleCampaignSelect,
@@ -77,7 +66,7 @@ export function MediaFolderView({
   } = useFolderState(selectedCampaignId);
 
   // Render campaign view when in folder mode with selected brand and campaign
-  if (galleryView === "folder" && selectedBrand && selectedCampaignFromUrl) {
+  if (galleryView === "folder" && selectedBrandId && selectedCampaignFromUrl) {
     return (
       <div className="w-full max-w-full overflow-hidden">
         {/* Add search filters for campaign view */}
@@ -98,7 +87,8 @@ export function MediaFolderView({
         />
 
         <CampaignView
-          selectedBrand={selectedBrand}
+          selectedBrandId={selectedBrandId}
+          brandName={brandName}
           campaignId={selectedCampaignFromUrl}
           activeTab={activeTab}
           onBackToCampaigns={handleBackToCampaigns}
@@ -117,22 +107,21 @@ export function MediaFolderView({
   return (
     <div className="w-full max-w-full  overflow-hidden">
       {/* Brand Selector */}
-      <FolderBrandSelector
-        selectedBrand={selectedBrand}
-        brands={brands}
-        brandsLoading={brandsLoading}
-        setSelectedBrand={setSelectedBrand}
-      />
+      <div className="my-4">
+        <BrandSelector
+          className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+          showSelectedValue
+        />
+      </div>
 
       {/* Upload Dropzone */}
       <FolderUploadDropzone
         activeTab={activeTab}
         onUploadComplete={onUploadComplete}
         addToGallery={addToGallery}
-        selectedBrand={selectedBrand}
+        selectedBrandId={selectedBrandId}
         selectedCampaignId={selectedCampaignFromUrl || undefined}
         selectedMoodboardId={selecteMoodboardId}
-        brandsLoading={brandsLoading}
       />
 
       {/* Add search filters for folder view */}
@@ -154,13 +143,13 @@ export function MediaFolderView({
 
       {/* Campaigns List - Show when in folder mode with selected brand but no campaign */}
       {galleryView === "folder" &&
-        selectedBrand &&
+        selectedBrandId &&
         !selectedCampaignFromUrl && (
           <CampaignsList
-            selectedBrand={selectedBrand}
+            selectedBrandId={selectedBrandId}
             onCampaignSelect={handleCampaignSelect}
             onRefreshData={onRefreshData}
-            key={selectedBrand?.brand_id}
+            key={selectedBrandId}
           />
         )}
 
@@ -172,12 +161,12 @@ export function MediaFolderView({
       />
 
       {/* Gallery Grid View - Show in multiple scenarios */}
-      {!brandsLoading && (
+      {isBrandsFetched && (
         <>
           {/* Show for grid view regardless of brand selection */}
           {galleryView === "grid" && (
             <FolderGalleryView
-              selectedBrand={selectedBrand}
+              selectedBrandId={selectedBrandId}
               selectedCampaignId={selectedCampaignFromUrl || undefined}
               searchQuery={searchQuery}
               favorites={favorites}
@@ -188,10 +177,10 @@ export function MediaFolderView({
 
           {/* Show for folder view when brand is selected but no campaign (brand-level view) */}
           {galleryView === "folder" &&
-            selectedBrand &&
+            selectedBrandId &&
             !selectedCampaignFromUrl && (
               <FolderGalleryView
-                selectedBrand={selectedBrand}
+                selectedBrandId={selectedBrandId}
                 selectedCampaignId={undefined}
                 searchQuery={searchQuery}
                 favorites={favorites}
@@ -201,9 +190,9 @@ export function MediaFolderView({
             )}
 
           {/* Show for folder view when no brand is selected */}
-          {galleryView === "folder" && !selectedBrand && (
+          {galleryView === "folder" && !selectedBrandId && (
             <FolderGalleryView
-              selectedBrand={null}
+              selectedBrandId={null}
               selectedCampaignId={undefined}
               searchQuery={searchQuery}
               favorites={favorites}
