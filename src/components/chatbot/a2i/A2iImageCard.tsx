@@ -511,8 +511,10 @@ const A2iImageCard = ({
       {showImageModal && stableItem && (
         <ImageWithMetadataModal
           isOpen={showImageModal}
-          parameters={parameters}
-          type={type}
+          generation={{
+            parameters,
+            type,
+          }}
           galleryItem={stableItem}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}
@@ -524,6 +526,7 @@ const A2iImageCard = ({
             }
           }}
           isLiked={isLiked}
+          source="concept-visual-media"
         />
       )}
     </div>

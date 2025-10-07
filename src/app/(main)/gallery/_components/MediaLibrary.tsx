@@ -99,8 +99,7 @@ export function MediaLibrary({
     "brandId",
     {
       defaultValue: undefined,
-      parse: (value) =>
-        brands.find((b) => b.id === value) ? value : undefined,
+      parse: (value) => value || undefined,
       serialize: (value) => value || "",
       history: "push",
     }
@@ -144,10 +143,10 @@ export function MediaLibrary({
 
   useEffect(() => {
     // Update the selected brand if brandId is provided via URL
-    if (initialBrandId) {
+    if (initialBrandId && brands.find((b) => b.id === initialBrandId)) {
       setSelectedBrandId(initialBrandId);
     }
-  }, [initialBrandId]);
+  }, [initialBrandId, brands]);
 
   useEffect(() => {
     if (selectedBrandId) {
@@ -360,7 +359,7 @@ export function MediaLibrary({
         <div className="flex justify-between mb-2">
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
-            {!hasNoBrands && galleryView === "grid" && (
+            {!hasNoBrands && (
               <BrandSelector
                 showCampaigns
                 showSelectedValue

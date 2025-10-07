@@ -14,7 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
 import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -244,6 +244,9 @@ const A2iImageInput = ({
 
     // Remove from imageBlocks
     setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
+
+    // delete the file from GCS
+    deleteFile(urlToRemove);
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
@@ -292,6 +295,12 @@ const A2iImageInput = ({
 
   // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
+    for (const block of imageBlocks) {
+      if (block.url) {
+        deleteFile(block.url);
+      }
+    }
+
     setImageBlocks([]);
     if (refernceImagesModelInfo) {
       form.setValue(refernceImagesModelInfo.id, null, {
@@ -301,26 +310,6 @@ const A2iImageInput = ({
       });
     }
   }, [selectedImageGenerationModel?.id]);
-
-  // This useEffect is to fetch reference images stored in the session storage and populate the image blocks
-  useEffect(() => {
-    if (refernceImagesModelInfo) {
-      const referenceImages = form.getValues(refernceImagesModelInfo.id);
-
-      if (
-        referenceImages &&
-        Array.isArray(referenceImages) &&
-        referenceImages.length > 0
-      ) {
-        setImageBlocks(
-          referenceImages.map((url) => ({
-            previewUrl: url,
-            url: url,
-          }))
-        );
-      }
-    }
-  }, [form, selectedImageGenerationModel?.id]);
 
   useEffect(() => {
     if (scrollTo === "a2i-input" && inputContainerRef.current) {
@@ -347,42 +336,28 @@ const A2iImageInput = ({
       form.trigger();
       setParameters("imageGeneationParameters", null);
     }
-    if (parameters.referenceImageParameterArray) {
+
+    if (parameters.referenceImage) {
+      const referenceImageUrl = parameters.referenceImage;
       const paramName = refernceImagesModelInfo?.id;
+
       if (paramName) {
         form.reset({
           ...form.getValues(),
-          [paramName]: parameters.referenceImageParameterArray,
+          [paramName]:
+            refernceImagesModelInfo.maxLimit > 1
+              ? [referenceImageUrl]
+              : referenceImageUrl,
         });
-        form.trigger();
-
-        setImageBlocks(
-          parameters.referenceImageParameterArray.map((url) => ({
-            previewUrl: url,
-            url: url,
-          }))
-        );
-
-        setParameters("referenceImageParameterArray", null);
-      }
-    }
-    if (parameters.referenceImageParameterString) {
-      const paramName = refernceImagesModelInfo?.id;
-      if (paramName) {
-        form.reset({
-          ...form.getValues(),
-          [paramName]: parameters.referenceImageParameterString,
-        });
-        form.trigger();
 
         setImageBlocks([
           {
-            previewUrl: parameters.referenceImageParameterString,
-            url: parameters.referenceImageParameterString,
+            previewUrl: referenceImageUrl,
+            url: referenceImageUrl,
           },
         ]);
 
-        setParameters("referenceImageParameterString", null);
+        setParameters("referenceImage", null);
       }
     }
   }, [parameters]);

@@ -40,6 +40,7 @@ export const useA2iForm = ({
     return {
       ...defaultValues,
       ...(localStoredValues || {}),
+      ...dynamicDefualtValues,
     };
   }, [defaultValues, localStoredValues]);
 

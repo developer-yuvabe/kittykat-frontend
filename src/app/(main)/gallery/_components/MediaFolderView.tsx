@@ -10,7 +10,6 @@ import { FolderGalleryView } from "./folder/FolderGalleryView";
 import { MediaSearchFilters } from "./MediaSearchFilters";
 import { FolderTabs } from "./folder/FolderTabs";
 import { useBrandStore } from "@/store/brand.store";
-import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -37,7 +36,6 @@ interface MediaFolderViewProps {
   ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
-  onRefreshData?: () => void;
 }
 
 export function MediaFolderView({
@@ -56,7 +54,6 @@ export function MediaFolderView({
   setSelectedFilters,
   setInitialWorkflowStatus,
   onTabChange,
-  onRefreshData,
 }: MediaFolderViewProps) {
   const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const {
@@ -106,14 +103,6 @@ export function MediaFolderView({
 
   return (
     <div className="w-full max-w-full  overflow-hidden">
-      {/* Brand Selector */}
-      <div className="my-4">
-        <BrandSelector
-          className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
-          showSelectedValue
-        />
-      </div>
-
       {/* Upload Dropzone */}
       <FolderUploadDropzone
         activeTab={activeTab}
@@ -148,7 +137,6 @@ export function MediaFolderView({
           <CampaignsList
             selectedBrandId={selectedBrandId}
             onCampaignSelect={handleCampaignSelect}
-            onRefreshData={onRefreshData}
             key={selectedBrandId}
           />
         )}
@@ -192,7 +180,7 @@ export function MediaFolderView({
           {/* Show for folder view when no brand is selected */}
           {galleryView === "folder" && !selectedBrandId && (
             <FolderGalleryView
-              selectedBrandId={null}
+              selectedBrandId={selectedBrandId}
               selectedCampaignId={undefined}
               searchQuery={searchQuery}
               favorites={favorites}
