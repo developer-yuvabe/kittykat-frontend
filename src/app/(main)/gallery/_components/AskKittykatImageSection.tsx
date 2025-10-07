@@ -299,7 +299,7 @@ export const AskKittykatImageSection: React.FC<
   const renderPlaceholder = () => (
     <div
       className={cn("relative", {
-        "w-full h-[80vh]  bg-muted rounded-lg flex items-center justify-center":
+        "w-full h-[80vh] bg-muted rounded-lg flex items-center justify-center":
           !item,
       })}
     >
