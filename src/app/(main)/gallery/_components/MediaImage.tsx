@@ -179,6 +179,7 @@ export function MediaImage({
           onDownload={handleDownload}
           onLike={handleFavoriteClick}
           isLiked={item.is_favourite || false}
+          source="media-gallery"
         />
       )}
     </>

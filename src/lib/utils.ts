@@ -406,3 +406,12 @@ export function getDimensionAndAspectRatioFromParameters(
     return "";
   }
 }
+
+export async function urlToFile(url: string): Promise<File> {
+  const response = await fetch(url);
+  const blob = await response.blob();
+
+  const filename = url.split("/").pop()?.split("?")[0] || "file";
+
+  return new File([blob], filename, { type: blob.type });
+}

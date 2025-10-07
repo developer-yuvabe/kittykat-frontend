@@ -11,15 +11,15 @@ type Store = {
 
   selectedImageGenerationModel: Model | null;
   setSelectedImageGenerationModel: (model: Model) => void;
-  setSelectedImageGenerationModelById: (id: string) => void;
+  setSelectedImageGenerationModelByModelId: (modelId: string) => void;
 
   selectedVideoGenearationModel: Model | null;
   setSelectedVideoGenearationModel: (model: Model) => void;
-  setSelectedVideoGenearationModelById: (id: string) => void;
+  setSelectedVideoGenearationModelByModelId: (modelId: string) => void;
 
   selectedRemixModel: Model | null;
   setSelectedRemixModel: (model: Model) => void;
-  setSelectedRemixModelById: (id: string) => void;
+  setSelectedRemixModelByModelId: (modelId: string) => void;
 
   selectedVtonModel: Model | null;
   setSelectedVtonModel: (model: Model) => void;
@@ -130,9 +130,9 @@ export const useModelsStore = create<Store>()((set, get) => {
 
     selectedImageGenerationModel:
       getSessionItem("a2i-image-generation-model-id") || null,
-    setSelectedImageGenerationModelById: (id) => {
+    setSelectedImageGenerationModelByModelId: (modelId) => {
       const models = get().models;
-      const model = models.find((model) => model.id === id);
+      const model = models.find((model) => model.model === modelId);
       if (model) {
         // Save to session storage
         setSessionItem("a2i-image-generation-model-id", model.id);
@@ -149,9 +149,9 @@ export const useModelsStore = create<Store>()((set, get) => {
 
     selectedVideoGenearationModel:
       getSessionItem("a2i-video-generation-model-id") || null,
-    setSelectedVideoGenearationModelById: (id) => {
+    setSelectedVideoGenearationModelByModelId: (modelId) => {
       const models = get().models;
-      const model = models.find((model) => model.id === id);
+      const model = models.find((model) => model.model === modelId);
       if (model) {
         // Save to session storage
         setSessionItem("a2i-video-generation-model-id", model.id);
@@ -166,9 +166,9 @@ export const useModelsStore = create<Store>()((set, get) => {
     },
 
     selectedRemixModel: getSessionItem("a2i-remix-model-id") || null,
-    setSelectedRemixModelById: (id) => {
+    setSelectedRemixModelByModelId: (modelId) => {
       const models = get().models;
-      const model = models.find((model) => model.id === id);
+      const model = models.find((model) => model.model === modelId);
       if (model) {
         // Save to session storage
         setSessionItem("a2i-remix-model-id", model.id);

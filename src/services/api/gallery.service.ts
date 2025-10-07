@@ -312,7 +312,7 @@ export const useBulkGalleryItems = (ids: string[], enabled = true) => {
   });
 };
 
-export const GetGalleryImageParameters = async (
+export const getGalleryImageParameters = async (
   brandId: string,
   galleryId: string
 ): Promise<GalleryImageParametersResponse | null> => {

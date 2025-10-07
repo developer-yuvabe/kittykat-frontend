@@ -1,4 +1,4 @@
-import { AggregatedTagItem } from "./types";
+import { A2iImageGeneration, AggregatedTagItem } from "./types";
 
 export type Comment = {
   id: string;
@@ -319,6 +319,6 @@ export function isVideoUrl(url: string): boolean {
 }
 
 export type GalleryImageParametersResponse = {
-  parameters: Record<string, any>;
-  type: string;
+  parameters: A2iImageGeneration["parameters"];
+  type: A2iImageGeneration["type"];
 };
