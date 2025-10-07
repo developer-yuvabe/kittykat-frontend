@@ -146,7 +146,10 @@ const MoodboardContent = forwardRef<
   });
 
   // Handle drag-and-drop from carousel to moodboard placeholders
-  const handleCarouselItemDrop = (item: GalleryItemResponse) => {
+  const handleCarouselItemDrop = (
+    item: GalleryItemResponse,
+    placeholderIndex: number
+  ) => {
     // Check if the item is already in the moodboard
     const isAlreadyInMoodboard = photos.some((photo) => photo.id === item.id);
 
@@ -155,8 +158,8 @@ const MoodboardContent = forwardRef<
       return;
     }
 
-    // Use the existing gallery selection logic to handle the drop
-    handleGallerySelection([item]);
+    // Use the existing gallery selection logic to handle the drop with specific placeholder index
+    handleGallerySelection([item], placeholderIndex);
     toast.success(`Added image to your moodboard!`);
   };
 
