@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useVideoGenStore } from "@/store/video-gen.store";
 import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -22,22 +21,11 @@ const A2iImagesSection = function A2iImagesSection({
   campaignInformation,
   selectedCampaignIndex,
 }: A2iImagesSectionProps) {
-  const { setGenerations } = useVideoGenStore();
-
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLDivElement | null>(null);
   const [scrollTo, setScrollTo] = useQueryState("scrollTo");
 
-  useEffect(() => {
-    if (
-      a2iImageInformation?.generations &&
-      a2iImageInformation.generations.length > 0
-    ) {
-      setGenerations(a2iImageInformation.generations);
-    }
-  }, [a2iImageInformation?.generations]);
-
-  // 👇 scroll on mount if query param matches
+  // scroll on mount if query param matches
   useEffect(() => {
     if (scrollTo === "a2i" && formRef.current) {
       formRef.current.scrollIntoView({

@@ -10,13 +10,11 @@ import { useBrandStore } from "@/store/brand.store";
 interface CampaignsListProps {
   selectedBrandId: string | null;
   onCampaignSelect: (campaignId: string) => void;
-  onRefreshData?: () => void;
 }
 
 export function CampaignsList({
   selectedBrandId,
   onCampaignSelect,
-  onRefreshData,
 }: CampaignsListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -80,7 +78,6 @@ export function CampaignsList({
             brandId={selectedBrandId}
             brandName={brandName}
             onCampaignCreated={onCampaignSelect}
-            onRefreshData={onRefreshData}
           />
         </div>
       </div>
@@ -137,7 +134,6 @@ export function CampaignsList({
             brandId={selectedBrandId}
             brandName={brandName}
             onCampaignCreated={onCampaignSelect}
-            onRefreshData={onRefreshData}
             trigger={
               <Button variant="outline" size="sm">
                 Create Your First Campaign
