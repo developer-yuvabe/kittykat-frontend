@@ -28,7 +28,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { toast } from "sonner";
-import { scrollToBottom } from "@/lib/scroll.utils";
 import { DisplayField } from "../DisplayField";
 
 export const CampaignSection: React.FC<{
@@ -117,9 +116,6 @@ export const CampaignSection: React.FC<{
             currentBrandContextId: selectedBrandId,
           });
         }
-
-        // Use the reusable scroll utility
-        scrollToBottom(100);
       } catch (error) {
         console.error("Error creating new campaign:", error);
       }
