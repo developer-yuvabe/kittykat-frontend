@@ -37,7 +37,6 @@ interface MediaFolderViewProps {
   ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
-  onRefreshData?: () => void;
 }
 
 export function MediaFolderView({
@@ -56,7 +55,6 @@ export function MediaFolderView({
   setSelectedFilters,
   setInitialWorkflowStatus,
   onTabChange,
-  onRefreshData,
 }: MediaFolderViewProps) {
   const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const {
@@ -148,7 +146,6 @@ export function MediaFolderView({
           <CampaignsList
             selectedBrandId={selectedBrandId}
             onCampaignSelect={handleCampaignSelect}
-            onRefreshData={onRefreshData}
             key={selectedBrandId}
           />
         )}
@@ -192,7 +189,7 @@ export function MediaFolderView({
           {/* Show for folder view when no brand is selected */}
           {galleryView === "folder" && !selectedBrandId && (
             <FolderGalleryView
-              selectedBrandId={null}
+              selectedBrandId={selectedBrandId}
               selectedCampaignId={undefined}
               searchQuery={searchQuery}
               favorites={favorites}

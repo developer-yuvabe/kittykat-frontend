@@ -74,15 +74,6 @@ export function NavLinks() {
             })}
             <NotificationHoverCard />
             <div
-              onClick={() => {}}
-              className={cn(
-                `flex flex-col cursor-pointer gap-y-0.5 items-center text-xs text-[#6e7787]`
-              )}
-            >
-              <Image size={ICON_SIZE} color="#6e7787" />
-              <span>Visual Editor Old</span>
-            </div>
-            <div
               onClick={() =>
                 openConceptVisual({
                   source: "blanket",
