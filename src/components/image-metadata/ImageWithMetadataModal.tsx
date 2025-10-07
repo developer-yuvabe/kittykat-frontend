@@ -258,13 +258,14 @@ const ImageWithMetadataModal = ({
         </DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none w-[80vw] max-h-[80vh] max-w-screen-xl flex items-center justify-center focus:outline-none"
+        className="p-0 border-none bg-transparent shadow-none  flex items-center justify-center focus:outline-none"
         onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
         hideCloseIcon
+        overflowClassName="bg-black/80"
       >
-        <div className="flex items- justify-center items-stretch  flex-1 min-w-[80vw] max-w-[80vw] max-h-[80vh]">
-          <div className="relative rounded-l-lg  group flex items-center justify-center  h-[80vh] overflow-hidden bg-white border-r">
+        <div className="flex justify-center items-stretch flex-1 min-w-[80dvw] min-h-[80dvh] max-w-[80dvw] max-h-[80dvh]">
+          <div className="relative rounded-l-lg group flex items-center justify-center w-[70%] overflow-hidden bg-white border-r">
             <img
               src={galleryItem.asset_url}
               alt={
@@ -272,9 +273,14 @@ const ImageWithMetadataModal = ({
                 galleryItem.input_prompt ??
                 "Expanded image"
               }
-              className="w-full h-full object-contain relative"
+              className="w-full h-full object-contain relative z-10"
             />
-
+            <div
+              className="absolute inset-0 bg-cover bg-center blur-lg scale-105"
+              style={{
+                backgroundImage: `url(${galleryItem.asset_url}`,
+              }}
+            />
             {/* Hover Overlay */}
             <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-l-lg" />
