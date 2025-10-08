@@ -154,7 +154,7 @@ const ImageWithMetadataModal = ({
       setParameters("imageGeneationParameters", data.parameters);
 
       onClose();
-      router.push("/?scrollTo=a2i");
+      router.push("/?scrollTo=a2i-input");
 
       toast.info("Pre Selected Model and its parameters have been set.");
     } else {
@@ -273,7 +273,7 @@ const ImageWithMetadataModal = ({
       setParameters("referenceImage", url);
 
       onClose();
-      router.push("/?scrollTo=a2i");
+      router.push("/?scrollTo=a2i-input");
       toast.info("Pre Selected Model and Reference Image have been set.");
     } catch (error) {
       console.log(error);

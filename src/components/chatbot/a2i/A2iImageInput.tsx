@@ -312,16 +312,22 @@ const A2iImageInput = ({
   }, [selectedImageGenerationModel?.id]);
 
   useEffect(() => {
-    if (scrollTo === "a2i-input" && inputContainerRef.current) {
-      inputContainerRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
+    if (scrollTo === "a2i-input") {
+      const observer = new MutationObserver(() => {
+        if (inputContainerRef.current) {
+          inputContainerRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          setScrollTo(null);
+          observer.disconnect();
+        }
       });
 
-      // reset so it doesn’t scroll again unnecessarily
-      setScrollTo(null);
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
     }
-  }, [scrollTo, setScrollTo]);
+  }, [scrollTo]);
 
   useEffect(() => {
     if (parameters.imageGeneationParameters) {
@@ -384,6 +390,7 @@ const A2iImageInput = ({
     <div
       ref={inputContainerRef}
       className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4"
+      id="concept-visual-playground"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
