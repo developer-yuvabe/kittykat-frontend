@@ -131,7 +131,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i-input");
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error("Error generating image:", error);
@@ -150,7 +150,7 @@ const ImageWithMetadataModal = ({
       setParameters("imageGeneationParameters", data.parameters);
 
       onClose();
-      router.push("/?scrollTo=a2i-input");
+      router.push("/?scrollTo=a2i");
 
       toast.info("Pre Selected Model and its parameters have been set.");
     } else {
@@ -188,7 +188,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i-input");
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error("Error upscaling the image:", error);
@@ -269,7 +269,7 @@ const ImageWithMetadataModal = ({
       setParameters("referenceImage", url);
 
       onClose();
-      router.push("/?scrollTo=a2i-input");
+      router.push("/?scrollTo=a2i");
       toast.info("Pre Selected Model and Reference Image have been set.");
     } catch (error) {
       console.log(error);
@@ -340,7 +340,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i-input");
+        router.push("/?scrollTo=a2i");
       }
 
       toast.info(`Started Video Generation with ${preset} Animation.`);
