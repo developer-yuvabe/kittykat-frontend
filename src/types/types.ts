@@ -142,7 +142,8 @@ export type A2iImageGeneration = {
     | "remix"
     | "video"
     | "upscale"
-    | "video_generation";
+    | "video_generation"
+    | "a2i"; // Backward compatibility
   created_at: string;
   updated_at: string;
   parameters: Record<string, any>;

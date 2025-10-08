@@ -97,7 +97,11 @@ const ImageWithMetadataModal = ({
       : null,
     staleTime: 0,
   });
-  const isDisabled = data?.type !== "image_generation";
+  const isDisabled = !(
+    data?.type === "image_generation" || data?.type === "a2i"
+  )
+    ? true
+    : false;
 
   const handleCopyPrompt = () => {
     if (data?.parameters.prompt) {
