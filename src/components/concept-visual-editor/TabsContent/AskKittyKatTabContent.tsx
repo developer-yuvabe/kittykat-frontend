@@ -165,6 +165,8 @@ const AskKittyKatTabContent = ({
         : prev
     );
 
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+
     // Clear input fields immediately
     setNewComment("");
     setAttachments([]);
@@ -705,6 +707,12 @@ const AskKittyKatTabContent = ({
   const hasComments =
     currentAssetVersion?.comments && currentAssetVersion.comments.length > 0;
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentAssetVersion.comments]);
+
   return (
     <>
       {/* Comments Section */}
@@ -713,7 +721,7 @@ const AskKittyKatTabContent = ({
           currentAssetVersion.sent_to_human_queue
             ? "max-h-[calc(100vh-460px)]"
             : "max-h-[calc(100vh-520px)]"
-        } flex-1 p-4 space-y-4   overflow-y-scroll `}
+        } flex-1 p-4 space-y-4 overflow-y-scroll`}
       >
         <div className="space-y-4">
           {!hasComments ? (
@@ -765,6 +773,7 @@ const AskKittyKatTabContent = ({
             </div>
           )}
         </div>
+        <div ref={scrollRef} />
       </div>
 
       {/* Comment Input Section */}
@@ -850,6 +859,7 @@ const AskKittyKatTabContent = ({
                 multiple
                 className="hidden"
                 onChange={(e) => handleFileUpload(e.target.files)}
+                accept="image/*,video/*"
               />
               <Button
                 variant="ghost"
