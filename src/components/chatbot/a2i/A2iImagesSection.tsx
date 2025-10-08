@@ -27,14 +27,20 @@ const A2iImagesSection = function A2iImagesSection({
 
   // scroll on mount if query param matches
   useEffect(() => {
-    if (scrollTo === "a2i" && formRef.current) {
-      formRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+    if (scrollTo === "a2i") {
+      const observer = new MutationObserver(() => {
+        if (formRef.current) {
+          formRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          });
+          setScrollTo(null);
+          observer.disconnect();
+        }
       });
 
-      // reset so it doesn’t scroll again unnecessarily
-      setScrollTo(null);
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
     }
   }, [scrollTo, setScrollTo]);
 
