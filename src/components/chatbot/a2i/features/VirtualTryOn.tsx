@@ -9,12 +9,13 @@ import { createVtonImage } from "@/services/api/vton.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { BrainIcon, Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
+import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 
 type VirtualTryOnProps = {
   modelImage?: string;
@@ -134,27 +135,20 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
         </div>
 
         <div className="flex-shrink-0">
-          <Button
+          <TokenGenerateButton
             className="w-full"
+            label="Concept Visual Generation"
+            onClick={() => form.handleSubmit(onSubmit)()}
+            tokens={credits}
+            loading={form.formState.isSubmitting}
             disabled={
               form.formState.isSubmitting ||
               !form.formState.isValid ||
               !productImage ||
-              isCalculatingCredits ||
               loading
             }
-            loading={form.formState.isSubmitting}
-          >
-            <BrainIcon />
-            Concept Visual Generation
-            <p>
-              {isCalculatingCredits ? (
-                <Loader2 className="animate-spin h-4 w-4" />
-              ) : (
-                `(${credits} credits)`
-              )}
-            </p>
-          </Button>
+            isCalculatingTokens={isCalculatingCredits}
+          />
         </div>
 
         <MediaLibraryDialog

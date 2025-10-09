@@ -1,13 +1,16 @@
 import React from "react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
+import { Spinner } from "../ui/spinner";
 
 type TokenGenerateButtonProps = {
   onClick: () => void;
   disabled?: boolean;
   loading?: boolean;
   tokens: number;
+  isCalculatingTokens?: boolean;
   className?: string;
+  label?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const TokenGenerateButton = ({
@@ -15,20 +18,27 @@ const TokenGenerateButton = ({
   disabled = false,
   loading = false,
   tokens,
+  isCalculatingTokens,
   className,
+  label = "Generate",
   ...props
 }: TokenGenerateButtonProps) => {
   return (
     <Button
       {...props}
       onClick={onClick}
-      disabled={disabled}
-      loading={loading}
+      disabled={disabled || isCalculatingTokens}
       className={cn("", className)}
     >
-      {loading
-        ? "Generating..."
-        : `Generate (${tokens.toLocaleString()} tokens)`}
+      {loading ? (
+        <Spinner />
+      ) : isCalculatingTokens ? (
+        <>
+          {label} <Spinner />
+        </>
+      ) : (
+        `${label} (${tokens.toLocaleString()} tokens)`
+      )}
     </Button>
   );
 };
