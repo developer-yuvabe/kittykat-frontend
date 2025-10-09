@@ -51,9 +51,14 @@ export function AskKittykatTabs() {
       variant="icon-grid"
     >
       {tabItems.map((item) => {
+        /*
+          Disable the tab if any of the following conditions are true:
+          1. The current asset is a video, and the tab is NOT "ask-kittykat".
+          2. The source is "blanket" and the tab IS "ask-kittykat".
+        */
         const isDisabled =
           (currentAsset?.asset_type === "video" &&
-            item.key === "video-generation") ||
+            item.key !== "ask-kittykat") ||
           (source === "blanket" && item.key === "ask-kittykat");
 
         return (
