@@ -154,7 +154,7 @@ const ImageWithMetadataModal = ({
       setParameters("imageGeneationParameters", data.parameters);
 
       onClose();
-      router.push("/?scrollTo=a2i");
+      router.push("/?scrollTo=a2i-input");
 
       toast.info("Pre Selected Model and its parameters have been set.");
     } else {
@@ -271,7 +271,7 @@ const ImageWithMetadataModal = ({
       setParameters("referenceImage", url);
 
       onClose();
-      router.push("/?scrollTo=a2i");
+      router.push("/?scrollTo=a2i-input");
       toast.info("Pre Selected Model and Reference Image have been set.");
     } catch (error) {
       console.log(error);
@@ -387,13 +387,13 @@ const ImageWithMetadataModal = ({
               className="w-full h-full object-contain relative z-10"
             />
             <div
-              className="absolute inset-0 bg-cover bg-center blur-lg scale-105"
+              className="absolute inset-0 bg-cover bg-center blur-lg scale-105 z-0"
               style={{
                 backgroundImage: `url(${galleryItem.asset_url}`,
               }}
             />
             {/* Hover Overlay */}
-            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
+            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-20">
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-l-lg" />
 
               {/* Bottom Right - Actions (Download + Like) */}
