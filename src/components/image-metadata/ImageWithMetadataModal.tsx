@@ -97,7 +97,11 @@ const ImageWithMetadataModal = ({
       : null,
     staleTime: 0,
   });
-  const isDisabled = data?.type !== "image_generation";
+  const isDisabled = !(
+    data?.type === "image_generation" || data?.type === "a2i"
+  )
+    ? true
+    : false;
 
   const handleCopyPrompt = () => {
     if (data?.parameters.prompt) {
@@ -150,7 +154,7 @@ const ImageWithMetadataModal = ({
       setParameters("imageGeneationParameters", data.parameters);
 
       onClose();
-      router.push("/?scrollTo=a2i");
+      router.push("/?scrollTo=a2i-input");
 
       toast.info("Pre Selected Model and its parameters have been set.");
     } else {
@@ -232,15 +236,13 @@ const ImageWithMetadataModal = ({
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
 
-      if (!model) {
-        throw new Error("Model not found for reference modification");
-      }
-
       // Check whether the model supports reference images
-      const fileParam = model.parameters.find((p) => p.type === "file");
+      const fileParam = model
+        ? model.parameters.find((p) => p.type === "file")
+        : null;
       let imageReferenceModelId;
 
-      if (!fileParam || isDisabled) {
+      if (!fileParam || isDisabled || !model) {
         const defaultImageReferenceModel = models.find(
           (m) => m.default_image_reference_model
         );
@@ -269,7 +271,7 @@ const ImageWithMetadataModal = ({
       setParameters("referenceImage", url);
 
       onClose();
-      router.push("/?scrollTo=a2i");
+      router.push("/?scrollTo=a2i-input");
       toast.info("Pre Selected Model and Reference Image have been set.");
     } catch (error) {
       console.log(error);
@@ -385,13 +387,13 @@ const ImageWithMetadataModal = ({
               className="w-full h-full object-contain relative z-10"
             />
             <div
-              className="absolute inset-0 bg-cover bg-center blur-lg scale-105"
+              className="absolute inset-0 bg-cover bg-center blur-lg scale-105 z-0"
               style={{
                 backgroundImage: `url(${galleryItem.asset_url}`,
               }}
             />
             {/* Hover Overlay */}
-            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
+            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-20">
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-l-lg" />
 
               {/* Bottom Right - Actions (Download + Like) */}
