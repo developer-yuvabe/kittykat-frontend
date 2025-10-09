@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -22,7 +21,6 @@ import { useBrandStore } from "@/store/brand.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -30,6 +28,7 @@ import { z } from "zod";
 import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
+import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 
 const upscalerSchema = z.object({
   image_url: z.string().min(1, "Image URL is required"),
@@ -346,27 +345,14 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
           />
 
           {/* Submit Button - No credits shown */}
-          <Button
-            type="submit"
+          <TokenGenerateButton
             className="w-full"
-            disabled={form.formState.isSubmitting || isCalculatingCredits}
-          >
-            {form.formState.isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Upscale Image"
-            )}
-            <p>
-              {isCalculatingCredits ? (
-                <Loader2 className="animate-spin h-4 w-4" />
-              ) : (
-                `(${credits} credits)`
-              )}
-            </p>
-          </Button>
+            onClick={() => form.handleSubmit(onSubmit)()}
+            tokens={credits}
+            loading={form.formState.isSubmitting}
+            disabled={!form.formState.isValid || form.formState.isSubmitting}
+            isCalculatingTokens={isCalculatingCredits}
+          />
         </form>
       </Form>
     </div>

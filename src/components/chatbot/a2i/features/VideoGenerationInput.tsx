@@ -1,4 +1,5 @@
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 import { Button } from "@/components/ui/button";
 import { SelectIcon } from "@/components/ui/custom-icon";
 import {
@@ -24,7 +25,7 @@ import { useModelsStore } from "@/store/models.store";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
-import { Loader2, Settings2, X } from "lucide-react";
+import { Settings2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
@@ -360,27 +361,15 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
                 )}
               </div>
               <div>
-                <Button
+                <TokenGenerateButton
+                  onClick={() => form.handleSubmit(onSubmit)()}
+                  tokens={credits}
+                  loading={form.formState.isSubmitting}
                   disabled={
-                    !form.formState.isValid ||
-                    form.formState.isSubmitting ||
-                    isCalculatingCredits
+                    !form.formState.isValid || form.formState.isSubmitting
                   }
-                >
-                  {form.formState.isSubmitting ? (
-                    <Loader2 className="animate-spin h-4 w-4" />
-                  ) : (
-                    <div className="flex gap-x-1 items-center text-sm">
-                      <p>Generate</p>
-                      <p>
-                        {isCalculatingCredits && (
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        )}
-                        {credits > 0 && `(${credits} credits)`}
-                      </p>
-                    </div>
-                  )}
-                </Button>
+                  isCalculatingTokens={isCalculatingCredits}
+                />
               </div>
             </div>
           </div>

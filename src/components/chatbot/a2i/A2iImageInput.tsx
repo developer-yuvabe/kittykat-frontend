@@ -34,6 +34,7 @@ import { useA2iForm } from "@/hooks/useA2iForm";
 import { useCreditsStore } from "@/store/credits.store";
 import { useQueryState } from "nuqs";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
+import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -53,24 +54,26 @@ const A2iImageInput = ({
     selectedModel: selectedImageGenerationModel,
   });
   const { setShowInsufficientCreditsModal } = useCreditsStore();
-  const { credits, isCalculatingCredits } = useModelPricing({
-    form,
-    model: selectedImageGenerationModel,
-  });
+  const { credits, isCalculatingCredits: isCalculatingTokens } =
+    useModelPricing({
+      form,
+      model: selectedImageGenerationModel,
+    });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
     useA2iStore();
-  const { mutate: handleEnhancePrompt, isPending } = useMutation({
-    mutationFn: () =>
-      enhancePrompt(
-        selectedBrandId!,
-        form.getValues("prompt"),
-        referenceMoodboardId
-      ),
-    onSuccess: () => {
-      clearReferencePrompt();
-    },
-  });
+  const { mutate: handleEnhancePrompt, isPending: isEnhnacingPrompt } =
+    useMutation({
+      mutationFn: () =>
+        enhancePrompt(
+          selectedBrandId!,
+          form.getValues("prompt"),
+          referenceMoodboardId
+        ),
+      onSuccess: () => {
+        clearReferencePrompt();
+      },
+    });
 
   const currentCampaign = useMemo(
     () =>
@@ -549,7 +552,7 @@ const A2iImageInput = ({
             <div className="flex gap-x-2">
               <Button
                 type="button"
-                disabled={!form.watch("prompt") || isPending}
+                disabled={!form.watch("prompt") || isEnhnacingPrompt}
                 variant={"outline"}
                 className="border-primary text-primary"
                 onClick={() => {
@@ -573,32 +576,20 @@ const A2iImageInput = ({
                 }}
               >
                 <WandSparkles />
-                {isPending ? "Enhancing Prompt..." : "Enhance Prompt"}
+                {isEnhnacingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
               </Button>
-              <Button
+              <TokenGenerateButton
+                onClick={() => form.handleSubmit(onSubmit)()}
+                tokens={credits}
+                loading={form.formState.isSubmitting}
                 disabled={
                   !form.formState.isValid ||
                   form.formState.isSubmitting ||
                   isUploading ||
-                  isPending ||
-                  isCalculatingCredits
+                  isEnhnacingPrompt
                 }
-              >
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="animate-spin h-4 w-4" />
-                ) : (
-                  <div className="flex gap-x-1 items-center text-sm">
-                    <p>Generate</p>
-                    <p>
-                      {isCalculatingCredits ? (
-                        <Loader2 className="animate-spin h-4 w-4" />
-                      ) : (
-                        `(${credits.toLocaleString()} credits)`
-                      )}
-                    </p>
-                  </div>
-                )}
-              </Button>
+                isCalculatingTokens={isCalculatingTokens}
+              />
             </div>
           </div>
         </form>
