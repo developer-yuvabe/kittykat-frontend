@@ -32,12 +32,14 @@ const TokenGenerateButton = ({
     >
       {loading ? (
         <Spinner />
-      ) : isCalculatingTokens ? (
-        <>
-          {label} <Spinner />
-        </>
       ) : (
-        `${label} (${tokens.toLocaleString()} tokens)`
+        <>
+          {label}
+          {isCalculatingTokens && <Spinner />}
+          {!isCalculatingTokens &&
+            tokens > 0 &&
+            ` (${tokens.toLocaleString()} tokens)`}
+        </>
       )}
     </Button>
   );
