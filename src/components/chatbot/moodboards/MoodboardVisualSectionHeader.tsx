@@ -81,7 +81,7 @@ export const MoodboardVisualSectionHeader = ({
               asset_title: file.name,
               asset_url: downloadUrl,
               asset_type: "image",
-              asset_source: "upload",
+              asset_source: "brand-uploads",
               size: "unknown",
               media_format: file.type.split("/")[1] || "jpg",
               related_asset_ids: [],
