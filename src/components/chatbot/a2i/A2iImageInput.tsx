@@ -317,7 +317,7 @@ const A2iImageInput = ({
         if (inputContainerRef.current) {
           inputContainerRef.current.scrollIntoView({
             behavior: "smooth",
-            block: "center",
+            block: "end",
           });
           setScrollTo(null);
           observer.disconnect();
@@ -363,7 +363,9 @@ const A2iImageInput = ({
           },
         ]);
 
-        setParameters("referenceImage", null);
+        requestAnimationFrame(() => {
+          setParameters("referenceImage", null);
+        });
       }
     }
   }, [parameters]);
