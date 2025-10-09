@@ -26,7 +26,6 @@ import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import {
-  BrainIcon,
   Eraser,
   Images,
   Loader2,
@@ -42,6 +41,7 @@ import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
+import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -594,26 +594,19 @@ const RemixControls = ({
                     </Popover>
                   )}
                 </div>
-
-                <Button
+                <TokenGenerateButton
+                  className="w-full"
+                  label="Concept Visual Generation"
+                  onClick={() => form.handleSubmit(onSubmit)()}
+                  tokens={credits}
+                  loading={form.formState.isSubmitting}
                   disabled={
                     form.formState.isSubmitting ||
                     !form.formState.isValid ||
-                    isUploading ||
-                    isCalculatingCredits
+                    isUploading
                   }
-                  loading={form.formState.isSubmitting}
-                >
-                  <BrainIcon />
-                  Concept Visual Generation
-                  <p>
-                    {isCalculatingCredits ? (
-                      <Loader2 className="animate-spin h-4 w-4" />
-                    ) : (
-                      `(${credits} credits)`
-                    )}
-                  </p>
-                </Button>
+                  isCalculatingTokens={isCalculatingCredits}
+                />
               </div>
             </form>
           </Form>
