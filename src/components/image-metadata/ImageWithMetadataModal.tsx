@@ -236,15 +236,13 @@ const ImageWithMetadataModal = ({
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
 
-      if (!model) {
-        throw new Error("Model not found for reference modification");
-      }
-
       // Check whether the model supports reference images
-      const fileParam = model.parameters.find((p) => p.type === "file");
+      const fileParam = model
+        ? model.parameters.find((p) => p.type === "file")
+        : null;
       let imageReferenceModelId;
 
-      if (!fileParam || isDisabled) {
+      if (!fileParam || isDisabled || !model) {
         const defaultImageReferenceModel = models.find(
           (m) => m.default_image_reference_model
         );
