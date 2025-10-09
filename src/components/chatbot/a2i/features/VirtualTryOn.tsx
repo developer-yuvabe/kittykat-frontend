@@ -133,51 +133,53 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
               )}
             </div>
 
-        <div className="flex-shrink-0">
-          <TokenGenerateButton
-            className="w-full"
-            label="Concept Visual Generation"
-            onClick={() => form.handleSubmit(onSubmit)()}
-            tokens={credits}
-            loading={form.formState.isSubmitting}
-            disabled={
-              form.formState.isSubmitting ||
-              !form.formState.isValid ||
-              !productImage ||
-              loading
-            }
-            isCalculatingTokens={isCalculatingCredits}
-          />
+            <div className="flex-shrink-0">
+              <TokenGenerateButton
+                className="w-full"
+                label="Concept Visual Generation"
+                onClick={() => form.handleSubmit(onSubmit)()}
+                tokens={credits}
+                loading={form.formState.isSubmitting}
+                disabled={
+                  form.formState.isSubmitting ||
+                  !form.formState.isValid ||
+                  !productImage ||
+                  loading
+                }
+                isCalculatingTokens={isCalculatingCredits}
+              />
+            </div>
+
+            <MediaLibraryDialog
+              open={showMediaLibrary}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setShowMediaLibrary(false);
+                }
+              }}
+              onMediaItemSelected={(mediaItem) => {
+                if (productImageParam) {
+                  form.setValue(productImageParam.id, mediaItem);
+                }
+
+                setShowMediaLibrary(false);
+              }}
+              filters={{
+                brands: [selectedBrandId!],
+                campaigns: [],
+                product_categories: [],
+                asset_types: ["image"],
+                asset_sources: [],
+                media_format: [],
+                aspect_ratio: [],
+                workflow_status: [],
+                moodboards: [],
+              }}
+              brandId={selectedBrandId!}
+              campaignId={campaignId ?? undefined}
+            />
+          </div>
         </div>
-
-        <MediaLibraryDialog
-          open={showMediaLibrary}
-          onOpenChange={(open) => {
-            if (!open) {
-              setShowMediaLibrary(false);
-            }
-          }}
-          onMediaItemSelected={(mediaItem) => {
-            if (productImageParam) {
-              form.setValue(productImageParam.id, mediaItem);
-            }
-
-            setShowMediaLibrary(false);
-          }}
-          filters={{
-            brands: [selectedBrandId!],
-            campaigns: [],
-            product_categories: [],
-            asset_types: ["image"],
-            asset_sources: [],
-            media_format: [],
-            aspect_ratio: [],
-            workflow_status: [],
-            moodboards: [],
-          }}
-          brandId={selectedBrandId!}
-          campaignId={campaignId ?? undefined}
-        />
       </form>
     </Form>
   );
