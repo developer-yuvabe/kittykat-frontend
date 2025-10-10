@@ -26,6 +26,7 @@ interface CampaignViewProps {
   favorites?: boolean;
   selectedFilters?: EnhancedSelectedFilters;
   onTabChange: (value: string) => void;
+  showHeader?: boolean; // New prop to control header visibility
 }
 
 export function CampaignView({
@@ -41,6 +42,7 @@ export function CampaignView({
   favorites = false,
   selectedFilters,
   onTabChange,
+  showHeader = false, // Default to not showing header (when used with sidebar)
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -167,61 +169,67 @@ export function CampaignView({
 
   return (
     <div className="space-y-6">
-      {/* Campaign Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackToCampaigns}
-            className="p-1 h-auto"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Folder className="w-4 h-4 text-purple-600" />
-          </div>
-          <div>
-            <h2 className="text-sm font-medium text-gray-900">
-              {currentCampaign.title}
-            </h2>
-            <p className="text-xs text-gray-500">
-              {brandName} • {galleryActions.getGalleryItems().length} media
-              items
-            </p>
+      {/* Campaign Header - Only show if showHeader is true */}
+      {showHeader && (
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToCampaigns}
+              className="p-1 h-auto"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Folder className="w-4 h-4 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-gray-900">
+                {currentCampaign.title}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {brandName} • {galleryActions.getGalleryItems().length} media
+                items
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Upload Dropzone for Campaign */}
-      <FolderUploadDropzone
-        activeTab={activeTab}
-        onUploadComplete={onUploadComplete}
-        addToGallery={addToGallery}
-        galleryFilters={{
-          selectedFilters: {
-            brands: [selectedBrandId],
-            campaigns: [campaignId],
-            moodboards: [],
-            product_categories: [],
-            asset_types: [],
-            asset_sources: [],
-            media_format: [],
-            aspect_ratio: [],
-            workflow_status: [],
-          },
-        }}
-        selectedBrandId={selectedBrandId}
-        selectedCampaignId={campaignId}
-        selectedMoodboardId={selectedMoodboardId}
-      />
+      {/* Upload Dropzone for Campaign - Only show if showHeader is false (sidebar mode) */}
+      {!showHeader && (
+        <FolderUploadDropzone
+          activeTab={activeTab}
+          onUploadComplete={onUploadComplete}
+          addToGallery={addToGallery}
+          galleryFilters={{
+            selectedFilters: {
+              brands: [selectedBrandId],
+              campaigns: [campaignId],
+              moodboards: [],
+              product_categories: [],
+              asset_types: [],
+              asset_sources: [],
+              media_format: [],
+              aspect_ratio: [],
+              workflow_status: [],
+            },
+          }}
+          selectedBrandId={selectedBrandId}
+          selectedCampaignId={campaignId}
+          selectedMoodboardId={selectedMoodboardId}
+        />
+      )}
 
-      {/* Folder Tabs for campaign view */}
-      <FolderTabs
-        activeTab={activeTab}
-        onTabChange={onTabChange}
-        title="Subfolders"
-      />
+      {/* Folder Tabs for campaign view - Only show if showHeader is false */}
+      {!showHeader && (
+        <FolderTabs
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          title="Subfolders"
+        />
+      )}
 
       {/* Gallery Status Display */}
       <MediaGalleryStatusDisplay

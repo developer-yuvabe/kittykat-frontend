@@ -4,12 +4,13 @@ import React from "react";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
-import { CampaignsList } from "./folder/CampaignsList";
 import { CampaignView } from "./folder/CampaignView";
 import { FolderGalleryView } from "./folder/FolderGalleryView";
 import { MediaSearchFilters } from "./MediaSearchFilters";
 import { FolderTabs } from "./folder/FolderTabs";
+import { CampaignsSidebar } from "./folder/CampaignsSidebar";
 import { useBrandStore } from "@/store/brand.store";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -62,41 +63,69 @@ export function MediaFolderView({
     handleBackToCampaigns,
   } = useFolderState(selectedCampaignId);
 
+  // Sidebar state - expanded by default
+  const [isSidebarExpanded, setIsSidebarExpanded] = useLocalStorage(
+    "campaigns-sidebar-expanded",
+    true
+  );
+
+  const handleToggleSidebar = () => {
+    setIsSidebarExpanded(!isSidebarExpanded);
+  };
+
   // Render campaign view when in folder mode with selected brand and campaign
   if (galleryView === "folder" && selectedBrandId && selectedCampaignFromUrl) {
     return (
       <div className="w-full max-w-full overflow-hidden">
-        {/* Add search filters for campaign view */}
-        <MediaSearchFilters
-          onSearchChange={onSearchChange}
-          onSourceChange={() => {}} // Not used in folder view
-          onCreatorChange={() => {}} // Not used in folder view
-          onFavoritesChange={onFavoritesChange}
-          onToggleFilters={() => {}} // Not used in folder view
-          source="" // Not used in folder view
-          creator="" // Not used in folder view
-          favorites={favorites}
-          showFilters={false} // Don't show filter toggle in folder view
-          selectedFilters={selectedFilters}
-          setSelectedFilters={setSelectedFilters}
-          setInitialWorkflowStatus={setInitialWorkflowStatus}
-          isMediaSelectDialog={false}
-        />
+        {/* Two-column layout: Sidebar + Campaign View */}
+        <div className="flex gap-0 h-[calc(100vh-200px)]">
+          {/* Left Sidebar - Campaigns List */}
+          <CampaignsSidebar
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={selectedCampaignFromUrl}
+            onCampaignSelect={handleCampaignSelect}
+            isExpanded={isSidebarExpanded}
+            onToggleExpand={handleToggleSidebar}
+          />
 
-        <CampaignView
-          selectedBrandId={selectedBrandId}
-          brandName={brandName}
-          campaignId={selectedCampaignFromUrl}
-          activeTab={activeTab}
-          onBackToCampaigns={handleBackToCampaigns}
-          onUploadComplete={onUploadComplete}
-          addToGallery={addToGallery}
-          selectedMoodboardId={selecteMoodboardId}
-          searchQuery={searchQuery}
-          favorites={favorites}
-          selectedFilters={selectedFilters}
-          onTabChange={onTabChange}
-        />
+          {/* Right Content - Campaign View */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-4">
+              {/* Add search filters for campaign view */}
+              <MediaSearchFilters
+                onSearchChange={onSearchChange}
+                onSourceChange={() => {}} // Not used in folder view
+                onCreatorChange={() => {}} // Not used in folder view
+                onFavoritesChange={onFavoritesChange}
+                onToggleFilters={() => {}} // Not used in folder view
+                source="" // Not used in folder view
+                creator="" // Not used in folder view
+                favorites={favorites}
+                showFilters={false} // Don't show filter toggle in folder view
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                setInitialWorkflowStatus={setInitialWorkflowStatus}
+                isMediaSelectDialog={false}
+              />
+
+              <CampaignView
+                selectedBrandId={selectedBrandId}
+                brandName={brandName}
+                campaignId={selectedCampaignFromUrl}
+                activeTab={activeTab}
+                onBackToCampaigns={handleBackToCampaigns}
+                onUploadComplete={onUploadComplete}
+                addToGallery={addToGallery}
+                selectedMoodboardId={selecteMoodboardId}
+                searchQuery={searchQuery}
+                favorites={favorites}
+                selectedFilters={selectedFilters}
+                onTabChange={onTabChange}
+                showHeader={false}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -130,17 +159,6 @@ export function MediaFolderView({
         isMediaSelectDialog={false}
       />
 
-      {/* Campaigns List - Show when in folder mode with selected brand but no campaign */}
-      {galleryView === "folder" &&
-        selectedBrandId &&
-        !selectedCampaignFromUrl && (
-          <CampaignsList
-            selectedBrandId={selectedBrandId}
-            onCampaignSelect={handleCampaignSelect}
-            key={selectedBrandId}
-          />
-        )}
-
       {/* Folder Tabs - Horizontal scrollable tabs */}
       <FolderTabs
         activeTab={activeTab}
@@ -148,7 +166,36 @@ export function MediaFolderView({
         title="Subfolders"
       />
 
-      {/* Gallery Grid View - Show in multiple scenarios */}
+      {/* Two-column layout for folder view with selected brand but no campaign */}
+      {galleryView === "folder" &&
+        selectedBrandId &&
+        !selectedCampaignFromUrl &&
+        isBrandsFetched && (
+          <div className="flex gap-0 h-[calc(100vh-280px)] mt-4">
+            {/* Left Sidebar - Campaigns List */}
+            <CampaignsSidebar
+              selectedBrandId={selectedBrandId}
+              selectedCampaignId={null}
+              onCampaignSelect={handleCampaignSelect}
+              isExpanded={isSidebarExpanded}
+              onToggleExpand={handleToggleSidebar}
+            />
+
+            {/* Right Content - Brand-level Gallery View */}
+            <div className="flex-1 overflow-y-auto px-4">
+              <FolderGalleryView
+                selectedBrandId={selectedBrandId}
+                selectedCampaignId={undefined}
+                searchQuery={searchQuery}
+                favorites={favorites}
+                selectedFilters={selectedFilters}
+                activeTab={activeTab}
+              />
+            </div>
+          </div>
+        )}
+
+      {/* Gallery Grid View - Show in other scenarios */}
       {isBrandsFetched && (
         <>
           {/* Show for grid view regardless of brand selection */}
@@ -162,20 +209,6 @@ export function MediaFolderView({
               activeTab={activeTab}
             />
           )}
-
-          {/* Show for folder view when brand is selected but no campaign (brand-level view) */}
-          {galleryView === "folder" &&
-            selectedBrandId &&
-            !selectedCampaignFromUrl && (
-              <FolderGalleryView
-                selectedBrandId={selectedBrandId}
-                selectedCampaignId={undefined}
-                searchQuery={searchQuery}
-                favorites={favorites}
-                selectedFilters={selectedFilters}
-                activeTab={activeTab}
-              />
-            )}
 
           {/* Show for folder view when no brand is selected */}
           {galleryView === "folder" && !selectedBrandId && (
