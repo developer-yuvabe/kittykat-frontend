@@ -4,6 +4,7 @@ import { InlineEditableBadges } from "../shared/InlineEditableBadges";
 import { InlineEditableField } from "../shared/InlineEditableField";
 import { Agents } from "@/types/types";
 import { cn } from "@/lib/utils";
+import { isEqual } from "lodash";
 
 interface DisplayFieldProps<T extends Record<string, any>> {
   title?: string;
@@ -13,7 +14,7 @@ interface DisplayFieldProps<T extends Record<string, any>> {
   showKeyAsLabel?: boolean;
 }
 
-export const DisplayField = <T extends Record<string, any>>({
+export const DisplayFieldComponent = <T extends Record<string, any>>({
   title: initialTitle,
   agentId,
   json,
@@ -86,6 +87,7 @@ export const DisplayField = <T extends Record<string, any>>({
       if (["string", "number", "boolean"].includes(typeof value)) {
         return withWrap(
           <InlineEditableField
+            key={String(value)}
             label={key}
             value={String(value)}
             onSave={async (newVal) => handleSave(key, newVal as any)}
@@ -114,6 +116,7 @@ export const DisplayField = <T extends Record<string, any>>({
           return withWrap(
             <InlineEditableBadges
               label={key}
+              key={String(value)}
               values={value.map(String)}
               onSave={async (newVals) => handleSave(key, newVals as any)}
               showLabel={false}
@@ -165,6 +168,11 @@ export const DisplayField = <T extends Record<string, any>>({
     setTitle(initialTitle);
   }, [initialTitle]);
 
+  useEffect(() => {
+    if (Object.keys(json).includes("tagline")) console.log(json, data);
+    setData(json);
+  }, [json]);
+
   if (!title) {
     return (
       <>
@@ -196,3 +204,10 @@ export const DisplayField = <T extends Record<string, any>>({
     />
   );
 };
+
+export const DisplayField = React.memo(DisplayFieldComponent, (prev, next) => {
+  const arePropsEqual =
+    isEqual(prev.json, next.json) && prev.title === next.title;
+  console.log(arePropsEqual, "");
+  return arePropsEqual;
+}) as typeof DisplayFieldComponent;
