@@ -533,3 +533,22 @@ export const IMAGE_GENERATION_MODELS = [
   fluxProUltraModel,
   ...customFluxProFinetunedModels,
 ] as const;
+
+export function getRemixInputPlaceholderMessage(options?: {
+  supportsBrush?: boolean;
+  supportsReferenceImage?: boolean;
+}): string {
+  const baseMessage = "Describe the changes you want to make";
+  const { supportsBrush, supportsReferenceImage } = options || {};
+
+  const brushPart = supportsBrush
+    ? ", then brush over the area you’d like to edit"
+    : "";
+
+  const referencePart = supportsReferenceImage
+    ? " You can also add reference images of objects or people to add or replace in your visual."
+    : "";
+
+  // Combine and ensure proper punctuation/flow
+  return `${baseMessage}${brushPart}.${referencePart}`.trim();
+}
