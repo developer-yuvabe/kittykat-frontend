@@ -10,10 +10,14 @@ import {
 import { RENDER_FILE_ID_PREFIX } from "./constants";
 import { Dispatch, SetStateAction } from "react";
 import { FileTextIcon, Music, Video, Image } from "lucide-react";
-import { Color, MessageContentFiles } from "@/types/langgraph.types";
+import {
+  Color,
+  MessageContentFiles,
+  PinnedMoodboardItem,
+} from "@/types/langgraph.types";
 import { getContentString } from "@/components/thread/utils";
 import { validate } from "uuid";
-import { PinnedItem, PinnedMoodboardItem } from "@/store/usePinnedContextStore";
+import { PinnedItem } from "@/store/usePinnedContextStore";
 import type {
   Base64ContentBlock,
   MessageContentComplex,
