@@ -3,6 +3,8 @@ import { ChangeEvent, useRef, useState } from "react";
 
 type FileTriggerType = "image" | "file";
 
+// Image upload to to chatinput
+
 export function FileUploadPopover({
   isFileUploading,
   handleAddFiles,
@@ -22,7 +24,7 @@ export function FileUploadPopover({
 
   return (
     <>
-      <button onClick={() => triggerInput("image")}>
+      <button type="button" onClick={() => triggerInput("image")}>
         <Image size={20} className="text-primary cursor-pointer" />
       </button>
 
