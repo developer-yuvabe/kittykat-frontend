@@ -32,7 +32,8 @@ export const upscalerSchema = z.object({
 
 export const upscaleImage = async (
   brandId: string,
-  data: z.infer<typeof upscalerSchema>
+  data: z.infer<typeof upscalerSchema>,
+  source_asset_id: string | null = null
 ) => {
   try {
     await handleApiRequest(
@@ -40,6 +41,7 @@ export const upscaleImage = async (
         ...data,
         model: "magnific/image-upscaler",
         provider: "magnific",
+        source_asset_id: source_asset_id,
       })
     );
   } catch (error) {

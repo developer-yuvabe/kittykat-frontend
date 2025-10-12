@@ -5,13 +5,15 @@ import { A2iVideoGenerationResponse } from "@/types/a2i-video.types";
 export const videoGenerationService = async (
   brandId: string,
   data: Record<string, any>,
-  campaignId?: string | null
+  campaignId?: string | null,
+  source_asset_id?: string | null
 ) => {
   try {
     return await handleApiRequest<A2iVideoGenerationResponse>(
       axiosInstance.post(`/brands/${brandId}/a2i/video-generation`, {
         ...data,
         campaign_id: campaignId,
+        source_asset_id: source_asset_id,
       })
     );
   } catch (error) {
@@ -69,13 +71,15 @@ export const estimateVideoGenerationCredits = async (
 
 export const generateAnimationPrompt = async (
   preset: "smooth" | "dynamic",
-  prompt?: string
+  prompt?: string,
+  source_asset_id?: string | null
 ) => {
   try {
     return await handleApiRequest<string>(
       axiosInstance.post(`/a2i/actions/animate`, {
         preset,
         input_prompt: prompt,
+        source_asset_id: source_asset_id,
       })
     );
   } catch (error) {
