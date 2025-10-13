@@ -141,11 +141,10 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
       if (!selectedBrandId && !item?.brand_id) {
         throw new Error("Brand ID is missing.");
       }
-      const { generation_id } = await videoGenerationService(
-        selectedBrandId || item?.brand_id || "",
+      const { generation_id } = await videoGenerationService(selectedBrandId!, {
         data,
-        campaignId ?? undefined
-      );
+        campaign_id: campaignId,
+      });
 
       if (Array.isArray(generation_id)) {
         generation_id.forEach((id) => addCurrentSessionGenerationId(id));
