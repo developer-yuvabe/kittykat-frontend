@@ -169,7 +169,6 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
   }, [initialTitle]);
 
   useEffect(() => {
-    if (Object.keys(json).includes("tagline")) console.log(json, data);
     setData(json);
   }, [json]);
 
@@ -208,6 +207,5 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
 export const DisplayField = React.memo(DisplayFieldComponent, (prev, next) => {
   const arePropsEqual =
     isEqual(prev.json, next.json) && prev.title === next.title;
-  console.log(arePropsEqual, "");
   return arePropsEqual;
 }) as typeof DisplayFieldComponent;
