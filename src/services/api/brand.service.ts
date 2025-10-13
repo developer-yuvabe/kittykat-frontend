@@ -109,3 +109,23 @@ export async function createCampaign(
     axiosInstance.post(`/brands/${brandId}/campaign`, campaignData)
   );
 }
+
+export async function updateCampaign(
+  brandId: string,
+  campaignId: string,
+  campaignData: Partial<ThreadCampaign>
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.put(`/brands/${brandId}/campaign/${campaignId}`, campaignData)
+  );
+}
+
+export async function updateCampaignName(
+  brandId: string,
+  campaignId: string,
+  title: string
+): Promise<ThreadCampaign> {
+  return updateCampaign(brandId, campaignId, {
+    campaign: { title },
+  });
+}
