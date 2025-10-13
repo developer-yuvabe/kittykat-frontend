@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Search, Folder, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,51 @@ import { CreateCampaignDialog } from "@/components/gallery/CreateCampaignDialog"
 import { cn } from "@/lib/utils";
 import { updateCampaignName } from "@/services/api/brand.service";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Component to show tooltip only when text is truncated
+function TruncatedText({
+  text,
+  className,
+}: {
+  text: string;
+  className?: string;
+}) {
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const element = textRef.current;
+    if (element) {
+      setIsTruncated(element.scrollWidth > element.clientWidth);
+    }
+  }, [text]);
+
+  if (isTruncated) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <p ref={textRef} className={className}>
+            {text}
+          </p>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={5}>
+          <p className="max-w-xs">{text}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <p ref={textRef} className={className}>
+      {text}
+    </p>
+  );
+}
 
 interface CampaignsSidebarProps {
   selectedBrandId: string | null;
@@ -165,16 +210,15 @@ export function CampaignsSidebar({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p
+                      <TruncatedText
+                        text={campaign.title}
                         className={cn(
                           "text-sm font-medium truncate",
                           selectedCampaignId === campaign.id
                             ? "text-purple-900"
                             : "text-gray-900"
                         )}
-                      >
-                        {campaign.title}
-                      </p>
+                      />
                     </div>
                   </div>
                 </button>
