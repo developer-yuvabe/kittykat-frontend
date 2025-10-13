@@ -7,7 +7,7 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import type {
@@ -16,8 +16,6 @@ import type {
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
-import { MediaBulkActions } from "./MediaBulkActions";
-import MediaFilterSidebar from "./MediaFilterSidebar";
 import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
 import { MediaFolderView } from "./MediaFolderView";
@@ -36,6 +34,7 @@ import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { MediaBulkActions } from "./MediaBulkActions";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -264,10 +263,6 @@ export function MediaLibrary({
     setShowFilters(!showFilters);
   };
 
-  const handleApplyFilters = (filters: EnhancedSelectedFilters) => {
-    setSelectedFilters(filters);
-  };
-
   // Handle multi-select "Add" button
   const handleAddSelectedItems = () => {
     if (isMultiSelect && multiSelectItems.length > 0) {
@@ -492,29 +487,6 @@ export function MediaLibrary({
                   />
                 ) : (
                   <div className="flex flex-col md:flex-row gap-4">
-                    <div
-                      className={`${
-                        showFilters ? "w-full md:w-1/4" : "hidden"
-                      } transition-all duration-300 ease-in-out`}
-                    >
-                      <div className="md:hidden flex justify-between items-center mb-2">
-                        <h3 className="font-medium">Filters</h3>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={toggleFilters}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <MediaFilterSidebar
-                        selectedFilters={selectedFilters}
-                        onApply={handleApplyFilters}
-                        product_categories={[]}
-                        setShowFilter={setShowFilters}
-                      />
-                    </div>
-
                     <div
                       className={`${
                         showFilters ? "w-full md:w-3/4" : "w-full"

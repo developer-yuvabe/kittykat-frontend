@@ -266,30 +266,28 @@ export function MediaBulkAskKittyKatDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Bulk Request to KittyKat Experts
+            Submitting Your Request to KittyKat Experts
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600 space-y-3 mt-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2 text-blue-800">
-                  <p className="font-medium">
-                    Creating separate tasklists for {selectedItems.length}{" "}
-                    assets
+                  <p className="text-sm">
+                    Each selected asset will be sent as a separate tasklist with
+                    the same request details.
                   </p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li className="text-sm">
-                      Each asset will get its own tasklist with the same
-                      request.
-                    </li>
-                    <li className="text-sm">
-                      For bulk requests, credit adjustments may be made by an
-                      admin after reviewing the scope of work.
-                    </li>
-                  </ul>
+                  <p className="text-sm">
+                    You&apos;ll be able to track progress and feedback for each
+                    image individually under your tasklists.
+                  </p>
                   <p className="text-sm font-medium">
-                    💳 Credit deduction: {selectedItems.length * 3} credits (3
-                    per asset)
+                    💳 Credit Deduction: 3 credits per asset (total:{" "}
+                    {selectedItems.length * 3} credits)
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    For larger bulk submissions, our team may adjust credits
+                    after reviewing the scope of work.
                   </p>
                 </div>
               </div>
