@@ -169,7 +169,6 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
   }, [initialTitle]);
 
   useEffect(() => {
-    if (Object.keys(json).includes("tagline")) console.log(json, data);
     setData(json);
   }, [json]);
 
