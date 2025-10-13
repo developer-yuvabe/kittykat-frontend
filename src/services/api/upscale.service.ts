@@ -32,7 +32,7 @@ export const upscalerSchema = z.object({
 
 export const upscaleImage = async (
   brandId: string,
-  data: z.infer<typeof upscalerSchema>
+  data: Record<string, any>
 ) => {
   try {
     await handleApiRequest(
