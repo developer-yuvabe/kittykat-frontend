@@ -17,12 +17,13 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { Color } from "@/types/langgraph.types";
 import { Check, Copy, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import React from "react";
 import { Agents } from "@/types/types";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
+import { isEqual } from "lodash";
 
 interface BrandColorsProps {
   colors: Color[];
@@ -33,7 +34,9 @@ interface ColorEditForm {
   hex: string;
 }
 
-export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
+export const BrandColorsComponent: React.FC<BrandColorsProps> = ({
+  colors,
+}) => {
   const [validColors, setValidColors] = useState(
     filterAndNormalizeColors(colors)
   );
@@ -159,6 +162,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   const handleFormChange = (field: keyof ColorEditForm, value: string) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  useEffect(() => setValidColors(filterAndNormalizeColors(colors)), [colors]);
 
   return (
     <ContentSection
@@ -294,3 +299,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
     />
   );
 };
+
+export const BrandColors = React.memo(BrandColorsComponent, (prev, next) => {
+  const arePropsEqual = isEqual(prev, next);
+  return arePropsEqual;
+}) as typeof BrandColorsComponent;

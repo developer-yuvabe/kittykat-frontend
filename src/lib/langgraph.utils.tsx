@@ -7,7 +7,7 @@ import {
   Thread,
   ToolMessage,
 } from "@langchain/langgraph-sdk";
-import { RENDER_FILE_ID_PREFIX } from "./constants";
+import { RENDER_FILE_ID_PREFIX, MAX_IMAGE_UPLOAD_SIZE } from "./constants";
 import { Dispatch, SetStateAction } from "react";
 import { FileTextIcon, Music, Video, Image } from "lucide-react";
 import {
@@ -296,6 +296,57 @@ export async function getFileIcon(url: string): Promise<React.ElementType> {
 
   const [type] = contentType.split("/");
   return fileTypeIcons[type] || File;
+}
+
+/**
+ * Validates image upload size and returns files that can be uploaded within the 50MB limit
+ * @param files - Array of files to validate
+ * @param existingSize - Size of already uploaded images in bytes (default: 0)
+ * @returns Object with valid files array and rejected files array with reasons
+ */
+export function validateImageUploadSize(
+  files: File[],
+  existingSize: number = 0
+): {
+  validFiles: File[];
+  rejectedFiles: { file: File; reason: string }[];
+  totalSize: number;
+} {
+  const validFiles: File[] = [];
+  const rejectedFiles: { file: File; reason: string }[] = [];
+  let currentSize = existingSize;
+
+  for (const file of files) {
+    // Check if adding this file would exceed the limit
+    if (currentSize + file.size > MAX_IMAGE_UPLOAD_SIZE) {
+      rejectedFiles.push({
+        file,
+        reason: `Adding ${file.name} would exceed the 50MB limit`,
+      });
+    } else {
+      validFiles.push(file);
+      currentSize += file.size;
+    }
+  }
+
+  return {
+    validFiles,
+    rejectedFiles,
+    totalSize: currentSize,
+  };
+}
+
+/**
+ * Formats file size in bytes to human-readable format
+ * @param bytes - Size in bytes
+ * @returns Formatted string (e.g., "5.2 MB")
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 export const getThreadDisplayName = (thread: Thread) => {
@@ -609,3 +660,12 @@ Make sure to trigger analyze-moodboard toolcall in the MoodboardAgent always eve
 Please ignore <kittykat-do-not-render> tag.
 </kittykat-do-not-render>`;
 };
+
+export const SUPPORTED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
+
+export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
