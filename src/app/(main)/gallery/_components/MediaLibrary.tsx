@@ -332,6 +332,16 @@ export function MediaLibrary({
     }
   );
 
+  const [, setSelectedCampaignInUrl] = useQueryState<string | null>(
+    "campaign",
+    {
+      defaultValue: null,
+      parse: (value) => value ?? null,
+      serialize: (value) => value ?? "",
+      history: "push",
+    }
+  );
+
   const setGalleryView = (value: "grid" | "folder") => {
     setLocalGalleryView(value);
     setGalleryViewRaw(value);
@@ -353,15 +363,15 @@ export function MediaLibrary({
   );
 
   return (
-    <div className="flex flex-col w-full max-w-7xl mx-auto relative">
+    <div className="flex flex-col w-full mx-auto  ">
       {/* Conditionally render header based on hideHeader prop */}
       {!hideHeader && (
-        <div className="flex justify-between mb-2">
+        <div className="flex justify-between mb-2 sticky top-24 bg-[#F3F4F6FF] pt-4 pb-2 z-50">
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
             {!hasNoBrands && (
               <BrandSelector
-                showCampaigns
+                showCampaigns={galleryView === "grid"}
                 showSelectedValue
                 className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
                 onBrandSelect={(brandId) => {
@@ -373,6 +383,7 @@ export function MediaLibrary({
 
                   setInitialWorkflowStatus(null);
                   setInitialBrandId(null);
+                  setSelectedCampaignInUrl(null);
                 }}
               />
             )}
@@ -430,7 +441,6 @@ export function MediaLibrary({
                 activeTab={activeTab}
                 selectedCampaignId={selectedCampaignId ?? undefined}
                 selecteMoodboardId={moodboardId}
-                galleryView={galleryView}
                 brandName={selectedBrandName}
                 isUrlDialogOpen={isUrlDialogOpen} // Use state variable
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
@@ -453,10 +463,12 @@ export function MediaLibrary({
               value={activeTab}
               onValueChange={handleTabChange}
             >
-              <MediaLibraryTabs />
+              <div className="sticky top-36 bg-[#F3F4F6FF] pt-2  z-40">
+                <MediaLibraryTabs />
+              </div>
               <TabsContent
                 value={activeTab}
-                className="p-3 rounded-3xl bg-white mt-0"
+                className="p-3 rounded-3xl bg-white mt-0 "
               >
                 {activeTab !== "pexels" &&
                   (activeTab !== "a2i-media" ||
