@@ -19,3 +19,8 @@ export const DO_NOT_RENDER_ID_PREFIX = "do-not-render-";
 export const RENDER_FILE_ID_PREFIX = "render-file-";
 
 export const KITTYKAT_AGENT_ID = "agent";
+
+// Maximum total size for image uploads per message (50MB)
+export const MAX_IMAGE_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+
+export const MAX_PDF_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB in bytes
