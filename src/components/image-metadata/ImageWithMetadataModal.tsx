@@ -125,17 +125,14 @@ const ImageWithMetadataModal = ({
       const paramsResponsibleForVaryingNumberOfOutputs =
         model.parameters.filter((p) => p.type === "image_count");
 
-      await generateImage(
-        selectedBrandId!,
-        {
-          ...data.parameters,
-          seed: -1,
-          ...Object.fromEntries(
-            paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
-          ),
-        },
-        galleryItem.id
-      );
+      await generateImage(selectedBrandId!, {
+        ...data.parameters,
+        seed: -1,
+        ...Object.fromEntries(
+          paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
+        ),
+        source_asset_id: galleryItem.id,
+      });
 
       onClose();
       if (source === "media-gallery") {
@@ -182,21 +179,18 @@ const ImageWithMetadataModal = ({
   const handleUpscaleAuto = async () => {
     setLoading((p) => ({ ...p, upscaleAuto: true }));
     try {
-      await upscaleImage(
-        selectedBrandId!,
-        {
-          image_url: galleryItem.asset_url,
-          creativity: 0,
-          scale_factor: "2x",
-          optimized_for: "standard",
-          hdr: 0,
-          resemblance: 0,
-          fractality: 0,
-          engine: "automatic",
-          prompt: "",
-        },
-        galleryItem.id
-      );
+      await upscaleImage(selectedBrandId!, {
+        image_url: galleryItem.asset_url,
+        creativity: 0,
+        scale_factor: "2x",
+        optimized_for: "standard",
+        hdr: 0,
+        resemblance: 0,
+        fractality: 0,
+        engine: "automatic",
+        prompt: "",
+        source_asset_id: galleryItem.id,
+      });
 
       onClose();
       if (source === "media-gallery") {
@@ -341,17 +335,13 @@ const ImageWithMetadataModal = ({
         data?.parameters?.prompt
       );
       const { defaultValues } = useDynamicModelSchema(defaultAnimationModel);
-      await videoGenerationService(
-        selectedBrandId!,
-        {
-          ...defaultValues,
-          first_frame: galleryItem.asset_url,
-          prompt,
-          model: defaultAnimationModel.model,
-        },
-        null,
-        galleryItem.id
-      );
+      await videoGenerationService(selectedBrandId!, {
+        ...defaultValues,
+        first_frame: galleryItem.asset_url,
+        prompt,
+        model: defaultAnimationModel.model,
+        source_asset_id: galleryItem.id,
+      });
 
       onClose();
       if (source === "media-gallery") {

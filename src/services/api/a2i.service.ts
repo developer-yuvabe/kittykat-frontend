@@ -5,15 +5,12 @@ import { z, ZodTypeAny } from "zod";
 
 export const generateImage = async <T extends ZodTypeAny>(
   brandId: string,
-  // campaignId: string | null,
-  data: z.infer<T>,
-  source_asset_id?: string | null
+  data: z.infer<T>
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.post(`/brands/${brandId}/a2i/image-generation`, {
         ...data,
-        source_asset_id: source_asset_id,
       })
     );
   } catch (error) {
