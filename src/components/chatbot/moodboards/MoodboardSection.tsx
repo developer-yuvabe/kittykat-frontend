@@ -13,7 +13,11 @@ import {
   CirclePlus,
   Presentation,
 } from "lucide-react";
-import { MoodboardInformation, ThreadDetails } from "@/types/types";
+import {
+  MoodboardInformation,
+  ThreadCampaign,
+  ThreadDetails,
+} from "@/types/types";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
@@ -47,14 +51,13 @@ import { ScreenshotProvider } from "@/contexts/ScreenshotContext";
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
   brandInformation: ThreadDetails["brand_information"];
-  setSelectedCampaignIndex: React.Dispatch<React.SetStateAction<number>>;
   moodboardInformation: ThreadDetails["moodboard_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
   moodboardTags?: { [key: string]: string[] };
 }> = ({
   campaignInformation,
-  selectedCampaignIndex,
   moodboardInformation,
+  currentCampaign,
   brandInformation,
 }) => {
   const {
@@ -113,14 +116,6 @@ export const MoodboardSection: React.FC<{
   // Use ref to get current selectedMoodboardId without adding to useEffect dependencies
   const selectedMoodboardIdRef = useRef(selectedMoodboardId);
   selectedMoodboardIdRef.current = selectedMoodboardId;
-
-  const currentCampaign = useMemo(
-    () =>
-      campaignInformation && campaignInformation[selectedCampaignIndex]
-        ? campaignInformation[selectedCampaignIndex]
-        : null,
-    [campaignInformation, selectedCampaignIndex]
-  );
 
   // Get list of moodboards matching current campaign
   const currentCampaignMoodboards = useMemo(() => {
@@ -508,6 +503,7 @@ export const MoodboardSection: React.FC<{
               <CardContent>
                 {currentCampaign && (
                   <motion.div
+                    key={currentCampaign?.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}

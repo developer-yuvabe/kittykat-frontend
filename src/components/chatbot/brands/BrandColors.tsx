@@ -45,7 +45,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
   });
   const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
 
   const stream = useStreamContext();
 
@@ -133,6 +134,8 @@ export const BrandColors: React.FC<BrandColorsProps> = ({ colors }) => {
           text: enhancedMsg,
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
+          currentCampaignId: selectedCampaignId,
+          currentMoodboardId: selectedMoodboardId,
         });
       }
 

@@ -77,8 +77,13 @@ export const renderBrandData = (
   const [showDynamicData, setShowDynamicData] = React.useState(false);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId, setIsCreatingBrand, setSelectedBrandId } =
-    useBrandStore();
+  const {
+    selectedBrandId,
+    setIsCreatingBrand,
+    setSelectedBrandId,
+    selectedCampaignId,
+    selectedMoodboardId,
+  } = useBrandStore();
   const { removePinnedItem } = usePinnedContextStore();
 
   const handleFieldUpdate = (
@@ -106,6 +111,8 @@ export const renderBrandData = (
         text: msg,
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       });
     }
   };
@@ -127,6 +134,8 @@ export const renderBrandData = (
         text: "Let's create a new brand.",
         userId: user!.id,
         currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
       });
 
       // Clear pinned items

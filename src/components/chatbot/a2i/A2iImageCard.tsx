@@ -11,11 +11,7 @@ import { retryGeneration } from "@/services/api/genration.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
-import {
-  A2iImageDetail,
-  A2iImageGeneration,
-  ThreadDetails,
-} from "@/types/types";
+import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
 import {
   CheckIcon,
   CopyIcon,
@@ -46,8 +42,6 @@ export type A2iImageCardProps = {
   style?: CSSProperties;
   disableDrag?: boolean;
   isNSFW: boolean;
-  campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
 };
 
 // 🔑 Control size for all overlay buttons

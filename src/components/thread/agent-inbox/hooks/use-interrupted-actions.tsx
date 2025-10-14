@@ -57,7 +57,8 @@ export default function useInterruptedActions({
 }: UseInterruptedActionsInput): UseInterruptedActionsValue {
   const thread = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
   const [humanResponse, setHumanResponse] = useState<HumanResponseWithEdits[]>(
     []
   );
@@ -91,6 +92,8 @@ export default function useInterruptedActions({
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: thread.values.previousBrandContextId,
+          currentCampaignId: selectedCampaignId,
+          currentMoodboardId: selectedMoodboardId,
         },
         {
           command: {
@@ -266,6 +269,8 @@ export default function useInterruptedActions({
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: thread.values.previousBrandContextId,
+          currentCampaignId: selectedCampaignId,
+          currentMoodboardId: selectedMoodboardId,
         },
         {
           command: {

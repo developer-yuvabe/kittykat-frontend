@@ -20,6 +20,7 @@ import Splash from "@/components/shared/Splash";
 import { fetchThreadState } from "@/services/api/langgraph.service";
 import { useBrandStore } from "@/store/brand.store";
 import { client } from "./langgraph.client";
+import { toast } from "sonner";
 
 export type StateType = {
   messages: Message[];
@@ -27,6 +28,9 @@ export type StateType = {
   userId: string;
   currentBrandContextId: string | null;
   previousBrandContextId?: string | null;
+
+  currentCampaignId: string | null;
+  currentMoodboardId: string | null;
 };
 
 const useTypedStream = useStream<
@@ -39,6 +43,9 @@ const useTypedStream = useStream<
       userId: string;
       currentBrandContextId: string | null;
       previousBrandContextId?: string | null;
+
+      currentCampaignId: string | null;
+      currentMoodboardId: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }
@@ -69,6 +76,11 @@ const StreamSession = ({
     reconnectOnMount: true,
     fetchStateHistory: {
       limit: 1,
+    },
+    onError: () => {
+      toast.error(
+        "An error occurred while connecting to the agent. Please try again."
+      );
     },
     onThreadId: (id) => {
       updateUser(user!.id, {

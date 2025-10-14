@@ -36,7 +36,8 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
   const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
   const [validColors, setValidColors] = useState(
     colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color))
   );
@@ -85,6 +86,8 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
 
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       });
     }
 
