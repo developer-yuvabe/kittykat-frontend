@@ -18,6 +18,7 @@ import {
 import { AvatarFallback, Avatar } from "@/components/ui/avatar";
 import { SearchIcon } from "@/components/ui/custom-icon";
 import { useQueryState } from "nuqs";
+import { useBrandStore } from "@/store/brand.store";
 
 interface TransformedCampaign {
   id: string;
@@ -29,14 +30,12 @@ interface TransformedCampaign {
 
 interface CampaignSelectorProps {
   campaigns: any[];
-  setSelectedCampaignIndex: (index: number) => void;
-  selectedCampaignIndex: number;
+  onCampaignSelect?: (campaignId: string) => void;
 }
 
 export default function CampaignSelector({
   campaigns,
-  setSelectedCampaignIndex,
-  selectedCampaignIndex,
+  onCampaignSelect,
 }: CampaignSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,6 +49,7 @@ export default function CampaignSelector({
 
   const [, setCampaignIdFromUrl] = useQueryState("campaignId");
   const [, setMoodboardIdFromUrl] = useQueryState("moodboardId");
+  const { setSelectedCampaignId, selectedCampaignId } = useBrandStore();
 
   // Transform campaigns on initial load
   useEffect(() => {
@@ -85,24 +85,27 @@ export default function CampaignSelector({
   }, [searchQuery, transformedCampaigns]);
 
   const handleCampaignSelect = (campaignId: string) => {
+    const campaign = campaigns.find((c) => c.id === campaignId);
+    if (!campaign) return;
+
     setCampaignIdFromUrl(null);
     setMoodboardIdFromUrl(null);
-    const index = campaigns.findIndex((campaign) => campaign.id === campaignId);
-    if (index !== -1) {
-      setSelectedCampaignIndex(index);
-      setOpen(false);
-      toast.success(`Campaign '${campaigns[index].campaign.title}' selected`, {
-        position: "top-right",
-      });
+
+    if (onCampaignSelect) {
+      onCampaignSelect(campaignId);
     }
+
+    setSelectedCampaignId(campaignId);
+    setOpen(false);
+    toast.success(`Campaign '${campaign.campaign.title}' selected`, {
+      position: "top-right",
+    });
   };
 
   // Custom filtering implementation
   const handleInputChange = (value: string) => {
     setSearchQuery(value);
   };
-
-  const selectedCampaignId = campaigns[selectedCampaignIndex]?.id;
 
   return (
     <div className="" onClick={(e) => e.stopPropagation()}>

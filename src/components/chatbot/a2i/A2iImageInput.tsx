@@ -25,7 +25,7 @@ import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
-import { ThreadA2iImage, ThreadDetails } from "@/types/types";
+import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
@@ -38,12 +38,10 @@ import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 
 const A2iImageInput = ({
   referenceMoodboardId,
-  campaignInformation,
-  selectedCampaignIndex,
+  currentCampaign,
 }: {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
-  campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
 }) => {
   const inputContainerRef = useRef<HTMLDivElement | null>(null);
   const [scrollTo, setScrollTo] = useQueryState("scrollTo");
@@ -74,14 +72,6 @@ const A2iImageInput = ({
         clearReferencePrompt();
       },
     });
-
-  const currentCampaign = useMemo(
-    () =>
-      campaignInformation && campaignInformation[selectedCampaignIndex]
-        ? campaignInformation[selectedCampaignIndex]
-        : null,
-    [campaignInformation, selectedCampaignIndex]
-  );
 
   // Reference to the file input element
   const { refernceImagesModelInfo, initialParams, advancedParams } =

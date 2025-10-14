@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -6,7 +6,7 @@ import {
   CirclePlus,
   MegaphoneIcon,
 } from "lucide-react";
-import { Agents, ThreadDetails } from "@/types/types";
+import { Agents, ThreadCampaign, ThreadDetails } from "@/types/types";
 import { CampaignColors } from "./CampaignColors";
 import CampaignSelector from "./CampaignSelector";
 import { useStreamContext } from "@/providers/langgraph/Stream";
@@ -33,18 +33,14 @@ import { DisplayField } from "../DisplayField";
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
   brandInformation: ThreadDetails["brand_information"];
-  latestCampaignIndex: number;
-  selectedCampaignIndex: number;
-  setSelectedCampaignIndex: React.Dispatch<React.SetStateAction<number>>;
+  currentCampaign: ThreadCampaign | null;
   expandedSections: { [key: string]: boolean };
   setExpandedSections: React.Dispatch<
     React.SetStateAction<{ [key: string]: boolean }>
   >;
 }> = ({
   campaignInformation,
-  latestCampaignIndex,
-  selectedCampaignIndex,
-  setSelectedCampaignIndex,
+  currentCampaign,
   expandedSections,
   setExpandedSections,
 }) => {
@@ -59,20 +55,14 @@ export const CampaignSection: React.FC<{
     selectedBrandId,
     isCreatingBrand,
     isCampaignCreating,
+    selectedCampaignId,
+    selectedMoodboardId,
     setIsCampaignCreating,
   } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
   const [fadeKey, setFadeKey] = useState(0);
-
-  const currentCampaign = useMemo(
-    () =>
-      campaignInformation && campaignInformation[selectedCampaignIndex]
-        ? campaignInformation[selectedCampaignIndex]
-        : null,
-    [campaignInformation, selectedCampaignIndex]
-  );
 
   // Create a ref for the CampaignOverview component
   const campaignOverviewRef = React.useRef<HTMLDivElement>(null);
@@ -87,14 +77,13 @@ export const CampaignSection: React.FC<{
   // All useEffect hooks
   useEffect(() => {
     setFadeKey((prev) => prev + 1);
-    setSelectedCampaignIndex(latestCampaignIndex);
 
     // Ensure the campaign section stays expanded when new campaign is created
     setExpandedSections((prev) => ({
       ...prev,
       campaignInformation: true,
     }));
-  }, [latestCampaignIndex, setExpandedSections]);
+  }, [setExpandedSections, currentCampaign?.id]);
 
   // Enhanced function to handle new campaign creation with scroll
   const handleViaAgent = useCallback(
@@ -114,6 +103,8 @@ export const CampaignSection: React.FC<{
             text: `Let's create a new campaign!`,
             userId: user.id,
             currentBrandContextId: selectedBrandId,
+            currentCampaignId: selectedCampaignId,
+            currentMoodboardId: selectedMoodboardId,
           });
         }
       } catch (error) {
@@ -122,11 +113,6 @@ export const CampaignSection: React.FC<{
     },
     [user, stream, selectedBrandId, setIsCampaignCreating]
   );
-
-  const handleCampaignIndexChange = (index: number) => {
-    setFadeKey((prev) => prev + 1);
-    setSelectedCampaignIndex(index);
-  };
 
   const toggleExpanded = useCallback(() => {
     setExpandedSections((prev) => ({
@@ -164,6 +150,8 @@ export const CampaignSection: React.FC<{
         text: msg,
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       });
     }
   };
@@ -237,13 +225,7 @@ export const CampaignSection: React.FC<{
                       <div className="absolute right-3 top-7 flex ">
                         <div className="flex justify-between items-center gap-x-2">
                           {campaignInformation && (
-                            <CampaignSelector
-                              campaigns={campaignInformation}
-                              selectedCampaignIndex={selectedCampaignIndex}
-                              setSelectedCampaignIndex={
-                                handleCampaignIndexChange
-                              }
-                            />
+                            <CampaignSelector campaigns={campaignInformation} />
                           )}
 
                           <TooltipIconButton
@@ -297,11 +279,7 @@ export const CampaignSection: React.FC<{
             <div className="absolute right-3 top-7">
               <div className="flex justify-between items-center gap-x-2">
                 {campaignInformation && (
-                  <CampaignSelector
-                    campaigns={campaignInformation}
-                    selectedCampaignIndex={selectedCampaignIndex}
-                    setSelectedCampaignIndex={handleCampaignIndexChange}
-                  />
+                  <CampaignSelector campaigns={campaignInformation} />
                 )}
 
                 <TooltipIconButton

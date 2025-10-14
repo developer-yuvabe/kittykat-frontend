@@ -9,6 +9,8 @@ type SubmitOptions = {
   text: string;
   userId: string;
   currentBrandContextId: string | null;
+  currentCampaignId: string | null;
+  currentMoodboardId: string | null;
 };
 
 export function submitOptimisticMessage({
@@ -16,6 +18,8 @@ export function submitOptimisticMessage({
   text,
   userId,
   currentBrandContextId,
+  currentCampaignId,
+  currentMoodboardId,
 }: SubmitOptions) {
   const newMessage: Message = {
     id: uuidv4(),
@@ -34,6 +38,9 @@ export function submitOptimisticMessage({
       userId,
       currentBrandContextId,
       previousBrandContextId: stream.values.previousBrandContextId,
+      currentCampaignId: currentCampaignId ?? stream.values.currentCampaignId,
+      currentMoodboardId:
+        currentMoodboardId ?? stream.values.currentMoodboardId,
     },
     {
       streamMode: ["values"],
