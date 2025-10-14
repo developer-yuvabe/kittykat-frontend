@@ -361,7 +361,9 @@ export function MediaLibrary({
     <div className="flex flex-col w-full mx-auto  ">
       {/* Conditionally render header based on hideHeader prop */}
       {!hideHeader && (
-        <div className="flex justify-between mb-2 sticky top-24 bg-[#F3F4F6FF] pt-4 pb-2 z-50">
+        <div
+          className={`flex justify-between mb-2 sticky  top-24 bg-[#F3F4F6FF] pt-4 pb-2 z-50`}
+        >
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
             {!hasNoBrands && (
@@ -397,10 +399,31 @@ export function MediaLibrary({
           </Select>
         </div>
       )}
-      {/* Optional: Simple header for dialog mode */}
+      {/* Optional: Simple header for dialog mode (compact) */}
       {hideHeader && isMediaSelectDialog && (
-        <div className="flex justify-between items-center mb-4 pb-3 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Select Media</h2>
+        <div className="sticky -top-7 pt-4 z-50 bg-white flex justify-between items-start mb-2 pb-1 ">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <span>Select Media</span>
+              {/* selection count shown inline next to title */}
+              {currentSelectionCount > 0 && (
+                <span className="text-sm text-gray-500">
+                  ({currentSelectionCount} selected)
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {/* Compact actions aligned top-right */}
+          <div className="ml-4">
+            <MediaDialogMultiSelectHeader
+              isActive={isMultiSelect && isMediaSelectDialog}
+              currentSelectionCount={currentSelectionCount}
+              onClearSelection={handleUnselectAll}
+              onAddSelectedItems={handleAddSelectedItems}
+              totalAssets={inSelectionGalleryIds.length + currentSelectionCount}
+            />
+          </div>
         </div>
       )}
 
@@ -458,8 +481,12 @@ export function MediaLibrary({
               value={activeTab}
               onValueChange={handleTabChange}
             >
-              <div className="sticky top-36 bg-[#F3F4F6FF] pt-2  z-40">
-                <MediaLibraryTabs />
+              <div
+                className={`sticky ${
+                  isMediaSelectDialog ? "top-5" : "top-36"
+                } bg-[#F3F4F6FF]   z-40`}
+              >
+                <MediaLibraryTabs isSticky={isMediaSelectDialog} />
               </div>
               <TabsContent
                 value={activeTab}
@@ -518,16 +545,6 @@ export function MediaLibrary({
                         setSelectedFilters={setSelectedFilters}
                         setInitialWorkflowStatus={setInitialWorkflowStatus}
                         isMediaSelectDialog={isMediaSelectDialog}
-                      />
-
-                      <MediaDialogMultiSelectHeader
-                        isActive={isMultiSelect && isMediaSelectDialog}
-                        currentSelectionCount={currentSelectionCount}
-                        onClearSelection={handleUnselectAll}
-                        onAddSelectedItems={handleAddSelectedItems}
-                        totalAssets={
-                          inSelectionGalleryIds.length + currentSelectionCount
-                        }
                       />
 
                       <MediaGalleryStatusDisplay
