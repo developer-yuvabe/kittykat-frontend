@@ -142,7 +142,7 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
         throw new Error("Brand ID is missing.");
       }
       const { generation_id } = await videoGenerationService(selectedBrandId!, {
-        data,
+        ...data,
         campaign_id: campaignId,
       });
 
