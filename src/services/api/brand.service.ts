@@ -129,3 +129,25 @@ export async function updateCampaignName(
     campaign: { title },
   });
 }
+export async function addDeprioritizedIds(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string,
+  deprioritizedIds: string[]
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/deprioritized-ids`,
+      {
+        brand_id: brandId,
+        campaign_id: campaignId,
+        deprioritized_ids: deprioritizedIds,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+  );
+}

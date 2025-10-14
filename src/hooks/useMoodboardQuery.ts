@@ -1,6 +1,7 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getAutoFillMoodboardSuggestedImages } from "@/services/api/moodboard.service";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
+import { addDeprioritizedIds } from "@/services/api/brand.service";
 
 interface UseMoodboardQueryOptions {
   brandId?: string;
@@ -86,9 +87,46 @@ export function useMoodboardQuery({
     });
   }
 
+  // Mutation for deprioritizing/removing images
+  const deprioritizeMutation = useMutation({
+    mutationFn: async (imageIds: string[]) => {
+      if (!brandId || !campaignId || !moodboardId) {
+        throw new Error("Missing required IDs for deprioritization");
+      }
+
+      // Optimistically update cache by moving deprioritized images to the end
+      const allQueries = queryClient.getQueriesData<AutoFillSuggestedImage[]>({
+        queryKey: ["autofill-suggestions"],
+        exact: false,
+      });
+
+      allQueries.forEach(([queryKey, oldData]) => {
+        if (!oldData) return;
+
+        queryClient.setQueryData<AutoFillSuggestedImage[]>(queryKey, () => {
+          const deprioritizedSet = new Set(imageIds);
+          const prioritized = oldData.filter(
+            (item) => !deprioritizedSet.has(item.id)
+          );
+          const deprioritized = oldData.filter((item) =>
+            deprioritizedSet.has(item.id)
+          );
+
+          return [...prioritized, ...deprioritized];
+        });
+      });
+
+      return addDeprioritizedIds(brandId, campaignId, moodboardId, imageIds);
+    },
+    onSuccess: () => {
+      refetchAllAutoFillQueries();
+    },
+  });
+
   return {
     ...query,
     updateAutoFillSuggestionCache,
     refetchAllAutoFillQueries,
+    deprioritizeMutation,
   };
 }
