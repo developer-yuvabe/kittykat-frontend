@@ -13,7 +13,6 @@ import React, {
   useLayoutEffect,
   useRef,
 } from "react";
-import UrlUploadDialog from "./UrlUploadDialog";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import {
   getFileIcon,
@@ -44,6 +43,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import AgentPdfAttachmentUploader from "./AgentPdfAttachmentUploader";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -469,7 +469,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   isFileUploading={isUploading}
                   handleAddFiles={handleFileUpload}
                 />
-                <UrlUploadDialog onUploadComplete={handleAddFile} />
+                <AgentPdfAttachmentUploader onUploadComplete={handleAddFile} />
                 <button
                   type="button"
                   onClick={startRecording}
