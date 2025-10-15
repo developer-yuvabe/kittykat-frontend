@@ -131,6 +131,7 @@ const ImageWithMetadataModal = ({
         ...Object.fromEntries(
           paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
         ),
+        source_asset_id: galleryItem.id,
       });
 
       onClose();
@@ -188,6 +189,7 @@ const ImageWithMetadataModal = ({
         fractality: 0,
         engine: "automatic",
         prompt: "",
+        source_asset_id: galleryItem.id,
       });
 
       onClose();
@@ -338,6 +340,7 @@ const ImageWithMetadataModal = ({
         first_frame: galleryItem.asset_url,
         prompt,
         model: defaultAnimationModel.model,
+        source_asset_id: galleryItem.id,
       });
 
       onClose();

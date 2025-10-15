@@ -5,7 +5,6 @@ import { z, ZodTypeAny } from "zod";
 
 export const generateImage = async <T extends ZodTypeAny>(
   brandId: string,
-  // campaignId: string | null,
   data: z.infer<T>
 ) => {
   try {

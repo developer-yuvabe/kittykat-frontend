@@ -94,6 +94,11 @@ export function SortableMediaItem({
     }
   };
 
+  const handleExpandClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowImageModal(true);
+  };
+
   const aspectRatio = dimensions.width / dimensions.height || 1;
   const skeletonHeight = item.dimensions?.height
     ? Math.min(item.dimensions.height / 4, 400)
@@ -105,9 +110,12 @@ export function SortableMediaItem({
       style={style}
       className={`mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
         isDragging ? "opacity-50 z-50" : ""
-      }`}
+      } ${isMediaSelectDialog && !isDisabled ? "cursor-pointer" : ""}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onClick={
+        isMediaSelectDialog && !isDisabled ? handleImageClick : undefined
+      }
       {...(isDraggable ? attributes : {})}
     >
       {!isLoaded && (
@@ -138,6 +146,7 @@ export function SortableMediaItem({
                 data: { is_favourite: !item.is_favourite },
               });
             }}
+            isMediaSelectDialog={isMediaSelectDialog}
           />
         </div>
 
@@ -162,6 +171,7 @@ export function SortableMediaItem({
           onEditClick={onEditClick}
           onDelete={onDelete}
           onEditMoodboard={onEditMoodboard}
+          onExpandClick={handleExpandClick}
         />
 
         {/* Dark overlay for better drag handle visibility - only show on hover when draggable */}

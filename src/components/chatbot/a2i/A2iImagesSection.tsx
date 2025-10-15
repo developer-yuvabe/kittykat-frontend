@@ -1,7 +1,11 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
+import type {
+  ThreadA2iImage,
+  ThreadCampaign,
+  ThreadDetails,
+} from "@/types/types";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
@@ -12,14 +16,13 @@ interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
   moodboardInformation: ThreadDetails["moodboard_information"];
   campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
 }
 
 const A2iImagesSection = function A2iImagesSection({
   a2iImageInformation,
   moodboardInformation,
-  campaignInformation,
-  selectedCampaignIndex,
+  currentCampaign,
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLDivElement | null>(null);
@@ -81,8 +84,7 @@ const A2iImagesSection = function A2iImagesSection({
             prompts={a2iImageInformation?.prompts}
             moodboardInformation={moodboardInformation}
             formRef={formRef}
-            campaignInformation={campaignInformation}
-            selectedCampaignIndex={selectedCampaignIndex}
+            currentCampaign={currentCampaign}
             referenceMoodboardAssets={
               a2iImageInformation?.reference_moodboard_assets
             }
@@ -91,8 +93,7 @@ const A2iImagesSection = function A2iImagesSection({
             formRef={formRef}
             generations={[...(a2iImageInformation?.generations || [])]}
             referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-            campaignInformation={campaignInformation}
-            selectedCampaignIndex={selectedCampaignIndex}
+            currentCampaign={currentCampaign}
           />
         </CardContent>
       )}

@@ -14,18 +14,19 @@ import {
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { toast } from "sonner";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check, Copy, Pencil } from "lucide-react";
 import { Agents } from "@/types/types";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { isEqual } from "lodash";
 interface CampaignColorsProps {
   colors: string[];
   campaignId: string;
   campaignTitle: string | undefined;
 }
 
-export const CampaignColors: React.FC<CampaignColorsProps> = ({
+export const CampaignColorsComponent: React.FC<CampaignColorsProps> = ({
   colors,
   campaignId,
   campaignTitle,
@@ -36,7 +37,8 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
   const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
   const [validColors, setValidColors] = useState(
     colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color))
   );
@@ -85,11 +87,17 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
 
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       });
     }
 
     setPopoverOpen(null);
   };
+
+  useEffect(() => {
+    setValidColors(colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)));
+  }, [colors]);
 
   return (
     <ContentSection
@@ -176,3 +184,11 @@ export const CampaignColors: React.FC<CampaignColorsProps> = ({
     />
   );
 };
+
+export const CampaignColors = React.memo(
+  CampaignColorsComponent,
+  (prev, next) => {
+    const arePropsEqual = isEqual(prev, next);
+    return arePropsEqual;
+  }
+) as typeof CampaignColorsComponent;

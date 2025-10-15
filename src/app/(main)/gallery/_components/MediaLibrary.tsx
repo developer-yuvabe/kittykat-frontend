@@ -7,7 +7,7 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import type {
@@ -16,8 +16,6 @@ import type {
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
-import { MediaBulkActions } from "./MediaBulkActions";
-import MediaFilterSidebar from "./MediaFilterSidebar";
 import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
 import { MediaFolderView } from "./MediaFolderView";
@@ -36,6 +34,7 @@ import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { MediaBulkActions } from "./MediaBulkActions";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -264,10 +263,6 @@ export function MediaLibrary({
     setShowFilters(!showFilters);
   };
 
-  const handleApplyFilters = (filters: EnhancedSelectedFilters) => {
-    setSelectedFilters(filters);
-  };
-
   // Handle multi-select "Add" button
   const handleAddSelectedItems = () => {
     if (isMultiSelect && multiSelectItems.length > 0) {
@@ -332,6 +327,16 @@ export function MediaLibrary({
     }
   );
 
+  const [, setSelectedCampaignInUrl] = useQueryState<string | null>(
+    "campaign",
+    {
+      defaultValue: null,
+      parse: (value) => value ?? null,
+      serialize: (value) => value ?? "",
+      history: "push",
+    }
+  );
+
   const setGalleryView = (value: "grid" | "folder") => {
     setLocalGalleryView(value);
     setGalleryViewRaw(value);
@@ -353,26 +358,29 @@ export function MediaLibrary({
   );
 
   return (
-    <div className="flex flex-col w-full max-w-7xl mx-auto relative">
+    <div className="flex flex-col w-full mx-auto  ">
       {/* Conditionally render header based on hideHeader prop */}
       {!hideHeader && (
-        <div className="flex justify-between mb-2">
+        <div
+          className={`flex justify-between mb-2 sticky  top-24 bg-[#F3F4F6FF] pt-4 pb-2 z-50`}
+        >
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
             {!hasNoBrands && (
               <BrandSelector
-                showCampaigns
+                showCampaigns={galleryView === "grid"}
                 showSelectedValue
                 className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
-                onBrandSelect={(brandId) => {
+                onBrandSelect={(brandId, campaignId) => {
                   setSelectedFilters((prev) => ({
                     ...prev,
                     brandId: [brandId],
-                    campaigns: [],
+                    campaigns: campaignId ? [campaignId] : [],
                   }));
 
                   setInitialWorkflowStatus(null);
                   setInitialBrandId(null);
+                  setSelectedCampaignInUrl(null);
                 }}
               />
             )}
@@ -391,10 +399,31 @@ export function MediaLibrary({
           </Select>
         </div>
       )}
-      {/* Optional: Simple header for dialog mode */}
+      {/* Optional: Simple header for dialog mode (compact) */}
       {hideHeader && isMediaSelectDialog && (
-        <div className="flex justify-between items-center mb-4 pb-3 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Select Media</h2>
+        <div className="sticky -top-7 pt-4 z-50 bg-white flex justify-between items-start mb-2 pb-1 ">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <span>Select Media</span>
+              {/* selection count shown inline next to title */}
+              {currentSelectionCount > 0 && (
+                <span className="text-sm text-gray-500">
+                  ({currentSelectionCount} selected)
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {/* Compact actions aligned top-right */}
+          <div className="ml-4">
+            <MediaDialogMultiSelectHeader
+              isActive={isMultiSelect && isMediaSelectDialog}
+              currentSelectionCount={currentSelectionCount}
+              onClearSelection={handleUnselectAll}
+              onAddSelectedItems={handleAddSelectedItems}
+              totalAssets={inSelectionGalleryIds.length + currentSelectionCount}
+            />
+          </div>
         </div>
       )}
 
@@ -430,7 +459,6 @@ export function MediaLibrary({
                 activeTab={activeTab}
                 selectedCampaignId={selectedCampaignId ?? undefined}
                 selecteMoodboardId={moodboardId}
-                galleryView={galleryView}
                 brandName={selectedBrandName}
                 isUrlDialogOpen={isUrlDialogOpen} // Use state variable
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
@@ -453,10 +481,16 @@ export function MediaLibrary({
               value={activeTab}
               onValueChange={handleTabChange}
             >
-              <MediaLibraryTabs />
+              <div
+                className={`sticky ${
+                  isMediaSelectDialog ? "top-5" : "top-36"
+                } bg-[#F3F4F6FF]   z-40`}
+              >
+                <MediaLibraryTabs isSticky={isMediaSelectDialog} />
+              </div>
               <TabsContent
                 value={activeTab}
-                className="p-3 rounded-3xl bg-white mt-0"
+                className="p-3 rounded-3xl bg-white mt-0 "
               >
                 {activeTab !== "pexels" &&
                   (activeTab !== "a2i-media" ||
@@ -494,29 +528,6 @@ export function MediaLibrary({
                   <div className="flex flex-col md:flex-row gap-4">
                     <div
                       className={`${
-                        showFilters ? "w-full md:w-1/4" : "hidden"
-                      } transition-all duration-300 ease-in-out`}
-                    >
-                      <div className="md:hidden flex justify-between items-center mb-2">
-                        <h3 className="font-medium">Filters</h3>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={toggleFilters}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <MediaFilterSidebar
-                        selectedFilters={selectedFilters}
-                        onApply={handleApplyFilters}
-                        product_categories={[]}
-                        setShowFilter={setShowFilters}
-                      />
-                    </div>
-
-                    <div
-                      className={`${
                         showFilters ? "w-full md:w-3/4" : "w-full"
                       } transition-all duration-300 ease-in-out`}
                     >
@@ -534,16 +545,6 @@ export function MediaLibrary({
                         setSelectedFilters={setSelectedFilters}
                         setInitialWorkflowStatus={setInitialWorkflowStatus}
                         isMediaSelectDialog={isMediaSelectDialog}
-                      />
-
-                      <MediaDialogMultiSelectHeader
-                        isActive={isMultiSelect && isMediaSelectDialog}
-                        currentSelectionCount={currentSelectionCount}
-                        onClearSelection={handleUnselectAll}
-                        onAddSelectedItems={handleAddSelectedItems}
-                        totalAssets={
-                          inSelectionGalleryIds.length + currentSelectionCount
-                        }
                       />
 
                       <MediaGalleryStatusDisplay

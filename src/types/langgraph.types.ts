@@ -6,6 +6,7 @@ import {
   UIMessage,
   uiMessageReducer,
 } from "@langchain/langgraph-sdk/react-ui/server";
+import { MoodboardPinnedItem } from "./moodboard-agent.types";
 
 export const GenerativeUIAnnotation = Annotation.Root({
   messages: MessagesAnnotation.spec["messages"],
@@ -80,4 +81,9 @@ export interface TransformedThread {
   initial: string;
   searchKey: string; // Unique search key combining name and ID
   raw: Thread;
+}
+
+export interface PinnedMoodboardItem {
+  title: string;
+  moodboard: MoodboardPinnedItem["moodboard"];
 }

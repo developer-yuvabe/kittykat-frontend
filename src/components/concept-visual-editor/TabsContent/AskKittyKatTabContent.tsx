@@ -678,6 +678,7 @@ const AskKittyKatTabContent = ({
           data: {
             sent_to_human_queue: true,
             workflow_status: "request_created",
+            sent_to_queue_at: new Date().toISOString(),
           },
         },
         {

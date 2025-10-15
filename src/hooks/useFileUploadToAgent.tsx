@@ -3,21 +3,13 @@ import { toast } from "sonner";
 import type { URLContentBlock, IDContentBlock } from "@langchain/core/messages";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { uploadThreadFile } from "@/services/api/brand.service";
-
-export const SUPPORTED_FILE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "application/pdf",
-];
-
-export const IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-];
+import {
+  validateImageUploadSize,
+  formatFileSize,
+  IMAGE_TYPES,
+  SUPPORTED_FILE_TYPES,
+} from "@/lib/langgraph.utils";
+import { MAX_IMAGE_UPLOAD_SIZE } from "@/lib/constants";
 
 export type ContentBlock = URLContentBlock | IDContentBlock;
 
@@ -36,6 +28,28 @@ export function useFileUpload({
   const [dragOver, setDragOver] = useState(false);
   const dragCounter = useRef(0);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Track total size of uploaded images
+  const [currentImageSize, setCurrentImageSize] = useState(0);
+
+  // Calculate total size of image blocks
+  const calculateImageSize = (blocks: ContentBlock[]): number => {
+    return blocks.reduce((total, block) => {
+      if (
+        block.type === "image" &&
+        block.source_type === "url" &&
+        block.metadata?.size
+      ) {
+        return total + (block.metadata.size as number);
+      }
+      return total;
+    }, 0);
+  };
+
+  // Update current image size when blocks change
+  useEffect(() => {
+    setCurrentImageSize(calculateImageSize(contentBlocks));
+  }, [contentBlocks]);
 
   const isDuplicate = (file: File, blocks: ContentBlock[]): boolean => {
     if (IMAGE_TYPES.includes(file.type)) {
@@ -77,7 +91,7 @@ export function useFileUpload({
           source_type: "url",
           url: uploadedUrl,
           mime_type: file.type,
-          metadata: { name: file.name },
+          metadata: { name: file.name, size: file.size },
         } as URLContentBlock;
       } else if (brandId) {
         // PDFs and other files: Upload to thread files and return IDContentBlock
@@ -125,22 +139,37 @@ export function useFileUpload({
         (file) => !isDuplicate(file, contentBlocks)
       );
 
+      // Validate image sizes (only images here, no need to separate)
+      const { validFiles: validImageFiles, rejectedFiles: rejectedImageFiles } =
+        validateImageUploadSize(uniqueFiles, currentImageSize);
+
       if (invalidFiles.length > 0) {
-        toast.error(
+        toast.warning(
           "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF."
         );
       }
 
       if (duplicateFiles.length > 0) {
-        toast.error(
+        toast.warning(
           `Duplicate file(s) detected: ${duplicateFiles
             .map((f) => f.name)
             .join(", ")}. Each file can only be uploaded once per message.`
         );
       }
 
-      if (uniqueFiles.length > 0) {
-        const promise = Promise.all(uniqueFiles.map(fileToContentBlock));
+      if (rejectedImageFiles.length > 0) {
+        const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
+        toast.warning(
+          `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
+            remainingSpace
+          )} remaining. Rejected: ${rejectedImageFiles
+            .map((r) => r.file.name)
+            .join(", ")}`
+        );
+      }
+
+      if (validImageFiles.length > 0) {
+        const promise = Promise.all(validImageFiles.map(fileToContentBlock));
 
         toast.promise(promise, {
           loading: "Uploading files...",
@@ -236,21 +265,38 @@ export function useFileUpload({
           (file) => !isDuplicate(file, contentBlocks)
         );
 
+        // Validate image sizes (only images here)
+        const {
+          validFiles: validImageFiles,
+          rejectedFiles: rejectedImageFiles,
+        } = validateImageUploadSize(uniqueFiles, currentImageSize);
+
         if (invalidFiles.length > 0) {
-          toast.error(
+          toast.warning(
             "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF."
           );
         }
         if (duplicateFiles.length > 0) {
-          toast.error(
+          toast.warning(
             `Duplicate file(s) detected: ${duplicateFiles
               .map((f) => f.name)
               .join(", ")}. Each file can only be uploaded once per message.`
           );
         }
 
-        if (uniqueFiles.length > 0) {
-          const promise = Promise.all(uniqueFiles.map(fileToContentBlock));
+        if (rejectedImageFiles.length > 0) {
+          const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
+          toast.warning(
+            `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
+              remainingSpace
+            )} remaining. Rejected: ${rejectedImageFiles
+              .map((r) => r.file.name)
+              .join(", ")}`
+          );
+        }
+
+        if (validImageFiles.length > 0) {
+          const promise = Promise.all(validImageFiles.map(fileToContentBlock));
 
           toast.promise(promise, {
             loading: "Uploading files...",
@@ -332,21 +378,35 @@ export function useFileUpload({
         (file) => !isDuplicate(file, contentBlocks)
       );
 
+      // Validate image sizes (only images here)
+      const { validFiles: validImageFiles, rejectedFiles: rejectedImageFiles } =
+        validateImageUploadSize(uniqueFiles, currentImageSize);
+
       if (invalidFiles.length > 0) {
-        toast.error(
+        toast.warning(
           "You have pasted an invalid file type. Please paste a JPEG, PNG, GIF, WEBP image or a PDF."
         );
       }
       if (duplicateFiles.length > 0) {
-        toast.error(
+        toast.warning(
           `Duplicate file(s) detected: ${duplicateFiles
             .map((f) => f.name)
             .join(", ")}. Each file can only be uploaded once per message.`
         );
       }
-      if (uniqueFiles.length > 0) {
+      if (rejectedImageFiles.length > 0) {
+        const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
+        toast.warning(
+          `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
+            remainingSpace
+          )} remaining. Rejected: ${rejectedImageFiles
+            .map((r) => r.file.name)
+            .join(", ")}`
+        );
+      }
+      if (validImageFiles.length > 0) {
         const newBlocks = await Promise.all(
-          uniqueFiles.map(fileToContentBlock)
+          validImageFiles.map(fileToContentBlock)
         );
         setContentBlocks((prev) => [...prev, ...newBlocks]);
       }

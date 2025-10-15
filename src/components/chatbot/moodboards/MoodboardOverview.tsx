@@ -25,7 +25,8 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
 }) => {
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
 
   const handleFieldUpdate = (
     fieldPath: string,
@@ -52,6 +53,8 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
         text: msg,
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       });
     }
   };

@@ -9,6 +9,7 @@ import {
   MoodboardAsset,
   MoodboardInformation,
   ThreadA2iImage,
+  ThreadCampaign,
   ThreadDetails,
 } from "@/types/types";
 import { UnifiedMoodboardItem } from "@/types/moodboard.types";
@@ -38,8 +39,7 @@ type ReferenceMoodboardProps = {
   prompts: ThreadA2iImage["prompts"];
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
-  campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
 };
 
 const ReferenceMoodboard = ({
@@ -48,8 +48,7 @@ const ReferenceMoodboard = ({
   prompts,
   moodboardInformation,
   formRef,
-  campaignInformation,
-  selectedCampaignIndex,
+  currentCampaign,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt, isGeneratingPrompts, setIsGeneratingPrompts } =
     useA2iStore();
@@ -92,15 +91,6 @@ const ReferenceMoodboard = ({
       setIsGeneratingPrompts(false);
     },
   });
-
-  // Get the current campaign based on selectedCampaignIndex
-  const currentCampaign = useMemo(
-    () =>
-      campaignInformation && campaignInformation[selectedCampaignIndex]
-        ? campaignInformation[selectedCampaignIndex]
-        : null,
-    [campaignInformation, selectedCampaignIndex]
-  );
 
   const selectedMoodboard = useMemo(
     () => moodboardInformation?.find((mb) => mb.id === referenceMoodboardId),

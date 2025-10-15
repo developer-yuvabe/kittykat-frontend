@@ -1,14 +1,16 @@
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Loader2, PaperclipIcon } from "lucide-react";
+import { MAX_PDF_UPLOAD_SIZE } from "@/lib/constants";
 
-import { Loader2, PaperclipIcon } from "lucide-react"; // Loader icon
-
-interface FileUploaderProps {
+interface AgentPdfAttachmentUploaderProps {
   onUploadComplete: (url: string) => void;
 }
 
-export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
+export default function AgentPdfAttachmentUploader({
+  onUploadComplete,
+}: AgentPdfAttachmentUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,9 +37,22 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      uploadFile(file);
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== "application/pdf") {
+      toast.warning("Only PDF files are allowed.");
+      return;
     }
+
+    // Validate file size (MAX_PDF_UPLOAD_SIZE is in bytes)
+    if (file.size > MAX_PDF_UPLOAD_SIZE) {
+      const maxSizeMB = MAX_PDF_UPLOAD_SIZE / (1024 * 1024);
+      toast.warning(`File size must be ≤ ${maxSizeMB}MB.`);
+      return;
+    }
+
+    uploadFile(file);
   };
 
   return (

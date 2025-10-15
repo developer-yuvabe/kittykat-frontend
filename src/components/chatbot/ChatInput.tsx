@@ -13,17 +13,18 @@ import React, {
   useLayoutEffect,
   useRef,
 } from "react";
-import UrlUploadDialog from "./UrlUploadDialog";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import {
   getFileIcon,
   addFileWrappers,
   removeFileWrappers,
+  getPinnedItemContextMessage,
   ensureToolCallsHaveResponses,
 } from "@/lib/langgraph.utils";
 import { scrollToBottom } from "@/lib/scroll.utils"; // Import your utility function
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
-import { SendIcon } from "../ui/custom-icon";
+import { PinIcon, SendIcon } from "../ui/custom-icon";
 import { ChatFilePreview } from "./ChatFilePreview";
 import { FileUploadPopover } from "./FileUploadPopover";
 import { useFileUpload } from "@/hooks/useFileUploadToAgent";
@@ -42,6 +43,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import AgentPdfAttachmentUploader from "./AgentPdfAttachmentUploader";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -97,8 +99,10 @@ const FileThumbnail = ({
 export const ChatInput: React.FC<ChatInputProps> = ({
   setFirstTokenReceived,
 }) => {
+  const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
+    useBrandStore();
   const stream = useStreamContext();
   const { isLoading, stop } = stream;
 
@@ -214,14 +218,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     contentBlocks,
     setContentBlocks,
     handleFileUpload,
-
+    dropRef,
     removeBlock,
     handlePaste,
     isUploading,
   } = useFileUpload({ brandId: user?.thread_id || "" });
-
-  // Combined drop zone for both files and moodboards
-  const combinedDropRef = useRef<HTMLDivElement>(null);
 
   const handleAddFile = useCallback((url: string) => {
     addFileWrappers(url, setFileList);
@@ -246,13 +247,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       setFirstTokenReceived(false);
 
+      const pinnedContextMessage: string | null = pinnedItem
+        ? getPinnedItemContextMessage(pinnedItem)
+        : null;
+
       const newHumanMessage: Message = {
         id: uuidv4(),
         type: "human",
         content: [
           {
             type: "text",
-            text: input.trimEnd(),
+            text: pinnedContextMessage
+              ? `${pinnedContextMessage}${input.trimEnd()}`
+              : input.trimEnd(),
           },
           ...contentBlocks,
         ] as Message["content"],
@@ -279,6 +286,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: stream.values.previousBrandContextId,
+          currentCampaignId: selectedCampaignId,
+          currentMoodboardId: selectedMoodboardId,
         },
         {
           streamMode: ["values"],
@@ -300,6 +309,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       input,
       isLoading,
       setFirstTokenReceived,
+      pinnedItem,
       contentBlocks,
       fileList,
       resetFiles,
@@ -331,10 +341,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div
-      ref={combinedDropRef}
-      className={`relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col  
-      `}
+      ref={dropRef}
+      className="relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col"
     >
+      {pinnedItem && (
+        <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
+          <div className="flex gap-2 flex-wrap items-center">
+            <PinIcon className="text-gray-700" />
+            <div className="flex flex-col gap-1 flex-1 border-l pl-3 border-gray-900">
+              <span className="text-xs text-gray-500">Focused only on</span>
+              <div className="relative group flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900">
+                  {pinnedItem.title}
+                </span>
+              </div>
+              <button
+                onClick={() => removePinnedItem()}
+                className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {fileList.length > 0 && (
         <div className="p-3 border-b flex space-x-2 overflow-x-auto">
           {fileList
@@ -438,7 +469,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   isFileUploading={isUploading}
                   handleAddFiles={handleFileUpload}
                 />
-                <UrlUploadDialog onUploadComplete={handleAddFile} />
+                <AgentPdfAttachmentUploader onUploadComplete={handleAddFile} />
                 <button
                   type="button"
                   onClick={startRecording}

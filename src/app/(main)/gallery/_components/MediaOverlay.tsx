@@ -7,6 +7,7 @@ import {
   PencilIcon,
   X,
   LayoutGridIcon,
+  Expand,
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 
@@ -26,6 +27,7 @@ interface MediaOverlayProps {
   onEditClick?: (item: GalleryItemResponse) => void;
   onDelete?: (id: string, e: React.MouseEvent) => void;
   onEditMoodboard?: (item: GalleryItemResponse) => void;
+  onExpandClick?: (e: React.MouseEvent) => void;
 }
 
 // 🔑 Control size for all overlay buttons & checkbox
@@ -47,6 +49,7 @@ export function MediaOverlay({
   onEditClick,
   onDelete,
   onEditMoodboard,
+  onExpandClick,
 }: MediaOverlayProps) {
   const { updateAutoFillSuggestionCache } = useMoodboardQuery({});
 
@@ -80,6 +83,7 @@ export function MediaOverlay({
         className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${
           shouldShowSelection ? "opacity-100" : "opacity-0"
         }`}
+        onClick={(e) => e.stopPropagation()} // Prevent tile click when clicking checkbox
       >
         {isMediaSelectDialog || isMultiSelectMode ? (
           // Checkbox for both Single and Multi Select Mode
@@ -126,6 +130,25 @@ export function MediaOverlay({
             onClick={(e: React.MouseEvent) => onDelete(item.id, e)}
             icon={
               <X
+                className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+              />
+            }
+          />
+        </div>
+      )}
+
+      {/* Expand Button - Top Right (only in media select dialog mode) */}
+      {isMediaSelectDialog && onExpandClick && (
+        <div
+          className={`absolute top-2 right-2 z-30 transition-opacity duration-200 ${
+            isHovered ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <TooltipButton
+            tooltip="Preview"
+            onClick={onExpandClick}
+            icon={
+              <Expand
                 className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
               />
             }
@@ -205,6 +228,7 @@ export function MediaOverlay({
         className={`absolute bottom-2 right-2 z-30 flex items-center gap-2 transition-opacity duration-200 ${
           isHovered ? "opacity-100" : "opacity-0"
         }`}
+        onClick={(e) => e.stopPropagation()} // Prevent tile click when clicking action buttons
       >
         <TooltipButton
           tooltip="Download"

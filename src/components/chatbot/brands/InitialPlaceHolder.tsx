@@ -319,6 +319,8 @@ export const InitialPlaceHolder: React.FC<{
         text: "Let's create a new brand.",
         userId: user!.id,
         currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
       });
 
       // Clear pinned items

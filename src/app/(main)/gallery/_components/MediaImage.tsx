@@ -11,12 +11,14 @@ interface MediaImageProps {
   onImageLoad: (event: any) => void;
   onEditClick: (item: GalleryItemResponse) => void;
   onToggleFavorite: () => void;
+  isMediaSelectDialog?: boolean;
 }
 
 export function MediaImage({
   item,
   onImageLoad,
   onToggleFavorite,
+  isMediaSelectDialog = false,
 }: MediaImageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -85,10 +87,19 @@ export function MediaImage({
   };
 
   const handleImageClick = () => {
-    setShowImageModal(true);
+    if (!isMediaSelectDialog) {
+      setShowImageModal(true);
+    }
   };
 
-  const handleVideoClick = () => {
+  const handleVideoClick = (e?: React.MouseEvent) => {
+    if (isMediaSelectDialog) {
+      // In media select dialog, let the parent handle the click
+      return;
+    }
+    if (e) {
+      e.stopPropagation();
+    }
     if (videoRef && videoRef.current) {
       if (videoRef.current.requestFullscreen) {
         videoRef.current.requestFullscreen();
@@ -119,9 +130,10 @@ export function MediaImage({
   if (isVideo && !videoError) {
     return (
       <div
-        className="relative w-full h-full cursor-pointer"
+        className="relative w-full h-full"
         onClick={handleVideoClick}
-        title="Click to fullscreen"
+        title={isMediaSelectDialog ? undefined : "Click to fullscreen"}
+        style={{ cursor: isMediaSelectDialog ? "default" : "pointer" }}
       >
         <video
           ref={videoRef}
@@ -157,7 +169,8 @@ export function MediaImage({
         src={item.preview_url || item.asset_url || "/placeholder.svg"}
         alt={item.asset_title}
         fill
-        className="object-cover cursor-pointer"
+        className="object-cover"
+        style={{ cursor: isMediaSelectDialog ? "default" : "pointer" }}
         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
         onLoad={onImageLoad}
         onError={(e) => {

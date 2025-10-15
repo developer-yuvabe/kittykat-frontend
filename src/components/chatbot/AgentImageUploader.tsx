@@ -5,7 +5,7 @@ type FileTriggerType = "image" | "file";
 
 // Image upload to to chatinput
 
-export function FileUploadPopover({
+export function AgentImageUploader({
   isFileUploading,
   handleAddFiles,
 }: {

@@ -103,9 +103,9 @@ export default function BrandSelector({
 
     // Filter brands while keeping campaigns grouped
     return sorted.reduce<typeof brands>((acc, brand) => {
-      const brandMatch = brand.name.toLowerCase().includes(query);
-      const brandCreatedByMatch = brand.created_by.name
-        .toLowerCase()
+      const brandMatch = brand.name?.toLowerCase().includes(query);
+      const brandCreatedByMatch = brand.created_by?.name
+        ?.toLowerCase()
         .includes(query);
       const campaignMatches = showCampaigns
         ? brand.campaigns.filter((c) => c.title.toLowerCase().includes(query))
