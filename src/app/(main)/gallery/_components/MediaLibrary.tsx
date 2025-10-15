@@ -371,11 +371,11 @@ export function MediaLibrary({
                 showCampaigns={galleryView === "grid"}
                 showSelectedValue
                 className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
-                onBrandSelect={(brandId) => {
+                onBrandSelect={(brandId, campaignId) => {
                   setSelectedFilters((prev) => ({
                     ...prev,
                     brandId: [brandId],
-                    campaigns: [],
+                    campaigns: campaignId ? [campaignId] : [],
                   }));
 
                   setInitialWorkflowStatus(null);

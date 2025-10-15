@@ -42,6 +42,7 @@ import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
+import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -503,9 +504,14 @@ const RemixControls = ({
                 name="prompt"
                 render={({ field }) => (
                   <FormItem>
+                    {/* Mask Image parameter exists — supports brush.
+                        Reference Image parameter exists — supports reference image. */}
                     <FormControl>
                       <Textarea
-                        placeholder="Describe the image you want to create or brush an area to edit"
+                        placeholder={getRemixInputPlaceholderMessage({
+                          supportsBrush: !!maskImageParam,
+                          supportsReferenceImage: !!referenceImageParam,
+                        })}
                         className="resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none min-h-10 h-max max-h-60 scrollbar mb-2 px-0"
                         {...field}
                         onKeyDown={(e) => {

@@ -24,7 +24,7 @@ const tabItems: {
   {
     key: "remix",
     icon: <PaintBrushIcon className="w-6 h-6" />,
-    label: "In-Paint Editing",
+    label: "Image Editing",
   },
   {
     key: "video-generation",
