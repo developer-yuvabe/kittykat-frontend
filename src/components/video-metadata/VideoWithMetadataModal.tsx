@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { DownloadIcon } from "../ui/custom-icon";
 import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, convertParameterValue } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -71,7 +71,7 @@ const VideoWithMetadataModal = ({
     queryKey: ["video-parameters", galleryItem.brand_id, galleryItem.id],
     queryFn: () =>
       getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
-    enabled: !!galleryItem.id,
+    enabled: !generation && galleryItem.asset_source == "showboard-media",
     placeholderData: generation
       ? {
           type: generation.type,
@@ -126,51 +126,32 @@ const VideoWithMetadataModal = ({
         throw new Error("No model found for this video.");
       }
 
-      const convertValue = (
-        value: string | number,
-        paramDef: any
-      ): string | number => {
-        if (!paramDef?.defaultValue) return value;
-
-        const valueType = typeof value;
-        const targetType = typeof paramDef.defaultValue;
-
-        // If types already match, return as-is
-        if (valueType === targetType) {
-          return value;
-        }
-
-        // Convert if types don't match
-        if (targetType === "number" && valueType === "string") {
-          return parseInt(value as string, 10);
-        }
-        if (targetType === "string" && valueType === "number") {
-          return value.toString();
-        }
-        return value;
-      };
-
-      // ✅ Convert all parameters based on model parameter definitions
+      // Convert all parameters based on model parameter definitions
       const videoParams = { ...data.parameters };
-
       model.parameters?.forEach((paramDef) => {
         const paramId = paramDef.id;
         if (
           videoParams[paramId] !== undefined &&
           videoParams[paramId] !== null
         ) {
-          videoParams[paramId] = convertValue(videoParams[paramId], paramDef);
+          videoParams[paramId] = convertParameterValue(
+            videoParams[paramId],
+            paramDef
+          );
         }
       });
 
-      // ✅ Set model + parameters
+      //  Set model + parameters
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
 
       openConceptVisual({
         source: "blanket",
         assetItems: [galleryItem],
-        asset: null,
+        asset: {
+          currentAsset: galleryItem,
+          galleryActions: null,
+        },
         defaultActiveTab: "video-generation",
       });
 
@@ -308,11 +289,31 @@ const VideoWithMetadataModal = ({
                     )}
 
                     {/* Model Info */}
-                    <div className="flex flex-wrap gap-x-3 text-muted-foreground">
-                      <span>{data.parameters.model}</span>
-                      <span>{data.parameters.resolution}</span>
-                      <span>{data.parameters.aspect_ratio}</span>
-                      <span>{data.parameters.duration}s</span>
+                    <div className="flex flex-wrap items-center gap-x-2 text-muted-foreground text-sm">
+                      <span>Model: {data.parameters.model}</span>
+
+                      {data.parameters.resolution && (
+                        <>
+                          <span>-</span>
+                          <span>Resolution: {data.parameters.resolution}</span>
+                        </>
+                      )}
+
+                      {data.parameters.aspect_ratio && (
+                        <>
+                          <span>-</span>
+                          <span>
+                            Aspect ratio: {data.parameters.aspect_ratio}
+                          </span>
+                        </>
+                      )}
+
+                      {data.parameters.duration && (
+                        <>
+                          <span>-</span>
+                          <span>Duration: {data.parameters.duration}s</span>
+                        </>
+                      )}
                     </div>
                   </>
                 )}
@@ -324,19 +325,56 @@ const VideoWithMetadataModal = ({
                     <div className="flex justify-between items-center">
                       <p className="w-24">Vary</p>
                       <div className="flex flex-1 gap-x-2 items-start">
-                        <Button
-                          onClick={!isDisabled ? handleVaryAuto : undefined}
-                          disabled={isDisabled || loading.varyAuto}
-                          loading={loading.varyAuto}
-                        >
-                          Auto
-                        </Button>
-                        <Button
-                          onClick={!isDisabled ? handleVaryManual : undefined}
-                          disabled={isDisabled}
-                        >
-                          Manual
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              <Button
+                                onClick={
+                                  !isDisabled ? handleVaryAuto : undefined
+                                }
+                                disabled={isDisabled || loading.varyAuto}
+                                loading={!isDisabled && loading.varyAuto}
+                              >
+                                Auto
+                              </Button>
+                            </TooltipTrigger>
+
+                            {isDisabled && (
+                              <TooltipContent className="w-40">
+                                The variation feature is available exclusively
+                                for videos produced using video generation
+                                models.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              <Button
+                                onClick={
+                                  !isDisabled ? handleVaryManual : undefined
+                                }
+                                disabled={isDisabled}
+                              >
+                                Manual
+                              </Button>
+                            </TooltipTrigger>
+
+                            {isDisabled && (
+                              <TooltipContent className="w-40">
+                                The variation feature is available exclusively
+                                for videos produced using video generation
+                                models.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
 
