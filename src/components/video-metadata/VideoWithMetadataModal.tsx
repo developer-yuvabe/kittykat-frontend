@@ -126,15 +126,11 @@ const VideoWithMetadataModal = ({
         throw new Error("No model found for this video.");
       }
 
-      // ✅ Find parameter definitions from model
-      const durationParam = model.parameters?.find((p) => p.id === "duration");
-      const fpsParam = model.parameters?.find((p) => p.id === "framepersecond");
-
       const convertValue = (
         value: string | number,
         paramDef: any
       ): string | number => {
-        if (!paramDef) return value;
+        if (!paramDef?.defaultValue) return value;
 
         const valueType = typeof value;
         const targetType = typeof paramDef.defaultValue;
@@ -154,18 +150,18 @@ const VideoWithMetadataModal = ({
         return value;
       };
 
-      const videoParams = {
-        ...data.parameters,
-        ...(data.parameters.duration && {
-          duration: convertValue(data.parameters.duration, durationParam),
-        }),
-        ...(data.parameters.framepersecond && {
-          framepersecond: convertValue(
-            data.parameters.framepersecond,
-            fpsParam
-          ),
-        }),
-      };
+      // ✅ Convert all parameters based on model parameter definitions
+      const videoParams = { ...data.parameters };
+
+      model.parameters?.forEach((paramDef) => {
+        const paramId = paramDef.id;
+        if (
+          videoParams[paramId] !== undefined &&
+          videoParams[paramId] !== null
+        ) {
+          videoParams[paramId] = convertValue(videoParams[paramId], paramDef);
+        }
+      });
 
       // ✅ Set model + parameters
       setSelectedVideoGenearationModel(model);

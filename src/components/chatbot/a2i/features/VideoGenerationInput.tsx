@@ -90,7 +90,6 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
         ...parameters.videoParameters,
       });
 
-      form.trigger();
       setParameters("videoParameters", null);
     }
   }, [parameters]);
