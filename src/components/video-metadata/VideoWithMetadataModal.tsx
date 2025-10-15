@@ -121,7 +121,6 @@ const VideoWithMetadataModal = ({
 
     try {
       const model = models.find((m) => m.model === data.parameters.model);
-      console.log("Vary manual model:", model);
 
       if (!model) {
         throw new Error("No model found for this video.");
@@ -167,7 +166,6 @@ const VideoWithMetadataModal = ({
           ),
         }),
       };
-      console.log("Video params for vary manual:", videoParams);
 
       // ✅ Set model + parameters
       setSelectedVideoGenearationModel(model);
@@ -175,14 +173,16 @@ const VideoWithMetadataModal = ({
 
       openConceptVisual({
         source: "blanket",
-        assetItems: [],
+        assetItems: [galleryItem],
         asset: null,
         defaultActiveTab: "video-generation",
       });
 
       onClose();
 
-      toast.info("Model and prompt preloaded in Video Generation tab.");
+      toast.info(
+        "Preselected Model and its paramters set in Video Generation tab."
+      );
     } catch (error) {
       console.error(error);
       toast.error(
