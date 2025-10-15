@@ -26,10 +26,11 @@ import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Settings2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
@@ -80,6 +81,19 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
       image: item?.asset_url || null,
     },
   });
+  const { parameters, setParameters } = useMetadataActionsStore();
+
+  useEffect(() => {
+    if (parameters.videoParameters) {
+      form.reset({
+        ...form.getValues(),
+        ...parameters.videoParameters,
+      });
+
+      form.trigger();
+      setParameters("videoParameters", null);
+    }
+  }, [parameters]);
 
   const {
     negativePromptParam,
