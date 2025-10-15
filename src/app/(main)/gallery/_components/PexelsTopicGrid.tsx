@@ -180,7 +180,6 @@ export default function TopicsGrid({
         brand_id: selectedBrandId,
         campaign_id: selectedCampaignId,
         moodboard_id: selecteMoodboardId,
-        scrape_only: false,
       };
       setActiveTab("all-media");
       await galleryActions.bulkUpload(bulkUploadPayload);
@@ -259,7 +258,6 @@ export default function TopicsGrid({
         brand_id: selectedBrandId,
         campaign_id: selectedCampaignId,
         moodboard_id: selecteMoodboardId,
-        scrape_only: false,
       };
 
       // Fire and forget - we handle success/failure with toasts
