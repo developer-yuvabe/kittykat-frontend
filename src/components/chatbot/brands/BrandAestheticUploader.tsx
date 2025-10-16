@@ -25,7 +25,7 @@ import {
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { AnalysisLogDetail } from "@/types/types";
-import { getPlatformFromOptionId } from "@/lib/logs.utils";
+import { getPlatformFromOptionId, getDateTimestamp } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
 import { BrandAnalysisLogsPopover } from "./BrandAnalysisLogsPopover";
 import { BrandSocialVerifyDialog } from "./BrandSocialVerifyDialog";
@@ -67,8 +67,8 @@ export const BrandAestheticUploader: React.FC<Props> = ({
   const categorizedLogs = useMemo(() => {
     // Sort all logs by creation time (latest first)
     const sortedLogs = [...analysisLogs].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
+      const dateA = getDateTimestamp(a.created_at);
+      const dateB = getDateTimestamp(b.created_at);
       return dateB - dateA; // Latest first
     });
 
