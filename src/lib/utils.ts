@@ -415,3 +415,37 @@ export async function urlToFile(url: string): Promise<File> {
 
   return new File([blob], filename, { type: blob.type });
 }
+
+/**
+ * Converts a value to match the target type based on the parameter definition's default value type.
+ * Used when applying saved parameters to ensure type consistency with model schema.
+ *
+ * @param value - The value to convert (string or number)
+ * @param paramDef - The parameter definition from the model schema
+ * @returns The converted value matching the expected type
+ */
+export const convertParameterValue = (
+  value: string | number,
+  paramDef: any
+): string | number => {
+  if (!paramDef?.defaultValue) return value;
+
+  const valueType = typeof value;
+  const targetType = typeof paramDef.defaultValue;
+
+  // If types already match, return as-is
+  if (valueType === targetType) {
+    return value;
+  }
+
+  // Convert if types don't match
+  if (targetType === "number" && valueType === "string") {
+    return parseInt(value as string, 10);
+  }
+
+  if (targetType === "string" && valueType === "number") {
+    return value.toString();
+  }
+
+  return value;
+};
