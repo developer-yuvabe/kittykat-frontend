@@ -73,32 +73,13 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { parameters, setParameters } = useMetadataActionsStore();
-  // Store the current first frame value - persists until explicitly changed
-  const [currentFirstFrame, setCurrentFirstFrame] = useState<string | null>(
-    item?.asset_url || null
-  );
-
-  // When parameters arrive, extract and store the first frame
-  useEffect(() => {
-    if (parameters.videoParameters) {
-      const frameValue =
-        parameters.videoParameters.first_frame ||
-        parameters.videoParameters.start_image ||
-        parameters.videoParameters.image;
-
-      if (frameValue) {
-        setCurrentFirstFrame(frameValue);
-      }
-    }
-  }, [parameters.videoParameters]);
-
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
     formKey: `video-generation`,
     dynamicDefualtValues: {
-      start_image: currentFirstFrame,
-      first_frame: currentFirstFrame,
-      image: currentFirstFrame,
+      start_image: item?.asset_url || null,
+      first_frame: item?.asset_url || null,
+      image: item?.asset_url || null,
     },
   });
 
