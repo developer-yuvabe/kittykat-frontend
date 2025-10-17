@@ -259,11 +259,14 @@ export interface BulkGalleryUploadRequest {
   brand_id: string;
   campaign_id?: string;
   moodboard_id?: string;
-  scrape_config?: ScrapeConfig;
-  scrape_only?: boolean;
-  skip_embedding_for_existing?: boolean;
 }
 
+export interface BulkScrapeRequest {
+  scrape_config: ScrapeConfig;
+  brand_id: string;
+  campaign_id?: string;
+  moodboard_id?: string;
+}
 export interface MediaWithStatus extends Omit<FileWithStatus, "file"> {
   file?: File;
   url?: string;

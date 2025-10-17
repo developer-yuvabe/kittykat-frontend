@@ -5,6 +5,7 @@ import { PlayCircle, PauseCircle } from "lucide-react";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import ImageWithMetadataModal from "@/components/image-metadata/ImageWithMetadataModal";
+import VideoWithMetadataModal from "@/components/video-metadata/VideoWithMetadataModal";
 
 interface MediaImageProps {
   item: GalleryItemResponse;
@@ -25,6 +26,7 @@ export function MediaImage({
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   // Check if the item is a video with more robust detection
   const isVideo =
@@ -92,23 +94,8 @@ export function MediaImage({
     }
   };
 
-  const handleVideoClick = (e?: React.MouseEvent) => {
-    if (isMediaSelectDialog) {
-      // In media select dialog, let the parent handle the click
-      return;
-    }
-    if (e) {
-      e.stopPropagation();
-    }
-    if (videoRef && videoRef.current) {
-      if (videoRef.current.requestFullscreen) {
-        videoRef.current.requestFullscreen();
-      } else if ((videoRef.current as any).webkitRequestFullscreen) {
-        (videoRef.current as any).webkitRequestFullscreen();
-      } else if ((videoRef.current as any).msRequestFullscreen) {
-        (videoRef.current as any).msRequestFullscreen();
-      }
-    }
+  const handleVideoClick = () => {
+    setShowVideoModal(true);
   };
 
   const handleDownload = () => {
@@ -129,36 +116,53 @@ export function MediaImage({
 
   if (isVideo && !videoError) {
     return (
-      <div
-        className="relative w-full h-full"
-        onClick={handleVideoClick}
-        title={isMediaSelectDialog ? undefined : "Click to fullscreen"}
-        style={{ cursor: isMediaSelectDialog ? "default" : "pointer" }}
-      >
-        <video
-          ref={videoRef}
-          src={item.preview_url || item.asset_url}
-          className="object-contain w-full h-full"
-          muted
-          autoPlay
-          loop
-          style={{
-            display: videoLoaded ? "block" : "none",
-          }}
-        />
-        {videoLoaded && (
-          <button
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"
-            onClick={handleVideoToggle}
-          >
-            {isVideoPlaying ? (
-              <PauseCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
-            ) : (
-              <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
-            )}
-          </button>
+      <>
+        <div
+          className="relative w-full h-full cursor-pointer"
+          onClick={handleVideoClick}
+          title="Click to view metadata"
+        >
+          <video
+            ref={videoRef}
+            src={item.preview_url || item.asset_url}
+            className="object-contain w-full h-full"
+            muted
+            autoPlay
+            loop
+            style={{
+              display: videoLoaded ? "block" : "none",
+            }}
+          />
+          {videoLoaded && (
+            <button
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"
+              onClick={handleVideoToggle}
+            >
+              {isVideoPlaying ? (
+                <PauseCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
+              ) : (
+                <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* ✅ Video Metadata Modal */}
+        {showVideoModal && (
+          <VideoWithMetadataModal
+            isOpen={showVideoModal}
+            galleryItem={{
+              ...item,
+              asset_url: item.preview_url || item.asset_url,
+            }}
+            onClose={() => setShowVideoModal(false)}
+            onDownload={handleDownload}
+            onLike={handleFavoriteClick}
+            isLiked={item.is_favourite || false}
+            source="media-gallery"
+          />
         )}
-      </div>
+      </>
     );
   }
 

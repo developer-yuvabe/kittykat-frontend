@@ -280,7 +280,6 @@ export function FolderUploadDropzone({
         const bulkUploadPayload: BulkGalleryUploadRequest = {
           gallery_items: itemsToUpload,
           brand_id: selectedBrandId,
-          scrape_only: false,
         };
 
         await galleryActions.bulkUpload(bulkUploadPayload);

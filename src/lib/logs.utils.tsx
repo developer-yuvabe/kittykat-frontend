@@ -10,10 +10,28 @@ import {
   XCircle,
 } from "lucide-react";
 
+/**
+ * Extract date value from nested $date objects or plain strings
+ * Handles MongoDB date format: { $date: "ISO_STRING" }
+ */
+export const getDateValue = (dateObj: any): string => {
+  if (typeof dateObj === "string") return dateObj;
+  if (dateObj?.$date) return dateObj.$date;
+  return dateObj;
+};
+
+/**
+ * Extract timestamp in milliseconds from date objects
+ * Handles nested $date objects from MongoDB
+ */
+export const getDateTimestamp = (dateObj: any): number => {
+  const dateValue = getDateValue(dateObj);
+  return new Date(dateValue).getTime();
+};
+
 export const formatTimestamp = (timestamp: string | { $date: string }) => {
   try {
-    const rawDate =
-      typeof timestamp === "string" ? timestamp : timestamp?.$date;
+    const rawDate = getDateValue(timestamp);
 
     const date = new Date(rawDate);
 
@@ -117,4 +135,33 @@ export const getEstimatedTimeRemaining = (log: AnalysisLogDetail) => {
   if (remaining < 60000) return "< 1 min";
   if (remaining < 3600000) return `${Math.round(remaining / 60000)} min`;
   return `${Math.round(remaining / 3600000)} hr`;
+};
+
+/**
+ * Calculate the time taken between created_at and completed_at/updated_at
+ * Handles nested $date objects from MongoDB
+ */
+export const calculateTimeTaken = (
+  createdAt: string | { $date: string },
+  completedAt?: string | { $date: string } | null,
+  updatedAt?: string | { $date: string }
+): string => {
+  const startTime = getDateTimestamp(createdAt);
+  const endTime = getDateTimestamp(completedAt || updatedAt);
+
+  // Validate timestamps
+  if (isNaN(startTime) || isNaN(endTime)) {
+    return "N/A";
+  }
+
+  const diffMs = endTime - startTime;
+  if (diffMs < 0) {
+    return "N/A";
+  }
+
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const secs = diffSecs % 60;
+
+  return diffMins > 0 ? `${diffMins}m ${secs}s` : `${secs}s`;
 };

@@ -17,11 +17,15 @@ import { GlobeIcon } from "lucide-react";
 import { LimitsState, UploadedImage } from "@/types/moodboard.types";
 import { SocialOption, SocialOptionId } from "@/types/campaign.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { BulkGalleryUploadRequest, GalleryItem } from "@/types/gallery.types";
+import {
+  BulkGalleryUploadRequest,
+  BulkScrapeRequest,
+  GalleryItem,
+} from "@/types/gallery.types";
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { AnalysisLogDetail } from "@/types/types";
-import { getPlatformFromOptionId } from "@/lib/logs.utils";
+import { getPlatformFromOptionId, getDateTimestamp } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
 import { BrandAnalysisLogsPopover } from "./BrandAnalysisLogsPopover";
 import { BrandSocialVerifyDialog } from "./BrandSocialVerifyDialog";
@@ -57,14 +61,14 @@ export const BrandAestheticUploader: React.FC<Props> = ({
   });
 
   const { user } = useUserStore();
-  const { uploadBulkWithAnalysis: bulkUpload } = useGalleryQuery({});
+  const { bulkUpload, scrapeHandles } = useGalleryQuery({});
 
   // Fixed categorization and sorting with proper status handling
   const categorizedLogs = useMemo(() => {
     // Sort all logs by creation time (latest first)
     const sortedLogs = [...analysisLogs].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
+      const dateA = getDateTimestamp(a.created_at);
+      const dateB = getDateTimestamp(b.created_at);
       return dateB - dateA; // Latest first
     });
 
@@ -206,7 +210,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         const scrapePromises = validatedOptions.map(async (option) => {
           if (!option) return;
 
-          const scrapePayload: BulkGalleryUploadRequest = {
+          const scrapePayload: BulkScrapeRequest = {
             brand_id: brandId,
             scrape_config: {
               url: option.url,
@@ -214,10 +218,8 @@ export const BrandAestheticUploader: React.FC<Props> = ({
               results_limit: option.resultsLimit,
               user_id: user.id,
             },
-            scrape_only: true,
-            gallery_items: [],
           };
-          return bulkUpload(scrapePayload);
+          return scrapeHandles(scrapePayload);
         });
 
         await Promise.all(scrapePromises);
@@ -251,7 +253,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         const uploadPayload: BulkGalleryUploadRequest = {
           gallery_items: itemsToUpload,
           brand_id: brandId,
-          scrape_only: false,
         };
 
         await bulkUpload(uploadPayload);
@@ -286,7 +287,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         const uploadPayload: BulkGalleryUploadRequest = {
           gallery_items: itemsToUpload,
           brand_id: brandId,
-          scrape_only: false,
         };
 
         await bulkUpload(uploadPayload);
@@ -344,7 +344,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         const scrapePromises = validatedSocialOptions.map(async (option) => {
           if (!option) return;
 
-          const scrapePayload: BulkGalleryUploadRequest = {
+          const scrapePayload: BulkScrapeRequest = {
             brand_id: brandId,
             scrape_config: {
               url: option.url,
@@ -352,11 +352,9 @@ export const BrandAestheticUploader: React.FC<Props> = ({
               results_limit: option.resultsLimit,
               user_id: user.id,
             },
-            scrape_only: true,
-            gallery_items: [],
           };
 
-          return bulkUpload(scrapePayload);
+          return scrapeHandles(scrapePayload);
         });
 
         await Promise.all(scrapePromises);

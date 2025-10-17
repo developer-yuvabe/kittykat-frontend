@@ -7,6 +7,7 @@ import {
 import { galleryService } from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
+  BulkScrapeRequest,
   CommentReplyUpdate,
   CommentUpdate,
   GalleryFilters,
@@ -228,11 +229,11 @@ export const useGalleryQuery = (
     },
   });
 
+  // Bulk upload mutation for manual uploads (no scraping/analysis)
   const bulkUploadMutation = useMutation({
     mutationFn: (body: BulkGalleryUploadRequest) =>
       galleryService.uploadBulkGalleryItems(body),
     onMutate: () => {
-      // Show loading toast and store the ID
       const toastId = toast.loading("Uploading items to gallery...");
       return { toastId };
     },
@@ -240,38 +241,33 @@ export const useGalleryQuery = (
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-
-      // Update the loading toast to success
       toast.success("Items uploaded to gallery", { id: context?.toastId });
     },
     onError: (_error, _variables, context) => {
-      // Update the loading toast to error
       toast.error("Failed to upload items to gallery", {
         id: context?.toastId,
       });
     },
   });
 
-  // Upload bulk gallery items with analysis mutation
-  const uploadBulkWithAnalysisMutation = useMutation({
-    mutationFn: (body: BulkGalleryUploadRequest) =>
+  // Scraping mutation for social media scraping with analysis
+  const scrapeHandlesMutation = useMutation({
+    mutationFn: (body: BulkScrapeRequest) =>
       galleryService.uploadBulkGalleryItemsWithAnalysis(body),
     onMutate: () => {
-      // Show loading toast and store the ID
-      const toastId = toast.loading("Uploading items to gallery...");
+      const toastId = toast.loading("Initiating social media scraping...");
       return { toastId };
     },
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-
-      // Update the loading toast to success
-      toast.success("Items uploaded to gallery", { id: context?.toastId });
+      toast.success("Social media scraping initiated", {
+        id: context?.toastId,
+      });
     },
     onError: (_error, _variables, context) => {
-      // Update the loading toast to error
-      toast.error("Failed to upload items to gallery", {
+      toast.error("Failed to initiate scraping", {
         id: context?.toastId,
       });
     },
@@ -932,7 +928,7 @@ export const useGalleryQuery = (
 
     bulkUpload: bulkUploadMutation.mutateAsync,
 
-    uploadBulkWithAnalysis: uploadBulkWithAnalysisMutation.mutateAsync,
+    scrapeHandles: scrapeHandlesMutation.mutateAsync,
   };
 };
 
