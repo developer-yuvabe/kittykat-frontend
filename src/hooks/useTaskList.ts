@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import taskListService from "@/services/api/tasklist.service";
-import { galleryService } from "@/services/api/gallery.service";
 import type {
   TasklistFilters,
   TasklistListResponse,
@@ -46,14 +45,6 @@ export const useTaskList = ({
 
     return roleBasedFilters;
   };
-
-  // Fetch brands and campaigns for filters
-  const brandsQuery = useQuery({
-    queryKey: ["brands-campaigns"],
-    queryFn: () => galleryService.getBrandsWithCampaigns(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!user,
-  });
 
   // Generate query key for current filters
   const getTaskListQueryKey = (queryFilters: TasklistFilters) => [
@@ -372,7 +363,6 @@ export const useTaskList = ({
   return {
     // Queries
     taskListQuery,
-    brandsQuery,
     useTaskListDetail,
     useTaskListTimeline,
     usePriceList,
@@ -393,7 +383,6 @@ export const useTaskList = ({
     // Data
     tasklists: taskListQuery.data?.tasklists || [],
     totalCount: taskListQuery.data?.total_count || 0,
-    brands: brandsQuery.data?.brands || [],
     pagination: {
       page: taskListQuery.data?.page || 1,
       pageSize: taskListQuery.data?.page_size || ITEMS_PER_PAGE,

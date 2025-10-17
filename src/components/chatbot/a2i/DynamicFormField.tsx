@@ -79,21 +79,31 @@ export function DynamicFormField<T extends FieldValues>({
     formName: string,
     value: string
   ): { disabled: boolean; hintText?: string } => {
-    if (!rules) return { disabled: false };
+    if (!rules || rules.length === 0) return { disabled: false };
 
-    const matchingRule = rules.find(
+    // Find all rules that match the current field and value
+    const matchingRules = rules.filter(
       (r) => r.name === formName && r.paramId === value
     );
-    if (!matchingRule) return { disabled: false };
 
-    const shouldDisable =
-      watchedValues?.[matchingRule.disableIf.name] ===
-      matchingRule.disableIf.paramId;
+    if (matchingRules.length === 0) return { disabled: false };
 
-    return {
-      disabled: shouldDisable,
-      hintText: shouldDisable ? matchingRule.hintText : undefined,
-    };
+    // Check each rule's disableIf array
+    for (const rule of matchingRules) {
+      const disableIfArray = Array.isArray(rule.disableIf)
+        ? rule.disableIf
+        : [rule.disableIf]; // support single object too
+
+      const shouldDisable = disableIfArray.some(
+        (cond) => watchedValues?.[cond.name] === cond.paramId
+      );
+
+      if (shouldDisable) {
+        return { disabled: true, hintText: rule.hintText };
+      }
+    }
+
+    return { disabled: false };
   };
 
   if (
@@ -279,7 +289,7 @@ export function DynamicFormField<T extends FieldValues>({
                           return (
                             <div
                               key={optionValue.toString()}
-                              className="focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none pointer-events-auto opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+                              className="focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-3 rounded-sm py-3 pr-8 pl-2 text-sm outline-hidden select-none pointer-events-auto opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
                             >
                               <FormLabel className="font-normal">
                                 {optionLabel}

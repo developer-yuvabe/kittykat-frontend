@@ -9,6 +9,10 @@ type Store = {
   brands: UserBrand[];
   setBrands: (brands: UserBrand[]) => void;
   addBrand: (brand: UserBrand) => void;
+  addCampaignToBrand: (
+    brandId: string,
+    campaign: UserBrand["campaigns"][0]
+  ) => void;
   removeBrand: (brandId: string) => void;
 
   campaigns: UserBrand["campaigns"];
@@ -43,6 +47,9 @@ type Store = {
   isMoodboardSaving: boolean;
   setIsMoodboardSaving: (isSaving: boolean) => void;
 
+  // Get a detailed brand information
+  getSelectedBrand: () => UserBrand | null;
+
   // Getters for selected names
   getSelectedBrandName: () => string | null;
   getSelectedCampaignName: () => string | null;
@@ -65,6 +72,15 @@ export const useBrandStore = create<Store>((set, get) => ({
   },
   addBrand: (brand: UserBrand) =>
     set((state) => ({ brands: [...state.brands, brand] })),
+  addCampaignToBrand: (brandId: string, campaign: UserBrand["campaigns"][0]) =>
+    set((state) => ({
+      brands: state.brands.map((brand) =>
+        brand.id === brandId
+          ? { ...brand, campaigns: [...(brand.campaigns || []), campaign] }
+          : brand
+      ),
+      campaigns: [...state.campaigns, campaign],
+    })),
   removeBrand: (brandId: string) =>
     set((state) => ({
       brands: state.brands.filter((brand) => brand.id !== brandId),
@@ -129,6 +145,11 @@ export const useBrandStore = create<Store>((set, get) => ({
   isMoodboardSaving: false,
   setIsMoodboardSaving: (isSaving: boolean) =>
     set({ isMoodboardSaving: isSaving }),
+
+  getSelectedBrand: () => {
+    const state = get();
+    return state.brands.find((b) => b.id == state.selectedBrandId) ?? null;
+  },
 
   // Getters for selected names
   getSelectedBrandName: () => {

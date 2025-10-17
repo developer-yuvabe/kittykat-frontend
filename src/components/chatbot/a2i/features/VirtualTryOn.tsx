@@ -32,6 +32,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
     selectedModel: selectedVtonModel,
     dynamicDefualtValues: {
       model_image: modelImage,
+      product_image: "",
     },
   });
   const { credits, isCalculatingCredits } = useModelPricing({
@@ -83,7 +84,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="h-full flex flex-col"
+        className="p-4 space-y-6 min-h-full flex flex-col h-full max-h-full"
       >
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-6 min-h-full flex flex-col">

@@ -1,17 +1,17 @@
 import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
-  const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
-  const [data, setData] = useState<ThreadDetails | null>(null);
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
   const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
+  const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -60,9 +60,4 @@ export function useBrandUpdates() {
       previousCampaignInfo.current = undefined;
     };
   }, [selectedBrandId]);
-
-  return {
-    data,
-    isFetchingBrandInfo,
-  };
 }

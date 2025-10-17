@@ -8,8 +8,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DownloadIcon } from "../ui/custom-icon";
-import { CheckIcon, CopyIcon, HeartIcon, Loader2 } from "lucide-react";
-import { cn, getDimensionAndAspectRatioFromParameters } from "@/lib/utils";
+import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
+import {
+  cn,
+  getDimensionAndAspectRatioFromParameters,
+  urlToFile,
+} from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -26,18 +30,30 @@ import {
   videoGenerationService,
 } from "@/services/api/video-gen.service";
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
-import { GetGalleryImageParameters } from "@/services/api/gallery.service";
+import { getGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
+import { Spinner } from "../ui/spinner";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipContent,
+  TooltipTrigger,
+} from "../ui/tooltip";
+import { A2iImageGeneration } from "@/types/types";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
-  parameters?: Record<string, any> | null;
-  type?: string;
+  generation?: {
+    type: A2iImageGeneration["type"];
+    parameters: A2iImageGeneration["parameters"];
+  };
   isOpen: boolean;
   onClose: () => void;
   onDownload?: () => void;
   onLike?: () => void;
   isLiked?: boolean;
+  source: "concept-visual-media" | "media-gallery";
 };
 
 const ImageWithMetadataModal = ({
@@ -47,45 +63,49 @@ const ImageWithMetadataModal = ({
   onDownload,
   onLike,
   isLiked,
-  parameters: propParameters,
-  type: propType,
+  generation,
+  source,
 }: ImageWithMetadataModalProps) => {
+  const router = useRouter();
   const { setParameters } = useMetadataActionsStore();
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState({
+    varyAuto: false,
+    upscaleAuto: false,
+    animateDynamic: false,
+    animateSmooth: false,
+    modifyReference: false,
+  });
   const [copied, setCopied] = useState(false);
   const { selectedBrandId } = useBrandStore();
   const { openConceptVisual } = useConceptVisualStore();
   const {
-    setSelectedImageGenerationModelById,
-    setSelectedVideoGenearationModelById,
-    setSelectedRemixModelById,
+    setSelectedImageGenerationModelByModelId,
+    setSelectedVideoGenearationModel,
+    setSelectedRemixModel,
     models,
   } = useModelsStore();
-  const router = useRouter();
-  // ✅ Fetch parameters only if not provided
-  const { data, isLoading: isFetchingParams } = useQuery({
+  const { data, isFetching: isFetchingParams } = useQuery({
     queryKey: ["image-parameters", galleryItem.brand_id, galleryItem.id],
     queryFn: () =>
-      GetGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
-    enabled: !propParameters && galleryItem.asset_source == "showboard-media",
+      getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
+    enabled: !generation && galleryItem.asset_source == "showboard-media",
+    placeholderData: generation
+      ? {
+          type: generation.type,
+          parameters: generation.parameters,
+        }
+      : null,
+    staleTime: 0,
   });
-
-  // Final parameters (prop takes precedence, else fetched)
-  const parameters = propParameters ?? data?.parameters ?? null;
-  const type = propType ?? data?.type ?? null;
-  const isDisabledType =
-    type === "vton" || type === "remix" || type === "upscale" || type === null;
-
-  const MODELS_WITHOUT_REFERENCE_IMAGE = [
-    "imagen-4.0-ultra-generate-001",
-    "imagen-4.0-generate-001",
-    "imagen-4.0-fast-generate-001",
-    "seedream-3-0-t2i-250415",
-  ];
+  const isDisabled = !(
+    data?.type === "image_generation" || data?.type === "a2i"
+  )
+    ? true
+    : false;
 
   const handleCopyPrompt = () => {
-    if (parameters?.prompt) {
-      navigator.clipboard.writeText(parameters.prompt).then(() => {
+    if (data?.parameters.prompt) {
+      navigator.clipboard.writeText(data.parameters.prompt).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });
@@ -93,41 +113,54 @@ const ImageWithMetadataModal = ({
   };
 
   const handleVaryAuto = async () => {
-    if (!parameters) return;
+    if (!data?.parameters) return;
 
-    setLoading("vary-auto");
+    setLoading((p) => ({ ...p, varyAuto: true }));
     try {
-      // campaignId is already included in parameters
+      const model = models.find((m) => m.model === data.parameters.model);
+      if (!model) {
+        throw new Error("Model not found for variation");
+      }
+
+      const paramsResponsibleForVaryingNumberOfOutputs =
+        model.parameters.filter((p) => p.type === "image_count");
 
       await generateImage(selectedBrandId!, {
-        ...parameters,
+        ...data.parameters,
         seed: -1,
+        ...Object.fromEntries(
+          paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
+        ),
+        source_asset_id: galleryItem.id,
       });
 
       onClose();
-      if (!propParameters) {
-        router.push("/?scrollTo=a2i-input");
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error("Error generating image:", error);
       toast.error("Error generating a varied image. Please try again.");
     } finally {
-      setLoading(null);
+      setLoading((p) => ({ ...p, varyAuto: false }));
       toast.info("Started Generation of Auto Vary Image.");
     }
   };
 
   const handleVaryManual = () => {
-    if (!parameters) return;
+    if (!data?.parameters) return;
 
-    if (parameters.model) {
-      setSelectedImageGenerationModelById(parameters.model);
-      setParameters("imageGeneationParameters", null);
-      setParameters("imageGeneationParameters", parameters);
+    if (data.parameters.model) {
+      setSelectedImageGenerationModelByModelId(data.parameters.model);
+      setParameters("imageGeneationParameters", data.parameters);
+
       onClose();
       router.push("/?scrollTo=a2i-input");
+
+      toast.info("Pre Selected Model and its parameters have been set.");
+    } else {
+      toast.error("No model found for this image.");
     }
-    toast.info("Pre Selected Model and its parameters have been set.");
   };
 
   const handleUpscaleManual = () => {
@@ -144,7 +177,7 @@ const ImageWithMetadataModal = ({
   };
 
   const handleUpscaleAuto = async () => {
-    setLoading("upscale-auto");
+    setLoading((p) => ({ ...p, upscaleAuto: true }));
     try {
       await upscaleImage(selectedBrandId!, {
         image_url: galleryItem.asset_url,
@@ -156,94 +189,175 @@ const ImageWithMetadataModal = ({
         fractality: 0,
         engine: "automatic",
         prompt: "",
+        source_asset_id: galleryItem.id,
       });
 
       onClose();
-      if (!propParameters) {
-        router.push("/?scrollTo=a2i-input");
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i");
       }
     } catch (error) {
       console.error("Error upscaling the image:", error);
       toast.error("Error upscaling the image. Please try again.");
     } finally {
-      setLoading(null);
+      setLoading((p) => ({ ...p, upscaleAuto: false }));
       toast.info("Started Upscaling of the Image.");
     }
   };
 
   const handleModifyEdit = () => {
-    onClose();
-    setSelectedRemixModelById("gemini-2.5-flash-image-preview-remix");
-    openConceptVisual({
-      source: "blanket",
-      assetItems: [galleryItem],
-      asset: {
-        currentAsset: galleryItem,
-        galleryActions: null,
-      },
-      defaultActiveTab: "remix",
-    });
+    try {
+      const defualtEditModel = models.find((model) => model.default_edit_model);
+
+      if (!defualtEditModel) {
+        throw new Error("No default edit model found");
+      }
+
+      setSelectedRemixModel(defualtEditModel);
+      openConceptVisual({
+        source: "blanket",
+        assetItems: [galleryItem],
+        asset: {
+          currentAsset: galleryItem,
+          galleryActions: null,
+        },
+        defaultActiveTab: "remix",
+      });
+
+      onClose();
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        "An error occurred while trying to edit the image. Please try again."
+      );
+    }
   };
 
-  const handleModifyReference = () => {
-    if (
-      MODELS_WITHOUT_REFERENCE_IMAGE.includes(parameters?.model) ||
-      parameters?.model === "seedream-4-0-250828" ||
-      isDisabledType
-    ) {
-      setSelectedImageGenerationModelById("seedream-4-0-250828");
-      setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
-    } else if (
-      parameters?.model === "gpt-image-1" ||
-      parameters?.model === "gemini-2.5-flash-image-preview"
-    ) {
-      setSelectedImageGenerationModelById(parameters.model);
-      setParameters("referenceImageParameterArray", [galleryItem.asset_url]);
-    } else {
-      setSelectedImageGenerationModelById(parameters?.model);
-      setParameters("referenceImageParameterString", galleryItem.asset_url);
+  const handleModifyReference = async () => {
+    try {
+      setLoading((p) => ({ ...p, modifyReference: true }));
+      const model = models.find((m) => m.model === data?.parameters?.model);
+
+      // Check whether the model supports reference images
+      const fileParam = model
+        ? model.parameters.find((p) => p.type === "file")
+        : null;
+      let imageReferenceModelId;
+
+      if (!fileParam || isDisabled || !model) {
+        const defaultImageReferenceModel = models.find(
+          (m) => m.default_image_reference_model
+        );
+
+        imageReferenceModelId = defaultImageReferenceModel?.model;
+      } else {
+        imageReferenceModelId = model.model;
+      }
+
+      if (!imageReferenceModelId) {
+        throw new Error("No model found that supports reference images");
+      }
+
+      setSelectedImageGenerationModelByModelId(imageReferenceModelId);
+
+      // It is necessary to upload the image to our GCS bucket because the image URL might be deleted.
+      const file = await urlToFile(galleryItem.asset_url);
+      const url = await uploadFileAndReturnUrl(
+        file.name,
+        file.type,
+        "brands",
+        file,
+        selectedBrandId
+      );
+
+      setParameters("referenceImage", url);
+
+      onClose();
+      router.push("/?scrollTo=a2i-input");
+      toast.info("Pre Selected Model and Reference Image have been set.");
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        "An error occurred while trying to edit the image. Please try again."
+      );
+    } finally {
+      setLoading((p) => ({ ...p, modifyReference: false }));
     }
-    onClose();
-    router.push("/?scrollTo=a2i-input");
-    toast.info("Pre Selected Model and Reference Image have been set.");
   };
 
   const handleAnimateManual = () => {
-    onClose();
-    setSelectedVideoGenearationModelById("seedance-1-0-pro-250528");
-    openConceptVisual({
-      source: "blanket",
-      assetItems: [galleryItem],
-      asset: {
-        currentAsset: galleryItem,
-        galleryActions: null,
-      },
-      defaultActiveTab: "video-generation",
-    });
+    try {
+      const defaultAnimationModel = models.find(
+        (model) => model.default_animation_model
+      );
+
+      if (!defaultAnimationModel) {
+        throw new Error("No default animation model found");
+      }
+
+      setSelectedVideoGenearationModel(defaultAnimationModel);
+      openConceptVisual({
+        source: "blanket",
+        assetItems: [galleryItem],
+        asset: {
+          currentAsset: galleryItem,
+          galleryActions: null,
+        },
+        defaultActiveTab: "video-generation",
+      });
+
+      onClose();
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        "An error occurred while trying to animate the image. Please try again."
+      );
+    }
   };
 
   const handleAnimatePreset = async (preset: "dynamic" | "smooth") => {
-    setLoading(`animate-${preset}`);
+    setLoading((p) => ({
+      ...p,
+      animateDynamic: preset === "dynamic" ? true : p.animateDynamic,
+      animateSmooth: preset === "smooth" ? true : p.animateSmooth,
+    }));
     try {
-      const prompt = await generateAnimationPrompt(preset, parameters?.prompt);
-      const model = models.find((m) => m.id === "seedance-1-0-pro-250528");
-      const { defaultValues } = useDynamicModelSchema(model!);
+      const defaultAnimationModel = models.find(
+        (model) => model.default_animation_model
+      );
+
+      if (!defaultAnimationModel) {
+        throw new Error("No default animation model found");
+      }
+
+      const prompt = await generateAnimationPrompt(
+        preset,
+        data?.parameters?.prompt
+      );
+      const { defaultValues } = useDynamicModelSchema(defaultAnimationModel);
       await videoGenerationService(selectedBrandId!, {
         ...defaultValues,
         first_frame: galleryItem.asset_url,
         prompt,
-        model: model!.id,
+        model: defaultAnimationModel.model,
+        source_asset_id: galleryItem.id,
       });
+
       onClose();
-      if (!propParameters) {
-        router.push("/?scrollTo=a2i-input");
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i");
       }
+
+      toast.info(`Started Video Generation with ${preset} Animation.`);
     } catch (error) {
       console.error("Error animating the image:", error);
       toast.error("Error animating the image. Please try again.");
     } finally {
-      setLoading(null);
-      toast.info("Started Video Generation with " + preset + " Animation");
+      setLoading((p) => ({
+        ...p,
+        animateDynamic: preset === "dynamic" ? false : p.animateDynamic,
+        animateSmooth: preset === "smooth" ? false : p.animateSmooth,
+      }));
     }
   };
 
@@ -252,30 +366,37 @@ const ImageWithMetadataModal = ({
       <DialogHeader className="sr-only">
         <DialogTitle>Expanded Image</DialogTitle>
         <DialogDescription>
-          {parameters?.prompt ??
+          {data?.parameters?.prompt ??
             galleryItem.input_prompt ??
             "No description available"}
         </DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none [&>button]:hidden w-[80vw] max-h-[80vh] max-w-screen-xl flex items-center justify-center focus:outline-none"
+        className="p-0 border-none bg-transparent shadow-none  flex items-center justify-center focus:outline-none"
         onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
+        hideCloseIcon
+        overflowClassName="bg-black/80"
       >
-        <div className="flex items- justify-center items-stretch  flex-1 min-w-[80vw] max-w-[80vw] max-h-[80vh]">
-          <div className="relative rounded-l-lg  group flex items-center justify-center w-[70%] h-[80vh] overflow-hidden bg-white border-r">
+        <div className="flex justify-center items-stretch flex-1 min-w-[80dvw] min-h-[80dvh] max-w-[80dvw] max-h-[80dvh]">
+          <div className="relative rounded-l-lg group flex items-center justify-center w-[70%] overflow-hidden bg-white border-r">
             <img
               src={galleryItem.asset_url}
               alt={
-                parameters?.prompt ??
+                data?.parameters?.prompt ??
                 galleryItem.input_prompt ??
                 "Expanded image"
               }
-              className="w-full h-full object-contain relative"
+              className="w-full h-full object-contain relative z-10"
             />
-
+            <div
+              className="absolute inset-0 bg-cover bg-center blur-lg scale-105 z-0"
+              style={{
+                backgroundImage: `url(${galleryItem.asset_url}`,
+              }}
+            />
             {/* Hover Overlay */}
-            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
+            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-20">
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-l-lg" />
 
               {/* Bottom Right - Actions (Download + Like) */}
@@ -320,22 +441,19 @@ const ImageWithMetadataModal = ({
             {isFetchingParams ? (
               // Loading State
               <div className="flex items-center justify-center flex-col gap-2 h-full">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground text-sm">
-                  Loading parameters...
-                </p>
+                <Spinner className="size-8 text-muted-foreground" />
               </div>
             ) : (
               <>
-                {parameters && (
+                {data?.parameters && (
                   <>
                     {/* Prompt */}
-                    {parameters?.prompt && (
+                    {data.parameters.prompt && (
                       <div className="space-y-2">
                         <p>Prompt</p>
                         <div className="relative">
                           <Textarea
-                            value={parameters.prompt}
+                            value={data.parameters.prompt}
                             className="h-40 lg:h-60 focus:outline-none resize-none"
                             readOnly
                           />
@@ -361,73 +479,122 @@ const ImageWithMetadataModal = ({
                       </div>
                     )}
                     <p className="text-muted-foreground">
-                      {parameters.model}
-                      {getDimensionAndAspectRatioFromParameters(parameters)}
+                      {data.parameters.model}
+                      {getDimensionAndAspectRatioFromParameters(
+                        data.parameters
+                      )}
                     </p>
                   </>
                 )}
 
                 {/* Metadata Action Buttons (always visible) */}
-                <div className="space-y-6 mt-6">
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Vary</p>
-                    <div className="flex flex-1 gap-x-2 items-start">
-                      <Button
-                        onClick={handleVaryAuto}
-                        disabled={loading === "vary-auto" || isDisabledType}
-                        loading={loading === "vary-auto"}
-                      >
-                        Auto
-                      </Button>
-                      <Button
-                        onClick={handleVaryManual}
-                        disabled={isDisabledType}
-                      >
-                        Manual
-                      </Button>
-                    </div>
-                  </div>
+                <div className="space-y-4 mt-4">
+                  <h2 className="text-lg border-b pb-2">Creative Actions</h2>
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Vary</p>
+                      <div className="flex flex-1 gap-x-2 items-start">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              <Button
+                                onClick={
+                                  !isDisabled ? handleVaryAuto : undefined
+                                }
+                                disabled={isDisabled || loading.varyAuto}
+                                loading={!isDisabled && loading.varyAuto}
+                                className={isDisabled ? "opacity-50" : ""}
+                              >
+                                Auto
+                              </Button>
+                            </TooltipTrigger>
 
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Upscale</p>
-                    <div className="flex flex-1 gap-2 items-start flex-wrap">
-                      <Button
-                        disabled={loading === "upscale-auto"}
-                        loading={loading === "upscale-auto"}
-                        onClick={handleUpscaleAuto}
-                      >
-                        Auto
-                      </Button>
-                      <Button onClick={handleUpscaleManual}>Manual</Button>
-                    </div>
-                  </div>
+                            {isDisabled && (
+                              <TooltipContent className="w-40">
+                                The variation feature is available exclusively
+                                for images produced using image generation
+                                models.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              <Button
+                                onClick={
+                                  !isDisabled ? handleVaryManual : undefined
+                                }
+                                disabled={isDisabled}
+                                className={isDisabled ? "opacity-50" : ""}
+                              >
+                                Manual
+                              </Button>
+                            </TooltipTrigger>
 
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Modify</p>
-                    <div className="flex flex-1 gap-2 items-start flex-wrap">
-                      <Button onClick={handleModifyEdit}>Edit</Button>
-                      <Button onClick={handleModifyReference}>Reference</Button>
+                            {isDisabled && (
+                              <TooltipContent className="w-40">
+                                The variation feature is available exclusively
+                                for images produced using image generation
+                                models.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex justify-between items-center">
-                    <p className="w-24">Animate</p>
-                    <div className="flex flex-1 gap-2 items-start flex-wrap">
-                      <Button
-                        onClick={() => handleAnimatePreset("dynamic")}
-                        disabled={loading === "animate-dynamic"}
-                        loading={loading === "animate-dynamic"}
-                      >
-                        Dynamic
-                      </Button>
-                      <Button
-                        onClick={() => handleAnimatePreset("smooth")}
-                        disabled={loading === "animate-smooth"}
-                        loading={loading === "animate-smooth"}
-                      >
-                        Smooth
-                      </Button>
-                      <Button onClick={handleAnimateManual}>Manual</Button>
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Upscale</p>
+                      <div className="flex flex-1 gap-2 items-start flex-wrap">
+                        <Button
+                          disabled={loading.upscaleAuto}
+                          loading={loading.upscaleAuto}
+                          onClick={handleUpscaleAuto}
+                        >
+                          Auto
+                        </Button>
+                        <Button onClick={handleUpscaleManual}>Manual</Button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Modify</p>
+                      <div className="flex flex-1 gap-2 items-start flex-wrap">
+                        <Button onClick={handleModifyEdit}>Edit</Button>
+                        <Button
+                          onClick={handleModifyReference}
+                          loading={loading.modifyReference}
+                          disabled={loading.modifyReference}
+                        >
+                          Reference
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <p className="w-24">Animate</p>
+                      <div className="flex flex-1 gap-2 items-start flex-wrap">
+                        <Button
+                          onClick={() => handleAnimatePreset("dynamic")}
+                          disabled={loading.animateDynamic}
+                          loading={loading.animateDynamic}
+                        >
+                          Dynamic
+                        </Button>
+                        <Button
+                          onClick={() => handleAnimatePreset("smooth")}
+                          disabled={loading.animateSmooth}
+                          loading={loading.animateSmooth}
+                        >
+                          Smooth
+                        </Button>
+                        <Button onClick={handleAnimateManual}>Manual</Button>
+                      </div>
                     </div>
                   </div>
                 </div>

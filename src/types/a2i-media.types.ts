@@ -86,6 +86,10 @@ export type Model = {
   credits: number | null;
   rules?: Rule[];
   parameters: ModelParameter[];
+
+  default_edit_model?: boolean;
+  default_animation_model?: boolean;
+  default_image_reference_model?: boolean;
 };
 
 export type Rule = {

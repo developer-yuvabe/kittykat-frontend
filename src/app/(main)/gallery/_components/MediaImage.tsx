@@ -5,24 +5,28 @@ import { PlayCircle, PauseCircle } from "lucide-react";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import ImageWithMetadataModal from "@/components/image-metadata/ImageWithMetadataModal";
+import VideoWithMetadataModal from "@/components/video-metadata/VideoWithMetadataModal";
 
 interface MediaImageProps {
   item: GalleryItemResponse;
   onImageLoad: (event: any) => void;
   onEditClick: (item: GalleryItemResponse) => void;
   onToggleFavorite: () => void;
+  isMediaSelectDialog?: boolean;
 }
 
 export function MediaImage({
   item,
   onImageLoad,
   onToggleFavorite,
+  isMediaSelectDialog = false,
 }: MediaImageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   // Check if the item is a video with more robust detection
   const isVideo =
@@ -85,19 +89,13 @@ export function MediaImage({
   };
 
   const handleImageClick = () => {
-    setShowImageModal(true);
+    if (!isMediaSelectDialog) {
+      setShowImageModal(true);
+    }
   };
 
   const handleVideoClick = () => {
-    if (videoRef && videoRef.current) {
-      if (videoRef.current.requestFullscreen) {
-        videoRef.current.requestFullscreen();
-      } else if ((videoRef.current as any).webkitRequestFullscreen) {
-        (videoRef.current as any).webkitRequestFullscreen();
-      } else if ((videoRef.current as any).msRequestFullscreen) {
-        (videoRef.current as any).msRequestFullscreen();
-      }
-    }
+    setShowVideoModal(true);
   };
 
   const handleDownload = () => {
@@ -118,35 +116,53 @@ export function MediaImage({
 
   if (isVideo && !videoError) {
     return (
-      <div
-        className="relative w-full h-full cursor-pointer"
-        onClick={handleVideoClick}
-        title="Click to fullscreen"
-      >
-        <video
-          ref={videoRef}
-          src={item.preview_url || item.asset_url}
-          className="object-contain w-full h-full"
-          muted
-          autoPlay
-          loop
-          style={{
-            display: videoLoaded ? "block" : "none",
-          }}
-        />
-        {videoLoaded && (
-          <button
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"
-            onClick={handleVideoToggle}
-          >
-            {isVideoPlaying ? (
-              <PauseCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
-            ) : (
-              <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
-            )}
-          </button>
+      <>
+        <div
+          className="relative w-full h-full cursor-pointer"
+          onClick={handleVideoClick}
+          title="Click to view metadata"
+        >
+          <video
+            ref={videoRef}
+            src={item.preview_url || item.asset_url}
+            className="object-contain w-full h-full"
+            muted
+            autoPlay
+            loop
+            style={{
+              display: videoLoaded ? "block" : "none",
+            }}
+          />
+          {videoLoaded && (
+            <button
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"
+              onClick={handleVideoToggle}
+            >
+              {isVideoPlaying ? (
+                <PauseCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform opacity-0 group-hover:opacity-100" />
+              ) : (
+                <PlayCircle className="w-16 h-16 text-white z-20 hover:scale-105 transition-transform" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* ✅ Video Metadata Modal */}
+        {showVideoModal && (
+          <VideoWithMetadataModal
+            isOpen={showVideoModal}
+            galleryItem={{
+              ...item,
+              asset_url: item.preview_url || item.asset_url,
+            }}
+            onClose={() => setShowVideoModal(false)}
+            onDownload={handleDownload}
+            onLike={handleFavoriteClick}
+            isLiked={item.is_favourite || false}
+            source="media-gallery"
+          />
         )}
-      </div>
+      </>
     );
   }
 
@@ -157,7 +173,8 @@ export function MediaImage({
         src={item.preview_url || item.asset_url || "/placeholder.svg"}
         alt={item.asset_title}
         fill
-        className="object-cover cursor-pointer"
+        className="object-cover"
+        style={{ cursor: isMediaSelectDialog ? "default" : "pointer" }}
         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
         onLoad={onImageLoad}
         onError={(e) => {
@@ -174,11 +191,15 @@ export function MediaImage({
       {showImageModal && (
         <ImageWithMetadataModal
           isOpen={showImageModal}
-          galleryItem={item}
+          galleryItem={{
+            ...item,
+            asset_url: item.preview_url || item.asset_url,
+          }}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}
           onLike={handleFavoriteClick}
           isLiked={item.is_favourite || false}
+          source="media-gallery"
         />
       )}
     </>

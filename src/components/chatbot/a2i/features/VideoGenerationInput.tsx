@@ -26,10 +26,11 @@ import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Settings2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
@@ -71,6 +72,7 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
+  const { parameters, setParameters } = useMetadataActionsStore();
   const form = useA2iForm({
     selectedModel: selectedVideoGenearationModel,
     formKey: `video-generation`,
@@ -136,16 +138,26 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
       : true,
   });
 
+  useEffect(() => {
+    if (parameters.videoParameters) {
+      form.reset({
+        ...form.getValues(),
+        ...parameters.videoParameters,
+      });
+
+      setParameters("videoParameters", null);
+    }
+  }, [parameters.videoParameters]);
+
   const onSubmit = async (data: Record<string, any>) => {
     try {
       if (!selectedBrandId && !item?.brand_id) {
         throw new Error("Brand ID is missing.");
       }
-      const { generation_id } = await videoGenerationService(
-        selectedBrandId || item?.brand_id || "",
-        data,
-        campaignId ?? undefined
-      );
+      const { generation_id } = await videoGenerationService(selectedBrandId!, {
+        ...data,
+        campaign_id: campaignId,
+      });
 
       if (Array.isArray(generation_id)) {
         generation_id.forEach((id) => addCurrentSessionGenerationId(id));

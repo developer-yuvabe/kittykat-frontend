@@ -42,38 +42,46 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
   const [isRemoving, setIsRemoving] = useState(false);
   const { selectedBrandId, isMoodboardSaving } = useBrandStore();
 
-  const { updateAutoFillSuggestionCache } = useMoodboardQuery({
-    brandId: selectedBrandId || undefined,
-    campaignId: moodboard.campaign_id,
-    moodboardId: moodboard.id,
-    count: 50,
-    enabled: false,
-  });
+  const { updateAutoFillSuggestionCache, deprioritizeMutation } =
+    useMoodboardQuery({
+      brandId: selectedBrandId || undefined,
+      campaignId: moodboard.campaign_id,
+      moodboardId: moodboard.id,
+      count: 50,
+      enabled: false,
+    });
 
-  const handleRemove = (e: React.MouseEvent) => {
+  const handleRemove = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     setIsRemoving(true);
 
-    setTimeout(() => {
-      setItems((prev) => {
-        return prev.map((item) => {
-          if (item.id === photo.id) {
-            return {
-              id: `placeholder-${item.position}`,
-              width: 300,
-              height: 300,
-              is_placeholder: true,
-              position: item.position,
-              alt: `Placeholder ${item.position + 1}`,
-            };
-          }
-          return item;
+    // Use mutation to deprioritize the image
+    deprioritizeMutation.mutate([photo.id], {
+      onSuccess: () => {
+        setItems((prev) => {
+          return prev.map((item) => {
+            if (item.id === photo.id) {
+              return {
+                id: `placeholder-${item.position}`,
+                width: 300,
+                height: 300,
+                is_placeholder: true,
+                position: item.position,
+                alt: `Placeholder ${item.position + 1}`,
+              };
+            }
+            return item;
+          });
         });
-      });
-      setIsRemoving(false);
-    }, 150);
+        setIsRemoving(false);
+      },
+      onError: () => {
+        // Reset removing state on error
+        setIsRemoving(false);
+      },
+    });
   };
 
   const handlePhotoLike = (index: number, liked: boolean) => {

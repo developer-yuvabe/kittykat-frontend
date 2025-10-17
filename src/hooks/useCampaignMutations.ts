@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { createCampaign } from "@/services/api/brand.service";
 import type { ThreadCampaign } from "@/types/types";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface CreateCampaignData {
   brandId: string;
@@ -9,8 +9,6 @@ interface CreateCampaignData {
 }
 
 export function useCampaignMutations() {
-  const queryClient = useQueryClient();
-
   const createCampaignMutation = useMutation({
     mutationFn: async ({ brandId, title }: CreateCampaignData) => {
       const campaignData: Omit<ThreadCampaign, "id"> = {
@@ -32,16 +30,6 @@ export function useCampaignMutations() {
 
     onSuccess: async (data, variables, context) => {
       try {
-        // Invalidate all related queries
-        await queryClient.invalidateQueries({
-          queryKey: ["brands-campaigns"],
-        });
-        // Force a complete refetch to ensure the new campaign is available
-        await queryClient.refetchQueries({
-          queryKey: ["brands-campaigns"],
-          type: "active",
-        });
-
         // Update the loading toast to success
         toast.success(`Campaign "${variables.title}" created successfully!`, {
           id: context?.toastId,
