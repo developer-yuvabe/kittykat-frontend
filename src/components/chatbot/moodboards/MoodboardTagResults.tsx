@@ -212,20 +212,20 @@ function MoodboardTagResults({
 
       // Try to capture screenshot in parallel (don't wait for it)
       // This prevents the screenshot from blocking the generation
-      if (
-        captureScreenshot &&
-        galleryActions &&
-        currentCampaign &&
-        selectedBrandId &&
-        moodboardId
-      ) {
-        captureMoodboardAndUploadToGallery().catch((error) => {
-          console.error(
-            "Screenshot capture failed but continuing with generation:",
-            error
-          );
-        });
-      }
+      // if (
+      //   captureScreenshot &&
+      //   galleryActions &&
+      //   currentCampaign &&
+      //   selectedBrandId &&
+      //   moodboardId
+      // ) {
+      //   captureMoodboardAndUploadToGallery().catch((error) => {
+      //     console.error(
+      //       "Screenshot capture failed but continuing with generation:",
+      //       error
+      //     );
+      //   });
+      // }
 
       // Start generation immediately
       generateShowboard(undefined, {
