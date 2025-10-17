@@ -82,7 +82,6 @@ function MoodboardTagResults({
 
   // Initialize localTags from both moodboard_tags & selected_moodboard_tags
   useEffect(() => {
-    // Reset tags when moodboard changes
     if (!moodboard_tags) {
       setLocalTags({});
       return;
@@ -100,8 +99,7 @@ function MoodboardTagResults({
       }
     }
     setLocalTags(converted);
-  }, [moodboard_tags, selected_moodboard_tags]);
-
+  }, [moodboardId, moodboardAssets]);
   const toggleTag = (category: string, value: string) => {
     setLocalTags((prev) => ({
       ...prev,

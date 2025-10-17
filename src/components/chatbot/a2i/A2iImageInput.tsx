@@ -73,6 +73,14 @@ const A2iImageInput = ({
       },
     });
 
+  const currentCampaign = useMemo(
+    () =>
+      campaignInformation && campaignInformation[selectedCampaignIndex]
+        ? campaignInformation[selectedCampaignIndex]
+        : null,
+    [campaignInformation, selectedCampaignIndex]
+  );
+
   // Reference to the file input element
   const { refernceImagesModelInfo, initialParams, advancedParams } =
     useMemo(() => {

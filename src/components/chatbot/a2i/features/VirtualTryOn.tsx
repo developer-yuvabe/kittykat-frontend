@@ -86,99 +86,101 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="p-4 space-y-6 min-h-full flex flex-col h-full max-h-full"
       >
-        <ModelSelector
-          selectedModel={selectedVtonModel}
-          onModelChange={(m) => {
-            setSelectedVtonModel(m);
-          }}
-          typeFilter="vton"
-        />
-        <div
-          className={cn(
-            "border border-dashed bg-muted cursor-pointer flex items-center justify-center relative overflow-hidden flex-1 max-h-full",
-            {
-              "border-double": !!productImage,
-            }
-          )}
-          onClick={() => {
-            if (productImageParam && !productImage) {
-              setShowMediaLibrary(true);
-            }
-          }}
-        >
-          {productImage ? (
-            <div className="flex flex-col relative w-full h-full overflow-hidden items-center justify-center">
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  form.setValue("product_image", "");
-                }}
-              >
-                <X />
-              </Button>
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-6 min-h-full flex flex-col">
+            <ModelSelector
+              selectedModel={selectedVtonModel}
+              onModelChange={(m) => {
+                setSelectedVtonModel(m);
+              }}
+              typeFilter="vton"
+            />
+            <div
+              className={cn(
+                "border border-dashed bg-muted cursor-pointer rounded-xl flex items-center justify-center relative overflow-hidden min-h-[300px] flex-1",
+                {
+                  "border-double": !!productImage,
+                }
+              )}
+              onClick={() => {
+                if (productImageParam) {
+                  setShowMediaLibrary(true);
+                }
+              }}
+            >
+              {productImage ? (
+                <div className="flex items-center justify-center">
+                  <img
+                    src={productImage}
+                    alt="Garment"
+                    className="object-contain w-[70%] max-h-[300px] lg:max-h-[350px] 2xl:max-h-[450px]"
+                  />
+                  <Button
+                    disabled={loading}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      form.setValue("product_image", null);
+                    }}
+                    className="bg-destructive/10 text-destructive border-destructive border border-dashed hover:bg-destructive/15 absolute top-2 right-2 z-[1000]"
+                  >
+                    <X />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <UploadIcon className="size-8" />
+                  <p>Upload Garment</p>
+                </div>
+              )}
+            </div>
 
-              <img
-                src={productImage}
-                alt="Garment"
-                className="w-auto h-auto max-h-[60dvh] object-contain"
+            <div className="flex-shrink-0">
+              <TokenGenerateButton
+                className="w-full"
+                label="Concept Visual Generation"
+                onClick={() => form.handleSubmit(onSubmit)()}
+                tokens={credits}
+                loading={form.formState.isSubmitting}
+                disabled={
+                  form.formState.isSubmitting ||
+                  !form.formState.isValid ||
+                  !productImage ||
+                  loading
+                }
+                isCalculatingTokens={isCalculatingCredits}
               />
             </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <UploadIcon className="size-8" />
-              <p>Upload Garment</p>
-            </div>
-          )}
+
+            <MediaLibraryDialog
+              open={showMediaLibrary}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setShowMediaLibrary(false);
+                }
+              }}
+              onMediaItemSelected={(mediaItem) => {
+                if (productImageParam) {
+                  form.setValue(productImageParam.id, mediaItem);
+                }
+
+                setShowMediaLibrary(false);
+              }}
+              filters={{
+                brands: [selectedBrandId!],
+                campaigns: [],
+                product_categories: [],
+                asset_types: ["image"],
+                asset_sources: [],
+                media_format: [],
+                aspect_ratio: [],
+                workflow_status: [],
+                moodboards: [],
+              }}
+              brandId={selectedBrandId!}
+              campaignId={campaignId ?? undefined}
+            />
+          </div>
         </div>
-
-        <div className="flex-shrink-0">
-          <TokenGenerateButton
-            className="w-full"
-            label="Concept Visual Generation"
-            onClick={() => form.handleSubmit(onSubmit)()}
-            tokens={credits}
-            loading={form.formState.isSubmitting}
-            disabled={
-              form.formState.isSubmitting ||
-              !form.formState.isValid ||
-              !productImage ||
-              loading
-            }
-            isCalculatingTokens={isCalculatingCredits}
-          />
-        </div>
-
-        <MediaLibraryDialog
-          open={showMediaLibrary}
-          onOpenChange={(open) => {
-            if (!open) {
-              setShowMediaLibrary(false);
-            }
-          }}
-          onMediaItemSelected={(url) => {
-            if (productImageParam) {
-              form.setValue(productImageParam.id, url);
-            }
-
-            setShowMediaLibrary(false);
-          }}
-          filters={{
-            brands: [selectedBrandId!],
-            campaigns: [],
-            product_categories: [],
-            asset_types: ["image"],
-            asset_sources: [],
-            media_format: [],
-            aspect_ratio: [],
-            workflow_status: [],
-            moodboards: [],
-          }}
-          brandId={selectedBrandId!}
-          campaignId={campaignId ?? undefined}
-        />
       </form>
     </Form>
   );

@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { FileContentTypeResult } from "@/types/langgraph.types";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
-import { ContentBlock } from "@/hooks/useFileUploadToAgent";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { ContentBlock } from "@/lib/file-upload.utils";
 
 interface FileAttachmentProps {
   fileUrl: string;
