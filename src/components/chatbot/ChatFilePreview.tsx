@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { FilePreview } from "./FilePreview";
-import { ContentBlock } from "@/hooks/useFileUploadToAgent";
+import { ContentBlock } from "@/lib/file-upload.utils";
 
 interface ChatFilePreviewProps {
   blocks: ContentBlock[];
