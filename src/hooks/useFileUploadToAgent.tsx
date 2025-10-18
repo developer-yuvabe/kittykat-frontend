@@ -10,8 +10,14 @@ import {
   SUPPORTED_FILE_TYPES,
 } from "@/lib/langgraph.utils";
 import { MAX_IMAGE_UPLOAD_SIZE } from "@/lib/constants";
-
-export type ContentBlock = URLContentBlock | IDContentBlock;
+import {
+  generateFileHash,
+  generateUniqueFilename,
+  calculateImageSize,
+  categorizeDuplicates,
+  categorizeFileTypes,
+  type ContentBlock,
+} from "@/lib/file-upload.utils";
 
 interface UseFileUploadOptions {
   initialBlocks?: ContentBlock[];
@@ -32,55 +38,22 @@ export function useFileUpload({
   // Track total size of uploaded images
   const [currentImageSize, setCurrentImageSize] = useState(0);
 
-  // Calculate total size of image blocks
-  const calculateImageSize = (blocks: ContentBlock[]): number => {
-    return blocks.reduce((total, block) => {
-      if (
-        block.type === "image" &&
-        block.source_type === "url" &&
-        block.metadata?.size
-      ) {
-        return total + (block.metadata.size as number);
-      }
-      return total;
-    }, 0);
-  };
-
   // Update current image size when blocks change
   useEffect(() => {
     setCurrentImageSize(calculateImageSize(contentBlocks));
   }, [contentBlocks]);
 
-  const isDuplicate = (file: File, blocks: ContentBlock[]): boolean => {
-    if (IMAGE_TYPES.includes(file.type)) {
-      return blocks.some(
-        (b) =>
-          b.type === "image" &&
-          b.source_type === "url" &&
-          b.mime_type === file.type &&
-          b.metadata?.name === file.name
-      );
-    }
-
-    if (file.type === "application/pdf") {
-      return blocks.some(
-        (b) =>
-          b.type === "file" &&
-          b.source_type === "id" &&
-          b.mime_type === "application/pdf" &&
-          b.metadata?.filename === file.name
-      );
-    }
-
-    return false;
-  };
-
-  const fileToContentBlock = async (file: File): Promise<ContentBlock> => {
+  const fileToContentBlock = async (
+    file: File,
+    uniqueName?: string
+  ): Promise<ContentBlock> => {
     try {
+      const fileName = uniqueName || file.name;
+
       if (IMAGE_TYPES.includes(file.type)) {
-        // Images: Upload to GCS and return URLContentBlock
+        const fileHash = await generateFileHash(file);
         const uploadedUrl = await uploadFileAndReturnUrl(
-          file.name,
+          fileName,
           file.type,
           "threads",
           file
@@ -91,10 +64,9 @@ export function useFileUpload({
           source_type: "url",
           url: uploadedUrl,
           mime_type: file.type,
-          metadata: { name: file.name, size: file.size },
+          metadata: { name: fileName, size: file.size, hash: fileHash },
         } as URLContentBlock;
       } else if (brandId) {
-        // PDFs and other files: Upload to thread files and return IDContentBlock
         const threadFileResponse = await uploadThreadFile(
           brandId,
           file,
@@ -106,7 +78,7 @@ export function useFileUpload({
           source_type: "id",
           id: threadFileResponse.file_id,
           mime_type: file.type,
-          metadata: { threadFileResponse },
+          metadata: { threadFileResponse, filename: fileName },
         } as IDContentBlock;
       }
       throw new Error(
@@ -126,23 +98,24 @@ export function useFileUpload({
 
     try {
       const fileArray = Array.from(files);
-      const validFiles = fileArray.filter((file) =>
-        SUPPORTED_FILE_TYPES.includes(file.type)
-      );
-      const invalidFiles = fileArray.filter(
-        (file) => !SUPPORTED_FILE_TYPES.includes(file.type)
-      );
-      const duplicateFiles = validFiles.filter((file) =>
-        isDuplicate(file, contentBlocks)
-      );
-      const uniqueFiles = validFiles.filter(
-        (file) => !isDuplicate(file, contentBlocks)
+
+      // Categorize files by type
+      const { validFiles, invalidFiles } = categorizeFileTypes(
+        fileArray,
+        SUPPORTED_FILE_TYPES
       );
 
-      // Validate image sizes (only images here, no need to separate)
+      // Check for duplicates based on content
+      const { duplicateFiles, uniqueFiles } = await categorizeDuplicates(
+        validFiles,
+        contentBlocks
+      );
+
+      // Validate image sizes
       const { validFiles: validImageFiles, rejectedFiles: rejectedImageFiles } =
         validateImageUploadSize(uniqueFiles, currentImageSize);
 
+      // Show appropriate warnings
       if (invalidFiles.length > 0) {
         toast.warning(
           "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF."
@@ -168,8 +141,14 @@ export function useFileUpload({
         );
       }
 
+      // Upload valid files
       if (validImageFiles.length > 0) {
-        const promise = Promise.all(validImageFiles.map(fileToContentBlock));
+        const promise = Promise.all(
+          validImageFiles.map((file) => {
+            const uniqueName = generateUniqueFilename(file.name, contentBlocks);
+            return fileToContentBlock(file, uniqueName);
+          })
+        );
 
         toast.promise(promise, {
           loading: "Uploading files...",
@@ -252,25 +231,26 @@ export function useFileUpload({
 
       try {
         const files = Array.from(e.dataTransfer.files);
-        const validFiles = files.filter((file) =>
-          SUPPORTED_FILE_TYPES.includes(file.type)
-        );
-        const invalidFiles = files.filter(
-          (file) => !SUPPORTED_FILE_TYPES.includes(file.type)
-        );
-        const duplicateFiles = validFiles.filter((file) =>
-          isDuplicate(file, contentBlocks)
-        );
-        const uniqueFiles = validFiles.filter(
-          (file) => !isDuplicate(file, contentBlocks)
+
+        // Categorize files by type
+        const { validFiles, invalidFiles } = categorizeFileTypes(
+          files,
+          SUPPORTED_FILE_TYPES
         );
 
-        // Validate image sizes (only images here)
+        // Check for duplicates based on content
+        const { duplicateFiles, uniqueFiles } = await categorizeDuplicates(
+          validFiles,
+          contentBlocks
+        );
+
+        // Validate image sizes
         const {
           validFiles: validImageFiles,
           rejectedFiles: rejectedImageFiles,
         } = validateImageUploadSize(uniqueFiles, currentImageSize);
 
+        // Show appropriate warnings
         if (invalidFiles.length > 0) {
           toast.warning(
             "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF."
@@ -295,8 +275,17 @@ export function useFileUpload({
           );
         }
 
+        // Upload valid files
         if (validImageFiles.length > 0) {
-          const promise = Promise.all(validImageFiles.map(fileToContentBlock));
+          const promise = Promise.all(
+            validImageFiles.map((file) => {
+              const uniqueName = generateUniqueFilename(
+                file.name,
+                contentBlocks
+              );
+              return fileToContentBlock(file, uniqueName);
+            })
+          );
 
           toast.promise(promise, {
             loading: "Uploading files...",
@@ -362,57 +351,113 @@ export function useFileUpload({
     if (files.length === 0) return;
     e.preventDefault();
 
+    // Show loading toast immediately when pasting
+    const toastId = toast.loading("Uploading pasted image(s)...");
     setIsUploading(true);
 
     try {
-      const validFiles = files.filter((file) =>
-        SUPPORTED_FILE_TYPES.includes(file.type)
-      );
-      const invalidFiles = files.filter(
-        (file) => !SUPPORTED_FILE_TYPES.includes(file.type)
-      );
-      const duplicateFiles = validFiles.filter((file) =>
-        isDuplicate(file, contentBlocks)
-      );
-      const uniqueFiles = validFiles.filter(
-        (file) => !isDuplicate(file, contentBlocks)
+      // Categorize files by type
+      const { validFiles, invalidFiles } = categorizeFileTypes(
+        files,
+        SUPPORTED_FILE_TYPES
       );
 
-      // Validate image sizes (only images here)
+      // Check for duplicates based on content
+      const { duplicateFiles, uniqueFiles } = await categorizeDuplicates(
+        validFiles,
+        contentBlocks
+      );
+
+      // Validate image sizes
       const { validFiles: validImageFiles, rejectedFiles: rejectedImageFiles } =
         validateImageUploadSize(uniqueFiles, currentImageSize);
 
+      // Determine if we should show warnings or proceed with upload
+      const hasWarnings =
+        invalidFiles.length > 0 ||
+        duplicateFiles.length > 0 ||
+        rejectedImageFiles.length > 0;
+      const hasValidUploads = validImageFiles.length > 0;
+
+      // Show appropriate warnings (don't replace toast if we have valid uploads)
       if (invalidFiles.length > 0) {
-        toast.warning(
-          "You have pasted an invalid file type. Please paste a JPEG, PNG, GIF, WEBP image or a PDF."
-        );
+        if (!hasValidUploads) {
+          toast.warning(
+            "You have pasted an invalid file type. Please paste a JPEG, PNG, WEBP image or a PDF.",
+            { id: toastId }
+          );
+        } else {
+          toast.warning(
+            "You have pasted an invalid file type. Please paste a JPEG, PNG, WEBP image or a PDF."
+          );
+        }
       }
       if (duplicateFiles.length > 0) {
-        toast.warning(
-          `Duplicate file(s) detected: ${duplicateFiles
-            .map((f) => f.name)
-            .join(", ")}. Each file can only be uploaded once per message.`
-        );
+        if (!hasValidUploads) {
+          toast.warning(
+            `Duplicate file(s) detected: ${duplicateFiles
+              .map((f) => f.name)
+              .join(
+                ", "
+              )}. This exact image content has already been attached.`,
+            { id: toastId }
+          );
+        } else {
+          toast.warning(
+            `${duplicateFiles.length} duplicate file(s) skipped. These images were already attached.`
+          );
+        }
       }
       if (rejectedImageFiles.length > 0) {
         const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
-        toast.warning(
-          `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
-            remainingSpace
-          )} remaining. Rejected: ${rejectedImageFiles
-            .map((r) => r.file.name)
-            .join(", ")}`
-        );
+        if (!hasValidUploads) {
+          toast.warning(
+            `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
+              remainingSpace
+            )} remaining. Rejected: ${rejectedImageFiles
+              .map((r) => r.file.name)
+              .join(", ")}`,
+            { id: toastId }
+          );
+        } else {
+          toast.warning(
+            `${
+              rejectedImageFiles.length
+            } image(s) exceeded size limit. You have ${formatFileSize(
+              remainingSpace
+            )} remaining.`
+          );
+        }
       }
+
+      // Upload valid files
       if (validImageFiles.length > 0) {
         const newBlocks = await Promise.all(
-          validImageFiles.map(fileToContentBlock)
+          validImageFiles.map((file) => {
+            const uniqueName = generateUniqueFilename(file.name, contentBlocks);
+            return fileToContentBlock(file, uniqueName);
+          })
         );
         setContentBlocks((prev) => [...prev, ...newBlocks]);
+
+        // Show success message
+        const successMessage = hasWarnings
+          ? `Successfully uploaded ${validImageFiles.length} image(s). Some files were skipped.`
+          : `Successfully uploaded ${validImageFiles.length} image(s)!`;
+
+        toast.success(successMessage, { id: toastId });
+      } else {
+        // No valid files to upload, toast already replaced with warning
+        // Only dismiss if no warnings were shown
+        if (!hasWarnings) {
+          toast.dismiss(toastId);
+        }
       }
     } catch (error) {
       console.error("File paste error:", error);
-      toast.error("Something went wrong while processing pasted files.");
+      toast.error("Something went wrong while processing pasted files.", {
+        id: toastId,
+      });
     } finally {
       setIsUploading(false);
     }

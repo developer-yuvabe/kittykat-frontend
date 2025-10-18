@@ -2,8 +2,8 @@ import React from "react";
 import { File, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchFileType } from "@/lib/langgraph.utils";
-import { ContentBlock } from "@/hooks/useFileUploadToAgent";
 import { URLContentBlock } from "@langchain/core/messages";
+import { ContentBlock } from "@/lib/file-upload.utils";
 
 export interface FilePreviewProps {
   block: ContentBlock;

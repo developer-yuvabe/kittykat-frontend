@@ -28,6 +28,7 @@ import {
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
 import { GetGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
+import ZoomableImage from "../ui/zoomable-image";
 
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -75,6 +76,11 @@ const ImageWithMetadataModal = ({
   const type = propType ?? data?.type ?? null;
   const isDisabledType =
     type === "vton" || type === "remix" || type === "upscale" || type === null;
+
+  const referenceImages =
+    parameters?.reference_images ||
+    (Array.isArray(parameters?.image) && parameters.image) ||
+    [];
 
   const MODELS_WITHOUT_REFERENCE_IMAGE = [
     "imagen-4.0-ultra-generate-001",
@@ -336,11 +342,11 @@ const ImageWithMetadataModal = ({
                         <div className="relative">
                           <Textarea
                             value={parameters.prompt}
-                            className="h-40 lg:h-60 focus:outline-none resize-none"
+                            className="max-h-40 lg:max-h-50 focus:outline-none resize-none py-2 px-4"
                             readOnly
                           />
                           <TooltipButton
-                            className="absolute top-3 right-1 text-muted-foreground"
+                            className="absolute top-2 right-2 text-muted-foreground"
                             tooltip={copied ? "Copied!" : "Copy Prompt"}
                             onClick={handleCopyPrompt}
                             icon={
@@ -357,6 +363,23 @@ const ImageWithMetadataModal = ({
                               )
                             }
                           />
+                        </div>
+                      </div>
+                    )}
+                    {referenceImages?.length > 0 && (
+                      <div>
+                        <p>Reference Image(s)</p>
+                        <div className="mt-2 w-full overflow-x-auto">
+                          <div className="flex flex-row gap-x-2 w-max">
+                            {referenceImages.map((img: string, idx: number) => (
+                              <ZoomableImage
+                                key={idx}
+                                src={img}
+                                className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                variant="default"
+                              />
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
