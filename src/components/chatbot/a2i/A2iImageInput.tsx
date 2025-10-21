@@ -348,7 +348,7 @@ const A2iImageInput = ({
 
       form.trigger();
       requestAnimationFrame(() => {
-        setParameters("referenceImage", null);
+        setParameters("imageGeneationParameters", null);
       });
     }
   }, [parameters]);
