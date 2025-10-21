@@ -329,8 +329,22 @@ const A2iImageInput = ({
       form.reset({
         ...form.getValues(),
         ...parameters.imageGeneationParameters,
-        ...(paramName ? { [paramName]: null } : {}),
       });
+
+      // Update imageBlocks
+      if (paramName && parameters.imageGeneationParameters[paramName]) {
+        const referenceImages = parameters.imageGeneationParameters[paramName];
+        const imagesArray = Array.isArray(referenceImages)
+          ? referenceImages
+          : [referenceImages];
+
+        setImageBlocks(
+          imagesArray.map((url) => ({
+            previewUrl: url,
+            url: url,
+          }))
+        );
+      }
 
       form.trigger();
       setParameters("imageGeneationParameters", null);
