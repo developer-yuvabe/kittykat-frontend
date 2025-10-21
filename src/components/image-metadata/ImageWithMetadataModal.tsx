@@ -32,6 +32,7 @@ import {
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
 import { getGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
+import ZoomableImage from "../ui/zoomable-image";
 import { Spinner } from "../ui/spinner";
 import {
   Tooltip,
@@ -102,6 +103,11 @@ const ImageWithMetadataModal = ({
   )
     ? true
     : false;
+
+  const referenceImages =
+    data?.parameters?.reference_images ||
+    (Array.isArray(data?.parameters?.image) && data?.parameters.image) ||
+    [];
 
   const handleCopyPrompt = () => {
     if (data?.parameters.prompt) {
@@ -458,7 +464,7 @@ const ImageWithMetadataModal = ({
                             readOnly
                           />
                           <TooltipButton
-                            className="absolute top-3 right-1 text-muted-foreground"
+                            className="absolute top-2 right-2 text-muted-foreground"
                             tooltip={copied ? "Copied!" : "Copy Prompt"}
                             onClick={handleCopyPrompt}
                             icon={
@@ -475,6 +481,23 @@ const ImageWithMetadataModal = ({
                               )
                             }
                           />
+                        </div>
+                      </div>
+                    )}
+                    {referenceImages?.length > 0 && (
+                      <div>
+                        <p>Reference Image(s)</p>
+                        <div className="mt-2 w-full overflow-x-auto">
+                          <div className="flex flex-row gap-x-2 w-max">
+                            {referenceImages.map((img: string, idx: number) => (
+                              <ZoomableImage
+                                key={idx}
+                                src={img}
+                                className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                variant="default"
+                              />
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}

@@ -33,6 +33,7 @@ on:
       - development
       - staging
       - beta
+      - hotfix/test-branch
 
 jobs:
   Deploy:
@@ -70,6 +71,9 @@ jobs:
               beta )
                   STAGE_TYPE="beta"
                   ;;
+              hotfix/test-branch )
+                  STAGE_TYPE="stg"
+                  ;;
               *) 
                   echo "Unknown branch"; 
                   exit 1 
@@ -80,6 +84,8 @@ jobs:
 
           if [ "$STAGE_TYPE" = "prod" ]; then
             COMPUTED_SERVICE_NAME="${{ secrets.SERVICE_NAME }}"
+          elif [ "${GITHUB_REF_NAME}" = "hotfix/test-branch" ]; then
+            COMPUTED_SERVICE_NAME="${{ secrets.SERVICE_NAME }}-hotfix-test"
           else
             COMPUTED_SERVICE_NAME="${{ secrets.SERVICE_NAME }}-$STAGE_TYPE"
           fi

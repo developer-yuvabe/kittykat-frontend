@@ -329,7 +329,7 @@ export const useGalleryQuery = (
         return updated;
       });
 
-      // Also remove the item from existing bulk query caches
+      // Update the item in existing bulk query caches (don't remove it)
       const bulkQueries = queryClient.getQueriesData({
         queryKey: ["gallery-items-bulk"],
         exact: false,
@@ -342,7 +342,9 @@ export const useGalleryQuery = (
           queryKey,
           (prev: GalleryItemResponse[] | undefined) => {
             if (!prev) return prev;
-            return prev.filter((item) => item.id !== itemId);
+            return prev.map((item) =>
+              item.id === itemId ? { ...item, ...data } : item
+            );
           }
         );
       });
