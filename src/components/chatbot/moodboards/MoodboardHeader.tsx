@@ -4,12 +4,9 @@ import { patchMoodboard } from "@/services/api/moodboard.service";
 import EditableInput from "./EditableInput";
 import MoodboardSaveIndicator from "./MoodboardSaveIndicator";
 import MoodboardControls from "./MoodboardControls";
-import { Button } from "@/components/ui/button";
-import { LoaderCircle, SparklesIcon } from "lucide-react";
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
-import { useStreamContext } from "@/providers/langgraph/Stream";
 
 interface MoodboardHeaderProps {
   moodboard: MoodboardInformation;
@@ -19,8 +16,6 @@ interface MoodboardHeaderProps {
   photos: SortablePhoto<Photo>[];
   isAutoFillLoading: boolean;
   autoFillPlaceholders: () => void;
-  onPinMoodboard?: () => void;
-  isScreenshotLoading: boolean;
 }
 
 function MoodboardHeader({
@@ -31,11 +26,7 @@ function MoodboardHeader({
   photos,
   isAutoFillLoading,
   autoFillPlaceholders,
-  onPinMoodboard,
-  isScreenshotLoading,
 }: MoodboardHeaderProps) {
-  const { isLoading } = useStreamContext();
-
   return (
     <div className="w-full flex flex-col gap-3">
       {/* Top row - Title, Save Indicator, and Action Buttons */}
@@ -60,21 +51,6 @@ function MoodboardHeader({
 
         {/* Right side - Action Buttons */}
         <div className="flex items-center gap-2">
-          {onPinMoodboard && (
-            <Button
-              disabled={isLoading || isScreenshotLoading}
-              onClick={onPinMoodboard}
-              size="lg"
-              className="flex items-center gap-2"
-            >
-              {isScreenshotLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <SparklesIcon className="h-4 w-4" />
-              )}
-              {isScreenshotLoading ? "Analyzing..." : "Ask Kittykat"}
-            </Button>
-          )}
           <MoodboardControls
             photos={photos}
             isAutoFillLoading={isAutoFillLoading}

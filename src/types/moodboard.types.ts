@@ -29,27 +29,10 @@ export interface MoodboardCreateRequest {
   selected_moodboard_tags?: Record<string, string[]>;
 }
 
-export interface MoodboardImageAnalysisRequest {
-  pinterest_limit?: number;
-  instagram_limit?: number;
-  facebook_limit?: number;
-  website_limit?: number;
-  reanalyze?: boolean;
-}
-
 export type MoodboardPatchRequest = Partial<MoodboardInformation>;
-
-export interface CreateMoodboardRequest {
-  no_of_images: number;
-}
 
 export interface AddMoodboardImageRequest {
   id: string;
-}
-
-export interface ReplaceMoodboardImageRequest {
-  image_to_replace_id: string;
-  replacement_image_url: string;
 }
 
 export interface AutoFillSuggestedImage {
@@ -99,8 +82,6 @@ export interface MoodboardScreenshotAsset {
 }
 
 export interface GenerateMoodboardScreenshotRequest {
-  title: string;
-  assets: MoodboardScreenshotAsset[];
   show_logo?: boolean;
   show_title?: boolean;
   show_footer?: boolean;

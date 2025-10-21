@@ -13,7 +13,7 @@ import type { MoodboardInformation } from "@/types/types";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import type { UnifiedMoodboardItem } from "@/types/moodboard.types";
 import { CustomGalleryHooks } from "./CustomGalleryHooks";
-import { CustomGalleryGrid, CustomGalleryGridRef } from "./CustomGalleryGrid";
+import { CustomGalleryGrid } from "./CustomGalleryGrid";
 import { CustomGalleryControls } from "./CustomGalleryControls";
 import { useMoodboardStore } from "@/store/moodboard.store";
 import { GalleryActions } from "@/hooks/useGallery";
@@ -42,7 +42,7 @@ type OptimisticCustomGridGalleryProps = {
 };
 
 const CustomGalleryContainer = forwardRef<
-  CustomGalleryGridRef,
+  HTMLDivElement,
   OptimisticCustomGridGalleryProps
 >(
   (
