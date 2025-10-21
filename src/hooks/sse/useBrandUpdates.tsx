@@ -10,7 +10,8 @@ export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
-  const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
+  const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
+    useBrandStore();
   const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
 
   useEffect(() => {
@@ -35,6 +36,12 @@ export function useBrandUpdates() {
       if (newCampaign !== prevCampaign) {
         queryClient.invalidateQueries({ queryKey: ["brands"] });
         setIsCampaignCreating(false); // <-- mark creation as done
+
+        const latestCreatedCampaign = parsed.campaign_information?.at(-1);
+
+        if (latestCreatedCampaign) {
+          setSelectedCampaignId(latestCreatedCampaign.id);
+        }
       }
 
       previousCampaignInfo.current = parsed.campaign_information;
