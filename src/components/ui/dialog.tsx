@@ -55,19 +55,21 @@ type DialogContentProps = React.ComponentProps<
   typeof DialogPrimitive.Content
 > & {
   hideCloseIcon?: boolean;
+  overflowClassName?: string;
 };
 
 function DialogContent({
   className,
   children,
   hideCloseIcon = false,
+  overflowClassName,
   ...props
 }: DialogContentProps) {
   // Safety cleanup on unmount
 
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay className={overflowClassName} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

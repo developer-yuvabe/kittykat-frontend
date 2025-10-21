@@ -78,7 +78,7 @@ const AddVersion = ({
       setShowUrlInput(false);
       setUrl("");
       setIsUploading(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add version. Please try again.");
       setIsUploading(false);
     }
@@ -155,7 +155,7 @@ const AddVersion = ({
         ? "video"
         : "image";
       await addVersion(url, fileType);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add version from URL. Please try again.");
       setIsUploading(false);
     }

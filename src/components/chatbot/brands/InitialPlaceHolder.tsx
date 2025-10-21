@@ -19,7 +19,6 @@ import { useUserStore } from "@/store/user.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { SearchIcon } from "@/components/ui/custom-icon";
-import { scrollToBottom } from "@/lib/scroll.utils";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -320,15 +319,14 @@ export const InitialPlaceHolder: React.FC<{
         text: "Let's create a new brand.",
         userId: user!.id,
         currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
       });
 
       // Clear pinned items
       if (clearPinnedItems) {
         clearPinnedItems();
       }
-
-      // Use the reusable scroll utility
-      scrollToBottom(100);
     } catch (error) {
       console.error("Error creating new brand:", error);
     }

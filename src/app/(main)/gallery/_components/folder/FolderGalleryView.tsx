@@ -1,19 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { Loader2 } from "lucide-react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { SortableMediaGrid } from "../SortableMediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
-import type {
-  BrandCampaignListResponse,
-  EnhancedSelectedFilters,
-} from "@/types/gallery.types";
+import type { EnhancedSelectedFilters } from "@/types/gallery.types";
+import { useBrandStore } from "@/store/brand.store";
 
 interface FolderGalleryViewProps {
-  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
+  selectedBrandId?: string | null;
   selectedCampaignId?: string;
   searchQuery?: string;
   favorites?: boolean;
@@ -22,7 +20,7 @@ interface FolderGalleryViewProps {
 }
 
 export function FolderGalleryView({
-  selectedBrand,
+  selectedBrandId,
   selectedCampaignId,
   searchQuery = "",
   favorites = false,
@@ -30,6 +28,8 @@ export function FolderGalleryView({
   activeTab = "all-media",
 }: FolderGalleryViewProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const { getSelectedBrand } = useBrandStore();
+  const brand = useMemo(() => getSelectedBrand(), [selectedBrandId]);
 
   // Use gallery hook with proper filters
   const galleryActions = useGalleryQuery(
@@ -56,8 +56,8 @@ export function FolderGalleryView({
         ...(selectedFilters || {}),
         // Force brand and campaign filters based on current selection
         // This ensures the URL state takes precedence over any other filters
-        brands: selectedBrand
-          ? [selectedBrand.brand_id]
+        brands: selectedBrandId
+          ? [selectedBrandId]
           : selectedFilters?.brands || [],
         campaigns: selectedCampaignId
           ? [selectedCampaignId]
@@ -75,7 +75,7 @@ export function FolderGalleryView({
   // Clear selected items when brand or campaign changes
   useEffect(() => {
     setSelectedItems([]);
-  }, [selectedBrand, selectedCampaignId]);
+  }, [selectedBrandId, selectedCampaignId]);
 
   // Fetch next page when in view
   useEffect(() => {
@@ -149,7 +149,7 @@ export function FolderGalleryView({
           selectedItems={selectedItemsData}
           onUnselectAll={handleUnselectAll}
           galleryActions={galleryActions}
-          brandName={selectedBrand?.brand_name || "brand"}
+          brandName={brand?.name ?? "Brand"}
         />
       )}
     </div>

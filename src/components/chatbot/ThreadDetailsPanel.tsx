@@ -1,14 +1,14 @@
 "use client";
 
-import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 import { useBrandStore } from "@/store/brand.store";
-import React, { useEffect, useMemo, useState } from "react";
+import { useQueryState } from "nuqs";
+import React, { useMemo } from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
-import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { BrandSection } from "./brands/BrandSection";
+import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { MoodboardSection } from "./moodboards/MoodboardSection";
-import { useQueryState } from "nuqs";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -20,9 +20,13 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const [expandedSections, setExpandedSections] = React.useState<{
     [key: string]: boolean;
   }>({ brandOverview: true, campaignInformation: true });
-  const { isBrandsFetched, isCreatingBrand, setSelectedCampaignId } =
-    useBrandStore();
-  const { isFetchingBrandInfo, data } = useBrandUpdates();
+  const {
+    isBrandsFetched,
+    isCreatingBrand,
+    selectedCampaignId: globalSelectedCamapaignId,
+    setSelectedCampaignId,
+  } = useBrandStore();
+  const { isFetchingBrandInfo, data } = useBrandUpdatesStore();
 
   const brandingInformation = data?.brand_information;
   const campaignInformation = data?.campaign_information?.filter(
@@ -33,34 +37,27 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const moodboardTags = data?.moodboard_tags;
 
   const [selectedCampaignIdFromUrl] = useQueryState("campaignId");
-
-  const activeCampaignIndex = useMemo(() => {
-    if (!campaignInformation || campaignInformation.length === 0) return 0;
+  const currentCampaign = useMemo(() => {
+    if (!campaignInformation || campaignInformation.length === 0) return null;
 
     // If there's a campaignId in the URL, try to find it in the list
-    if (selectedCampaignIdFromUrl !== null) {
-      const idx = campaignInformation.findIndex(
-        (c) => c.id === selectedCampaignIdFromUrl
-      );
-      if (idx !== -1) return idx; // found campaign from URL
-    }
+    const campaign = campaignInformation.find(
+      (c) =>
+        c.id === selectedCampaignIdFromUrl || c.id === globalSelectedCamapaignId
+    );
 
-    // fallback to latest campaign
-    return campaignInformation.length - 1;
-  }, [campaignInformation, selectedCampaignIdFromUrl]);
-  const [selectedCampaignIndex, setSelectedCampaignIndex] =
-    useState(activeCampaignIndex);
+    if (campaign) return campaign;
 
-  const currentCampaignId = campaignInformation?.[selectedCampaignIndex]?.id;
-
-  useEffect(() => {
-    const updateCampaigns = async () => {
-      if (currentCampaignId) {
-        setSelectedCampaignId(currentCampaignId);
-      }
-    };
-    updateCampaigns();
-  }, [selectedCampaignIndex]);
+    // If not found, return the latest campaign
+    setSelectedCampaignId(
+      campaignInformation[campaignInformation.length - 1].id
+    );
+    return campaignInformation[campaignInformation.length - 1];
+  }, [
+    campaignInformation,
+    selectedCampaignIdFromUrl,
+    globalSelectedCamapaignId,
+  ]);
 
   return (
     <div
@@ -85,9 +82,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
           <CampaignSection
             campaignInformation={campaignInformation}
             brandInformation={brandingInformation}
-            latestCampaignIndex={activeCampaignIndex}
-            selectedCampaignIndex={selectedCampaignIndex}
-            setSelectedCampaignIndex={setSelectedCampaignIndex}
+            currentCampaign={currentCampaign}
             expandedSections={expandedSections}
             setExpandedSections={setExpandedSections}
           />
@@ -96,8 +91,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
             <MoodboardSection
               brandInformation={brandingInformation}
               campaignInformation={campaignInformation}
-              setSelectedCampaignIndex={setSelectedCampaignIndex}
-              selectedCampaignIndex={selectedCampaignIndex}
+              currentCampaign={currentCampaign}
               moodboardInformation={moodboardInformation}
               moodboardTags={moodboardTags}
             />
@@ -109,7 +103,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
           a2iImageInformation={a2iImageInformation}
           moodboardInformation={moodboardInformation}
           campaignInformation={campaignInformation}
-          selectedCampaignIndex={selectedCampaignIndex}
+          currentCampaign={currentCampaign}
         />
       )}
     </div>

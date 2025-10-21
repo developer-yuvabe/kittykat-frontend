@@ -35,7 +35,12 @@ const MoodboardContent = forwardRef<
   CustomGalleryGridRef,
   MoodboardContentProps
 >(({ moodboard, brandId, carouselHeader }, ref) => {
-  const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
+  const {
+    isMoodboardSaving,
+    setIsMoodboardSaving,
+    selectedCampaignId,
+    selectedMoodboardId,
+  } = useBrandStore();
   const stream = useStreamContext();
   const { user } = useUserStore();
 
@@ -241,6 +246,8 @@ const MoodboardContent = forwardRef<
           userId: user!.id,
           currentBrandContextId: brandId,
           previousBrandContextId: stream.values.previousBrandContextId,
+          currentCampaignId: selectedCampaignId,
+          currentMoodboardId: selectedMoodboardId,
         },
         {
           streamMode: ["values"],

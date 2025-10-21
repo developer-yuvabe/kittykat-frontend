@@ -1,32 +1,34 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Folder, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CampaignCard } from "../CampaignCard";
 import { CreateCampaignDialog } from "@/components/gallery/CreateCampaignDialog";
-import type { BrandCampaignListResponse } from "@/types/gallery.types";
+import { useBrandStore } from "@/store/brand.store";
 
 interface CampaignsListProps {
-  selectedBrand: BrandCampaignListResponse["brands"][number] | null;
+  selectedBrandId: string | null;
   onCampaignSelect: (campaignId: string) => void;
-  onRefreshData?: () => void;
 }
 
 export function CampaignsList({
-  selectedBrand,
+  selectedBrandId,
   onCampaignSelect,
-  onRefreshData,
 }: CampaignsListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const { brands } = useBrandStore();
 
-  if (!selectedBrand) {
-    return null;
-  }
+  const { campaigns, brandName } = useMemo(() => {
+    const brand = brands.find((b) => b.id === selectedBrandId);
 
-  const campaigns = selectedBrand.campaigns || [];
+    return {
+      campaigns: brand ? brand.campaigns : [],
+      brandName: brand?.name ?? "Brand",
+    };
+  }, [brands]);
 
   const updateScrollButtons = () => {
     if (scrollContainerRef.current) {
@@ -58,21 +60,24 @@ export function CampaignsList({
     }
   };
 
+  if (!selectedBrandId) {
+    return null;
+  }
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {selectedBrand.brand_name} Campaigns
+          {brandName} Campaigns
         </h3>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500">
             {campaigns.length} campaigns
           </span>
           <CreateCampaignDialog
-            brandId={selectedBrand.brand_id}
-            brandName={selectedBrand.brand_name}
+            brandId={selectedBrandId}
+            brandName={brandName}
             onCampaignCreated={onCampaignSelect}
-            onRefreshData={onRefreshData}
           />
         </div>
       </div>
@@ -126,10 +131,9 @@ export function CampaignsList({
             No campaigns found for this brand
           </p>
           <CreateCampaignDialog
-            brandId={selectedBrand.brand_id}
-            brandName={selectedBrand.brand_name}
+            brandId={selectedBrandId}
+            brandName={brandName}
             onCampaignCreated={onCampaignSelect}
-            onRefreshData={onRefreshData}
             trigger={
               <Button variant="outline" size="sm">
                 Create Your First Campaign

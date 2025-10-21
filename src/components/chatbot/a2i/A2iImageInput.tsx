@@ -14,7 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
 import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -25,7 +25,7 @@ import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import { useMutation } from "@tanstack/react-query";
 import { enhancePrompt } from "@/services/api/moodboard.service";
 import { toast } from "sonner";
-import { ThreadA2iImage, ThreadDetails } from "@/types/types";
+import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
@@ -38,12 +38,10 @@ import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 
 const A2iImageInput = ({
   referenceMoodboardId,
-  campaignInformation,
-  selectedCampaignIndex,
+  currentCampaign,
 }: {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
-  campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
 }) => {
   const inputContainerRef = useRef<HTMLDivElement | null>(null);
   const [scrollTo, setScrollTo] = useQueryState("scrollTo");
@@ -74,14 +72,6 @@ const A2iImageInput = ({
         clearReferencePrompt();
       },
     });
-
-  const currentCampaign = useMemo(
-    () =>
-      campaignInformation && campaignInformation[selectedCampaignIndex]
-        ? campaignInformation[selectedCampaignIndex]
-        : null,
-    [campaignInformation, selectedCampaignIndex]
-  );
 
   // Reference to the file input element
   const { refernceImagesModelInfo, initialParams, advancedParams } =
@@ -247,6 +237,9 @@ const A2iImageInput = ({
 
     // Remove from imageBlocks
     setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
+
+    // delete the file from GCS
+    deleteFile(urlToRemove);
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
@@ -295,6 +288,12 @@ const A2iImageInput = ({
 
   // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
+    for (const block of imageBlocks) {
+      if (block.url) {
+        deleteFile(block.url);
+      }
+    }
+
     setImageBlocks([]);
     if (refernceImagesModelInfo) {
       form.setValue(refernceImagesModelInfo.id, null, {
@@ -305,37 +304,23 @@ const A2iImageInput = ({
     }
   }, [selectedImageGenerationModel?.id]);
 
-  // This useEffect is to fetch reference images stored in the session storage and populate the image blocks
   useEffect(() => {
-    if (refernceImagesModelInfo) {
-      const referenceImages = form.getValues(refernceImagesModelInfo.id);
-
-      if (
-        referenceImages &&
-        Array.isArray(referenceImages) &&
-        referenceImages.length > 0
-      ) {
-        setImageBlocks(
-          referenceImages.map((url) => ({
-            previewUrl: url,
-            url: url,
-          }))
-        );
-      }
-    }
-  }, [form, selectedImageGenerationModel?.id]);
-
-  useEffect(() => {
-    if (scrollTo === "a2i-input" && inputContainerRef.current) {
-      inputContainerRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
+    if (scrollTo === "a2i-input") {
+      const observer = new MutationObserver(() => {
+        if (inputContainerRef.current) {
+          inputContainerRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          });
+          setScrollTo(null);
+          observer.disconnect();
+        }
       });
 
-      // reset so it doesn’t scroll again unnecessarily
-      setScrollTo(null);
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
     }
-  }, [scrollTo, setScrollTo]);
+  }, [scrollTo]);
 
   useEffect(() => {
     if (parameters.imageGeneationParameters) {
@@ -350,42 +335,30 @@ const A2iImageInput = ({
       form.trigger();
       setParameters("imageGeneationParameters", null);
     }
-    if (parameters.referenceImageParameterArray) {
+
+    if (parameters.referenceImage) {
+      const referenceImageUrl = parameters.referenceImage;
       const paramName = refernceImagesModelInfo?.id;
+
       if (paramName) {
         form.reset({
           ...form.getValues(),
-          [paramName]: parameters.referenceImageParameterArray,
+          [paramName]:
+            refernceImagesModelInfo.maxLimit > 1
+              ? [referenceImageUrl]
+              : referenceImageUrl,
         });
-        form.trigger();
-
-        setImageBlocks(
-          parameters.referenceImageParameterArray.map((url) => ({
-            previewUrl: url,
-            url: url,
-          }))
-        );
-
-        setParameters("referenceImageParameterArray", null);
-      }
-    }
-    if (parameters.referenceImageParameterString) {
-      const paramName = refernceImagesModelInfo?.id;
-      if (paramName) {
-        form.reset({
-          ...form.getValues(),
-          [paramName]: parameters.referenceImageParameterString,
-        });
-        form.trigger();
 
         setImageBlocks([
           {
-            previewUrl: parameters.referenceImageParameterString,
-            url: parameters.referenceImageParameterString,
+            previewUrl: referenceImageUrl,
+            url: referenceImageUrl,
           },
         ]);
 
-        setParameters("referenceImageParameterString", null);
+        requestAnimationFrame(() => {
+          setParameters("referenceImage", null);
+        });
       }
     }
   }, [parameters]);
@@ -412,6 +385,7 @@ const A2iImageInput = ({
     <div
       ref={inputContainerRef}
       className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4"
+      id="concept-visual-playground"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

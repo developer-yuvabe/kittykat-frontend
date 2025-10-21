@@ -1,5 +1,5 @@
 // components/AskKittykatReplyInput.tsx
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
@@ -31,9 +31,18 @@ export function AskKittykatReplyInput({
   onFileUpload,
 }: AskKittykatReplyInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replyContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Scroll the reply input into view when it's mounted
+    replyContainerRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, []);
 
   return (
-    <div className="ml-11 space-y-2">
+    <div ref={replyContainerRef} className="ml-11 space-y-2">
       <Textarea
         value={replyText}
         onChange={(e) => setReplyText(e.target.value)}
@@ -87,6 +96,7 @@ export function AskKittykatReplyInput({
             type="file"
             multiple
             className="hidden"
+            accept="image/*,video/*"
             onChange={(e) => onFileUpload(e.target.files, true)}
           />
           <Button

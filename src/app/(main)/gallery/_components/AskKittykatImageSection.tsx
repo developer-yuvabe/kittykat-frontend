@@ -297,7 +297,12 @@ export const AskKittykatImageSection: React.FC<
   };
 
   const renderPlaceholder = () => (
-    <div className="relative w-full h-[80%] bg-muted rounded-lg flex items-center justify-center">
+    <div
+      className={cn("relative", {
+        "w-full h-[80vh] bg-muted rounded-lg flex items-center justify-center":
+          !item,
+      })}
+    >
       {!item && (
         <button
           onClick={() => {
@@ -312,23 +317,44 @@ export const AskKittykatImageSection: React.FC<
           <span>Choose from Gallery</span>
         </button>
       )}
-      {item && (
-        <>
-          <img
-            src={item.asset_url}
-            alt="Selected"
-            className="absolute inset-0 w-full h-full object-contain rounded-lg"
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-            onClick={() => setCurrentItem(null)}
-          >
-            <X />
-          </Button>
-        </>
-      )}
+      {item &&
+        (isRemixEnabled ? (
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute -top-8 right-2 bg-muted size-6 hover:text-muted-foreground"
+              onClick={() => setCurrentItem(null)}
+            >
+              <X />
+            </Button>
+            <RemixImage
+              ref={remixImageRef}
+              imageRef={imageRef}
+              canvasRef={canvasRef}
+              offScreenCanvasRef={offScreenCanvasRef}
+              url={item.asset_url}
+              remixHistory={remixHistory}
+              brushSize={brushSize}
+            />
+          </>
+        ) : (
+          <>
+            <img
+              src={item.asset_url}
+              alt="Selected"
+              className="w-full h-full object-contain max-h-[80vh]"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+              onClick={() => setCurrentItem(null)}
+            >
+              <X />
+            </Button>
+          </>
+        ))}
     </div>
   );
 
@@ -349,16 +375,11 @@ export const AskKittykatImageSection: React.FC<
       );
     }
 
-    if (
-      isRemixEnabled &&
-      remixHistory &&
-      imageRef &&
-      canvasRef &&
-      offScreenCanvasRef
-    ) {
-      if (!item) {
-        return renderPlaceholder();
-      }
+    if (source === "blanket") {
+      return renderPlaceholder();
+    }
+
+    if (isRemixEnabled) {
       return (
         <RemixImage
           ref={remixImageRef}
@@ -372,16 +393,12 @@ export const AskKittykatImageSection: React.FC<
       );
     }
 
-    if (source === "blanket") {
-      return renderPlaceholder();
-    }
-
     return (
       item && (
         <ZoomableImage
           src={item.asset_url}
           key={item.asset_url}
-          className="object-contain rounded-lg max-h-[80vh]"
+          className="object-contain max-h-[80vh]"
           variant="overlay"
           isLiked={item.is_favourite}
           onLike={handleLike}

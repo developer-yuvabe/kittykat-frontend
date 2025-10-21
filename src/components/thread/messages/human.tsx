@@ -163,7 +163,8 @@ export function HumanMessage({
 }) {
   const thread = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
 
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
@@ -196,6 +197,8 @@ export function HumanMessage({
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
         previousBrandContextId: thread.values.previousBrandContextId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       },
       {
         checkpoint: parentCheckpoint,
