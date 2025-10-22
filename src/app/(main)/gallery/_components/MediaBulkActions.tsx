@@ -451,6 +451,7 @@ export function MediaBulkActions({
             "brand-uploads": "Brand Uploads",
             "showboard-media": "Concept Visuals",
             "a2i-media": "A2I Media",
+            moodboard: "Moodboard",
           };
           return `to ${sourceMap[targetSource] || targetSource}`;
         }
@@ -531,6 +532,7 @@ export function MediaBulkActions({
       { value: "brand-uploads", label: "Brand Uploads" },
       { value: "showboard-media", label: "Concept Visuals" },
       { value: "a2i-media", label: "A2I Media" },
+      { value: "moodboard", label: "Moodboard" },
     ];
 
     // Filter out sources that are already used by selected items
@@ -632,6 +634,7 @@ export function MediaBulkActions({
                         { value: "brand-uploads", label: "Brand Uploads" },
                         { value: "showboard-media", label: "Concept Visuals" },
                         { value: "a2i-media", label: "A2I Media" },
+                        { value: "moodboard", label: "Moodboard" },
                       ];
                       const currentSource = allSources.find(
                         (s) => s.value === uniqueSources[0]
@@ -771,6 +774,7 @@ export function MediaBulkActions({
                       { value: "brand-uploads", label: "Brand Uploads" },
                       { value: "showboard-media", label: "Concept Visuals" },
                       { value: "a2i-media", label: "A2I Media" },
+                      { value: "moodboard", label: "Moodboard" },
                     ];
                     const availableSources = allSources.filter(
                       (source) => !uniqueSources.includes(source.value)
