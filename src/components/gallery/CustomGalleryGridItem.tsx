@@ -57,29 +57,29 @@ export function CustomGalleryGridItem<TPhoto extends Photo>({
 
     setIsRemoving(true);
 
-    // Use mutation to deprioritize the image
+    // Immediately update UI - remove item optimistically
+    setItems((prev) => {
+      return prev.map((item) => {
+        if (item.id === photo.id) {
+          return {
+            id: `placeholder-${item.position}`,
+            width: 300,
+            height: 300,
+            is_placeholder: true,
+            position: item.position,
+            alt: `Placeholder ${item.position + 1}`,
+          };
+        }
+        return item;
+      });
+    });
+
+    // Make API call in background without blocking UX
     deprioritizeMutation.mutate([photo.id], {
-      onSuccess: () => {
-        setItems((prev) => {
-          return prev.map((item) => {
-            if (item.id === photo.id) {
-              return {
-                id: `placeholder-${item.position}`,
-                width: 300,
-                height: 300,
-                is_placeholder: true,
-                position: item.position,
-                alt: `Placeholder ${item.position + 1}`,
-              };
-            }
-            return item;
-          });
-        });
-        setIsRemoving(false);
-      },
-      onError: () => {
-        // Reset removing state on error
-        setIsRemoving(false);
+      onError: (error) => {
+        console.error("Failed to deprioritize image:", error);
+        // Optionally show a toast notification about the error
+        // but don't revert the UI change
       },
     });
   };

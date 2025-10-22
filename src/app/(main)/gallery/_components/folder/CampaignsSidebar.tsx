@@ -144,9 +144,20 @@ export function CampaignsSidebar({
     <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-80 rounded-sm">
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">
-          Campaigns
-        </h3>
+        {selectedCampaignId ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onCampaignSelect("")}
+            className="text-sm font-semibold text-gray-900 hover:text-purple-600"
+          >
+            ← Go Back
+          </Button>
+        ) : (
+          <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">
+            Campaigns
+          </h3>
+        )}
       </div>
 
       {/* Search Bar */}
