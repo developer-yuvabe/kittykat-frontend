@@ -40,13 +40,11 @@ import {
 import { Command, CommandEmpty } from "@/components/ui/command";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
-import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 import {
   moodboardFields,
   PlaceholderSection,
 } from "../brands/InitialPlaceHolder";
 import { useQueryState } from "nuqs";
-import { ScreenshotProvider } from "@/contexts/ScreenshotContext";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -99,9 +97,6 @@ export const MoodboardSection: React.FC<{
     },
   });
 
-  // Create a ref for the gallery grid to capture screenshots
-  const galleryGridRef = useRef<CustomGalleryGridRef>(null);
-
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const [moodboardIdFromUrl, setMoodboardIdFromUrl] =
@@ -141,16 +136,17 @@ export const MoodboardSection: React.FC<{
   // Get current moodboard from props (real-time updates)
   const currentMoodboard = useMemo(() => {
     // If we have a selected moodboard ID, find it in the current data
-
     if (selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       const found = currentCampaignMoodboards.find(
         (mb) => mb.id === selectedMoodboardId
       );
-      if (found) return found;
+      // Only return the found moodboard if it exists, otherwise return null
+      // Don't fall back to latest - let the auto-select effect handle that
+      return found || null;
     }
 
-    // If no specific selection or selected moodboard not found, get the latest moodboard
-    if (currentCampaignMoodboards.length > 0) {
+    // Only return latest if there's no selection at all
+    if (!selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       return currentCampaignMoodboards[currentCampaignMoodboards.length - 1];
     }
 
@@ -163,6 +159,20 @@ export const MoodboardSection: React.FC<{
 
     // Don't auto-select if we have a moodboard ID from URL to process
     if (moodboardIdFromUrl) {
+      return;
+    }
+
+    // Don't auto-select if a valid moodboard is already selected
+    if (
+      selectedMoodboardIdRef.current &&
+      currentCampaignMoodboards.find(
+        (mb) => mb.id === selectedMoodboardIdRef.current
+      )
+    ) {
+      // Valid selection exists, only update count tracker
+      if (currentCount !== lastMoodboardCount) {
+        setLastMoodboardCount(currentCount);
+      }
       return;
     }
 
@@ -192,10 +202,11 @@ export const MoodboardSection: React.FC<{
     }
   }, [
     currentCampaign?.id,
-    currentCampaignMoodboards.length,
+    currentCampaignMoodboards,
     lastMoodboardCount,
     isCreatingNewMoodboard,
     moodboardIdFromUrl,
+    setSelectedMoodboardId,
     // Don't include selectedMoodboardId to avoid loops
   ]);
 
@@ -381,210 +392,206 @@ export const MoodboardSection: React.FC<{
   }
 
   return (
-    <ScreenshotProvider>
-      <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
-        <CardHeader className="py-1">
-          <div
-            className="flex items-center justify-between cursor-pointer"
-            onClick={toggleExpanded}
-          >
-            <div className="flex items-center">
-              {expanded ? (
-                <ChevronDown className="text-[#6e7787] mr-2" size={20} />
-              ) : (
-                <ChevronRight className="text-[#6e7787] mr-2" size={20} />
-              )}
-              {!expanded ? (
-                <div className="flex items-center">
+    <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
+      <CardHeader className="py-1">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={toggleExpanded}
+        >
+          <div className="flex items-center">
+            {expanded ? (
+              <ChevronDown className="text-[#6e7787] mr-2" size={20} />
+            ) : (
+              <ChevronRight className="text-[#6e7787] mr-2" size={20} />
+            )}
+            {!expanded ? (
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
+                  <span className="text-white font-bold">
+                    <Presentation size={24} />
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex justify-between">
+                    <div className="flex flex-col">
+                      <div className="text-sm font-medium break-words max-w-xs">
+                        {moodboardTitle}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-[#6e7787]">
+                    Design the visual direction of your campaign
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex">
                   <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
                     <span className="text-white font-bold">
                       <Presentation size={24} />
                     </span>
                   </div>
-                  <div className="flex flex-col">
-                    <div className="flex justify-between">
-                      <div className="flex flex-col">
-                        <div className="text-sm font-medium break-words max-w-xs">
-                          {moodboardTitle}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-xs text-[#6e7787]">
-                      Design the visual direction of your campaign
-                    </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-0 block">
+                      Moodboard
+                    </label>
+
+                    {currentCampaign &&
+                    (!moodboardInformation ||
+                      moodboardInformation.length == 0) ? (
+                      <Input
+                        value={moodboardTitle}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onChange={(e) => setMoodboardTitle(e.target.value)}
+                        placeholder="Enter moodboard title"
+                        className="font-bold w-96"
+                      />
+                    ) : (
+                      <p className="font-bold break-words max-w-xs">
+                        {moodboardTitle}
+                      </p>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <div>
-                  <div className="flex">
-                    <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
-                      <span className="text-white font-bold">
-                        <Presentation size={24} />
-                      </span>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-0 block">
-                        Moodboard
-                      </label>
+              </div>
+            )}
+          </div>
 
-                      {currentCampaign &&
-                      (!moodboardInformation ||
-                        moodboardInformation.length == 0) ? (
-                        <Input
-                          value={moodboardTitle}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          onChange={(e) => setMoodboardTitle(e.target.value)}
-                          placeholder="Enter moodboard title"
-                          className="font-bold w-96"
+          <div className="absolute right-3 top-7 flex items-center gap-x-2">
+            {campaignInformation && currentCampaign ? (
+              <MoodboardSelector
+                campaignId={currentCampaign.id}
+                moodboards={moodboardInformation || []}
+                selectedMoodboard={currentMoodboard}
+                setSelectedMoodboard={handleMoodboardSelect}
+                onNewMoodboard={handleCreateNewMoodboard}
+                isCreatingNew={false}
+              />
+            ) : (
+              <Popover open={openPopover} onOpenChange={setOpenPopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <SearchIcon size={10} className="text-black" />
+                    {`Select Moodboard`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandEmpty>No Existing Moodboard</CommandEmpty>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
+
+            <TooltipIconButton
+              tooltip="New Moodboard"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreateNewMoodboard();
+              }}
+              className="p-4"
+              size={"lg"}
+              disabled={isCreatingNewMoodboard}
+            >
+              <CirclePlus className="size-5" />
+            </TooltipIconButton>
+          </div>
+        </div>
+      </CardHeader>
+
+      {expanded && (
+        <>
+          <div>
+            <CardContent>
+              {currentCampaign && (
+                <motion.div
+                  key={currentCampaign?.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="pt-0 pb-6"
+                >
+                  <div className="mt-1 space-y-6">
+                    <MoodboardOverview
+                      title={currentCampaign?.campaign?.title}
+                      description={currentCampaign?.campaign?.description}
+                      tone={currentCampaign?.campaign?.tone}
+                      campaignId={currentCampaign.id}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {currentMoodboard?.aggregated_tags && (
+                <ContentSection
+                  title={`Build Your Campaign Moodboard`}
+                  content={
+                    <div>
+                      <div ref={scrollRef}></div>
+                      <div>
+                        {selectedBrandId &&
+                          currentMoodboard &&
+                          currentCampaign &&
+                          moodboardInformation && (
+                            <MoodboardLayout
+                              brandId={selectedBrandId}
+                              moodboard={currentMoodboard}
+                              carouselHeader={
+                                currentCampaign && currentMoodboard ? (
+                                  <MoodboardVisualSectionHeader
+                                    currentMoodboard={currentMoodboard}
+                                    brandName={
+                                      brandInformation?.static?.brand?.name
+                                    }
+                                    currentCampaign={currentCampaign}
+                                    moodboard={currentMoodboard}
+                                    galleryActions={galleryActions}
+                                  />
+                                ) : null
+                              }
+                            />
+                          )}
+                      </div>
+                      {currentMoodboard && (
+                        <MoodboardTagResults
+                          moodboardId={currentMoodboard.id}
+                          campaignId={currentMoodboard.campaign_id}
+                          moodboard_tags={currentMoodboard?.moodboard_tags}
+                          selected_moodboard_tags={
+                            currentMoodboard.selected_moodboard_tags
+                          }
+                          showAdvancedSettings={showAdvancedSettings}
+                          isGalleryItemsProcessing={galleryActions.isGalleryItemsProcessing()}
+                          moodboardAssets={
+                            currentMoodboard.moodboard_assets || []
+                          }
                         />
-                      ) : (
-                        <p className="font-bold break-words max-w-xs">
-                          {moodboardTitle}
-                        </p>
                       )}
                     </div>
-                  </div>
+                  }
+                  context={undefined}
+                />
+              )}
+
+              {currentCampaignMoodboards.length === 0 && (
+                <div className="mt-4">
+                  <Button className="w-full" onClick={handleCreateMoodboard}>
+                    Create Moodboard
+                  </Button>
                 </div>
               )}
-            </div>
-
-            <div className="absolute right-3 top-7 flex items-center gap-x-2">
-              {campaignInformation && currentCampaign ? (
-                <MoodboardSelector
-                  campaignId={currentCampaign.id}
-                  moodboards={moodboardInformation || []}
-                  selectedMoodboard={currentMoodboard}
-                  setSelectedMoodboard={handleMoodboardSelect}
-                  onNewMoodboard={handleCreateNewMoodboard}
-                  isCreatingNew={false}
-                />
-              ) : (
-                <Popover open={openPopover} onOpenChange={setOpenPopover}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <SearchIcon size={10} className="text-black" />
-                      {`Select Moodboard`}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                      <CommandEmpty>No Existing Moodboard</CommandEmpty>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              )}
-
-              <TooltipIconButton
-                tooltip="New Moodboard"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCreateNewMoodboard();
-                }}
-                className="p-4"
-                size={"lg"}
-                disabled={isCreatingNewMoodboard}
-              >
-                <CirclePlus className="size-5" />
-              </TooltipIconButton>
-            </div>
+            </CardContent>
           </div>
-        </CardHeader>
-
-        {expanded && (
-          <>
-            <div>
-              <CardContent>
-                {currentCampaign && (
-                  <motion.div
-                    key={currentCampaign?.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="pt-0 pb-6"
-                  >
-                    <div className="mt-1 space-y-6">
-                      <MoodboardOverview
-                        title={currentCampaign?.campaign?.title}
-                        description={currentCampaign?.campaign?.description}
-                        tone={currentCampaign?.campaign?.tone}
-                        campaignId={currentCampaign.id}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {currentMoodboard?.aggregated_tags && (
-                  <ContentSection
-                    title={`Build Your Campaign Moodboard`}
-                    content={
-                      <div>
-                        <div ref={scrollRef}></div>
-                        <div>
-                          {selectedBrandId &&
-                            currentMoodboard &&
-                            currentCampaign &&
-                            moodboardInformation && (
-                              <MoodboardLayout
-                                ref={galleryGridRef}
-                                brandId={selectedBrandId}
-                                moodboard={currentMoodboard}
-                                carouselHeader={
-                                  currentCampaign && currentMoodboard ? (
-                                    <MoodboardVisualSectionHeader
-                                      currentMoodboard={currentMoodboard}
-                                      brandName={
-                                        brandInformation?.static?.brand?.name
-                                      }
-                                      currentCampaign={currentCampaign}
-                                      moodboard={currentMoodboard}
-                                      galleryActions={galleryActions}
-                                    />
-                                  ) : null
-                                }
-                              />
-                            )}
-                        </div>
-                        {currentMoodboard && (
-                          <MoodboardTagResults
-                            moodboardId={currentMoodboard.id}
-                            moodboard_tags={currentMoodboard?.moodboard_tags}
-                            selected_moodboard_tags={
-                              currentMoodboard.selected_moodboard_tags
-                            }
-                            showAdvancedSettings={showAdvancedSettings}
-                            isGalleryItemsProcessing={galleryActions.isGalleryItemsProcessing()}
-                            galleryActions={galleryActions}
-                            currentCampaign={currentCampaign}
-                            moodboardAssets={
-                              currentMoodboard.moodboard_assets || []
-                            }
-                          />
-                        )}
-                      </div>
-                    }
-                    context={undefined}
-                  />
-                )}
-
-                {currentCampaignMoodboards.length === 0 && (
-                  <div className="mt-4">
-                    <Button className="w-full" onClick={handleCreateMoodboard}>
-                      Create Moodboard
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </div>
-          </>
-        )}
-      </Card>
-    </ScreenshotProvider>
+        </>
+      )}
+    </Card>
   );
 };

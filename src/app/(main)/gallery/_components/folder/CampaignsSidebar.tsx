@@ -82,7 +82,6 @@ export function CampaignsSidebar({
     title: string;
   } | null>(null);
   const [newCampaignName, setNewCampaignName] = useState("");
-  const [isRenaming, setIsRenaming] = useState(false);
   const { brands } = useBrandStore();
 
   const { campaigns, brandName } = useMemo(() => {
@@ -116,24 +115,26 @@ export function CampaignsSidebar({
       return;
     }
 
-    setIsRenaming(true);
-    try {
-      await updateCampaignName(
-        selectedBrandId,
-        renamingCampaign.id,
-        newCampaignName.trim()
-      );
-      toast.success("Campaign renamed successfully");
-      setRenameDialogOpen(false);
-      setRenamingCampaign(null);
-      setNewCampaignName("");
-      // Refetch brands to update the UI
-    } catch (error) {
-      console.error("Error renaming campaign:", error);
-      toast.error("Failed to rename campaign");
-    } finally {
-      setIsRenaming(false);
-    }
+    const campaignName = newCampaignName.trim();
+    const campaignId = renamingCampaign.id;
+
+    // Close dialog immediately
+    setRenameDialogOpen(false);
+    setRenamingCampaign(null);
+    setNewCampaignName("");
+
+    // Use toast.promise to handle the async operation
+    const renamePromise = updateCampaignName(
+      selectedBrandId,
+      campaignId,
+      campaignName
+    );
+
+    toast.promise(renamePromise, {
+      loading: "Renaming campaign...",
+      success: "Campaign renamed successfully",
+      error: "Failed to rename campaign",
+    });
   };
 
   if (!selectedBrandId) {
@@ -144,9 +145,20 @@ export function CampaignsSidebar({
     <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-80 rounded-sm">
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">
-          Campaigns
-        </h3>
+        {selectedCampaignId ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onCampaignSelect("")}
+            className="text-sm font-semibold text-gray-900 hover:text-purple-600"
+          >
+            ← Go Back
+          </Button>
+        ) : (
+          <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">
+            Campaigns
+          </h3>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -181,7 +193,10 @@ export function CampaignsSidebar({
         {filteredCampaigns.length > 0 ? (
           <div className="space-y-1 p-2">
             {filteredCampaigns.map((campaign) => (
-              <div key={campaign.id} className="relative group">
+              <div
+                key={`${selectedBrandId}-${campaign.id}`}
+                className="relative group"
+              >
                 <button
                   onClick={() => onCampaignSelect(campaign.id)}
                   className={cn(
@@ -280,7 +295,7 @@ export function CampaignsSidebar({
                 onChange={(e) => setNewCampaignName(e.target.value)}
                 placeholder="Enter campaign name"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !isRenaming) {
+                  if (e.key === "Enter") {
                     handleRenameSave();
                   }
                 }}
@@ -292,16 +307,15 @@ export function CampaignsSidebar({
               type="button"
               variant="outline"
               onClick={() => setRenameDialogOpen(false)}
-              disabled={isRenaming}
             >
               Cancel
             </Button>
             <Button
               type="button"
               onClick={handleRenameSave}
-              disabled={isRenaming || !newCampaignName.trim()}
+              disabled={!newCampaignName.trim()}
             >
-              {isRenaming ? "Saving..." : "Save Changes"}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

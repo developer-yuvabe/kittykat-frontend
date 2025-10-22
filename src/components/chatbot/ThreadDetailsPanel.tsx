@@ -38,7 +38,10 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   const [selectedCampaignIdFromUrl] = useQueryState("campaignId");
   const currentCampaign = useMemo(() => {
-    if (!campaignInformation || campaignInformation.length === 0) return null;
+    if (!campaignInformation || campaignInformation.length === 0) {
+      setSelectedCampaignId(null);
+      return null;
+    }
 
     // If there's a campaignId in the URL, try to find it in the list
     const campaign = campaignInformation.find(

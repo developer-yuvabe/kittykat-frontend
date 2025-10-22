@@ -42,7 +42,6 @@ export function MediaFolderView({
   onUploadComplete,
   addToGallery = true,
   brandName,
-  selectedCampaignId,
   selecteMoodboardId,
   searchQuery,
   onSearchChange,
@@ -58,7 +57,7 @@ export function MediaFolderView({
     selectedCampaignFromUrl,
     handleCampaignSelect,
     handleBackToCampaigns,
-  } = useFolderState(selectedCampaignId);
+  } = useFolderState();
 
   // Common filter props
   const filterProps = {

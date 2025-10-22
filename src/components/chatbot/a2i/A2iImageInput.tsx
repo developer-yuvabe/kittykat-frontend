@@ -329,37 +329,27 @@ const A2iImageInput = ({
       form.reset({
         ...form.getValues(),
         ...parameters.imageGeneationParameters,
-        ...(paramName ? { [paramName]: null } : {}),
       });
 
-      form.trigger();
-      setParameters("imageGeneationParameters", null);
-    }
+      // Update imageBlocks
+      if (paramName && parameters.imageGeneationParameters[paramName]) {
+        const referenceImages = parameters.imageGeneationParameters[paramName];
+        const imagesArray = Array.isArray(referenceImages)
+          ? referenceImages
+          : [referenceImages];
 
-    if (parameters.referenceImage) {
-      const referenceImageUrl = parameters.referenceImage;
-      const paramName = refernceImagesModelInfo?.id;
-
-      if (paramName) {
-        form.reset({
-          ...form.getValues(),
-          [paramName]:
-            refernceImagesModelInfo.maxLimit > 1
-              ? [referenceImageUrl]
-              : referenceImageUrl,
-        });
-
-        setImageBlocks([
-          {
-            previewUrl: referenceImageUrl,
-            url: referenceImageUrl,
-          },
-        ]);
-
-        requestAnimationFrame(() => {
-          setParameters("referenceImage", null);
-        });
+        setImageBlocks(
+          imagesArray.map((url) => ({
+            previewUrl: url,
+            url: url,
+          }))
+        );
       }
+
+      form.trigger();
+      requestAnimationFrame(() => {
+        setParameters("imageGeneationParameters", null);
+      });
     }
   }, [parameters]);
 
