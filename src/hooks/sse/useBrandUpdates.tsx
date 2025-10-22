@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
-import { usePathname } from "next/navigation";
 
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
@@ -14,9 +13,6 @@ export function useBrandUpdates() {
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
   const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
-  const pathname = usePathname();
-
-  console.log(pathname);
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -44,7 +40,7 @@ export function useBrandUpdates() {
         const latestCreatedCampaign = parsed.campaign_information?.at(-1);
 
         // Allow auto-select only on the main dashboard page for realtime updates
-        if (latestCreatedCampaign && pathname === "/") {
+        if (latestCreatedCampaign && window.location.pathname == "/") {
           setSelectedCampaignId(latestCreatedCampaign.id);
         }
       }
