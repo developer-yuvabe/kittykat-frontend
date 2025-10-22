@@ -76,7 +76,9 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
 
   useEffect(() => {
     if (modelImage) {
-      form.setValue("model_image", modelImage);
+      form.setValue("model_image", modelImage, { shouldValidate: true });
+    } else {
+      form.setValue("model_image", null, { shouldValidate: true });
     }
   }, [modelImage, form]);
 
@@ -119,7 +121,9 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
                     disabled={loading}
                     onClick={(e) => {
                       e.stopPropagation();
-                      form.setValue("product_image", null);
+                      form.setValue("product_image", null, {
+                        shouldValidate: true,
+                      });
                     }}
                     className="bg-destructive/10 text-destructive border-destructive border border-dashed hover:bg-destructive/15 absolute top-2 right-2 z-[1000]"
                   >
@@ -160,7 +164,9 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
               }}
               onMediaItemSelected={(mediaItem) => {
                 if (productImageParam) {
-                  form.setValue(productImageParam.id, mediaItem);
+                  form.setValue(productImageParam.id, mediaItem, {
+                    shouldValidate: true,
+                  });
                 }
 
                 setShowMediaLibrary(false);

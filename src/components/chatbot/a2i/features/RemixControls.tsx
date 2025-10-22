@@ -136,7 +136,9 @@ const RemixControls = ({
 
   useEffect(() => {
     if (image.url && baseImageParam) {
-      form.setValue(baseImageParam.id, image.url);
+      form.setValue(baseImageParam.id, image.url, { shouldValidate: true });
+    } else if (baseImageParam) {
+      form.setValue(baseImageParam.id, null, { shouldValidate: true });
     }
   }, [image]);
 
@@ -327,7 +329,7 @@ const RemixControls = ({
         maskUrl
       );
 
-      form.setValue("prompt", "");
+      form.setValue("prompt", "", { shouldValidate: true });
       if (referenceImageParam) {
         form.setValue(referenceImageParam.id, null);
       }

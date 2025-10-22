@@ -257,7 +257,7 @@ const A2iImageInput = ({
         campaign_id: currentCampaign?.id || null,
       });
 
-      form.setValue("prompt", "");
+      form.setValue("prompt", "", { shouldValidate: true });
       if (refernceImagesModelInfo) {
         form.setValue(refernceImagesModelInfo.id, null);
       }
@@ -270,8 +270,6 @@ const A2iImageInput = ({
       }
 
       toast.error("Failed to generate image. Please try again.");
-    } finally {
-      form.trigger();
     }
   };
 
