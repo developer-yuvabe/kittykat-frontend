@@ -136,16 +136,17 @@ export const MoodboardSection: React.FC<{
   // Get current moodboard from props (real-time updates)
   const currentMoodboard = useMemo(() => {
     // If we have a selected moodboard ID, find it in the current data
-
     if (selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       const found = currentCampaignMoodboards.find(
         (mb) => mb.id === selectedMoodboardId
       );
-      if (found) return found;
+      // Only return the found moodboard if it exists, otherwise return null
+      // Don't fall back to latest - let the auto-select effect handle that
+      return found || null;
     }
 
-    // If no specific selection or selected moodboard not found, get the latest moodboard
-    if (currentCampaignMoodboards.length > 0) {
+    // Only return latest if there's no selection at all
+    if (!selectedMoodboardId && currentCampaignMoodboards.length > 0) {
       return currentCampaignMoodboards[currentCampaignMoodboards.length - 1];
     }
 
@@ -158,6 +159,20 @@ export const MoodboardSection: React.FC<{
 
     // Don't auto-select if we have a moodboard ID from URL to process
     if (moodboardIdFromUrl) {
+      return;
+    }
+
+    // Don't auto-select if a valid moodboard is already selected
+    if (
+      selectedMoodboardIdRef.current &&
+      currentCampaignMoodboards.find(
+        (mb) => mb.id === selectedMoodboardIdRef.current
+      )
+    ) {
+      // Valid selection exists, only update count tracker
+      if (currentCount !== lastMoodboardCount) {
+        setLastMoodboardCount(currentCount);
+      }
       return;
     }
 
@@ -187,10 +202,11 @@ export const MoodboardSection: React.FC<{
     }
   }, [
     currentCampaign?.id,
-    currentCampaignMoodboards.length,
+    currentCampaignMoodboards,
     lastMoodboardCount,
     isCreatingNewMoodboard,
     moodboardIdFromUrl,
+    setSelectedMoodboardId,
     // Don't include selectedMoodboardId to avoid loops
   ]);
 
