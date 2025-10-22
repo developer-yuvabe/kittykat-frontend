@@ -224,9 +224,8 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
                           </button>
                         )}
                         {field.value &&
-                          (source !== "blanket"
-                            ? !firstFrameParam.required
-                            : true) && (
+                          (source === "blanket" ||
+                            !firstFrameParam.required) && (
                             <Button
                               variant="outline"
                               size="icon"
