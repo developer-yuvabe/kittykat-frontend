@@ -140,7 +140,19 @@ export const useBrandStore = create<Store>((set, get) => ({
 
   selectedMoodboardId: null,
   setSelectedMoodboardId: (moodboardId: string | null) =>
-    set({ selectedMoodboardId: moodboardId }),
+    set((state) => {
+      // If moodboardId is provided, find the campaign it belongs to and select it
+      if (moodboardId) {
+        const moodboard = state.moodboards.find((mb) => mb.id === moodboardId);
+        if (moodboard) {
+          return {
+            selectedMoodboardId: moodboardId,
+            selectedCampaignId: moodboard.campaign_id,
+          };
+        }
+      }
+      return { selectedMoodboardId: moodboardId };
+    }),
 
   isMoodboardSaving: false,
   setIsMoodboardSaving: (isSaving: boolean) =>
