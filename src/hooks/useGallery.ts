@@ -273,6 +273,24 @@ export const useGalleryQuery = (
     },
   });
 
+  // Create gallery item version mutation
+  const createVersionMutation = useMutation({
+    mutationFn: (galleryItem: GalleryItem) =>
+      galleryService.createGalleryItemVersion(galleryItem),
+    onSuccess: (createdVersion) => {
+      // Invalidate gallery items to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+      // Invalidate versions query for the parent item
+      if (createdVersion.parent_asset_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["versions", createdVersion.parent_asset_id],
+        });
+      }
+    },
+  });
+
   // Update gallery item mutation
   const updateItemMutation = useMutation({
     mutationFn: ({ itemId, data }: { itemId: string; data: GalleryItem }) =>
@@ -931,6 +949,9 @@ export const useGalleryQuery = (
     bulkUpload: bulkUploadMutation.mutateAsync,
 
     scrapeHandles: scrapeHandlesMutation.mutateAsync,
+
+    createVersion: createVersionMutation.mutateAsync,
+    isCreatingVersion: createVersionMutation.isPending,
   };
 };
 

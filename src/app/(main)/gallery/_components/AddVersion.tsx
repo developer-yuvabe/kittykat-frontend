@@ -5,11 +5,7 @@ import { Loader } from "@/components/ui/loader";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery, ITEMS_PER_PAGE } from "@/hooks/useGallery";
-import {
-  GalleryItem,
-  GalleryItemResponse,
-  BulkGalleryUploadRequest,
-} from "@/types/gallery.types";
+import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Link, Upload } from "lucide-react";
 import React, { useCallback, useState } from "react";
@@ -37,7 +33,7 @@ const AddVersion = ({
   const [url, setUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-  const { bulkUpload } = useGalleryQuery(
+  const { createVersion } = useGalleryQuery(
     {},
     ITEMS_PER_PAGE,
     true,
@@ -72,16 +68,10 @@ const AddVersion = ({
     };
 
     try {
-      const bulkUploadPayload: BulkGalleryUploadRequest = {
-        gallery_items: [galleryItem],
-        brand_id: item.brand_id,
-        campaign_id: item.campaign_id,
-      };
+      const uploadedItem = await createVersion(galleryItem);
 
-      const uploadedItems = await bulkUpload(bulkUploadPayload);
-
-      if (uploadedItems?.[0]) {
-        onVersionChange(uploadedItems[0]);
+      if (uploadedItem) {
+        onVersionChange(uploadedItem);
       }
 
       toast.success("Version added successfully!");
