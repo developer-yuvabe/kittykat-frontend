@@ -76,7 +76,7 @@ const VideoGenerationInputControls = ({
   item,
   setCurrentItem,
 }: VideoGenerationInputProps) => {
-  const { source } = useConceptVisualStore();
+  const { source, isConceptVisualOpened } = useConceptVisualStore();
   const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -95,6 +95,12 @@ const VideoGenerationInputControls = ({
       image: item?.asset_url || null,
     },
   });
+
+  useEffect(() => {
+    if (isConceptVisualOpened) {
+      form.setValue("prompt", "", { shouldValidate: true });
+    }
+  }, [isConceptVisualOpened]);
 
   const {
     negativePromptParam,

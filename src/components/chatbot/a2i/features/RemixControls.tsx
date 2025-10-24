@@ -74,7 +74,8 @@ const RemixControls = ({
   brandId,
 }: RemixControlsProps) => {
   const router = useRouter();
-  const { closeConceptVisual, source } = useConceptVisualStore();
+  const { closeConceptVisual, source, isConceptVisualOpened } =
+    useConceptVisualStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
@@ -141,6 +142,12 @@ const RemixControls = ({
       form.setValue(baseImageParam.id, null, { shouldValidate: true });
     }
   }, [image]);
+
+  useEffect(() => {
+    if (isConceptVisualOpened) {
+      form.setValue("prompt", "", { shouldValidate: true });
+    }
+  }, [isConceptVisualOpened]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -257,9 +264,11 @@ const RemixControls = ({
     accept: {
       "image/*": [],
     },
-    disabled: isUploading || 10 - imageBlocks.length <= 0,
-    maxFiles: 10 - imageBlocks.length,
-    maxSize: AppConfig.MAX_FILE_SIZE,
+    disabled:
+      isUploading ||
+      (referenceImageParam?.maxLimit || 10) - imageBlocks.length <= 0,
+    maxFiles: (referenceImageParam?.maxLimit || 10) - imageBlocks.length,
+    maxSize: referenceImageParam?.maxFileSizeLimit || AppConfig.MAX_FILE_SIZE,
   });
 
   function removeReferenceImage(urlToRemove: string) {
@@ -370,24 +379,24 @@ const RemixControls = ({
   }, [selectedRemixModel?.id]);
 
   // This useEffect is to fetch reference images stored in the session storage and populate the image blocks
-  useEffect(() => {
-    if (referenceImageParam) {
-      const referenceImages = form.getValues(referenceImageParam.id);
+  // useEffect(() => {
+  //   if (referenceImageParam) {
+  //     const referenceImages = form.getValues(referenceImageParam.id);
 
-      if (
-        referenceImages &&
-        Array.isArray(referenceImages) &&
-        referenceImages.length > 0
-      ) {
-        setImageBlocks(
-          referenceImages.map((url) => ({
-            previewUrl: url,
-            url: url,
-          }))
-        );
-      }
-    }
-  }, [form, selectedRemixModel?.id]);
+  //     if (
+  //       referenceImages &&
+  //       Array.isArray(referenceImages) &&
+  //       referenceImages.length > 0
+  //     ) {
+  //       setImageBlocks(
+  //         referenceImages.map((url) => ({
+  //           previewUrl: url,
+  //           url: url,
+  //         }))
+  //       );
+  //     }
+  //   }
+  // }, [form, selectedRemixModel?.id]);
 
   // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
   const value = form.watch("max_images");
