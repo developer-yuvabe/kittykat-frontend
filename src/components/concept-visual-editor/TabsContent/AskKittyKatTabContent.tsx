@@ -712,7 +712,7 @@ const AskKittyKatTabContent = ({
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentAssetVersion.comments]);
+  }, [currentAssetVersion.comments?.length]);
 
   return (
     <>
