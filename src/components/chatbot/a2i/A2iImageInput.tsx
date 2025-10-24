@@ -349,6 +349,32 @@ const A2iImageInput = ({
         setParameters("imageGeneationParameters", null);
       });
     }
+
+    if (parameters.referenceImage) {
+      const referenceImageUrl = parameters.referenceImage;
+      const paramName = refernceImagesModelInfo?.id;
+
+      if (paramName) {
+        form.reset({
+          ...form.getValues(),
+          [paramName]:
+            refernceImagesModelInfo.maxLimit > 1
+              ? [referenceImageUrl]
+              : referenceImageUrl,
+        });
+
+        setImageBlocks([
+          {
+            previewUrl: referenceImageUrl,
+            url: referenceImageUrl,
+          },
+        ]);
+
+        requestAnimationFrame(() => {
+          setParameters("referenceImage", null);
+        });
+      }
+    }
   }, [parameters]);
 
   // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
