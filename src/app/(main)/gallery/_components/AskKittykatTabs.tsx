@@ -10,6 +10,7 @@ import { Shirt, CatIcon } from "lucide-react";
 import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import React from "react";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { GalleryItemResponse } from "@/types/gallery.types";
 
 const tabItems: {
   key: ConceptVisualTabs;
@@ -43,7 +44,11 @@ const tabItems: {
   },
 ];
 
-export function AskKittykatTabs() {
+interface AskKittykatTabsProps {
+  currentVersion: GalleryItemResponse | null;
+}
+
+export function AskKittykatTabs({ currentVersion }: AskKittykatTabsProps) {
   const { source, currentAsset } = useConceptVisualStore();
   return (
     <TabsList
@@ -59,7 +64,9 @@ export function AskKittykatTabs() {
         const isDisabled =
           (currentAsset?.asset_type === "video" &&
             item.key !== "ask-kittykat") ||
-          (source === "blanket" && item.key === "ask-kittykat");
+          (source === "blanket" && item.key === "ask-kittykat") ||
+          (currentVersion?.asset_type === "video" &&
+            item.key !== "ask-kittykat");
 
         return (
           <TabsTrigger

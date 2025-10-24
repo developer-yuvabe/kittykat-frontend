@@ -101,6 +101,15 @@ const ConceptVisualEditor = () => {
     }
   }, [currentAsset, versions.data]);
 
+  useEffect(() => {
+    if (
+      currentAssetVersion?.asset_type === "video" &&
+      currentTab !== "ask-kittykat"
+    ) {
+      setCurrentTab("ask-kittykat");
+    }
+  }, [currentAssetVersion, currentTab]);
+
   return (
     <Dialog
       open={isConceptVisualOpened}
@@ -258,7 +267,7 @@ const ConceptVisualEditor = () => {
                     onValueChange={(v) => setCurrentTab(v as ConceptVisualTabs)}
                     className="flex-1 flex flex-col bg-none"
                   >
-                    <AskKittykatTabs />
+                    <AskKittykatTabs currentVersion={currentAssetVersion} />
 
                     {/* Tabs Content */}
 
