@@ -26,7 +26,7 @@ import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Settings2, X } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
@@ -35,9 +35,13 @@ import { useConceptVisualStore } from "@/store/concept-visual.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
+  setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
 
-const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
+const VideoGenerationInput = ({
+  item,
+  setCurrentItem,
+}: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
     selectedVideoGenearationModel,
@@ -57,14 +61,21 @@ const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
               }}
             />
           </div>
-          <VideoGenerationInputControls item={item} key={item?.id} />
+          <VideoGenerationInputControls
+            item={item}
+            key={item?.id}
+            setCurrentItem={setCurrentItem}
+          />
         </>
       )}
     </div>
   );
 };
 
-const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
+const VideoGenerationInputControls = ({
+  item,
+  setCurrentItem,
+}: VideoGenerationInputProps) => {
   const { source } = useConceptVisualStore();
   const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
@@ -230,11 +241,14 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
                               variant="outline"
                               size="icon"
                               className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                              onClick={() =>
+                              onClick={() => {
                                 form.setValue(firstFrameParam.id, null, {
                                   shouldValidate: true,
-                                })
-                              }
+                                });
+                                if (source === "blanket") {
+                                  setCurrentItem(null);
+                                }
+                              }}
                             >
                               <X />
                             </Button>
@@ -407,6 +421,9 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
             form.setValue(galleryPickerSource, item.asset_url, {
               shouldValidate: true,
             });
+            if (source === "blanket") {
+              setCurrentItem(item);
+            }
           }
           setGalleryPickerSource(null);
         }}
