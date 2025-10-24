@@ -68,7 +68,12 @@ const VideoWithMetadataModal = ({
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const { data, isFetching: isFetchingParams } = useQuery({
-    queryKey: ["video-parameters", galleryItem.brand_id, galleryItem.id],
+    queryKey: [
+      "video-parameters",
+      galleryItem.brand_id,
+      galleryItem.id,
+      galleryItem.asset_url,
+    ],
     queryFn: () =>
       getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
     enabled: !generation && galleryItem.asset_source == "showboard-media",
