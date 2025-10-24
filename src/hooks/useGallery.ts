@@ -203,6 +203,34 @@ export const useGalleryQuery = (
     queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
   }
 
+  /**
+   * Revalidate gallery item versions cache
+   * This function updates the cache when a version is modified (e.g., comments, edits)
+   * @param parentAssetId - The ID of the parent asset that has versions
+   * @param updatedVersion - The updated version data
+   */
+  function revalidateGalleryItemVersions(
+    parentAssetId: string,
+    updatedVersion: GalleryItemResponse
+  ) {
+    // Update the versions cache using the parent asset ID
+    queryClient.setQueryData(
+      ["versions", parentAssetId],
+      (oldData: GalleryItemResponse[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((version) =>
+          version.id === updatedVersion.id ? updatedVersion : version
+        );
+      }
+    );
+
+    // Also update individual gallery-item cache for this specific version
+    queryClient.setQueryData(["gallery-item", updatedVersion.id], updatedVersion);
+
+    // Update the item in all gallery queries as well
+    updateGalleryItemInCache(updatedVersion);
+  }
+
   // Create new gallery item mutation
   const addToGalleryMutation = useMutation({
     mutationFn: (newItem: GalleryItem) =>
@@ -945,6 +973,9 @@ export const useGalleryQuery = (
     totalItems,
 
     refetchAllGalleryQueries,
+
+    // Revalidate versions cache
+    revalidateGalleryItemVersions,
 
     bulkUpload: bulkUploadMutation.mutateAsync,
 
