@@ -11,6 +11,7 @@ import { ArrowLeft, Link, Upload } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 type AddVersionProps = {
   children?: React.ReactNode;
@@ -32,6 +33,8 @@ const AddVersion = ({
 
   const [url, setUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const { createVersion } = useGalleryQuery(
     {},
@@ -76,6 +79,14 @@ const AddVersion = ({
 
       toast.success("Version added successfully!");
       await refetchVersions();
+
+      // Revalidate parameters queries
+      queryClient.invalidateQueries({
+        queryKey: ["image-parameters", item.brand_id, item.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["video-parameters", item.brand_id, item.id],
+      });
 
       setIsOpen(false);
       setShowUrlInput(false);
