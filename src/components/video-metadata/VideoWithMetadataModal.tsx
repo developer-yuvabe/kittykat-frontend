@@ -101,8 +101,16 @@ const VideoWithMetadataModal = ({
       const model = models.find((m) => m.model === data.parameters.model);
       if (!model) throw new Error("Model not found for variation");
 
+      // Filter parameters that control number of outputs
+      const paramsResponsibleForVaryingNumberOfOutputs =
+        model.parameters.filter((p) => p.type === "image_count");
+
       await videoGenerationService(selectedBrandId!, {
         ...data.parameters,
+        seed: -1,
+        ...Object.fromEntries(
+          paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
+        ),
         source_asset_id: galleryItem.id,
       });
 
