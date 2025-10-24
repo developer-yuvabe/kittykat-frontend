@@ -299,11 +299,14 @@ const VideoWithMetadataModal = ({
                         </>
                       )}
 
-                      {data.parameters.aspect_ratio && (
+                      {(data.parameters.aspect_ratio ||
+                        data.parameters.ratio) && (
                         <>
                           <span>-</span>
                           <span>
-                            Aspect ratio: {data.parameters.aspect_ratio}
+                            Aspect Ratio:{" "}
+                            {data.parameters.aspect_ratio ||
+                              data.parameters.ratio}
                           </span>
                         </>
                       )}
