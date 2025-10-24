@@ -33,7 +33,7 @@ const AddVersion = ({
   const [url, setUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-  const { addToGallery } = useGalleryQuery(
+  const { createVersion } = useGalleryQuery(
     {},
     ITEMS_PER_PAGE,
     true,
@@ -68,12 +68,15 @@ const AddVersion = ({
     };
 
     try {
-      const newVersion = await addToGallery(galleryItem);
-      toast.success("Version added successfully!");
-      if (newVersion) {
-        await refetchVersions();
-        onVersionChange(newVersion);
+      const uploadedItem = await createVersion(galleryItem);
+
+      if (uploadedItem) {
+        onVersionChange(uploadedItem);
       }
+
+      toast.success("Version added successfully!");
+      await refetchVersions();
+
       setIsOpen(false);
       setShowUrlInput(false);
       setUrl("");
