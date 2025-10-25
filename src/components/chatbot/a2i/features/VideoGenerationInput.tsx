@@ -148,12 +148,13 @@ const VideoGenerationInputControls = ({
       form.setValue("prompt", "", { shouldValidate: true });
       form.setValue("negative_prompt", "", { shouldValidate: true });
       form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
-    } else {
-      // When only model changes
-      form.setValue("negative_prompt", "", { shouldValidate: true });
-      form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
     }
-  }, [isConceptVisualOpened, selectedVideoGenearationModel]);
+  }, [isConceptVisualOpened]);
+
+  useEffect(() => {
+    form.setValue("negative_prompt", "", { shouldValidate: true });
+    form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+  }, [selectedVideoGenearationModel]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
