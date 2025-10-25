@@ -268,7 +268,9 @@ const RemixControls = ({
       isUploading ||
       (referenceImageParam?.maxLimit || 10) - imageBlocks.length <= 0,
     maxFiles: (referenceImageParam?.maxLimit || 10) - imageBlocks.length,
-    maxSize: referenceImageParam?.maxFileSizeLimit || AppConfig.MAX_FILE_SIZE,
+    maxSize: referenceImageParam
+      ? referenceImageParam?.maxFileSizeLimit * 1024 * 1024
+      : AppConfig.MAX_FILE_SIZE,
   });
 
   function removeReferenceImage(urlToRemove: string) {
