@@ -70,6 +70,7 @@ const ImageWithMetadataModal = ({
   const router = useRouter();
   const { setParameters } = useMetadataActionsStore();
   const [loading, setLoading] = useState({
+    manualAuto: false,
     varyAuto: false,
     upscaleAuto: false,
     animateDynamic: false,
@@ -81,6 +82,7 @@ const ImageWithMetadataModal = ({
   const { openConceptVisual } = useConceptVisualStore();
   const {
     setSelectedImageGenerationModelByModelId,
+    setSelectedImageGenerationModel,
     setSelectedVideoGenearationModel,
     setSelectedRemixModel,
     models,
@@ -153,19 +155,80 @@ const ImageWithMetadataModal = ({
     }
   };
 
-  const handleVaryManual = () => {
-    if (!data?.parameters) return;
+  const handleVaryManual = async () => {
+    try {
+      setLoading((p) => ({ ...p, manualAuto: true }));
+      if (!data?.parameters) return;
 
-    if (data.parameters.model) {
-      setSelectedImageGenerationModelByModelId(data.parameters.model);
-      setParameters("imageGeneationParameters", data.parameters);
+      const model = models.find((m) => m.model === data.parameters.model);
+
+      if (!model) {
+        toast.error("No model found for this image.");
+        return;
+      }
+
+      setSelectedImageGenerationModel(model);
+
+      const parameters = data.parameters;
+
+      // Ensure that refernce images are different files rather than the related urls
+      const referneceImagesParamId = model.parameters.find(
+        (p) => p.type === "file"
+      );
+
+      let modifiedParameters = { ...parameters };
+
+      if (referneceImagesParamId) {
+        const refImageOrImages = parameters[referneceImagesParamId.id];
+
+        if (Array.isArray(refImageOrImages)) {
+          const uploadedUrls = [];
+          for (const imgUrl of refImageOrImages) {
+            const file = await urlToFile(imgUrl);
+            const url = await uploadFileAndReturnUrl(
+              file.name,
+              file.type,
+              "brands",
+              file,
+              selectedBrandId
+            );
+            uploadedUrls.push(url);
+          }
+
+          modifiedParameters = {
+            ...modifiedParameters,
+            [referneceImagesParamId.id]: uploadedUrls,
+          };
+        } else {
+          const file = await urlToFile(galleryItem.asset_url);
+          const url = await uploadFileAndReturnUrl(
+            file.name,
+            file.type,
+            "brands",
+            file,
+            selectedBrandId
+          );
+
+          modifiedParameters = {
+            ...modifiedParameters,
+            [referneceImagesParamId.id]: url,
+          };
+        }
+      }
+
+      setParameters("imageGeneationParameters", modifiedParameters);
 
       onClose();
       router.push("/?scrollTo=a2i-input");
 
       toast.info("Pre Selected Model and its parameters have been set.");
-    } else {
-      toast.error("No model found for this image.");
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        "An error occurred while trying to vary the image. Please try again."
+      );
+    } finally {
+      setLoading((p) => ({ ...p, manualAuto: false }));
     }
   };
 
@@ -552,7 +615,8 @@ const ImageWithMetadataModal = ({
                                 onClick={
                                   !isDisabled ? handleVaryManual : undefined
                                 }
-                                disabled={isDisabled}
+                                loading={loading.manualAuto}
+                                disabled={isDisabled || loading.manualAuto}
                                 className={isDisabled ? "opacity-50" : ""}
                               >
                                 Manual
