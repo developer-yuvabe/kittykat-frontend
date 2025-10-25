@@ -102,7 +102,14 @@ export const useBrandStore = create<Store>((set, get) => ({
         }
       }
 
-      return { selectedBrandId: brandId };
+      // Reset campaign selection when brand changes
+      const isBrandChanging = state.selectedBrandId !== brandId;
+      
+      return { 
+        selectedBrandId: brandId,
+        // Clear campaign selection when switching brands
+        selectedCampaignId: isBrandChanging ? null : state.selectedCampaignId,
+      };
     }),
 
   selectedCampaignId: null,

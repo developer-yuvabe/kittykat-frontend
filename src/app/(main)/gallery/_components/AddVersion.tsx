@@ -36,7 +36,7 @@ const AddVersion = ({
 
   const queryClient = useQueryClient();
 
-  const { addToGallery } = useGalleryQuery(
+  const { createVersion } = useGalleryQuery(
     {},
     ITEMS_PER_PAGE,
     true,
@@ -71,19 +71,23 @@ const AddVersion = ({
     };
 
     try {
-      const newVersion = await addToGallery(galleryItem);
-      toast.success("Version added successfully!");
-      if (newVersion) {
-        await refetchVersions();
-        queryClient.invalidateQueries({
-          queryKey: ["image-parameters", item.brand_id, item.id],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["video-parameters", item.brand_id, item.id],
-        });
+      const uploadedItem = await createVersion(galleryItem);
 
-        onVersionChange(newVersion);
+      if (uploadedItem) {
+        onVersionChange(uploadedItem);
       }
+
+      toast.success("Version added successfully!");
+      await refetchVersions();
+
+      // Revalidate parameters queries
+      queryClient.invalidateQueries({
+        queryKey: ["image-parameters", item.brand_id, item.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["video-parameters", item.brand_id, item.id],
+      });
+
       setIsOpen(false);
       setShowUrlInput(false);
       setUrl("");

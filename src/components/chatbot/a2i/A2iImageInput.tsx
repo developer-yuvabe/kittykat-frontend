@@ -305,14 +305,16 @@ const A2iImageInput = ({
   useEffect(() => {
     if (scrollTo === "a2i-input") {
       const observer = new MutationObserver(() => {
-        if (inputContainerRef.current) {
-          inputContainerRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-          });
-          setScrollTo(null);
-          observer.disconnect();
-        }
+        setTimeout(() => {
+          if (inputContainerRef.current) {
+            inputContainerRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "end",
+            });
+            setScrollTo(null);
+            observer.disconnect();
+          }
+        }, 50);
       });
 
       observer.observe(document.body, { childList: true, subtree: true });

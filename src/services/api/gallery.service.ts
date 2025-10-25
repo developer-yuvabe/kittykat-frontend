@@ -299,6 +299,17 @@ class GalleryService {
       axiosInstance.post(`/gallery/reorder`, { items: reorderData })
     );
   }
+
+  /**
+   * Create a new version of an existing gallery item
+   */
+  async createGalleryItemVersion(
+    galleryItem: GalleryItem
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.post("/gallery/version", galleryItem)
+    );
+  }
 }
 
 export const galleryService = new GalleryService();

@@ -237,7 +237,7 @@ const RemixImage = forwardRef<RemixImageHandle, RemixImageProps>(
           imageRef.current.height = image.naturalHeight;
         }
       };
-    }, [url, clearHistory, brushSize, calculateActualBrushSize, setImageWidth]);
+    }, [url, clearHistory, calculateActualBrushSize, setImageWidth]);
 
     const getPointerCoords = useCallback(
       (e: React.MouseEvent<HTMLCanvasElement>) => {

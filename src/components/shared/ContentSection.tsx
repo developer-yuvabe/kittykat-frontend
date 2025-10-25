@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import React from "react";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
@@ -59,6 +59,18 @@ export function ContentSection({
       isEqual(pinnedItem?.context?.data, context?.data)
     );
   }, [pinnedItem, content, title]);
+
+  useEffect(() => {
+    // Auto-update pinned item if context data changes
+    if (
+      pinnedItem &&
+      context &&
+      pinnedItem.title === title &&
+      !isEqual(pinnedItem.context.data, context.data)
+    ) {
+      addPinnedItem({ title, context });
+    }
+  }, [context]);
 
   const handleCopy = async () => {
     if (!context) return;
