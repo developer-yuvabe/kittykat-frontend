@@ -100,8 +100,8 @@ export const TaskListAdjustCreditsDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
             Adjust Credits
@@ -112,7 +112,7 @@ export const TaskListAdjustCreditsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1">
           {/* Current Credit Breakdown */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
@@ -262,7 +262,7 @@ export const TaskListAdjustCreditsDialog = ({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>

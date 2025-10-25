@@ -54,30 +54,21 @@ const ConceptVisualEditor = () => {
     staleTime: Infinity,
   });
 
-  const revalidateGalleryItemVersions = async (data: GalleryItemResponse) => {
-    if (currentAsset?.id) {
-      // Update the versions cache for any version that matches
-      queryClient.setQueryData(
-        ["versions", currentAsset.id],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return oldData.map((version: GalleryItemResponse) =>
-            version.id === data.id ? data : version
-          );
-        }
-      );
+  const handleVersionUpdate = async (updatedVersion: GalleryItemResponse) => {
+    if (!currentAsset?.id) return;
 
-      if (data.id === currentAsset.id) {
-        queryClient.setQueryData(["gallery-item", currentAsset.id], data);
-      }
-
-      setCurrentAssetVersion((prev) => {
-        if (!prev || prev.id !== data.id) {
-          return prev; // Don't update if it's not the current version
-        }
-        return data; // Update if it's the current version
-      });
+    // Use the common revalidation function from galleryActions
+    if (galleryActions?.revalidateGalleryItemVersions) {
+      galleryActions.revalidateGalleryItemVersions(currentAsset.id, updatedVersion);
     }
+
+    // Update local state if this is the currently displayed version
+    setCurrentAssetVersion((prev) => {
+      if (!prev || prev.id !== updatedVersion.id) {
+        return prev;
+      }
+      return updatedVersion;
+    });
   };
 
   const handleNavigateAssetItems = (direction: "next" | "prev") => {
@@ -100,6 +91,15 @@ const ConceptVisualEditor = () => {
       setCurrentAssetVersion(currentAsset);
     }
   }, [currentAsset, versions.data]);
+
+  useEffect(() => {
+    if (
+      currentAssetVersion?.asset_type === "video" &&
+      currentTab !== "ask-kittykat"
+    ) {
+      setCurrentTab("ask-kittykat");
+    }
+  }, [currentAssetVersion, currentTab]);
 
   return (
     <Dialog
@@ -217,14 +217,15 @@ const ConceptVisualEditor = () => {
                       <div className="bg-gray-200 rounded-lg w-full max-w-4xlh-20 sm:h-[16rem] md:h-[24rem] lg:h-[36rem] xl:h-[40rem]" />
                     </div>
                   ) : currentTab === "video-generation" ? (
-                    <VideoGenerationInput item={currentAssetVersion} />
+                    <VideoGenerationInput
+                      item={currentAssetVersion}
+                      setCurrentItem={setCurrentAssetVersion}
+                    />
                   ) : (
                     <AskKittykatImageSection
                       item={currentAssetVersion}
                       galleryActions={galleryActions!}
-                      revalidateGalleryItemVersions={
-                        revalidateGalleryItemVersions
-                      }
+                      revalidateGalleryItemVersions={handleVersionUpdate}
                       setCurrentItem={setCurrentAssetVersion}
                       currentTab={currentTab}
                     />
@@ -255,7 +256,7 @@ const ConceptVisualEditor = () => {
                     onValueChange={(v) => setCurrentTab(v as ConceptVisualTabs)}
                     className="flex-1 flex flex-col bg-none"
                   >
-                    <AskKittykatTabs />
+                    <AskKittykatTabs currentVersion={currentAssetVersion} />
 
                     {/* Tabs Content */}
 
@@ -303,6 +304,7 @@ const ConceptVisualEditor = () => {
                     >
                       {currentAssetVersion && (
                         <AskKittyKatTabContent
+                          currentAsset={currentAsset!}
                           currentAssetVersion={currentAssetVersion}
                           setCurrentAssetVersion={setCurrentAssetVersion}
                           galleryActions={galleryActions!}

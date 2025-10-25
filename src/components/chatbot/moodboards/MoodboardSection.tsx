@@ -162,21 +162,7 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
-    // Don't auto-select if a valid moodboard is already selected
-    if (
-      selectedMoodboardIdRef.current &&
-      currentCampaignMoodboards.find(
-        (mb) => mb.id === selectedMoodboardIdRef.current
-      )
-    ) {
-      // Valid selection exists, only update count tracker
-      if (currentCount !== lastMoodboardCount) {
-        setLastMoodboardCount(currentCount);
-      }
-      return;
-    }
-
-    // If moodboard count increased, a new one was created - select the latest
+    // If moodboard count increased, a new one was created - select the latest immediately
     if (currentCount > lastMoodboardCount && currentCount > 0) {
       const latestMoodboard = currentCampaignMoodboards[currentCount - 1];
       setSelectedMoodboardId(latestMoodboard.id);
@@ -189,12 +175,18 @@ export const MoodboardSection: React.FC<{
       setLastMoodboardCount(currentCount);
     }
 
-    // Auto-select latest if no moodboard is selected and we have moodboards
+    // Don't auto-select if a valid moodboard is already selected
     if (
-      !selectedMoodboardIdRef.current &&
-      currentCount > 0 &&
-      !isCreatingNewMoodboard
+      selectedMoodboardIdRef.current &&
+      currentCampaignMoodboards.find(
+        (mb) => mb.id === selectedMoodboardIdRef.current
+      )
     ) {
+      return;
+    }
+
+    // Auto-select latest if no moodboard is selected and we have moodboards
+    if (!selectedMoodboardIdRef.current && currentCount > 0) {
       const latestMoodboard = currentCampaignMoodboards[currentCount - 1];
       setSelectedMoodboardId(latestMoodboard.id);
     } else if (currentCount === 0) {
@@ -204,7 +196,6 @@ export const MoodboardSection: React.FC<{
     currentCampaign?.id,
     currentCampaignMoodboards,
     lastMoodboardCount,
-    isCreatingNewMoodboard,
     moodboardIdFromUrl,
     setSelectedMoodboardId,
     // Don't include selectedMoodboardId to avoid loops

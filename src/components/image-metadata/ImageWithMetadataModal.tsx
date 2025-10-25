@@ -86,7 +86,12 @@ const ImageWithMetadataModal = ({
     models,
   } = useModelsStore();
   const { data, isFetching: isFetchingParams } = useQuery({
-    queryKey: ["image-parameters", galleryItem.brand_id, galleryItem.id],
+    queryKey: [
+      "image-parameters",
+      galleryItem.brand_id,
+      galleryItem.id,
+      galleryItem.asset_url,
+    ],
     queryFn: () =>
       getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
     enabled: !generation && galleryItem.asset_source == "showboard-media",

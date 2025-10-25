@@ -155,7 +155,8 @@ export function MediaLibrary({
           workflow_status:
             initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
           brands: [selectedBrandId],
-        };
+          campaigns: selectedCampaignId ? [selectedCampaignId] : [],
+        } as EnhancedSelectedFilters;
 
         // Only update if something actually changed
         if (JSON.stringify(newFilters) !== JSON.stringify(prev)) {
@@ -164,7 +165,7 @@ export function MediaLibrary({
         return prev;
       });
     }
-  }, [selectedBrandId, initialWorkflowStatus]);
+  }, [selectedBrandId, initialWorkflowStatus, selectedCampaignId]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { markNotificationsAsRead } from "@/services/api/notification.service";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBrandStore } from "@/store/brand.store";
 
 const NotificationItem = ({
   notification,
@@ -18,8 +19,30 @@ const NotificationItem = ({
   setOpen: () => void;
 }) => {
   const router = useRouter();
+  const { setSelectedCampaignId } = useBrandStore();
   const [showAssets, setShowAssets] = React.useState(false);
   const queryClient = useQueryClient();
+
+  const handleNotificationClick = async () => {
+    setSelectedCampaignId(null);
+
+    const status = Array.from(
+      new Set(notification.assets.map((a) => a.status))
+    ).join(", ");
+
+    // Make sure the campaignId is reset before navigation
+    setTimeout(() => {
+      router.replace(
+        `/gallery?brandId=${notification.brand_id}&status=${status}`
+      );
+    }, 100);
+
+    setOpen();
+    await markNotificationsAsRead(notification.brand_id);
+    queryClient.invalidateQueries({
+      queryKey: ["user-notifications"],
+    });
+  };
 
   return (
     <div className="border-b last:border-b-0 py-2">
@@ -47,21 +70,7 @@ const NotificationItem = ({
               );
               return (
                 <li
-                  onClick={async () => {
-                    const status = Array.from(
-                      new Set(notification.assets.map((a) => a.status))
-                    ).join(", ");
-
-                    router.replace(
-                      `/gallery?brandId=${notification.brand_id}&status=${status}`
-                    );
-
-                    setOpen();
-                    await markNotificationsAsRead(notification.brand_id);
-                    queryClient.invalidateQueries({
-                      queryKey: ["user-notifications"],
-                    });
-                  }}
+                  onClick={handleNotificationClick}
                   key={asset.gallery_item_id}
                   className={cn(
                     `flex items-center justify-between p-2 cursor-pointer hover:bg-muted px-4`,

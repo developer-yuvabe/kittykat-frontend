@@ -68,7 +68,12 @@ const VideoWithMetadataModal = ({
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const { data, isFetching: isFetchingParams } = useQuery({
-    queryKey: ["video-parameters", galleryItem.brand_id, galleryItem.id],
+    queryKey: [
+      "video-parameters",
+      galleryItem.brand_id,
+      galleryItem.id,
+      galleryItem.asset_url,
+    ],
     queryFn: () =>
       getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
     enabled: !generation && galleryItem.asset_source == "showboard-media",
@@ -101,8 +106,16 @@ const VideoWithMetadataModal = ({
       const model = models.find((m) => m.model === data.parameters.model);
       if (!model) throw new Error("Model not found for variation");
 
+      // Filter parameters that control number of outputs
+      const paramsResponsibleForVaryingNumberOfOutputs =
+        model.parameters.filter((p) => p.type === "image_count");
+
       await videoGenerationService(selectedBrandId!, {
         ...data.parameters,
+        seed: -1,
+        ...Object.fromEntries(
+          paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
+        ),
         source_asset_id: galleryItem.id,
       });
 
@@ -299,11 +312,14 @@ const VideoWithMetadataModal = ({
                         </>
                       )}
 
-                      {data.parameters.aspect_ratio && (
+                      {(data.parameters.aspect_ratio ||
+                        data.parameters.ratio) && (
                         <>
                           <span>-</span>
                           <span>
-                            Aspect ratio: {data.parameters.aspect_ratio}
+                            Aspect Ratio:{" "}
+                            {data.parameters.aspect_ratio ||
+                              data.parameters.ratio}
                           </span>
                         </>
                       )}
