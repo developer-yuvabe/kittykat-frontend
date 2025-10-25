@@ -96,12 +96,6 @@ const VideoGenerationInputControls = ({
     },
   });
 
-  useEffect(() => {
-    if (isConceptVisualOpened) {
-      form.setValue("prompt", "", { shouldValidate: true });
-    }
-  }, [isConceptVisualOpened]);
-
   const {
     negativePromptParam,
     firstFrameParam,
@@ -148,6 +142,18 @@ const VideoGenerationInputControls = ({
       advancedParams,
     };
   }, [selectedVideoGenearationModel]);
+
+  useEffect(() => {
+    if (isConceptVisualOpened) {
+      form.setValue("prompt", "", { shouldValidate: true });
+      form.setValue("negative_prompt", "", { shouldValidate: true });
+      form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+    } else {
+      // When only model changes
+      form.setValue("negative_prompt", "", { shouldValidate: true });
+      form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+    }
+  }, [isConceptVisualOpened, selectedVideoGenearationModel]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -427,7 +433,7 @@ const VideoGenerationInputControls = ({
             form.setValue(galleryPickerSource, item.asset_url, {
               shouldValidate: true,
             });
-            if (source === "blanket") {
+            if (source === "blanket" && galleryPickerSource === "first_frame") {
               setCurrentItem(item);
             }
           }
