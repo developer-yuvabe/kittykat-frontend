@@ -30,6 +30,7 @@ type Store = {
 
   assetItems: GalleryItemResponse[];
   setAssetItems: (items: GalleryItemResponse[]) => void;
+  updateAssetItem: (assetId: string, updatedAsset: GalleryItemResponse) => void;
 
   galleryActions: GalleryActions | null;
 
@@ -58,6 +59,12 @@ export const useConceptVisualStore = create<Store>((set) => ({
 
   assetItems: [],
   setAssetItems: (items) => set({ assetItems: items }),
+  updateAssetItem: (assetId, updatedAsset) =>
+    set((state) => ({
+      assetItems: state.assetItems.map((item) =>
+        item.id === assetId ? updatedAsset : item
+      ),
+    })),
 
   galleryActions: null,
   defaultActiveTab: null,

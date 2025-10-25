@@ -225,7 +225,10 @@ export const useGalleryQuery = (
     );
 
     // Also update individual gallery-item cache for this specific version
-    queryClient.setQueryData(["gallery-item", updatedVersion.id], updatedVersion);
+    queryClient.setQueryData(
+      ["gallery-item", updatedVersion.id],
+      updatedVersion
+    );
 
     // Update the item in all gallery queries as well
     updateGalleryItemInCache(updatedVersion);
