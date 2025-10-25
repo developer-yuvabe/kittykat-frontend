@@ -11,6 +11,7 @@ import { GalleryActions } from "@/hooks/useGallery";
 import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useUserStore } from "@/store/user.store";
 import {
   CommentReply,
@@ -38,6 +39,7 @@ const AskKittyKatTabContent = ({
   galleryActions,
 }: ImageUpcalerTabContentProps) => {
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
+  const { updateAssetItem } = useConceptVisualStore();
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -57,6 +59,11 @@ const AskKittyKatTabContent = ({
   const handleVersionUpdate = async (updatedVersion: GalleryItemResponse) => {
     // Use the common revalidation function from galleryActions
     galleryActions.revalidateGalleryItemVersions(currentAsset.id, updatedVersion);
+
+    // Update the store's assetItems if the updated version is the current asset
+    if (updatedVersion.id === currentAsset.id) {
+      updateAssetItem(currentAsset.id, updatedVersion);
+    }
 
     // Update local state if this is the currently displayed version
     setCurrentAssetVersion((prev) => {
