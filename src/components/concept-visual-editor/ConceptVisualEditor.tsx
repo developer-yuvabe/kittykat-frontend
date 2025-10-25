@@ -92,6 +92,15 @@ const ConceptVisualEditor = () => {
     }
   }, [currentAsset, versions.data]);
 
+  useEffect(() => {
+    if (
+      currentAssetVersion?.asset_type === "video" &&
+      currentTab !== "ask-kittykat"
+    ) {
+      setCurrentTab("ask-kittykat");
+    }
+  }, [currentAssetVersion, currentTab]);
+
   return (
     <Dialog
       open={isConceptVisualOpened}
@@ -208,7 +217,10 @@ const ConceptVisualEditor = () => {
                       <div className="bg-gray-200 rounded-lg w-full max-w-4xlh-20 sm:h-[16rem] md:h-[24rem] lg:h-[36rem] xl:h-[40rem]" />
                     </div>
                   ) : currentTab === "video-generation" ? (
-                    <VideoGenerationInput item={currentAssetVersion} />
+                    <VideoGenerationInput
+                      item={currentAssetVersion}
+                      setCurrentItem={setCurrentAssetVersion}
+                    />
                   ) : (
                     <AskKittykatImageSection
                       item={currentAssetVersion}
@@ -244,7 +256,7 @@ const ConceptVisualEditor = () => {
                     onValueChange={(v) => setCurrentTab(v as ConceptVisualTabs)}
                     className="flex-1 flex flex-col bg-none"
                   >
-                    <AskKittykatTabs />
+                    <AskKittykatTabs currentVersion={currentAssetVersion} />
 
                     {/* Tabs Content */}
 
