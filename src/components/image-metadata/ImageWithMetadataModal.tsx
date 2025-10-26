@@ -149,7 +149,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       console.error("Error generating image:", error);
@@ -268,7 +268,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       console.error("Error upscaling the image:", error);
@@ -419,7 +419,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
 
       toast.info(`Started Video Generation with ${preset} Animation.`);

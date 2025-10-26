@@ -120,7 +120,7 @@ const VideoWithMetadataModal = ({
       });
 
       onClose();
-      if (source === "media-gallery") router.push("/?scrollTo=a2i");
+      if (source === "media-gallery") router.push("/?scrollTo=a2i-input");
       toast.info("Started Generation of Auto Vary Video.");
     } catch {
       toast.error("Error generating varied video. Please try again.");
