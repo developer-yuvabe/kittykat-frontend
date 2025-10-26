@@ -35,6 +35,9 @@ type Store = {
   galleryActions: GalleryActions | null;
 
   defaultActiveTab: ConceptVisualTabs | null;
+
+  baseImage: string | null;
+  setBaseImage: (url: string | null) => void;
 };
 
 export const useConceptVisualStore = create<Store>((set) => ({
@@ -68,4 +71,7 @@ export const useConceptVisualStore = create<Store>((set) => ({
 
   galleryActions: null,
   defaultActiveTab: null,
+
+  baseImage: null,
+  setBaseImage: (url: string | null) => set(() => ({ baseImage: url })),
 }));
