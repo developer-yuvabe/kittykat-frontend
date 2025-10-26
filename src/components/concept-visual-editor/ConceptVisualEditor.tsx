@@ -100,11 +100,12 @@ const ConceptVisualEditor = () => {
   useEffect(() => {
     if (
       currentAssetVersion?.asset_type === "video" &&
-      currentTab !== "ask-kittykat"
+      currentTab !== "ask-kittykat" &&
+      source !== "video-creative-actions"
     ) {
       setCurrentTab("ask-kittykat");
     }
-  }, [currentAssetVersion, currentTab]);
+  }, [currentAssetVersion, currentTab, source]);
 
   return (
     <Dialog

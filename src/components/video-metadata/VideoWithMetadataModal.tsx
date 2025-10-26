@@ -159,7 +159,7 @@ const VideoWithMetadataModal = ({
       setParameters("videoParameters", videoParams);
 
       openConceptVisual({
-        source: "blanket",
+        source: "video-creative-actions",
         assetItems: [galleryItem],
         asset: {
           currentAsset: galleryItem,

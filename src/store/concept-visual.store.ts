@@ -3,7 +3,11 @@ import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { create } from "zustand";
 
-type ConceptVisualSource = "blanket" | "concept-visual-media" | "media-gallery";
+export type ConceptVisualSource =
+  | "blanket"
+  | "concept-visual-media"
+  | "media-gallery"
+  | "video-creative-actions";
 type OpenConceptVisualArguments = {
   source: ConceptVisualSource;
   assetItems: GalleryItemResponse[];
