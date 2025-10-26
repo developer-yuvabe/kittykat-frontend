@@ -23,7 +23,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { galleryService } from "@/services/api/gallery.service";
 import VideoGenerationInput from "../chatbot/a2i/features/VideoGenerationInput";
 import { AskKittykatImageSection } from "@/app/(main)/gallery/_components/AskKittykatImageSection";
-import { useVideoGenStore } from "@/store/video-gen.store";
 
 /**
     @description A visual editor for creating and editing concept visual media. The UI adapts based on the source prop
@@ -38,10 +37,11 @@ const ConceptVisualEditor = () => {
     assetItems,
     galleryActions,
     defaultActiveTab,
+    setBaseImage,
   } = useConceptVisualStore();
   const { isModelsFetched } = useModelsStore();
   const { isBrandsFetched, selectedBrandId } = useBrandStore();
-  const { setBaseImage } = useVideoGenStore();
+
   const [currentAssetVersion, setCurrentAssetVersion] = useState(currentAsset);
   const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>(
     defaultActiveTab ?? (source === "blanket" ? "vton" : "ask-kittykat")
