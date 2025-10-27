@@ -120,7 +120,7 @@ const VideoWithMetadataModal = ({
       });
 
       onClose();
-      if (source === "media-gallery") router.push("/?scrollTo=a2i");
+      if (source === "media-gallery") router.push("/?scrollTo=a2i-input");
       toast.info("Started Generation of Auto Vary Video.");
     } catch {
       toast.error("Error generating varied video. Please try again.");
@@ -162,7 +162,14 @@ const VideoWithMetadataModal = ({
         source: "blanket",
         assetItems: [galleryItem],
         asset: {
-          currentAsset: galleryItem,
+          currentAsset: {
+            ...galleryItem,
+            asset_url:
+              data.parameters.first_frame ||
+              data.parameters.image ||
+              data.parameters.start_image ||
+              null,
+          },
           galleryActions: null,
         },
         defaultActiveTab: "video-generation",

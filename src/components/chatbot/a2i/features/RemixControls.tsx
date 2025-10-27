@@ -348,7 +348,7 @@ const RemixControls = ({
 
       closeConceptVisual();
       if (source === "blanket") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       console.error(error);

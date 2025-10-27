@@ -104,7 +104,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
 
       closeConceptVisual();
       if (source === "blanket") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {

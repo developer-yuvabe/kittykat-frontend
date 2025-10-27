@@ -55,7 +55,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
       closeConceptVisual();
 
       if (source === "blanket") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       console.error("VTON Generation Error:", error);
