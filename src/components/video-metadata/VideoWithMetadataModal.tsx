@@ -159,10 +159,17 @@ const VideoWithMetadataModal = ({
       setParameters("videoParameters", videoParams);
 
       openConceptVisual({
-        source: "video-creative-actions",
+        source: "blanket",
         assetItems: [galleryItem],
         asset: {
-          currentAsset: galleryItem,
+          currentAsset: {
+            ...galleryItem,
+            asset_url:
+              data.parameters.first_frame ||
+              data.parameters.image ||
+              data.parameters.start_image ||
+              null,
+          },
           galleryActions: null,
         },
         defaultActiveTab: "video-generation",

@@ -570,25 +570,26 @@ export function isTabDisabled(
   currentAsset: GalleryItemResponse | null,
   currentVersion: GalleryItemResponse | null
 ): boolean {
-  // When source is "video-creative-actions" (manual video variation)
-  if (source === "video-creative-actions") {
-    // Only allow video-generation tab, disable everything else
+  const isVideoAsset =
+    currentAsset?.asset_type === "video" ||
+    currentVersion?.asset_type === "video";
+
+  // Blanket + video: only video-generation tab is enabled
+  if (source === "blanket" && isVideoAsset) {
     return tabKey !== "video-generation";
   }
 
-  // For blanket source, disable ask-kittykat tab
+  // Blanket (non-video): disable ask-kittykat
   if (source === "blanket" && tabKey === "ask-kittykat") {
     return true;
   }
 
-  // For video assets (when not in video-creative-actions mode)
-  const isVideoAsset =
-    currentAsset?.asset_type === "video" ||
-    currentVersion?.asset_type === "video";
+  // For other video assets (not in blanket mode)
   if (isVideoAsset) {
-    // Only ask-kittykat is available for videos in normal mode
+    // Only ask-kittykat is enabled for videos in normal mode
     return tabKey !== "ask-kittykat";
   }
 
+  // Default: all tabs enabled
   return false;
 }

@@ -76,8 +76,7 @@ const VideoGenerationInputControls = ({
   item,
   setCurrentItem,
 }: VideoGenerationInputProps) => {
-  const { source, isConceptVisualOpened, baseImage, setBaseImage } =
-    useConceptVisualStore();
+  const { source, isConceptVisualOpened } = useConceptVisualStore();
   const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -91,9 +90,9 @@ const VideoGenerationInputControls = ({
     selectedModel: selectedVideoGenearationModel,
     formKey: `video-generation`,
     dynamicDefualtValues: {
-      start_image: baseImage || item?.asset_url || null,
-      first_frame: baseImage || item?.asset_url || null,
-      image: baseImage || item?.asset_url || null,
+      start_image: item?.asset_url || null,
+      first_frame: item?.asset_url || null,
+      image: item?.asset_url || null,
     },
   });
 
@@ -149,19 +148,8 @@ const VideoGenerationInputControls = ({
       form.setValue("prompt", "", { shouldValidate: true });
       form.setValue("negative_prompt", "", { shouldValidate: true });
       form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
-    } else if (source === "blanket") {
-      // Clear base image when closing blanket mode
-      setBaseImage(null);
     }
   }, [isConceptVisualOpened]);
-
-  // Sync base image with form when it changes
-  useEffect(() => {
-    if (firstFrameParam) {
-      const imageValue = baseImage || item?.asset_url || null;
-      form.setValue(firstFrameParam.id, imageValue, { shouldValidate: true });
-    }
-  }, [baseImage, firstFrameParam, item?.asset_url]);
 
   useEffect(() => {
     form.setValue("negative_prompt", "", { shouldValidate: true });
@@ -217,7 +205,6 @@ const VideoGenerationInputControls = ({
       form.setValue("prompt", "", { shouldValidate: true });
       if (source === "blanket" && firstFrameParam) {
         form.setValue(firstFrameParam.id, null, { shouldValidate: true });
-        setBaseImage(null);
       }
     }
   };
@@ -272,7 +259,6 @@ const VideoGenerationInputControls = ({
                                   shouldValidate: true,
                                 });
                                 if (source === "blanket") {
-                                  setBaseImage(null);
                                   setCurrentItem(null);
                                 }
                               }}
@@ -449,11 +435,10 @@ const VideoGenerationInputControls = ({
               shouldValidate: true,
             });
             if (
-              source === "blanket" &&
-              firstFrameParam &&
-              galleryPickerSource === firstFrameParam.id
+              (source === "blanket" && galleryPickerSource === "first_frame") ||
+              galleryPickerSource === "start_image" ||
+              galleryPickerSource === "image"
             ) {
-              setBaseImage(item.asset_url);
               setCurrentItem(item);
             }
           }

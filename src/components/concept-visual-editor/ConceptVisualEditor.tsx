@@ -37,11 +37,9 @@ const ConceptVisualEditor = () => {
     assetItems,
     galleryActions,
     defaultActiveTab,
-    setBaseImage,
   } = useConceptVisualStore();
   const { isModelsFetched } = useModelsStore();
   const { isBrandsFetched, selectedBrandId } = useBrandStore();
-
   const [currentAssetVersion, setCurrentAssetVersion] = useState(currentAsset);
   const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>(
     defaultActiveTab ?? (source === "blanket" ? "vton" : "ask-kittykat")
@@ -101,7 +99,7 @@ const ConceptVisualEditor = () => {
     if (
       currentAssetVersion?.asset_type === "video" &&
       currentTab !== "ask-kittykat" &&
-      source !== "video-creative-actions"
+      source !== "blanket"
     ) {
       setCurrentTab("ask-kittykat");
     }
@@ -113,9 +111,6 @@ const ConceptVisualEditor = () => {
       onOpenChange={(isOpened) => {
         if (!isOpened) {
           closeConceptVisual();
-          if (source === "blanket") {
-            setBaseImage(null);
-          }
         }
       }}
     >
