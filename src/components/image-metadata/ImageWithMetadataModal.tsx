@@ -114,6 +114,11 @@ const ImageWithMetadataModal = ({
   const referenceImages =
     data?.parameters?.reference_images ||
     (Array.isArray(data?.parameters?.image) && data?.parameters.image) ||
+    (data?.parameters?.provider === "replicate" &&
+      (data?.parameters?.image ? [data?.parameters?.image] : undefined)) ||
+    (data?.parameters?.image_prompt
+      ? [data?.parameters?.image_prompt]
+      : undefined) ||
     [];
 
   const handleCopyPrompt = () => {
@@ -149,7 +154,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       console.error("Error generating image:", error);
@@ -204,8 +209,8 @@ const ImageWithMetadataModal = ({
             ...modifiedParameters,
             [referneceImagesParamId.id]: uploadedUrls,
           };
-        } else {
-          const file = await urlToFile(galleryItem.asset_url);
+        } else if (typeof refImageOrImages === "string") {
+          const file = await urlToFile(refImageOrImages);
           const url = await uploadFileAndReturnUrl(
             file.name,
             file.type,
@@ -268,7 +273,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       console.error("Error upscaling the image:", error);
@@ -419,7 +424,7 @@ const ImageWithMetadataModal = ({
 
       onClose();
       if (source === "media-gallery") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
 
       toast.info(`Started Video Generation with ${preset} Animation.`);

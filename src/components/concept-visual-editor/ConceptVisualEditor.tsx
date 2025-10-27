@@ -59,7 +59,10 @@ const ConceptVisualEditor = () => {
 
     // Use the common revalidation function from galleryActions
     if (galleryActions?.revalidateGalleryItemVersions) {
-      galleryActions.revalidateGalleryItemVersions(currentAsset.id, updatedVersion);
+      galleryActions.revalidateGalleryItemVersions(
+        currentAsset.id,
+        updatedVersion
+      );
     }
 
     // Update local state if this is the currently displayed version
@@ -95,11 +98,12 @@ const ConceptVisualEditor = () => {
   useEffect(() => {
     if (
       currentAssetVersion?.asset_type === "video" &&
-      currentTab !== "ask-kittykat"
+      currentTab !== "ask-kittykat" &&
+      source !== "blanket"
     ) {
       setCurrentTab("ask-kittykat");
     }
-  }, [currentAssetVersion, currentTab]);
+  }, [currentAssetVersion, currentTab, source]);
 
   return (
     <Dialog

@@ -445,6 +445,10 @@ const A2iImageInput = ({
                       {...field}
                       onChange={(e) => {
                         field.onChange(e.target.value);
+                        // Clear the reference prompt when user manually edits the prompt
+                        if (referencePrompt) {
+                          clearReferencePrompt();
+                        }
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && e.shiftKey) {

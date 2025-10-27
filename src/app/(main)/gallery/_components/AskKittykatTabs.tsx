@@ -11,6 +11,7 @@ import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import React from "react";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { GalleryItemResponse } from "@/types/gallery.types";
+import { isTabDisabled } from "@/lib/a2i.utils";
 
 const tabItems: {
   key: ConceptVisualTabs;
@@ -56,27 +57,22 @@ export function AskKittykatTabs({ currentVersion }: AskKittykatTabsProps) {
       variant="icon-grid"
     >
       {tabItems.map((item) => {
-        /*
-          Disable the tab if any of the following conditions are true:
-          1. The current asset is a video, and the tab is NOT "ask-kittykat".
-          2. The source is "blanket" and the tab IS "ask-kittykat".
-        */
-        const isDisabled =
-          (currentAsset?.asset_type === "video" &&
-            item.key !== "ask-kittykat") ||
-          (source === "blanket" && item.key === "ask-kittykat") ||
-          (currentVersion?.asset_type === "video" &&
-            item.key !== "ask-kittykat");
+        const disabled = isTabDisabled(
+          item.key,
+          source,
+          currentAsset,
+          currentVersion
+        );
 
         return (
           <TabsTrigger
             key={item.key}
             value={item.key}
             variant="icon-grid"
-            disabled={isDisabled}
-            className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+            disabled={disabled}
+            className={disabled ? "opacity-50 cursor-not-allowed" : ""}
             title={
-              isDisabled
+              disabled
                 ? item.key === "ask-kittykat"
                   ? "Kittykat Experts is disabled in Concept Visual Editor"
                   : "This feature is only available for images"
