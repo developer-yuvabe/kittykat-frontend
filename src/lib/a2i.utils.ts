@@ -7,6 +7,9 @@ import {
   gptImage1Schema,
 } from "@/schema/image-gen.schema";
 import { Ruler } from "lucide-react";
+import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
+import { GalleryItemResponse } from "@/types/gallery.types";
+import { ConceptVisualSource } from "@/store/concept-visual.store";
 
 export const finetunedModels = [
   {
@@ -551,4 +554,42 @@ export function getRemixInputPlaceholderMessage(options?: {
 
   // Combine and ensure proper punctuation/flow
   return `${baseMessage}${brushPart}.${referencePart}`.trim();
+}
+
+/**
+ * Determines if a tab should be disabled based on the current state
+ * @param tabKey - The tab identifier
+ * @param source - The concept visual source context
+ * @param currentAsset - The currently selected asset
+ * @param currentVersion - The current version of the asset
+ * @returns boolean indicating if the tab should be disabled
+ */
+export function isTabDisabled(
+  tabKey: ConceptVisualTabs,
+  source: ConceptVisualSource,
+  currentAsset: GalleryItemResponse | null,
+  currentVersion: GalleryItemResponse | null
+): boolean {
+  const isVideoAsset =
+    currentAsset?.asset_type === "video" ||
+    currentVersion?.asset_type === "video";
+
+  // Blanket + video: only video-generation tab is enabled
+  if (source === "blanket" && isVideoAsset) {
+    return tabKey !== "video-generation";
+  }
+
+  // Blanket (non-video): disable ask-kittykat
+  if (source === "blanket" && tabKey === "ask-kittykat") {
+    return true;
+  }
+
+  // For other video assets (not in blanket mode)
+  if (isVideoAsset) {
+    // Only ask-kittykat is enabled for videos in normal mode
+    return tabKey !== "ask-kittykat";
+  }
+
+  // Default: all tabs enabled
+  return false;
 }
