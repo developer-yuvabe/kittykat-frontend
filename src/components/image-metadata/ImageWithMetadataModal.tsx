@@ -114,6 +114,11 @@ const ImageWithMetadataModal = ({
   const referenceImages =
     data?.parameters?.reference_images ||
     (Array.isArray(data?.parameters?.image) && data?.parameters.image) ||
+    (data?.parameters?.provider === "replicate" &&
+      (data?.parameters?.image ? [data?.parameters?.image] : undefined)) ||
+    (data?.parameters?.image_prompt
+      ? [data?.parameters?.image_prompt]
+      : undefined) ||
     [];
 
   const handleCopyPrompt = () => {
