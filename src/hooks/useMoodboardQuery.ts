@@ -63,17 +63,12 @@ export function useMoodboardQuery({
       if (!oldData) return;
 
       queryClient.setQueryData<AutoFillSuggestedImage[]>(queryKey, () => {
-        const updated = oldData.map((item) =>
+        // Update the favorite state without reordering
+        return oldData.map((item) =>
           item.id === imageId
             ? { ...item, is_favourite: newFavoriteState }
             : item
         );
-
-        // Reorder liked items first
-        return [...updated].sort((a, b) => {
-          if (a.is_favourite === b.is_favourite) return 0;
-          return a.is_favourite ? -1 : 1;
-        });
       });
     });
   };

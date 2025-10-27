@@ -148,6 +148,11 @@ export function MediaLibrary({
   }, [initialBrandId, brands]);
 
   useEffect(() => {
+    // Skip this effect in dialog mode
+    if (isMediaSelectDialog) {
+      return;
+    }
+
     if (selectedBrandId) {
       setSelectedFilters((prev) => {
         const newFilters = {

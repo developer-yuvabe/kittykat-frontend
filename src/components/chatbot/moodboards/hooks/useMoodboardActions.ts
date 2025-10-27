@@ -260,17 +260,9 @@ export const useMoodboardActions = ({
     }
 
     // Filter out images that are already in the moodboard
-    let availableItems = autoFillSuggestions.filter(
+    const availableItems = autoFillSuggestions.filter(
       (item: AutoFillSuggestedImage) =>
         !photos.some((photo) => photo.id === item.id)
-    );
-
-    // Sort so that items with is_favourite === true come first
-    availableItems = availableItems.sort(
-      (a: AutoFillSuggestedImage, b: AutoFillSuggestedImage) => {
-        if (a.is_favourite === b.is_favourite) return 0;
-        return a.is_favourite ? -1 : 1;
-      }
     );
 
     if (availableItems.length === 0) {
