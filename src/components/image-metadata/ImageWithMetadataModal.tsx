@@ -204,8 +204,8 @@ const ImageWithMetadataModal = ({
             ...modifiedParameters,
             [referneceImagesParamId.id]: uploadedUrls,
           };
-        } else {
-          const file = await urlToFile(galleryItem.asset_url);
+        } else if (typeof refImageOrImages === "string") {
+          const file = await urlToFile(refImageOrImages);
           const url = await uploadFileAndReturnUrl(
             file.name,
             file.type,
