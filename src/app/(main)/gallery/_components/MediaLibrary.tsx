@@ -7,19 +7,15 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { useQueryClient } from "@tanstack/react-query";
 import type {
-  BrandCampaignListResponse,
   EnhancedSelectedFilters,
   GalleryItemResponse,
 } from "@/types/gallery.types";
 import { debounce } from "lodash";
 import MediaLibraryTabs from "./MediaLibraryTabs";
-import { MediaBulkActions } from "./MediaBulkActions";
-import MediaFilterSidebar from "./MediaFilterSidebar";
 import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
 import { MediaFolderView } from "./MediaFolderView";
@@ -38,6 +34,7 @@ import { UserRoleId } from "@/types/user.types";
 import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { MediaBulkActions } from "./MediaBulkActions";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -67,7 +64,7 @@ export function MediaLibrary({
   inSelectionGalleryIds = [],
   isMultiSelect = false,
   maxSelectionCount,
-  hideHeader = false, // 👈 Added default value
+  hideHeader = false,
   closeDialog,
 }: MediaLibraryProps) {
   const router = useRouter();
@@ -88,22 +85,24 @@ export function MediaLibrary({
     serialize: (value) => value.join(","),
     history: "push",
   });
-  const { selectedBrandId, selectedCampaignId, brands } = useBrandStore();
+  const {
+    selectedBrandId,
+    setSelectedBrandId,
+    selectedCampaignId,
+    brands,
+    isBrandsFetched,
+    getSelectedBrand,
+  } = useBrandStore();
+  // Get brandId from URL query params
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
     "brandId",
     {
       defaultValue: undefined,
-      parse: (value) =>
-        brands.find((b) => b.id === value) ? value : undefined,
+      parse: (value) => value || undefined,
       serialize: (value) => value || "",
       history: "push",
     }
   );
-
-  // Priority logic: initialBrandId takes precedence over selectedBrandId
-  const effectiveBrandId = useMemo(() => {
-    return initialBrandId || selectedBrandId;
-  }, [initialBrandId, selectedBrandId]);
 
   const initialFilters = useMemo(() => {
     return (
@@ -129,12 +128,6 @@ export function MediaLibrary({
   const [selectedFilters, setSelectedFilters] =
     useState<EnhancedSelectedFilters>(initialFilters);
 
-  const [selectedBrand, setSelectedBrand] = useState<
-    BrandCampaignListResponse["brands"][number] | null
-  >(null);
-
-  const queryClient = useQueryClient();
-
   // Use our custom hook for data fetching and mutations
   const galleryActions = useGalleryQuery({
     assetType: activeTab,
@@ -148,23 +141,22 @@ export function MediaLibrary({
   const galleryItems = galleryActions.getGalleryItems();
 
   useEffect(() => {
-    if (effectiveBrandId || initialWorkflowStatus.length > 0) {
-      // Find the brand from the brands data using the effective brand ID
-      const brandToSelect = galleryActions.brandsData?.brands.find(
-        (b) => b.brand_id === effectiveBrandId
-      );
+    // Update the selected brand if brandId is provided via URL
+    if (initialBrandId && brands.find((b) => b.id === initialBrandId)) {
+      setSelectedBrandId(initialBrandId);
+    }
+  }, [initialBrandId, brands]);
 
-      if (brandToSelect && brandToSelect.brand_id !== selectedBrand?.brand_id) {
-        setSelectedBrand(brandToSelect);
-      }
-
+  useEffect(() => {
+    if (selectedBrandId) {
       setSelectedFilters((prev) => {
         const newFilters = {
           ...prev,
           workflow_status:
             initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
-          brands: effectiveBrandId ? [effectiveBrandId] : prev.brands,
-        };
+          brands: [selectedBrandId],
+          campaigns: selectedCampaignId ? [selectedCampaignId] : [],
+        } as EnhancedSelectedFilters;
 
         // Only update if something actually changed
         if (JSON.stringify(newFilters) !== JSON.stringify(prev)) {
@@ -173,42 +165,7 @@ export function MediaLibrary({
         return prev;
       });
     }
-  }, [
-    initialWorkflowStatus,
-    effectiveBrandId,
-    galleryActions.brandsData?.brands,
-    selectedBrand?.brand_id, // Add this dependency
-  ]);
-
-  const selectedBrandName = selectedBrand?.brand_name || "brand";
-
-  // Function to refresh brand data and update selectedBrand
-  const handleRefreshBrandData = async () => {
-    try {
-      // Invalidate and refetch brands query to bypass cache
-      await queryClient.invalidateQueries({
-        queryKey: ["brands-campaigns"],
-      });
-
-      // Small delay to ensure invalidation is processed
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Refetch brands data and get the result
-      const { data: freshBrandsData } = await galleryActions.brandsRefetch();
-
-      // Update selectedBrand with fresh data immediately
-      if (selectedBrand?.brand_id && freshBrandsData?.brands) {
-        const updatedBrand = freshBrandsData.brands.find(
-          (b) => b.brand_id === selectedBrand.brand_id
-        );
-        if (updatedBrand) {
-          setSelectedBrand(updatedBrand);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to refresh brand data:", error);
-    }
-  };
+  }, [selectedBrandId, initialWorkflowStatus, selectedCampaignId]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -307,10 +264,6 @@ export function MediaLibrary({
     setShowFilters(!showFilters);
   };
 
-  const handleApplyFilters = (filters: EnhancedSelectedFilters) => {
-    setSelectedFilters(filters);
-  };
-
   // Handle multi-select "Add" button
   const handleAddSelectedItems = () => {
     if (isMultiSelect && multiSelectItems.length > 0) {
@@ -375,6 +328,16 @@ export function MediaLibrary({
     }
   );
 
+  const [, setSelectedCampaignInUrl] = useQueryState<string | null>(
+    "campaign",
+    {
+      defaultValue: null,
+      parse: (value) => value ?? null,
+      serialize: (value) => value ?? "",
+      history: "push",
+    }
+  );
+
   const setGalleryView = (value: "grid" | "folder") => {
     setLocalGalleryView(value);
     setGalleryViewRaw(value);
@@ -386,20 +349,27 @@ export function MediaLibrary({
   };
 
   // Check if there are no brands available
-  const hasNoBrands = (galleryActions.brandsData?.brands?.length ?? 0) === 0;
+  const hasNoBrands = brands.length === 0;
 
   const { user } = useUserStore();
 
+  const selectedBrandName = useMemo(
+    () => getSelectedBrand()?.name ?? "Brand Name",
+    [brands, selectedBrandId]
+  );
+
   return (
-    <div className="flex flex-col w-full max-w-7xl mx-auto relative">
+    <div className="flex flex-col w-full mx-auto  ">
       {/* Conditionally render header based on hideHeader prop */}
       {!hideHeader && (
-        <div className="flex justify-between mb-2">
+        <div
+          className={`flex justify-between mb-2 sticky  top-24 bg-[#F3F4F6FF] pt-4 pb-2 z-50`}
+        >
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
-            {!hasNoBrands && galleryView === "grid" && (
+            {!hasNoBrands && (
               <BrandSelector
-                showCampaigns
+                showCampaigns={galleryView === "grid"}
                 showSelectedValue
                 className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
                 onBrandSelect={(brandId, campaignId) => {
@@ -411,6 +381,7 @@ export function MediaLibrary({
 
                   setInitialWorkflowStatus(null);
                   setInitialBrandId(null);
+                  setSelectedCampaignInUrl(null);
                 }}
               />
             )}
@@ -429,15 +400,36 @@ export function MediaLibrary({
           </Select>
         </div>
       )}
-      {/* Optional: Simple header for dialog mode */}
+      {/* Optional: Simple header for dialog mode (compact) */}
       {hideHeader && isMediaSelectDialog && (
-        <div className="flex justify-between items-center mb-4 pb-3 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Select Media</h2>
+        <div className="sticky -top-7 pt-4 z-50 bg-white flex justify-between items-start mb-2 pb-1 ">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <span>Select Media</span>
+              {/* selection count shown inline next to title */}
+              {currentSelectionCount > 0 && (
+                <span className="text-sm text-gray-500">
+                  ({currentSelectionCount} selected)
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {/* Compact actions aligned top-right */}
+          <div className="ml-4">
+            <MediaDialogMultiSelectHeader
+              isActive={isMultiSelect && isMediaSelectDialog}
+              currentSelectionCount={currentSelectionCount}
+              onClearSelection={handleUnselectAll}
+              onAddSelectedItems={handleAddSelectedItems}
+              totalAssets={inSelectionGalleryIds.length + currentSelectionCount}
+            />
+          </div>
         </div>
       )}
 
       {/* Show no brands message */}
-      {hasNoBrands && !galleryActions.brandsLoading ? (
+      {hasNoBrands && isBrandsFetched ? (
         <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
           <h2 className="text-xl font-semibold text-gray-800">
             No brand access or onboarded brands
@@ -449,6 +441,16 @@ export function MediaLibrary({
           </p>
           <Button onClick={handleOnboardBrand}>Onboard Brand</Button>
         </div>
+      ) : !selectedBrandId && isBrandsFetched ? (
+        <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            No brand selected
+          </h2>
+          <p className="text-gray-600 max-w-md">
+            You haven&apos;t selected a brand yet. Please choose a brand to view
+            the media gallery assets.
+          </p>
+        </div>
       ) : (
         <>
           {/* Only show folder view if header is not hidden */}
@@ -456,13 +458,8 @@ export function MediaLibrary({
             <div>
               <MediaFolderView
                 activeTab={activeTab}
-                selectedBrand={selectedBrand}
-                setSelectedBrand={setSelectedBrand}
-                brands={galleryActions.brandsData?.brands || []}
-                brandsLoading={galleryActions.brandsLoading}
                 selectedCampaignId={selectedCampaignId ?? undefined}
                 selecteMoodboardId={moodboardId}
-                galleryView={galleryView}
                 brandName={selectedBrandName}
                 isUrlDialogOpen={isUrlDialogOpen} // Use state variable
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
@@ -474,8 +471,6 @@ export function MediaLibrary({
                 setSelectedFilters={setSelectedFilters}
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
-                selectedBrandId={effectiveBrandId!}
-                onRefreshData={handleRefreshBrandData}
               />
             </div>
           )}
@@ -487,10 +482,16 @@ export function MediaLibrary({
               value={activeTab}
               onValueChange={handleTabChange}
             >
-              <MediaLibraryTabs />
+              <div
+                className={`sticky ${
+                  isMediaSelectDialog ? "top-5" : "top-36"
+                } bg-[#F3F4F6FF]   z-40`}
+              >
+                <MediaLibraryTabs isSticky={isMediaSelectDialog} />
+              </div>
               <TabsContent
                 value={activeTab}
-                className="p-3 rounded-3xl bg-white mt-0"
+                className="p-3 rounded-3xl bg-white mt-0 "
               >
                 {activeTab !== "pexels" &&
                   (activeTab !== "a2i-media" ||
@@ -505,10 +506,7 @@ export function MediaLibrary({
                         searchQuery,
                         selectedFilters,
                       }}
-                      selectedBrand={selectedBrand}
-                      setSelectedBrand={setSelectedBrand}
-                      brands={galleryActions.brandsData?.brands || []}
-                      brandsLoading={galleryActions.brandsLoading}
+                      selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId ?? undefined}
                       selecteMoodboardId={moodboardId}
                     />
@@ -516,7 +514,7 @@ export function MediaLibrary({
 
                 {activeTab === "pexels" ? (
                   <TopicsGrid
-                    selectedBrand={selectedBrand}
+                    selectedBrandId={selectedBrandId}
                     selectedCampaignId={selectedCampaignId ?? undefined}
                     selecteMoodboardId={moodboardId}
                     setActiveTab={setActiveTab}
@@ -529,34 +527,6 @@ export function MediaLibrary({
                   />
                 ) : (
                   <div className="flex flex-col md:flex-row gap-4">
-                    <div
-                      className={`${
-                        showFilters ? "w-full md:w-1/4" : "hidden"
-                      } transition-all duration-300 ease-in-out`}
-                    >
-                      <div className="md:hidden flex justify-between items-center mb-2">
-                        <h3 className="font-medium">Filters</h3>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={toggleFilters}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <MediaFilterSidebar
-                        selectedFilters={selectedFilters}
-                        onApply={handleApplyFilters}
-                        brandsWithCampaigns={
-                          galleryActions.brandsData?.brands || []
-                        }
-                        product_categories={
-                          galleryActions.brandsData?.product_categories || []
-                        }
-                        setShowFilter={setShowFilters}
-                      />
-                    </div>
-
                     <div
                       className={`${
                         showFilters ? "w-full md:w-3/4" : "w-full"
@@ -578,16 +548,6 @@ export function MediaLibrary({
                         isMediaSelectDialog={isMediaSelectDialog}
                       />
 
-                      <MediaDialogMultiSelectHeader
-                        isActive={isMultiSelect && isMediaSelectDialog}
-                        currentSelectionCount={currentSelectionCount}
-                        onClearSelection={handleUnselectAll}
-                        onAddSelectedItems={handleAddSelectedItems}
-                        totalAssets={
-                          inSelectionGalleryIds.length + currentSelectionCount
-                        }
-                      />
-
                       <MediaGalleryStatusDisplay
                         galleryStatus={galleryActions.galleryStatus}
                         galleryItemsLength={galleryItems.length}
@@ -596,7 +556,7 @@ export function MediaLibrary({
                       {galleryActions.galleryStatus === "success" &&
                         galleryItems.length > 0 && (
                           <div>
-                            {selectedBrand && (
+                            {selectedBrandId && (
                               <SortableMediaGrid
                                 galleryActions={galleryActions}
                                 selectedItems={currentlySelectedItems}

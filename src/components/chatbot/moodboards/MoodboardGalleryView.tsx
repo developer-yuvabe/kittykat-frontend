@@ -5,7 +5,6 @@ import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
 import type { MoodboardInformation } from "@/types/types";
 import { GalleryActions } from "@/hooks/useGallery";
-import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 import { forwardRef } from "react";
 
 interface MoodboardGalleryViewProps {
@@ -20,7 +19,7 @@ interface MoodboardGalleryViewProps {
 }
 
 const MoodboardGalleryView = forwardRef<
-  CustomGalleryGridRef,
+  HTMLDivElement,
   MoodboardGalleryViewProps
 >(
   (

@@ -10,6 +10,7 @@ import { Shirt, CatIcon } from "lucide-react";
 import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import React from "react";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { GalleryItemResponse } from "@/types/gallery.types";
 
 const tabItems: {
   key: ConceptVisualTabs;
@@ -43,7 +44,11 @@ const tabItems: {
   },
 ];
 
-export function AskKittykatTabs() {
+interface AskKittykatTabsProps {
+  currentVersion: GalleryItemResponse | null;
+}
+
+export function AskKittykatTabs({ currentVersion }: AskKittykatTabsProps) {
   const { source, currentAsset } = useConceptVisualStore();
   return (
     <TabsList
@@ -51,10 +56,17 @@ export function AskKittykatTabs() {
       variant="icon-grid"
     >
       {tabItems.map((item) => {
+        /*
+          Disable the tab if any of the following conditions are true:
+          1. The current asset is a video, and the tab is NOT "ask-kittykat".
+          2. The source is "blanket" and the tab IS "ask-kittykat".
+        */
         const isDisabled =
           (currentAsset?.asset_type === "video" &&
-            item.key === "video-generation") ||
-          (source === "blanket" && item.key === "ask-kittykat");
+            item.key !== "ask-kittykat") ||
+          (source === "blanket" && item.key === "ask-kittykat") ||
+          (currentVersion?.asset_type === "video" &&
+            item.key !== "ask-kittykat");
 
         return (
           <TabsTrigger

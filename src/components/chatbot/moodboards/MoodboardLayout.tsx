@@ -5,7 +5,6 @@ import type React from "react";
 import "react-photo-album/rows.css";
 import MoodboardContent from "./MoodboardContent";
 import { forwardRef } from "react";
-import { CustomGalleryGridRef } from "@/components/gallery/CustomGalleryGrid";
 
 interface MoodboardLayoutProps {
   moodboard: MoodboardInformation;
@@ -13,7 +12,7 @@ interface MoodboardLayoutProps {
   carouselHeader?: React.ReactNode;
 }
 
-const MoodboardLayout = forwardRef<CustomGalleryGridRef, MoodboardLayoutProps>(
+const MoodboardLayout = forwardRef<HTMLDivElement, MoodboardLayoutProps>(
   ({ moodboard, brandId, carouselHeader }, ref) => {
     return (
       <div className="mt-4">

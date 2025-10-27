@@ -5,10 +5,15 @@ import { useBrandStore } from "@/store/brand.store";
 import React, { useState } from "react";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import Link from "next/link";
+import { ImageModal } from "@/components/shared/ImageModal";
+import { handleDownloadImage } from "@/lib/utils";
 
 export const BrandMedia: React.FC = ({}) => {
   const { selectedBrandId } = useBrandStore();
-  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    alt: string;
+  } | null>(null);
 
   const { getGalleryItems, totalItems } = useGalleryQuery({
     selectedFilters: {
@@ -52,7 +57,10 @@ export const BrandMedia: React.FC = ({}) => {
                 renderItem={({ item }) => (
                   <div
                     onClick={() =>
-                      setExpandedImage(item.preview_url || item.asset_url)
+                      setSelectedImage({
+                        url: item.preview_url || item.asset_url,
+                        alt: item.asset_title,
+                      })
                     }
                     className="cursor-pointer"
                   >
@@ -70,18 +78,15 @@ export const BrandMedia: React.FC = ({}) => {
             </div>
           </div>
 
-          {/* Expanded Image Modal */}
-          {expandedImage && (
-            <div
-              className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-              onClick={() => setExpandedImage(null)}
-            >
-              <img
-                src={expandedImage}
-                alt="Expanded media"
-                className="max-w-full max-h-[90vh] rounded-lg"
-              />
-            </div>
+          {/* Image Modal */}
+          {selectedImage && (
+            <ImageModal
+              imageUrl={selectedImage.url}
+              alt={selectedImage.alt}
+              isOpen={!!selectedImage}
+              onClose={() => setSelectedImage(null)}
+              onDownload={() => handleDownloadImage(selectedImage.url)}
+            />
           )}
         </div>
       }

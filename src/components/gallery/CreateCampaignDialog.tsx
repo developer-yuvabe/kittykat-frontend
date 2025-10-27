@@ -15,12 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCampaignMutations } from "@/hooks/useCampaignMutations";
+import { useBrandStore } from "@/store/brand.store";
 
 interface CreateCampaignDialogProps {
   brandId: string;
   brandName: string;
   onCampaignCreated?: (campaignId: string) => void;
-  onRefreshData?: () => void;
   trigger?: React.ReactNode;
 }
 
@@ -28,12 +28,12 @@ export function CreateCampaignDialog({
   brandId,
   brandName,
   onCampaignCreated,
-  onRefreshData,
   trigger,
 }: CreateCampaignDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const { createCampaign, isCreatingCampaign } = useCampaignMutations();
+  const { addCampaignToBrand } = useBrandStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +48,6 @@ export function CreateCampaignDialog({
         title: title.trim(),
       });
 
-      // Trigger parent data refresh to ensure the new campaign is available
-      if (onRefreshData) {
-        onRefreshData();
-      }
-
       // Reset form and close dialog
       setTitle("");
       setOpen(false);
@@ -60,6 +55,11 @@ export function CreateCampaignDialog({
       // Only navigate to the campaign after backend confirms creation with real ID
       // Add a delay to ensure data refresh is complete
       if (onCampaignCreated && newCampaign?.id) {
+        addCampaignToBrand(brandId, {
+          id: newCampaign.id,
+          title: title.trim(),
+        });
+
         setTimeout(() => {
           onCampaignCreated(newCampaign.id);
         }, 800); // Increased delay to ensure data refresh is complete

@@ -78,7 +78,7 @@ export default function ZoomableImage({
       alt,
       onClick: () => setIsOpen(true),
       className: cn(
-        "hover:cursor-zoom-in object-contain rounded w-full",
+        "hover:cursor-zoom-in object-contain w-full",
         variant === "download" && "select-none",
         className
       ),
@@ -110,11 +110,11 @@ export default function ZoomableImage({
 
     // variant === "overlay"
     return (
-      <div className="relative group overflow-hidden rounded">
+      <div className="relative group overflow-hidden">
         <img {...baseImageProps} />
 
         {/* Overlay */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded pointer-events-none" />
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
 
         {/* Bottom Left: Copy (only if prompt exists and is not empty) */}
         {prompt && prompt.trim() && (

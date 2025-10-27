@@ -4,6 +4,7 @@ import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon } from "@/components/ui/custom-icon";
 import { TooltipButton } from "@/components/ui/tooltip-button";
+import VideoWithMetadataModal from "@/components/video-metadata/VideoWithMetadataModal";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { deleteA2iImage } from "@/services/api/a2i.service";
@@ -11,11 +12,7 @@ import { retryGeneration } from "@/services/api/genration.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
-import {
-  A2iImageDetail,
-  A2iImageGeneration,
-  ThreadDetails,
-} from "@/types/types";
+import { A2iImageDetail, A2iImageGeneration } from "@/types/types";
 import {
   CheckIcon,
   CopyIcon,
@@ -46,8 +43,6 @@ export type A2iImageCardProps = {
   style?: CSSProperties;
   disableDrag?: boolean;
   isNSFW: boolean;
-  campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
 };
 
 // 🔑 Control size for all overlay buttons
@@ -73,6 +68,7 @@ const A2iImageCard = ({
   const [copied, setCopied] = useState(false);
   const { openConceptVisual } = useConceptVisualStore();
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -205,18 +201,8 @@ const A2iImageCard = ({
   const handleItemClick = () => {
     if (image) {
       setShowImageModal(true);
-    }
-  };
-
-  const handleVideoClick = () => {
-    if (videoRef && videoRef.current) {
-      if (videoRef.current.requestFullscreen) {
-        videoRef.current.requestFullscreen();
-      } else if ((videoRef.current as any).webkitRequestFullscreen) {
-        (videoRef.current as any).webkitRequestFullscreen();
-      } else if ((videoRef.current as any).msRequestFullscreen) {
-        (videoRef.current as any).msRequestFullscreen();
-      }
+    } else if (video) {
+      setShowVideoModal(true);
     }
   };
 
@@ -247,8 +233,8 @@ const A2iImageCard = ({
       {video && (
         <div
           className="relative w-full h-full cursor-pointer"
-          onClick={handleVideoClick}
-          title="Click to fullscreen"
+          onClick={() => setShowVideoModal(true)} // Open modal
+          title="Click to view metadata"
         >
           <video
             ref={videoRef}
@@ -511,8 +497,10 @@ const A2iImageCard = ({
       {showImageModal && stableItem && (
         <ImageWithMetadataModal
           isOpen={showImageModal}
-          parameters={parameters}
-          type={type}
+          generation={{
+            parameters,
+            type,
+          }}
           galleryItem={stableItem}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}
@@ -524,6 +512,27 @@ const A2iImageCard = ({
             }
           }}
           isLiked={isLiked}
+          source="concept-visual-media"
+        />
+      )}
+
+      {/*  VIDEO MODAL */}
+      {showVideoModal && stableItem && (
+        <VideoWithMetadataModal
+          galleryItem={stableItem}
+          generation={{ type, parameters }}
+          isOpen={showVideoModal}
+          onClose={() => setShowVideoModal(false)}
+          onDownload={handleDownload}
+          onLike={() => {
+            setIsLiked((prev) => !prev);
+            const id = video?.id;
+            if (id) {
+              galleryActions.toggleFavorite(id);
+            }
+          }}
+          isLiked={isLiked}
+          source="concept-visual-media"
         />
       )}
     </div>

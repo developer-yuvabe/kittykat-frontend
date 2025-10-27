@@ -109,3 +109,45 @@ export async function createCampaign(
     axiosInstance.post(`/brands/${brandId}/campaign`, campaignData)
   );
 }
+
+export async function updateCampaign(
+  brandId: string,
+  campaignId: string,
+  campaignData: Partial<ThreadCampaign>
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.put(`/brands/${brandId}/campaign/${campaignId}`, campaignData)
+  );
+}
+
+export async function updateCampaignName(
+  brandId: string,
+  campaignId: string,
+  title: string
+): Promise<ThreadCampaign> {
+  return updateCampaign(brandId, campaignId, {
+    campaign: { title },
+  });
+}
+export async function addDeprioritizedIds(
+  brandId: string,
+  campaignId: string,
+  moodboardId: string,
+  deprioritizedIds: string[]
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/deprioritized-ids`,
+      {
+        brand_id: brandId,
+        campaign_id: campaignId,
+        deprioritized_ids: deprioritizedIds,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+  );
+}

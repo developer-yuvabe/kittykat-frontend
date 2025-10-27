@@ -16,7 +16,8 @@ export function ChatSuggestions({
   setFirstTokenReceived,
 }: ChatSuggestionsProps) {
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
+    useBrandStore();
   const suggestions = [
     "Help me get started with branding—what do you need to know from me?",
     "I want to set up my brand—can you guide me through the first steps?",
@@ -40,6 +41,8 @@ export function ChatSuggestions({
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
         previousBrandContextId: stream.values.previousBrandContextId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       },
 
       {
