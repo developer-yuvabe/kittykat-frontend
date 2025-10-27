@@ -4,14 +4,12 @@ import { A2iVideoGenerationResponse } from "@/types/a2i-video.types";
 
 export const videoGenerationService = async (
   brandId: string,
-  data: Record<string, any>,
-  campaignId?: string | null
+  data: Record<string, any>
 ) => {
   try {
     return await handleApiRequest<A2iVideoGenerationResponse>(
       axiosInstance.post(`/brands/${brandId}/a2i/video-generation`, {
         ...data,
-        campaign_id: campaignId,
       })
     );
   } catch (error) {

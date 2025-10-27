@@ -7,6 +7,7 @@ import {
 import { galleryService } from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
+  BulkScrapeRequest,
   CommentReplyUpdate,
   CommentUpdate,
   GalleryFilters,
@@ -28,13 +29,6 @@ export const useGalleryQuery = (
   compUsed: string = "unknown"
 ) => {
   const queryClient = useQueryClient();
-
-  // Fetch brands and campaigns for filters
-  const brandsQuery = useQuery({
-    queryKey: ["brands-campaigns"],
-    queryFn: () => galleryService.getBrandsWithCampaigns(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
 
   // Map asset type for filtering
   const getAssetTypesFromFilter = () => {
@@ -61,7 +55,6 @@ export const useGalleryQuery = (
     queryKey: getGalleryQueryKey(),
     enabled:
       enabled &&
-      brandsQuery.isSuccess &&
       (filters.selectedFilters?.brands?.length ?? 0) > 0 &&
       filters.selectedFilters?.brands?.every((brand) => brand != null),
     queryFn: async ({ pageParam = 0 }) => {
@@ -210,6 +203,37 @@ export const useGalleryQuery = (
     queryClient.setQueryData(["gallery-item", updatedItem.id], updatedItem);
   }
 
+  /**
+   * Revalidate gallery item versions cache
+   * This function updates the cache when a version is modified (e.g., comments, edits)
+   * @param parentAssetId - The ID of the parent asset that has versions
+   * @param updatedVersion - The updated version data
+   */
+  function revalidateGalleryItemVersions(
+    parentAssetId: string,
+    updatedVersion: GalleryItemResponse
+  ) {
+    // Update the versions cache using the parent asset ID
+    queryClient.setQueryData(
+      ["versions", parentAssetId],
+      (oldData: GalleryItemResponse[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((version) =>
+          version.id === updatedVersion.id ? updatedVersion : version
+        );
+      }
+    );
+
+    // Also update individual gallery-item cache for this specific version
+    queryClient.setQueryData(
+      ["gallery-item", updatedVersion.id],
+      updatedVersion
+    );
+
+    // Update the item in all gallery queries as well
+    updateGalleryItemInCache(updatedVersion);
+  }
+
   // Create new gallery item mutation
   const addToGalleryMutation = useMutation({
     mutationFn: (newItem: GalleryItem) =>
@@ -236,11 +260,11 @@ export const useGalleryQuery = (
     },
   });
 
+  // Bulk upload mutation for manual uploads (no scraping/analysis)
   const bulkUploadMutation = useMutation({
     mutationFn: (body: BulkGalleryUploadRequest) =>
       galleryService.uploadBulkGalleryItems(body),
     onMutate: () => {
-      // Show loading toast and store the ID
       const toastId = toast.loading("Uploading items to gallery...");
       return { toastId };
     },
@@ -248,40 +272,53 @@ export const useGalleryQuery = (
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-
-      // Update the loading toast to success
       toast.success("Items uploaded to gallery", { id: context?.toastId });
     },
     onError: (_error, _variables, context) => {
-      // Update the loading toast to error
       toast.error("Failed to upload items to gallery", {
         id: context?.toastId,
       });
     },
   });
 
-  // Upload bulk gallery items with analysis mutation
-  const uploadBulkWithAnalysisMutation = useMutation({
-    mutationFn: (body: BulkGalleryUploadRequest) =>
+  // Scraping mutation for social media scraping with analysis
+  const scrapeHandlesMutation = useMutation({
+    mutationFn: (body: BulkScrapeRequest) =>
       galleryService.uploadBulkGalleryItemsWithAnalysis(body),
     onMutate: () => {
-      // Show loading toast and store the ID
-      const toastId = toast.loading("Uploading items to gallery...");
+      const toastId = toast.loading("Initiating social media scraping...");
       return { toastId };
     },
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
-
-      // Update the loading toast to success
-      toast.success("Items uploaded to gallery", { id: context?.toastId });
-    },
-    onError: (_error, _variables, context) => {
-      // Update the loading toast to error
-      toast.error("Failed to upload items to gallery", {
+      toast.success("Social media scraping initiated", {
         id: context?.toastId,
       });
+    },
+    onError: (_error, _variables, context) => {
+      toast.error("Failed to initiate scraping", {
+        id: context?.toastId,
+      });
+    },
+  });
+
+  // Create gallery item version mutation
+  const createVersionMutation = useMutation({
+    mutationFn: (galleryItem: GalleryItem) =>
+      galleryService.createGalleryItemVersion(galleryItem),
+    onSuccess: (createdVersion) => {
+      // Invalidate gallery items to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+      // Invalidate versions query for the parent item
+      if (createdVersion.parent_asset_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["versions", createdVersion.parent_asset_id],
+        });
+      }
     },
   });
 
@@ -876,11 +913,6 @@ export const useGalleryQuery = (
   const totalItems = galleryQuery.data?.pages[0]?.pagination.total ?? 0;
 
   return {
-    // Queries
-    brandsData: brandsQuery.data,
-    brandsLoading: brandsQuery.isLoading,
-    brandsRefetch: brandsQuery.refetch,
-
     // Gallery items
     getGalleryItems,
     isGalleryItemsProcessing,
@@ -945,9 +977,15 @@ export const useGalleryQuery = (
 
     refetchAllGalleryQueries,
 
+    // Revalidate versions cache
+    revalidateGalleryItemVersions,
+
     bulkUpload: bulkUploadMutation.mutateAsync,
 
-    uploadBulkWithAnalysis: uploadBulkWithAnalysisMutation.mutateAsync,
+    scrapeHandles: scrapeHandlesMutation.mutateAsync,
+
+    createVersion: createVersionMutation.mutateAsync,
+    isCreatingVersion: createVersionMutation.isPending,
   };
 };
 

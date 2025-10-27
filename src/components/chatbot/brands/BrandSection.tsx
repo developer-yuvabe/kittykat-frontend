@@ -77,8 +77,13 @@ export const renderBrandData = (
   const [showDynamicData, setShowDynamicData] = React.useState(false);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedBrandId, setIsCreatingBrand, setSelectedBrandId } =
-    useBrandStore();
+  const {
+    selectedBrandId,
+    setIsCreatingBrand,
+    setSelectedBrandId,
+    selectedCampaignId,
+    selectedMoodboardId,
+  } = useBrandStore();
   const { removePinnedItem } = usePinnedContextStore();
 
   const handleFieldUpdate = (
@@ -106,6 +111,8 @@ export const renderBrandData = (
         text: msg,
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
+        currentCampaignId: selectedCampaignId,
+        currentMoodboardId: selectedMoodboardId,
       });
     }
   };
@@ -127,39 +134,12 @@ export const renderBrandData = (
         text: "Let's create a new brand.",
         userId: user!.id,
         currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
       });
 
       // Clear pinned items
       removePinnedItem();
-
-      // Scroll to bottom after a short delay to ensure message is rendered
-      setTimeout(() => {
-        // Try multiple approaches to ensure scroll happens
-        const chatContainer = document.querySelector(
-          '[class*="StickToBottom"]'
-        );
-        const scrollContainer = document.querySelector(
-          '[class*="overflow-y-scroll"]'
-        );
-
-        if (chatContainer) {
-          chatContainer.scrollTo({
-            top: chatContainer.scrollHeight,
-            behavior: "smooth",
-          });
-        } else if (scrollContainer) {
-          scrollContainer.scrollTo({
-            top: scrollContainer.scrollHeight,
-            behavior: "smooth",
-          });
-        } else {
-          // Fallback: scroll the window
-          window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      }, 100);
     } catch (error) {
       console.error("Error creating new brand:", error);
     }

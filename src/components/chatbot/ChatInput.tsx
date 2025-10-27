@@ -101,7 +101,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
+    useBrandStore();
   const stream = useStreamContext();
   const { isLoading, stop } = stream;
 
@@ -285,6 +286,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           userId: user!.id,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: stream.values.previousBrandContextId,
+          currentCampaignId: selectedCampaignId,
+          currentMoodboardId: selectedMoodboardId,
         },
         {
           streamMode: ["values"],

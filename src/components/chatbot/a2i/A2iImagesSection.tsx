@@ -1,8 +1,11 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useVideoGenStore } from "@/store/video-gen.store";
-import type { ThreadA2iImage, ThreadDetails } from "@/types/types";
+import type {
+  ThreadA2iImage,
+  ThreadCampaign,
+  ThreadDetails,
+} from "@/types/types";
 import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
@@ -13,40 +16,34 @@ interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
   moodboardInformation: ThreadDetails["moodboard_information"];
   campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
 }
 
 const A2iImagesSection = function A2iImagesSection({
   a2iImageInformation,
   moodboardInformation,
-  campaignInformation,
-  selectedCampaignIndex,
+  currentCampaign,
 }: A2iImagesSectionProps) {
-  const { setGenerations } = useVideoGenStore();
-
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLDivElement | null>(null);
   const [scrollTo, setScrollTo] = useQueryState("scrollTo");
 
+  // scroll on mount if query param matches
   useEffect(() => {
-    if (
-      a2iImageInformation?.generations &&
-      a2iImageInformation.generations.length > 0
-    ) {
-      setGenerations(a2iImageInformation.generations);
-    }
-  }, [a2iImageInformation?.generations]);
-
-  // 👇 scroll on mount if query param matches
-  useEffect(() => {
-    if (scrollTo === "a2i" && formRef.current) {
-      formRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+    if (scrollTo === "a2i") {
+      const observer = new MutationObserver(() => {
+        if (formRef.current) {
+          formRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          });
+          setScrollTo(null);
+          observer.disconnect();
+        }
       });
 
-      // reset so it doesn’t scroll again unnecessarily
-      setScrollTo(null);
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
     }
   }, [scrollTo, setScrollTo]);
 
@@ -87,8 +84,7 @@ const A2iImagesSection = function A2iImagesSection({
             prompts={a2iImageInformation?.prompts}
             moodboardInformation={moodboardInformation}
             formRef={formRef}
-            campaignInformation={campaignInformation}
-            selectedCampaignIndex={selectedCampaignIndex}
+            currentCampaign={currentCampaign}
             referenceMoodboardAssets={
               a2iImageInformation?.reference_moodboard_assets
             }
@@ -97,8 +93,7 @@ const A2iImagesSection = function A2iImagesSection({
             formRef={formRef}
             generations={[...(a2iImageInformation?.generations || [])]}
             referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-            campaignInformation={campaignInformation}
-            selectedCampaignIndex={selectedCampaignIndex}
+            currentCampaign={currentCampaign}
           />
         </CardContent>
       )}

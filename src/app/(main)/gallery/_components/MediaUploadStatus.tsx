@@ -1,10 +1,10 @@
 import React from "react";
 import type { MediaWithStatus } from "@/types/gallery.types";
 import { MediaUploadFileList } from "./MediaUploadFileList";
+import { useBrandStore } from "@/store/brand.store";
 
 interface MediaUploadStatusProps {
   brands: any[];
-  brandsLoading: boolean;
   isDragActive: boolean;
   currentConfig: {
     placeholder: string;
@@ -17,14 +17,14 @@ interface MediaUploadStatusProps {
 
 export function MediaUploadStatus({
   brands,
-  brandsLoading,
   isDragActive,
   currentConfig,
   addToGallery,
   mediaWithStatus,
   onRemoveItem,
 }: MediaUploadStatusProps) {
-  if (brands.length === 0 && !brandsLoading) {
+  const { isBrandsFetched } = useBrandStore();
+  if (brands.length === 0 && !isBrandsFetched) {
     return (
       <p className="text-sm text-gray-500">Set up a brand to get started</p>
     );

@@ -14,7 +14,6 @@ import {
   MultiSelectEmpty,
 } from "@/components/ui/multi-select";
 import {
-  BrandCampaignResponse,
   EnhancedSelectedFilters,
   ProductCategory,
 } from "@/types/gallery.types";
@@ -28,11 +27,11 @@ import {
   WORKFLOW_STATUS_OPTIONS,
 } from "@/lib/gallery.utils";
 import { ExpandableCard } from "@/components/ui/expandable-card";
+import { useBrandStore } from "@/store/brand.store";
 
 interface MediaFilterSidebarProps {
   selectedFilters: EnhancedSelectedFilters;
   onApply: (filters: EnhancedSelectedFilters) => void;
-  brandsWithCampaigns: BrandCampaignResponse[];
   product_categories: ProductCategory[];
   setShowFilter: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -40,10 +39,10 @@ interface MediaFilterSidebarProps {
 export default function MediaFilterSidebar({
   selectedFilters,
   onApply,
-  brandsWithCampaigns,
   product_categories,
   setShowFilter,
 }: MediaFilterSidebarProps) {
+  const { getSelectedBrand, brands } = useBrandStore();
   const [filters, setFilters] =
     useState<EnhancedSelectedFilters>(selectedFilters);
 
@@ -54,15 +53,7 @@ export default function MediaFilterSidebar({
   const activeFiltersCount = getActiveFiltersCount(filters);
 
   // Get all campaigns and filter based on selected brands
-  const allCampaigns = brandsWithCampaigns.flatMap((b) => b.campaigns);
-  const filteredCampaigns = allCampaigns
-    .filter((c) => {
-      if (filters.brands.length === 0) return true;
-      return brandsWithCampaigns
-        .filter((b) => filters.brands.includes(b.brand_id))
-        .some((b) => b.campaigns.find((bc) => bc.id === c.id));
-    })
-    .filter((c, i, self) => self.findIndex((x) => x.id === c.id) === i);
+  const filteredCampaigns = getSelectedBrand()?.campaigns || [];
 
   const handleApply = () => {
     onApply(filters);
@@ -181,13 +172,13 @@ export default function MediaFilterSidebar({
               <MultiSelectSearch placeholder="Search brands..." />
               <MultiSelectList>
                 <MultiSelectEmpty>No brands found</MultiSelectEmpty>
-                {brandsWithCampaigns.map((brand) => (
+                {brands.map((brand) => (
                   <MultiSelectItem
-                    key={brand.brand_id}
-                    value={brand.brand_id}
-                    label={brand.brand_name}
+                    key={brand.id}
+                    value={brand.id}
+                    label={brand.name}
                   >
-                    {brand.brand_name}
+                    {brand.name}
                   </MultiSelectItem>
                 ))}
               </MultiSelectList>

@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  BrandCampaignListResponse,
   BulkGalleryUploadRequest,
   GalleryItem,
   GalleryItemResponse,
@@ -26,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { searchPexelsPhotos } from "@/services/actions/pexels-client";
 
 interface TopicsGridProps {
-  selectedBrand?: BrandCampaignListResponse["brands"][number] | null;
+  selectedBrandId: string | null;
   selectedCampaignId?: string;
   selecteMoodboardId?: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
@@ -39,7 +38,7 @@ interface TopicsGridProps {
 }
 
 export default function TopicsGrid({
-  selectedBrand,
+  selectedBrandId,
   selectedCampaignId,
   selecteMoodboardId,
   setActiveTab,
@@ -83,10 +82,10 @@ export default function TopicsGrid({
     isLoading: topicsLoading,
     isError: topicsError,
   } = useQuery<PexelsTopicsResponse>({
-    queryKey: ["topics", selectedBrand?.brand_id, selectedCampaignId],
+    queryKey: ["topics", selectedBrandId, selectedCampaignId],
     queryFn: () =>
-      fetchTopics(selectedBrand?.brand_id ?? "", selectedCampaignId ?? null),
-    enabled: !!selectedBrand?.brand_id, // only run when brand is selected
+      fetchTopics(selectedBrandId ?? "", selectedCampaignId ?? null),
+    enabled: !!selectedBrandId, // only run when brand is selected
   });
 
   // 📡 React Query Infinite Scroll for Search
@@ -131,7 +130,7 @@ export default function TopicsGrid({
   };
 
   const handleUrlUpload = async (urls: string[]) => {
-    if (!selectedBrand?.brand_id) {
+    if (!selectedBrandId) {
       toast.error("No brand selected.");
       return;
     }
@@ -154,7 +153,7 @@ export default function TopicsGrid({
       const itemsToUpload: GalleryItem[] = validUrls.map((url) => {
         const extension = getExtensionFromUrl(url);
         return {
-          brand_id: selectedBrand.brand_id,
+          brand_id: selectedBrandId,
           asset_url: url,
           asset_source: "brand-uploads",
           asset_type: "image",
@@ -178,10 +177,9 @@ export default function TopicsGrid({
 
       const bulkUploadPayload: BulkGalleryUploadRequest = {
         gallery_items: itemsToUpload,
-        brand_id: selectedBrand.brand_id,
+        brand_id: selectedBrandId,
         campaign_id: selectedCampaignId,
         moodboard_id: selecteMoodboardId,
-        scrape_only: false,
       };
       setActiveTab("all-media");
       await galleryActions.bulkUpload(bulkUploadPayload);
@@ -210,7 +208,7 @@ export default function TopicsGrid({
   };
 
   const onAddSelectedItemsToMoodboard = async () => {
-    if (!selectedBrand?.brand_id) {
+    if (!selectedBrandId) {
       toast.error("No brand selected.");
       return;
     }
@@ -233,7 +231,7 @@ export default function TopicsGrid({
       const itemsToUpload: GalleryItem[] = validUrls.map((url) => {
         const extension = getExtensionFromUrl(url);
         return {
-          brand_id: selectedBrand.brand_id,
+          brand_id: selectedBrandId,
           asset_url: url,
           asset_source: "brand-uploads",
           asset_type: "image",
@@ -257,10 +255,9 @@ export default function TopicsGrid({
 
       const bulkUploadPayload: BulkGalleryUploadRequest = {
         gallery_items: itemsToUpload,
-        brand_id: selectedBrand.brand_id,
+        brand_id: selectedBrandId,
         campaign_id: selectedCampaignId,
         moodboard_id: selecteMoodboardId,
-        scrape_only: false,
       };
 
       // Fire and forget - we handle success/failure with toasts

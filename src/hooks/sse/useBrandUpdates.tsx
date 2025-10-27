@@ -1,17 +1,18 @@
 import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails, ThreadCampaign } from "@/types/types";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
-  const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
-  const [data, setData] = useState<ThreadDetails | null>(null);
   const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
   const { setGenerations } = useVideoGenStore();
-  const { setIsCampaignCreating, selectedBrandId } = useBrandStore();
+  const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
+    useBrandStore();
+  const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -35,6 +36,13 @@ export function useBrandUpdates() {
       if (newCampaign !== prevCampaign) {
         queryClient.invalidateQueries({ queryKey: ["brands"] });
         setIsCampaignCreating(false); // <-- mark creation as done
+
+        const latestCreatedCampaign = parsed.campaign_information?.at(-1);
+
+        // Allow auto-select only on the main dashboard page for realtime updates
+        if (latestCreatedCampaign && window.location.pathname == "/") {
+          setSelectedCampaignId(latestCreatedCampaign.id);
+        }
       }
 
       previousCampaignInfo.current = parsed.campaign_information;
@@ -60,9 +68,4 @@ export function useBrandUpdates() {
       previousCampaignInfo.current = undefined;
     };
   }, [selectedBrandId]);
-
-  return {
-    data,
-    isFetchingBrandInfo,
-  };
 }

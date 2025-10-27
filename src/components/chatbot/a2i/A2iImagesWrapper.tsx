@@ -4,7 +4,7 @@ import { ContentSection } from "@/components/shared/ContentSection";
 import type {
   A2iImageGeneration,
   ThreadA2iImage,
-  ThreadDetails,
+  ThreadCampaign,
 } from "@/types/types";
 import {
   A2iImageCard,
@@ -46,8 +46,7 @@ type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
   formRef: RefObject<HTMLDivElement | null>;
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
-  campaignInformation: ThreadDetails["campaign_information"];
-  selectedCampaignIndex: number;
+  currentCampaign: ThreadCampaign | null;
 };
 
 // Helper function to get existing ID only - no fallback generation
@@ -64,8 +63,7 @@ export const A2iImagesWrapper = ({
   generations,
   formRef,
   referenceMoodboardId,
-  campaignInformation,
-  selectedCampaignIndex,
+  currentCampaign,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
   const {
@@ -98,8 +96,6 @@ export const A2iImagesWrapper = ({
               upscaleParameters: generation.upscale_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
-              campaignInformation,
-              selectedCampaignIndex,
             },
           ];
         }
@@ -114,8 +110,6 @@ export const A2iImagesWrapper = ({
           remixParameters: generation.remix_parameters,
           video: generation.video,
           isNSFW: generation.is_nsfw_detected || false,
-          campaignInformation,
-          selectedCampaignIndex,
         }));
       }
     );
@@ -274,8 +268,6 @@ export const A2iImagesWrapper = ({
                       key={trackingId}
                       {...image}
                       disableDrag={!existingId}
-                      campaignInformation={campaignInformation}
-                      selectedCampaignIndex={selectedCampaignIndex}
                     />
                   );
                 })}
@@ -295,8 +287,7 @@ export const A2iImagesWrapper = ({
           ) : (
             <A2iImageInput
               referenceMoodboardId={referenceMoodboardId}
-              campaignInformation={campaignInformation}
-              selectedCampaignIndex={selectedCampaignIndex}
+              currentCampaign={currentCampaign}
             />
           )}
         </div>

@@ -138,7 +138,7 @@ class TaskListService {
   async exportTasklistsCsv(filters: TasklistFilters): Promise<Blob> {
     const response = await axiosInstance.post(
       "/ask-kittykat/tasklists/export/excel",
-      filters,
+      { filters },
       {
         responseType: "blob",
       }

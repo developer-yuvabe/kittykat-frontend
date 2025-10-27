@@ -5,7 +5,6 @@ import {
   GalleryItem,
   GalleryItemResponse,
   GalleryItemsListResponse,
-  BrandCampaignListResponse,
   CommentReplyCreate,
   CommentUpdate,
   CommentReplyUpdate,
@@ -124,15 +123,6 @@ class GalleryService {
         limit,
       },
     };
-  }
-
-  /**
-   * Get all brands with their associated campaigns
-   */
-  async getBrandsWithCampaigns(): Promise<BrandCampaignListResponse> {
-    return handleApiRequest<BrandCampaignListResponse>(
-      axiosInstance.get("/gallery/brands-campaigns")
-    );
   }
 
   /**
@@ -295,7 +285,7 @@ class GalleryService {
     body: BulkGalleryUploadRequest
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.post(`/gallery/bulk/upload`, body)
+      axiosInstance.post(`/gallery/bulk/scrape`, body)
     );
   }
 
@@ -307,6 +297,17 @@ class GalleryService {
   ): Promise<void> {
     return handleApiRequest<void>(
       axiosInstance.post(`/gallery/reorder`, { items: reorderData })
+    );
+  }
+
+  /**
+   * Create a new version of an existing gallery item
+   */
+  async createGalleryItemVersion(
+    galleryItem: GalleryItem
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.post("/gallery/version", galleryItem)
     );
   }
 }
@@ -322,7 +323,7 @@ export const useBulkGalleryItems = (ids: string[], enabled = true) => {
   });
 };
 
-export const GetGalleryImageParameters = async (
+export const getGalleryImageParameters = async (
   brandId: string,
   galleryId: string
 ): Promise<GalleryImageParametersResponse | null> => {

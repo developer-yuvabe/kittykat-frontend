@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
+import React, {
+  useState,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+  useMemo,
+} from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { BrandCampaignResponse, Comment } from "@/types/gallery.types";
+import type { Comment } from "@/types/gallery.types";
 import taskListService from "@/services/api/tasklist.service";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +26,7 @@ import { AskKittyKatTaskList } from "./AskKittyKatTaskList";
 import { CreateTasklistRequest } from "@/types/tasklist.types";
 import { formatTasksAsMarkdown } from "@/lib/askKittykat.utils";
 import { useTaskList } from "@/hooks/useTaskList";
+import { useBrandStore } from "@/store/brand.store";
 
 interface AskKittyKatConfirmationDialogProps {
   open: boolean;
@@ -36,7 +43,6 @@ interface AskKittyKatConfirmationDialogProps {
   imageId: string;
   allAttachments: string[];
   onAllAttachmentsChange: Dispatch<SetStateAction<string[]>>;
-  brandsWithCampaigns: BrandCampaignResponse[];
 }
 
 interface TaskListTask {
@@ -56,9 +62,9 @@ export function AskKittyKatConfirmationDialog({
   imageId,
   allAttachments,
   onAllAttachmentsChange,
-  brandsWithCampaigns,
 }: AskKittyKatConfirmationDialogProps) {
   const { user } = useUserStore();
+  const { brands, getSelectedBrand } = useBrandStore();
   const [tasks, setTasks] = useState<TaskListTask[]>([]);
   const { createTaskListMutation } = useTaskList();
 
@@ -68,15 +74,15 @@ export function AskKittyKatConfirmationDialog({
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
 
   // Brand and campaign names for record creation
-  const brandName = brandId
-    ? brandsWithCampaigns.find((b) => b.brand_id === brandId)?.brand_name
-    : undefined;
+  const { brandName, campaignName } = useMemo(() => {
+    const brand = getSelectedBrand();
 
-  const campaignName = campaignId
-    ? brandsWithCampaigns
-        .flatMap((b) => b.campaigns)
-        .find((c) => c.id === campaignId)?.title
-    : undefined;
+    return {
+      brandName: brand?.name,
+      campaignName: brand?.campaigns.find((c) => c.id == campaignId)?.title,
+    };
+  }, [brands, brandId, campaignId]);
+
   // Initialize all attachments when dialog opens or comments change
   useEffect(() => {
     if (open) {

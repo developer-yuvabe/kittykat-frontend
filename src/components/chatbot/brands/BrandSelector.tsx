@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -9,12 +10,12 @@ import {
 } from "@/components/ui/command";
 import { SearchIcon } from "@/components/ui/custom-icon";
 import { Input } from "@/components/ui/input";
-import { Loader } from "@/components/ui/loader";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
@@ -134,42 +135,60 @@ export default function BrandSelector({
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          {showSelectedValue && selectedBrandId ? (
+          {!isBrandsFetched ? (
             <div
               className={cn(
                 "min-w-0 font-medium flex justify-between items-center w-full gap-x-1",
                 className
               )}
             >
-              <div className="space-x-2 truncate">
-                <span className="font-medium">
-                  {getSelectedBrandName() ?? "Select Brand"}
-                </span>
-
-                {showCampaigns && selectedCampaignId && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">
-                      {getSelectedCampaignName() ?? "Campaign"}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {open ? (
-                <ChevronUp className="h-4 w-4 shrink-0 opacity-50" />
-              ) : (
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-              )}
-              {/* Floating Label */}
-              <label className="absolute left-3 transition-all duration-200 text-muted-foreground pointer-events-none top-0 text-xs font-medium translate-y-[-50%] px-1 z-10 bg-inherit">
-                Brand
-              </label>
+              <span className="animate-pulse">Loading Brands...</span>
+              <Spinner className="text-muted-foreground" />
             </div>
           ) : (
             <>
-              <SearchIcon size={10} className="text-foreground" />
-              Select Brand
+              {showSelectedValue && selectedBrandId ? (
+                <div
+                  className={cn(
+                    "min-w-0 font-medium flex justify-between items-center w-full gap-x-1",
+                    className
+                  )}
+                >
+                  <div className="space-x-2 truncate">
+                    <span className="font-medium">
+                      {getSelectedBrandName() ?? "Select Brand"}
+                    </span>
+
+                    {showCampaigns &&
+                      (selectedCampaignId ? (
+                        <>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="text-muted-foreground">
+                            {getSelectedCampaignName() ?? "Campaign"}
+                          </span>
+                        </>
+                      ) : (
+                        <Badge className="text-xs bg-primary/10 rounded-full text-primary">
+                          No Campaign selected
+                        </Badge>
+                      ))}
+                  </div>
+
+                  {open ? (
+                    <ChevronUp className="h-4 w-4 shrink-0 opacity-50" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  )}
+                  <label className="absolute left-3 transition-all duration-200 text-muted-foreground pointer-events-none top-0 text-xs font-medium translate-y-[-50%] px-1 z-10 bg-inherit">
+                    Brand
+                  </label>
+                </div>
+              ) : (
+                <>
+                  <SearchIcon size={10} className="text-foreground" />
+                  Select Brand
+                </>
+              )}
             </>
           )}
         </Button>
@@ -196,7 +215,7 @@ export default function BrandSelector({
             <CommandEmpty>
               {!isBrandsFetched ? (
                 <div className="mx-auto w-max">
-                  <Loader className="fill-foreground" />
+                  <Spinner className="text-foreground" />
                 </div>
               ) : showCampaigns ? (
                 "No brands or campaigns found."
@@ -249,7 +268,13 @@ export default function BrandSelector({
                       <CommandItem
                         key={`${campaign.id}-${campaign.title}`}
                         value={campaign.title}
-                        className="flex items-center justify-between group gap-0"
+                        className={cn(
+                          "flex items-center justify-between group gap-0 my-0.5",
+                          {
+                            "bg-primary/10 text-primary":
+                              selectedCampaignId === campaign.id,
+                          }
+                        )}
                         onSelect={() =>
                           handleBrandSelect(brand.id, campaign.id)
                         }
@@ -260,7 +285,7 @@ export default function BrandSelector({
                         <div className="flex items-start min-w-0 w-full">
                           <Megaphone
                             className={cn("mr-2 mt-0.5", {
-                              "text-muted-foreground fill-primary":
+                              "text-primary":
                                 selectedCampaignId === campaign.id,
                             })}
                             size={20}

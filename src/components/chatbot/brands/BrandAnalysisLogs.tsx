@@ -6,6 +6,7 @@ import {
   formatTimestamp,
   getStatusColor,
   getStatusIcon,
+  calculateTimeTaken,
 } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
 import { AnalysisLogDetail } from "@/types/types";
@@ -53,8 +54,8 @@ export const BrandAnalysisLogs = (log: AnalysisLogDetail, isActive = false) => (
 
           {/* Enhanced Progress Section */}
           {(log.status === AnalysisStatus.IN_PROGRESS ||
-            log.status === "processing" ||
-            log.status === AnalysisStatus.COMPLETED) && (
+            log.status === AnalysisStatus.COMPLETED ||
+            log.status === AnalysisStatus.FAILED) && (
             <div className="space-y-3 bg-white rounded-lg p-3 border border-gray-100">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-gray-700">
@@ -67,36 +68,54 @@ export const BrandAnalysisLogs = (log: AnalysisLogDetail, isActive = false) => (
               <Progress
                 value={log.progress_percent}
                 className={`h-2.5 ${
-                  log.status === AnalysisStatus.IN_PROGRESS ||
-                  log.status === "processing"
+                  log.status === AnalysisStatus.IN_PROGRESS
                     ? "bg-blue-100"
                     : "bg-green-100"
                 }`}
               />
 
               {/* Enhanced Stats with better visual hierarchy */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600 font-medium">
-                  {log.processed_items} of {log.total_items} items processed
-                </span>
-                <div className="flex items-center gap-3">
-                  {log.successful_items > 0 && (
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3 text-green-500" />
-                      <span className="text-xs text-green-700 font-semibold">
-                        {log.successful_items}
-                      </span>
-                    </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  {log.status === AnalysisStatus.IN_PROGRESS ? (
+                    <span className="text-xs text-gray-600 font-medium">
+                      Scraping latest {log.total_items} posts
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-600 font-medium">
+                      Scraped {log.successful_items} items from{" "}
+                      {log.total_items} posts
+                    </span>
                   )}
-                  {log.failed_items > 0 && (
-                    <div className="flex items-center gap-1">
-                      <XCircle className="w-3 h-3 text-red-500" />
-                      <span className="text-xs text-red-700 font-semibold">
-                        {log.failed_items}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {log.successful_items > 0 && (
+                      <div className="flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3 text-green-500" />
+                        <span className="text-xs text-green-700 font-semibold">
+                          {log.successful_items}
+                        </span>
+                      </div>
+                    )}
+                    {log.failed_items > 0 && (
+                      <div className="flex items-center gap-1">
+                        <XCircle className="w-3 h-3 text-red-500" />
+                        <span className="text-xs text-red-700 font-semibold">
+                          {log.failed_items}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+                {!(log.status === AnalysisStatus.IN_PROGRESS) && (
+                  <span className="text-xs text-gray-500 font-medium">
+                    Time taken:{" "}
+                    {calculateTimeTaken(
+                      log.created_at,
+                      log.completed_at,
+                      log.updated_at
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           )}

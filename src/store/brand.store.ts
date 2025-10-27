@@ -9,6 +9,10 @@ type Store = {
   brands: UserBrand[];
   setBrands: (brands: UserBrand[]) => void;
   addBrand: (brand: UserBrand) => void;
+  addCampaignToBrand: (
+    brandId: string,
+    campaign: UserBrand["campaigns"][0]
+  ) => void;
   removeBrand: (brandId: string) => void;
 
   campaigns: UserBrand["campaigns"];
@@ -43,6 +47,9 @@ type Store = {
   isMoodboardSaving: boolean;
   setIsMoodboardSaving: (isSaving: boolean) => void;
 
+  // Get a detailed brand information
+  getSelectedBrand: () => UserBrand | null;
+
   // Getters for selected names
   getSelectedBrandName: () => string | null;
   getSelectedCampaignName: () => string | null;
@@ -65,6 +72,15 @@ export const useBrandStore = create<Store>((set, get) => ({
   },
   addBrand: (brand: UserBrand) =>
     set((state) => ({ brands: [...state.brands, brand] })),
+  addCampaignToBrand: (brandId: string, campaign: UserBrand["campaigns"][0]) =>
+    set((state) => ({
+      brands: state.brands.map((brand) =>
+        brand.id === brandId
+          ? { ...brand, campaigns: [...(brand.campaigns || []), campaign] }
+          : brand
+      ),
+      campaigns: [...state.campaigns, campaign],
+    })),
   removeBrand: (brandId: string) =>
     set((state) => ({
       brands: state.brands.filter((brand) => brand.id !== brandId),
@@ -86,7 +102,14 @@ export const useBrandStore = create<Store>((set, get) => ({
         }
       }
 
-      return { selectedBrandId: brandId };
+      // Reset campaign selection when brand changes
+      const isBrandChanging = state.selectedBrandId !== brandId;
+      
+      return { 
+        selectedBrandId: brandId,
+        // Clear campaign selection when switching brands
+        selectedCampaignId: isBrandChanging ? null : state.selectedCampaignId,
+      };
     }),
 
   selectedCampaignId: null,
@@ -124,11 +147,28 @@ export const useBrandStore = create<Store>((set, get) => ({
 
   selectedMoodboardId: null,
   setSelectedMoodboardId: (moodboardId: string | null) =>
-    set({ selectedMoodboardId: moodboardId }),
+    set((state) => {
+      // If moodboardId is provided, find the campaign it belongs to and select it
+      if (moodboardId) {
+        const moodboard = state.moodboards.find((mb) => mb.id === moodboardId);
+        if (moodboard) {
+          return {
+            selectedMoodboardId: moodboardId,
+            selectedCampaignId: moodboard.campaign_id,
+          };
+        }
+      }
+      return { selectedMoodboardId: moodboardId };
+    }),
 
   isMoodboardSaving: false,
   setIsMoodboardSaving: (isSaving: boolean) =>
     set({ isMoodboardSaving: isSaving }),
+
+  getSelectedBrand: () => {
+    const state = get();
+    return state.brands.find((b) => b.id == state.selectedBrandId) ?? null;
+  },
 
   // Getters for selected names
   getSelectedBrandName: () => {
