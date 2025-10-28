@@ -1626,3 +1626,166 @@ export const ReplicateIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
     <path d="M22 10.552v2.26h-7.932V22H11.54V10.552H22zM22 2v2.264H4.528V22H2V2h20zm0 4.276V8.54H9.296V22H6.768V6.276H22z"></path>
   </svg>
 );
+
+export const MagicEnabledIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M3.59595 17.996L5.99595 20.396L16.7839 9.58402L14.4139 7.18402L3.59595 17.996Z"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M12.02 9.58002L14.42 11.98"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M20.4724 3.5274L17.9272 6.0726"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M17.9272 3.5274L20.4724 6.0726"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M20.4724 14.3274L17.9272 16.8726"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M17.9272 14.3274L20.4724 16.8726"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M9.67264 3.5274L7.12744 6.0726"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M7.12744 3.5274L9.67264 6.0726"
+      stroke="#171A1F"
+      strokeWidth="1.44"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+  </svg>
+);
+
+export const MagicDisabledIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 22 22"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M18.61 6L19.55 3.94L21.61 3L19.55 2.06L18.61 0L17.67 2.06L15.61 3L17.67 3.94L18.61 6ZM12.78 7.42L14.19 8.83L12.73 10.29L14.14 11.7L16.31 9.53C16.4972 9.34315 16.6024 9.08951 16.6024 8.825C16.6024 8.56049 16.4972 8.30684 16.31 8.12L13.48 5.29C13.2947 5.10377 13.0427 4.99936 12.78 5C12.52 5 12.27 5.1 12.07 5.29L9.9 7.46L11.31 8.87L12.78 7.42ZM0 3.22L7.07 10.29L0.9 16.46C0.712772 16.6468 0.607556 16.9005 0.607556 17.165C0.607556 17.4295 0.712772 17.6832 0.9 17.87L3.73 20.7C3.93 20.9 4.18 21 4.44 21C4.7 21 4.95 20.9 5.15 20.71L11.32 14.54L18.39 21.61L19.8 20.2L1.42 1.81L0 3.22ZM9.9 13.12L4.44 18.58L3.03 17.17L8.49 11.71L9.9 13.12Z"
+      fill="#171A1F"
+    />
+  </svg>
+);
+
+export const LockIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M18.02 11.13L5.98001 11.13C5.03008 11.13 4.26001 11.9001 4.26001 12.85L4.26001 19.73C4.26001 20.6799 5.03008 21.45 5.98001 21.45L18.02 21.45C18.9699 21.45 19.74 20.6799 19.74 19.73V12.85C19.74 11.9001 18.9699 11.13 18.02 11.13Z"
+      stroke="#171A1F"
+    />
+    <path
+      d="M12 18.01C12.95 18.01 13.72 17.2399 13.72 16.29C13.72 15.3401 12.95 14.57 12 14.57C11.0501 14.57 10.28 15.3401 10.28 16.29C10.28 17.2399 11.0501 18.01 12 18.01Z"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M16.3 7.72003V6.86003C16.3233 4.5091 14.4369 2.58413 12.086 2.56003H12C9.64902 2.53664 7.72405 4.4231 7.69995 6.77403V7.72003"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export const TrashIcon: React.FC<CustomIconProps> = ({ size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M8.56006 6.01001V2.57001L15.4401 2.57001V6.01001"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M18.8801 11.98V19.72C18.8801 20.6699 18.11 21.44 17.1601 21.44L6.84012 21.44C5.89019 21.44 5.12012 20.6699 5.12012 19.72L5.12012 11.98"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+    />
+    <path
+      d="M12 13.71V17.15"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M8.57007 13.71V17.15"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M15.4299 13.71V17.15"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M21.46 5.98999L2.54004 5.98999L2.54004 9.42999L21.46 9.42999V5.98999Z"
+      stroke="#171A1F"
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+  </svg>
+);
