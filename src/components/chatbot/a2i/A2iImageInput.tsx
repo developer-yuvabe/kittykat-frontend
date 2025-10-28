@@ -35,6 +35,12 @@ import { useCreditsStore } from "@/store/credits.store";
 import { useQueryState } from "nuqs";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
+import ModelSelector from "./ModelSelector";
+import {
+  LockIcon,
+  MagicEnabledIcon,
+  TrashIcon,
+} from "@/components/ui/custom-icon";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -46,7 +52,8 @@ const A2iImageInput = ({
   const inputContainerRef = useRef<HTMLDivElement | null>(null);
   const [scrollTo, setScrollTo] = useQueryState("scrollTo");
   const { parameters, setParameters } = useMetadataActionsStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, setSelectedImageGenerationModel } =
+    useModelsStore();
   const form = useA2iForm({
     formKey: `image-generation`,
     selectedModel: selectedImageGenerationModel,
@@ -400,7 +407,7 @@ const A2iImageInput = ({
   return (
     <div
       ref={inputContainerRef}
-      className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-[10] pb-4"
+      className="flex flex-col items-stretch w-full  mx-auto border resize-none rounded-2xl  bottom-8 h-max bg-background scrollbar overflow-hidden pb-4 "
       id="concept-visual-playground"
     >
       <Form {...form}>
@@ -461,10 +468,15 @@ const A2iImageInput = ({
                         }
                       }}
                       className={cn(
-                        "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[20px] max-h-[200px] overflow-y-auto align-top"
+                        "relative w-full resize-none mt-5 border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[80px] max-h-[200px] overflow-y-auto align-top"
                       )}
                       placeholder="Describe what you want to see ..."
                     />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <MagicEnabledIcon className="h-4 w-4 text-muted-foreground" />
+                      <LockIcon className="h-4 w-4 text-muted-foreground" />
+                      <TrashIcon className="h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
                 </FormControl>
               </FormItem>
@@ -544,6 +556,11 @@ const A2iImageInput = ({
               )}
             </div>
             <div className="flex gap-x-2">
+              <ModelSelector
+                onModelChange={setSelectedImageGenerationModel}
+                selectedModel={selectedImageGenerationModel}
+                typeFilter="image"
+              />
               <Button
                 type="button"
                 disabled={!form.watch("prompt") || isEnhnacingPrompt}

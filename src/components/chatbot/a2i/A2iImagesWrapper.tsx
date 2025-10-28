@@ -40,7 +40,6 @@ import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
 import { useModelsStore } from "@/store/models.store";
 import A2iImageInputLoader from "./A2iImageInputLoader";
-import ModelSelector from "./ModelSelector";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -66,11 +65,7 @@ export const A2iImagesWrapper = ({
   currentCampaign,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
-  const {
-    selectedImageGenerationModel,
-    isModelsFetched,
-    setSelectedImageGenerationModel,
-  } = useModelsStore();
+  const { selectedImageGenerationModel, isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
 
   // Track drag and server update states
@@ -214,16 +209,6 @@ export const A2iImagesWrapper = ({
     return items.map(getExistingId).filter(Boolean) as string[];
   }, [items]);
 
-  const customActions = useMemo(
-    () => (
-      <ModelSelector
-        typeFilter="image"
-        selectedModel={selectedImageGenerationModel}
-        onModelChange={(m) => setSelectedImageGenerationModel(m)}
-      />
-    ),
-    [selectedImageGenerationModel]
-  );
   const contextValue = useMemo(() => ({ data: {} }), []);
 
   const INITIAL_IMAGE_PLACEHOLDER = 12;
@@ -231,65 +216,71 @@ export const A2iImagesWrapper = ({
   return (
     <ContentSection
       title=""
-      customActions={customActions}
       showCopy={false}
       showPin={false}
       context={contextValue}
       ref={formRef}
       content={
-        <div className="relative h-[80vh] bg-muted rounded-md">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={sortableItems}
-              strategy={rectSortingStrategy}
-            >
-              <div className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full relative overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1">
-                {items.map((image) => {
-                  const existingId = getExistingId(image);
-                  const trackingId = getItemTrackingId(image);
+        <div className="flex flex-col gap-4 h-full">
+          {/* Form Section - Above */}
+          <div className="flex-shrink-0">
+            {!isModelsFetched || !selectedImageGenerationModel ? (
+              <A2iImageInputLoader />
+            ) : (
+              <A2iImageInput
+                referenceMoodboardId={referenceMoodboardId}
+                currentCampaign={currentCampaign}
+              />
+            )}
+          </div>
 
-                  if (image.status === "completed" && existingId) {
+          {/* Images Grid Section - Below */}
+          <div className="flex-1 bg-muted rounded-md overflow-hidden">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sortableItems}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1">
+                  {items.map((image) => {
+                    const existingId = getExistingId(image);
+                    const trackingId = getItemTrackingId(image);
+
+                    if (image.status === "completed" && existingId) {
+                      return (
+                        <A2iImageCardDraggable
+                          key={trackingId}
+                          imageData={image}
+                        />
+                      );
+                    }
+
+                    // For non-completed items or items without existing IDs, use regular card
                     return (
-                      <A2iImageCardDraggable
+                      <A2iImageCard
                         key={trackingId}
-                        imageData={image}
+                        {...image}
+                        disableDrag={!existingId}
                       />
                     );
-                  }
+                  })}
 
-                  // For non-completed items or items without existing IDs, use regular card
-                  return (
-                    <A2iImageCard
-                      key={trackingId}
-                      {...image}
-                      disableDrag={!existingId}
+                  {Array.from({
+                    length: INITIAL_IMAGE_PLACEHOLDER,
+                  }).map((_, index) => (
+                    <A2iImagePlaceholderCard
+                      key={`empty-placeholder-${items.length + index}`}
                     />
-                  );
-                })}
-
-                {Array.from({
-                  length: INITIAL_IMAGE_PLACEHOLDER,
-                }).map((_, index) => (
-                  <A2iImagePlaceholderCard
-                    key={`empty-placeholder-${items.length + index}`}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-          {!isModelsFetched || !selectedImageGenerationModel ? (
-            <A2iImageInputLoader />
-          ) : (
-            <A2iImageInput
-              referenceMoodboardId={referenceMoodboardId}
-              currentCampaign={currentCampaign}
-            />
-          )}
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
         </div>
       }
     />
