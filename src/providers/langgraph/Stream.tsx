@@ -31,6 +31,7 @@ export type StateType = {
 
   currentCampaignId: string | null;
   currentMoodboardId: string | null;
+  timestamp: number;
 };
 
 const useTypedStream = useStream<
