@@ -852,7 +852,7 @@ const AskKittyKatTabContent = ({
             <Button
               onClick={() => handleSubmitComment()}
               disabled={
-                isSubmitting || (!newComment.trim() && attachments.length === 0)
+                isSubmitting || (!newComment.trim() && attachments.length === 0) || isUploading
               }
               className="bg-purple-600 hover:bg-purple-700"
             >
