@@ -93,6 +93,17 @@ export const WorkflowStatusDialog = ({
         });
       }
 
+      // Add notes as a comment to the asset if notes are provided
+      if (notes.trim()) {
+        galleryActions.addComment({
+          itemId: tasklist.asset_ids[0],
+          commentData: {
+            text: notes.trim(),
+            is_tasklist: true,
+          },
+        });
+      }
+
       toast.success(
         `Status updated to ${WORKFLOW_STATUS_MAP[selectedStatus].label}`
       );
