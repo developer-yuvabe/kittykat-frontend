@@ -37,6 +37,8 @@ export type A2iImageCardProps = {
   remixParameters?: A2iImageGeneration["remix_parameters"];
   upscaleParameters?: A2iImageGeneration["upscale_parameters"];
   video?: A2iImageGeneration["video"];
+  createdAt: A2iImageGeneration["created_at"];
+  updatedAt: A2iImageGeneration["updated_at"];
   dragListeners?: any;
   dragAttributes?: any;
   isDragging?: boolean;
@@ -539,8 +541,20 @@ const A2iImageCard = ({
   );
 };
 
-const A2iImagePlaceholderCard = () => {
-  return <div className="border bg-muted min-w-60 aspect-square" />;
+interface A2iImagePlaceholderCardProps {
+  loading?: boolean;
+}
+
+const A2iImagePlaceholderCard = ({
+  loading = false,
+}: A2iImagePlaceholderCardProps) => {
+  return (
+    <div
+      className={`border min-w-60 aspect-square  overflow-hidden relative ${
+        loading ? "bg-gray-300 animate-pulse" : "bg-muted"
+      }`}
+    />
+  );
 };
 
 export { A2iImageCard, A2iImagePlaceholderCard };
