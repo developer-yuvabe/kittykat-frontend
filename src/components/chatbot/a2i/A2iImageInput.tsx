@@ -499,9 +499,9 @@ const A2iImageInput = ({
                       placeholder="Describe what you want to see ..."
                     />
                     <div className="absolute top-2 right-2 flex gap-2">
-                      <MagicEnabledIcon className="h-4 w-4 text-muted-foreground" />
-                      <LockIcon className="h-4 w-4 text-muted-foreground" />
-                      <TrashIcon className="h-4 w-4 text-muted-foreground" />
+                      <MagicEnabledIcon color="#6B5FBA" />
+                      <LockIcon color="#6B5FBA" />
+                      <TrashIcon color="#6B5FBA" />
                     </div>
                   </div>
                 </FormControl>
