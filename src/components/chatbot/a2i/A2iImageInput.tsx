@@ -29,7 +29,7 @@ import { ThreadA2iImage, ThreadCampaign } from "@/types/types";
 import { useModelsStore } from "@/store/models.store";
 import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import { useCreditsStore } from "@/store/credits.store";
 import { useQueryState } from "nuqs";
@@ -38,9 +38,11 @@ import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 import ModelSelector from "./ModelSelector";
 import {
   LockIcon,
+  LockOpenIcon,
   MagicEnabledIcon,
   TrashIcon,
 } from "@/components/ui/custom-icon";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -111,6 +113,7 @@ const A2iImageInput = ({
       url: string | null;
     }[]
   >([]);
+  const [isLocked, setIsLocked] = useState(false);
 
   // Store the current prompt value to preserve it across model changes
   const remainingUploads = refernceImagesModelInfo
@@ -249,6 +252,15 @@ const A2iImageInput = ({
     deleteFile(urlToRemove);
   }
 
+  function clearPromptAndReferences() {
+    form.setValue("prompt", "", { shouldValidate: true });
+    if (refernceImagesModelInfo) {
+      form.setValue(refernceImagesModelInfo.id, null);
+    }
+    setImageBlocks([]);
+    clearReferencePrompt();
+  }
+
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
     try {
       if (selectedImageGenerationModel?.prefix) {
@@ -264,12 +276,15 @@ const A2iImageInput = ({
         campaign_id: currentCampaign?.id || null,
       });
 
-      form.setValue("prompt", "", { shouldValidate: true });
-      if (refernceImagesModelInfo) {
-        form.setValue(refernceImagesModelInfo.id, null);
+      // Only clear prompt and references if unlocked
+      if (!isLocked) {
+        form.setValue("prompt", "", { shouldValidate: true });
+        if (refernceImagesModelInfo) {
+          form.setValue(refernceImagesModelInfo.id, null);
+        }
+        setImageBlocks([]);
+        clearReferencePrompt();
       }
-      setImageBlocks([]);
-      clearReferencePrompt();
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
@@ -498,10 +513,41 @@ const A2iImageInput = ({
                       )}
                       placeholder="Describe what you want to see ..."
                     />
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <MagicEnabledIcon color="#6B5FBA" />
-                      <LockIcon color="#6B5FBA" />
-                      <TrashIcon color="#6B5FBA" />
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <TooltipButton
+                        tooltip="Magic enhance (feature coming soon)"
+                        icon={<MagicEnabledIcon color="#6B5FBA" size={22} />}
+                        size="md"
+                        className="px-2 py-2"
+                        onClick={() => {
+                          // Dummy message for now
+                          toast.info("Magic enhance feature coming soon!");
+                        }}
+                      />
+                      <TooltipButton
+                        tooltip={
+                          isLocked
+                            ? "Keep prompt and reference images after generation."
+                            : "Clear prompt and references after generation."
+                        }
+                        icon={
+                          isLocked ? (
+                            <LockIcon color="#6B5FBA" size={20} />
+                          ) : (
+                            <LockOpenIcon color="#6B5FBA" size={20} />
+                          )
+                        }
+                        size="md"
+                        className="px-2 py-2"
+                        onClick={() => setIsLocked(!isLocked)}
+                      />
+                      <TooltipButton
+                        tooltip="Clear prompt and references"
+                        icon={<TrashIcon color="#6B5FBA" size={20} />}
+                        size="md"
+                        className="px-2 py-2"
+                        onClick={() => clearPromptAndReferences()}
+                      />
                     </div>
                   </div>
                 </FormControl>

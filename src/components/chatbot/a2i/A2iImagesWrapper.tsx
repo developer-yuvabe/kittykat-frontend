@@ -41,7 +41,7 @@ import { useBrandStore } from "@/store/brand.store";
 import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
 import { useModelsStore } from "@/store/models.store";
-import A2iImageInputLoader from "./A2iImageInputLoader";
+import { parseMongoDBDate } from "@/lib/a2i.utils";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -86,10 +86,17 @@ export const A2iImagesWrapper = ({
   });
 
   // Infinite scroll hook for pagination
-  const { displayedItems, sentinelRef, hasMore } = useInfiniteScroll({
-    items,
-    itemsPerPage,
-  });
+  const { displayedItems, sentinelRef, hasMore, isLoading, reset } =
+    useInfiniteScroll({
+      items,
+      itemsPerPage,
+      loadingDelay: 1500,
+    });
+
+  // Reset pagination when items change significantly
+  useEffect(() => {
+    reset();
+  }, [items.length, reset]);
 
   // Track drag and server update states
   const isUpdatingServer = useRef(false);
@@ -114,6 +121,8 @@ export const A2iImagesWrapper = ({
               upscaleParameters: generation.upscale_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
+              createdAt: generation.created_at,
+              updatedAt: generation.updated_at,
             },
           ];
         }
@@ -126,23 +135,23 @@ export const A2iImagesWrapper = ({
           type: generation.type,
           vtonParameters: generation.vton_parameters,
           remixParameters: generation.remix_parameters,
+          upscaleParameters: generation.upscale_parameters,
           video: generation.video,
           isNSFW: generation.is_nsfw_detected || false,
+          createdAt: generation.created_at,
+          updatedAt: generation.updated_at,
         }));
       }
     );
 
-    // Sort by position first, then by creation date (newest first for same position)
     flatImages.sort((a, b) => {
       const aPos = a.image?.position ?? Number.POSITIVE_INFINITY;
       const bPos = b.image?.position ?? Number.POSITIVE_INFINITY;
+      // 1️⃣ Smaller position first (top)
+      if (aPos !== bPos) return aPos - bPos;
 
-      if (aPos !== bPos) {
-        return aPos - bPos;
-      }
-
-      const aDate = new Date(a.image?.created_at ?? "").getTime();
-      const bDate = new Date(b.image?.created_at ?? "").getTime();
+      const aDate = parseMongoDBDate(a.createdAt);
+      const bDate = parseMongoDBDate(b.createdAt);
       return bDate - aDate;
     });
 
@@ -271,7 +280,7 @@ export const A2iImagesWrapper = ({
                   ref={gridContainerRef}
                   className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1"
                 >
-                  {displayedItems.toReversed().map((image) => {
+                  {displayedItems.map((image) => {
                     const existingId = getExistingId(image);
                     const trackingId = getItemTrackingId(image);
 
@@ -302,6 +311,20 @@ export const A2iImagesWrapper = ({
                       }).map((_, index) => (
                         <A2iImagePlaceholderCard
                           key={`placeholder-${displayedItems.length + index}`}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Loading indicator for pagination */}
+                  {isLoading && (
+                    <>
+                      {Array.from({
+                        length: 20,
+                      }).map((_, index) => (
+                        <A2iImagePlaceholderCard
+                          key={`placeholder-${displayedItems.length + index}`}
+                          loading
                         />
                       ))}
                     </>

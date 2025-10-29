@@ -1,72 +1,66 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useInView } from "react-intersection-observer";
 
 type UseInfiniteScrollOptions<T> = {
   items: T[];
   itemsPerPage?: number;
   onLoadMore?: () => void;
+  loadingDelay?: number; // Delay in ms to simulate loading
 };
 
 type UseInfiniteScrollReturn<T> = {
   displayedItems: T[];
-  sentinelRef: React.RefObject<HTMLDivElement | null>;
+  sentinelRef: (node?: Element | null) => void; // Changed to function for useInView
   hasMore: boolean;
   currentPage: number;
   totalPages: number;
+  isLoading: boolean;
   reset: () => void;
 };
 
 const DEFAULT_ITEMS_PER_PAGE = 20;
+const DEFAULT_LOADING_DELAY = 300; // 300ms delay to simulate loading
 
 /**
  * Custom hook for infinite scroll pagination using Intersection Observer
  * Displays items in chunks and loads more when user scrolls near the bottom
+ * Includes a loading state for better UX
  */
 export function useInfiniteScroll<T>({
   items,
   itemsPerPage = DEFAULT_ITEMS_PER_PAGE,
   onLoadMore,
+  loadingDelay = DEFAULT_LOADING_DELAY,
 }: UseInfiniteScrollOptions<T>): UseInfiniteScrollReturn<T> {
   const [currentPage, setCurrentPage] = useState(1);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
   const hasMore = currentPage < totalPages;
   const displayedItems = items.slice(0, currentPage * itemsPerPage);
 
-  // Setup Intersection Observer for sentinel element
+  // Use react-intersection-observer for better control
+  const { ref: sentinelRef, inView } = useInView({
+    rootMargin: "0px", // Start loading before reaching the absolute bottom
+    threshold: 1,
+  });
+
+  // Handle loading more items when sentinel is in view
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore) return;
-
-    if (observerRef.current) {
-      observerRef.current.disconnect();
+    if (inView && hasMore && !isLoading) {
+      setIsLoading(true);
+      // Simulate loading delay for better UX
+      setTimeout(() => {
+        setCurrentPage((prev) => prev + 1);
+        onLoadMore?.();
+        setIsLoading(false);
+      }, loadingDelay);
     }
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        // Check if sentinel is visible in viewport
-        if (entries[0]?.isIntersecting && hasMore) {
-          setCurrentPage((prev) => prev + 1);
-          onLoadMore?.();
-        }
-      },
-      {
-        root: null,
-        rootMargin: "100px", // Start loading before reaching the absolute bottom
-        threshold: 0,
-      }
-    );
-
-    observerRef.current.observe(sentinel);
-
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [hasMore, onLoadMore]);
+  }, [inView, hasMore, isLoading, loadingDelay, onLoadMore]);
 
   const reset = useCallback(() => {
     setCurrentPage(1);
+    setIsLoading(false);
   }, []);
 
   return {
@@ -75,6 +69,7 @@ export function useInfiniteScroll<T>({
     hasMore,
     currentPage,
     totalPages,
+    isLoading,
     reset,
   };
 }
