@@ -12,6 +12,8 @@ import {
   A2iImagePlaceholderCard,
 } from "./A2iImageCard";
 import A2iImageInput from "./A2iImageInput";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { useResizeObserver } from "@/hooks/useResizeObserver";
 import {
   useEffect,
   useState,
@@ -67,6 +69,27 @@ export const A2iImagesWrapper = ({
   const { selectedBrandId } = useBrandStore();
   const { selectedImageGenerationModel, isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+
+  // Track component resize to adjust items per page
+  useResizeObserver({
+    ref: gridContainerRef as React.RefObject<HTMLDivElement>,
+    onResize: (size) => {
+      // Increase items to 25 if container width increases
+      if (size.width && size.width > 800) {
+        setItemsPerPage(28);
+      } else {
+        setItemsPerPage(20);
+      }
+    },
+  });
+
+  // Infinite scroll hook for pagination
+  const { displayedItems, sentinelRef, hasMore } = useInfiniteScroll({
+    items,
+    itemsPerPage,
+  });
 
   // Track drag and server update states
   const isUpdatingServer = useRef(false);
@@ -211,8 +234,6 @@ export const A2iImagesWrapper = ({
 
   const contextValue = useMemo(() => ({ data: {} }), []);
 
-  const INITIAL_IMAGE_PLACEHOLDER = 12;
-
   return (
     <ContentSection
       title=""
@@ -235,7 +256,7 @@ export const A2iImagesWrapper = ({
           </div>
 
           {/* Images Grid Section - Below */}
-          <div className="flex-1 bg-muted rounded-md overflow-hidden">
+          <div className="flex-1 bg-muted rounded-md max-h-[520px] overflow-y-scroll">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -246,8 +267,11 @@ export const A2iImagesWrapper = ({
                 items={sortableItems}
                 strategy={rectSortingStrategy}
               >
-                <div className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1">
-                  {items.map((image) => {
+                <div
+                  ref={gridContainerRef}
+                  className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1"
+                >
+                  {displayedItems.toReversed().map((image) => {
                     const existingId = getExistingId(image);
                     const trackingId = getItemTrackingId(image);
 
@@ -270,13 +294,27 @@ export const A2iImagesWrapper = ({
                     );
                   })}
 
-                  {Array.from({
-                    length: INITIAL_IMAGE_PLACEHOLDER,
-                  }).map((_, index) => (
-                    <A2iImagePlaceholderCard
-                      key={`empty-placeholder-${items.length + index}`}
+                  {/* Show placeholder cards if items are less than itemsPerPage and no more pages */}
+                  {!hasMore && displayedItems.length < itemsPerPage && (
+                    <>
+                      {Array.from({
+                        length: itemsPerPage - displayedItems.length,
+                      }).map((_, index) => (
+                        <A2iImagePlaceholderCard
+                          key={`placeholder-${displayedItems.length + index}`}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Sentinel element for infinite scroll trigger */}
+                  {hasMore && (
+                    <div
+                      ref={sentinelRef}
+                      className="col-span-full h-4"
+                      aria-label="Load more items"
                     />
-                  ))}
+                  )}
                 </div>
               </SortableContext>
             </DndContext>
