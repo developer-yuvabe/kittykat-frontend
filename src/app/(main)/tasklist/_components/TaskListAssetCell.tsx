@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { PlatformApiError } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ExternalLink } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 // Asset cell component with MediaEditor dialog functionality
 export const TaskListAssetCell = ({
@@ -44,6 +46,18 @@ export const TaskListAssetCell = ({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // Check for PlatformApiError with "not found" message
+    if (
+      galleryItem?.error instanceof PlatformApiError &&
+      galleryItem?.error.statusCode === 404
+    ) {
+      toast.error("Asset not found", {
+        description: "This asset has been deleted from the gallery.",
+      });
+      return;
+    }
+
     if (galleryItem && galleryItem.data)
       openConceptVisual({
         source: "media-gallery",

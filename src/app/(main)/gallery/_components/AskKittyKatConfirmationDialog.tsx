@@ -275,11 +275,11 @@ export function AskKittyKatConfirmationDialog({
     if (isGeneratingTasks || createTaskListMutation.isPending) return false;
 
     if (hasNoComments) {
-      // For new comments, require a comment text
-      return newComment.trim().length > 0;
+      // For new comments, require a comment text AND generated tasks
+      return newComment.trim().length > 0 && tasks.length > 0;
     } else {
-      // For existing comments, just check if not loading
-      return true;
+      // For existing comments, require tasks to be generated
+      return tasks.length > 0;
     }
   };
 
