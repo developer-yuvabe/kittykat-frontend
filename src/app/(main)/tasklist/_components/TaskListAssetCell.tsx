@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { PlatformApiError } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ExternalLink } from "lucide-react";
@@ -47,24 +48,12 @@ export const TaskListAssetCell = ({
     e.preventDefault();
 
     // Check for PlatformApiError with "not found" message
-    if (galleryItem?.isError && galleryItem?.error) {
-      const error = galleryItem.error as any;
-      const errorMessage = error?.message || "";
-
-      // Check if it's a "not found" error (404)
-      if (
-        errorMessage.includes("not found") ||
-        error?.name === "PlatformApiError"
-      ) {
-        toast.error("Asset not found", {
-          description: "This asset has been deleted from the gallery.",
-        });
-        return;
-      }
-
-      // Other errors
-      toast.error("Failed to load asset", {
-        description: "Please try again later.",
+    if (
+      galleryItem?.error instanceof PlatformApiError &&
+      galleryItem?.error.statusCode === 404
+    ) {
+      toast.error("Asset not found", {
+        description: "This asset has been deleted from the gallery.",
       });
       return;
     }
