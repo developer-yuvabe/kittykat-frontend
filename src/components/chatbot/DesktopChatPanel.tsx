@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import AgentDebug from "./AgentDebug";
 
 interface DesktopChatPanelProps {
   layoutConfig: any;
@@ -129,6 +130,8 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                       </Tooltip>
                     </TooltipProvider>
                   </div>
+
+                  <AgentDebug className="absolute top-4 right-4 z-20" />
 
                   <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
                     {false ? (
