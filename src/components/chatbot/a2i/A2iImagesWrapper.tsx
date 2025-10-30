@@ -42,6 +42,7 @@ import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
 import { useModelsStore } from "@/store/models.store";
 import { parseMongoDBDate } from "@/lib/a2i.utils";
+import A2iImageInputLoader from "./A2iImageInputLoader";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];

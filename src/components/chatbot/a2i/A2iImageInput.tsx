@@ -14,11 +14,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
-import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
-import { Images, Loader2, Settings2, WandSparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileRejection, useDropzone } from "react-dropzone";
+import { Settings2, WandSparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
@@ -42,7 +40,7 @@ import {
   MagicEnabledIcon,
   TrashIcon,
 } from "@/components/ui/custom-icon";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
+import ReferenceImageSelector from "./ReferenceImageSelector";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -56,25 +54,25 @@ const A2iImageInput = ({
   const { parameters, setParameters } = useMetadataActionsStore();
   const { selectedImageGenerationModel, setSelectedImageGenerationModel } =
     useModelsStore();
-  const form = useA2iForm({
+  const formInstance = useA2iForm({
     formKey: `image-generation`,
     selectedModel: selectedImageGenerationModel,
   });
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { credits, isCalculatingCredits: isCalculatingTokens } =
     useModelPricing({
-      form,
+      form: formInstance,
       model: selectedImageGenerationModel,
     });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
     useA2iStore();
-  const { mutate: handleEnhancePrompt, isPending: isEnhnacingPrompt } =
+  const { mutate: handleEnhancePrompt, isPending: isEnhancingPrompt } =
     useMutation({
       mutationFn: () =>
         enhancePrompt(
           selectedBrandId!,
-          form.getValues("prompt"),
+          formInstance.getValues("prompt"),
           referenceMoodboardId
         ),
       onSuccess: () => {
@@ -82,8 +80,7 @@ const A2iImageInput = ({
       },
     });
 
-  // Reference to the file input element
-  const { refernceImagesModelInfo, initialParams, advancedParams } =
+  const { referenceImagesModelInfo, initialParams, advancedParams } =
     useMemo(() => {
       let fileParam: FileParam | null = null;
       const initialParams: ModelParameter[] = [];
@@ -100,169 +97,37 @@ const A2iImageInput = ({
       }
 
       return {
-        refernceImagesModelInfo: fileParam,
+        referenceImagesModelInfo: fileParam,
         initialParams,
         advancedParams,
       };
     }, [selectedImageGenerationModel]);
-  const inputFileRef = useRef<HTMLInputElement | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [imageBlocks, setImageBlocks] = useState<
-    {
-      previewUrl: string;
-      url: string | null;
-    }[]
-  >([]);
+
+  const [masterReference, setMasterReference] = useState<string[]>([]);
+  const [productReference, setProductReference] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
 
-  // Store the current prompt value to preserve it across model changes
-  const remainingUploads = refernceImagesModelInfo
-    ? refernceImagesModelInfo?.maxLimit - imageBlocks.length
-    : 0;
-
-  const onDrop = useCallback(
-    async (
-      acceptedFiles: File[],
-      fileRejections: FileRejection[],
-      event: any
-    ) => {
-      if (event?.target) {
-        event.target.value = null;
-      }
-      if (fileRejections.length > 0) {
-        if (remainingUploads === 0)
-          toast.error(
-            `Maximum limit reached. You can only upload ${refernceImagesModelInfo?.maxLimit} image(s).`
-          );
-        else
-          toast.warning(
-            `Some files were rejected. Please note: Maximum file size is ${
-              refernceImagesModelInfo?.maxFileSizeLimit
-            } MB, allowed file types are ${refernceImagesModelInfo?.fileTypes.join(
-              ", "
-            )}, and you can upload up to ${remainingUploads} more image(s).`
-          );
-      }
-
-      if (acceptedFiles.length === 0 || !refernceImagesModelInfo) return;
-
-      setIsUploading(true);
-
-      const uploadPromises = acceptedFiles.map((file) => {
-        return new Promise<void>((resolve) => {
-          const reader = new FileReader();
-
-          reader.onloadend = async () => {
-            const previewUrl = reader.result as string;
-            let blockIndex = -1;
-
-            setImageBlocks((prev) => {
-              blockIndex = prev.length;
-              return [...prev, { previewUrl, url: null }];
-            });
-
-            try {
-              const uploadedUrl = await uploadFileAndReturnUrl(
-                file.name,
-                file.type,
-                "brands",
-                file,
-                selectedBrandId || null
-              );
-
-              setImageBlocks((prev) => {
-                const updated = [...prev];
-                updated[blockIndex] = {
-                  ...updated[blockIndex],
-                  url: uploadedUrl,
-                };
-                return updated;
-              });
-
-              const formName = refernceImagesModelInfo.id;
-
-              const value =
-                refernceImagesModelInfo.maxLimit > 1
-                  ? [...(form.getValues(formName) || []), uploadedUrl]
-                  : uploadedUrl;
-
-              form.setValue(formName, value, {
-                shouldValidate: true,
-                shouldDirty: true,
-                shouldTouch: true,
-              });
-            } catch {
-              console.error("Upload failed for", file.name);
-              setImageBlocks((prev) =>
-                prev.filter((_, idx) => idx !== blockIndex)
-              );
-            } finally {
-              resolve();
-            }
-          };
-
-          reader.readAsDataURL(file);
-        });
-      });
-
-      await Promise.allSettled(uploadPromises);
-      setIsUploading(false);
-    },
-    [refernceImagesModelInfo?.id, remainingUploads]
-  );
-
-  const { getInputProps } = useDropzone({
-    onDrop,
-    multiple: refernceImagesModelInfo
-      ? refernceImagesModelInfo?.maxLimit > 1
-      : false,
-    accept: Object.fromEntries(
-      (refernceImagesModelInfo?.fileTypes ?? []).map((type) => [type, []])
-    ),
-    preventDropOnDocument: true,
-    disabled:
-      isUploading ||
-      form.formState.isSubmitting ||
-      remainingUploads <= 0 ||
-      !refernceImagesModelInfo,
-    maxFiles: refernceImagesModelInfo
-      ? refernceImagesModelInfo?.maxLimit - imageBlocks.length
-      : 0,
-    maxSize: refernceImagesModelInfo
-      ? refernceImagesModelInfo?.maxFileSizeLimit * 1024 * 1024
-      : 0, // Convert MB to bytes
-  });
-
-  function removeReferenceImage(urlToRemove: string) {
-    const formName = refernceImagesModelInfo!.id;
-    const currentImages = form.getValues(formName);
-
-    if (!currentImages) return;
-
-    let updatedImages;
-    if (Array.isArray(currentImages)) {
-      updatedImages = currentImages.filter((url) => url !== urlToRemove);
-    }
-    form.setValue(formName, updatedImages);
-
-    // Remove from imageBlocks
-    setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
-
-    // delete the file from GCS
-    deleteFile(urlToRemove);
-  }
+  const currentImageCount = masterReference.length + productReference.length;
 
   function clearPromptAndReferences() {
-    form.setValue("prompt", "", { shouldValidate: true });
-    if (refernceImagesModelInfo) {
-      form.setValue(refernceImagesModelInfo.id, null);
-    }
-    setImageBlocks([]);
+    formInstance.setValue("prompt", "", { shouldValidate: true });
+    setMasterReference([]);
+    setProductReference([]);
     clearReferencePrompt();
   }
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
     try {
+      const referenceImages: string[] = [];
+      referenceImages.push(...masterReference, ...productReference);
+
+      if (referenceImagesModelInfo && referenceImages.length > 0) {
+        data[referenceImagesModelInfo.id] =
+          referenceImagesModelInfo.maxLimit > 1
+            ? referenceImages
+            : referenceImages[0];
+      }
+
       if (selectedImageGenerationModel?.prefix) {
         data.prompt = `${selectedImageGenerationModel.prefix} ${data.prompt}`;
       }
@@ -276,13 +141,10 @@ const A2iImageInput = ({
         campaign_id: currentCampaign?.id || null,
       });
 
-      // Only clear prompt and references if unlocked
       if (!isLocked) {
-        form.setValue("prompt", "", { shouldValidate: true });
-        if (refernceImagesModelInfo) {
-          form.setValue(refernceImagesModelInfo.id, null);
-        }
-        setImageBlocks([]);
+        formInstance.setValue("prompt", "", { shouldValidate: true });
+        setMasterReference([]);
+        setProductReference([]);
         clearReferencePrompt();
       }
     } catch (error) {
@@ -295,60 +157,66 @@ const A2iImageInput = ({
     }
   };
 
-  // Handle reference prompt changes
   useEffect(() => {
     if (referencePrompt) {
-      form.setValue("prompt", referencePrompt, {
+      formInstance.setValue("prompt", referencePrompt, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true,
       });
     }
-  }, [referencePrompt, form, referencePromptSignal]);
+  }, [referencePrompt, formInstance, referencePromptSignal]);
 
-  // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
-    if (!refernceImagesModelInfo) {
-      if (imageBlocks.length > 0) {
-        toast.info("This model doesn't support reference images. Uploaded images have been removed.");
+    if (!referenceImagesModelInfo) {
+      if (currentImageCount > 0) {
+        toast.info(
+          "This model doesn't support reference images. Uploaded images have been removed."
+        );
       }
-      for (const block of imageBlocks) {
-        if (block.url) {
-          deleteFile(block.url);
-        }
-      }
-      setImageBlocks([]);
+      setMasterReference([]);
+      setProductReference([]);
       return;
     }
 
-    const maxLimit = refernceImagesModelInfo.maxLimit;
-    const imagesToKeep = imageBlocks.slice(0, maxLimit);
-    const imagesToDelete = imageBlocks.slice(maxLimit);
+    const maxLimit = referenceImagesModelInfo.maxLimit;
+    const totalImages = masterReference.length + productReference.length;
 
-    // Delete images that exceed the new model's limit
-    if (imagesToDelete.length > 0) {
-      toast.info(`This model only supports ${maxLimit} image${maxLimit > 1 ? 's' : ''}. Extra images have been removed.`);
-    }
-    
-    for (const block of imagesToDelete) {
-      if (block.url) {
-        deleteFile(block.url);
+    if (totalImages > maxLimit) {
+      const masterKeep = masterReference.slice(0, maxLimit);
+      const productKeep = productReference.slice(
+        0,
+        Math.max(0, maxLimit - masterKeep.length)
+      );
+
+      toast.info(
+        `This model only supports ${maxLimit} image${
+          maxLimit > 1 ? "s" : ""
+        }. Extra images have been removed.`
+      );
+
+      setMasterReference(masterKeep);
+      setProductReference(productKeep);
+
+      // Update form value with kept images
+      const keptImages = [...masterKeep, ...productKeep];
+      if (keptImages.length > 0) {
+        const value = maxLimit > 1 ? keptImages : keptImages[0];
+        formInstance.setValue(referenceImagesModelInfo.id, value, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
       }
     }
-
-    setImageBlocks(imagesToKeep);
-
-    // Update form value with kept images
-    const urls = imagesToKeep.map(block => block.url).filter(Boolean);
-    if (urls.length > 0) {
-      const value = maxLimit > 1 ? urls : urls[0];
-      form.setValue(refernceImagesModelInfo.id, value, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    } 
-  }, [selectedImageGenerationModel?.id]);
+  }, [
+    selectedImageGenerationModel?.id,
+    referenceImagesModelInfo,
+    masterReference.length,
+    productReference.length,
+    formInstance,
+    currentImageCount,
+  ]);
 
   useEffect(() => {
     if (scrollTo === "a2i-input") {
@@ -372,29 +240,25 @@ const A2iImageInput = ({
 
   useEffect(() => {
     if (parameters.imageGeneationParameters) {
-      const paramName = refernceImagesModelInfo?.id;
+      const paramName = referenceImagesModelInfo?.id;
 
-      form.reset({
-        ...form.getValues(),
+      formInstance.reset({
+        ...formInstance.getValues(),
         ...parameters.imageGeneationParameters,
       });
 
-      // Update imageBlocks
       if (paramName && parameters.imageGeneationParameters[paramName]) {
         const referenceImages = parameters.imageGeneationParameters[paramName];
         const imagesArray = Array.isArray(referenceImages)
           ? referenceImages
           : [referenceImages];
 
-        setImageBlocks(
-          imagesArray.map((url) => ({
-            previewUrl: url,
-            url: url,
-          }))
-        );
+        // For now, assign all to master; can split later if needed
+        setMasterReference(imagesArray);
+        setProductReference([]);
       }
 
-      form.trigger();
+      formInstance.trigger();
       requestAnimationFrame(() => {
         setParameters("imageGeneationParameters", null);
       });
@@ -402,88 +266,83 @@ const A2iImageInput = ({
 
     if (parameters.referenceImage) {
       const referenceImageUrl = parameters.referenceImage;
-      const paramName = refernceImagesModelInfo?.id;
+      setMasterReference([referenceImageUrl]);
 
-      if (paramName) {
-        form.reset({
-          ...form.getValues(),
-          [paramName]:
-            refernceImagesModelInfo.maxLimit > 1
-              ? [referenceImageUrl]
-              : referenceImageUrl,
-        });
-
-        setImageBlocks([
-          {
-            previewUrl: referenceImageUrl,
-            url: referenceImageUrl,
-          },
-        ]);
-
-        requestAnimationFrame(() => {
-          setParameters("referenceImage", null);
-        });
-      }
+      requestAnimationFrame(() => {
+        setParameters("referenceImage", null);
+      });
     }
   }, [parameters]);
 
-  // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
-  const value = form.watch("max_images");
-  const numberOfReferenceImagesUploaded = refernceImagesModelInfo
-    ? form.watch(refernceImagesModelInfo.id)?.length || 0
-    : 0;
+  const value = formInstance.watch("max_images");
 
   useEffect(() => {
-    const total = numberOfReferenceImagesUploaded + value;
+    const total = currentImageCount + value;
 
     if (total > 15) {
-      const newValue = Math.max(1, 15 - numberOfReferenceImagesUploaded);
-      form.setValue("max_images", newValue);
+      const newValue = Math.max(1, 15 - currentImageCount);
+      formInstance.setValue("max_images", newValue);
       toast.info(
         `The maximum number of images to generate has been adjusted to ${newValue} due to the number of reference images uploaded.`
       );
     }
-  }, [numberOfReferenceImagesUploaded, value, form]);
+  }, [currentImageCount, value, formInstance]);
 
   return (
     <div
       ref={inputContainerRef}
-      className="flex flex-col items-stretch w-full  mx-auto border resize-none rounded-2xl  bottom-8 h-max bg-background scrollbar overflow-hidden pb-4 "
+      className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4"
       id="concept-visual-playground"
     >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {imageBlocks.length > 0 && (
+      <Form {...formInstance}>
+        <div
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            formInstance.handleSubmit(onSubmit)();
+          }}
+        >
+          {(masterReference.length > 0 || productReference.length > 0) && (
             <div className="flex flex-wrap gap-2 px-4 pt-2">
-              {imageBlocks.map((block, index) => (
-                <div
-                  key={block.previewUrl}
-                  className="relative w-12 h-12 rounded-lg"
-                >
+              {[
+                ...masterReference.map((url) => ({
+                  url,
+                  type: "master" as const,
+                })),
+                ...productReference.map((url) => ({
+                  url,
+                  type: "product" as const,
+                })),
+              ].map((ref, index) => (
+                <div key={ref.url} className="relative w-12 h-12 rounded-lg">
                   <img
-                    src={block.previewUrl}
-                    alt={`Uploaded preview ${index + 1}`}
+                    src={ref.url}
+                    alt={`Reference ${index + 1}`}
                     className="w-full h-full object-cover rounded-lg"
                   />
-                  {!!block.url && (
-                    <button
-                      onClick={() => removeReferenceImage(block.url!)}
-                      className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-[100]"
-                    >
-                      <X className="h-2 w-2" />
-                    </button>
-                  )}
-                  {!block.url && (
-                    <div className="absolute top-0 right-0 bg-black/30 text-white text-xs  px-1 flex items-center justify-center w-full h-full rounded-lg">
-                      <Loader2 className="animate-spin" />
-                    </div>
-                  )}
+                  <button
+                    onClick={() => {
+                      if (ref.type === "master") {
+                        setMasterReference(
+                          masterReference.filter((u) => u !== ref.url)
+                        );
+                      } else {
+                        setProductReference(
+                          productReference.filter((u) => u !== ref.url)
+                        );
+                      }
+                    }}
+                    className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-10"
+                  >
+                    <X className="h-2 w-2" />
+                  </button>
                 </div>
               ))}
             </div>
           )}
+
           <FormField
-            control={form.control}
+            control={formInstance.control}
             name="prompt"
             render={({ field }) => (
               <FormItem>
@@ -493,19 +352,17 @@ const A2iImageInput = ({
                       {...field}
                       onChange={(e) => {
                         field.onChange(e.target.value);
-                        // Clear the reference prompt when user manually edits the prompt
                         if (referencePrompt) {
                           clearReferencePrompt();
                         }
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && e.shiftKey) {
-                          // Allow new line on Shift + Enter
                           return;
                         }
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          form.handleSubmit(onSubmit)();
+                          formInstance.handleSubmit(onSubmit)();
                         }
                       }}
                       className={cn(
@@ -520,7 +377,6 @@ const A2iImageInput = ({
                         size="md"
                         className="px-2 py-2"
                         onClick={() => {
-                          // Dummy message for now
                           toast.info("Magic enhance feature coming soon!");
                         }}
                       />
@@ -556,30 +412,18 @@ const A2iImageInput = ({
           />
           <div className="flex gap-2 justify-between items-center px-4">
             <div className="flex items-center gap-2">
-              {refernceImagesModelInfo && (
-                <div>
-                  <input {...getInputProps()} ref={inputFileRef} />
-                  <TooltipIconButton
-                    tooltip={
-                      refernceImagesModelInfo.maxLimit - imageBlocks.length <= 0
-                        ? "You’ve reached the maximum upload limit"
-                        : `You can add ${remainingUploads} more image${
-                            remainingUploads > 1 ? "s" : ""
-                          }`
-                    }
-                    className="size-max px-3 py-2"
-                    variant="outline"
-                    size="icon"
-                    type="button"
-                    onClick={() => inputFileRef.current?.click()}
-                    disabled={
-                      refernceImagesModelInfo?.maxLimit - imageBlocks.length <=
-                      0
-                    }
-                  >
-                    <Images />
-                  </TooltipIconButton>
-                </div>
+              {referenceImagesModelInfo && (
+                <ReferenceImageSelector
+                  masterReference={masterReference}
+                  productReference={productReference}
+                  onMasterReferenceChange={setMasterReference}
+                  onProductReferenceChange={setProductReference}
+                  maxLimit={referenceImagesModelInfo.maxLimit}
+                  fileTypes={referenceImagesModelInfo.fileTypes}
+                  maxFileSizeLimit={referenceImagesModelInfo.maxFileSizeLimit}
+                  disabled={formInstance.formState.isSubmitting}
+                  currentCampaignId={currentCampaign?.id}
+                />
               )}
 
               {initialParams.map((param) => {
@@ -587,7 +431,7 @@ const A2iImageInput = ({
                   <DynamicFormField
                     key={param.id}
                     param={param}
-                    form={form}
+                    form={formInstance}
                     type="initial"
                     rules={selectedImageGenerationModel?.rules}
                   />
@@ -616,7 +460,7 @@ const A2iImageInput = ({
                           <DynamicFormField
                             key={param.id}
                             param={param}
-                            form={form}
+                            form={formInstance}
                             type="advanced"
                             rules={selectedImageGenerationModel?.rules}
                           />
@@ -635,14 +479,14 @@ const A2iImageInput = ({
               />
               <Button
                 type="button"
-                disabled={!form.watch("prompt") || isEnhnacingPrompt}
+                disabled={!formInstance.watch("prompt") || isEnhancingPrompt}
                 variant={"outline"}
                 className="border-primary text-primary"
                 onClick={() => {
-                  if (!form.getValues("prompt")) return;
+                  if (!formInstance.getValues("prompt")) return;
                   handleEnhancePrompt(undefined, {
                     onSuccess: (data) => {
-                      form.setValue("prompt", data.prompt, {
+                      formInstance.setValue("prompt", data.prompt, {
                         shouldValidate: true,
                         shouldDirty: true,
                         shouldTouch: true,
@@ -659,23 +503,22 @@ const A2iImageInput = ({
                 }}
               >
                 <WandSparkles />
-                {isEnhnacingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
+                {isEnhancingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
               </Button>
               <TokenGenerateButton
-                onClick={() => form.handleSubmit(onSubmit)()}
+                onClick={() => formInstance.handleSubmit(onSubmit)()}
                 tokens={credits}
-                loading={form.formState.isSubmitting}
+                loading={formInstance.formState.isSubmitting}
                 disabled={
-                  !form.formState.isValid ||
-                  form.formState.isSubmitting ||
-                  isUploading ||
-                  isEnhnacingPrompt
+                  !formInstance.formState.isValid ||
+                  formInstance.formState.isSubmitting ||
+                  isEnhancingPrompt
                 }
                 isCalculatingTokens={isCalculatingTokens}
               />
             </div>
           </div>
-        </form>
+        </div>
       </Form>
     </div>
   );
