@@ -46,9 +46,26 @@ export const TaskListAssetCell = ({
     e.stopPropagation();
     e.preventDefault();
 
-    // Check if there's an error fetching the item (likely deleted)
-    if (galleryItem?.isError) {
-      toast.error("This asset has been deleted from the gallery");
+    // Check for PlatformApiError with "not found" message
+    if (galleryItem?.isError && galleryItem?.error) {
+      const error = galleryItem.error as any;
+      const errorMessage = error?.message || "";
+
+      // Check if it's a "not found" error (404)
+      if (
+        errorMessage.includes("not found") ||
+        error?.name === "PlatformApiError"
+      ) {
+        toast.error("Asset not found", {
+          description: "This asset has been deleted from the gallery.",
+        });
+        return;
+      }
+
+      // Other errors
+      toast.error("Failed to load asset", {
+        description: "Please try again later.",
+      });
       return;
     }
 

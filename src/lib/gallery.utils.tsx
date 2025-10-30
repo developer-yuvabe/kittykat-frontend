@@ -500,7 +500,7 @@ export const generateTasklistStatusLogMessage = (
   const date = new Date().toLocaleDateString();
 
   const statusMessages: Record<WorkflowStatus, string> = {
-    request_created: `Tasklist created by ${user} at ${date}`,
+    request_created: `Tasklist status changed as request created by ${user} at ${date}`,
     draft: `Tasklist marked as draft by ${user} at ${date}`,
     a2i_media_created: `Tasklist marked as A2I Media Created by ${user} at ${date}`,
     requested_revision: `Tasklist marked as revision requested by ${user} at ${date}`,
