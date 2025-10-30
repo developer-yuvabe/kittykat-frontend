@@ -93,6 +93,17 @@ export const WorkflowStatusDialog = ({
         });
       }
 
+      // Add notes as a comment to the asset if notes are provided
+      if (notes.trim()) {
+        galleryActions.addComment({
+          itemId: tasklist.asset_ids[0],
+          commentData: {
+            text: notes.trim(),
+            is_tasklist: true,
+          },
+        });
+      }
+
       toast.success(
         `Status updated to ${WORKFLOW_STATUS_MAP[selectedStatus].label}`
       );
@@ -112,7 +123,11 @@ export const WorkflowStatusDialog = ({
     ? WORKFLOW_STATUS_MAP[currentStatus as WorkflowStatus]
     : null;
 
-  const handleOpenChange = (open: boolean) => {
+  // Check if the asset is a video
+  const isVideo =
+    galleryItem?.data?.asset_type === "video";
+
+    const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose();
       setSelectedStatus("");
@@ -150,11 +165,25 @@ export const WorkflowStatusDialog = ({
           {/* Asset Preview */}
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
             <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted">
-              <img
+
+                <>
+                  {isVideo ? (
+                    <video
+                      src={tasklist.asset_urls[0]}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
                 src={tasklist.asset_urls[0]}
-                alt="Asset"
-                className="w-full h-full object-cover"
-              />
+                      alt="Asset"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </>
+             
             </div>
             <div>
               <p className="font-medium text-sm">

@@ -15,6 +15,7 @@ import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import type { TimelineEvent } from "@/types/tasklist.types";
 import { useTaskList } from "@/hooks/useTaskList";
 import { format } from "date-fns";
+import { formatToLocalTime } from "@/lib/utils";
 import {
   ExternalLink,
   Clock,
@@ -243,10 +244,7 @@ export const TaskListDetailsDrawer = ({
                         Submitted At
                       </p>
                       <p className="text-sm">
-                        {format(
-                          new Date(tasklist.submitted_at),
-                          "MMM dd, yyyy 'at' h:mm a"
-                        )}
+                        {formatToLocalTime(tasklist.submitted_at)}
                       </p>
                     </div>
                   </div>
@@ -473,10 +471,7 @@ export const TaskListDetailsDrawer = ({
                               <span>{log.adjusted_by}</span>
                               <Calendar className="h-3 w-3 ml-2" />
                               <span>
-                                {format(
-                                  new Date(log.adjusted_at),
-                                  "MMM dd, yyyy 'at' h:mm a"
-                                )}
+                                {formatToLocalTime(log.adjusted_at)}
                               </span>
                             </div>
                           </div>
@@ -524,10 +519,7 @@ export const TaskListDetailsDrawer = ({
                                     {eventInfo.title}
                                   </p>
                                   <span className="text-xs text-muted-foreground">
-                                    {format(
-                                      new Date(event.timestamp),
-                                      "MMM dd, yyyy 'at' h:mm a"
-                                    )}
+                                    {formatToLocalTime(event.timestamp)}
                                   </span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
