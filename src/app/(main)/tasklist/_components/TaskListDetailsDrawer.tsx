@@ -29,12 +29,12 @@ import {
   Settings,
   GemIcon,
 } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 import { TaskListAdjustCreditsDialog } from "./TaskListAdjustCreditsDialog";
 import { TaskListEditNotesDialog } from "./TaskListEditNotesDialog";
 import { WorkflowStatusDialog } from "./TaskListStatusDialog";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { AssetThumbnail } from "@/components/shared/AssetThumbnail";
 
 interface TaskListDetailsDrawerProps {
   tasklistId: string | null;
@@ -262,8 +262,9 @@ export const TaskListDetailsDrawer = ({
                     <div className="flex items-center gap-3">
                       <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted">
                         {tasklist.asset_urls?.[0] && (
-                          <Image
-                            src={tasklist.asset_urls[0]}
+                          <AssetThumbnail
+                            assetUrl={tasklist.asset_urls[0]}
+                            galleryItem={galleryItem?.data}
                             alt="Asset preview"
                             fill
                             className="object-cover"
