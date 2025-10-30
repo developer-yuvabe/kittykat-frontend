@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { PlatformApiError } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ExternalLink } from "lucide-react";
 import { AssetThumbnail } from "@/components/shared/AssetThumbnail";
+import { toast } from "sonner";
 
 // Asset cell component with MediaEditor dialog functionality
 export const TaskListAssetCell = ({
