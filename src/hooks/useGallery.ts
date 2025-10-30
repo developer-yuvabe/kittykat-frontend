@@ -480,6 +480,7 @@ export const useGalleryQuery = (
   const deleteItemMutation = useMutation({
     mutationFn: (itemId: string) => galleryService.deleteGalleryItem(itemId),
     onMutate: async (itemId) => {
+      queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       const queryKey = getGalleryQueryKey();
       await queryClient.cancelQueries({ queryKey });
 
@@ -507,7 +508,7 @@ export const useGalleryQuery = (
     },
     onSuccess: (data, itemId) => {
       // Remove item from single item cache
-      queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
+
       toast.success("Item deleted successfully");
       // Invalidate bulk items queries
       queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });

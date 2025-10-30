@@ -4,6 +4,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ExternalLink } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 // Asset cell component with MediaEditor dialog functionality
 export const TaskListAssetCell = ({
@@ -44,6 +45,13 @@ export const TaskListAssetCell = ({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // Check if there's an error fetching the item (likely deleted)
+    if (galleryItem?.isError) {
+      toast.error("This asset has been deleted from the gallery");
+      return;
+    }
+
     if (galleryItem && galleryItem.data)
       openConceptVisual({
         source: "media-gallery",
