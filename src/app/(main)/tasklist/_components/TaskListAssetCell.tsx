@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { PlatformApiError } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ExternalLink } from "lucide-react";
@@ -44,6 +45,15 @@ export const TaskListAssetCell = ({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // Check for PlatformApiError with "not found" message
+    if (!galleryItem?.data) {
+      toast.error("Asset not found", {
+        description: "This asset has been deleted from the gallery.",
+      });
+      return;
+    }
+
     if (galleryItem && galleryItem.data)
       openConceptVisual({
         source: "media-gallery",

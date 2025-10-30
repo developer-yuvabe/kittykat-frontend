@@ -17,6 +17,7 @@ import { AskKittykartRejectDialog } from "./AskKittykartRejectDialog";
 import { AskKittykartAcceptAndStartDialog } from "./AskKittykartAcceptAndStartDialog";
 import { getClientNameFromComments } from "@/lib/askKittykat.utils";
 import { useTaskList } from "@/hooks/useTaskList";
+import { generateTasklistStatusLogMessage } from "@/lib/gallery.utils";
 
 interface AskKittykatReviewStatusProps {
   item: GalleryItemResponse;
@@ -73,6 +74,17 @@ export function AskKittykatReviewStatus({
   };
 
   const handleStatusChange = (newStatus: WorkflowStatus) => {
+    //update tasklist status if applicable
+    if (item.tasklist_id) {
+      const logMessage = generateTasklistStatusLogMessage(
+        newStatus,
+        user?.name
+      );
+
+      if (logMessage) {
+        handleTasklistStateChange(newStatus, logMessage);
+      }
+    }
     setCurrentItem((prev) =>
       prev ? { ...prev, workflow_status: newStatus } : prev
     );
@@ -96,39 +108,6 @@ export function AskKittykatReviewStatus({
       }
     );
 
-    //update tasklist status if applicable
-    if (item.tasklist_id) {
-      let logMessage = "";
-      switch (newStatus) {
-        case "requested_revision":
-          logMessage = `Tasklist marked as revision requested by ${
-            user?.name || "Admin"
-          } at ${new Date().toLocaleDateString()}`;
-          break;
-        case "approved":
-          logMessage = `Tasklist marked as approved by ${
-            user?.name || "Admin"
-          } at ${new Date().toLocaleDateString()}`;
-          break;
-        case "in_progress":
-          logMessage = `Tasklist marked as in progress by ${
-            user?.name || "Admin"
-          } at ${new Date().toLocaleDateString()}`;
-          break;
-        case "in_review":
-          logMessage = `Tasklist marked as in review by ${
-            user?.name || "Admin"
-          } at ${new Date().toLocaleDateString()}`;
-          break;
-        default:
-          // No log for other statuses
-          break;
-      }
-
-      if (logMessage) {
-        handleTasklistStateChange(newStatus, logMessage);
-      }
-    }
     setIsEditingStatus(false);
   };
 

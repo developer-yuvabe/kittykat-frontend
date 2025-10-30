@@ -491,3 +491,23 @@ export async function batchExecute<T>(
     return results;
   }
 }
+
+export const generateTasklistStatusLogMessage = (
+  status: WorkflowStatus,
+  userName?: string
+): string => {
+  const user = userName || "Admin";
+  const date = new Date().toLocaleDateString();
+
+  const statusMessages: Record<WorkflowStatus, string> = {
+    request_created: `Tasklist status changed as request created by ${user} at ${date}`,
+    draft: `Tasklist marked as draft by ${user} at ${date}`,
+    a2i_media_created: `Tasklist marked as A2I Media Created by ${user} at ${date}`,
+    requested_revision: `Tasklist marked as revision requested by ${user} at ${date}`,
+    approved: `Tasklist marked as approved by ${user} at ${date}`,
+    in_progress: `Tasklist marked as in progress by ${user} at ${date}`,
+    in_review: `Tasklist marked as in review by ${user} at ${date}`,
+  };
+
+  return statusMessages[status] || "";
+};
