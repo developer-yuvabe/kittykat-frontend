@@ -48,10 +48,7 @@ export const TaskListAssetCell = ({
     e.preventDefault();
 
     // Check for PlatformApiError with "not found" message
-    if (
-      galleryItem?.error instanceof PlatformApiError &&
-      galleryItem?.error.statusCode === 404
-    ) {
+    if (!galleryItem?.data) {
       toast.error("Asset not found", {
         description: "This asset has been deleted from the gallery.",
       });
@@ -70,32 +67,31 @@ export const TaskListAssetCell = ({
   };
 
   // Check if the asset is a video
-  const isVideo =
-    galleryItem?.data?.asset_type === "video" 
+  const isVideo = galleryItem?.data?.asset_type === "video";
 
   return (
     <>
       <div className="flex items-center gap-2 overflow-hidden justify-center text-center">
         <div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted">
-            <>
-              {isVideo ? (
-                <video
-                  src={assetUrls[0]}
-                  className="w-full h-full object-cover"
-                  muted
-                  playsInline
-                  preload="metadata"
-                />
-              ) : (
-                <Image
-                  src={assetUrls[0]}
-                  alt="Asset thumbnail"
-                  fill
-                  className="object-cover"
-                  sizes="40px"
-                />
-              )}
-            </>
+          <>
+            {isVideo ? (
+              <video
+                src={assetUrls[0]}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
+            ) : (
+              <Image
+                src={assetUrls[0]}
+                alt="Asset thumbnail"
+                fill
+                className="object-cover"
+                sizes="40px"
+              />
+            )}
+          </>
           {assetUrls.length > 1 && (
             <div className="absolute bottom-0 right-0 bg-black/70 text-white text-[10px] px-1 rounded-tl">
               +{assetUrls.length - 1}
