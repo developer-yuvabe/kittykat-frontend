@@ -31,6 +31,7 @@ import {
 import { useState } from "react";
 import { Settings, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { AssetThumbnail } from "@/components/shared/AssetThumbnail";
 
 interface WorkflowStatusDialogProps {
   tasklist: TasklistRecord | null;
@@ -93,6 +94,17 @@ export const WorkflowStatusDialog = ({
         });
       }
 
+      // Add notes as a comment to the asset if notes are provided
+      if (notes.trim()) {
+        galleryActions.addComment({
+          itemId: tasklist.asset_ids[0],
+          commentData: {
+            text: notes.trim(),
+            is_tasklist: true,
+          },
+        });
+      }
+
       toast.success(
         `Status updated to ${WORKFLOW_STATUS_MAP[selectedStatus].label}`
       );
@@ -150,11 +162,14 @@ export const WorkflowStatusDialog = ({
           {/* Asset Preview */}
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
             <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted">
-              <img
-                src={tasklist.asset_urls[0]}
-                alt="Asset"
-                className="w-full h-full object-cover"
-              />
+              {tasklist.asset_urls[0] && (
+                <AssetThumbnail
+                  assetUrl={tasklist.asset_urls[0]}
+                  galleryItem={galleryItem?.data}
+                  alt="Asset"
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
             <div>
               <p className="font-medium text-sm">

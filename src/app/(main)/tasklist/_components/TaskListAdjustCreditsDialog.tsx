@@ -47,7 +47,7 @@ export const TaskListAdjustCreditsDialog = ({
 
   const adjustmentNumber = useMemo(() => {
     const num = parseFloat(adjustment);
-    return isNaN(num) ? 0 : num;
+    return isNaN(num) ? 0 : Math.round(num * 10) / 10;
   }, [adjustment]);
 
   const newTotal = useMemo(() => {
