@@ -3,7 +3,8 @@ import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { useBrandStore } from "@/store/brand.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ExternalLink } from "lucide-react";
-import Image from "next/image";
+import { AssetThumbnail } from "@/components/shared/AssetThumbnail";
+import { toast } from "sonner";
 
 // Asset cell component with MediaEditor dialog functionality
 export const TaskListAssetCell = ({
@@ -44,6 +45,15 @@ export const TaskListAssetCell = ({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // Check for PlatformApiError with "not found" message
+    if (!galleryItem?.data) {
+      toast.error("Asset not found", {
+        description: "This asset has been deleted from the gallery.",
+      });
+      return;
+    }
+
     if (galleryItem && galleryItem.data)
       openConceptVisual({
         source: "media-gallery",
@@ -60,8 +70,9 @@ export const TaskListAssetCell = ({
       <div className="flex items-center gap-2 overflow-hidden justify-center text-center">
         <div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted">
           {assetUrls[0] && (
-            <Image
-              src={assetUrls[0]}
+            <AssetThumbnail
+              assetUrl={assetUrls[0]}
+              galleryItem={galleryItem?.data}
               alt="Asset thumbnail"
               fill
               className="object-cover"

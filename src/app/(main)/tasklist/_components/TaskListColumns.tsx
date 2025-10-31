@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 import type { TasklistRecord } from "@/types/tasklist.types";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { formatToLocalTime } from "@/lib/utils";
 import { Eye, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -127,7 +127,7 @@ export const getTaskListColumns = ({
       accessorKey: "submitted_at",
       cell: ({ row }) => (
         <p className="text-sm text-muted-foreground truncate whitespace-nowrap overflow-hidden text-center">
-          {format(new Date(row.original.submitted_at), "MMM dd, yyyy")}
+          {formatToLocalTime(row.original.submitted_at)}
         </p>
       ),
       size: 90,
