@@ -286,14 +286,39 @@ const A2iImageInput = ({
 
   // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
-    for (const block of imageBlocks) {
+    if (!refernceImagesModelInfo) {
+      for (const block of imageBlocks) {
+        if (block.url) {
+          deleteFile(block.url);
+        }
+      }
+      setImageBlocks([]);
+      return;
+    }
+
+    const maxLimit = refernceImagesModelInfo.maxLimit;
+    const imagesToKeep = imageBlocks.slice(0, maxLimit);
+    const imagesToDelete = imageBlocks.slice(maxLimit);
+
+    // Delete images that exceed the new model's limit
+    for (const block of imagesToDelete) {
       if (block.url) {
         deleteFile(block.url);
       }
     }
 
-    setImageBlocks([]);
-    if (refernceImagesModelInfo) {
+    setImageBlocks(imagesToKeep);
+
+    // Update form value with kept images
+    const urls = imagesToKeep.map(block => block.url).filter(Boolean);
+    if (urls.length > 0) {
+      const value = maxLimit > 1 ? urls : urls[0];
+      form.setValue(refernceImagesModelInfo.id, value, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    } else {
       form.setValue(refernceImagesModelInfo.id, null, {
         shouldValidate: true,
         shouldDirty: true,
