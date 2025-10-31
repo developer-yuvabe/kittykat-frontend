@@ -287,6 +287,9 @@ const A2iImageInput = ({
   // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
     if (!refernceImagesModelInfo) {
+      if (imageBlocks.length > 0) {
+        toast.info("This model doesn't support reference images. Uploaded images have been removed.");
+      }
       for (const block of imageBlocks) {
         if (block.url) {
           deleteFile(block.url);
@@ -301,6 +304,10 @@ const A2iImageInput = ({
     const imagesToDelete = imageBlocks.slice(maxLimit);
 
     // Delete images that exceed the new model's limit
+    if (imagesToDelete.length > 0) {
+      toast.info(`This model only supports ${maxLimit} image${maxLimit > 1 ? 's' : ''}. Extra images have been removed.`);
+    }
+    
     for (const block of imagesToDelete) {
       if (block.url) {
         deleteFile(block.url);
@@ -318,13 +325,7 @@ const A2iImageInput = ({
         shouldDirty: true,
         shouldTouch: true,
       });
-    } else {
-      form.setValue(refernceImagesModelInfo.id, null, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    }
+    } 
   }, [selectedImageGenerationModel?.id]);
 
   useEffect(() => {
