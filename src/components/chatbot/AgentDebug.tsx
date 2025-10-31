@@ -61,7 +61,7 @@ const AgentDebug = ({ className }: AgentDebugProps) => {
                       Timestamp
                     </td>
                     <td className="px-3 py-2 text-gray-600">
-                      {format(values.timestamp, "PPpp")}
+                      {values.timestamp && format(values.timestamp, "PPpp")}
                     </td>
                   </tr>
                   {Object.entries(values)
