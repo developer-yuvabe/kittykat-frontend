@@ -224,6 +224,16 @@ export interface EnhancedSelectedFilters {
   // User preference filters
   is_favourite?: boolean | null;
   is_archived?: boolean | null;
+
+  has_comments?: boolean | null;
+  sort_by?:
+    | "created_at"
+    | "updated_at"
+    | "brand_sort_order"
+    | "last_accessed_at"
+    | "name_ascending"
+    | "name_descending";
+  created_at_range?: [string, string]; // ISO date strings
 }
 
 export interface CommentReplyCreate {

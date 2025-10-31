@@ -111,6 +111,10 @@ export const useGalleryQuery = (
             : undefined,
           skip: pageParam,
           limit: items_per_page,
+          has_comments: filters.selectedFilters?.has_comments ?? undefined,
+          sort_by: filters.selectedFilters?.sort_by ?? undefined,
+          created_at_range:
+            filters.selectedFilters?.created_at_range ?? undefined,
         });
       } catch (error) {
         console.error("Gallery query failed:", error);
