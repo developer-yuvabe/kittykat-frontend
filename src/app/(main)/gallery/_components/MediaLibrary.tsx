@@ -35,6 +35,9 @@ import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 import { MediaBulkActions } from "./MediaBulkActions";
+import { toast } from "sonner";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { galleryService } from "@/services/api/gallery.service";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -68,6 +71,7 @@ export function MediaLibrary({
   closeDialog,
 }: MediaLibraryProps) {
   const router = useRouter();
+  const { openConceptVisual } = useConceptVisualStore();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
@@ -96,6 +100,15 @@ export function MediaLibrary({
   // Get brandId from URL query params
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
     "brandId",
+    {
+      defaultValue: undefined,
+      parse: (value) => value || undefined,
+      serialize: (value) => value || "",
+      history: "push",
+    }
+  );
+  const [galleryItemId, setGalleryItemId] = useQueryState<string | undefined>(
+    "id",
     {
       defaultValue: undefined,
       parse: (value) => value || undefined,
@@ -171,6 +184,34 @@ export function MediaLibrary({
       });
     }
   }, [selectedBrandId, initialWorkflowStatus, selectedCampaignId]);
+
+  useEffect(() => {
+    if (!galleryItemId) return;
+
+    const fetchGalleryItem = async () => {
+      try {
+        const item = await galleryService.getGalleryItemById(galleryItemId);
+
+        if (item) {
+          openConceptVisual({
+            source: "media-gallery",
+            assetItems: [item],
+            asset: {
+              galleryActions,
+              currentAsset: item,
+            },
+          });
+        }
+      } catch {
+        toast.error("Failed to fetch gallery item.");
+      } finally {
+        // Clear the galleryItemId from URL after opening
+        setGalleryItemId(null);
+      }
+    };
+
+    fetchGalleryItem();
+  }, [galleryItemId]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
