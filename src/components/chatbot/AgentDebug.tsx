@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "../ui/button";
-import { Info } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { format } from "date-fns";
 
@@ -28,15 +28,24 @@ const AgentDebug = ({ className }: AgentDebugProps) => {
 
   return (
     <div className={cn("", className)}>
-      <Popover open={open} onOpenChange={(isOpen) => setOpen(isOpen)}>
-        <PopoverTrigger asChild onClick={() => setOpen(open)}>
+      <Popover open={open}>
+        <PopoverTrigger asChild onClick={() => setOpen((open) => !open)}>
           <Button variant="outline" size="icon" className="rounded-full">
             <Info />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-xl" align="end">
           <div className="grid gap-4">
-            <h3 className="font-medium leading-none text-lg">Agent Debug</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="font-medium leading-none text-lg">Agent Debug</h3>
+              <Button
+                variant="outline"
+                size={"icon"}
+                onClick={() => setOpen(false)}
+              >
+                <X />
+              </Button>
+            </div>
             <div className="border border-gray-200 rounded-md overflow-hidden w-full">
               <table className="min-w-full text-sm text-left border-collapse">
                 <tbody>

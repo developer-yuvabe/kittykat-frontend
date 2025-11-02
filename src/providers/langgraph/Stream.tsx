@@ -31,6 +31,10 @@ export type StateType = {
 
   currentCampaignId: string | null;
   currentMoodboardId: string | null;
+
+  currentSelectedImageGenerationModelId: string | null;
+  userAccessToken: string | null;
+
   timestamp: number;
 };
 
@@ -47,6 +51,9 @@ const useTypedStream = useStream<
 
       currentCampaignId: string | null;
       currentMoodboardId: string | null;
+
+      currentSelectedImageGenerationModelId: string | null;
+      userAccessToken: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }
