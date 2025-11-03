@@ -6,8 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface ReferenceGalleryGridProps {
   items: GalleryItemResponse[];
   isLoading: boolean;
-  selectedUrls: string[];
-  onItemClick: (assetUrl: string, assetId: string) => void;
+  masterReferenceUrls: string[];
+  productReferenceUrls: string[];
+  onItemClick: (assetUrl: string, assetId: string, size?: string) => void;
   onDragStart: (e: React.DragEvent, assetUrl: string, assetId?: string) => void;
   onDeleteItem: (item: GalleryItemResponse) => void;
 }
@@ -15,7 +16,8 @@ interface ReferenceGalleryGridProps {
 export const ReferenceGalleryGrid = ({
   items,
   isLoading,
-  selectedUrls,
+  masterReferenceUrls,
+  productReferenceUrls,
   onItemClick,
   onDragStart,
   onDeleteItem,
@@ -43,17 +45,16 @@ export const ReferenceGalleryGrid = ({
   return (
     <div className="grid grid-cols-5 gap-2">
       {items.map((item) => {
-        const isSelected = selectedUrls.includes(item.asset_url);
-        const isMaster = selectedUrls
-          .slice(0, selectedUrls.indexOf(item.asset_url) + 1)
-          .includes(item.asset_url);
+        const isMaster = masterReferenceUrls.includes(item.asset_url);
+        const isProduct = productReferenceUrls.includes(item.asset_url);
+        const isSelected = isMaster || isProduct;
 
         return (
           <div
             key={item.id}
             draggable
             onDragStart={(e) => onDragStart(e, item.asset_url, item.id)}
-            onClick={() => onItemClick(item.asset_url, item.id)}
+            onClick={() => onItemClick(item.asset_url, item.id, item.size)}
             className={cn(
               "relative aspect-square rounded-lg group cursor-pointer border-2 transition-all overflow-hidden",
               isSelected
