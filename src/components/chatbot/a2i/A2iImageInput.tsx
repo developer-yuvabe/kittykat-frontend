@@ -416,16 +416,12 @@ const A2iImageInput = ({
                         disabled={productReference.length === 0}
                       />
                       <TooltipButton
-                        tooltip={
-                          isLocked
-                            ? "Keep prompt and reference images after generation."
-                            : "Clear prompt and references after generation."
-                        }
+                        tooltip="Keep prompt and reference images"
                         icon={
                           isLocked ? (
-                            <LockIcon color="#6B5FBA" size={20} />
+                            <LockIcon color="#7F55E0" size={20} />
                           ) : (
-                            <LockOpenIcon color="#6B5FBA" size={20} />
+                            <LockOpenIcon color="#7F55E0" size={20} />
                           )
                         }
                         size="md"
@@ -434,7 +430,7 @@ const A2iImageInput = ({
                       />
                       <TooltipButton
                         tooltip="Clear prompt and references"
-                        icon={<TrashIcon color="#6B5FBA" size={20} />}
+                        icon={<TrashIcon color="#7F55E0" size={20} />}
                         size="md"
                         className="px-2 py-2"
                         onClick={() => clearPromptAndReferences()}

@@ -33,7 +33,7 @@ export const ReferenceZone = ({
   return (
     <div
       className={cn(
-        "flex-1 border rounded-xl p-4 bg-background cursor-pointer transition-all",
+        "flex-1 border rounded-xl p-4 bg-background cursor-pointer transition-all min-w-0",
         isSelected
           ? "border-primary ring-2 ring-primary/20"
           : "border-border hover:border-primary/50"
@@ -43,10 +43,10 @@ export const ReferenceZone = ({
       onDrop={onDrop}
     >
       <div className="flex flex-row items-center gap-2 mb-2">
-        <Icon className="h-5 w-5" />
-        <div className="text-start">
+        <Icon className="h-5 w-5 flex-shrink-0" />
+        <div className="text-start min-w-0">
           <p className="font-medium text-sm">{title}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
         </div>
       </div>
 
@@ -54,7 +54,7 @@ export const ReferenceZone = ({
         {images.map((url) => (
           <div
             key={url}
-            className="relative w-20 h-20 rounded-lg"
+            className="relative w-20 h-20 rounded-lg flex-shrink-0"
             draggable
             onDragStart={(e) => onDragStart(e, url)}
             onClick={(e) => e.stopPropagation()}

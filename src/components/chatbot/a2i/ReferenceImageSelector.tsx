@@ -211,17 +211,29 @@ const ReferenceImageSelector = ({
 
   const handleImageClick = useCallback(
     (assetUrl: string, assetId: string) => {
+      // Check if image is already selected and toggle it off
+      if (masterReference.includes(assetUrl)) {
+        onMasterReferenceChange(
+          masterReference.filter((url) => url !== assetUrl)
+        );
+        toast.success("Master reference removed");
+        return;
+      }
+
+      if (productReference.includes(assetUrl)) {
+        onProductReferenceChange(
+          productReference.filter((url) => url !== assetUrl)
+        );
+        toast.success("Product reference removed");
+        return;
+      }
+
+      // Check if we can add more images
       if (currentImageCount >= maxLimit) {
         return toast.error(`You can only upload ${maxLimit} image(s).`);
       }
 
-      if (
-        masterReference.includes(assetUrl) ||
-        productReference.includes(assetUrl)
-      ) {
-        return toast.error("This image is already selected as a reference.");
-      }
-
+      // Add to the active tab
       if (activeTab === "master") {
         onMasterReferenceChange([...masterReference, assetUrl]);
         toast.success("Master reference added");
@@ -384,8 +396,11 @@ const ReferenceImageSelector = ({
         toast.success(`${items.length} product reference(s) added`);
       }
 
-      // Optimistically add items to gallery
-      const itemsAsResponse = items.map((item) => item as GalleryItemResponse);
+      // Optimistically add items to gallery with correct is_master flag
+      const itemsAsResponse = items.map((item) => ({
+        ...item,
+        is_master: activeTab === "master",
+      })) as GalleryItemResponse[];
       const itemsWithIds = itemsAsResponse.filter((item) => item.id);
 
       if (itemsWithIds.length > 0) {
@@ -399,7 +414,10 @@ const ReferenceImageSelector = ({
           updateLastAccessed(itemResponse.id);
           patchItem({
             itemId: itemResponse.id,
-            data: { last_accessed_at: new Date().toISOString() },
+            data: {
+              last_accessed_at: new Date().toISOString(),
+              is_master: activeTab === "master",
+            },
             revalidateAutofillSuggestions: false,
           });
         }
@@ -499,7 +517,8 @@ const ReferenceImageSelector = ({
                   <ReferenceGalleryGrid
                     items={galleryItems}
                     isLoading={isLoadingStore}
-                    selectedUrls={[...masterReference, ...productReference]}
+                    masterReferenceUrls={masterReference}
+                    productReferenceUrls={productReference}
                     onItemClick={handleImageClick}
                     onDragStart={(e, assetUrl, assetId) =>
                       handleDragStart(e, assetUrl, undefined, assetId)
