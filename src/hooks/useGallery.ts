@@ -16,7 +16,7 @@ import type {
 } from "@/types/gallery.types";
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
-
+import { allMediaAssetSources } from "@/lib/gallery.utils";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import { useMoodboardQuery } from "./useMoodboardQuery";
 
@@ -31,10 +31,13 @@ export const useGalleryQuery = (
   const queryClient = useQueryClient();
 
   // Map asset type for filtering
-  const getAssetTypesFromFilter = () => {
-    if (!filters.assetType || filters.assetType === "all-media")
-      return undefined;
-    return filters.assetType;
+  const getAssetTypesFromFilter = (): typeof allMediaAssetSources => {
+    if (
+      !filters.selectedFilters?.asset_sources ||
+      filters.selectedFilters.asset_sources.length === 0
+    )
+      return allMediaAssetSources;
+    return filters.selectedFilters.asset_sources;
   };
 
   // Generate query key for current filters
@@ -72,9 +75,7 @@ export const useGalleryQuery = (
         }
 
         return await galleryService.getAllGalleryItems({
-          asset_sources: [getAssetTypesFromFilter()].filter(
-            (v): v is string => v !== undefined
-          ),
+          asset_sources: getAssetTypesFromFilter(),
           is_favourite:
             filters.favorites ||
             filters.selectedFilters?.is_favourite ||
@@ -349,12 +350,14 @@ export const useGalleryQuery = (
     mutationFn: ({
       itemId,
       data,
+      revalidateAutofillSuggestions = true,
     }: {
       itemId: string;
       data: Partial<GalleryItem>;
+      revalidateAutofillSuggestions?: boolean;
     }) => galleryService.patchGalleryItem(itemId, data),
 
-    onMutate: async ({ itemId, data }) => {
+    onMutate: async ({ itemId, data, revalidateAutofillSuggestions }) => {
       updateAutoFillSuggestionCache(itemId, data.is_favourite!);
 
       const queryKey = getGalleryQueryKey();
@@ -401,11 +404,14 @@ export const useGalleryQuery = (
           }
         );
       });
-      // Invalidate autofill-suggestions queries after patch
-      queryClient.invalidateQueries({
-        queryKey: ["autofill-suggestions"],
-        exact: false,
-      });
+
+      if (revalidateAutofillSuggestions) {
+        // Invalidate autofill-suggestions queries after patch
+        queryClient.invalidateQueries({
+          queryKey: ["autofill-suggestions"],
+          exact: false,
+        });
+      }
 
       // Return context for potential rollback
       return { queryKey };

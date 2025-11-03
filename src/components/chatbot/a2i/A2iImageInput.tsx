@@ -38,9 +38,13 @@ import {
   LockIcon,
   LockOpenIcon,
   MagicEnabledIcon,
+  MagicDisabledIcon,
   TrashIcon,
 } from "@/components/ui/custom-icon";
 import ReferenceImageSelector from "./ReferenceImageSelector";
+import ZoomableImage from "@/components/ui/zoomable-image";
+import { useUserStore } from "@/store/user.store";
+import { updateUser } from "@/services/api/user.service";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -67,6 +71,10 @@ const A2iImageInput = ({
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
     useA2iStore();
+  const { user, setUser } = useUserStore();
+  const [isMagicEnabled, setIsMagicEnabled] = useState(
+    user?.user_preferences?.enhance_prompts
+  );
   const { mutate: handleEnhancePrompt, isPending: isEnhancingPrompt } =
     useMutation({
       mutationFn: () =>
@@ -79,6 +87,35 @@ const A2iImageInput = ({
         clearReferencePrompt();
       },
     });
+
+  const handleToggleMagic = async () => {
+    if (!user) return;
+
+    try {
+      const updatedPreferences = {
+        enhance_prompts: !isMagicEnabled,
+      };
+
+      const updatedUser = await updateUser(user.id, {
+        user_preferences: updatedPreferences,
+      });
+
+      // Update local state and store with the new preference
+      const updatedUserWithPrefs = {
+        ...updatedUser,
+        user_preferences: updatedPreferences,
+      };
+
+      setIsMagicEnabled(!isMagicEnabled);
+      setUser(updatedUserWithPrefs);
+      toast.success(
+        `Magic feature ${!isMagicEnabled ? "enabled" : "disabled"}`
+      );
+    } catch (error) {
+      console.error("Error toggling magic feature:", error);
+      toast.error("Failed to update magic preference");
+    }
+  };
 
   const { referenceImagesModelInfo, initialParams, advancedParams } =
     useMemo(() => {
@@ -139,6 +176,9 @@ const A2iImageInput = ({
       await generateImage(selectedBrandId!, {
         ...data,
         campaign_id: currentCampaign?.id || null,
+        enhance_prompt_for_product:
+          isMagicEnabled && productReference.length > 0,
+        product_reference_images: productReference,
       });
 
       if (!isLocked) {
@@ -314,14 +354,19 @@ const A2iImageInput = ({
                   type: "product" as const,
                 })),
               ].map((ref, index) => (
-                <div key={ref.url} className="relative w-12 h-12 rounded-lg">
-                  <img
+                <div key={ref.url} className="relative w-20 h-20 rounded-lg">
+                  <ZoomableImage
                     src={ref.url}
                     alt={`Reference ${index + 1}`}
                     className="w-full h-full object-cover rounded-lg"
+                    variant="default"
                   />
+                  <div className="absolute top-0 right-0 bg-primary text-white text-xs px-2 py-0.5 rounded">
+                    {ref.type === "master" ? "Master" : "Product"}
+                  </div>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (ref.type === "master") {
                         setMasterReference(
                           masterReference.filter((u) => u !== ref.url)
@@ -332,7 +377,7 @@ const A2iImageInput = ({
                         );
                       }
                     }}
-                    className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-10"
+                    className="p-1 absolute -top-2 -right-2 bg-primary rounded-full text-white hover:bg-destructive z-10"
                   >
                     <X className="h-2 w-2" />
                   </button>
@@ -372,13 +417,21 @@ const A2iImageInput = ({
                     />
                     <div className="absolute top-2 right-2 flex gap-1">
                       <TooltipButton
-                        tooltip="Magic enhance (feature coming soon)"
-                        icon={<MagicEnabledIcon color="#6B5FBA" size={22} />}
+                        tooltip={
+                          isMagicEnabled
+                            ? "Disable magic enhance"
+                            : "Enable magic enhance"
+                        }
+                        icon={
+                          isMagicEnabled ? (
+                            <MagicEnabledIcon color="#7F55E0" size={22} />
+                          ) : (
+                            <MagicDisabledIcon color="#6B5FBA" size={22} />
+                          )
+                        }
                         size="md"
                         className="px-2 py-2"
-                        onClick={() => {
-                          toast.info("Magic enhance feature coming soon!");
-                        }}
+                        onClick={handleToggleMagic}
                       />
                       <TooltipButton
                         tooltip={
