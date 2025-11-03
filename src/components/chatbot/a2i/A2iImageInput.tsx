@@ -15,8 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
-import { ImagesIcon, Settings2, WandSparkles, X } from "lucide-react";
+import {
+  ImagesIcon,
+  Settings2,
+  WandSparkles,
+  Paperclip,
+  PanelTop,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
@@ -42,7 +49,6 @@ import {
   TrashIcon,
 } from "@/components/ui/custom-icon";
 import ReferenceImageSelector from "./ReferenceImageSelector";
-import ZoomableImage from "@/components/ui/zoomable-image";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
 import {
@@ -50,6 +56,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ReferenceZone } from "./ReferenceZone";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -150,8 +157,17 @@ const A2iImageInput = ({
   const [masterReference, setMasterReference] = useState<string[]>([]);
   const [productReference, setProductReference] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
+  const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
+  const [referencePopoverTab, setReferencePopoverTab] = useState<
+    "master" | "product"
+  >("master");
 
   const currentImageCount = masterReference.length + productReference.length;
+
+  const openReferencePopover = (tab: "master" | "product") => {
+    setReferencePopoverTab(tab);
+    setIsReferencePopoverOpen(true);
+  };
 
   function clearPromptAndReferences() {
     formInstance.setValue("prompt", "", { shouldValidate: true });
@@ -349,50 +365,6 @@ const A2iImageInput = ({
             formInstance.handleSubmit(onSubmit)();
           }}
         >
-          {(masterReference.length > 0 || productReference.length > 0) && (
-            <div className="flex flex-wrap gap-2 px-4 pt-2">
-              {[
-                ...masterReference.map((url) => ({
-                  url,
-                  type: "master" as const,
-                })),
-                ...productReference.map((url) => ({
-                  url,
-                  type: "product" as const,
-                })),
-              ].map((ref, index) => (
-                <div key={ref.url} className="relative w-20 h-20 rounded-lg">
-                  <ZoomableImage
-                    src={ref.url}
-                    alt={`Reference ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg"
-                    variant="default"
-                  />
-                  <div className="absolute top-0 right-0 bg-primary text-white text-xs px-2 py-0.5 rounded">
-                    {ref.type === "master" ? "Master" : "Product"}
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (ref.type === "master") {
-                        setMasterReference(
-                          masterReference.filter((u) => u !== ref.url)
-                        );
-                      } else {
-                        setProductReference(
-                          productReference.filter((u) => u !== ref.url)
-                        );
-                      }
-                    }}
-                    className="p-1 absolute -top-2 -right-2 bg-primary rounded-full text-white hover:bg-destructive z-10"
-                  >
-                    <X className="h-2 w-2" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
           <FormField
             control={formInstance.control}
             name="prompt"
@@ -486,6 +458,10 @@ const A2iImageInput = ({
                   maxFileSizeLimit={referenceImagesModelInfo.maxFileSizeLimit}
                   disabled={formInstance.formState.isSubmitting}
                   currentCampaignId={currentCampaign?.id}
+                  isOpen={isReferencePopoverOpen}
+                  onOpenChange={setIsReferencePopoverOpen}
+                  activeTab={referencePopoverTab}
+                  onTabChange={setReferencePopoverTab}
                 />
               ) : (
                 <Tooltip>
@@ -594,6 +570,76 @@ const A2iImageInput = ({
               />
             </div>
           </div>
+
+          {/* Reference Zones - Show when there are references */}
+          {(masterReference.length > 0 || productReference.length > 0) &&
+            !isReferencePopoverOpen && (
+              <div className="w-full px-4">
+                <div className="flex gap-4 w-full">
+                  {/* MASTER REFERENCE SECTION */}
+                  <div className="flex-1">
+                    <ReferenceZone
+                      type="master"
+                      icon={Paperclip}
+                      title="Master Reference"
+                      description="Use elements of an image. (Click to add)"
+                      images={masterReference}
+                      isSelected={referencePopoverTab === "master"}
+                      onClick={() => openReferencePopover("master")}
+                      onDrop={(e: DragEvent) => {
+                        e.preventDefault();
+                      }}
+                      onDragStart={(e: DragEvent, url: string) => {
+                        e.dataTransfer.setData("assetUrl", url);
+                        e.dataTransfer.setData("source", "master");
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onRemoveImage={(url: string) => {
+                        setMasterReference(
+                          masterReference.filter((u) => u !== url)
+                        );
+                      }}
+                      showAddButton={
+                        masterReference.length === 0 &&
+                        productReference.length > 0
+                      }
+                      onAddClick={() => openReferencePopover("master")}
+                    />
+                  </div>
+
+                  {/* PRODUCT REFERENCE SECTION */}
+                  <div className="flex-1">
+                    <ReferenceZone
+                      type="product"
+                      icon={PanelTop}
+                      title="Product Reference"
+                      description="Use a product image. This might alter your prompt. (Click to add)"
+                      images={productReference}
+                      isSelected={referencePopoverTab === "product"}
+                      onClick={() => openReferencePopover("product")}
+                      onDrop={(e: DragEvent) => {
+                        e.preventDefault();
+                      }}
+                      onDragStart={(e: DragEvent, url: string) => {
+                        e.dataTransfer.setData("assetUrl", url);
+                        e.dataTransfer.setData("source", "product");
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onRemoveImage={(url: string) => {
+                        setProductReference(
+                          productReference.filter((u) => u !== url)
+                        );
+                      }}
+                      showAddButton={
+                        productReference.length === 0 &&
+                        masterReference.length > 0
+                      }
+                      onAddClick={() => openReferencePopover("product")}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
         </div>
       </Form>
     </div>

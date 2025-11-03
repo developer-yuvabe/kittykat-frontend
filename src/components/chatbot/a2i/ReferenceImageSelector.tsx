@@ -30,6 +30,10 @@ interface ReferenceImageSelectorProps {
   maxFileSizeLimit: number;
   disabled?: boolean;
   currentCampaignId?: string | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  activeTab: "master" | "product";
+  onTabChange: (tab: "master" | "product") => void;
 }
 
 const ReferenceImageSelector = ({
@@ -42,13 +46,23 @@ const ReferenceImageSelector = ({
   maxFileSizeLimit,
   disabled = false,
   currentCampaignId,
+  isOpen,
+  onOpenChange,
+  activeTab,
+  onTabChange,
 }: ReferenceImageSelectorProps) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<"master" | "product">(
-    "master"
-  );
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && mediaLibraryOpen) {
+        return;
+      }
+      onOpenChange(open);
+    },
+    [mediaLibraryOpen, onOpenChange]
+  );
 
   const { selectedBrandId } = useBrandStore();
 
@@ -83,6 +97,16 @@ const ReferenceImageSelector = ({
 
   const currentImageCount = masterReference.length + productReference.length;
   const remainingSlots = maxLimit - currentImageCount;
+
+  const openForMaster = useCallback(() => {
+    onTabChange("master");
+    handleOpenChange(true);
+  }, [onTabChange, handleOpenChange]);
+
+  const openForProduct = useCallback(() => {
+    onTabChange("product");
+    handleOpenChange(true);
+  }, [onTabChange, handleOpenChange]);
 
   // Fetch reference images when component mounts or brand changes
   useEffect(() => {
@@ -155,7 +179,7 @@ const ReferenceImageSelector = ({
 
         // Automatically add uploaded images to the selected tab
         if (uploadedUrls.length > 0) {
-          if (selectedTab === "master") {
+          if (activeTab === "master") {
             onMasterReferenceChange([...masterReference, ...uploadedUrls]);
             toast.success("Master references added");
           } else {
@@ -176,7 +200,7 @@ const ReferenceImageSelector = ({
       maxFileSizeLimit,
       selectedBrandId,
       bulkUpload,
-      selectedTab,
+      activeTab,
       masterReference,
       productReference,
       onMasterReferenceChange,
@@ -198,7 +222,7 @@ const ReferenceImageSelector = ({
         return toast.error("This image is already selected as a reference.");
       }
 
-      if (selectedTab === "master") {
+      if (activeTab === "master") {
         onMasterReferenceChange([...masterReference, assetUrl]);
         toast.success("Master reference added");
       } else {
@@ -221,7 +245,7 @@ const ReferenceImageSelector = ({
       maxLimit,
       masterReference,
       productReference,
-      selectedTab,
+      activeTab,
       onMasterReferenceChange,
       onProductReferenceChange,
       updateLastAccessed,
@@ -350,7 +374,7 @@ const ReferenceImageSelector = ({
     (items: GalleryItem[]) => {
       const selectedUrls = items.map((item) => item.asset_url);
 
-      if (selectedTab === "master") {
+      if (activeTab === "master") {
         const newMasterRefs = [...masterReference, ...selectedUrls];
         onMasterReferenceChange(newMasterRefs);
         toast.success(`${items.length} master reference(s) added`);
@@ -384,7 +408,7 @@ const ReferenceImageSelector = ({
       setMediaLibraryOpen(false);
     },
     [
-      selectedTab,
+      activeTab,
       masterReference,
       productReference,
       onMasterReferenceChange,
@@ -397,16 +421,7 @@ const ReferenceImageSelector = ({
 
   return (
     <>
-      <Popover
-        open={isOpen}
-        onOpenChange={(open) => {
-          // Don't close popover if media library is open
-          if (!open && mediaLibraryOpen) {
-            return;
-          }
-          setIsOpen(open);
-        }}
-      >
+      <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -450,11 +465,13 @@ const ReferenceImageSelector = ({
                     title="Master Reference"
                     description="Use elements of an image. (Click or drag to add)"
                     images={masterReference}
-                    isSelected={selectedTab === "master"}
-                    onClick={() => setSelectedTab("master")}
+                    isSelected={activeTab === "master"}
+                    onClick={openForMaster}
                     onDrop={(e) => handleDropZone(e, "master")}
                     onDragStart={(e, url) => handleDragStart(e, url, "master")}
                     onRemoveImage={(url) => handleRemoveImage("master", url)}
+                    showAddButton={productReference.length > 0}
+                    onAddClick={openForMaster}
                   />
 
                   {/* PRODUCT REFERENCE SECTION */}
@@ -464,11 +481,13 @@ const ReferenceImageSelector = ({
                     title="Product Reference"
                     description="Use a product image. This might alter your prompt. (Click or drag to add)"
                     images={productReference}
-                    isSelected={selectedTab === "product"}
-                    onClick={() => setSelectedTab("product")}
+                    isSelected={activeTab === "product"}
+                    onClick={openForProduct}
                     onDrop={(e) => handleDropZone(e, "product")}
                     onDragStart={(e, url) => handleDragStart(e, url, "product")}
                     onRemoveImage={(url) => handleRemoveImage("product", url)}
+                    showAddButton={masterReference.length > 0}
+                    onAddClick={openForProduct}
                   />
                 </div>
 
