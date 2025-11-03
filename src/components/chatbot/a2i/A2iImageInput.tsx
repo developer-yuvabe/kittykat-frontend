@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn, PlatformApiError } from "@/lib/utils";
 import { generateImage } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
-import { Settings2, WandSparkles, X } from "lucide-react";
+import { ImagesIcon, Settings2, WandSparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
@@ -45,6 +45,11 @@ import ReferenceImageSelector from "./ReferenceImageSelector";
 import ZoomableImage from "@/components/ui/zoomable-image";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -465,7 +470,7 @@ const A2iImageInput = ({
           />
           <div className="flex gap-2 justify-between items-center px-4">
             <div className="flex items-center gap-2">
-              {referenceImagesModelInfo && (
+              {referenceImagesModelInfo ? (
                 <ReferenceImageSelector
                   masterReference={masterReference}
                   productReference={productReference}
@@ -477,6 +482,19 @@ const A2iImageInput = ({
                   disabled={formInstance.formState.isSubmitting}
                   currentCampaignId={currentCampaign?.id}
                 />
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button size={"icon"} variant={"outline"} disabled={true}>
+                        <ImagesIcon />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    This model does not support attaching reference images
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {initialParams.map((param) => {
