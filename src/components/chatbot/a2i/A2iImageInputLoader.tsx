@@ -5,7 +5,7 @@ import React from "react";
 
 const A2iImageInputLoader = () => {
   return (
-    <div className="flex flex-col items-stretch w-full max-w-2xl mx-auto border resize-none rounded-2xl sticky bottom-8 h-max bg-background scrollbar overflow-hidden shadow-2xl z-10 pb-4">
+    <div className="flex flex-col items-stretch w-full  mx-auto border resize-none rounded-2xl  bottom-8 h-max bg-background scrollbar overflow-hidden pb-4">
       <div className="space-y-4">
         <div className="relative h-full">
           <Textarea

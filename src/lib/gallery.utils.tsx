@@ -511,3 +511,9 @@ export const generateTasklistStatusLogMessage = (
 
   return statusMessages[status] || "";
 };
+export const allMediaAssetSources = [
+  "brand-uploads",
+  "moodboard",
+  "showboard-media",
+  "a2i-media",
+];
