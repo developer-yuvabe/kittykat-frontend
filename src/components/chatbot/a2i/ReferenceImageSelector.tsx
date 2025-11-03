@@ -18,7 +18,7 @@ import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { ReferenceUploadArea } from "./ReferenceUploadArea";
 import { ReferenceZone } from "./ReferenceZone";
 import { ReferenceGalleryGrid } from "./ReferenceGalleryGrid";
-import { allMediaAssetSources } from "@/lib/gallery.utils";
+import { allMediaAssetSources, checkFileSizeLimit } from "@/lib/gallery.utils";
 
 interface ReferenceImageSelectorProps {
   masterReference: string[];
@@ -210,7 +210,7 @@ const ReferenceImageSelector = ({
   );
 
   const handleImageClick = useCallback(
-    (assetUrl: string, assetId: string) => {
+    async (assetUrl: string, assetId: string, sizeString?: string) => {
       // Check if image is already selected and toggle it off
       if (masterReference.includes(assetUrl)) {
         onMasterReferenceChange(
@@ -231,6 +231,21 @@ const ReferenceImageSelector = ({
       // Check if we can add more images
       if (currentImageCount >= maxLimit) {
         return toast.error(`You can only upload ${maxLimit} image(s).`);
+      }
+
+      // Check file size before adding
+      const { isValid, sizeInMB } = await checkFileSizeLimit(
+        assetUrl,
+        sizeString,
+        maxFileSizeLimit
+      );
+      if (!isValid && sizeInMB) {
+        toast.error(
+          `Image size (${sizeInMB.toFixed(
+            1
+          )}MB) exceeds the limit of ${maxFileSizeLimit}MB`
+        );
+        return;
       }
 
       // Add to the active tab
@@ -262,6 +277,7 @@ const ReferenceImageSelector = ({
       onProductReferenceChange,
       updateLastAccessed,
       patchItem,
+      maxFileSizeLimit,
     ]
   );
 
@@ -283,7 +299,7 @@ const ReferenceImageSelector = ({
   );
 
   const handleDropZone = useCallback(
-    (e: React.DragEvent, zone: "master" | "product") => {
+    async (e: React.DragEvent, zone: "master" | "product") => {
       e.preventDefault();
       const assetUrl = e.dataTransfer.getData("assetUrl");
       const source = e.dataTransfer.getData("source");
@@ -311,6 +327,25 @@ const ReferenceImageSelector = ({
           productReference.includes(assetUrl)
         ) {
           return toast.error("This image is already selected as a reference.");
+        }
+
+        // Check file size before adding from gallery
+        // Try to get size from gallery items
+        const galleryItem = galleryItems.find(
+          (item) => item.asset_url === assetUrl
+        );
+        const { isValid, sizeInMB } = await checkFileSizeLimit(
+          assetUrl,
+          galleryItem?.size,
+          maxFileSizeLimit
+        );
+        if (!isValid && sizeInMB) {
+          toast.error(
+            `Image size (${sizeInMB.toFixed(
+              1
+            )}MB) exceeds the limit of ${maxFileSizeLimit}MB`
+          );
+          return;
         }
 
         // Optimistically update in store
@@ -342,6 +377,8 @@ const ReferenceImageSelector = ({
       onProductReferenceChange,
       updateLastAccessed,
       patchItem,
+      galleryItems,
+      maxFileSizeLimit,
     ]
   );
 
@@ -383,21 +420,57 @@ const ReferenceImageSelector = ({
   );
 
   const handleMediaLibrarySelection = useCallback(
-    (items: GalleryItem[]) => {
-      const selectedUrls = items.map((item) => item.asset_url);
+    async (items: GalleryItem[]) => {
+      // Check file sizes for all selected items
+      const validItems: GalleryItem[] = [];
+      const invalidItems: string[] = [];
+
+      for (const item of items) {
+        const { isValid, sizeInMB } = await checkFileSizeLimit(
+          item.asset_url,
+          item.size,
+          maxFileSizeLimit
+        );
+        if (isValid) {
+          validItems.push(item);
+        } else {
+          invalidItems.push(
+            `${item.asset_title || "Unnamed file"} (${sizeInMB?.toFixed(1)}MB)`
+          );
+        }
+      }
+
+      // If no valid items, don't proceed
+      if (validItems.length === 0) {
+        toast.error("No valid images to add (all exceeded size limit)");
+        return;
+      }
+
+      // Show warning if some items were rejected
+      if (invalidItems.length > 0) {
+        toast.warning(
+          `${invalidItems.length} image(s) rejected due to size limit. ${validItems.length} image(s) added.`
+        );
+      }
+
+      const selectedUrls = validItems.map((item) => item.asset_url);
 
       if (activeTab === "master") {
         const newMasterRefs = [...masterReference, ...selectedUrls];
         onMasterReferenceChange(newMasterRefs);
-        toast.success(`${items.length} master reference(s) added`);
+        if (invalidItems.length === 0) {
+          toast.success(`${validItems.length} master reference(s) added`);
+        }
       } else {
         const newProductRefs = [...productReference, ...selectedUrls];
         onProductReferenceChange(newProductRefs);
-        toast.success(`${items.length} product reference(s) added`);
+        if (invalidItems.length === 0) {
+          toast.success(`${validItems.length} product reference(s) added`);
+        }
       }
 
       // Optimistically add items to gallery with correct is_master flag
-      const itemsAsResponse = items.map((item) => ({
+      const itemsAsResponse = validItems.map((item) => ({
         ...item,
         is_master: activeTab === "master",
       })) as GalleryItemResponse[];
@@ -408,7 +481,7 @@ const ReferenceImageSelector = ({
       }
 
       // Update last_accessed_at for each item
-      items.forEach((item) => {
+      validItems.forEach((item) => {
         const itemResponse = item as GalleryItemResponse;
         if (itemResponse.id) {
           updateLastAccessed(itemResponse.id);
@@ -434,6 +507,7 @@ const ReferenceImageSelector = ({
       addItems,
       updateLastAccessed,
       patchItem,
+      maxFileSizeLimit,
     ]
   );
 

@@ -8,7 +8,7 @@ interface ReferenceGalleryGridProps {
   isLoading: boolean;
   masterReferenceUrls: string[];
   productReferenceUrls: string[];
-  onItemClick: (assetUrl: string, assetId: string) => void;
+  onItemClick: (assetUrl: string, assetId: string, size?: string) => void;
   onDragStart: (e: React.DragEvent, assetUrl: string, assetId?: string) => void;
   onDeleteItem: (item: GalleryItemResponse) => void;
 }
@@ -54,7 +54,7 @@ export const ReferenceGalleryGrid = ({
             key={item.id}
             draggable
             onDragStart={(e) => onDragStart(e, item.asset_url, item.id)}
-            onClick={() => onItemClick(item.asset_url, item.id)}
+            onClick={() => onItemClick(item.asset_url, item.id, item.size)}
             className={cn(
               "relative aspect-square rounded-lg group cursor-pointer border-2 transition-all overflow-hidden",
               isSelected
