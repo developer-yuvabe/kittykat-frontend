@@ -36,6 +36,9 @@ export const updateUser = async (
     contentFilterDisabled?: boolean;
     credits?: number;
     kittykat_expert_credits?: number;
+    user_preferences?: {
+      enhance_prompts?: boolean;
+    };
   }
 ): Promise<UserListItem> => {
   try {
@@ -47,6 +50,7 @@ export const updateUser = async (
       content_filter_disabled: userData.contentFilterDisabled,
       credits: userData.credits,
       kittykat_expert_credits: userData.kittykat_expert_credits,
+      user_preferences: userData.user_preferences,
     };
 
     const updatedUser = await handleApiRequest<UserListItem>(

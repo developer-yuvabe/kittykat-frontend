@@ -491,3 +491,10 @@ export async function batchExecute<T>(
     return results;
   }
 }
+
+export const allMediaAssetSources = [
+  "brand-uploads",
+  "moodboard",
+  "showboard-media",
+  "a2i-media",
+];

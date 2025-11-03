@@ -137,7 +137,7 @@ export type GalleryItem = {
   quality_flag?: string;
 
   // 📆 Usage Tracking
-  last_accessed_at?: string;
+  last_accessed_at?: string | null;
 
   // ⚙️ System Metadata
   processing_status?: "processing" | "ready" | "failed";

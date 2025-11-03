@@ -4,8 +4,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Images, Upload, X, Paperclip, PanelTop } from "lucide-react";
-import { useCallback, useState } from "react";
+import {
+  Images,
+  Upload,
+  X,
+  Paperclip,
+  PanelTop,
+  RefreshCw,
+  Trash,
+} from "lucide-react";
+import { useCallback, useState, useEffect } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { useBrandStore } from "@/store/brand.store";
@@ -13,6 +21,8 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { cn, getExtensionFromUrl } from "@/lib/utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { GalleryItem } from "@/types/gallery.types";
+import { useReferenceImagesStore } from "@/store/reference-image.store";
+import ZoomableImage from "@/components/ui/zoomable-image";
 
 interface ReferenceImageSelectorProps {
   masterReference: string[];
@@ -39,31 +49,53 @@ const ReferenceImageSelector = ({
 }: ReferenceImageSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
   const [selectedTab, setSelectedTab] = useState<"master" | "product">(
     "master"
   );
+
   const { selectedBrandId } = useBrandStore();
 
-  const { getGalleryItems, bulkUpload } = useGalleryQuery(
-    {
-      selectedFilters: {
-        brands: [selectedBrandId!],
-        campaigns: [],
-        moodboards: [],
-        product_categories: [],
-        asset_types: [],
-        asset_sources: [],
-        media_format: [],
-        aspect_ratio: [],
-        workflow_status: [],
+  const { bulkUpload, patchItem, getGalleryItems, isFetching, deleteItem } =
+    useGalleryQuery(
+      {
+        selectedFilters: {
+          brands: [selectedBrandId!],
+          campaigns: [],
+          moodboards: [],
+          product_categories: [],
+          asset_types: [],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          sort_by: "last_accessed_at",
+        },
       },
-    },
-    40,
-    true
-  );
+      40,
+      true
+    );
 
-  const galleryItems = getGalleryItems();
+  const {
+    items: galleryItems,
+    isLoading: isLoadingStore,
+    updateLastAccessed,
+    setItems,
+  } = useReferenceImagesStore();
+
+  // Fetch reference images when component mounts or brand changes
+  useEffect(() => {
+    if (selectedBrandId) {
+      setItems(getGalleryItems());
+    }
+  }, [selectedBrandId, isFetching]);
+
+  // Auto-refetch when popover opens
+  useEffect(() => {
+    if (isOpen && selectedBrandId) {
+      setItems(getGalleryItems());
+    }
+  }, [isOpen, selectedBrandId]);
+
   const currentImageCount = masterReference.length + productReference.length;
   const remainingSlots = maxLimit - currentImageCount;
 
@@ -89,7 +121,7 @@ const ReferenceImageSelector = ({
               file.type,
               "brands",
               file,
-              selectedBrandId || null
+              selectedBrandId
             );
 
             uploadedGalleryItems.push({
@@ -102,6 +134,7 @@ const ReferenceImageSelector = ({
               media_format: getExtensionFromUrl(uploadedUrl),
               is_master: true,
               size: "",
+              last_accessed_at: new Date().toISOString(),
             });
 
             uploadedUrls.push(uploadedUrl);
@@ -162,7 +195,7 @@ const ReferenceImageSelector = ({
     maxSize: maxFileSizeLimit * 1024 * 1024,
   });
 
-  const handleImageClick = (assetUrl: string) => {
+  const handleImageClick = (assetUrl: string, assetId: string) => {
     if (currentImageCount >= maxLimit) {
       return toast.error(`You can only upload ${maxLimit} image(s).`);
     }
@@ -181,15 +214,29 @@ const ReferenceImageSelector = ({
       onProductReferenceChange([...productReference, assetUrl]);
       toast.success("Product reference added");
     }
+
+    // Optimistically update in store
+    updateLastAccessed(assetId);
+
+    // Update in backend
+    patchItem({
+      itemId: assetId,
+      data: { last_accessed_at: new Date().toISOString() },
+      revalidateAutofillSuggestions: false,
+    });
   };
 
   const handleDragStart = (
     e: React.DragEvent,
     assetUrl: string,
-    source?: "master" | "product"
+    source?: "master" | "product",
+    assetId?: string
   ) => {
     e.dataTransfer.setData("assetUrl", assetUrl);
     e.dataTransfer.setData("source", source || "gallery");
+    if (assetId) {
+      e.dataTransfer.setData("assetId", assetId);
+    }
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -197,6 +244,7 @@ const ReferenceImageSelector = ({
     e.preventDefault();
     const assetUrl = e.dataTransfer.getData("assetUrl");
     const source = e.dataTransfer.getData("source");
+    const assetId = e.dataTransfer.getData("assetId");
 
     if (!assetUrl) return;
 
@@ -221,6 +269,18 @@ const ReferenceImageSelector = ({
       ) {
         return toast.error("This image is already selected as a reference.");
       }
+
+      // Optimistically update in store
+      if (assetId) {
+        updateLastAccessed(assetId);
+
+        // Update in backend
+        patchItem({
+          itemId: assetId,
+          data: { last_accessed_at: new Date().toISOString() },
+        });
+      }
+
       if (zone === "master") {
         onMasterReferenceChange([...masterReference, assetUrl]);
         toast.success("Master reference added");
@@ -232,6 +292,21 @@ const ReferenceImageSelector = ({
   };
 
   const clearReference = (zone: "master" | "product", url: string) => {
+    // Find the item in gallery to patch and remove from store
+    const itemToRemove = galleryItems.find((item) => item.asset_url === url);
+    if (itemToRemove) {
+      // Patch last_accessed_at to null
+      patchItem({
+        itemId: itemToRemove.id,
+        data: { last_accessed_at: null as any },
+        revalidateAutofillSuggestions: false,
+      });
+      // Remove from store
+      const newItems = galleryItems.filter((item) => item.asset_url !== url);
+      setItems(newItems);
+    }
+
+    // Remove from reference arrays
     if (zone === "master") {
       onMasterReferenceChange(masterReference.filter((u) => u !== url));
     } else {
@@ -352,20 +427,24 @@ const ReferenceImageSelector = ({
                     {masterReference.map((url) => (
                       <div
                         key={url}
-                        className="relative w-20 h-20 rounded-lg overflow-hidden shadow-md border-2 border-primary cursor-move"
+                        className="relative w-20 h-20 rounded-lg"
                         draggable
                         onDragStart={(e) => handleDragStart(e, url, "master")}
                       >
-                        <img
+                        <ZoomableImage
                           src={url}
                           alt="Master reference"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-lg"
+                          variant="default"
                         />
                         <button
-                          onClick={() => clearReference("master", url)}
-                          className="absolute -top-2 -right-2 bg-destructive rounded-full p-1 text-white hover:bg-destructive/90 shadow z-10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearReference("master", url);
+                          }}
+                          className="p-1 absolute -top-2 -right-2 bg-primary rounded-full text-white hover:bg-destructive z-10"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-2 w-2" />
                         </button>
                       </div>
                     ))}
@@ -399,20 +478,24 @@ const ReferenceImageSelector = ({
                     {productReference.map((url) => (
                       <div
                         key={url}
-                        className="relative w-20 h-20 rounded-lg overflow-hidden shadow-md border-2 border-primary cursor-move"
+                        className="relative w-20 h-20 rounded-lg"
                         draggable
                         onDragStart={(e) => handleDragStart(e, url, "product")}
                       >
-                        <img
+                        <ZoomableImage
                           src={url}
                           alt="Product reference"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-lg"
+                          variant="default"
                         />
                         <button
-                          onClick={() => clearReference("product", url)}
-                          className="absolute -top-2 -right-2 bg-destructive rounded-full p-1 text-white hover:bg-destructive/90 shadow z-10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearReference("product", url);
+                          }}
+                          className="p-1 absolute -top-2 -right-2 bg-primary rounded-full text-white hover:bg-destructive z-10"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-2 w-2" />
                         </button>
                       </div>
                     ))}
@@ -421,42 +504,82 @@ const ReferenceImageSelector = ({
               </div>
 
               {/* GALLERY SECTION */}
+
               <div
                 id="gallery-section"
                 className="overflow-y-auto max-h-[300px] overflow-x-hidden"
               >
-                <div className="grid grid-cols-5 gap-2">
-                  {galleryItems.map((item) => (
-                    <div
-                      key={item.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, item.asset_url)}
-                      onClick={() => handleImageClick(item.asset_url)}
-                      className={cn(
-                        "relative aspect-square rounded-lg group cursor-pointer border-2 transition-all",
-                        masterReference.includes(item.asset_url) ||
-                          productReference.includes(item.asset_url)
-                          ? "border-primary ring-2 ring-primary"
-                          : "border-transparent hover:border-primary"
-                      )}
-                    >
-                      <img
-                        src={item.asset_url}
-                        alt={item.asset_title || "Gallery item"}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                      {(masterReference.includes(item.asset_url) ||
-                        productReference.includes(item.asset_url)) && (
-                        <div className="absolute top-1 right-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
-                          {masterReference.includes(item.asset_url)
-                            ? "Master"
-                            : "Product"}
+                {isLoadingStore && galleryItems.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-2">
+                    {galleryItems.map((item) => (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) =>
+                          handleDragStart(e, item.asset_url, undefined, item.id)
+                        }
+                        onClick={() =>
+                          handleImageClick(item.asset_url, item.id)
+                        }
+                        className={cn(
+                          "relative aspect-square rounded-lg group cursor-pointer border-2 transition-all",
+                          masterReference.includes(item.asset_url) ||
+                            productReference.includes(item.asset_url)
+                            ? "border-primary ring-2 ring-primary"
+                            : "border-transparent hover:border-primary"
+                        )}
+                      >
+                        <img
+                          src={item.asset_url}
+                          alt={item.asset_title || "Gallery item"}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        {(masterReference.includes(item.asset_url) ||
+                          productReference.includes(item.asset_url)) && (
+                          <div className="absolute top-1 right-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
+                            {masterReference.includes(item.asset_url)
+                              ? "Master"
+                              : "Product"}
+                          </div>
+                        )}
+                        <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (item.asset_source === "reference") {
+                                // Delete from gallery if asset_source is "reference"
+                                deleteItem(item.id);
+                                const newItems = galleryItems.filter(
+                                  (i) => i.id !== item.id
+                                );
+                                setItems(newItems);
+                              } else {
+                                // Just remove from history by patching last_accessed_at to null
+                                patchItem({
+                                  itemId: item.id,
+                                  data: { last_accessed_at: null as any },
+                                  revalidateAutofillSuggestions: false,
+                                });
+                                const newItems = galleryItems.filter(
+                                  (i) => i.id !== item.id
+                                );
+                                setItems(newItems);
+                              }
+                            }}
+                            className="p-1 bg-destructive text-white rounded-full hover:bg-destructive/80"
+                          >
+                            <Trash className="h-3 w-3" />
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
