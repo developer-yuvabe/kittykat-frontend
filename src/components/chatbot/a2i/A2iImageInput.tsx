@@ -96,28 +96,30 @@ const A2iImageInput = ({
   const handleToggleMagic = async () => {
     if (!user) return;
 
-    try {
-      const updatedPreferences = {
-        enhance_prompts: !isMagicEnabled,
-      };
+    const newMagicState = !isMagicEnabled;
+    const updatedPreferences = {
+      enhance_prompts: newMagicState,
+    };
 
-      const updatedUser = await updateUser(user.id, {
+    // Update local state and store optimistically
+    setIsMagicEnabled(newMagicState);
+    const updatedUserWithPrefs = {
+      ...user,
+      user_preferences: updatedPreferences,
+    };
+    setUser(updatedUserWithPrefs);
+    toast.success(`Magic enhance ${newMagicState ? "enabled" : "disabled"}`);
+
+    // Update server in the background
+    try {
+      await updateUser(user.id, {
         user_preferences: updatedPreferences,
       });
-
-      // Update local state and store with the new preference
-      const updatedUserWithPrefs = {
-        ...updatedUser,
-        user_preferences: updatedPreferences,
-      };
-
-      setIsMagicEnabled(!isMagicEnabled);
-      setUser(updatedUserWithPrefs);
-      toast.success(
-        `Magic feature ${!isMagicEnabled ? "enabled" : "disabled"}`
-      );
     } catch (error) {
       console.error("Error toggling magic feature:", error);
+      // Revert optimistic update on error
+      setIsMagicEnabled(!newMagicState);
+      setUser(user);
       toast.error("Failed to update magic preference");
     }
   };
@@ -423,7 +425,9 @@ const A2iImageInput = ({
                     <div className="absolute top-2 right-2 flex gap-1">
                       <TooltipButton
                         tooltip={
-                          isMagicEnabled
+                          productReference.length === 0
+                            ? "Add product reference images to enable magic enhance"
+                            : isMagicEnabled
                             ? "Disable magic enhance"
                             : "Enable magic enhance"
                         }
@@ -437,6 +441,7 @@ const A2iImageInput = ({
                         size="md"
                         className="px-2 py-2"
                         onClick={handleToggleMagic}
+                        disabled={productReference.length === 0}
                       />
                       <TooltipButton
                         tooltip={
