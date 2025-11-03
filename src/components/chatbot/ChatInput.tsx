@@ -44,6 +44,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import AgentPdfAttachmentUploader from "./AgentPdfAttachmentUploader";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -99,6 +101,7 @@ const FileThumbnail = ({
 export const ChatInput: React.FC<ChatInputProps> = ({
   setFirstTokenReceived,
 }) => {
+  const { selectedImageGenerationModel } = useModelsStore();
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
@@ -241,7 +244,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [setContentBlocks]);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!input.trim() || isLoading) return;
 
@@ -288,6 +291,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           previousBrandContextId: stream.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,
+          currentSelectedImageGenerationModelId:
+            selectedImageGenerationModel?.id ?? null,
+          userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
           streamMode: ["values"],

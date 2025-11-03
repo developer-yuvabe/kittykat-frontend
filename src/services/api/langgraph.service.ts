@@ -11,6 +11,8 @@ type SubmitOptions = {
   currentBrandContextId: string | null;
   currentCampaignId: string | null;
   currentMoodboardId: string | null;
+  currentSelectedImageGenerationModelId: string | null;
+  userAccessToken: string | null;
 };
 
 export function submitOptimisticMessage({
@@ -20,6 +22,8 @@ export function submitOptimisticMessage({
   currentBrandContextId,
   currentCampaignId,
   currentMoodboardId,
+  currentSelectedImageGenerationModelId,
+  userAccessToken,
 }: SubmitOptions) {
   const newMessage: Message = {
     id: uuidv4(),
@@ -38,9 +42,10 @@ export function submitOptimisticMessage({
       userId,
       currentBrandContextId,
       previousBrandContextId: stream.values.previousBrandContextId,
-      currentCampaignId: currentCampaignId ?? stream.values.currentCampaignId,
-      currentMoodboardId:
-        currentMoodboardId ?? stream.values.currentMoodboardId,
+      currentCampaignId: currentCampaignId,
+      currentMoodboardId: currentMoodboardId,
+      currentSelectedImageGenerationModelId,
+      userAccessToken,
     },
     {
       streamMode: ["values"],

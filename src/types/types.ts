@@ -144,8 +144,8 @@ export type A2iImageGeneration = {
     | "upscale"
     | "video_generation"
     | "a2i"; // Backward compatibility
-  created_at: string;
-  updated_at: string;
+  created_at: string | { $date: string };
+  updated_at: string | { $date: string };
   parameters: Record<string, any>;
   images?: A2iImageDetail[];
   vton_parameters?: {

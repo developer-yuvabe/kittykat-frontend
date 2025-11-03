@@ -593,3 +593,10 @@ export function isTabDisabled(
   // Default: all tabs enabled
   return false;
 }
+
+export const parseMongoDBDate = (obj: any): number => {
+  if (!obj) return 0;
+  if (typeof obj === "string") return new Date(obj).getTime();
+  if (obj.$date) return new Date(obj.$date).getTime();
+  return 0;
+};

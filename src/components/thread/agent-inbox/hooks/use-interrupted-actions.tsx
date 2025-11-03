@@ -15,6 +15,8 @@ import { END } from "@langchain/langgraph/web";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 interface UseInterruptedActionsInput {
   interrupt: HumanInterrupt;
@@ -57,6 +59,7 @@ export default function useInterruptedActions({
 }: UseInterruptedActionsInput): UseInterruptedActionsValue {
   const thread = useStreamContext();
   const { user } = useUserStore();
+  const { selectedImageGenerationModel } = useModelsStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
   const [humanResponse, setHumanResponse] = useState<HumanResponseWithEdits[]>(
@@ -85,7 +88,7 @@ export default function useInterruptedActions({
     }
   }, [interrupt]);
 
-  const resumeRun = (response: HumanResponse[]): boolean => {
+  const resumeRun = async (response: HumanResponse[]): Promise<boolean> => {
     try {
       thread.submit(
         {
@@ -94,6 +97,9 @@ export default function useInterruptedActions({
           previousBrandContextId: thread.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,
+          currentSelectedImageGenerationModelId:
+            selectedImageGenerationModel?.id ?? null,
+          userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
           command: {
@@ -271,6 +277,9 @@ export default function useInterruptedActions({
           previousBrandContextId: thread.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,
+          currentSelectedImageGenerationModelId:
+            selectedImageGenerationModel?.id ?? null,
+          userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
           command: {

@@ -11,6 +11,9 @@ export type User = {
   is_default_admin?: boolean;
   credits?: number;
   kittykat_expert_credits?: number;
+  user_preferences?: {
+    enhance_prompts?: boolean;
+  };
 };
 
 export type UserListItem = {

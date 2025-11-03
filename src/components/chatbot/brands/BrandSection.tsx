@@ -25,6 +25,8 @@ import { BrandColors } from "./BrandColors";
 import { BrandMedia } from "./BrandMedia";
 import BrandSelector from "./BrandSelector";
 import { InitialPlaceHolder } from "./InitialPlaceHolder";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -84,9 +86,10 @@ export const renderBrandData = (
     selectedCampaignId,
     selectedMoodboardId,
   } = useBrandStore();
+  const { selectedImageGenerationModel } = useModelsStore();
   const { removePinnedItem } = usePinnedContextStore();
 
-  const handleFieldUpdate = (
+  const handleFieldUpdate = async (
     fieldPath: string,
     oldValue: any,
     newVal: any,
@@ -113,6 +116,9 @@ export const renderBrandData = (
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }
   };
@@ -136,6 +142,9 @@ export const renderBrandData = (
         currentBrandContextId: null,
         currentCampaignId: null,
         currentMoodboardId: null,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
 
       // Clear pinned items

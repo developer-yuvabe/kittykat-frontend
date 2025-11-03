@@ -95,6 +95,15 @@ class GalleryService {
     workflow_status?: string[];
     is_archived?: boolean;
     moodboard_ids?: string[];
+    has_comments?: boolean;
+    sort_by?:
+      | "created_at"
+      | "updated_at"
+      | "brand_sort_order"
+      | "last_accessed_at"
+      | "name_ascending"
+      | "name_descending";
+    created_at_range?: [string, string];
   }): Promise<GalleryItemsListResponse> {
     const {
       skip = 0,
