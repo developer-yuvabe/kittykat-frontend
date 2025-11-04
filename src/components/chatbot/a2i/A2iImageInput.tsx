@@ -316,14 +316,37 @@ const A2iImageInput = ({
           ? referenceImages
           : [referenceImages];
 
-        // For now, assign all to master; can split later if needed
-        setMasterReference(imagesArray);
+        // Get product reference images from parameters or stored state
+        const productRefImages = parameters.productReferenceImages || [];
+
+        // Categorize images: if product_reference_images exists, use it to split
+        if (productRefImages.length > 0) {
+          // Images in productRefImages go to productReference
+          const productImages = imagesArray.filter((img) =>
+            productRefImages.includes(img)
+          );
+          // Remaining images go to masterReference
+          const masterImages = imagesArray.filter(
+            (img) => !productRefImages.includes(img)
+          );
+
+          setProductReference(productImages);
+          setMasterReference(masterImages);
+        } else {
+          // If no product_reference_images, assign all to master
+          setMasterReference(imagesArray);
+          setProductReference([]);
+        }
+      } else {
+        // No reference images in parameters - clear existing references
+        setMasterReference([]);
         setProductReference([]);
       }
 
       formInstance.trigger();
       requestAnimationFrame(() => {
         setParameters("imageGeneationParameters", null);
+        setParameters("productReferenceImages", null);
       });
     }
 
