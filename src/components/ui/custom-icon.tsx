@@ -1739,19 +1739,19 @@ export const LockIcon: React.FC<CustomIconProps> = ({
     <path
       d="M18.02 11.13L5.98001 11.13C5.03008 11.13 4.26001 11.9001 4.26001 12.85L4.26001 19.73C4.26001 20.6799 5.03008 21.45 5.98001 21.45L18.02 21.45C18.9699 21.45 19.74 20.6799 19.74 19.73V12.85C19.74 11.9001 18.9699 11.13 18.02 11.13Z"
       stroke={color}
-      strokeWidth="2.064"
+      strokeWidth="2.5"
     />
     <path
       d="M12 18.01C12.95 18.01 13.72 17.2399 13.72 16.29C13.72 15.3401 12.95 14.57 12 14.57C11.0501 14.57 10.28 15.3401 10.28 16.29C10.28 17.2399 11.0501 18.01 12 18.01Z"
       stroke={color}
-      strokeWidth="2.064"
+      strokeWidth="2.5"
       strokeMiterlimit="10"
       strokeLinecap="square"
     />
     <path
       d="M16.3 7.72003V6.86003C16.3233 4.5091 14.4369 2.58413 12.086 2.56003H12C9.64902 2.53664 7.72405 4.4231 7.69995 6.77403V7.72003"
       stroke={color}
-      strokeWidth="2.064"
+      strokeWidth="2.5"
       strokeMiterlimit="10"
       strokeLinecap="round"
     />

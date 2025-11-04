@@ -19,6 +19,11 @@ import { ReferenceUploadArea } from "./ReferenceUploadArea";
 import { ReferenceZone } from "./ReferenceZone";
 import { ReferenceGalleryGrid } from "./ReferenceGalleryGrid";
 import { allMediaAssetSources, checkFileSizeLimit } from "@/lib/gallery.utils";
+import {
+  handleReferenceImageDrop,
+  addReferenceToZone,
+  removeReferenceFromZone,
+} from "@/lib/reference-image.utils";
 
 interface ReferenceImageSelectorProps {
   masterReference: string[];
@@ -34,6 +39,8 @@ interface ReferenceImageSelectorProps {
   onOpenChange: (open: boolean) => void;
   activeTab: "master" | "product";
   onTabChange: (tab: "master" | "product") => void;
+  isMagicEnabled?: boolean;
+  onToggleMagic?: () => void;
 }
 
 const ReferenceImageSelector = ({
@@ -50,6 +57,8 @@ const ReferenceImageSelector = ({
   onOpenChange,
   activeTab,
   onTabChange,
+  isMagicEnabled,
+  onToggleMagic,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
@@ -128,9 +137,12 @@ const ReferenceImageSelector = ({
       if (acceptedFiles.length === 0) return;
 
       setIsUploading(true);
-      try {
+
+      const uploadPromise = async () => {
         const uploadedGalleryItems: GalleryItem[] = [];
         const uploadedUrls: string[] = [];
+
+        // Upload files to storage
         const uploadPromises = acceptedFiles.map(async (file) => {
           try {
             const uploadedUrl = await uploadFileAndReturnUrl(
@@ -156,41 +168,53 @@ const ReferenceImageSelector = ({
 
             uploadedUrls.push(uploadedUrl);
             return uploadedUrl;
-          } catch {
-            console.error("Upload failed for", file.name);
-            return null;
+          } catch (error) {
+            console.error("Upload failed for", file.name, error);
+            throw error;
           }
         });
 
         await Promise.all(uploadPromises);
 
-        if (uploadedGalleryItems.length > 0) {
-          // Upload to backend
-          const response = await bulkUpload({
-            gallery_items: uploadedGalleryItems,
-            brand_id: selectedBrandId!,
-          });
-
-          // Add uploaded items to gallery after successful upload
-          if (response && response.length > 0) {
-            addItems(response);
-          }
+        if (uploadedGalleryItems.length === 0) {
+          throw new Error("No files were uploaded successfully");
         }
 
-        // Automatically add uploaded images to the selected tab
-        if (uploadedUrls.length > 0) {
-          if (activeTab === "master") {
-            onMasterReferenceChange([...masterReference, ...uploadedUrls]);
-            toast.success("Master references added");
-          } else {
-            onProductReferenceChange([...productReference, ...uploadedUrls]);
-            toast.success("Product references added");
-          }
+        // Save to gallery backend
+        const response = await bulkUpload({
+          gallery_items: uploadedGalleryItems,
+          brand_id: selectedBrandId!,
+        });
+
+        // Add uploaded items to gallery store
+        if (response && response.length > 0) {
+          addItems(response);
         }
 
-        toast.success("Files uploaded successfully!");
-      } catch {
-        toast.error("Failed to upload files. Please try again.");
+        // Add to references
+        if (activeTab === "master") {
+          onMasterReferenceChange([...masterReference, ...uploadedUrls]);
+        } else {
+          onProductReferenceChange([...productReference, ...uploadedUrls]);
+        }
+
+        return {
+          count: uploadedUrls.length,
+          targetZone: activeTab,
+        };
+      };
+
+      try {
+        const toastPromise = toast.promise(uploadPromise(), {
+          loading: `Uploading ${acceptedFiles.length} file(s) to ${activeTab} reference...`,
+          success: (data) =>
+            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+          error: "Failed to upload files. Please try again.",
+        });
+
+        await toastPromise.unwrap();
+      } catch (error) {
+        console.error("File upload failed:", error);
       } finally {
         setIsUploading(false);
       }
@@ -213,18 +237,26 @@ const ReferenceImageSelector = ({
     async (assetUrl: string, assetId: string, sizeString?: string) => {
       // Check if image is already selected and toggle it off
       if (masterReference.includes(assetUrl)) {
-        onMasterReferenceChange(
-          masterReference.filter((url) => url !== assetUrl)
+        const result = removeReferenceFromZone(
+          "master",
+          assetUrl,
+          masterReference,
+          productReference
         );
-        toast.success("Master reference removed");
+        onMasterReferenceChange(result.newMasterReference);
+        toast.success(result.toastMessage);
         return;
       }
 
       if (productReference.includes(assetUrl)) {
-        onProductReferenceChange(
-          productReference.filter((url) => url !== assetUrl)
+        const result = removeReferenceFromZone(
+          "product",
+          assetUrl,
+          masterReference,
+          productReference
         );
-        toast.success("Product reference removed");
+        onProductReferenceChange(result.newProductReference);
+        toast.success(result.toastMessage);
         return;
       }
 
@@ -248,14 +280,16 @@ const ReferenceImageSelector = ({
         return;
       }
 
-      // Add to the active tab
-      if (activeTab === "master") {
-        onMasterReferenceChange([...masterReference, assetUrl]);
-        toast.success("Master reference added");
-      } else {
-        onProductReferenceChange([...productReference, assetUrl]);
-        toast.success("Product reference added");
-      }
+      // Add to the active tab using shared utility
+      const result = addReferenceToZone(
+        activeTab,
+        assetUrl,
+        masterReference,
+        productReference
+      );
+      onMasterReferenceChange(result.newMasterReference);
+      onProductReferenceChange(result.newProductReference);
+      toast.success(result.toastMessage);
 
       // Optimistically update in store
       updateLastAccessed(assetId);
@@ -307,30 +341,26 @@ const ReferenceImageSelector = ({
 
       if (!assetUrl) return;
 
-      if (currentImageCount >= maxLimit) {
-        return toast.error(`You can only upload ${maxLimit} image(s).`);
+      // Use shared utility function for drop logic
+      const result = handleReferenceImageDrop(
+        assetUrl,
+        source,
+        zone,
+        masterReference,
+        productReference,
+        maxLimit
+      );
+
+      // If drop should be prevented, show toast and return
+      if (result.shouldPrevent) {
+        if (result.toastMessage) {
+          toast[result.toastMessage.type](result.toastMessage.message);
+        }
+        return;
       }
 
-      if (source === "master" && zone === "product") {
-        const newMaster = masterReference.filter((url) => url !== assetUrl);
-        onMasterReferenceChange(newMaster);
-        onProductReferenceChange([...productReference, assetUrl]);
-        toast.success("Reference moved to Product");
-      } else if (source === "product" && zone === "master") {
-        const newProduct = productReference.filter((url) => url !== assetUrl);
-        onProductReferenceChange(newProduct);
-        onMasterReferenceChange([...masterReference, assetUrl]);
-        toast.success("Reference moved to Master");
-      } else {
-        if (
-          masterReference.includes(assetUrl) ||
-          productReference.includes(assetUrl)
-        ) {
-          return toast.error("This image is already selected as a reference.");
-        }
-
-        // Check file size before adding from gallery
-        // Try to get size from gallery items
+      // Handle file size check only for gallery drops (new additions)
+      if (source === "gallery") {
         const galleryItem = galleryItems.find(
           (item) => item.asset_url === assetUrl
         );
@@ -348,31 +378,33 @@ const ReferenceImageSelector = ({
           return;
         }
 
-        // Optimistically update in store
+        // Optimistically update in store for gallery items
         if (assetId) {
           updateLastAccessed(assetId);
-
-          // Update in backend
           patchItem({
             itemId: assetId,
             data: { last_accessed_at: new Date().toISOString() },
           });
         }
+      }
 
-        if (zone === "master") {
-          onMasterReferenceChange([...masterReference, assetUrl]);
-          toast.success("Master reference added");
-        } else {
-          onProductReferenceChange([...productReference, assetUrl]);
-          toast.success("Product reference added");
-        }
+      // Apply the state updates
+      if (result.newMasterReference !== undefined) {
+        onMasterReferenceChange(result.newMasterReference);
+      }
+      if (result.newProductReference !== undefined) {
+        onProductReferenceChange(result.newProductReference);
+      }
+
+      // Show success toast
+      if (result.toastMessage) {
+        toast[result.toastMessage.type](result.toastMessage.message);
       }
     },
     [
-      currentImageCount,
-      maxLimit,
       masterReference,
       productReference,
+      maxLimit,
       onMasterReferenceChange,
       onProductReferenceChange,
       updateLastAccessed,
@@ -384,11 +416,14 @@ const ReferenceImageSelector = ({
 
   const handleRemoveImage = useCallback(
     (zone: "master" | "product", url: string) => {
-      if (zone === "master") {
-        onMasterReferenceChange(masterReference.filter((u) => u !== url));
-      } else {
-        onProductReferenceChange(productReference.filter((u) => u !== url));
-      }
+      const result = removeReferenceFromZone(
+        zone,
+        url,
+        masterReference,
+        productReference
+      );
+      onMasterReferenceChange(result.newMasterReference);
+      onProductReferenceChange(result.newProductReference);
     },
     [
       masterReference,
@@ -421,82 +456,96 @@ const ReferenceImageSelector = ({
 
   const handleMediaLibrarySelection = useCallback(
     async (items: GalleryItem[]) => {
-      // Check file sizes for all selected items
-      const validItems: GalleryItem[] = [];
-      const invalidItems: string[] = [];
+      const selectionPromise = async () => {
+        // Check file sizes for all selected items
+        const validItems: GalleryItem[] = [];
+        const invalidItems: string[] = [];
 
-      for (const item of items) {
-        const { isValid, sizeInMB } = await checkFileSizeLimit(
-          item.asset_url,
-          item.size,
-          maxFileSizeLimit
-        );
-        if (isValid) {
-          validItems.push(item);
-        } else {
-          invalidItems.push(
-            `${item.asset_title || "Unnamed file"} (${sizeInMB?.toFixed(1)}MB)`
+        for (const item of items) {
+          const { isValid, sizeInMB } = await checkFileSizeLimit(
+            item.asset_url,
+            item.size,
+            maxFileSizeLimit
+          );
+          if (isValid) {
+            validItems.push(item);
+          } else {
+            invalidItems.push(
+              `${item.asset_title || "Unnamed file"} (${sizeInMB?.toFixed(
+                1
+              )}MB)`
+            );
+          }
+        }
+
+        // If no valid items, don't proceed
+        if (validItems.length === 0) {
+          throw new Error("No valid images to add (all exceeded size limit)");
+        }
+
+        // Show warning if some items were rejected
+        if (invalidItems.length > 0) {
+          toast.warning(
+            `${invalidItems.length} image(s) rejected due to size limit.`
           );
         }
-      }
 
-      // If no valid items, don't proceed
-      if (validItems.length === 0) {
-        toast.error("No valid images to add (all exceeded size limit)");
-        return;
-      }
+        const selectedUrls = validItems.map((item) => item.asset_url);
 
-      // Show warning if some items were rejected
-      if (invalidItems.length > 0) {
-        toast.warning(
-          `${invalidItems.length} image(s) rejected due to size limit. ${validItems.length} image(s) added.`
-        );
-      }
-
-      const selectedUrls = validItems.map((item) => item.asset_url);
-
-      if (activeTab === "master") {
-        const newMasterRefs = [...masterReference, ...selectedUrls];
-        onMasterReferenceChange(newMasterRefs);
-        if (invalidItems.length === 0) {
-          toast.success(`${validItems.length} master reference(s) added`);
+        // Add to references
+        if (activeTab === "master") {
+          const newMasterRefs = [...masterReference, ...selectedUrls];
+          onMasterReferenceChange(newMasterRefs);
+        } else {
+          const newProductRefs = [...productReference, ...selectedUrls];
+          onProductReferenceChange(newProductRefs);
         }
-      } else {
-        const newProductRefs = [...productReference, ...selectedUrls];
-        onProductReferenceChange(newProductRefs);
-        if (invalidItems.length === 0) {
-          toast.success(`${validItems.length} product reference(s) added`);
+
+        // Optimistically add items to gallery - keep original is_master value (versioning control)
+        const itemsAsResponse = validItems.map((item) => ({
+          ...item,
+        })) as GalleryItemResponse[];
+        const itemsWithIds = itemsAsResponse.filter((item) => item.id);
+
+        if (itemsWithIds.length > 0) {
+          addItems(itemsWithIds);
         }
+
+        // Update last_accessed_at for each item
+        validItems.forEach((item) => {
+          const itemResponse = item as GalleryItemResponse;
+          if (itemResponse.id) {
+            updateLastAccessed(itemResponse.id);
+            patchItem({
+              itemId: itemResponse.id,
+              data: {
+                last_accessed_at: new Date().toISOString(),
+              },
+              revalidateAutofillSuggestions: false,
+            });
+          }
+        });
+
+        setMediaLibraryOpen(false);
+
+        return {
+          count: validItems.length,
+          targetZone: activeTab,
+        };
+      };
+
+      try {
+        const toastPromise = toast.promise(selectionPromise(), {
+          loading: `Adding ${items.length} image(s) to ${activeTab} reference...`,
+          success: (data) =>
+            `${data.count} image(s) added to ${data.targetZone} reference`,
+          error: (err) => err.message || "Failed to add images",
+        });
+
+        await toastPromise.unwrap();
+      } catch (error) {
+        console.error("Media library selection failed:", error);
       }
-
-      // Optimistically add items to gallery with correct is_master flag
-      const itemsAsResponse = validItems.map((item) => ({
-        ...item,
-        is_master: activeTab === "master",
-      })) as GalleryItemResponse[];
-      const itemsWithIds = itemsAsResponse.filter((item) => item.id);
-
-      if (itemsWithIds.length > 0) {
-        addItems(itemsWithIds);
-      }
-
-      // Update last_accessed_at for each item
-      validItems.forEach((item) => {
-        const itemResponse = item as GalleryItemResponse;
-        if (itemResponse.id) {
-          updateLastAccessed(itemResponse.id);
-          patchItem({
-            itemId: itemResponse.id,
-            data: {
-              last_accessed_at: new Date().toISOString(),
-              is_master: activeTab === "master",
-            },
-            revalidateAutofillSuggestions: false,
-          });
-        }
-      });
-
-      setMediaLibraryOpen(false);
     },
     [
       activeTab,
@@ -580,6 +629,8 @@ const ReferenceImageSelector = ({
                     onRemoveImage={(url) => handleRemoveImage("product", url)}
                     showAddButton={masterReference.length > 0}
                     onAddClick={openForProduct}
+                    isMagicEnabled={isMagicEnabled}
+                    onToggleMagic={onToggleMagic}
                   />
                 </div>
 

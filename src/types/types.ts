@@ -164,6 +164,7 @@ export type A2iImageGeneration = {
   };
   video?: A2iVideoDetail;
   is_nsfw_detected?: boolean;
+  product_reference_images?: string[];
 };
 
 export type ThreadA2iImage = {
