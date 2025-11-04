@@ -1,6 +1,11 @@
 import { LucideIcon, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import { TooltipButton } from "@/components/ui/tooltip-button";
+import {
+  MagicEnabledIcon,
+  MagicDisabledIcon,
+} from "@/components/ui/custom-icon";
 
 interface ReferenceZoneProps {
   type: "master" | "product";
@@ -15,9 +20,12 @@ interface ReferenceZoneProps {
   onRemoveImage: (url: string) => void;
   onAddClick?: () => void;
   showAddButton?: boolean;
+  isMagicEnabled?: boolean;
+  onToggleMagic?: () => void;
 }
 
 export const ReferenceZone = ({
+  type,
   icon: Icon,
   title,
   description,
@@ -29,6 +37,8 @@ export const ReferenceZone = ({
   onRemoveImage,
   onAddClick,
   showAddButton = false,
+  isMagicEnabled,
+  onToggleMagic,
 }: ReferenceZoneProps) => {
   return (
     <div
@@ -42,19 +52,44 @@ export const ReferenceZone = ({
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex flex-row items-center gap-2 mb-2">
-        <Icon className="h-5 w-5 flex-shrink-0" />
-        <div className="text-start min-w-0">
-          <p className="font-medium text-sm">{title}</p>
-          <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
+      <div className="flex flex-row items-center gap-2 mb-2 justify-between">
+        <div className="flex flex-row items-center gap-2 min-w-0">
+          <Icon className="h-5 w-5 shrink-0" />
+          <div className="text-start min-w-0">
+            <p className="font-medium text-sm">{title}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {description}
+            </p>
+          </div>
         </div>
+        {type === "product" && images.length > 0 && onToggleMagic && (
+          <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <TooltipButton
+              tooltip={
+                isMagicEnabled
+                  ? "Disable magic enhance"
+                  : "Enable magic enhance"
+              }
+              icon={
+                isMagicEnabled ? (
+                  <MagicEnabledIcon color="#7F55E0" size={22} />
+                ) : (
+                  <MagicDisabledIcon color="#6B5FBA" size={22} />
+                )
+              }
+              size="md"
+              className="px-2 py-2"
+              onClick={onToggleMagic}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
         {images.map((url) => (
           <div
             key={url}
-            className="relative w-20 h-20 rounded-lg flex-shrink-0"
+            className="relative w-20 h-20 rounded-lg shrink-0"
             draggable
             onDragStart={(e) => onDragStart(e, url)}
             onClick={(e) => e.stopPropagation()}

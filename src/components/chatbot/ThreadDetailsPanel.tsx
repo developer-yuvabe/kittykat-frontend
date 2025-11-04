@@ -64,7 +64,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   return (
     <div
-      className={`relative rounded-2xl p-8 flex flex-col overflow-auto scrollbar ${
+      className={`relative rounded-2xl px-8 pt-8  flex flex-col overflow-auto scrollbar ${
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
