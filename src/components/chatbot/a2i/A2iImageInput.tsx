@@ -41,13 +41,7 @@ import { useQueryState } from "nuqs";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 import ModelSelector from "./ModelSelector";
-import {
-  LockIcon,
-  LockOpenIcon,
-  MagicEnabledIcon,
-  MagicDisabledIcon,
-  TrashIcon,
-} from "@/components/ui/custom-icon";
+import { LockIcon, LockOpenIcon, TrashIcon } from "@/components/ui/custom-icon";
 import ReferenceImageSelector from "./ReferenceImageSelector";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
@@ -706,26 +700,6 @@ const A2iImageInput = ({
                     />
                     <div className="absolute top-2 right-2 flex gap-1">
                       <TooltipButton
-                        tooltip={
-                          productReference.length === 0
-                            ? "Add product reference images to enable magic enhance"
-                            : isMagicEnabled
-                            ? "Disable magic enhance"
-                            : "Enable magic enhance"
-                        }
-                        icon={
-                          isMagicEnabled ? (
-                            <MagicEnabledIcon color="#7F55E0" size={22} />
-                          ) : (
-                            <MagicDisabledIcon color="#6B5FBA" size={22} />
-                          )
-                        }
-                        size="md"
-                        className="px-2 py-2"
-                        onClick={handleToggleMagic}
-                        disabled={productReference.length === 0}
-                      />
-                      <TooltipButton
                         tooltip="Keep prompt and reference images"
                         icon={
                           isLocked ? (
@@ -768,6 +742,8 @@ const A2iImageInput = ({
                   onOpenChange={setIsReferencePopoverOpen}
                   activeTab={referencePopoverTab}
                   onTabChange={setReferencePopoverTab}
+                  isMagicEnabled={isMagicEnabled}
+                  onToggleMagic={handleToggleMagic}
                 />
               ) : (
                 <Tooltip>
@@ -937,6 +913,8 @@ const A2iImageInput = ({
                         masterReference.length > 0
                       }
                       onAddClick={() => openReferencePopover("product")}
+                      isMagicEnabled={isMagicEnabled}
+                      onToggleMagic={handleToggleMagic}
                     />
                   </div>
                 </div>

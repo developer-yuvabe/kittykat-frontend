@@ -39,6 +39,8 @@ interface ReferenceImageSelectorProps {
   onOpenChange: (open: boolean) => void;
   activeTab: "master" | "product";
   onTabChange: (tab: "master" | "product") => void;
+  isMagicEnabled?: boolean;
+  onToggleMagic?: () => void;
 }
 
 const ReferenceImageSelector = ({
@@ -55,6 +57,8 @@ const ReferenceImageSelector = ({
   onOpenChange,
   activeTab,
   onTabChange,
+  isMagicEnabled,
+  onToggleMagic,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
@@ -625,6 +629,8 @@ const ReferenceImageSelector = ({
                     onRemoveImage={(url) => handleRemoveImage("product", url)}
                     showAddButton={masterReference.length > 0}
                     onAddClick={openForProduct}
+                    isMagicEnabled={isMagicEnabled}
+                    onToggleMagic={onToggleMagic}
                   />
                 </div>
 
