@@ -22,7 +22,7 @@ import {
   Paperclip,
   PanelTop,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { DragEvent } from "react";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
@@ -57,6 +57,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ReferenceZone } from "./ReferenceZone";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import {
+  handleReferenceImageDrop,
+  validateFiles,
+  updateReferencesByZone,
+} from "@/lib/reference-image.utils";
+import { getExtensionFromUrl } from "@/lib/utils";
+import { useGalleryQuery } from "@/hooks/useGallery";
+import { useReferenceImagesStore } from "@/store/reference-image.store";
+import { GalleryItem } from "@/types/gallery.types";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -87,6 +97,29 @@ const A2iImageInput = ({
   const [isMagicEnabled, setIsMagicEnabled] = useState(
     user?.user_preferences?.enhance_prompts
   );
+
+  // Add gallery query and store for reference images
+  const { bulkUpload } = useGalleryQuery(
+    {
+      selectedFilters: {
+        brands: [selectedBrandId!],
+        campaigns: [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: ["reference"],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        sort_by: "last_accessed_at",
+      },
+    },
+    40,
+    true
+  );
+
+  const { addItems } = useReferenceImagesStore();
+
   const { mutate: handleEnhancePrompt, isPending: isEnhancingPrompt } =
     useMutation({
       mutationFn: () =>
@@ -175,6 +208,255 @@ const A2iImageInput = ({
     setProductReference([]);
     clearReferencePrompt();
   }
+
+  // Handle file uploads from OS drag-and-drop
+  const handleFileUpload = useCallback(
+    async (
+      files: File[],
+      targetZone: "master" | "product"
+    ): Promise<string[]> => {
+      if (!referenceImagesModelInfo) {
+        toast.error("This model doesn't support reference images");
+        return [];
+      }
+
+      const { fileTypes, maxFileSizeLimit, maxLimit } =
+        referenceImagesModelInfo;
+      const remainingSlots =
+        maxLimit - (masterReference.length + productReference.length);
+
+      if (remainingSlots <= 0) {
+        toast.error(`You can only upload ${maxLimit} image(s).`);
+        return [];
+      }
+
+      // Use shared validation utility
+      const { validFiles, invalidFiles } = validateFiles(
+        files,
+        fileTypes,
+        maxFileSizeLimit,
+        remainingSlots
+      );
+
+      if (invalidFiles.length > 0) {
+        toast.warning(
+          `${invalidFiles.length} file(s) rejected: ${invalidFiles.join(", ")}`
+        );
+      }
+
+      if (validFiles.length === 0) {
+        return [];
+      }
+
+      // Upload files with toast.promise for better UX
+      const uploadPromise = async () => {
+        const uploadedGalleryItems: GalleryItem[] = [];
+        const uploadedUrls: string[] = [];
+
+        // Upload files to storage
+        const uploadPromises = validFiles.map(async (file) => {
+          try {
+            const uploadedUrl = await uploadFileAndReturnUrl(
+              file.name,
+              file.type,
+              "brands",
+              file,
+              selectedBrandId
+            );
+
+            uploadedGalleryItems.push({
+              brand_id: selectedBrandId!,
+              asset_type: "image",
+              asset_source: "reference",
+              asset_title: file.name,
+              asset_url: uploadedUrl,
+              preview_url: uploadedUrl,
+              media_format: getExtensionFromUrl(uploadedUrl),
+              is_master: true,
+              size: "",
+              last_accessed_at: new Date().toISOString(),
+            });
+
+            uploadedUrls.push(uploadedUrl);
+            return uploadedUrl;
+          } catch (error) {
+            console.error("Upload failed for", file.name, error);
+            throw error;
+          }
+        });
+
+        await Promise.all(uploadPromises);
+
+        if (uploadedGalleryItems.length === 0) {
+          throw new Error("No files were uploaded successfully");
+        }
+
+        // Save to gallery backend
+        const response = await bulkUpload({
+          gallery_items: uploadedGalleryItems,
+          brand_id: selectedBrandId!,
+        });
+
+        // Add uploaded items to gallery store
+        if (response && response.length > 0) {
+          addItems(response);
+        }
+
+        return {
+          successfulUrls: uploadedUrls,
+          count: uploadedUrls.length,
+          targetZone,
+        };
+      };
+
+      try {
+        const toastPromise = toast.promise(uploadPromise(), {
+          loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
+          success: (data) =>
+            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+          error: "Failed to upload files. Please try again.",
+        });
+
+        const result = await toastPromise.unwrap();
+        return result.successfulUrls;
+      } catch (error) {
+        console.error("File upload failed:", error);
+        return [];
+      }
+    },
+    [
+      referenceImagesModelInfo,
+      masterReference.length,
+      productReference.length,
+      selectedBrandId,
+      bulkUpload,
+      addItems,
+    ]
+  );
+
+  // Handle drag-and-drop between zones (collapsed state)
+  const handleZoneDrop = useCallback(
+    async (e: DragEvent, targetZone: "master" | "product") => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!referenceImagesModelInfo) {
+        toast.error("This model doesn't support reference images");
+        return;
+      }
+
+      const assetUrl = e.dataTransfer.getData("assetUrl");
+      const source = e.dataTransfer.getData("source");
+
+      // Handle file drops from OS
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        const uploadedUrls = await handleFileUpload(files, targetZone);
+
+        if (uploadedUrls.length > 0) {
+          // Use shared utility to update references
+          const { newMasterReference, newProductReference } =
+            updateReferencesByZone(
+              targetZone,
+              uploadedUrls,
+              masterReference,
+              productReference
+            );
+          setMasterReference(newMasterReference);
+          setProductReference(newProductReference);
+        }
+        return;
+      }
+
+      // Handle drag between zones
+      if (!assetUrl) return;
+
+      // Use shared utility function for drop logic
+      const result = handleReferenceImageDrop(
+        assetUrl,
+        source,
+        targetZone,
+        masterReference,
+        productReference,
+        referenceImagesModelInfo.maxLimit
+      );
+
+      // If drop should be prevented, show toast and return
+      if (result.shouldPrevent) {
+        if (result.toastMessage) {
+          toast[result.toastMessage.type](result.toastMessage.message);
+        }
+        return;
+      }
+
+      // Apply the state updates
+      if (result.newMasterReference !== undefined) {
+        setMasterReference(result.newMasterReference);
+      }
+      if (result.newProductReference !== undefined) {
+        setProductReference(result.newProductReference);
+      }
+
+      // Show success toast
+      if (result.toastMessage) {
+        toast[result.toastMessage.type](result.toastMessage.message);
+      }
+    },
+    [
+      referenceImagesModelInfo,
+      masterReference,
+      productReference,
+      handleFileUpload,
+    ]
+  );
+
+  // Handle drag-and-drop on prompt textarea
+  const handlePromptDrop = useCallback(
+    async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!referenceImagesModelInfo) {
+        toast.error("This model doesn't support reference images");
+        return;
+      }
+
+      // Only handle file drops from OS
+      if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) {
+        return;
+      }
+
+      const files = Array.from(e.dataTransfer.files);
+
+      // Determine target zone based on active tab or default to master
+      const targetZone =
+        masterReference.length > 0 || productReference.length > 0
+          ? referencePopoverTab
+          : "master";
+
+      const uploadedUrls = await handleFileUpload(files, targetZone);
+
+      if (uploadedUrls.length > 0) {
+        // Use shared utility to update references
+        const { newMasterReference, newProductReference } =
+          updateReferencesByZone(
+            targetZone,
+            uploadedUrls,
+            masterReference,
+            productReference
+          );
+        setMasterReference(newMasterReference);
+        setProductReference(newProductReference);
+      }
+    },
+    [
+      referenceImagesModelInfo,
+      masterReference,
+      productReference,
+      referencePopoverTab,
+      handleFileUpload,
+    ]
+  );
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
     try {
@@ -412,8 +694,13 @@ const A2iImageInput = ({
                           formInstance.handleSubmit(onSubmit)();
                         }
                       }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={handlePromptDrop}
                       className={cn(
-                        "relative w-full resize-none mt-5 border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-[80px] max-h-[200px] overflow-y-auto align-top"
+                        "relative w-full resize-none mt-5 border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-20 max-h-[200px] overflow-y-auto align-top"
                       )}
                       placeholder="Describe what you want to see ..."
                     />
@@ -601,13 +888,11 @@ const A2iImageInput = ({
                       type="master"
                       icon={Paperclip}
                       title="Master Reference"
-                      description="Use elements of an image. (Click to add)"
+                      description="Use elements of an image. (Drag files or images here)"
                       images={masterReference}
                       isSelected={referencePopoverTab === "master"}
                       onClick={() => openReferencePopover("master")}
-                      onDrop={(e: DragEvent) => {
-                        e.preventDefault();
-                      }}
+                      onDrop={(e: DragEvent) => handleZoneDrop(e, "master")}
                       onDragStart={(e: DragEvent, url: string) => {
                         e.dataTransfer.setData("assetUrl", url);
                         e.dataTransfer.setData("source", "master");
@@ -632,13 +917,11 @@ const A2iImageInput = ({
                       type="product"
                       icon={PanelTop}
                       title="Product Reference"
-                      description="Use a product image. This might alter your prompt. (Click to add)"
+                      description="Use a product image. (Drag files or images here)"
                       images={productReference}
                       isSelected={referencePopoverTab === "product"}
                       onClick={() => openReferencePopover("product")}
-                      onDrop={(e: DragEvent) => {
-                        e.preventDefault();
-                      }}
+                      onDrop={(e: DragEvent) => handleZoneDrop(e, "product")}
                       onDragStart={(e: DragEvent, url: string) => {
                         e.dataTransfer.setData("assetUrl", url);
                         e.dataTransfer.setData("source", "product");
