@@ -43,6 +43,7 @@ import { toast } from "sonner";
 import { useModelsStore } from "@/store/models.store";
 import { parseMongoDBDate } from "@/lib/a2i.utils";
 import A2iImageInputLoader from "./A2iImageInputLoader";
+import { useQueryState } from "nuqs";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -244,6 +245,29 @@ export const A2iImagesWrapper = ({
 
   const contextValue = useMemo(() => ({ data: {} }), []);
 
+  const inputContainerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTo, setScrollTo] = useQueryState("scrollTo");
+
+  useEffect(() => {
+    if (scrollTo === "a2i-input") {
+      const observer = new MutationObserver(() => {
+        setTimeout(() => {
+          if (inputContainerRef.current) {
+            inputContainerRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "end",
+            });
+            setScrollTo(null);
+            observer.disconnect();
+          }
+        }, 50);
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
+    }
+  }, [scrollTo]);
+
   return (
     <ContentSection
       title=""
@@ -343,6 +367,7 @@ export const A2iImagesWrapper = ({
               </SortableContext>
             </DndContext>
           </div>
+          <div ref={inputContainerRef}></div>
         </div>
       }
     />
