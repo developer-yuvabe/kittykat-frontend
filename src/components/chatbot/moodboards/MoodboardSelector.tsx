@@ -548,10 +548,9 @@ export default function MoodboardSelector({
         title="Delete Moodboard?"
         description={
           <>
-            This will permanently delete <b>{moodboardToDelete?.title}</b>.
-            <br />
-            <br />
-            Are you sure?
+            This action will permanently delete the moodboard
+            <b>{moodboardToDelete?.title}</b> . This action cannot be undone.
+            Are you sure want to proceed?
           </>
         }
         confirmLabel="Delete"

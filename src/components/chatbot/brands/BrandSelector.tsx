@@ -403,17 +403,15 @@ export default function BrandSelector({
         description={
           brandDeleteStep === 1 ? (
             <>
-              Deleting <b>{brandToDelete?.name}</b> will also delete all
-              campaigns & moodboards.
+              Deleting the brand <b>{brandToDelete?.name}</b> will also delete
+              all campaigns & moodboards.
               <br />
-              <br />
-              Continue?
+              This cannot be undone. Proceed with caution.
             </>
           ) : (
             <>
-              Permanently delete <b>{brandToDelete?.name}</b>?<br />
-              <br />
-              This action cannot be undone.
+              Are you absolutely sure? This will permanently delete{" "}
+              <b>{brandToDelete?.name}</b> and all its campaigns & moodboards.
             </>
           )
         }
