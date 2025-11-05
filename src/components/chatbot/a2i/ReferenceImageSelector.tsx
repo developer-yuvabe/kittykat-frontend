@@ -169,6 +169,88 @@ const ReferenceImageSelector = ({
     setIsLoading(isFetching);
   }, [selectedBrandId, isFetching]);
 
+  // DRY: Shared upload logic for file drops and uploads
+  const uploadFilesAndAddToZone = useCallback(
+    async (
+      files: File[],
+      zone: "master" | "product",
+      showToast: boolean = true
+    ): Promise<string[]> => {
+      const uploadedGalleryItems: GalleryItem[] = [];
+      const uploadedUrls: string[] = [];
+
+      // Upload files to storage
+      const uploadPromises = files.map(async (file) => {
+        try {
+          const uploadedUrl = await uploadFileAndReturnUrl(
+            file.name,
+            file.type,
+            "brands",
+            file,
+            selectedBrandId
+          );
+
+          uploadedGalleryItems.push({
+            brand_id: selectedBrandId!,
+            asset_type: "image",
+            asset_source: "reference",
+            asset_title: file.name,
+            asset_url: uploadedUrl,
+            preview_url: uploadedUrl,
+            media_format: getExtensionFromUrl(uploadedUrl),
+            is_master: true,
+            size: "",
+            last_accessed_at: new Date().toISOString(),
+          });
+
+          uploadedUrls.push(uploadedUrl);
+          return uploadedUrl;
+        } catch (error) {
+          console.error("Upload failed for", file.name, error);
+          throw error;
+        }
+      });
+
+      await Promise.all(uploadPromises);
+
+      if (uploadedGalleryItems.length === 0) {
+        if (showToast) {
+          toast.error("No files were uploaded successfully");
+        }
+        return [];
+      }
+
+      // Save to gallery backend
+      const response = await bulkUpload({
+        gallery_items: uploadedGalleryItems,
+        brand_id: selectedBrandId!,
+      });
+
+      // Add uploaded items to gallery store
+      if (response && response.length > 0) {
+        addItems(response);
+      }
+
+      // Add to references
+      if (zone === "master") {
+        onMasterReferenceChange([...masterReference, ...uploadedUrls]);
+      } else {
+        onProductReferenceChange([...productReference, ...uploadedUrls]);
+      }
+
+      return uploadedUrls;
+    },
+    [
+      selectedBrandId,
+      bulkUpload,
+      addItems,
+      masterReference,
+      productReference,
+      onMasterReferenceChange,
+      onProductReferenceChange,
+    ]
+  );
+
   const handleDrop = useCallback(
     async (acceptedFiles: File[], fileRejections?: FileRejection[]) => {
       if (fileRejections && fileRejections.length > 0) {
@@ -182,82 +264,21 @@ const ReferenceImageSelector = ({
 
       setIsUploading(true);
 
-      const uploadPromise = async () => {
-        const uploadedGalleryItems: GalleryItem[] = [];
-        const uploadedUrls: string[] = [];
-
-        // Upload files to storage
-        const uploadPromises = acceptedFiles.map(async (file) => {
-          try {
-            const uploadedUrl = await uploadFileAndReturnUrl(
-              file.name,
-              file.type,
-              "brands",
-              file,
-              selectedBrandId
-            );
-
-            uploadedGalleryItems.push({
-              brand_id: selectedBrandId!,
-              asset_type: "image",
-              asset_source: "reference",
-              asset_title: file.name,
-              asset_url: uploadedUrl,
-              preview_url: uploadedUrl,
-              media_format: getExtensionFromUrl(uploadedUrl),
-              is_master: true,
-              size: "",
-              last_accessed_at: new Date().toISOString(),
-            });
-
-            uploadedUrls.push(uploadedUrl);
-            return uploadedUrl;
-          } catch (error) {
-            console.error("Upload failed for", file.name, error);
-            throw error;
-          }
-        });
-
-        await Promise.all(uploadPromises);
-
-        if (uploadedGalleryItems.length === 0) {
-          throw new Error("No files were uploaded successfully");
-        }
-
-        // Save to gallery backend
-        const response = await bulkUpload({
-          gallery_items: uploadedGalleryItems,
-          brand_id: selectedBrandId!,
-        });
-
-        // Add uploaded items to gallery store
-        if (response && response.length > 0) {
-          addItems(response);
-        }
-
-        // Add to references
-        if (activeTab === "master") {
-          onMasterReferenceChange([...masterReference, ...uploadedUrls]);
-        } else {
-          onProductReferenceChange([...productReference, ...uploadedUrls]);
-        }
-
-        return {
-          count: uploadedUrls.length,
-          targetZone: isSingleMode ? "reference" : activeTab,
-        };
-      };
-
       try {
         const zoneLabel = isSingleMode ? "reference" : `${activeTab} reference`;
-        const toastPromise = toast.promise(uploadPromise(), {
-          loading: `Uploading ${acceptedFiles.length} file(s) to ${zoneLabel}...`,
-          success: (data) =>
-            `${data.count} file(s) uploaded to ${data.targetZone}${
-              isSingleMode ? "" : " reference"
-            }`,
-          error: "Failed to upload files. Please try again.",
-        });
+        const toastPromise = toast.promise(
+          uploadFilesAndAddToZone(
+            acceptedFiles,
+            activeTab as "master" | "product",
+            false
+          ),
+          {
+            loading: `Uploading ${acceptedFiles.length} file(s) to ${zoneLabel}...`,
+            success: (uploadedUrls) =>
+              `${uploadedUrls.length} file(s) uploaded to ${zoneLabel}`,
+            error: "Failed to upload files. Please try again.",
+          }
+        );
 
         await toastPromise.unwrap();
       } catch (error) {
@@ -269,14 +290,9 @@ const ReferenceImageSelector = ({
     [
       fileTypes,
       maxFileSizeLimit,
-      selectedBrandId,
-      bulkUpload,
       activeTab,
-      masterReference,
-      productReference,
-      onMasterReferenceChange,
-      onProductReferenceChange,
-      addItems,
+      isSingleMode,
+      uploadFilesAndAddToZone,
     ]
   );
 
@@ -386,9 +402,50 @@ const ReferenceImageSelector = ({
       const source = e.dataTransfer.getData("source");
       const assetId = e.dataTransfer.getData("assetId");
 
+      // Handle file drops from OS directly to zones - upload here
+      if (
+        (!assetUrl || source === "os") &&
+        e.dataTransfer.files &&
+        e.dataTransfer.files.length > 0
+      ) {
+        const files = Array.from(e.dataTransfer.files);
+        setIsUploading(true);
+
+        const uploadPromise = async () => {
+          const uploadedUrls = await uploadFilesAndAddToZone(
+            files,
+            zone,
+            false
+          );
+          return {
+            count: uploadedUrls.length,
+            targetZone: isSingleMode ? "reference" : zone,
+          };
+        };
+
+        try {
+          const zoneLabel = isSingleMode ? "reference" : `${zone} reference`;
+          const toastPromise = toast.promise(uploadPromise(), {
+            loading: `Uploading ${files.length} file(s) to ${zoneLabel}...`,
+            success: (data) =>
+              `${data.count} file(s) uploaded to ${data.targetZone}${
+                isSingleMode ? "" : " reference"
+              }`,
+            error: "Failed to upload files. Please try again.",
+          });
+
+          await toastPromise.unwrap();
+        } catch (error) {
+          console.error("Failed to upload files:", error);
+        } finally {
+          setIsUploading(false);
+        }
+        return;
+      }
+
       if (!assetUrl) return;
 
-      // Use shared utility function for drop logic
+      // Use shared utility function for drop logic (gallery or zone-to-zone moves)
       const result = handleReferenceImageDrop(
         assetUrl,
         source,
@@ -458,6 +515,7 @@ const ReferenceImageSelector = ({
       patchItem,
       galleryItems,
       maxFileSizeLimit,
+      uploadFilesAndAddToZone,
     ]
   );
 

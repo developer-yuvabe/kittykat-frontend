@@ -22,18 +22,26 @@ import {
 } from "@/components/ui/tooltip";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
-import { canvasToBlob, cn, PlatformApiError } from "@/lib/utils";
+import {
+  canvasToBlob,
+  cn,
+  PlatformApiError,
+  getExtensionFromUrl,
+} from "@/lib/utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
 import { useUserStore } from "@/store/user.store";
+import { useReferenceImagesStore } from "@/store/reference-image.store";
+import { useGalleryQuery } from "@/hooks/useGallery";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
+import { GalleryItem } from "@/types/gallery.types";
 import { updateUser } from "@/services/api/user.service";
 import { Eraser, Images, Redo, Settings2, Undo } from "lucide-react";
 import { LockIcon, LockOpenIcon, TrashIcon } from "@/components/ui/custom-icon";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
@@ -45,6 +53,11 @@ import { TooltipButton } from "@/components/ui/tooltip-button";
 import ReferenceImageSelector from "../ReferenceImageSelector";
 import { Paperclip, PanelTop } from "lucide-react";
 import { ReferenceZone } from "../ReferenceZone";
+import {
+  handleReferenceImageDrop,
+  updateReferencesByZone,
+  validateFiles,
+} from "@/lib/reference-image.utils";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -169,10 +182,156 @@ const RemixControls = ({
 
   const currentImageCount = masterReference.length + productReference.length;
 
+  // Gallery query for uploading reference images
+  const { bulkUpload } = useGalleryQuery(
+    {
+      selectedFilters: {
+        brands: [selectedBrandId!],
+        campaigns: [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: ["reference"],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        sort_by: "last_accessed_at",
+      },
+    },
+    40,
+    true
+  );
+
+  const { addItems } = useReferenceImagesStore();
+
   const openReferencePopover = (tab: "master" | "product") => {
     setReferencePopoverTab(tab);
     setIsReferencePopoverOpen(true);
   };
+
+  // Handle file uploads from OS drag-and-drop
+  const handleFileUpload = useCallback(
+    async (
+      files: File[],
+      targetZone: "master" | "product"
+    ): Promise<string[]> => {
+      if (!referenceImageParam) {
+        toast.error("This model doesn't support reference images");
+        return [];
+      }
+
+      const { fileTypes, maxFileSizeLimit, maxLimit } = referenceImageParam;
+      const remainingSlots =
+        maxLimit - (masterReference.length + productReference.length);
+
+      if (remainingSlots <= 0) {
+        toast.error(`You can only upload ${maxLimit} image(s).`);
+        return [];
+      }
+
+      // Use shared validation utility
+      const { validFiles, invalidFiles } = validateFiles(
+        files,
+        fileTypes,
+        maxFileSizeLimit,
+        remainingSlots
+      );
+
+      if (invalidFiles.length > 0) {
+        toast.warning(
+          `${invalidFiles.length} file(s) rejected: ${invalidFiles.join(", ")}`
+        );
+      }
+
+      if (validFiles.length === 0) {
+        return [];
+      }
+
+      // Upload files with toast.promise for better UX
+      const uploadPromise = async () => {
+        const uploadedGalleryItems: GalleryItem[] = [];
+        const uploadedUrls: string[] = [];
+
+        // Upload files to storage
+        const uploadPromises = validFiles.map(async (file) => {
+          try {
+            const uploadedUrl = await uploadFileAndReturnUrl(
+              file.name,
+              file.type,
+              "brands",
+              file,
+              selectedBrandId
+            );
+
+            uploadedGalleryItems.push({
+              brand_id: selectedBrandId!,
+              asset_type: "image",
+              asset_source: "reference",
+              asset_title: file.name,
+              asset_url: uploadedUrl,
+              preview_url: uploadedUrl,
+              media_format: getExtensionFromUrl(uploadedUrl),
+              is_master: true,
+              size: "",
+              last_accessed_at: new Date().toISOString(),
+            });
+
+            uploadedUrls.push(uploadedUrl);
+            return uploadedUrl;
+          } catch (error) {
+            console.error("Upload failed for", file.name, error);
+            throw error;
+          }
+        });
+
+        await Promise.all(uploadPromises);
+
+        if (uploadedGalleryItems.length === 0) {
+          throw new Error("No files were uploaded successfully");
+        }
+
+        // Save to gallery backend
+        const response = await bulkUpload({
+          gallery_items: uploadedGalleryItems,
+          brand_id: selectedBrandId!,
+        });
+
+        // Add uploaded items to gallery store
+        if (response && response.length > 0) {
+          addItems(response);
+        }
+
+        return {
+          successfulUrls: uploadedUrls,
+          count: uploadedUrls.length,
+          targetZone,
+        };
+      };
+
+      try {
+        const toastPromise = toast.promise(uploadPromise(), {
+          loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
+          success: (data) =>
+            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+          error: "Failed to upload files. Please try again.",
+        });
+
+        const result = await toastPromise.unwrap();
+        return result.successfulUrls;
+      } catch (error) {
+        console.error("File upload failed:", error);
+        return [];
+      }
+    },
+    [
+      referenceImageParam,
+      masterReference.length,
+      productReference.length,
+      selectedBrandId,
+      bulkUpload,
+      addItems,
+    ]
+  );
 
   const handleToggleMagic = async () => {
     if (!user) return;
@@ -204,6 +363,77 @@ const RemixControls = ({
       toast.error("Failed to update magic preference");
     }
   };
+
+  // Handle drag-and-drop between zones (when popover is closed)
+  const handleZoneDrop = useCallback(
+    async (e: React.DragEvent, targetZone: "master" | "product") => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!referenceImageParam) {
+        toast.error("This model doesn't support reference images");
+        return;
+      }
+
+      const assetUrl = e.dataTransfer.getData("assetUrl");
+      const source = e.dataTransfer.getData("source");
+
+      // Handle file drops from OS
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        const uploadedUrls = await handleFileUpload(files, targetZone);
+
+        if (uploadedUrls.length > 0) {
+          // Use shared utility to update references
+          const { newMasterReference, newProductReference } =
+            updateReferencesByZone(
+              targetZone,
+              uploadedUrls,
+              masterReference,
+              productReference
+            );
+          setMasterReference(newMasterReference);
+          setProductReference(newProductReference);
+        }
+        return;
+      }
+
+      // Handle drag between zones
+      if (!assetUrl) return;
+
+      // Use shared utility function for drop logic
+      const result = handleReferenceImageDrop(
+        assetUrl,
+        source,
+        targetZone,
+        masterReference,
+        productReference,
+        referenceImageParam.maxLimit
+      );
+
+      // If drop should be prevented, show toast and return
+      if (result.shouldPrevent) {
+        if (result.toastMessage) {
+          toast[result.toastMessage.type](result.toastMessage.message);
+        }
+        return;
+      }
+
+      // Apply the state updates
+      if (result.newMasterReference !== undefined) {
+        setMasterReference(result.newMasterReference);
+      }
+      if (result.newProductReference !== undefined) {
+        setProductReference(result.newProductReference);
+      }
+
+      // Show success toast
+      if (result.toastMessage) {
+        toast[result.toastMessage.type](result.toastMessage.message);
+      }
+    },
+    [referenceImageParam, masterReference, productReference, handleFileUpload]
+  );
 
   const onSubmit = async (data: Record<string, any>) => {
     try {
@@ -577,10 +807,9 @@ const RemixControls = ({
                         images={masterReference}
                         isSelected={referencePopoverTab === "master"}
                         onClick={() => openReferencePopover("master")}
-                        onDrop={(e: React.DragEvent) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
+                        onDrop={(e: React.DragEvent) =>
+                          handleZoneDrop(e, "master")
+                        }
                         onDragStart={(e: React.DragEvent, url: string) => {
                           e.dataTransfer.setData("assetUrl", url);
                           e.dataTransfer.setData("source", "master");
@@ -609,10 +838,9 @@ const RemixControls = ({
                         images={productReference}
                         isSelected={referencePopoverTab === "product"}
                         onClick={() => openReferencePopover("product")}
-                        onDrop={(e: React.DragEvent) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
+                        onDrop={(e: React.DragEvent) =>
+                          handleZoneDrop(e, "product")
+                        }
                         onDragStart={(e: React.DragEvent, url: string) => {
                           e.dataTransfer.setData("assetUrl", url);
                           e.dataTransfer.setData("source", "product");
