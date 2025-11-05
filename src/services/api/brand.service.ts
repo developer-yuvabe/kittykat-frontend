@@ -169,15 +169,3 @@ export async function addDeprioritizedIds(
 export async function deleteBrand(brandId: string): Promise<void> {
   return handleApiRequest<void>(axiosInstance.delete(`/brands/${brandId}`));
 }
-
-/**
- * Delete a campaign and cascade delete all its moodboards.
- */
-export async function deleteCampaign(
-  brandId: string,
-  campaignId: string
-): Promise<void> {
-  return handleApiRequest<void>(
-    axiosInstance.delete(`/brands/${brandId}/campaign/${campaignId}`)
-  );
-}

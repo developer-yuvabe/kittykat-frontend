@@ -74,7 +74,6 @@ export function MediaLibrary({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
-  const [favorites, setFavorites] = useState<boolean>(false);
   const [source, setSource] = useState<string>(activeTab);
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -88,10 +87,17 @@ export function MediaLibrary({
     serialize: (value) => value.join(","),
     history: "push",
   });
-  // const [assetTypes, setAssetTypes] = useState<string[]>([]);
-  const [mediaTypes, setMediaTypes] = useState<string[]>([]);
-  const [hasComments, setHasComments] = useState<boolean>(false);
-  // console.log("hasComments", hasComments);
+
+  // Get filter state from store
+  const {
+    favorites,
+    hasComments,
+    mediaTypes,
+    dateFrom,
+    dateTo,
+    orderBy,
+    setIsDraggable,
+  } = useGalleryFilterStore();
 
   const {
     selectedBrandId,
@@ -101,8 +107,6 @@ export function MediaLibrary({
     isBrandsFetched,
     getSelectedBrand,
   } = useBrandStore();
-
-  const { orderBy, setIsDraggable } = useGalleryFilterStore();
 
   useEffect(() => {
     if (selectedCampaignId && orderBy === "brand_sort_order") {
@@ -156,9 +160,6 @@ export function MediaLibrary({
 
   const [selectedFilters, setSelectedFilters] =
     useState<EnhancedSelectedFilters>(initialFilters);
-
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   // Use our custom hook for data fetching and mutations
   const galleryActions = useGalleryQuery({
@@ -350,23 +351,6 @@ export function MediaLibrary({
     setCreator(value);
   };
 
-  const handleFavoritesChange = (checked: boolean) => {
-    setFavorites(checked);
-  };
-
-  const handleHasCommentsChange = (checked: boolean) => {
-    setHasComments(checked);
-  };
-
-  const handleResetFilters = () => {
-    setFavorites(false);
-    setHasComments(false);
-    setMediaTypes([]);
-    setInitialWorkflowStatus([]);
-    setDateFrom(undefined);
-    setDateTo(undefined);
-  };
-
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
@@ -512,20 +496,9 @@ export function MediaLibrary({
 
           <div className="flex justify-end">
             <MediaFilterDropdown
-              favorites={favorites}
-              onFavoritesChange={handleFavoritesChange}
-              hasComments={hasComments}
-              onCommentsChange={handleHasCommentsChange}
-              mediaTypes={mediaTypes}
-              onMediaTypeChange={setMediaTypes}
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
               setInitialWorkflowStatus={setInitialWorkflowStatus}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              setDateFrom={setDateFrom}
-              setDateTo={setDateTo}
-              onResetFilters={handleResetFilters}
             />
 
             <MediaViewsDropdown
@@ -601,8 +574,6 @@ export function MediaLibrary({
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
-                favorites={favorites}
-                onFavoritesChange={handleFavoritesChange}
                 selectedFilters={selectedFilters}
                 setSelectedFilters={setSelectedFilters}
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
@@ -672,11 +643,9 @@ export function MediaLibrary({
                         onSearchChange={handleSearchChange}
                         onSourceChange={handleSourceChange}
                         onCreatorChange={handleCreatorChange}
-                        onFavoritesChange={handleFavoritesChange}
                         onToggleFilters={toggleFilters}
                         source={source}
                         creator={creator}
-                        favorites={favorites}
                         showFilters={showFilters}
                         selectedFilters={selectedFilters}
                         setSelectedFilters={setSelectedFilters}

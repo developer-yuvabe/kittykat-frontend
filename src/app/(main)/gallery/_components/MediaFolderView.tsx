@@ -6,10 +6,11 @@ import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
 import { CampaignView } from "./folder/CampaignView";
 import { FolderGalleryView } from "./folder/FolderGalleryView";
-import { MediaSearchFilters } from "./MediaSearchFilters";
 import { FolderTabs } from "./folder/FolderTabs";
 import { CampaignsSidebar } from "./folder/CampaignsSidebar";
 import { useBrandStore } from "@/store/brand.store";
+
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -23,8 +24,6 @@ interface MediaFolderViewProps {
   // Add filter props
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  favorites: boolean;
-  onFavoritesChange: (checked: boolean) => void;
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: React.Dispatch<
     React.SetStateAction<EnhancedSelectedFilters>
@@ -44,34 +43,13 @@ export function MediaFolderView({
   brandName,
   selecteMoodboardId,
   searchQuery,
-  onSearchChange,
-  favorites,
-  onFavoritesChange,
   selectedFilters,
-  setSelectedFilters,
-  setInitialWorkflowStatus,
   onTabChange,
 }: MediaFolderViewProps) {
   const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
-
-  // Common filter props
-  const filterProps = {
-    onSearchChange,
-    onSourceChange: () => {},
-    onCreatorChange: () => {},
-    onFavoritesChange,
-    onToggleFilters: () => {},
-    source: "",
-    creator: "",
-    favorites,
-    showFilters: false,
-    selectedFilters,
-    setSelectedFilters,
-    setInitialWorkflowStatus,
-    isMediaSelectDialog: false,
-  };
+  const { favorites } = useGalleryFilterStore();
 
   // Show campaign view with sidebar
   if (selectedBrandId && selectedCampaignId) {
