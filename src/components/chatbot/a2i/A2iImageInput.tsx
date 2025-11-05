@@ -22,7 +22,7 @@ import {
   Paperclip,
   PanelTop,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { DragEvent } from "react";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
@@ -37,7 +37,6 @@ import useModelPricing from "@/hooks/useModelPricing";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import { useCreditsStore } from "@/store/credits.store";
-import { useQueryState } from "nuqs";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 import ModelSelector from "./ModelSelector";
@@ -69,8 +68,6 @@ const A2iImageInput = ({
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
   currentCampaign: ThreadCampaign | null;
 }) => {
-  const inputContainerRef = useRef<HTMLDivElement | null>(null);
-  const [scrollTo, setScrollTo] = useQueryState("scrollTo");
   const { parameters, setParameters } = useMetadataActionsStore();
   const { selectedImageGenerationModel, setSelectedImageGenerationModel } =
     useModelsStore();
@@ -558,26 +555,6 @@ const A2iImageInput = ({
   ]);
 
   useEffect(() => {
-    if (scrollTo === "a2i-input") {
-      const observer = new MutationObserver(() => {
-        setTimeout(() => {
-          if (inputContainerRef.current) {
-            inputContainerRef.current.scrollIntoView({
-              behavior: "smooth",
-              block: "end",
-            });
-            setScrollTo(null);
-            observer.disconnect();
-          }
-        }, 50);
-      });
-
-      observer.observe(document.body, { childList: true, subtree: true });
-      return () => observer.disconnect();
-    }
-  }, [scrollTo]);
-
-  useEffect(() => {
     if (parameters.imageGeneationParameters) {
       const paramName = referenceImagesModelInfo?.id;
 
@@ -652,7 +629,6 @@ const A2iImageInput = ({
 
   return (
     <div
-      ref={inputContainerRef}
       className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4"
       id="concept-visual-playground"
     >

@@ -26,10 +26,21 @@ import {
 } from "@/lib/reference-image.utils";
 
 interface ReferenceImageSelectorProps {
-  masterReference: string[];
-  productReference: string[];
-  onMasterReferenceChange: (urls: string[]) => void;
-  onProductReferenceChange: (urls: string[]) => void;
+  // Single-zone mode (for ChatInput)
+  referenceImages?: string[];
+  onReferenceImagesChange?: (urls: string[]) => void;
+
+  // Dual-zone mode (for A2I)
+  masterReference?: string[];
+  productReference?: string[];
+  onMasterReferenceChange?: (urls: string[]) => void;
+  onProductReferenceChange?: (urls: string[]) => void;
+  activeTab?: "master" | "product";
+  onTabChange?: (tab: "master" | "product") => void;
+  isMagicEnabled?: boolean;
+  onToggleMagic?: () => void;
+
+  // Common props
   maxLimit: number;
   fileTypes: string[];
   maxFileSizeLimit: number;
@@ -37,17 +48,29 @@ interface ReferenceImageSelectorProps {
   currentCampaignId?: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  activeTab: "master" | "product";
-  onTabChange: (tab: "master" | "product") => void;
-  isMagicEnabled?: boolean;
-  onToggleMagic?: () => void;
+
+  // Customization props
+  popoverAlign?: "start" | "center" | "end";
+  popoverSide?: "top" | "bottom" | "left" | "right";
+  customTrigger?: React.ReactNode;
 }
 
 const ReferenceImageSelector = ({
-  masterReference,
-  productReference,
-  onMasterReferenceChange,
-  onProductReferenceChange,
+  // Single-zone props
+  referenceImages,
+  onReferenceImagesChange,
+
+  // Dual-zone props
+  masterReference: masterReferenceProp,
+  productReference: productReferenceProp,
+  onMasterReferenceChange: onMasterReferenceChangeProp,
+  onProductReferenceChange: onProductReferenceChangeProp,
+  activeTab: activeTabProp,
+  onTabChange: onTabChangeProp,
+  isMagicEnabled,
+  onToggleMagic,
+
+  // Common props
   maxLimit,
   fileTypes,
   maxFileSizeLimit,
@@ -55,13 +78,34 @@ const ReferenceImageSelector = ({
   currentCampaignId,
   isOpen,
   onOpenChange,
-  activeTab,
-  onTabChange,
-  isMagicEnabled,
-  onToggleMagic,
+
+  // Customization props
+  popoverAlign = "start",
+  popoverSide = "top",
+  customTrigger,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+
+  // Determine mode based on whether product reference props are provided
+  const isSingleMode = !onProductReferenceChangeProp;
+
+  // Use master reference for single mode, or separate references for dual mode
+  const masterReference = isSingleMode
+    ? referenceImages || []
+    : masterReferenceProp || [];
+  const productReference = isSingleMode ? [] : productReferenceProp || [];
+  const activeTab = activeTabProp || "master";
+
+  const onMasterReferenceChange = isSingleMode
+    ? (urls: string[]) => onReferenceImagesChange?.(urls)
+    : onMasterReferenceChangeProp || (() => {});
+
+  const onProductReferenceChange = isSingleMode
+    ? () => {}
+    : onProductReferenceChangeProp || (() => {});
+
+  const onTabChange = onTabChangeProp || (() => {});
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -200,15 +244,18 @@ const ReferenceImageSelector = ({
 
         return {
           count: uploadedUrls.length,
-          targetZone: activeTab,
+          targetZone: isSingleMode ? "reference" : activeTab,
         };
       };
 
       try {
+        const zoneLabel = isSingleMode ? "reference" : `${activeTab} reference`;
         const toastPromise = toast.promise(uploadPromise(), {
-          loading: `Uploading ${acceptedFiles.length} file(s) to ${activeTab} reference...`,
+          loading: `Uploading ${acceptedFiles.length} file(s) to ${zoneLabel}...`,
           success: (data) =>
-            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+            `${data.count} file(s) uploaded to ${data.targetZone}${
+              isSingleMode ? "" : " reference"
+            }`,
           error: "Failed to upload files. Please try again.",
         });
 
@@ -530,15 +577,18 @@ const ReferenceImageSelector = ({
 
         return {
           count: validItems.length,
-          targetZone: activeTab,
+          targetZone: isSingleMode ? "reference" : activeTab,
         };
       };
 
       try {
+        const zoneLabel = isSingleMode ? "reference" : `${activeTab} reference`;
         const toastPromise = toast.promise(selectionPromise(), {
-          loading: `Adding ${items.length} image(s) to ${activeTab} reference...`,
+          loading: `Adding ${items.length} image(s) to ${zoneLabel}...`,
           success: (data) =>
-            `${data.count} image(s) added to ${data.targetZone} reference`,
+            `${data.count} image(s) added to ${data.targetZone}${
+              isSingleMode ? "" : " reference"
+            }`,
           error: (err) => err.message || "Failed to add images",
         });
 
@@ -564,25 +614,29 @@ const ReferenceImageSelector = ({
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            disabled={disabled}
-            className="relative"
-          >
-            <Images />
-            {currentImageCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                {currentImageCount}
-              </span>
-            )}
-          </Button>
+          {customTrigger || (
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={disabled}
+              className="relative"
+            >
+              <Images />
+              {currentImageCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                  {currentImageCount}
+                </span>
+              )}
+            </Button>
+          )}
         </PopoverTrigger>
 
         <PopoverContent
-          align="start"
-          side="top"
-          className="w-[1000px] max-h-[500px] p-0 rounded-xl shadow-xl border bg-background overflow-hidden"
+          align={popoverAlign}
+          side={popoverSide}
+          className={`${
+            isSingleMode ? "w-[calc(100vw-2rem)] max-w-[800px]" : "w-[1000px]"
+          } max-h-[500px] p-0 rounded-xl shadow-xl border bg-background overflow-hidden`}
         >
           <div className="flex h-full">
             {/* LEFT COLUMN - Upload/Drop Area */}
@@ -598,59 +652,117 @@ const ReferenceImageSelector = ({
             {/* RIGHT COLUMN - Tabs + Gallery */}
             <div className="flex-1 overflow-y-auto">
               <div className="p-5 space-y-5">
-                <div className="flex gap-4">
-                  {/* MASTER REFERENCE SECTION */}
-                  <ReferenceZone
-                    type="master"
-                    icon={Paperclip}
-                    title="Master Reference"
-                    description="Use elements of an image. (Click or drag to add)"
-                    images={masterReference}
-                    isSelected={activeTab === "master"}
-                    onClick={openForMaster}
-                    onDrop={(e) => handleDropZone(e, "master")}
-                    onDragStart={(e, url) => handleDragStart(e, url, "master")}
-                    onRemoveImage={(url) => handleRemoveImage("master", url)}
-                    showAddButton={productReference.length > 0}
-                    onAddClick={openForMaster}
-                  />
+                {isSingleMode ? (
+                  // Single mode - only show reference images zone (no tabs)
+                  <>
+                    <div className="flex gap-4">
+                      <ReferenceZone
+                        type="master"
+                        icon={Paperclip}
+                        title="Reference Image"
+                        description="Add reference images. (Click or drag to add)"
+                        images={masterReference}
+                        isSelected={false}
+                        onClick={() => {}}
+                        onDrop={(e) => handleDropZone(e, "master")}
+                        onDragStart={(e, url) =>
+                          handleDragStart(e, url, "master")
+                        }
+                        onRemoveImage={(url) =>
+                          handleRemoveImage("master", url)
+                        }
+                        showAddButton={false}
+                      />
+                    </div>
 
-                  {/* PRODUCT REFERENCE SECTION */}
-                  <ReferenceZone
-                    type="product"
-                    icon={PanelTop}
-                    title="Product Reference"
-                    description="Use a product image. This might alter your prompt. (Click or drag to add)"
-                    images={productReference}
-                    isSelected={activeTab === "product"}
-                    onClick={openForProduct}
-                    onDrop={(e) => handleDropZone(e, "product")}
-                    onDragStart={(e, url) => handleDragStart(e, url, "product")}
-                    onRemoveImage={(url) => handleRemoveImage("product", url)}
-                    showAddButton={masterReference.length > 0}
-                    onAddClick={openForProduct}
-                    isMagicEnabled={isMagicEnabled}
-                    onToggleMagic={onToggleMagic}
-                  />
-                </div>
+                    {/* GALLERY SECTION - Just bordered, no tabs */}
+                    <div className="border rounded-lg p-4">
+                      <h3 className="text-sm font-medium mb-3">
+                        Reference Image History
+                      </h3>
+                      <div className="overflow-y-auto max-h-[250px] overflow-x-hidden">
+                        <ReferenceGalleryGrid
+                          items={galleryItems}
+                          isLoading={isLoadingStore}
+                          masterReferenceUrls={masterReference}
+                          productReferenceUrls={productReference}
+                          onItemClick={handleImageClick}
+                          onDragStart={(e, assetUrl, assetId) =>
+                            handleDragStart(e, assetUrl, undefined, assetId)
+                          }
+                          onDeleteItem={handleDeleteGalleryItem}
+                          isSingleMode={true}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  // Dual mode - show master and product zones with tabs
+                  <>
+                    <div className="flex gap-4">
+                      {/* MASTER REFERENCE SECTION */}
+                      <ReferenceZone
+                        type="master"
+                        icon={Paperclip}
+                        title="Master Reference"
+                        description="Use elements of an image. (Click or drag to add)"
+                        images={masterReference}
+                        isSelected={activeTab === "master"}
+                        onClick={openForMaster}
+                        onDrop={(e) => handleDropZone(e, "master")}
+                        onDragStart={(e, url) =>
+                          handleDragStart(e, url, "master")
+                        }
+                        onRemoveImage={(url) =>
+                          handleRemoveImage("master", url)
+                        }
+                        showAddButton={productReference.length > 0}
+                        onAddClick={openForMaster}
+                      />
 
-                {/* GALLERY SECTION */}
-                <div
-                  id="gallery-section"
-                  className="overflow-y-auto max-h-[300px] overflow-x-hidden"
-                >
-                  <ReferenceGalleryGrid
-                    items={galleryItems}
-                    isLoading={isLoadingStore}
-                    masterReferenceUrls={masterReference}
-                    productReferenceUrls={productReference}
-                    onItemClick={handleImageClick}
-                    onDragStart={(e, assetUrl, assetId) =>
-                      handleDragStart(e, assetUrl, undefined, assetId)
-                    }
-                    onDeleteItem={handleDeleteGalleryItem}
-                  />
-                </div>
+                      {/* PRODUCT REFERENCE SECTION */}
+                      <ReferenceZone
+                        type="product"
+                        icon={PanelTop}
+                        title="Product Reference"
+                        description="Use a product image. This might alter your prompt. (Click or drag to add)"
+                        images={productReference}
+                        isSelected={activeTab === "product"}
+                        onClick={openForProduct}
+                        onDrop={(e) => handleDropZone(e, "product")}
+                        onDragStart={(e, url) =>
+                          handleDragStart(e, url, "product")
+                        }
+                        onRemoveImage={(url) =>
+                          handleRemoveImage("product", url)
+                        }
+                        showAddButton={masterReference.length > 0}
+                        onAddClick={openForProduct}
+                        isMagicEnabled={isMagicEnabled}
+                        onToggleMagic={onToggleMagic}
+                      />
+                    </div>
+
+                    {/* GALLERY SECTION */}
+                    <div
+                      id="gallery-section"
+                      className="overflow-y-auto max-h-[300px] overflow-x-hidden"
+                    >
+                      <ReferenceGalleryGrid
+                        items={galleryItems}
+                        isLoading={isLoadingStore}
+                        masterReferenceUrls={masterReference}
+                        productReferenceUrls={productReference}
+                        onItemClick={handleImageClick}
+                        onDragStart={(e, assetUrl, assetId) =>
+                          handleDragStart(e, assetUrl, undefined, assetId)
+                        }
+                        onDeleteItem={handleDeleteGalleryItem}
+                        isSingleMode={false}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
