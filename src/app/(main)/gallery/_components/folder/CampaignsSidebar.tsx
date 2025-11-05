@@ -47,6 +47,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { useCampaignCounts } from "@/hooks/useCampaignCounts";
+import { Loader2 } from "lucide-react";
 
 // Component to show tooltip only when text is truncated
 function TruncatedText({
@@ -115,6 +117,10 @@ export function CampaignsSidebar({
     title: string;
     is_archived?: boolean;
   } | null>(null);
+
+  // Fetch campaign counts
+  const { data: countData, isLoading: isCountLoading } =
+    useCampaignCounts(selectedBrandId);
 
   const { campaigns, brandName } = useMemo(() => {
     const brand = brands.find((b) => b.id === selectedBrandId);
@@ -281,6 +287,8 @@ export function CampaignsSidebar({
                     selectedBrandId={selectedBrandId}
                     selectedCampaignId={selectedCampaignId}
                     onCampaignSelect={onCampaignSelect}
+                    count={countData?.count_by_campaign?.[campaign.id]}
+                    isCountLoading={isCountLoading}
                     onRename={(campaign) => {
                       setRenamingCampaign(campaign);
                       setNewCampaignName(campaign.title);
@@ -319,6 +327,8 @@ export function CampaignsSidebar({
                     selectedBrandId={selectedBrandId}
                     selectedCampaignId={selectedCampaignId}
                     onCampaignSelect={onCampaignSelect}
+                    count={countData?.count_by_campaign?.[campaign.id]}
+                    isCountLoading={isCountLoading}
                     onRename={(campaign) => {
                       setRenamingCampaign(campaign);
                       setNewCampaignName(campaign.title);
@@ -459,6 +469,8 @@ function CampaignRow({
   selectedBrandId,
   selectedCampaignId,
   onCampaignSelect,
+  count,
+  isCountLoading,
   onRename,
   onArchiveToggle,
   onDelete,
@@ -467,6 +479,8 @@ function CampaignRow({
   selectedBrandId: string;
   selectedCampaignId: string | null;
   onCampaignSelect: (id: string) => void;
+  count?: number;
+  isCountLoading: boolean;
   onRename: (campaign: any) => void;
   onArchiveToggle: (campaign: any) => void;
   onDelete: (campaign: any) => void;
@@ -485,7 +499,7 @@ function CampaignRow({
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
               selectedCampaignId === campaign.id
                 ? "bg-purple-100"
                 : "bg-gray-100 group-hover:bg-gray-200"
@@ -501,16 +515,33 @@ function CampaignRow({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p
+            <TruncatedText
+              text={campaign.title}
               className={cn(
                 "text-sm font-medium truncate",
                 selectedCampaignId === campaign.id
                   ? "text-purple-900"
                   : "text-gray-900"
               )}
-            >
-              {campaign.title}
-            </p>
+            />
+          </div>
+
+          {/* Count badge */}
+          <div className="flex items-center gap-2 mr-6">
+            {isCountLoading ? (
+              <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />
+            ) : (
+              <span
+                className={cn(
+                  "text-xs font-medium px-2 py-0.5 rounded-full",
+                  selectedCampaignId === campaign.id
+                    ? " text-purple-700"
+                    : " text-gray-600"
+                )}
+              >
+                {count ?? 0}
+              </span>
+            )}
           </div>
         </div>
       </button>

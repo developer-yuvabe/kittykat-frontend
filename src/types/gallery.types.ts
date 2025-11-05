@@ -341,4 +341,45 @@ export type OrderBy =
   | "name_ascending"
   | "name_descending";
 
+/**
+ * Request model for counting assets with optional breakdown dimensions.
+ */
+export interface AssetCountRequest {
+  // Required
+  brand_id: string;
+
+  // Optional Campaign filter
+  campaign_id?: string;
+
+  // Breakdown flags - control what breakdowns to include in response
+  count_by_workflow_status?: boolean;
+  count_by_asset_type?: boolean;
+  count_by_media_format?: boolean;
+  count_by_aspect_ratio?: boolean;
+  count_by_campaign?: boolean;
+  count_with_comments?: boolean;
+  count_favourites?: boolean;
+}
+
+/**
+ * Response model for asset count with optional breakdowns.
+ */
+export interface AssetCountResponse {
+  // Context
+  brand_id: string;
+  campaign_id?: string;
+
+  // Total count
+  total_count: number;
+
+  // Optional breakdowns (only included if requested)
+  count_by_workflow_status?: Record<string, number>;
+  count_by_asset_type?: Record<string, number>;
+  count_by_media_format?: Record<string, number>;
+  count_by_aspect_ratio?: Record<string, number>;
+  count_by_campaign?: Record<string, number>;
+  count_with_comments?: number;
+  count_favourites?: number;
+}
+
 //

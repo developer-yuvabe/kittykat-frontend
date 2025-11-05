@@ -255,6 +255,13 @@ export const useGalleryQuery = (
         queryKey: ["gallery-items"],
       });
 
+      // Invalidate campaign counts for the brand
+      if (_variables.brand_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["campaign-counts", _variables.brand_id],
+        });
+      }
+
       // Update the loading toast to success
       toast.success("Item added to gallery", { id: context?.toastId });
     },
@@ -277,6 +284,14 @@ export const useGalleryQuery = (
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
+
+      // Invalidate campaign counts for the brand
+      if (_variables.brand_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["campaign-counts", _variables.brand_id],
+        });
+      }
+
       toast.success("Items uploaded to gallery", { id: context?.toastId });
     },
     onError: (_error, _variables, context) => {
@@ -298,6 +313,14 @@ export const useGalleryQuery = (
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
+
+      // Invalidate campaign counts for the brand
+      if (_variables.brand_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["campaign-counts", _variables.brand_id],
+        });
+      }
+
       toast.success("Social media scraping initiated", {
         id: context?.toastId,
       });
@@ -520,6 +543,13 @@ export const useGalleryQuery = (
       // Remove item from single item cache
 
       toast.success("Item deleted successfully");
+
+      // Invalidate all campaign counts
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
+
       // Invalidate bulk items queries
       queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
 
@@ -600,6 +630,12 @@ export const useGalleryQuery = (
         queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       });
       toast.success(`${data.length} items deleted successfully`);
+
+      // Invalidate all campaign counts
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
 
       // Invalidate and update bulk items queries
       queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
