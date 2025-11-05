@@ -104,22 +104,21 @@ export function DynamicFormField<T extends FieldValues>({
   };
 
   const applyRestrictIfDefaults = (fieldName: string, newValue: string) => {
-    if (!rules) return;
+    if (!rules || !allParameters) return;
     
-    rules.forEach((rule) => {
-      rule.disableIf.forEach((cond) => {
+    for (const rule of rules) {
+      for (const cond of rule.disableIf) {
         if (cond.restrictIf && cond.name === fieldName && cond.paramId === newValue) {
-          // Find the parameter definition for the restricted field
-          const restrictedParam = allParameters?.find((p) => p.id === rule.name);
-          const defaultValue = restrictedParam?.defaultValue;
+          const restrictedParam = allParameters.find((p) => p.id === rule.name);
           
-          if (defaultValue !== undefined) {
-            form.setValue(rule.name as any, defaultValue);
-            toast.info(`${restrictedParam?.label || rule.name} reset to default due to ${fieldName} selection`);
+          if (restrictedParam?.defaultValue !== undefined) {
+            form.setValue(rule.name as any, restrictedParam.defaultValue);
+            toast.info(`${restrictedParam.label} reset to default`);
+            return; 
           }
         }
-      });
-    });
+      }
+    }
   };
 
   if (
