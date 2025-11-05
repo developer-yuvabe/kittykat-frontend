@@ -1,32 +1,27 @@
 import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { toast } from "sonner";
-import type { URLContentBlock, IDContentBlock } from "@langchain/core/messages";
-import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import type { IDContentBlock } from "@langchain/core/messages";
 import { uploadThreadFile } from "@/services/api/brand.service";
 import {
-  validateImageUploadSize,
-  formatFileSize,
-  IMAGE_TYPES,
-  SUPPORTED_FILE_TYPES,
-} from "@/lib/langgraph.utils";
-import { MAX_IMAGE_UPLOAD_SIZE } from "@/lib/constants";
-import {
-  generateFileHash,
   generateUniqueFilename,
-  calculateImageSize,
   categorizeDuplicates,
   categorizeFileTypes,
   type ContentBlock,
 } from "@/lib/file-upload.utils";
 
+const PDF_FILE_TYPES = ["application/pdf"];
+const IMAGE_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 interface UseFileUploadOptions {
   initialBlocks?: ContentBlock[];
   brandId: string | null; // Required for uploading files to get IDs
+  onImageFilesDropped?: (files: File[]) => Promise<void>; // Callback for handling image files
 }
 
 export function useFileUpload({
   initialBlocks = [],
   brandId,
+  onImageFilesDropped,
 }: UseFileUploadOptions) {
   const [contentBlocks, setContentBlocks] =
     useState<ContentBlock[]>(initialBlocks);
@@ -35,14 +30,6 @@ export function useFileUpload({
   const dragCounter = useRef(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Track total size of uploaded images
-  const [currentImageSize, setCurrentImageSize] = useState(0);
-
-  // Update current image size when blocks change
-  useEffect(() => {
-    setCurrentImageSize(calculateImageSize(contentBlocks));
-  }, [contentBlocks]);
-
   const fileToContentBlock = async (
     file: File,
     uniqueName?: string
@@ -50,23 +37,8 @@ export function useFileUpload({
     try {
       const fileName = uniqueName || file.name;
 
-      if (IMAGE_TYPES.includes(file.type)) {
-        const fileHash = await generateFileHash(file);
-        const uploadedUrl = await uploadFileAndReturnUrl(
-          fileName,
-          file.type,
-          "threads",
-          file
-        );
-
-        return {
-          type: "image",
-          source_type: "url",
-          url: uploadedUrl,
-          mime_type: file.type,
-          metadata: { name: fileName, size: file.size, hash: fileHash },
-        } as URLContentBlock;
-      } else if (brandId) {
+      // Only handle PDFs now (images are handled by ReferenceImageSelector)
+      if (brandId && PDF_FILE_TYPES.includes(file.type)) {
         const threadFileResponse = await uploadThreadFile(
           brandId,
           file,
@@ -82,7 +54,7 @@ export function useFileUpload({
         } as IDContentBlock;
       }
       throw new Error(
-        "Unable to process file: missing brandId or unsupported file type."
+        "Unable to process file: missing brandId or unsupported file type. Only PDFs are supported."
       );
     } catch (error) {
       console.error("Error processing file:", error);
@@ -99,10 +71,10 @@ export function useFileUpload({
     try {
       const fileArray = Array.from(files);
 
-      // Categorize files by type
+      // Only accept PDFs (filter out images)
       const { validFiles, invalidFiles } = categorizeFileTypes(
         fileArray,
-        SUPPORTED_FILE_TYPES
+        PDF_FILE_TYPES
       );
 
       // Check for duplicates based on content
@@ -111,14 +83,10 @@ export function useFileUpload({
         contentBlocks
       );
 
-      // Validate image sizes
-      const { validFiles: validImageFiles, rejectedFiles: rejectedImageFiles } =
-        validateImageUploadSize(uniqueFiles, currentImageSize);
-
       // Show appropriate warnings
       if (invalidFiles.length > 0) {
         toast.warning(
-          "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF."
+          "Only PDF files are supported. Please upload a PDF document."
         );
       }
 
@@ -130,30 +98,19 @@ export function useFileUpload({
         );
       }
 
-      if (rejectedImageFiles.length > 0) {
-        const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
-        toast.warning(
-          `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
-            remainingSpace
-          )} remaining. Rejected: ${rejectedImageFiles
-            .map((r) => r.file.name)
-            .join(", ")}`
-        );
-      }
-
-      // Upload valid files
-      if (validImageFiles.length > 0) {
+      // Upload valid PDF files
+      if (uniqueFiles.length > 0) {
         const promise = Promise.all(
-          validImageFiles.map((file) => {
+          uniqueFiles.map((file) => {
             const uniqueName = generateUniqueFilename(file.name, contentBlocks);
             return fileToContentBlock(file, uniqueName);
           })
         );
 
         toast.promise(promise, {
-          loading: "Uploading files...",
-          success: "Files uploaded successfully!",
-          error: "Failed to upload files.",
+          loading: "Uploading PDF file(s)...",
+          success: "PDF file(s) uploaded successfully!",
+          error: "Failed to upload PDF file(s).",
         });
 
         const newBlocks = await promise;
@@ -222,20 +179,42 @@ export function useFileUpload({
         return; // Let other drop handlers handle this
       }
 
+      if (!e.dataTransfer) return;
+
+      const files = Array.from(e.dataTransfer.files);
+
+      // Separate PDFs and images
+      const pdfFiles = files.filter((file) =>
+        PDF_FILE_TYPES.includes(file.type)
+      );
+      const imageFiles = files.filter((file) =>
+        IMAGE_FILE_TYPES.includes(file.type)
+      );
+
       dragCounter.current = 0;
       setDragOver(false);
 
-      if (!e.dataTransfer) return;
+      // Handle image files if callback is provided
+      if (imageFiles.length > 0 && onImageFilesDropped) {
+        try {
+          await onImageFilesDropped(imageFiles);
+        } catch (error) {
+          console.error("Image file upload error:", error);
+        }
+      }
+
+      // Handle PDF files
+      if (pdfFiles.length === 0) {
+        return;
+      }
 
       setIsUploading(true);
 
       try {
-        const files = Array.from(e.dataTransfer.files);
-
-        // Categorize files by type
+        // Only accept PDFs
         const { validFiles, invalidFiles } = categorizeFileTypes(
-          files,
-          SUPPORTED_FILE_TYPES
+          pdfFiles,
+          PDF_FILE_TYPES
         );
 
         // Check for duplicates based on content
@@ -244,17 +223,9 @@ export function useFileUpload({
           contentBlocks
         );
 
-        // Validate image sizes
-        const {
-          validFiles: validImageFiles,
-          rejectedFiles: rejectedImageFiles,
-        } = validateImageUploadSize(uniqueFiles, currentImageSize);
-
         // Show appropriate warnings
         if (invalidFiles.length > 0) {
-          toast.warning(
-            "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF."
-          );
+          toast.warning("Only PDF files are supported for document upload.");
         }
         if (duplicateFiles.length > 0) {
           toast.warning(
@@ -264,21 +235,10 @@ export function useFileUpload({
           );
         }
 
-        if (rejectedImageFiles.length > 0) {
-          const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
-          toast.warning(
-            `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
-              remainingSpace
-            )} remaining. Rejected: ${rejectedImageFiles
-              .map((r) => r.file.name)
-              .join(", ")}`
-          );
-        }
-
-        // Upload valid files
-        if (validImageFiles.length > 0) {
+        // Upload valid PDF files
+        if (uniqueFiles.length > 0) {
           const promise = Promise.all(
-            validImageFiles.map((file) => {
+            uniqueFiles.map((file) => {
               const uniqueName = generateUniqueFilename(
                 file.name,
                 contentBlocks
@@ -288,9 +248,9 @@ export function useFileUpload({
           );
 
           toast.promise(promise, {
-            loading: "Uploading files...",
-            success: "Files uploaded successfully!",
-            error: "Failed to upload files.",
+            loading: "Uploading PDF file(s)...",
+            success: "PDF file(s) uploaded successfully!",
+            error: "Failed to upload PDF file(s).",
           });
 
           const newBlocks = await promise;
@@ -325,143 +285,13 @@ export function useFileUpload({
       element.removeEventListener("drop", handleDrop);
       element.removeEventListener("dragend", handleDragEnd);
     };
-  }, [contentBlocks, brandId]);
+  }, [contentBlocks, brandId, onImageFilesDropped]);
 
   const removeBlock = (idx: number) => {
     setContentBlocks((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const resetBlocks = () => setContentBlocks([]);
-
-  const handlePaste = async (
-    e: React.ClipboardEvent<HTMLTextAreaElement | HTMLInputElement>
-  ) => {
-    const items = e.clipboardData.items;
-    if (!items) return;
-
-    const files: File[] = [];
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.kind === "file") {
-        const file = item.getAsFile();
-        if (file) files.push(file);
-      }
-    }
-
-    if (files.length === 0) return;
-    e.preventDefault();
-
-    // Show loading toast immediately when pasting
-    const toastId = toast.loading("Uploading pasted image(s)...");
-    setIsUploading(true);
-
-    try {
-      // Categorize files by type
-      const { validFiles, invalidFiles } = categorizeFileTypes(
-        files,
-        SUPPORTED_FILE_TYPES
-      );
-
-      // Check for duplicates based on content
-      const { duplicateFiles, uniqueFiles } = await categorizeDuplicates(
-        validFiles,
-        contentBlocks
-      );
-
-      // Validate image sizes
-      const { validFiles: validImageFiles, rejectedFiles: rejectedImageFiles } =
-        validateImageUploadSize(uniqueFiles, currentImageSize);
-
-      // Determine if we should show warnings or proceed with upload
-      const hasWarnings =
-        invalidFiles.length > 0 ||
-        duplicateFiles.length > 0 ||
-        rejectedImageFiles.length > 0;
-      const hasValidUploads = validImageFiles.length > 0;
-
-      // Show appropriate warnings (don't replace toast if we have valid uploads)
-      if (invalidFiles.length > 0) {
-        if (!hasValidUploads) {
-          toast.warning(
-            "You have pasted an invalid file type. Please paste a JPEG, PNG, WEBP image or a PDF.",
-            { id: toastId }
-          );
-        } else {
-          toast.warning(
-            "You have pasted an invalid file type. Please paste a JPEG, PNG, WEBP image or a PDF."
-          );
-        }
-      }
-      if (duplicateFiles.length > 0) {
-        if (!hasValidUploads) {
-          toast.warning(
-            `Duplicate file(s) detected: ${duplicateFiles
-              .map((f) => f.name)
-              .join(
-                ", "
-              )}. This exact image content has already been attached.`,
-            { id: toastId }
-          );
-        } else {
-          toast.warning(
-            `${duplicateFiles.length} duplicate file(s) skipped. These images were already attached.`
-          );
-        }
-      }
-      if (rejectedImageFiles.length > 0) {
-        const remainingSpace = MAX_IMAGE_UPLOAD_SIZE - currentImageSize;
-        if (!hasValidUploads) {
-          toast.warning(
-            `Some images couldn't be uploaded. Total image size limit is 50MB per message. You have ${formatFileSize(
-              remainingSpace
-            )} remaining. Rejected: ${rejectedImageFiles
-              .map((r) => r.file.name)
-              .join(", ")}`,
-            { id: toastId }
-          );
-        } else {
-          toast.warning(
-            `${
-              rejectedImageFiles.length
-            } image(s) exceeded size limit. You have ${formatFileSize(
-              remainingSpace
-            )} remaining.`
-          );
-        }
-      }
-
-      // Upload valid files
-      if (validImageFiles.length > 0) {
-        const newBlocks = await Promise.all(
-          validImageFiles.map((file) => {
-            const uniqueName = generateUniqueFilename(file.name, contentBlocks);
-            return fileToContentBlock(file, uniqueName);
-          })
-        );
-        setContentBlocks((prev) => [...prev, ...newBlocks]);
-
-        // Show success message
-        const successMessage = hasWarnings
-          ? `Successfully uploaded ${validImageFiles.length} image(s). Some files were skipped.`
-          : `Successfully uploaded ${validImageFiles.length} image(s)!`;
-
-        toast.success(successMessage, { id: toastId });
-      } else {
-        // No valid files to upload, toast already replaced with warning
-        // Only dismiss if no warnings were shown
-        if (!hasWarnings) {
-          toast.dismiss(toastId);
-        }
-      }
-    } catch (error) {
-      console.error("File paste error:", error);
-      toast.error("Something went wrong while processing pasted files.", {
-        id: toastId,
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   return {
     contentBlocks,
@@ -471,7 +301,6 @@ export function useFileUpload({
     removeBlock,
     resetBlocks,
     dragOver,
-    handlePaste,
     isUploading,
   };
 }
