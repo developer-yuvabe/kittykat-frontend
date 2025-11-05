@@ -29,9 +29,14 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
   const { isFetchingBrandInfo, data } = useBrandUpdatesStore();
 
   const brandingInformation = data?.brand_information;
-  const campaignInformation = data?.campaign_information?.filter(
+  const filteredCampaigns = data?.campaign_information?.filter(
     (campaign) => campaign.is_custom !== true
   );
+  const campaignInformation =
+    filteredCampaigns && filteredCampaigns.length > 0
+      ? filteredCampaigns
+      : null;
+
   const a2iImageInformation = data?.a2i_image_information;
   const moodboardInformation = data?.moodboard_information;
   const moodboardTags = data?.moodboard_tags;
