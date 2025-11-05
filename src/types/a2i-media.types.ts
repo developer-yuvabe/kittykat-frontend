@@ -100,4 +100,5 @@ export type Rule = {
     name: string;
     paramId: string;
   };
+  restrictIf?: boolean;
 };

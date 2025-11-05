@@ -88,8 +88,12 @@ export function DynamicFormField<T extends FieldValues>({
 
     if (matchingRules.length === 0) return { disabled: false };
 
-    // Check each rule's disableIf array
     for (const rule of matchingRules) {
+      if (rule.restrictIf === true) {
+        continue;
+      }
+
+      // Check disableIf array
       const disableIfArray = Array.isArray(rule.disableIf)
         ? rule.disableIf
         : [rule.disableIf]; // support single object too
