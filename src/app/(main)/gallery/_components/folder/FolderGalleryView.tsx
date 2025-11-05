@@ -106,6 +106,11 @@ export function FolderGalleryView({
     }
   };
 
+  const handleSelectAll = () => {
+    const allIds = galleryActions.getGalleryItems().map((item) => item.id);
+    setSelectedItems(allIds);
+  };
+
   const handleUnselectAll = () => {
     setSelectedItems([]);
   };
@@ -148,6 +153,7 @@ export function FolderGalleryView({
         <MediaBulkActions
           selectedItems={selectedItemsData}
           onUnselectAll={handleUnselectAll}
+          onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brand?.name ?? "Brand"}
         />

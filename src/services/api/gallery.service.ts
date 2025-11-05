@@ -11,6 +11,7 @@ import {
   BulkGalleryItemRequest,
   BulkGalleryUploadRequest,
   GalleryImageParametersResponse,
+  OrderBy,
 } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -96,13 +97,7 @@ class GalleryService {
     is_archived?: boolean;
     moodboard_ids?: string[];
     has_comments?: boolean;
-    sort_by?:
-      | "created_at"
-      | "updated_at"
-      | "brand_sort_order"
-      | "last_accessed_at"
-      | "name_ascending"
-      | "name_descending";
+    sort_by?: OrderBy;
     created_at_range?: [string, string];
   }): Promise<GalleryItemsListResponse> {
     const {

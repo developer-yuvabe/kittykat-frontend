@@ -140,6 +140,11 @@ export function CampaignView({
     setSelectedItems([]);
   };
 
+  const handleSelectAll = () => {
+    const allItemIds = galleryActions.getGalleryItems().map((item) => item.id);
+    setSelectedItems(allItemIds);
+  };
+
   if (!currentCampaign) {
     return (
       <div className="space-y-6">
@@ -168,7 +173,7 @@ export function CampaignView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Campaign Header - Only show if showHeader is true */}
       {showHeader && (
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
@@ -197,39 +202,46 @@ export function CampaignView({
         </div>
       )}
 
-      {/* Upload Dropzone for Campaign - Only show if showHeader is false (sidebar mode) */}
       {!showHeader && (
-        <FolderUploadDropzone
-          activeTab={activeTab}
-          onUploadComplete={onUploadComplete}
-          addToGallery={addToGallery}
-          galleryFilters={{
-            selectedFilters: {
-              brands: [selectedBrandId],
-              campaigns: [campaignId],
-              moodboards: [],
-              product_categories: [],
-              asset_types: [],
-              asset_sources: [],
-              media_format: [],
-              aspect_ratio: [],
-              workflow_status: [],
-            },
-          }}
-          selectedBrandId={selectedBrandId}
-          selectedCampaignId={campaignId}
-          selectedMoodboardId={selectedMoodboardId}
-        />
+        <div className="px-4 pb-6">
+          <FolderTabs
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+            title="Subfolders"
+          />
+        </div>
       )}
 
-      {/* Folder Tabs for campaign view - Only show if showHeader is false */}
+      {/* Upload Dropzone for Campaign - Only show if showHeader is false (sidebar mode) */}
       {!showHeader && (
-        <FolderTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          title="Subfolders"
-        />
+        <div className="px-4">
+          <FolderUploadDropzone
+            activeTab={activeTab}
+            onUploadComplete={onUploadComplete}
+            addToGallery={addToGallery}
+            galleryFilters={{
+              selectedFilters: {
+                brands: [selectedBrandId],
+                campaigns: [campaignId],
+                moodboards: [],
+                product_categories: [],
+                asset_types: [],
+                asset_sources: [],
+                media_format: [],
+                aspect_ratio: [],
+                workflow_status: [],
+              },
+            }}
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={campaignId}
+            selectedMoodboardId={selectedMoodboardId}
+          />
+        </div>
       )}
+
+      {/* <MediaSearchFilters {...filterProps} /> */}
+
+      {/* Folder Tabs for campaign view - Only show if showHeader is false */}
 
       {/* Gallery Status Display */}
       <MediaGalleryStatusDisplay
@@ -238,7 +250,7 @@ export function CampaignView({
       />
 
       {/* Gallery Items with minimum height to prevent layout shift */}
-      <div className="min-h-[400px]">
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
         {galleryActions.galleryStatus === "success" &&
           galleryActions.getGalleryItems().length > 0 && (
             <div>
@@ -276,6 +288,7 @@ export function CampaignView({
         <MediaBulkActions
           selectedItems={selectedItemsData}
           onUnselectAll={handleUnselectAll}
+          onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brandName}
         />

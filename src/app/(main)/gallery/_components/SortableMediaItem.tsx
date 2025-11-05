@@ -11,6 +11,7 @@ import { MediaImage } from "./MediaImage";
 import { GalleryActions } from "@/hooks/useGallery";
 import { ImageModal } from "@/components/shared/ImageModal";
 import { handleDownloadImage } from "@/lib/utils";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 // Types
 interface SortableMediaItemProps {
@@ -99,7 +100,14 @@ export function SortableMediaItem({
     setShowImageModal(true);
   };
 
-  const aspectRatio = dimensions.width / dimensions.height || 1;
+  const { thumbnailShape } = useGalleryFilterStore();
+
+  // console.log("Thumbnail Shape:", thumbnailShape);
+
+  const aspectRatio =
+    thumbnailShape === "dynamic"
+      ? dimensions.width / dimensions.height || 1
+      : 1;
   const skeletonHeight = item.dimensions?.height
     ? Math.min(item.dimensions.height / 4, 400)
     : Math.floor(Math.random() * 200) + 200;

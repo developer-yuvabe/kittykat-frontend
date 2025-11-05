@@ -6,6 +6,7 @@ import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import ImageWithMetadataModal from "@/components/image-metadata/ImageWithMetadataModal";
 import VideoWithMetadataModal from "@/components/video-metadata/VideoWithMetadataModal";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface MediaImageProps {
   item: GalleryItemResponse;
@@ -27,6 +28,7 @@ export function MediaImage({
   const [videoError, setVideoError] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const isAutoPlay = useGalleryFilterStore((state) => state.isAutoPlay);
 
   // Check if the item is a video with more robust detection
   const isVideo =
@@ -76,6 +78,21 @@ export function MediaImage({
     }
   }, [isVideo, onImageLoad, item.asset_url]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && isAutoPlay) {
+      video.muted = true; // ensure autoplay policy compliance
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn("Autoplay failed:", err);
+        });
+      }
+    } else if (video && !isAutoPlay) {
+      video.pause();
+    }
+  }, [isAutoPlay]);
+
   const handleVideoToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -122,17 +139,29 @@ export function MediaImage({
           onClick={handleVideoClick}
           title="Click to view metadata"
         >
-          <video
-            ref={videoRef}
-            src={item.preview_url || item.asset_url}
-            className="object-contain w-full h-full"
-            muted
-            autoPlay
-            loop
-            style={{
-              display: videoLoaded ? "block" : "none",
-            }}
-          />
+          {isAutoPlay ? (
+            <video
+              ref={videoRef}
+              src={item.preview_url || item.asset_url}
+              className="object-contain w-full h-full"
+              muted
+              autoPlay={isAutoPlay}
+              loop={isAutoPlay}
+              style={{
+                display: videoLoaded ? "block" : "none",
+              }}
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              src={item.preview_url || item.asset_url}
+              className="object-contain w-full h-full"
+              muted
+              style={{
+                display: videoLoaded ? "block" : "none",
+              }}
+            />
+          )}
           {videoLoaded && (
             <button
               className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center rounded-full hover:bg-black/20 transition-colors"

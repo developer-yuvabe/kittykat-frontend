@@ -226,13 +226,7 @@ export interface EnhancedSelectedFilters {
   is_archived?: boolean | null;
 
   has_comments?: boolean | null;
-  sort_by?:
-    | "created_at"
-    | "updated_at"
-    | "brand_sort_order"
-    | "last_accessed_at"
-    | "name_ascending"
-    | "name_descending";
+  sort_by?: OrderBy;
   created_at_range?: [string, string]; // ISO date strings
 }
 
@@ -335,3 +329,16 @@ export type GalleryImageParametersResponse = {
   parameters: A2iImageGeneration["parameters"];
   type: A2iImageGeneration["type"];
 };
+
+export type ThumbnailSize = "small" | "medium" | "large";
+export type ThumbnailShape = "dynamic" | "square";
+export type OrderBy =
+  | "created_at_ascending"
+  | "created_at_descending"
+  | "updated_at"
+  | "brand_sort_order"
+  | "last_accessed_at"
+  | "name_ascending"
+  | "name_descending";
+
+//

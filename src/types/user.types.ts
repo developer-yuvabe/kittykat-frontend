@@ -71,6 +71,7 @@ export type UserBrand = {
   campaigns: {
     id: string;
     title: string;
+    is_archived?: boolean;
   }[];
   created_by: {
     id: string;

@@ -8,6 +8,7 @@ import {
   X,
   LayoutGridIcon,
   Expand,
+  MessageCircle,
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 
@@ -196,6 +197,27 @@ export function MediaOverlay({
                 }
               />
             )}
+
+            <TooltipButton
+              tooltip={
+                item.comments && item.comments.length > 0
+                  ? "Has comments"
+                  : "No comments"
+              }
+              icon={
+                <MessageCircle
+                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
+                    item.comments && item.comments.length > 0
+                      ? "fill-current"
+                      : ""
+                  }`}
+                />
+              }
+              isActive={item.comments && item.comments.length > 0}
+              normalColor="text-white"
+              activeColor="text-green-400"
+              className="transition-all duration-300"
+            />
           </div>
         )}
 
@@ -203,24 +225,46 @@ export function MediaOverlay({
       {!isMediaSelectDialog &&
         onEditClick &&
         item.asset_source !== "moodboard" && (
-          <div
-            className={`absolute bottom-2 left-2 z-30 transition-opacity duration-200 ${
-              isHovered ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <TooltipButton
-              tooltip="Concept Visual Editor"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                onEditClick(item);
-              }}
-              icon={
-                <PencilIcon
-                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                />
-              }
-            />
-          </div>
+          <>
+            <div
+              className={`absolute bottom-2 left-2 z-30 flex items-center gap-2 transition-opacity duration-200 ${
+                isHovered ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <TooltipButton
+                tooltip="Concept Visual Editor"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onEditClick(item);
+                }}
+                icon={
+                  <PencilIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+              <TooltipButton
+                tooltip={
+                  item.comments && item.comments.length > 0
+                    ? "Has comments"
+                    : "No comments"
+                }
+                icon={
+                  <MessageCircle
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
+                      item.comments && item.comments.length > 0
+                        ? "fill-current"
+                        : ""
+                    }`}
+                  />
+                }
+                isActive={item.comments && item.comments.length > 0}
+                normalColor="text-white"
+                activeColor="text-green-400"
+                className="transition-all duration-300"
+              />
+            </div>
+          </>
         )}
 
       {/* Download and Favorite Buttons - Bottom Right */}
