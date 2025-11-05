@@ -25,6 +25,7 @@ import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import Masonry from "react-masonry-css";
 import { SortableMediaItem } from "./SortableMediaItem";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
@@ -60,14 +61,17 @@ export function SortableMediaGrid({
     );
   }, [galleryActions]);
 
+  const { thumbnailSize, isDraggable } = useGalleryFilterStore();
+
   const breakpointColumnsObj = {
-    default: 5,
-    1536: 4,
-    1280: 4,
-    1024: 3,
-    768: 2,
-    640: 2,
-    500: 1,
+    default:
+      thumbnailSize === "small"
+        ? 10
+        : thumbnailSize === "medium"
+        ? 6
+        : thumbnailSize === "large"
+        ? 4
+        : 5,
   };
 
   const sensors = useSensors(
@@ -230,7 +234,7 @@ export function SortableMediaGrid({
                 maxSelectionCount={maxSelectionCount}
                 selectedCount={selectedItems.length}
                 galleryActions={galleryActions}
-                isDraggable={true} // Enable dragging in normal mode
+                isDraggable={isDraggable}
               />
             ))}
           </Masonry>

@@ -115,6 +115,7 @@ export async function updateCampaign(
   campaignId: string,
   campaignData: Partial<ThreadCampaign>
 ): Promise<ThreadCampaign> {
+  // console.log("Updating campaign with data:", campaignData);
   return handleApiRequest<ThreadCampaign>(
     axiosInstance.put(`/brands/${brandId}/campaign/${campaignId}`, campaignData)
   );
@@ -129,6 +130,16 @@ export async function updateCampaignName(
     campaign: { title },
   });
 }
+
+export async function deleteCampaign(
+  brandId: string,
+  campaignId: string
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.delete(`/brands/${brandId}/campaign/${campaignId}`)
+  );
+}
+
 export async function addDeprioritizedIds(
   brandId: string,
   campaignId: string,

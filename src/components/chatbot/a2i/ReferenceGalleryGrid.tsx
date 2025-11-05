@@ -11,6 +11,7 @@ interface ReferenceGalleryGridProps {
   onItemClick: (assetUrl: string, assetId: string, size?: string) => void;
   onDragStart: (e: React.DragEvent, assetUrl: string, assetId?: string) => void;
   onDeleteItem: (item: GalleryItemResponse) => void;
+  isSingleMode?: boolean; // Flag to determine if we're in single mode
 }
 
 export const ReferenceGalleryGrid = ({
@@ -21,6 +22,7 @@ export const ReferenceGalleryGrid = ({
   onItemClick,
   onDragStart,
   onDeleteItem,
+  isSingleMode = false,
 }: ReferenceGalleryGridProps) => {
   if (isLoading && items.length === 0) {
     return (
@@ -69,7 +71,8 @@ export const ReferenceGalleryGrid = ({
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
 
-            {isSelected && (
+            {/* Show tag only in dual mode */}
+            {isSelected && !isSingleMode && (
               <div className="absolute top-1 right-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
                 {isMaster ? "Master" : "Product"}
               </div>

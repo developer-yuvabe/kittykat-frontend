@@ -7,7 +7,8 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
 
 export function useFolderState() {
-  const { selectedCampaignId, setSelectedCampaignId, selectedBrandId } = useBrandStore();
+  const { selectedCampaignId, setSelectedCampaignId, selectedBrandId } =
+    useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
@@ -18,9 +19,9 @@ export function useFolderState() {
         setSelectedCampaignId(null);
         return;
       }
-      
+
       setSelectedCampaignId(campaignId);
-      
+
       // Update thread context if available
       if (user?.thread_id && selectedBrandId) {
         updateCurrentContextBrandId(
@@ -30,7 +31,12 @@ export function useFolderState() {
         );
       }
     },
-    [setSelectedCampaignId, user?.thread_id, selectedBrandId, stream.values.currentBrandContextId]
+    [
+      setSelectedCampaignId,
+      user?.thread_id,
+      selectedBrandId,
+      stream.values.currentBrandContextId,
+    ]
   );
 
   const handleBackToCampaigns = useCallback(() => {
@@ -38,7 +44,7 @@ export function useFolderState() {
   }, [setSelectedCampaignId]);
 
   return {
-    selectedCampaignFromUrl: selectedCampaignId || "",
+    selectedCampaignId,
     handleCampaignSelect,
     handleBackToCampaigns,
   };

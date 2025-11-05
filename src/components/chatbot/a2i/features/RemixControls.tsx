@@ -15,27 +15,33 @@ import {
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { AppConfig } from "@/config/app.config";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
-import { canvasToBlob, PlatformApiError } from "@/lib/utils";
-import { deleteFile, uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import {
+  canvasToBlob,
+  cn,
+  PlatformApiError,
+  getExtensionFromUrl,
+} from "@/lib/utils";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
+import { useUserStore } from "@/store/user.store";
+import { useReferenceImagesStore } from "@/store/reference-image.store";
+import { useGalleryQuery } from "@/hooks/useGallery";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
-import {
-  Eraser,
-  Images,
-  Loader2,
-  Redo,
-  Settings2,
-  Undo,
-  X,
-} from "lucide-react";
-import React, { useCallback, useEffect, useMemo } from "react";
-import { FileRejection, useDropzone } from "react-dropzone";
+import { GalleryItem } from "@/types/gallery.types";
+import { updateUser } from "@/services/api/user.service";
+import { Eraser, Images, Redo, Settings2, Undo } from "lucide-react";
+import { LockIcon, LockOpenIcon, TrashIcon } from "@/components/ui/custom-icon";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { DynamicFormField } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
@@ -43,6 +49,15 @@ import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
+import { TooltipButton } from "@/components/ui/tooltip-button";
+import ReferenceImageSelector from "../ReferenceImageSelector";
+import { Paperclip, PanelTop } from "lucide-react";
+import { ReferenceZone } from "../ReferenceZone";
+import {
+  handleReferenceImageDrop,
+  updateReferencesByZone,
+  validateFiles,
+} from "@/lib/reference-image.utils";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -55,7 +70,6 @@ export type RemixControlsProps = {
     size: string;
   };
   offScreenCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-  // Add brush size props
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
   brandId?: string;
@@ -79,6 +93,10 @@ const RemixControls = ({
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
+  const { user, setUser } = useUserStore();
+  const [isMagicEnabled, setIsMagicEnabled] = useState(
+    user?.user_preferences?.enhance_prompts
+  );
 
   const {
     initialParams,
@@ -153,147 +171,285 @@ const RemixControls = ({
     form,
     model: selectedRemixModel,
   });
-  const inputFileRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Image
-  const [isUploading, setIsUploading] = React.useState(false);
-  const [imageBlocks, setImageBlocks] = React.useState<
+  // Reference images state - using master/product zones like A2iImageInput
+  const [masterReference, setMasterReference] = useState<string[]>([]);
+  const [productReference, setProductReference] = useState<string[]>([]);
+  const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
+  const [referencePopoverTab, setReferencePopoverTab] = useState<
+    "master" | "product"
+  >("master");
+
+  const currentImageCount = masterReference.length + productReference.length;
+
+  // Gallery query for uploading reference images
+  const { bulkUpload } = useGalleryQuery(
     {
-      previewUrl: string;
-      url: string | null;
-    }[]
-  >([]);
-  const remainingUploads =
-    (referenceImageParam?.maxLimit || 0) - imageBlocks.length;
-
-  const onDrop = useCallback(
-    async (
-      acceptedFiles: File[],
-      fileRejections: FileRejection[],
-      event: any
-    ) => {
-      // Reset file input value to allow re-uploading the same file
-      if (event?.target) {
-        event.target.value = null;
-      }
-      if (fileRejections.length > 0) {
-        if (remainingUploads === 0)
-          toast.error(
-            `Maximum limit reached. You can only upload ${referenceImageParam?.maxLimit} image(s).`
-          );
-        else
-          toast.warning(
-            `Some files were rejected. Please note: Maximum file size is ${
-              referenceImageParam?.maxFileSizeLimit
-            } MB, allowed file types are ${referenceImageParam?.fileTypes.join(
-              ", "
-            )}, and you can upload up to ${remainingUploads} more image(s).`
-          );
-      }
-
-      if (acceptedFiles.length === 0 || !referenceImageParam) return;
-
-      setIsUploading(true);
-
-      const uploadPromises = acceptedFiles.map((file) => {
-        return new Promise<void>((resolve) => {
-          const reader = new FileReader();
-
-          reader.onloadend = async () => {
-            const previewUrl = reader.result as string;
-            let blockIndex = -1;
-
-            setImageBlocks((prev) => {
-              blockIndex = prev.length;
-              return [...prev, { previewUrl, url: null }];
-            });
-
-            try {
-              const uploadedUrl = await uploadFileAndReturnUrl(
-                file.name,
-                file.type,
-                "brands",
-                file,
-                selectedBrandId || null
-              );
-
-              setImageBlocks((prev) => {
-                const updated = [...prev];
-                updated[blockIndex] = {
-                  ...updated[blockIndex],
-                  url: uploadedUrl,
-                };
-                return updated;
-              });
-
-              const formName = referenceImageParam.id;
-
-              const value =
-                referenceImageParam.maxLimit > 1
-                  ? [...(form.getValues(formName) || []), uploadedUrl]
-                  : uploadedUrl;
-
-              form.setValue(formName, value, {
-                shouldValidate: true,
-                shouldDirty: true,
-                shouldTouch: true,
-              });
-            } catch {
-              console.error("Upload failed for", file.name);
-              setImageBlocks((prev) =>
-                prev.filter((_, idx) => idx !== blockIndex)
-              );
-            } finally {
-              resolve();
-            }
-          };
-
-          reader.readAsDataURL(file);
-        });
-      });
-
-      await Promise.allSettled(uploadPromises);
-      setIsUploading(false);
+      selectedFilters: {
+        brands: [selectedBrandId!],
+        campaigns: [],
+        moodboards: [],
+        product_categories: [],
+        asset_types: [],
+        asset_sources: ["reference"],
+        media_format: [],
+        aspect_ratio: [],
+        workflow_status: [],
+        sort_by: "last_accessed_at",
+      },
     },
-    [referenceImageParam?.id, remainingUploads]
+    40,
+    true
   );
 
-  const { getInputProps } = useDropzone({
-    onDrop,
-    multiple: true,
-    accept: {
-      "image/*": [],
+  const { addItems } = useReferenceImagesStore();
+
+  const openReferencePopover = (tab: "master" | "product") => {
+    setReferencePopoverTab(tab);
+    setIsReferencePopoverOpen(true);
+  };
+
+  // Handle file uploads from OS drag-and-drop
+  const handleFileUpload = useCallback(
+    async (
+      files: File[],
+      targetZone: "master" | "product"
+    ): Promise<string[]> => {
+      if (!referenceImageParam) {
+        toast.error("This model doesn't support reference images");
+        return [];
+      }
+
+      const { fileTypes, maxFileSizeLimit, maxLimit } = referenceImageParam;
+      const remainingSlots =
+        maxLimit - (masterReference.length + productReference.length);
+
+      if (remainingSlots <= 0) {
+        toast.error(`You can only upload ${maxLimit} image(s).`);
+        return [];
+      }
+
+      // Use shared validation utility
+      const { validFiles, invalidFiles } = validateFiles(
+        files,
+        fileTypes,
+        maxFileSizeLimit,
+        remainingSlots
+      );
+
+      if (invalidFiles.length > 0) {
+        toast.warning(
+          `${invalidFiles.length} file(s) rejected: ${invalidFiles.join(", ")}`
+        );
+      }
+
+      if (validFiles.length === 0) {
+        return [];
+      }
+
+      // Upload files with toast.promise for better UX
+      const uploadPromise = async () => {
+        const uploadedGalleryItems: GalleryItem[] = [];
+        const uploadedUrls: string[] = [];
+
+        // Upload files to storage
+        const uploadPromises = validFiles.map(async (file) => {
+          try {
+            const uploadedUrl = await uploadFileAndReturnUrl(
+              file.name,
+              file.type,
+              "brands",
+              file,
+              selectedBrandId
+            );
+
+            uploadedGalleryItems.push({
+              brand_id: selectedBrandId!,
+              asset_type: "image",
+              asset_source: "reference",
+              asset_title: file.name,
+              asset_url: uploadedUrl,
+              preview_url: uploadedUrl,
+              media_format: getExtensionFromUrl(uploadedUrl),
+              is_master: true,
+              size: "",
+              last_accessed_at: new Date().toISOString(),
+            });
+
+            uploadedUrls.push(uploadedUrl);
+            return uploadedUrl;
+          } catch (error) {
+            console.error("Upload failed for", file.name, error);
+            throw error;
+          }
+        });
+
+        await Promise.all(uploadPromises);
+
+        if (uploadedGalleryItems.length === 0) {
+          throw new Error("No files were uploaded successfully");
+        }
+
+        // Save to gallery backend
+        const response = await bulkUpload({
+          gallery_items: uploadedGalleryItems,
+          brand_id: selectedBrandId!,
+        });
+
+        // Add uploaded items to gallery store
+        if (response && response.length > 0) {
+          addItems(response);
+        }
+
+        return {
+          successfulUrls: uploadedUrls,
+          count: uploadedUrls.length,
+          targetZone,
+        };
+      };
+
+      try {
+        const toastPromise = toast.promise(uploadPromise(), {
+          loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
+          success: (data) =>
+            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+          error: "Failed to upload files. Please try again.",
+        });
+
+        const result = await toastPromise.unwrap();
+        return result.successfulUrls;
+      } catch (error) {
+        console.error("File upload failed:", error);
+        return [];
+      }
     },
-    disabled:
-      isUploading ||
-      (referenceImageParam?.maxLimit || 10) - imageBlocks.length <= 0,
-    maxFiles: (referenceImageParam?.maxLimit || 10) - imageBlocks.length,
-    maxSize: referenceImageParam
-      ? referenceImageParam?.maxFileSizeLimit * 1024 * 1024
-      : AppConfig.MAX_FILE_SIZE,
-  });
+    [
+      referenceImageParam,
+      masterReference.length,
+      productReference.length,
+      selectedBrandId,
+      bulkUpload,
+      addItems,
+    ]
+  );
 
-  function removeReferenceImage(urlToRemove: string) {
-    const formName = referenceImageParam!.id;
-    const currentImages = form.getValues(formName);
+  const handleToggleMagic = async () => {
+    if (!user) return;
 
-    if (!currentImages) return;
+    const newMagicState = !isMagicEnabled;
+    const updatedPreferences = {
+      enhance_prompts: newMagicState,
+    };
 
-    let updatedImages;
-    if (Array.isArray(currentImages)) {
-      updatedImages = currentImages.filter((url) => url !== urlToRemove);
+    // Update local state and store optimistically
+    setIsMagicEnabled(newMagicState);
+    const updatedUserWithPrefs = {
+      ...user,
+      user_preferences: updatedPreferences,
+    };
+    setUser(updatedUserWithPrefs);
+    toast.success(`Magic enhance ${newMagicState ? "enabled" : "disabled"}`);
+
+    // Update server in the background
+    try {
+      await updateUser(user.id, {
+        user_preferences: updatedPreferences,
+      });
+    } catch (error) {
+      console.error("Error toggling magic feature:", error);
+      // Revert optimistic update on error
+      setIsMagicEnabled(!newMagicState);
+      setUser(user);
+      toast.error("Failed to update magic preference");
     }
-    form.setValue(formName, updatedImages);
+  };
 
-    // Remove from imageBlocks
-    setImageBlocks((prev) => prev.filter((block) => block.url !== urlToRemove));
+  // Handle drag-and-drop between zones (when popover is closed)
+  const handleZoneDrop = useCallback(
+    async (e: React.DragEvent, targetZone: "master" | "product") => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    // delete the file from GCS
-    deleteFile(urlToRemove);
-  }
+      if (!referenceImageParam) {
+        toast.error("This model doesn't support reference images");
+        return;
+      }
+
+      const assetUrl = e.dataTransfer.getData("assetUrl");
+      const source = e.dataTransfer.getData("source");
+
+      // Handle file drops from OS
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        const uploadedUrls = await handleFileUpload(files, targetZone);
+
+        if (uploadedUrls.length > 0) {
+          // Use shared utility to update references
+          const { newMasterReference, newProductReference } =
+            updateReferencesByZone(
+              targetZone,
+              uploadedUrls,
+              masterReference,
+              productReference
+            );
+          setMasterReference(newMasterReference);
+          setProductReference(newProductReference);
+        }
+        return;
+      }
+
+      // Handle drag between zones
+      if (!assetUrl) return;
+
+      // Use shared utility function for drop logic
+      const result = handleReferenceImageDrop(
+        assetUrl,
+        source,
+        targetZone,
+        masterReference,
+        productReference,
+        referenceImageParam.maxLimit
+      );
+
+      // If drop should be prevented, show toast and return
+      if (result.shouldPrevent) {
+        if (result.toastMessage) {
+          toast[result.toastMessage.type](result.toastMessage.message);
+        }
+        return;
+      }
+
+      // Apply the state updates
+      if (result.newMasterReference !== undefined) {
+        setMasterReference(result.newMasterReference);
+      }
+      if (result.newProductReference !== undefined) {
+        setProductReference(result.newProductReference);
+      }
+
+      // Show success toast
+      if (result.toastMessage) {
+        toast[result.toastMessage.type](result.toastMessage.message);
+      }
+    },
+    [referenceImageParam, masterReference, productReference, handleFileUpload]
+  );
 
   const onSubmit = async (data: Record<string, any>) => {
     try {
+      // Combine master and product references for the API
+      const referenceImages: string[] = [];
+      referenceImages.push(...masterReference, ...productReference);
+
+      // Add reference images to form data if model supports it
+
+      if (referenceImageParam && referenceImages.length > 0) {
+        data[referenceImageParam.id] =
+          referenceImageParam.maxLimit > 1
+            ? referenceImages
+            : referenceImages[0];
+      }
+
       let maskUrl = null;
 
       if (maskImageParam) {
@@ -337,14 +493,19 @@ const RemixControls = ({
         brandId ?? selectedBrandId!,
         campaignId,
         data,
-        maskUrl
+        maskUrl,
+        productReference,
+        isMagicEnabled && productReference.length > 0
       );
 
-      form.setValue("prompt", "", { shouldValidate: true });
-      if (referenceImageParam) {
-        form.setValue(referenceImageParam.id, null);
+      if (!isLocked) {
+        form.setValue("prompt", "", { shouldValidate: true });
+        setMasterReference([]);
+        setProductReference([]);
+        if (referenceImageParam) {
+          form.setValue(referenceImageParam.id, null);
+        }
       }
-      setImageBlocks([]);
 
       closeConceptVisual();
       if (source === "blanket") {
@@ -361,16 +522,10 @@ const RemixControls = ({
     }
   };
 
-  // This useEffect is to populate the prompt value when the model changes
   useEffect(() => {
-    // Clean up uploaded files when model changes
-    for (const block of imageBlocks) {
-      if (block.url) {
-        deleteFile(block.url);
-      }
-    }
-
-    setImageBlocks([]);
+    // Clean up when model changes
+    setMasterReference([]);
+    setProductReference([]);
     if (referenceImageParam) {
       form.setValue(referenceImageParam.id, null, {
         shouldValidate: true,
@@ -380,31 +535,8 @@ const RemixControls = ({
     }
   }, [selectedRemixModel?.id]);
 
-  // This useEffect is to fetch reference images stored in the session storage and populate the image blocks
-  // useEffect(() => {
-  //   if (referenceImageParam) {
-  //     const referenceImages = form.getValues(referenceImageParam.id);
-
-  //     if (
-  //       referenceImages &&
-  //       Array.isArray(referenceImages) &&
-  //       referenceImages.length > 0
-  //     ) {
-  //       setImageBlocks(
-  //         referenceImages.map((url) => ({
-  //           previewUrl: url,
-  //           url: url,
-  //         }))
-  //       );
-  //     }
-  //   }
-  // }, [form, selectedRemixModel?.id]);
-
-  // For seedream 4 model, ensure that the total number of images (reference + to generate) does not exceed 15
   const value = form.watch("max_images");
-  const numberOfReferenceImagesUploaded = referenceImageParam
-    ? form.watch(referenceImageParam.id)?.length || 0
-    : 0;
+  const numberOfReferenceImagesUploaded = currentImageCount;
 
   useEffect(() => {
     const total = numberOfReferenceImagesUploaded + value;
@@ -418,17 +550,20 @@ const RemixControls = ({
     }
   }, [numberOfReferenceImagesUploaded, value, form]);
 
+  const [isLocked, setIsLocked] = useState(false);
+
+  function clearPromptAndReferences() {
+    form.setValue("prompt", "", { shouldValidate: true });
+    setMasterReference([]);
+    setProductReference([]);
+    if (referenceImageParam) {
+      form.setValue(referenceImageParam.id, null);
+    }
+  }
+
   return (
     <div className="w-full flex flex-col gap-y-6 p-4">
-      <div className="mr-auto w-max">
-        <ModelSelector
-          selectedModel={selectedRemixModel}
-          typeFilter="remix"
-          onModelChange={(m) => {
-            setSelectedRemixModel(m);
-          }}
-        />
-      </div>
+      {/* Brush Controls - Only show when maskImageParam exists */}
       {maskImageParam && (
         <div className="flex gap-x-4 w-full">
           <div className="flex gap-6 items-center border p-4 rounded-md flex-1">
@@ -479,157 +614,257 @@ const RemixControls = ({
           </div>
         </div>
       )}
-      <div className="bg-background rounded-2xl border shadow-xl py-6 px-4 mx-auto w-full h-max">
-        <div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              {imageBlocks.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {imageBlocks.map((block, index) => (
-                    <div
-                      key={block.previewUrl}
-                      className="relative w-12 h-12 rounded-lg"
-                    >
-                      <img
-                        src={block.previewUrl}
-                        alt={`Uploaded preview ${index + 1}`}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                      {!!block.url && (
-                        <button
-                          onClick={() => removeReferenceImage(block.url!)}
-                          className="p-1 absolute -top-1 -right-1 bg-primary rounded-full text-white hover:bg-destructive z-[100]"
-                        >
-                          <X className="h-2 w-2" />
-                        </button>
-                      )}
-                      {!block.url && (
-                        <div className="absolute top-0 right-0 bg-black/30 text-white text-xs  px-1 flex items-center justify-center w-full h-full rounded-lg">
-                          <Loader2 className="animate-spin" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <FormField
-                control={form.control}
-                name="prompt"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* Mask Image parameter exists — supports brush.
-                        Reference Image parameter exists — supports reference image. */}
-                    <FormControl>
+
+      {/* Main Input Container - Matching A2iImageInput Layout */}
+      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4">
+        <Form {...form}>
+          <div
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)();
+            }}
+          >
+            {/* Textarea with Lock and Clear buttons */}
+            <FormField
+              control={form.control}
+              name="prompt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="relative h-full">
                       <Textarea
-                        placeholder={getRemixInputPlaceholderMessage({
-                          supportsBrush: !!maskImageParam,
-                          supportsReferenceImage: !!referenceImageParam,
-                        })}
-                        className="resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none min-h-10 h-max max-h-60 scrollbar mb-2 px-0"
                         {...field}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
+                          if (e.key === "Enter" && e.shiftKey) {
+                            return;
+                          }
+                          if (e.key === "Enter") {
                             e.preventDefault();
                             form.handleSubmit(onSubmit)();
                           }
                         }}
+                        className={cn(
+                          "relative w-full resize-none mt-5 border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-20 max-h-[200px] overflow-y-auto align-top"
+                        )}
+                        placeholder={getRemixInputPlaceholderMessage({
+                          supportsBrush: !!maskImageParam,
+                          supportsReferenceImage: !!referenceImageParam,
+                        })}
                       />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        <TooltipButton
+                          tooltip="Keep prompt and reference images"
+                          icon={
+                            isLocked ? (
+                              <LockIcon color="#7F55E0" size={20} />
+                            ) : (
+                              <LockOpenIcon color="#7F55E0" size={20} />
+                            )
+                          }
+                          size="md"
+                          className="px-2 py-2"
+                          onClick={() => setIsLocked(!isLocked)}
+                        />
+                        <TooltipButton
+                          tooltip="Clear prompt and references"
+                          icon={<TrashIcon color="#7F55E0" size={20} />}
+                          size="md"
+                          className="px-2 py-2"
+                          onClick={() => clearPromptAndReferences()}
+                        />
+                      </div>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {referenceImageParam && (
-                    <>
-                      <input {...getInputProps()} ref={inputFileRef} />
-                      <TooltipIconButton
-                        tooltip={
-                          referenceImageParam.maxLimit - imageBlocks.length <= 0
-                            ? "You’ve reached the maximum upload limit"
-                            : `You can add ${remainingUploads} more image${
-                                remainingUploads > 1 ? "s" : ""
-                              }`
-                        }
-                        className="size-max px-3 py-2"
-                        variant="outline"
-                        size="icon"
-                        type="button"
-                        onClick={() => inputFileRef.current?.click()}
-                        disabled={
-                          referenceImageParam?.maxLimit - imageBlocks.length <=
-                          0
-                        }
-                      >
-                        <Images />
-                      </TooltipIconButton>
-                    </>
-                  )}
-                  {initialParams.map((param) => {
-                    return (
-                      <DynamicFormField
-                        key={param.id}
-                        param={param}
-                        form={form}
-                        type="initial"
-                        rules={selectedRemixModel?.rules}
-                        source="remix"
-                      />
-                    );
-                  })}
-
-                  {advancedParams.length > 0 && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button size={"icon"} variant={"outline"}>
-                          <Settings2 />
+            {/* Bottom Controls - Parameters, Model Selector, and Generate Button */}
+            <div className="flex gap-2 justify-between items-center px-4">
+              <div className="flex items-center gap-2">
+                {/* Reference Image Selector - matching A2iImageInput */}
+                {referenceImageParam ? (
+                  <ReferenceImageSelector
+                    masterReference={masterReference}
+                    productReference={productReference}
+                    onMasterReferenceChange={setMasterReference}
+                    onProductReferenceChange={setProductReference}
+                    maxLimit={referenceImageParam.maxLimit}
+                    fileTypes={referenceImageParam.fileTypes}
+                    maxFileSizeLimit={referenceImageParam.maxFileSizeLimit}
+                    disabled={form.formState.isSubmitting}
+                    currentCampaignId={campaignId}
+                    isOpen={isReferencePopoverOpen}
+                    onOpenChange={setIsReferencePopoverOpen}
+                    activeTab={referencePopoverTab}
+                    onTabChange={setReferencePopoverTab}
+                    isMagicEnabled={isMagicEnabled}
+                    onToggleMagic={handleToggleMagic}
+                  />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          size={"icon"}
+                          variant={"outline"}
+                          disabled={true}
+                        >
+                          <Images />
                         </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        forceMount
-                        align="start"
-                        side="top"
-                        className="space-y-2 w-64"
-                      >
-                        <div className="space-y-4">
-                          <FormLabel className="py-0 text-xs">
-                            Advance Parameters
-                          </FormLabel>
-                          {advancedParams.map((param) => {
-                            return (
-                              <DynamicFormField
-                                key={param.id}
-                                param={param}
-                                form={form}
-                                type="advanced"
-                                rules={selectedRemixModel?.rules}
-                                source="remix"
-                              />
-                            );
-                          })}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      This model does not support attaching reference images
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {/* Initial Parameters */}
+                {initialParams.map((param) => {
+                  return (
+                    <DynamicFormField
+                      key={param.id}
+                      param={param}
+                      form={form}
+                      type="initial"
+                      rules={selectedRemixModel?.rules}
+                      source="remix"
+                    />
+                  );
+                })}
+
+                {/* Advanced Parameters Popover */}
+                {advancedParams.length > 0 && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button size={"icon"} variant={"outline"}>
+                        <Settings2 />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      forceMount
+                      align="center"
+                      side="top"
+                      className="space-y-2 w-64"
+                    >
+                      <div className="space-y-4">
+                        <FormLabel className="py-0 text-xs">
+                          Advance Parameters
+                        </FormLabel>
+                        {advancedParams.map((param) => {
+                          return (
+                            <DynamicFormField
+                              key={param.id}
+                              param={param}
+                              form={form}
+                              type="advanced"
+                              rules={selectedRemixModel?.rules}
+                              source="remix"
+                            />
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+
+              {/* Right Side - Model Selector and Generate Button */}
+              <div className="flex gap-x-2">
+                <ModelSelector
+                  onModelChange={(m) => {
+                    setSelectedRemixModel(m);
+                  }}
+                  selectedModel={selectedRemixModel}
+                  typeFilter="remix"
+                />
                 <TokenGenerateButton
-                  className="w-full"
-                  label="Concept Visual Generation"
                   onClick={() => form.handleSubmit(onSubmit)()}
                   tokens={credits}
                   loading={form.formState.isSubmitting}
                   disabled={
-                    form.formState.isSubmitting ||
-                    !form.formState.isValid ||
-                    isUploading
+                    !form.formState.isValid || form.formState.isSubmitting
                   }
                   isCalculatingTokens={isCalculatingCredits}
                 />
               </div>
-            </form>
-          </Form>
-        </div>
+            </div>
+
+            {/* Reference Zones - Show when there are references */}
+            {(masterReference.length > 0 || productReference.length > 0) &&
+              !isReferencePopoverOpen && (
+                <div className="w-full px-4">
+                  <div className="flex gap-4 w-full">
+                    {/* MASTER REFERENCE SECTION */}
+                    <div className="flex-1">
+                      <ReferenceZone
+                        type="master"
+                        icon={Paperclip}
+                        title="Master Reference"
+                        description="Use elements of an image. (Drag files or images here)"
+                        images={masterReference}
+                        isSelected={referencePopoverTab === "master"}
+                        onClick={() => openReferencePopover("master")}
+                        onDrop={(e: React.DragEvent) =>
+                          handleZoneDrop(e, "master")
+                        }
+                        onDragStart={(e: React.DragEvent, url: string) => {
+                          e.dataTransfer.setData("assetUrl", url);
+                          e.dataTransfer.setData("source", "master");
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onRemoveImage={(url: string) => {
+                          setMasterReference(
+                            masterReference.filter((u) => u !== url)
+                          );
+                        }}
+                        showAddButton={
+                          masterReference.length === 0 &&
+                          productReference.length > 0
+                        }
+                        onAddClick={() => openReferencePopover("master")}
+                      />
+                    </div>
+
+                    {/* PRODUCT REFERENCE SECTION */}
+                    <div className="flex-1">
+                      <ReferenceZone
+                        type="product"
+                        icon={PanelTop}
+                        title="Product Reference"
+                        description="Use a product image. (Drag files or images here)"
+                        images={productReference}
+                        isSelected={referencePopoverTab === "product"}
+                        onClick={() => openReferencePopover("product")}
+                        onDrop={(e: React.DragEvent) =>
+                          handleZoneDrop(e, "product")
+                        }
+                        onDragStart={(e: React.DragEvent, url: string) => {
+                          e.dataTransfer.setData("assetUrl", url);
+                          e.dataTransfer.setData("source", "product");
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onRemoveImage={(url: string) => {
+                          setProductReference(
+                            productReference.filter((u) => u !== url)
+                          );
+                        }}
+                        showAddButton={
+                          productReference.length === 0 &&
+                          masterReference.length > 0
+                        }
+                        onAddClick={() => openReferencePopover("product")}
+                        isMagicEnabled={isMagicEnabled}
+                        onToggleMagic={handleToggleMagic}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+          </div>
+        </Form>
       </div>
     </div>
   );

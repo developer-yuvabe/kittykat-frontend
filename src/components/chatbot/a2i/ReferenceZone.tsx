@@ -65,11 +65,7 @@ export const ReferenceZone = ({
         {type === "product" && images.length > 0 && onToggleMagic && (
           <div onClick={(e) => e.stopPropagation()} className="shrink-0">
             <TooltipButton
-              tooltip={
-                isMagicEnabled
-                  ? "Disable magic enhance"
-                  : "Enable magic enhance"
-              }
+              tooltip="Product Reference Prompt Enhance"
               icon={
                 isMagicEnabled ? (
                   <MagicEnabledIcon color="#7F55E0" size={22} />
