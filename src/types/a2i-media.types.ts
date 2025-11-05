@@ -96,9 +96,9 @@ export type Rule = {
   name: string;
   paramId: string;
   hintText?: string;
-  disableIf: {
+  disableIf: Array<{
     name: string;
     paramId: string;
-  };
-  restrictIf?: boolean;
+    restrictIf?: boolean;
+  }>;
 };

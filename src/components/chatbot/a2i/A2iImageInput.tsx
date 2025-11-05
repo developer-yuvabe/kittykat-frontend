@@ -351,42 +351,6 @@ const A2iImageInput = ({
     }
   }, [currentImageCount, value, formInstance]);
 
-  const isResettingRef = useRef(false);
-  
-  useEffect(() => {
-    const sub = formInstance.watch((vals, { name }) => {
-      if (!name || !vals || isResettingRef.current || !selectedImageGenerationModel?.rules) return;
-
-      const rule = selectedImageGenerationModel.rules.find(
-        r => r.name === name && r.paramId === vals[name] && r.restrictIf
-      );
-      if (!rule) return;
-
-      const disables = Array.isArray(rule.disableIf) ? rule.disableIf : [rule.disableIf];
-      const toReset = disables
-        .map(d => selectedImageGenerationModel.parameters.find(p => p.id === d.name))
-        .filter(p => p && p.defaultValue !== undefined && vals[p.id] !== p.defaultValue)
-        .map(p => ({ id: p!.id, value: p!.defaultValue, label: p!.label || p!.id }));
-
-      if (toReset.length === 0) return;
-
-      isResettingRef.current = true;
-      
-      requestAnimationFrame(() => {
-        toReset.forEach(({ id, value }) => formInstance.setValue(id, value, { shouldValidate: true }));
-
-        const uniqueLabels = [...new Set(toReset.map(r => r.label))];
-        const triggeredByLabel = selectedImageGenerationModel.parameters.find(p => p.id === name)?.label || name;
-        
-        toast.info(`${uniqueLabels.join(", ")} reset to default due to incompatible ${triggeredByLabel}.`);
-        
-        setTimeout(() => { isResettingRef.current = false; }, 150);
-      });
-    });
-
-    return () => sub.unsubscribe();
-  }, [formInstance, selectedImageGenerationModel,parameters]);
-
   return (
     <div
       ref={inputContainerRef}
@@ -518,6 +482,7 @@ const A2iImageInput = ({
                     form={formInstance}
                     type="initial"
                     rules={selectedImageGenerationModel?.rules}
+                    allParameters={[...initialParams, ...advancedParams]}
                   />
                 );
               })}
@@ -547,6 +512,7 @@ const A2iImageInput = ({
                             form={formInstance}
                             type="advanced"
                             rules={selectedImageGenerationModel?.rules}
+                            allParameters={[...initialParams, ...advancedParams]}
                           />
                         );
                       })}

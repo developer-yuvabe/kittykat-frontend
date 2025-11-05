@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { ModelParameter, Rule } from "@/types/a2i-media.types";
 import { InfoIcon } from "lucide-react";
 import { FieldValues, UseFormReturn, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import Seedream4SequentailOptions from "./Seedream4SequentailOptions";
 
 type DynamicFormFieldProps<T extends FieldValues> = {
@@ -42,6 +43,7 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   type: "initial" | "advanced";
   sliderSuffix?: string;
   source?: "remix" | "upscale" | "vton";
+  allParameters?: ModelParameter[];
 };
 
 export const DynamicFormLabel = ({
@@ -70,6 +72,7 @@ export function DynamicFormField<T extends FieldValues>({
   rules,
   sliderSuffix,
   source,
+  allParameters,
 }: DynamicFormFieldProps<T>) {
   const watchedValues = useWatch({
     control: form.control,
@@ -81,7 +84,6 @@ export function DynamicFormField<T extends FieldValues>({
   ): { disabled: boolean; hintText?: string } => {
     if (!rules || rules.length === 0) return { disabled: false };
 
-    // Find all rules that match the current field and value
     const matchingRules = rules.filter(
       (r) => r.name === formName && r.paramId === value
     );
@@ -89,17 +91,8 @@ export function DynamicFormField<T extends FieldValues>({
     if (matchingRules.length === 0) return { disabled: false };
 
     for (const rule of matchingRules) {
-      if (rule.restrictIf === true) {
-        continue;
-      }
-
-      // Check disableIf array
-      const disableIfArray = Array.isArray(rule.disableIf)
-        ? rule.disableIf
-        : [rule.disableIf]; // support single object too
-
-      const shouldDisable = disableIfArray.some(
-        (cond) => watchedValues?.[cond.name] === cond.paramId
+      const shouldDisable = rule.disableIf.some(
+        (cond) => !cond.restrictIf && watchedValues?.[cond.name] === cond.paramId
       );
 
       if (shouldDisable) {
@@ -108,6 +101,25 @@ export function DynamicFormField<T extends FieldValues>({
     }
 
     return { disabled: false };
+  };
+
+  const applyRestrictIfDefaults = (fieldName: string, newValue: string) => {
+    if (!rules) return;
+    
+    rules.forEach((rule) => {
+      rule.disableIf.forEach((cond) => {
+        if (cond.restrictIf && cond.name === fieldName && cond.paramId === newValue) {
+          // Find the parameter definition for the restricted field
+          const restrictedParam = allParameters?.find((p) => p.id === rule.name);
+          const defaultValue = restrictedParam?.defaultValue;
+          
+          if (defaultValue !== undefined) {
+            form.setValue(rule.name as any, defaultValue);
+            toast.info(`${restrictedParam?.label || rule.name} reset to default due to ${fieldName} selection`);
+          }
+        }
+      });
+    });
   };
 
   if (
@@ -252,6 +264,7 @@ export function DynamicFormField<T extends FieldValues>({
                   onValueChange={(v) => {
                     if (!v) return;
                     field.onChange(v);
+                    applyRestrictIfDefaults(param.id, v);
                   }}
                   value={field.value}
                 >
