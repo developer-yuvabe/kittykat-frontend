@@ -33,7 +33,7 @@ import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
 
 export const CampaignSection: React.FC<{
-  campaignInformation: ThreadDetails["campaign_information"] | null;
+  campaignInformation: ThreadDetails["campaign_information"];
   brandInformation: ThreadDetails["brand_information"];
   currentCampaign: ThreadCampaign | null;
   expandedSections: { [key: string]: boolean };

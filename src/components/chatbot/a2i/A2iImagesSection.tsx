@@ -13,7 +13,7 @@ import ReferenceMoodboard from "./ReferenceMoodboard";
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
   moodboardInformation: ThreadDetails["moodboard_information"];
-  campaignInformation: ThreadDetails["campaign_information"] | null;
+  campaignInformation: ThreadDetails["campaign_information"];
   currentCampaign: ThreadCampaign | null;
 }
 
