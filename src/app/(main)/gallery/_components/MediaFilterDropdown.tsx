@@ -1,0 +1,278 @@
+"use client";
+
+import React from "react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, Funnel } from "lucide-react";
+import { format } from "date-fns";
+import {
+  MultiSelect,
+  MultiSelectTrigger,
+  MultiSelectContent,
+  MultiSelectList,
+  MultiSelectItem,
+  MultiSelectSearch,
+  MultiSelectEmpty,
+  MultiSelectValue,
+} from "@/components/ui/multi-select";
+import { EnhancedSelectedFilters } from "@/types/gallery.types";
+import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
+import { Options } from "nuqs";
+
+interface MediaFilterDropdownProps {
+  favorites: boolean;
+  onFavoritesChange: (checked: boolean) => void;
+
+  hasComments: boolean;
+  onCommentsChange: (checked: boolean) => void;
+
+  mediaTypes: string[];
+  onMediaTypeChange: (values: string[]) => void;
+
+  selectedFilters: EnhancedSelectedFilters;
+  setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: Options
+  ) => Promise<URLSearchParams>;
+
+  dateFrom: Date | undefined;
+  dateTo: Date | undefined;
+  setDateFrom: (date?: Date) => void;
+  setDateTo: (date?: Date) => void;
+  onResetFilters: () => void;
+}
+
+export function MediaFilterDropdown({
+  favorites,
+  onFavoritesChange,
+  hasComments,
+  onCommentsChange,
+  mediaTypes,
+  onMediaTypeChange,
+  selectedFilters,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  dateFrom,
+  dateTo,
+  setDateFrom,
+  setDateTo,
+  onResetFilters,
+}: MediaFilterDropdownProps) {
+  const handleWorkflowStatusChange = (values: string[]) => {
+    if (values.length === 0 || values.includes("__all__")) {
+      setInitialWorkflowStatus([]);
+      setSelectedFilters({
+        ...selectedFilters,
+        workflow_status: [],
+      });
+    } else {
+      setInitialWorkflowStatus(values);
+      setSelectedFilters({
+        ...selectedFilters,
+        workflow_status: values,
+      });
+    }
+  };
+
+  const handleMediaTypeChange = (type: string, checked: boolean) => {
+    const updated = checked
+      ? [...mediaTypes, type]
+      : mediaTypes.filter((t) => t !== type);
+    // console.log("Updated media types:", updated);
+    onMediaTypeChange(updated);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 rounded-md px-3 py-1.5 mr-2">
+          <Funnel className="w-4 h-4" />
+          <span>Filters</span>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        className="w-80 p-0 bg-white border rounded-lg shadow-lg"
+      >
+        {/* Header */}
+        <div className="border-b px-4 py-2 flex items-center justify-between">
+          <h2 className="font-semibold text-gray-700">Filters</h2>
+          <button
+            onClick={onResetFilters}
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Reset
+          </button>
+        </div>
+
+        {/* Accordion Sections */}
+        <Accordion
+          type="multiple"
+          defaultValue={["tags", "media", "status", "range"]}
+          className="divide-y"
+        >
+          {/* Tags */}
+          <AccordionItem value="tags">
+            <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
+              Tags
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="favorites"
+                  checked={favorites}
+                  onCheckedChange={(checked) =>
+                    onFavoritesChange(checked as boolean)
+                  }
+                />
+                <Label htmlFor="favorites" className="text-sm text-gray-700">
+                  Favorites only
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="comments"
+                  checked={hasComments}
+                  onCheckedChange={(checked) =>
+                    onCommentsChange(checked as boolean)
+                  }
+                />
+                <Label htmlFor="comments" className="text-sm text-gray-700">
+                  Has Comments only
+                </Label>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Media Type */}
+          <AccordionItem value="media">
+            <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
+              Media Type
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="images"
+                  checked={mediaTypes.includes("image")}
+                  onCheckedChange={(checked) =>
+                    handleMediaTypeChange("image", checked as boolean)
+                  }
+                />
+                <Label htmlFor="images" className="text-sm text-gray-700">
+                  Images
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="videos"
+                  checked={mediaTypes.includes("video")}
+                  onCheckedChange={(checked) =>
+                    handleMediaTypeChange("video", checked as boolean)
+                  }
+                />
+                <Label htmlFor="videos" className="text-sm text-gray-700">
+                  Videos
+                </Label>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Expert Status */}
+          <AccordionItem value="status">
+            <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
+              KittyKat Expert Status
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <MultiSelect
+                value={selectedFilters.workflow_status ?? []}
+                onValueChange={handleWorkflowStatusChange}
+                maxCount={WORKFLOW_STATUS_OPTIONS.length}
+              >
+                <MultiSelectTrigger className="w-full h-9 text-sm">
+                  <MultiSelectValue
+                    placeholder="Select workflow status"
+                    maxDisplay={1}
+                    maxItemLength={16}
+                  />
+                </MultiSelectTrigger>
+                <MultiSelectContent>
+                  <MultiSelectSearch placeholder="Select status..." />
+                  <MultiSelectList>
+                    <MultiSelectEmpty>All Status</MultiSelectEmpty>
+                    {WORKFLOW_STATUS_OPTIONS.map((option) => (
+                      <MultiSelectItem
+                        key={option.value}
+                        value={option.value}
+                        label={option.label}
+                      >
+                        {option.label}
+                      </MultiSelectItem>
+                    ))}
+                  </MultiSelectList>
+                </MultiSelectContent>
+              </MultiSelect>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Created Range */}
+          <AccordionItem value="range">
+            <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
+              Created range
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-3">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal text-sm"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateFrom && dateTo
+                      ? `${format(dateFrom, "d MMM yyyy")} - ${format(
+                          dateTo,
+                          "d MMM yyyy"
+                        )}`
+                      : "Select date range"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto " align="end" side="left">
+                  <Calendar
+                    mode="range"
+                    numberOfMonths={2}
+                    defaultMonth={dateFrom ?? new Date()}
+                    selected={{ from: dateFrom, to: dateTo }}
+                    onSelect={(range) => {
+                      setDateFrom(range?.from);
+                      setDateTo(range?.to);
+                    }}
+                    className="rounded-lg border shadow-sm"
+                  />
+                </PopoverContent>
+              </Popover>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

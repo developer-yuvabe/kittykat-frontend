@@ -115,6 +115,7 @@ export interface ThreadCampaign {
   created_at?: string;
   updated_at?: string;
   is_custom?: boolean;
+  is_archived?: boolean;
 }
 
 export type A2iImageDetail = {

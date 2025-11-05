@@ -57,6 +57,7 @@ interface MediaBulkActionsProps {
   onUnselectAll: () => void;
   galleryActions: GalleryActions;
   brandName: string;
+  onSelectAll?: () => void;
 }
 
 type MoveAction = "brand" | "campaign" | "source";
@@ -66,6 +67,7 @@ export function MediaBulkActions({
   onUnselectAll,
   galleryActions,
   brandName,
+  onSelectAll,
 }: MediaBulkActionsProps) {
   const { brands } = useBrandStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -787,6 +789,14 @@ export function MediaBulkActions({
               </div>
             </PopoverContent>
           </Popover>
+
+          <Button
+            variant="default"
+            onClick={onSelectAll}
+            className="bg-[#9095A0] hover:bg-[#9095A0]"
+          >
+            Select All
+          </Button>
 
           <Button
             variant="default"

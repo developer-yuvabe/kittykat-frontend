@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Search, Folder, Pencil } from "lucide-react";
+import {
+  Search,
+  Folder,
+  Pencil,
+  MoreVertical,
+  Archive,
+  Trash,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,13 +23,30 @@ import {
 import { useBrandStore } from "@/store/brand.store";
 import { CreateCampaignDialog } from "@/components/gallery/CreateCampaignDialog";
 import { cn } from "@/lib/utils";
-import { updateCampaignName } from "@/services/api/brand.service";
+import {
+  deleteCampaign,
+  updateCampaign,
+  updateCampaignName,
+} from "@/services/api/brand.service";
 import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 // Component to show tooltip only when text is truncated
 function TruncatedText({
@@ -84,6 +108,14 @@ export function CampaignsSidebar({
   const [newCampaignName, setNewCampaignName] = useState("");
   const { brands } = useBrandStore();
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [targetCampaign, setTargetCampaign] = useState<{
+    id: string;
+    title: string;
+    is_archived?: boolean;
+  } | null>(null);
+
   const { campaigns, brandName } = useMemo(() => {
     const brand = brands.find((b) => b.id === selectedBrandId);
     return {
@@ -100,15 +132,7 @@ export function CampaignsSidebar({
     );
   }, [campaigns, searchQuery]);
 
-  const handleRenameClick = (
-    e: React.MouseEvent,
-    campaign: { id: string; title: string }
-  ) => {
-    e.stopPropagation();
-    setRenamingCampaign(campaign);
-    setNewCampaignName(campaign.title);
-    setRenameDialogOpen(true);
-  };
+  // console.log("filteredCampaigns:", filteredCampaigns);
 
   const handleRenameSave = async () => {
     if (!renamingCampaign || !selectedBrandId || !newCampaignName.trim()) {
@@ -137,33 +161,92 @@ export function CampaignsSidebar({
     });
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!targetCampaign || !selectedBrandId) return;
+
+    const campaignId = targetCampaign.id;
+
+    const deletePromise = deleteCampaign(selectedBrandId, campaignId);
+
+    toast.promise(deletePromise, {
+      loading: `Deleting "${targetCampaign.title}"...`,
+      success: `"${targetCampaign.title}" deleted successfully.`,
+      error: "Failed to delete campaign.",
+    });
+
+    setDeleteDialogOpen(false);
+    setTargetCampaign(null);
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (!targetCampaign || !selectedBrandId) return;
+
+    console.log("targetCampaign:", targetCampaign);
+
+    const action = targetCampaign.is_archived ? "Unarchiving" : "Archiving";
+
+    const fieldToUpdate = {
+      is_archived: !targetCampaign.is_archived, // toggle archive flag
+    };
+
+    const archivePromise = updateCampaign(
+      selectedBrandId,
+      targetCampaign.id,
+      fieldToUpdate
+    );
+
+    toast.promise(archivePromise, {
+      loading: `${action} "${targetCampaign.title}"...`,
+      success: `"${targetCampaign.title}" ${
+        targetCampaign.is_archived ? "unarchived" : "archived"
+      } successfully.`,
+      error: `Failed to ${
+        targetCampaign.is_archived ? "unarchive" : "archive"
+      } campaign.`,
+    });
+
+    setArchiveDialogOpen(false);
+    setTargetCampaign(null);
+  };
+
+  const activeCampaigns = filteredCampaigns.filter((c) => !c.is_archived);
+  const archivedCampaigns = filteredCampaigns.filter((c) => c.is_archived);
+  const { setSelectedCampaignId } = useBrandStore();
+  const { orderBy, setOrderBy } = useGalleryFilterStore();
+
   if (!selectedBrandId) {
     return null;
   }
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-80 rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-1/3 rounded-sm">
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
         {selectedCampaignId ? (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onCampaignSelect("")}
+            onClick={() => {
+              onCampaignSelect("");
+              setSelectedCampaignId(null);
+              if (orderBy === "brand_sort_order") {
+                setOrderBy("created_at_descending");
+              }
+            }}
             className="text-sm font-semibold text-gray-900 hover:text-purple-600"
           >
             ← Go Back
           </Button>
         ) : (
-          <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">
+          <h3 className="text-2xl font-semibold text-gray-900 truncate flex-1">
             Campaigns
           </h3>
         )}
       </div>
 
       {/* Search Bar */}
-      <div className="p-3 border-b border-gray-200">
-        <div className="relative">
+      <div className="p-3 border-b border-gray-200 flex justify-center items-center gap-2 ">
+        <div className="relative w-2/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
@@ -173,107 +256,93 @@ export function CampaignsSidebar({
             className="pl-9 h-9 text-sm"
           />
         </div>
+        <div className="w-1/3 flex justify-center">
+          <CreateCampaignDialog
+            brandId={selectedBrandId}
+            brandName={brandName}
+            onCampaignCreated={onCampaignSelect}
+          />
+        </div>
       </div>
 
-      {/* Campaign Count & Create Button */}
-      <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
-        <span className="text-xs text-gray-500">
-          {filteredCampaigns.length} campaign
-          {filteredCampaigns.length !== 1 ? "s" : ""}
-        </span>
-        <CreateCampaignDialog
-          brandId={selectedBrandId}
-          brandName={brandName}
-          onCampaignCreated={onCampaignSelect}
-        />
-      </div>
-
-      {/* Campaigns List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredCampaigns.length > 0 ? (
-          <div className="space-y-1 p-2">
-            {filteredCampaigns.map((campaign) => (
-              <div
-                key={`${selectedBrandId}-${campaign.id}`}
-                className="relative group"
-              >
-                <button
-                  onClick={() => onCampaignSelect(campaign.id)}
-                  className={cn(
-                    "w-full text-left px-3 py-2.5 pr-10 rounded-lg transition-colors hover:bg-gray-50",
-                    selectedCampaignId === campaign.id
-                      ? "bg-purple-50 hover:bg-purple-100"
-                      : "bg-white"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                        selectedCampaignId === campaign.id
-                          ? "bg-purple-100"
-                          : "bg-gray-100 group-hover:bg-gray-200"
-                      )}
-                    >
-                      <Folder
-                        className={cn(
-                          "w-4 h-4",
-                          selectedCampaignId === campaign.id
-                            ? "text-purple-600"
-                            : "text-gray-600"
-                        )}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <TruncatedText
-                        text={campaign.title}
-                        className={cn(
-                          "text-sm font-medium truncate",
-                          selectedCampaignId === campaign.id
-                            ? "text-purple-900"
-                            : "text-gray-900"
-                        )}
-                      />
-                    </div>
-                  </div>
-                </button>
-
-                {/* Rename button - shows on hover */}
-                <button
-                  onClick={(e) => handleRenameClick(e, campaign)}
-                  className={cn(
-                    "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100",
-                    "hover:bg-gray-200 focus:opacity-100 focus:bg-gray-200"
-                  )}
-                  title="Rename campaign"
-                >
-                  <Pencil className="w-3.5 h-3.5 text-gray-600" />
-                </button>
+        <Accordion type="multiple" defaultValue={["active"]}>
+          {/* Active Campaigns */}
+          <AccordionItem value="active">
+            <AccordionTrigger className="text-lg p-4 hover:no-underline font-medium text-gray-800">
+              Active Campaigns ({activeCampaigns.length})
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1 p-2">
+                {activeCampaigns.map((campaign) => (
+                  <CampaignRow
+                    key={`${selectedBrandId}-${campaign.id}`}
+                    campaign={campaign}
+                    selectedBrandId={selectedBrandId}
+                    selectedCampaignId={selectedCampaignId}
+                    onCampaignSelect={onCampaignSelect}
+                    onRename={(campaign) => {
+                      setRenamingCampaign(campaign);
+                      setNewCampaignName(campaign.title);
+                      setRenameDialogOpen(true);
+                    }}
+                    onArchiveToggle={(campaign) => {
+                      setTargetCampaign(campaign);
+                      setArchiveDialogOpen(true);
+                    }}
+                    onDelete={(campaign) => {
+                      setTargetCampaign(campaign);
+                      setDeleteDialogOpen(true);
+                    }}
+                  />
+                ))}
+                {activeCampaigns.length === 0 && (
+                  <p className="text-sm text-gray-500 px-3 py-2">
+                    No active campaigns.
+                  </p>
+                )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <Folder className="w-10 h-10 text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500 mb-2">
-              {searchQuery
-                ? "No campaigns found"
-                : "No campaigns in this brand"}
-            </p>
-            {!searchQuery && (
-              <CreateCampaignDialog
-                brandId={selectedBrandId}
-                brandName={brandName}
-                onCampaignCreated={onCampaignSelect}
-                trigger={
-                  <Button variant="outline" size="sm" className="mt-2">
-                    Create Campaign
-                  </Button>
-                }
-              />
-            )}
-          </div>
-        )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Archived Campaigns */}
+          <AccordionItem value="archived">
+            <AccordionTrigger className="text-lg p-4 hover:no-underline font-medium text-gray-800">
+              Archived Campaigns ({archivedCampaigns.length})
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1 p-2">
+                {archivedCampaigns.map((campaign) => (
+                  <CampaignRow
+                    key={`${selectedBrandId}-${campaign.id}`}
+                    campaign={campaign}
+                    selectedBrandId={selectedBrandId}
+                    selectedCampaignId={selectedCampaignId}
+                    onCampaignSelect={onCampaignSelect}
+                    onRename={(campaign) => {
+                      setRenamingCampaign(campaign);
+                      setNewCampaignName(campaign.title);
+                      setRenameDialogOpen(true);
+                    }}
+                    onArchiveToggle={(campaign) => {
+                      setTargetCampaign(campaign);
+                      setArchiveDialogOpen(true);
+                    }}
+                    onDelete={(campaign) => {
+                      setTargetCampaign(campaign);
+                      setDeleteDialogOpen(true);
+                    }}
+                  />
+                ))}
+                {archivedCampaigns.length === 0 && (
+                  <p className="text-sm text-gray-500 px-3 py-2">
+                    No archived campaigns.
+                  </p>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       {/* Rename Dialog */}
@@ -320,6 +389,161 @@ export function CampaignsSidebar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Archive Confirmation Dialog */}
+      <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>
+              {targetCampaign?.is_archived
+                ? "Unarchive Campaign"
+                : "Archive Campaign"}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to{" "}
+              {targetCampaign?.is_archived ? "unarchive" : "move"}{" "}
+              <span className="font-semibold text-gray-900">
+                “{targetCampaign?.title}”
+              </span>{" "}
+              {targetCampaign?.is_archived
+                ? "back to active campaigns?"
+                : "to the archive?"}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setArchiveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleArchiveConfirm}>
+              {targetCampaign?.is_archived ? "Unarchive" : "Archive"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Campaign</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete{" "}
+              <span className="font-semibold text-gray-900">
+                “{targetCampaign?.title}”
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function CampaignRow({
+  campaign,
+  selectedBrandId,
+  selectedCampaignId,
+  onCampaignSelect,
+  onRename,
+  onArchiveToggle,
+  onDelete,
+}: {
+  campaign: any;
+  selectedBrandId: string;
+  selectedCampaignId: string | null;
+  onCampaignSelect: (id: string) => void;
+  onRename: (campaign: any) => void;
+  onArchiveToggle: (campaign: any) => void;
+  onDelete: (campaign: any) => void;
+}) {
+  return (
+    <div key={`${selectedBrandId}-${campaign.id}`} className="relative group">
+      <button
+        onClick={() => onCampaignSelect(campaign.id)}
+        className={cn(
+          "w-full text-left px-3 py-2.5 pr-10 rounded-lg transition-colors hover:bg-gray-50",
+          selectedCampaignId === campaign.id
+            ? "bg-purple-50 hover:bg-purple-100"
+            : "bg-white"
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+              selectedCampaignId === campaign.id
+                ? "bg-purple-100"
+                : "bg-gray-100 group-hover:bg-gray-200"
+            )}
+          >
+            <Folder
+              className={cn(
+                "w-4 h-4",
+                selectedCampaignId === campaign.id
+                  ? "text-purple-600"
+                  : "text-gray-600"
+              )}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className={cn(
+                "text-sm font-medium truncate",
+                selectedCampaignId === campaign.id
+                  ? "text-purple-900"
+                  : "text-gray-900"
+              )}
+            >
+              {campaign.title}
+            </p>
+          </div>
+        </div>
+      </button>
+
+      {/* Three-dot dropdown menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-200"
+            title="More options"
+          >
+            <MoreVertical className="w-4 h-4 text-gray-600" />
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem onClick={() => onRename(campaign)}>
+            <Pencil className="w-4 h-4 mr-2 text-gray-600" /> Rename
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => onArchiveToggle(campaign)}>
+            <Archive className="w-4 h-4 mr-2 text-gray-600" />
+            {campaign.is_archived ? "Unarchive" : "Move to Archive"}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => onDelete(campaign)}
+            className="text-red-600 focus:text-red-600"
+          >
+            <Trash className="w-4 h-4 mr-2" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
