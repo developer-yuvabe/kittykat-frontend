@@ -453,23 +453,54 @@ export function CampaignsSidebar({
       />
 
       {/* Campaigns List */}
+      {/* Campaigns List */}
       <div className="flex-1 overflow-y-auto">
         <Accordion type="multiple" defaultValue={["active"]}>
           {/* Active Campaigns */}
-          <AccordionItem value="active">
+          <AccordionItem
+            value="active"
+            className={cn(
+              "transition-colors",
+              dragOverSection === "active" && "bg-purple-50"
+            )}
+            onDragOver={(e) => handleSectionDragOver(e, "active")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleCampaignDropOnSection(e, "active")}
+          >
             <AccordionTrigger
               className={cn(
                 "text-lg p-4 hover:no-underline font-medium text-gray-800",
-                dragOverSection === "active" && "bg-purple-50"
+                draggedCampaignId && "pointer-events-none"
               )}
               onDragOver={(e) => handleSectionDragOver(e, "active")}
-              onDragLeave={handleDragLeave}
               onDrop={(e) => handleCampaignDropOnSection(e, "active")}
             >
-              Active Campaigns ({activeCampaigns.length})
+              <span className={cn(draggedCampaignId && "pointer-events-auto")}>
+                Active Campaigns ({activeCampaigns.length})
+              </span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-1 p-2">
+              <div
+                className="space-y-1 p-2"
+                onDragOver={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleSectionDragOver(e, "active");
+                  }
+                }}
+                onDrop={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleCampaignDropOnSection(e, "active");
+                  }
+                }}
+              >
                 {activeCampaigns.map((campaign) => (
                   <CampaignSidebarRow
                     key={`${selectedBrandId}-${campaign.id}`}
@@ -510,6 +541,8 @@ export function CampaignsSidebar({
                     onCampaignDragStart={handleCampaignDragStart}
                     onDragEnd={handleDragEnd}
                     isDragging={draggedCampaignId === campaign.id}
+                    onSectionDragOver={handleSectionDragOver}
+                    onSectionDrop={handleCampaignDropOnSection}
                   />
                 ))}
                 {activeCampaigns.length === 0 && (
@@ -522,20 +555,50 @@ export function CampaignsSidebar({
           </AccordionItem>
 
           {/* Archived Campaigns */}
-          <AccordionItem value="archived">
+          <AccordionItem
+            value="archived"
+            className={cn(
+              "transition-colors",
+              dragOverSection === "archived" && "bg-gray-100"
+            )}
+            onDragOver={(e) => handleSectionDragOver(e, "archived")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleCampaignDropOnSection(e, "archived")}
+          >
             <AccordionTrigger
               className={cn(
                 "text-lg p-4 hover:no-underline font-medium text-gray-800",
-                dragOverSection === "archived" && "bg-gray-100"
+                draggedCampaignId && "pointer-events-none"
               )}
               onDragOver={(e) => handleSectionDragOver(e, "archived")}
-              onDragLeave={handleDragLeave}
               onDrop={(e) => handleCampaignDropOnSection(e, "archived")}
             >
-              Archived Campaigns ({archivedCampaigns.length})
+              <span className={cn(draggedCampaignId && "pointer-events-auto")}>
+                Archived Campaigns ({archivedCampaigns.length})
+              </span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-1 p-2">
+              <div
+                className="space-y-1 p-2"
+                onDragOver={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleSectionDragOver(e, "archived");
+                  }
+                }}
+                onDrop={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleCampaignDropOnSection(e, "archived");
+                  }
+                }}
+              >
                 {archivedCampaigns.map((campaign) => (
                   <CampaignSidebarRow
                     key={`${selectedBrandId}-${campaign.id}`}
@@ -576,6 +639,8 @@ export function CampaignsSidebar({
                     onCampaignDragStart={handleCampaignDragStart}
                     onDragEnd={handleDragEnd}
                     isDragging={draggedCampaignId === campaign.id}
+                    onSectionDragOver={handleSectionDragOver}
+                    onSectionDrop={handleCampaignDropOnSection}
                   />
                 ))}
                 {archivedCampaigns.length === 0 && (
@@ -619,7 +684,7 @@ export function CampaignsSidebar({
             Are you sure you want to{" "}
             {archiveDialog.isArchived ? "unarchive" : "move"}{" "}
             <span className="font-semibold text-gray-900">
-              "{archiveDialog.campaignTitle}"
+              &quot;{archiveDialog.campaignTitle}&quot;
             </span>{" "}
             {archiveDialog.isArchived
               ? "back to active campaigns?"
@@ -646,7 +711,7 @@ export function CampaignsSidebar({
           <>
             Are you sure you want to permanently delete{" "}
             <span className="font-semibold text-gray-900">
-              "{deleteDialog.campaignTitle}"
+              &quot;{deleteDialog.campaignTitle}&quot;
             </span>
             ? This action cannot be undone.
           </>

@@ -43,6 +43,11 @@ interface CampaignSidebarRowProps {
   ) => void;
   onDragEnd?: () => void;
   isDragging?: boolean;
+  onSectionDragOver?: (
+    e: React.DragEvent,
+    section: "active" | "archived"
+  ) => void;
+  onSectionDrop?: (e: React.DragEvent, section: "active" | "archived") => void;
 }
 
 export function CampaignSidebarRow({
@@ -62,7 +67,41 @@ export function CampaignSidebarRow({
   onCampaignDragStart,
   onDragEnd,
   isDragging,
+  onSectionDragOver,
+  onSectionDrop,
 }: CampaignSidebarRowProps) {
+  const handleDragOver = (e: React.DragEvent) => {
+    // Check if dragging a campaign (for archive/unarchive)
+    const hasCampaignData = e.dataTransfer.types.includes(
+      "application/campaign-drag"
+    );
+
+    if (hasCampaignData && onSectionDragOver) {
+      // Pass to section handler for archive/unarchive
+      const section = campaign.is_archived ? "archived" : "active";
+      onSectionDragOver(e, section);
+    } else if (onAssetDragOver) {
+      // Handle asset drag (moving assets to campaign)
+      onAssetDragOver(e, campaign.id);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    // Check if dragging a campaign (for archive/unarchive)
+    const hasCampaignData = e.dataTransfer.types.includes(
+      "application/campaign-drag"
+    );
+
+    if (hasCampaignData && onSectionDrop) {
+      // Pass to section handler for archive/unarchive
+      const section = campaign.is_archived ? "archived" : "active";
+      onSectionDrop(e, section);
+    } else if (onAssetDrop) {
+      // Handle asset drop (moving assets to campaign)
+      onAssetDrop(e, campaign.id);
+    }
+  };
+
   return (
     <div
       key={`${selectedBrandId}-${campaign.id}`}
@@ -75,11 +114,9 @@ export function CampaignSidebarRow({
           : undefined
       }
       onDragEnd={onDragEnd}
-      onDragOver={
-        onAssetDragOver ? (e) => onAssetDragOver(e, campaign.id) : undefined
-      }
+      onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
-      onDrop={onAssetDrop ? (e) => onAssetDrop(e, campaign.id) : undefined}
+      onDrop={handleDrop}
     >
       <button
         onClick={() => onCampaignSelect(campaign.id)}
