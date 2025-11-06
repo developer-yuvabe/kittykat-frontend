@@ -20,12 +20,30 @@ import { CampaignSidebarRow } from "./CampaignSidebarRow";
 import { CampaignSidebarRenameDialog } from "./CampaignSidebarRenameDialog";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
+import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { EnhancedSelectedFilters } from "@/types/gallery.types";
 
 interface CampaignsSidebarProps {
-  selectedBrandId: string;
+  selectedBrandId: string | null;
   selectedCampaignId: string | null;
   onCampaignSelect: (campaignId: string) => void;
   galleryActions?: GalleryActions;
+  setInitialBrandId: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+  setSelectedCampaignInUrl: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: any
+  ) => Promise<URLSearchParams>;
+  hasNoBrands: boolean;
+  galleryView: "grid" | "folder";
 }
 
 export function CampaignsSidebar({
@@ -33,12 +51,19 @@ export function CampaignsSidebar({
   selectedCampaignId,
   onCampaignSelect,
   galleryActions,
+  setInitialBrandId,
+  setSelectedCampaignInUrl,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  hasNoBrands,
+  galleryView,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { brands } = useBrandStore();
   const { setSelectedCampaignId } = useBrandStore();
   const { orderBy, setOrderBy } = useGalleryFilterStore();
   const queryClient = useQueryClient();
+  const { execute } = useUndoableAction();
 
   // Dialog states - simplified
   const [renameDialog, setRenameDialog] = useState<{
@@ -104,11 +129,22 @@ export function CampaignsSidebar({
 
   // Handlers
   const handleDelete = async () => {
+    if (!selectedBrandId) return;
     setDeleteDialog((prev) => ({ ...prev, isDeleting: true }));
 
+    const title = deleteDialog.campaignTitle;
+    const campaignId = deleteDialog.campaignId;
+
     try {
-      await deleteCampaign(selectedBrandId, deleteDialog.campaignId);
-      toast.success(`"${deleteDialog.campaignTitle}" deleted successfully.`);
+      await execute({
+        title,
+        undoSeconds: 3,
+        loadingMessage: `Deleting "${title}"...`,
+        action: () => deleteCampaign(selectedBrandId, campaignId),
+        successMessage: `"${title}" deleted successfully.`,
+        errorMessage: `Failed to delete "${title}".`,
+      });
+
       setDeleteDialog({
         open: false,
         campaignId: "",
@@ -116,26 +152,37 @@ export function CampaignsSidebar({
         isDeleting: false,
       });
     } catch (error) {
-      toast.error("Failed to delete campaign.");
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
     }
   };
 
   const handleArchive = async () => {
+    if (!selectedBrandId) return;
     setArchiveDialog((prev) => ({ ...prev, isProcessing: true }));
 
     const shouldBeArchived = !archiveDialog.isArchived;
-    const action = shouldBeArchived ? "archived" : "unarchived";
+    const title = archiveDialog.campaignTitle;
+    const campaignId = archiveDialog.campaignId;
 
     try {
-      await updateCampaign(selectedBrandId, archiveDialog.campaignId, {
-        is_archived: shouldBeArchived,
+      await execute({
+        title,
+        undoSeconds: 4,
+        loadingMessage: `${
+          shouldBeArchived ? "Archiving" : "Unarchiving"
+        } "${title}"...`,
+        action: () =>
+          updateCampaign(selectedBrandId, campaignId, {
+            is_archived: shouldBeArchived,
+          }),
+        successMessage: `"${title}" ${
+          shouldBeArchived ? "archived" : "unarchived"
+        } successfully.`,
+        errorMessage: `Failed to ${
+          shouldBeArchived ? "archive" : "unarchive"
+        } "${title}".`,
       });
 
-      // Invalidate brands query to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
-
-      toast.success(`"${archiveDialog.campaignTitle}" ${action} successfully.`);
       setArchiveDialog({
         open: false,
         campaignId: "",
@@ -144,7 +191,6 @@ export function CampaignsSidebar({
         isProcessing: false,
       });
     } catch (error) {
-      toast.error(`Failed to ${action.slice(0, -1)} campaign.`);
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   };
@@ -217,6 +263,11 @@ export function CampaignsSidebar({
     e.preventDefault();
     e.stopPropagation();
 
+    if (!selectedBrandId) {
+      setDragOverCampaignId(null);
+      return;
+    }
+
     try {
       const data = e.dataTransfer.getData("application/gallery-drag");
       if (!data || !galleryActions) {
@@ -274,6 +325,12 @@ export function CampaignsSidebar({
     e.preventDefault();
     e.stopPropagation();
 
+    if (!selectedBrandId) {
+      setDragOverSection(null);
+      setDraggedCampaignId(null);
+      return;
+    }
+
     try {
       const data = e.dataTransfer.getData("application/campaign-drag");
       if (!data) {
@@ -299,19 +356,28 @@ export function CampaignsSidebar({
         return;
       }
 
-      const action = shouldBeArchived ? "archived" : "unarchived";
+      const title = campaign.title;
 
       try {
-        await updateCampaign(selectedBrandId, campaignId, {
-          is_archived: shouldBeArchived,
+        await execute({
+          title,
+          undoSeconds: 4,
+          loadingMessage: `${
+            shouldBeArchived ? "Archiving" : "Unarchiving"
+          } "${title}"...`,
+          action: () =>
+            updateCampaign(selectedBrandId, campaignId, {
+              is_archived: shouldBeArchived,
+            }),
+          successMessage: `"${title}" ${
+            shouldBeArchived ? "archived" : "unarchived"
+          } successfully.`,
+          errorMessage: `Failed to ${
+            shouldBeArchived ? "archive" : "unarchive"
+          } "${title}".`,
         });
-
-        // Invalidate brands query to refresh the UI
-        queryClient.invalidateQueries({ queryKey: ["brands"] });
-
-        toast.success(`"${campaign.title}" ${action} successfully.`);
       } catch (error) {
-        toast.error(`Failed to ${action.slice(0, -1)} campaign.`);
+        // Error already handled by useUndoableAction
       }
     } catch (error) {
       console.error("Archive error:", error);
@@ -327,8 +393,30 @@ export function CampaignsSidebar({
 
   return (
     <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-1/3 rounded-sm">
+      {/* Brand Selector and Title */}
+      <div className="flex flex-col px-4 gap-y-3 mt-4">
+        <h1 className="text-2xl font-bold">Media library</h1>
+        {!hasNoBrands && (
+          <BrandSelector
+            showCampaigns={galleryView === "grid"}
+            showSelectedValue
+            className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+            onBrandSelect={(brandId, campaignId) => {
+              setSelectedFilters((prev) => ({
+                ...prev,
+                brandId: [brandId],
+                campaigns: campaignId ? [campaignId] : [],
+              }));
+              setInitialWorkflowStatus(null);
+              setInitialBrandId(null);
+              setSelectedCampaignInUrl(null);
+            }}
+          />
+        )}
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="flex items-center justify-between px-4 border-gray-200 mt-3">
         {selectedCampaignId ? (
           <Button
             variant="ghost"
@@ -345,9 +433,7 @@ export function CampaignsSidebar({
             ← Go Back
           </Button>
         ) : (
-          <h3 className="text-2xl font-semibold text-gray-900 truncate flex-1">
-            Campaigns
-          </h3>
+          <h3 className="text-xl text-black truncate flex-1">Campaigns</h3>
         )}
       </div>
 
@@ -355,7 +441,7 @@ export function CampaignsSidebar({
       <CampaignSidebarHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        brandId={selectedBrandId}
+        brandId={selectedBrandId || ""}
         brandName={brandName}
         onCampaignCreated={onCampaignSelect}
       />

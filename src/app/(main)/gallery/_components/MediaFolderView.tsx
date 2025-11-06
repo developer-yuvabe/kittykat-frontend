@@ -11,6 +11,10 @@ import { CampaignsSidebar } from "./folder/CampaignsSidebar";
 import { useBrandStore } from "@/store/brand.store";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import MediaViewsDropdown from "./MediaViewDropDown";
+import { MediaFilterDropdown } from "./MediaFilterDropdown";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -34,6 +38,21 @@ interface MediaFolderViewProps {
   ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
+  // setSelectedCampaignInUrl?: (value: string | null) => void;
+  // setInitialBrandId?: (value: string | undefined) => void;
+  // ✅ Correct Query State Props
+  setInitialBrandId: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+
+  setSelectedCampaignInUrl: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+  galleryView: "grid" | "folder";
+  setGalleryView: (view: "grid" | "folder") => void;
+  hasNoBrands: boolean;
+  handleSearchChange: (query: string) => void;
+  showFilters?: boolean;
 }
 
 export function MediaFolderView({
@@ -45,6 +64,15 @@ export function MediaFolderView({
   searchQuery,
   selectedFilters,
   onTabChange,
+  setSelectedCampaignInUrl,
+  setInitialBrandId,
+  galleryView,
+  setGalleryView,
+  hasNoBrands,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  handleSearchChange,
+  showFilters,
 }: MediaFolderViewProps) {
   const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
@@ -95,6 +123,12 @@ export function MediaFolderView({
           selectedCampaignId={selectedCampaignId}
           onCampaignSelect={handleCampaignSelect}
           galleryActions={galleryActions}
+          setInitialBrandId={setInitialBrandId}
+          setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+          setSelectedFilters={setSelectedFilters}
+          setInitialWorkflowStatus={setInitialWorkflowStatus}
+          hasNoBrands={hasNoBrands}
+          galleryView={galleryView}
         />
 
         <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -114,6 +148,12 @@ export function MediaFolderView({
               selectedFilters={selectedFilters}
               onTabChange={onTabChange}
               showHeader={false}
+              handleSearchChange={handleSearchChange}
+              showFilters={showFilters}
+              setSelectedFilters={setSelectedFilters}
+              setInitialWorkflowStatus={setInitialWorkflowStatus}
+              galleryView={galleryView}
+              setGalleryView={setGalleryView}
             />
           </div>
         </div>
@@ -131,9 +171,42 @@ export function MediaFolderView({
           selectedCampaignId={null}
           onCampaignSelect={handleCampaignSelect}
           galleryActions={galleryActions}
+          setInitialBrandId={setInitialBrandId}
+          setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+          setSelectedFilters={setSelectedFilters}
+          setInitialWorkflowStatus={setInitialWorkflowStatus}
+          hasNoBrands={hasNoBrands}
+          galleryView={galleryView}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center m-2 mb-2">
+            <div className="relative w-fit mx-4 mb-2">
+              <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search media..."
+                className={`pl-9 transition-all duration-200 ${
+                  showFilters ? "w-[400px]" : "w-[300px]"
+                }`}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <MediaFilterDropdown
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                setInitialWorkflowStatus={setInitialWorkflowStatus}
+              />
+
+              <MediaViewsDropdown
+                galleryView={galleryView}
+                setGalleryView={setGalleryView}
+                selectedCampaignId={selectedCampaignId}
+              />
+            </div>
+          </div>
+
           {/* Top Section (Static) */}
           <div className="px-4 pb-6 flex-shrink-0">
             <FolderTabs
