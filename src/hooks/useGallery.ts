@@ -446,6 +446,11 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
+
       // toast.success("Item updated successfully");
     },
   });

@@ -9,8 +9,8 @@ import { FolderGalleryView } from "./folder/FolderGalleryView";
 import { FolderTabs } from "./folder/FolderTabs";
 import { CampaignsSidebar } from "./folder/CampaignsSidebar";
 import { useBrandStore } from "@/store/brand.store";
-
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -51,6 +51,41 @@ export function MediaFolderView({
     useFolderState();
   const { favorites } = useGalleryFilterStore();
 
+  // Create shared gallery actions for sidebar drag-drop operations
+  const galleryActions = useGalleryQuery(
+    {
+      assetType: activeTab,
+      favorites,
+      source: activeTab,
+      searchQuery,
+      selectedFilters: {
+        ...(selectedFilters || {
+          moodboards: [],
+          product_categories: [],
+          asset_types: [],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          has_product: undefined,
+          has_people: undefined,
+          has_lifestyle_context: undefined,
+          is_favourite: undefined,
+          is_archived: undefined,
+        }),
+        brands: selectedBrandId
+          ? [selectedBrandId]
+          : selectedFilters?.brands || [],
+        campaigns: selectedCampaignId
+          ? [selectedCampaignId]
+          : selectedFilters?.campaigns || [],
+      },
+    },
+    ITEMS_PER_PAGE,
+    true,
+    "MediaFolderView-Shared"
+  );
+
   // Show campaign view with sidebar
   if (selectedBrandId && selectedCampaignId) {
     return (
@@ -59,6 +94,7 @@ export function MediaFolderView({
           selectedBrandId={selectedBrandId}
           selectedCampaignId={selectedCampaignId}
           onCampaignSelect={handleCampaignSelect}
+          galleryActions={galleryActions}
         />
 
         <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -94,6 +130,7 @@ export function MediaFolderView({
           selectedBrandId={selectedBrandId}
           selectedCampaignId={null}
           onCampaignSelect={handleCampaignSelect}
+          galleryActions={galleryActions}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
