@@ -312,6 +312,7 @@ export function CampaignView({
                 onSelect={handleSelect}
                 galleryActions={galleryActions}
                 isMediaSelectDialog={false} // This is not a dialog
+                enableDragToMove={true}
               />
               {/* Infinite scroll loading indicator */}
               {galleryActions.hasNextPage && (

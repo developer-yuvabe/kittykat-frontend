@@ -35,6 +35,7 @@ interface SortableMediaGridProps {
   inSelectionGalleryIds?: string[];
   maxSelectionCount?: number;
   galleryActions: GalleryActions;
+  enableDragToMove?: boolean; // Enable drag-to-move functionality
 }
 
 export function SortableMediaGrid({
@@ -45,6 +46,7 @@ export function SortableMediaGrid({
   inSelectionGalleryIds,
   maxSelectionCount,
   galleryActions,
+  enableDragToMove = false,
 }: SortableMediaGridProps) {
   const router = useRouter();
   const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
@@ -61,7 +63,11 @@ export function SortableMediaGrid({
     );
   }, [galleryActions]);
 
-  const { thumbnailSize, isDraggable } = useGalleryFilterStore();
+  const { thumbnailSize, orderBy } = useGalleryFilterStore();
+
+  // Enable dnd-kit drag-to-reorder when orderBy is manual (brand_sort_order)
+  // This works independently of enableDragToMove (HTML5 drag to campaigns)
+  const isDndKitDraggable = orderBy === "brand_sort_order";
 
   const breakpointColumnsObj = {
     default:
@@ -155,6 +161,8 @@ export function SortableMediaGrid({
               selectedCount={selectedItems.length}
               galleryActions={galleryActions}
               isDraggable={false} // Disable dragging in dialog mode
+              selectedItems={selectedItems}
+              enableDragToMove={false} // No drag-to-move in dialog
             />
           ))}
         </Masonry>
@@ -234,7 +242,9 @@ export function SortableMediaGrid({
                 maxSelectionCount={maxSelectionCount}
                 selectedCount={selectedItems.length}
                 galleryActions={galleryActions}
-                isDraggable={isDraggable}
+                isDraggable={isDndKitDraggable} // Enable dnd-kit reorder only when manual order is active
+                selectedItems={selectedItems}
+                enableDragToMove={enableDragToMove}
               />
             ))}
           </Masonry>

@@ -201,21 +201,23 @@ export function MediaOverlay({
             <TooltipButton
               tooltip={
                 item.comments && item.comments.length > 0
-                  ? "Has comments"
+                  ? `${item.comments.length} comment${
+                      item.comments.length > 1 ? "s" : ""
+                    }`
                   : "No comments"
               }
               icon={
-                <MessageCircle
-                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
-                    item.comments && item.comments.length > 0
-                      ? "fill-current"
-                      : ""
-                  }`}
-                />
+                <div className="relative">
+                  <MessageCircle
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} text-white`}
+                  />
+                  {item.comments && item.comments.length > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {item.comments.length}
+                    </div>
+                  )}
+                </div>
               }
-              isActive={item.comments && item.comments.length > 0}
-              normalColor="text-white"
-              activeColor="text-green-400"
               className="transition-all duration-300"
             />
           </div>
@@ -246,21 +248,23 @@ export function MediaOverlay({
               <TooltipButton
                 tooltip={
                   item.comments && item.comments.length > 0
-                    ? "Has comments"
+                    ? `${item.comments.length} comment${
+                        item.comments.length > 1 ? "s" : ""
+                      }`
                     : "No comments"
                 }
                 icon={
-                  <MessageCircle
-                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} ${
-                      item.comments && item.comments.length > 0
-                        ? "fill-current"
-                        : ""
-                    }`}
-                  />
+                  <div className="relative">
+                    <MessageCircle
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} text-white`}
+                    />
+                    {item.comments && item.comments.length > 0 && (
+                      <div className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                        {item.comments.length}
+                      </div>
+                    )}
+                  </div>
                 }
-                isActive={item.comments && item.comments.length > 0}
-                normalColor="text-white"
-                activeColor="text-green-400"
                 className="transition-all duration-300"
               />
             </div>
