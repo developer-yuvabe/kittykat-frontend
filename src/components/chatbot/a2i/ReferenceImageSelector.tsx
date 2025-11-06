@@ -44,6 +44,7 @@ interface ReferenceImageSelectorProps {
   maxLimit: number;
   fileTypes: string[];
   maxFileSizeLimit: number;
+  maxTotalSizeMB?: number;
   disabled?: boolean;
   currentCampaignId?: string | null;
   isOpen: boolean;
@@ -74,6 +75,7 @@ const ReferenceImageSelector = ({
   maxLimit,
   fileTypes,
   maxFileSizeLimit,
+  maxTotalSizeMB,
   disabled = false,
   currentCampaignId,
   isOpen,
@@ -169,6 +171,40 @@ const ReferenceImageSelector = ({
     setIsLoading(isFetching);
   }, [selectedBrandId, isFetching]);
 
+  // Helper function to get file size in MB
+  const getFileSizeInMB = async (file: File): Promise<number> => {
+    return file.size / (1024 * 1024);
+  };
+
+  // Helper function to truncate files based on total size limit
+  const truncateFilesByTotalSize = useCallback(
+    async (
+      files: File[]
+    ): Promise<{ validFiles: File[]; rejectedCount: number }> => {
+      if (!maxTotalSizeMB) {
+        return { validFiles: files, rejectedCount: 0 };
+      }
+
+      const validFiles: File[] = [];
+      let currentTotalSizeMB = 0;
+      let rejectedCount = 0;
+
+      for (const file of files) {
+        const fileSizeMB = await getFileSizeInMB(file);
+
+        if (currentTotalSizeMB + fileSizeMB <= maxTotalSizeMB) {
+          validFiles.push(file);
+          currentTotalSizeMB += fileSizeMB;
+        } else {
+          rejectedCount++;
+        }
+      }
+
+      return { validFiles, rejectedCount };
+    },
+    [maxTotalSizeMB]
+  );
+
   // DRY: Shared upload logic for file drops and uploads
   const uploadFilesAndAddToZone = useCallback(
     async (
@@ -176,11 +212,29 @@ const ReferenceImageSelector = ({
       zone: "master" | "product",
       showToast: boolean = true
     ): Promise<string[]> => {
+      // Truncate files if total size limit is set
+      const { validFiles, rejectedCount } = await truncateFilesByTotalSize(
+        files
+      );
+
+      if (rejectedCount > 0 && maxTotalSizeMB) {
+        toast.warning(
+          `${rejectedCount} file(s) were skipped to stay within the ${maxTotalSizeMB}MB total size limit.`
+        );
+      }
+
+      if (validFiles.length === 0) {
+        if (showToast) {
+          toast.error("No files could be added within the size limit");
+        }
+        return [];
+      }
+
       const uploadedGalleryItems: GalleryItem[] = [];
       const uploadedUrls: string[] = [];
 
       // Upload files to storage
-      const uploadPromises = files.map(async (file) => {
+      const uploadPromises = validFiles.map(async (file) => {
         try {
           const uploadedUrl = await uploadFileAndReturnUrl(
             file.name,
@@ -248,6 +302,8 @@ const ReferenceImageSelector = ({
       productReference,
       onMasterReferenceChange,
       onProductReferenceChange,
+      truncateFilesByTotalSize,
+      maxTotalSizeMB,
     ]
   );
 

@@ -162,3 +162,10 @@ export async function addDeprioritizedIds(
     )
   );
 }
+/**
+ * Delete a brand permanently (Admin only).
+ * Cascade deletes all campaigns and moodboards.
+ */
+export async function deleteBrand(brandId: string): Promise<void> {
+  return handleApiRequest<void>(axiosInstance.delete(`/brands/${brandId}`));
+}

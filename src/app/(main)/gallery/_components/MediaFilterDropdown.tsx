@@ -36,56 +36,48 @@ import {
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
 import { Options } from "nuqs";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface MediaFilterDropdownProps {
-  favorites: boolean;
-  onFavoritesChange: (checked: boolean) => void;
-
-  hasComments: boolean;
-  onCommentsChange: (checked: boolean) => void;
-
-  mediaTypes: string[];
-  onMediaTypeChange: (values: string[]) => void;
-
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
   setInitialWorkflowStatus: (
     value: string[] | ((old: string[]) => string[] | null) | null,
     options?: Options
   ) => Promise<URLSearchParams>;
-
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
-  setDateFrom: (date?: Date) => void;
-  setDateTo: (date?: Date) => void;
-  onResetFilters: () => void;
 }
 
 export function MediaFilterDropdown({
-  favorites,
-  onFavoritesChange,
-  hasComments,
-  onCommentsChange,
-  mediaTypes,
-  onMediaTypeChange,
   selectedFilters,
   setSelectedFilters,
   setInitialWorkflowStatus,
-  dateFrom,
-  dateTo,
-  setDateFrom,
-  setDateTo,
-  onResetFilters,
 }: MediaFilterDropdownProps) {
+  const {
+    favorites,
+    hasComments,
+    mediaTypes,
+    workflowStatus,
+    dateFrom,
+    dateTo,
+    setFavorites,
+    setHasComments,
+    setMediaTypes,
+    setWorkflowStatus,
+    setDateFrom,
+    setDateTo,
+    resetFilters,
+  } = useGalleryFilterStore();
   const handleWorkflowStatusChange = (values: string[]) => {
     if (values.length === 0 || values.includes("__all__")) {
       setInitialWorkflowStatus([]);
+      setWorkflowStatus([]);
       setSelectedFilters({
         ...selectedFilters,
         workflow_status: [],
       });
     } else {
       setInitialWorkflowStatus(values);
+      setWorkflowStatus(values);
       setSelectedFilters({
         ...selectedFilters,
         workflow_status: values,
@@ -97,8 +89,12 @@ export function MediaFilterDropdown({
     const updated = checked
       ? [...mediaTypes, type]
       : mediaTypes.filter((t) => t !== type);
-    // console.log("Updated media types:", updated);
-    onMediaTypeChange(updated);
+    setMediaTypes(updated);
+  };
+
+  const handleResetFilters = () => {
+    resetFilters();
+    setInitialWorkflowStatus([]);
   };
 
   return (
@@ -118,7 +114,7 @@ export function MediaFilterDropdown({
         <div className="border-b px-4 py-2 flex items-center justify-between">
           <h2 className="font-semibold text-gray-700">Filters</h2>
           <button
-            onClick={onResetFilters}
+            onClick={handleResetFilters}
             className="text-sm text-gray-500 hover:underline"
           >
             Reset
@@ -142,7 +138,7 @@ export function MediaFilterDropdown({
                   id="favorites"
                   checked={favorites}
                   onCheckedChange={(checked) =>
-                    onFavoritesChange(checked as boolean)
+                    setFavorites(checked as boolean)
                   }
                 />
                 <Label htmlFor="favorites" className="text-sm text-gray-700">
@@ -154,7 +150,7 @@ export function MediaFilterDropdown({
                   id="comments"
                   checked={hasComments}
                   onCheckedChange={(checked) =>
-                    onCommentsChange(checked as boolean)
+                    setHasComments(checked as boolean)
                   }
                 />
                 <Label htmlFor="comments" className="text-sm text-gray-700">
@@ -204,7 +200,7 @@ export function MediaFilterDropdown({
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <MultiSelect
-                value={selectedFilters.workflow_status ?? []}
+                value={workflowStatus ?? []}
                 onValueChange={handleWorkflowStatusChange}
                 maxCount={WORKFLOW_STATUS_OPTIONS.length}
               >

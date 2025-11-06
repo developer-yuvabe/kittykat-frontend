@@ -12,6 +12,8 @@ import {
   BulkGalleryUploadRequest,
   GalleryImageParametersResponse,
   OrderBy,
+  AssetCountRequest,
+  AssetCountResponse,
 } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -312,6 +314,17 @@ class GalleryService {
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.post("/gallery/version", galleryItem)
+    );
+  }
+
+  /**
+   * Get asset count with optional breakdowns by various dimensions
+   */
+  async getAssetCount(
+    request: AssetCountRequest
+  ): Promise<AssetCountResponse> {
+    return handleApiRequest<AssetCountResponse>(
+      axiosInstance.post("/gallery/count", request)
     );
   }
 }
