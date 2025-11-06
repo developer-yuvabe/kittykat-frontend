@@ -152,6 +152,7 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                       </div>
                     ) : (
                       <StickyToBottomContent
+                        id="chat-panel-scroll-container"
                         className={cn(
                           "absolute inset-0 overflow-y-scroll scrollbar",
                           layoutConfig.contentPadding,

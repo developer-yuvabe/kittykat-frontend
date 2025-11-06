@@ -278,7 +278,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       setInput("");
       resetFiles();
 
-      // Scroll to bottom after sending message using your utility function
+      // Scroll chat panel to bottom after sending message
       scrollToBottom(100);
     },
     [
