@@ -92,7 +92,8 @@ export function DynamicFormField<T extends FieldValues>({
 
     for (const rule of matchingRules) {
       const shouldDisable = rule.disableIf.some(
-        (cond) => watchedValues?.[cond.name] === cond.paramId
+        (cond) =>
+          cond.restrict !== false && watchedValues?.[cond.name] === cond.paramId
       );
 
       if (shouldDisable) {
