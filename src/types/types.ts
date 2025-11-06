@@ -116,7 +116,10 @@ export interface ThreadCampaign {
   updated_at?: string;
   is_custom?: boolean;
   is_archived?: boolean;
+  position?: number;
 }
+
+export type ThreadCampaignUpdate = Partial<Omit<ThreadCampaign, "id">>;
 
 export type A2iImageDetail = {
   id: string;

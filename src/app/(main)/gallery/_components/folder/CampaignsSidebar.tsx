@@ -4,7 +4,11 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore } from "@/store/brand.store";
 import { cn } from "@/lib/utils";
-import { deleteCampaign, updateCampaign } from "@/services/api/brand.service";
+import {
+  deleteCampaign,
+  patchCampaign,
+  updateCampaign,
+} from "@/services/api/brand.service";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -103,6 +107,10 @@ export function CampaignsSidebar({
   const [draggedCampaignId, setDraggedCampaignId] = useState<string | null>(
     null
   );
+  const [dropPosition, setDropPosition] = useState<"before" | "after" | null>(
+    null
+  );
+  const [reorderTargetId, setReorderTargetId] = useState<string | null>(null);
 
   // Fetch campaign counts
   const { data: countData, isLoading: isCountLoading } =
@@ -116,6 +124,9 @@ export function CampaignsSidebar({
     };
   }, [brands, selectedBrandId]);
 
+  //selected brand campaigns for debugging
+  console.log("selected brand campaigns", campaigns);
+
   const filteredCampaigns = useMemo(() => {
     if (!searchQuery.trim()) return campaigns;
     const query = searchQuery.toLowerCase();
@@ -124,8 +135,28 @@ export function CampaignsSidebar({
     );
   }, [campaigns, searchQuery]);
 
-  const activeCampaigns = filteredCampaigns.filter((c) => !c.is_archived);
-  const archivedCampaigns = filteredCampaigns.filter((c) => c.is_archived);
+  // Sort campaigns by position (if available), otherwise maintain current order
+  const sortByPosition = (campaignList: typeof campaigns) => {
+    return [...campaignList].sort((a, b) => {
+      // If both have positions, sort by position
+      if (a.position !== undefined && b.position !== undefined) {
+        return a.position - b.position;
+      }
+      // If only 'a' has position, it comes first
+      if (a.position !== undefined) return -1;
+      // If only 'b' has position, it comes first
+      if (b.position !== undefined) return 1;
+      // If neither has position, maintain current order
+      return 0;
+    });
+  };
+
+  const activeCampaigns = sortByPosition(
+    filteredCampaigns.filter((c) => !c.is_archived)
+  );
+  const archivedCampaigns = sortByPosition(
+    filteredCampaigns.filter((c) => c.is_archived)
+  );
 
   // Handlers
   const handleDelete = async () => {
@@ -151,7 +182,7 @@ export function CampaignsSidebar({
         campaignTitle: "",
         isDeleting: false,
       });
-    } catch (error) {
+    } catch {
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -193,7 +224,7 @@ export function CampaignsSidebar({
         isArchived: false,
         isProcessing: false,
       });
-    } catch (error) {
+    } catch {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   };
@@ -210,6 +241,26 @@ export function CampaignsSidebar({
       JSON.stringify({ campaignId, isArchived })
     );
     setDraggedCampaignId(campaignId);
+  };
+
+  const handleCampaignReorderDragOver = (
+    e: React.DragEvent,
+    targetCampaignId: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const hasCampaignData = e.dataTransfer.types.includes(
+      "application/campaign-drag"
+    );
+    if (!hasCampaignData) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const position = e.clientY < midpoint ? "before" : "after";
+
+    setReorderTargetId(targetCampaignId);
+    setDropPosition(position);
   };
 
   const handleAssetDragOver = (e: React.DragEvent, campaignId: string) => {
@@ -257,6 +308,98 @@ export function CampaignsSidebar({
     setDraggedCampaignId(null);
     setDragOverCampaignId(null);
     setDragOverSection(null);
+    setReorderTargetId(null);
+    setDropPosition(null);
+  };
+
+  const handleCampaignReorderDrop = async (
+    e: React.DragEvent,
+    targetCampaignId: string,
+    section: "active" | "archived"
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!selectedBrandId) {
+      setReorderTargetId(null);
+      setDropPosition(null);
+      return;
+    }
+
+    try {
+      const data = e.dataTransfer.getData("application/campaign-drag");
+      if (!data) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      const { campaignId: draggedId, isArchived } = JSON.parse(data);
+
+      // Don't reorder if dropped on itself
+      if (draggedId === targetCampaignId) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      // Only allow reordering within the same section
+      const targetIsArchived = section === "archived";
+      if (isArchived !== targetIsArchived) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      const campaignList =
+        section === "active" ? activeCampaigns : archivedCampaigns;
+      const draggedIndex = campaignList.findIndex((c) => c.id === draggedId);
+      const targetIndex = campaignList.findIndex(
+        (c) => c.id === targetCampaignId
+      );
+
+      if (draggedIndex === -1 || targetIndex === -1) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      // Calculate drop position
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const position = e.clientY < midpoint ? "before" : "after";
+
+      // Create new order
+      const reordered = [...campaignList];
+      const [removed] = reordered.splice(draggedIndex, 1);
+
+      let insertIndex = targetIndex;
+      if (position === "after") {
+        insertIndex =
+          draggedIndex < targetIndex ? targetIndex : targetIndex + 1;
+      } else {
+        insertIndex =
+          draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      }
+
+      reordered.splice(insertIndex, 0, removed);
+
+      // Update positions for all campaigns in this section
+      const updatePromises = reordered.map((campaign, index) =>
+        patchCampaign(selectedBrandId, campaign.id, { position: index })
+      );
+
+      await Promise.all(updatePromises);
+      await queryClient.invalidateQueries({ queryKey: ["brands"] });
+
+      toast.success("Campaign order updated");
+    } catch (error) {
+      console.error("Reorder error:", error);
+      toast.error("Failed to reorder campaigns");
+    }
+
+    setReorderTargetId(null);
+    setDropPosition(null);
   };
 
   const handleAssetDropOnCampaign = async (
@@ -382,7 +525,7 @@ export function CampaignsSidebar({
             shouldBeArchived ? "archive" : "unarchive"
           } "${title}".`,
         });
-      } catch (error) {
+      } catch {
         // Error already handled by useUndoableAction
       }
     } catch (error) {
@@ -543,6 +686,12 @@ export function CampaignsSidebar({
                     isDragging={draggedCampaignId === campaign.id}
                     onSectionDragOver={handleSectionDragOver}
                     onSectionDrop={handleCampaignDropOnSection}
+                    onReorderDragOver={handleCampaignReorderDragOver}
+                    onReorderDrop={handleCampaignReorderDrop}
+                    isReorderTarget={reorderTargetId === campaign.id}
+                    dropPosition={
+                      reorderTargetId === campaign.id ? dropPosition : null
+                    }
                   />
                 ))}
                 {activeCampaigns.length === 0 && (
@@ -641,6 +790,12 @@ export function CampaignsSidebar({
                     isDragging={draggedCampaignId === campaign.id}
                     onSectionDragOver={handleSectionDragOver}
                     onSectionDrop={handleCampaignDropOnSection}
+                    onReorderDragOver={handleCampaignReorderDragOver}
+                    onReorderDrop={handleCampaignReorderDrop}
+                    isReorderTarget={reorderTargetId === campaign.id}
+                    dropPosition={
+                      reorderTargetId === campaign.id ? dropPosition : null
+                    }
                   />
                 ))}
                 {archivedCampaigns.length === 0 && (
