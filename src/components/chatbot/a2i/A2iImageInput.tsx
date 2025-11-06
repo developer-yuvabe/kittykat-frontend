@@ -482,7 +482,7 @@ const A2iImageInput = ({
                     form={formInstance}
                     type="initial"
                     rules={selectedImageGenerationModel?.rules}
-                    allParameters={[...initialParams, ...advancedParams]}
+                    allModelParameters={[...initialParams, ...advancedParams]}
                   />
                 );
               })}
@@ -512,7 +512,10 @@ const A2iImageInput = ({
                             form={formInstance}
                             type="advanced"
                             rules={selectedImageGenerationModel?.rules}
-                            allParameters={[...initialParams, ...advancedParams]}
+                            allModelParameters={[
+                              ...initialParams,
+                              ...advancedParams,
+                            ]}
                           />
                         );
                       })}

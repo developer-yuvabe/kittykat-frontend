@@ -96,9 +96,12 @@ export type Rule = {
   name: string;
   paramId: string;
   hintText?: string;
-  disableIf: Array<{
+  disableIf: {
     name: string;
     paramId: string;
-    restrictIf?: boolean;
-  }>;
+    /*
+      If false, the default value of the parameter will be overridden to the value specified here.
+    */
+    restrict?: boolean;
+  }[];
 };

@@ -43,7 +43,7 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   type: "initial" | "advanced";
   sliderSuffix?: string;
   source?: "remix" | "upscale" | "vton";
-  allParameters?: ModelParameter[];
+  allModelParameters?: ModelParameter[];
 };
 
 export const DynamicFormLabel = ({
@@ -72,7 +72,7 @@ export function DynamicFormField<T extends FieldValues>({
   rules,
   sliderSuffix,
   source,
-  allParameters,
+  allModelParameters,
 }: DynamicFormFieldProps<T>) {
   const watchedValues = useWatch({
     control: form.control,
@@ -92,7 +92,7 @@ export function DynamicFormField<T extends FieldValues>({
 
     for (const rule of matchingRules) {
       const shouldDisable = rule.disableIf.some(
-        (cond) => !cond.restrictIf && watchedValues?.[cond.name] === cond.paramId
+        (cond) => watchedValues?.[cond.name] === cond.paramId
       );
 
       if (shouldDisable) {
@@ -104,17 +104,25 @@ export function DynamicFormField<T extends FieldValues>({
   };
 
   const applyRestrictIfDefaults = (fieldName: string, newValue: string) => {
-    if (!rules || !allParameters) return;
-    
+    if (!rules || !allModelParameters) return;
+
     for (const rule of rules) {
       for (const cond of rule.disableIf) {
-        if (cond.restrictIf && cond.name === fieldName && cond.paramId === newValue) {
-          const restrictedParam = allParameters.find((p) => p.id === rule.name);
-          
+        if (
+          cond.restrict === false &&
+          cond.name === fieldName &&
+          cond.paramId === newValue
+        ) {
+          const restrictedParam = allModelParameters.find(
+            (p) => p.id === rule.name
+          );
+
           if (restrictedParam?.defaultValue !== undefined) {
             form.setValue(rule.name as any, restrictedParam.defaultValue);
-            toast.info(`${restrictedParam.label} reset to default`);
-            return; 
+            toast.info(
+              `${restrictedParam.label} reset to ${restrictedParam.defaultValue}`
+            );
+            return;
           }
         }
       }
