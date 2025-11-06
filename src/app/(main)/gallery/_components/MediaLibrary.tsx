@@ -452,7 +452,7 @@ export function MediaLibrary({
   return (
     <div className="flex flex-col w-full mx-auto">
       {/* Conditionally render header based on hideHeader prop */}
-      {!hideHeader && (
+      {!hideHeader && galleryView === "grid" && (
         <div
           className={`flex justify-between mb-2 sticky top-24 bg-[#F3F4F6FF] pt-2 pb-2 z-50`}
         >
@@ -477,22 +477,6 @@ export function MediaLibrary({
               />
             )}
           </div>
-
-          {galleryView === "folder" && (
-            <div className="flex gap-4 items-end absolute bottom-2 left-1/3 pl-4">
-              {/* Search Bar */}
-              <div className="relative w-fit">
-                <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search media..."
-                  className={`pl-9 transition-all duration-200 ${
-                    showFilters ? "w-[400px]" : "w-[300px]"
-                  }`}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
 
           <div className="flex justify-end">
             <MediaFilterDropdown
@@ -578,6 +562,13 @@ export function MediaLibrary({
                 setSelectedFilters={setSelectedFilters}
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
+                setInitialBrandId={setInitialBrandId}
+                setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+                galleryView={galleryView}
+                setGalleryView={setGalleryView}
+                hasNoBrands={hasNoBrands}
+                handleSearchChange={handleSearchChange}
+                showFilters={showFilters}
               />
             </div>
           )}

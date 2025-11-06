@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
-import { ArrowLeft, Folder, Loader2 } from "lucide-react";
+import { ArrowLeft, Folder, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { SortableMediaGrid } from "../SortableMediaGrid";
@@ -12,6 +12,9 @@ import { FolderUploadDropzone } from "./FolderUploadDropzone";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { FolderTabs } from "./FolderTabs";
 import { useBrandStore } from "@/store/brand.store";
+import { Input } from "@/components/ui/input";
+import { MediaFilterDropdown } from "../MediaFilterDropdown";
+import MediaViewsDropdown from "../MediaViewDropDown";
 
 interface CampaignViewProps {
   selectedBrandId: string;
@@ -24,9 +27,20 @@ interface CampaignViewProps {
   selectedMoodboardId?: string;
   searchQuery?: string;
   favorites?: boolean;
-  selectedFilters?: EnhancedSelectedFilters;
+  selectedFilters: EnhancedSelectedFilters;
   onTabChange: (value: string) => void;
   showHeader?: boolean; // New prop to control header visibility
+  handleSearchChange: (query: string) => void;
+  showFilters?: boolean;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: any
+  ) => Promise<URLSearchParams>;
+  galleryView: "grid" | "folder";
+  setGalleryView: (view: "grid" | "folder") => void;
 }
 
 export function CampaignView({
@@ -42,7 +56,13 @@ export function CampaignView({
   favorites = false,
   selectedFilters,
   onTabChange,
-  showHeader = false, // Default to not showing header (when used with sidebar)
+  showHeader = false,
+  handleSearchChange,
+  showFilters,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  galleryView,
+  setGalleryView, // Default to not showing header (when used with sidebar)
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -145,6 +165,8 @@ export function CampaignView({
     setSelectedItems(allItemIds);
   };
 
+  const { selectedCampaignId } = useBrandStore();
+
   if (!currentCampaign) {
     return (
       <div className="space-y-6">
@@ -201,6 +223,37 @@ export function CampaignView({
           </div>
         </div>
       )}
+
+      {!showHeader && (
+        <div className="flex justify-between items-center m-2 mb-2">
+          <div className="relative w-fit mx-4 mb-2">
+            <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search media..."
+              className={`pl-9 transition-all duration-200 ${
+                showFilters ? "w-[400px]" : "w-[300px]"
+              }`}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <MediaFilterDropdown
+              selectedFilters={selectedFilters}
+              setSelectedFilters={setSelectedFilters}
+              setInitialWorkflowStatus={setInitialWorkflowStatus}
+            />
+
+            <MediaViewsDropdown
+              galleryView={galleryView}
+              setGalleryView={setGalleryView}
+              selectedCampaignId={selectedCampaignId}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
 
       {!showHeader && (
         <div className="px-4 pb-6">

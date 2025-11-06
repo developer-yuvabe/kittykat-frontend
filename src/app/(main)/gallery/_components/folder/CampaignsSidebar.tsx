@@ -49,6 +49,9 @@ import {
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { useCampaignCounts } from "@/hooks/useCampaignCounts";
 import { Loader2 } from "lucide-react";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
+import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { EnhancedSelectedFilters } from "@/types/gallery.types";
 
 // Component to show tooltip only when text is truncated
 function TruncatedText({
@@ -94,12 +97,34 @@ interface CampaignsSidebarProps {
   selectedBrandId: string | null;
   selectedCampaignId: string | null;
   onCampaignSelect: (campaignId: string) => void;
+  setInitialBrandId: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+
+  setSelectedCampaignInUrl: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: any
+  ) => Promise<URLSearchParams>;
+  hasNoBrands: boolean;
+  galleryView: "grid" | "folder";
 }
 
 export function CampaignsSidebar({
   selectedBrandId,
   selectedCampaignId,
   onCampaignSelect,
+  setInitialBrandId,
+  setSelectedCampaignInUrl,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  hasNoBrands,
+  galleryView,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -140,44 +165,19 @@ export function CampaignsSidebar({
 
   // console.log("filteredCampaigns:", filteredCampaigns);
 
-  const handleRenameSave = async () => {
-    if (!renamingCampaign || !selectedBrandId || !newCampaignName.trim()) {
-      return;
-    }
-
-    const campaignName = newCampaignName.trim();
-    const campaignId = renamingCampaign.id;
-
-    // Close dialog immediately
-    setRenameDialogOpen(false);
-    setRenamingCampaign(null);
-    setNewCampaignName("");
-
-    // Use toast.promise to handle the async operation
-    const renamePromise = updateCampaignName(
-      selectedBrandId,
-      campaignId,
-      campaignName
-    );
-
-    toast.promise(renamePromise, {
-      loading: "Renaming campaign...",
-      success: "Campaign renamed successfully",
-      error: "Failed to rename campaign",
-    });
-  };
+  const { execute } = useUndoableAction();
 
   const handleDeleteConfirm = async () => {
     if (!targetCampaign || !selectedBrandId) return;
+    const title = targetCampaign.title;
 
-    const campaignId = targetCampaign.id;
-
-    const deletePromise = deleteCampaign(selectedBrandId, campaignId);
-
-    toast.promise(deletePromise, {
-      loading: `Deleting "${targetCampaign.title}"...`,
-      success: `"${targetCampaign.title}" deleted successfully.`,
-      error: "Failed to delete campaign.",
+    await execute({
+      title,
+      undoSeconds: 3,
+      loadingMessage: `Deleting "${title}"...`,
+      action: () => deleteCampaign(selectedBrandId, targetCampaign.id),
+      successMessage: `"${title}" deleted successfully.`,
+      errorMessage: `Failed to delete "${title}".`,
     });
 
     setDeleteDialogOpen(false);
@@ -187,32 +187,51 @@ export function CampaignsSidebar({
   const handleArchiveConfirm = async () => {
     if (!targetCampaign || !selectedBrandId) return;
 
-    console.log("targetCampaign:", targetCampaign);
+    const title = targetCampaign.title;
+    const isArchived = targetCampaign.is_archived;
 
-    const action = targetCampaign.is_archived ? "Unarchiving" : "Archiving";
-
-    const fieldToUpdate = {
-      is_archived: !targetCampaign.is_archived, // toggle archive flag
-    };
-
-    const archivePromise = updateCampaign(
-      selectedBrandId,
-      targetCampaign.id,
-      fieldToUpdate
-    );
-
-    toast.promise(archivePromise, {
-      loading: `${action} "${targetCampaign.title}"...`,
-      success: `"${targetCampaign.title}" ${
-        targetCampaign.is_archived ? "unarchived" : "archived"
+    await execute({
+      title,
+      undoSeconds: 4,
+      loadingMessage: `${
+        isArchived ? "Unarchiving" : "Archiving"
+      } "${title}"...`,
+      action: () =>
+        updateCampaign(selectedBrandId, targetCampaign.id, {
+          is_archived: !isArchived,
+        }),
+      successMessage: `"${title}" ${
+        isArchived ? "unarchived" : "archived"
       } successfully.`,
-      error: `Failed to ${
-        targetCampaign.is_archived ? "unarchive" : "archive"
-      } campaign.`,
+      errorMessage: `Failed to ${
+        isArchived ? "unarchive" : "archive"
+      } "${title}".`,
     });
 
     setArchiveDialogOpen(false);
     setTargetCampaign(null);
+  };
+
+  const handleRenameSave = async () => {
+    if (!renamingCampaign || !selectedBrandId || !newCampaignName.trim())
+      return;
+
+    const campaignId = renamingCampaign.id;
+    const oldName = renamingCampaign.title;
+    const newName = newCampaignName.trim();
+
+    setRenameDialogOpen(false);
+    setRenamingCampaign(null);
+    setNewCampaignName("");
+
+    await execute({
+      title: oldName,
+      undoSeconds: 3, // Allow 5s to undo rename
+      loadingMessage: `Renaming "${oldName}" to "${newName}"...`,
+      action: () => updateCampaignName(selectedBrandId, campaignId, newName),
+      successMessage: `Renamed "${oldName}" to "${newName}".`,
+      errorMessage: `Failed to rename "${oldName}".`,
+    });
   };
 
   const activeCampaigns = filteredCampaigns.filter((c) => !c.is_archived);
@@ -226,8 +245,28 @@ export function CampaignsSidebar({
 
   return (
     <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-1/3 rounded-sm">
+      <div className="flex flex-col px-4 gap-y-3 mt-4">
+        <h1 className="text-2xl font-bold">Media library</h1>
+        {!hasNoBrands && (
+          <BrandSelector
+            showCampaigns={galleryView === "grid"}
+            showSelectedValue
+            className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+            onBrandSelect={(brandId, campaignId) => {
+              setSelectedFilters((prev) => ({
+                ...prev,
+                brandId: [brandId],
+                campaigns: campaignId ? [campaignId] : [],
+              }));
+              setInitialWorkflowStatus(null);
+              setInitialBrandId(null);
+              setSelectedCampaignInUrl(null);
+            }}
+          />
+        )}
+      </div>
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="flex items-center justify-between px-4 border-gray-200 mt-3">
         {selectedCampaignId ? (
           <Button
             variant="ghost"
@@ -244,14 +283,12 @@ export function CampaignsSidebar({
             ← Go Back
           </Button>
         ) : (
-          <h3 className="text-2xl font-semibold text-gray-900 truncate flex-1">
-            Campaigns
-          </h3>
+          <h3 className="text-xl text-black truncate flex-1">Campaigns</h3>
         )}
       </div>
 
       {/* Search Bar */}
-      <div className="p-3 border-b border-gray-200 flex justify-center items-center gap-2 ">
+      <div className="px-3 pt-1 pb-4 border-b border-gray-200 flex justify-center items-center gap-2 ">
         <div className="relative w-2/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
