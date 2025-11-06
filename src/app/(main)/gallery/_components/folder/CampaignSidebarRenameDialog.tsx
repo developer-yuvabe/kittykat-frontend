@@ -13,9 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { updateCampaignName } from "@/services/api/brand.service";
-import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useBrandStore } from "@/store/brand.store";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
 
 interface CampaignSidebarRenameDialogProps {
   open: boolean;
@@ -34,7 +33,7 @@ export function CampaignSidebarRenameDialog({
 }: CampaignSidebarRenameDialogProps) {
   const [newName, setNewName] = useState(campaignTitle);
   const queryClient = useQueryClient();
-  const { brands, setBrands } = useBrandStore();
+  const { execute } = useUndoableAction();
 
   // Update newName when campaignTitle changes (prefill with old name)
   useEffect(() => {
@@ -47,41 +46,25 @@ export function CampaignSidebarRenameDialog({
     if (!newName.trim()) return;
 
     const trimmedName = newName.trim();
+    const oldName = campaignTitle;
+
     onOpenChange(false);
 
-    // Store previous state for rollback
-    const previousBrands = brands;
-
     try {
-      // Optimistically update the brands state
-      const updatedBrands = brands.map((brand) => {
-        if (brand.id === brandId) {
-          return {
-            ...brand,
-            campaigns: brand.campaigns.map((campaign) =>
-              campaign.id === campaignId
-                ? { ...campaign, title: trimmedName }
-                : campaign
-            ),
-          };
-        }
-        return brand;
+      await execute({
+        title: oldName,
+        undoSeconds: 3,
+        loadingMessage: `Renaming "${oldName}" to "${trimmedName}"...`,
+        action: async () => {
+          await updateCampaignName(brandId, campaignId, trimmedName);
+          // Invalidate brands query to ensure sync with server
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
+        successMessage: `Renamed "${oldName}" to "${trimmedName}".`,
+        errorMessage: `Failed to rename "${oldName}".`,
       });
-
-      // Update the store immediately for optimistic UI
-      setBrands(updatedBrands);
-
-      // Then make the API call
-      await updateCampaignName(brandId, campaignId, trimmedName);
-
-      // Invalidate brands query to ensure sync with server
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
-
-      toast.success("Campaign renamed successfully");
     } catch (error) {
-      // Rollback to previous state on error
-      setBrands(previousBrands);
-      toast.error("Failed to rename campaign");
+      // Error already handled by useUndoableAction
     }
   };
 

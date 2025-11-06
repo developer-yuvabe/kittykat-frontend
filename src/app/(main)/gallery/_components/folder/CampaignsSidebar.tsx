@@ -171,10 +171,13 @@ export function CampaignsSidebar({
         loadingMessage: `${
           shouldBeArchived ? "Archiving" : "Unarchiving"
         } "${title}"...`,
-        action: () =>
-          updateCampaign(selectedBrandId, campaignId, {
+        action: async () => {
+          await updateCampaign(selectedBrandId, campaignId, {
             is_archived: shouldBeArchived,
-          }),
+          });
+          // Invalidate brands query to refresh the UI
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
         successMessage: `"${title}" ${
           shouldBeArchived ? "archived" : "unarchived"
         } successfully.`,
@@ -365,10 +368,13 @@ export function CampaignsSidebar({
           loadingMessage: `${
             shouldBeArchived ? "Archiving" : "Unarchiving"
           } "${title}"...`,
-          action: () =>
-            updateCampaign(selectedBrandId, campaignId, {
+          action: async () => {
+            await updateCampaign(selectedBrandId, campaignId, {
               is_archived: shouldBeArchived,
-            }),
+            });
+            // Invalidate brands query to refresh the UI
+            await queryClient.invalidateQueries({ queryKey: ["brands"] });
+          },
           successMessage: `"${title}" ${
             shouldBeArchived ? "archived" : "unarchived"
           } successfully.`,
