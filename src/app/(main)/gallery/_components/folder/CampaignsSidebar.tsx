@@ -50,6 +50,8 @@ import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { useCampaignCounts } from "@/hooks/useCampaignCounts";
 import { Loader2 } from "lucide-react";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
+import BrandSelector from "@/components/chatbot/brands/BrandSelector";
+import { EnhancedSelectedFilters } from "@/types/gallery.types";
 
 // Component to show tooltip only when text is truncated
 function TruncatedText({
@@ -95,12 +97,34 @@ interface CampaignsSidebarProps {
   selectedBrandId: string | null;
   selectedCampaignId: string | null;
   onCampaignSelect: (campaignId: string) => void;
+  setInitialBrandId: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+
+  setSelectedCampaignInUrl: (
+    value: string | null | ((old: string | null) => string | null)
+  ) => Promise<URLSearchParams>;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: any
+  ) => Promise<URLSearchParams>;
+  hasNoBrands: boolean;
+  galleryView: "grid" | "folder";
 }
 
 export function CampaignsSidebar({
   selectedBrandId,
   selectedCampaignId,
   onCampaignSelect,
+  setInitialBrandId,
+  setSelectedCampaignInUrl,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  hasNoBrands,
+  galleryView,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -221,8 +245,28 @@ export function CampaignsSidebar({
 
   return (
     <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-1/3 rounded-sm">
+      <div className="flex flex-col px-4 gap-y-3 mt-4">
+        <h1 className="text-2xl font-bold">Media library</h1>
+        {!hasNoBrands && (
+          <BrandSelector
+            showCampaigns={galleryView === "grid"}
+            showSelectedValue
+            className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+            onBrandSelect={(brandId, campaignId) => {
+              setSelectedFilters((prev) => ({
+                ...prev,
+                brandId: [brandId],
+                campaigns: campaignId ? [campaignId] : [],
+              }));
+              setInitialWorkflowStatus(null);
+              setInitialBrandId(null);
+              setSelectedCampaignInUrl(null);
+            }}
+          />
+        )}
+      </div>
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="flex items-center justify-between px-4 border-gray-200 mt-3">
         {selectedCampaignId ? (
           <Button
             variant="ghost"
@@ -239,14 +283,12 @@ export function CampaignsSidebar({
             ← Go Back
           </Button>
         ) : (
-          <h3 className="text-2xl font-semibold text-gray-900 truncate flex-1">
-            Campaigns
-          </h3>
+          <h3 className="text-xl text-black truncate flex-1">Campaigns</h3>
         )}
       </div>
 
       {/* Search Bar */}
-      <div className="p-3 border-b border-gray-200 flex justify-center items-center gap-2 ">
+      <div className="px-3 pt-1 pb-4 border-b border-gray-200 flex justify-center items-center gap-2 ">
         <div className="relative w-2/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
