@@ -131,6 +131,7 @@ export function FolderGalleryView({
                 selectedItems={selectedItems}
                 onSelect={handleSelect}
                 galleryActions={galleryActions}
+                enableDragToMove={true}
               />
               {/* Infinite scroll loading indicator */}
               {galleryActions.hasNextPage && (

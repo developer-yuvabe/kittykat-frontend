@@ -51,6 +51,10 @@ import JSZip from "jszip";
 // Bulk dialog component for Ask KittyKat
 import { MediaBulkAskKittyKatDialog } from "./MediaBulkAskKittyKatDialog";
 import { useBrandStore } from "@/store/brand.store";
+import {
+  useMoveGalleryItems,
+  type BrandWithCampaigns,
+} from "@/hooks/useMoveGalleryItems";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
@@ -70,6 +74,13 @@ export function MediaBulkActions({
   onSelectAll,
 }: MediaBulkActionsProps) {
   const { brands } = useBrandStore();
+
+  // Use shared move hook
+  const { moveItems, isMoving } = useMoveGalleryItems(
+    galleryActions,
+    brands as BrandWithCampaigns[]
+  );
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -90,7 +101,6 @@ export function MediaBulkActions({
   // Move states - separate for each action
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [moveAction, setMoveAction] = useState<MoveAction>("brand");
-  const [isMoving, setIsMoving] = useState(false);
 
   // Individual move values
   const [targetBrandId, setTargetBrandId] = useState<string>("");
@@ -400,78 +410,26 @@ export function MediaBulkActions({
   };
 
   const handleConfirmMove = async () => {
-    setIsMoving(true);
     try {
-      const updateData: any = {};
+      // Determine move options based on action
+      const options: any = {};
 
       if (moveAction === "brand" && targetBrandId) {
-        updateData.brand_id = targetBrandId;
-        // When moving to a different brand, remove campaign assignment
-        updateData.campaign_id = null;
-      } else if (moveAction === "campaign" && targetCampaignId) {
-        if (targetCampaignId === "none") {
-          updateData.campaign_id = null;
-        } else {
-          updateData.campaign_id = targetCampaignId;
-          // When moving to a campaign, also update the brand to match the campaign's brand
-          const campaignWithBrand = brands.find((brand) =>
-            brand.campaigns.some((camp) => camp.id === targetCampaignId)
-          );
-          if (campaignWithBrand) {
-            updateData.brand_id = campaignWithBrand.id;
-          }
-        }
+        options.targetBrandId = targetBrandId;
+      } else if (moveAction === "campaign") {
+        options.targetCampaignId =
+          targetCampaignId === "none" ? null : targetCampaignId;
       } else if (moveAction === "source" && targetSource) {
-        updateData.asset_source = targetSource;
+        options.targetSource = targetSource;
       }
 
-      await Promise.all(
-        selectedItems.map((item) =>
-          galleryActions.patchItem?.({
-            itemId: item.id,
-            data: updateData,
-          })
-        )
-      );
-
-      // Success toast notification
-      const getMovementDescription = () => {
-        if (moveAction === "brand") {
-          const targetBrand = brands.find((b) => b.id === targetBrandId);
-          return `to brand "${targetBrand?.name}"`;
-        } else if (moveAction === "campaign") {
-          if (targetCampaignId === "none") {
-            return "and removed from campaigns";
-          }
-          const availableCampaigns = getAvailableCampaigns();
-          const targetCampaign = availableCampaigns.find(
-            (c) => c.id === targetCampaignId
-          );
-          return `to campaign "${targetCampaign?.title}"`;
-        } else if (moveAction === "source") {
-          const sourceMap: Record<string, string> = {
-            "brand-uploads": "Brand Uploads",
-            "showboard-media": "Concept Visuals",
-            "a2i-media": "A2I Media",
-            moodboard: "Moodboard",
-          };
-          return `to ${sourceMap[targetSource] || targetSource}`;
-        }
-        return "";
-      };
-
-      toast.success(
-        `Successfully moved ${selectedCount} item(s) ${getMovementDescription()}`
-      );
-
-      onUnselectAll();
-      galleryActions.refetchGalleryItems();
-      setIsMoveDialogOpen(false);
+      // Use the shared move function
+      await moveItems(selectedItems, moveAction, options, () => {
+        onUnselectAll();
+        setIsMoveDialogOpen(false);
+      });
     } catch (error) {
-      console.error("Move error:", error);
-      toast.error("Failed to move assets. Please try again.");
-    } finally {
-      setIsMoving(false);
+      // Error already handled by moveItems
     }
   };
 

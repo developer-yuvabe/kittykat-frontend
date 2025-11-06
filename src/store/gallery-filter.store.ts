@@ -83,7 +83,22 @@ export const useGalleryFilterStore = create<GalleryFilterState>()(
     }),
     {
       name: "gallery-filter-storage",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => localStorage, {
+        reviver: (key, value) => {
+          // Convert date strings back to Date objects
+          if (
+            (key === "dateFrom" || key === "dateTo") &&
+            typeof value === "string"
+          ) {
+            return new Date(value);
+          }
+          return value;
+        },
+        replacer: (key, value) => {
+          // Dates will automatically be converted to ISO strings
+          return value;
+        },
+      }),
       partialize: (state) => ({
         // Persist view settings
         thumbnailSize: state.thumbnailSize,

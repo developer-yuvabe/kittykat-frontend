@@ -382,4 +382,19 @@ export interface AssetCountResponse {
   count_favourites?: number;
 }
 
+/**
+ * Drag-and-drop payload for moving gallery items
+ * Contains minimal metadata needed for drop operations
+ */
+export interface GalleryDragPayload {
+  // Array of item IDs being dragged
+  itemIds: string[];
+  // Source brand ID (for context/validation)
+  sourceBrandId?: string;
+  // Source campaign ID (for context/validation)
+  sourceCampaignId?: string | null;
+  // Whether items are from archived section
+  isArchived?: boolean;
+}
+
 //

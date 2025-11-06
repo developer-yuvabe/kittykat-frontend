@@ -97,12 +97,32 @@ export function MediaFilterDropdown({
     setInitialWorkflowStatus([]);
   };
 
+  // Calculate active filters count from store
+  const activeFiltersCount = Object.values({
+    favorites,
+    hasComments,
+    mediaTypes,
+    workflowStatus,
+    dateFrom,
+    dateTo,
+  }).filter((value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === "boolean") return value === true;
+    if (value instanceof Date) return !!value;
+    return false;
+  }).length;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 rounded-md px-3 py-1.5 mr-2">
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 rounded-md px-3 py-1.5 mr-2 relative">
           <Funnel className="w-4 h-4" />
           <span>Filters</span>
+          {activeFiltersCount > 0 && (
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {activeFiltersCount}
+            </div>
+          )}
         </Button>
       </DropdownMenuTrigger>
 
