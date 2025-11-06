@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { updateCampaignName } from "@/services/api/brand.service";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBrandStore } from "@/store/brand.store";
 
 interface CampaignSidebarRenameDialogProps {
   open: boolean;
@@ -31,6 +33,8 @@ export function CampaignSidebarRenameDialog({
   campaignTitle,
 }: CampaignSidebarRenameDialogProps) {
   const [newName, setNewName] = useState(campaignTitle);
+  const queryClient = useQueryClient();
+  const { brands, setBrands } = useBrandStore();
 
   // Update newName when campaignTitle changes (prefill with old name)
   useEffect(() => {
@@ -45,13 +49,40 @@ export function CampaignSidebarRenameDialog({
     const trimmedName = newName.trim();
     onOpenChange(false);
 
-    const renamePromise = updateCampaignName(brandId, campaignId, trimmedName);
+    // Store previous state for rollback
+    const previousBrands = brands;
 
-    toast.promise(renamePromise, {
-      loading: "Renaming campaign...",
-      success: "Campaign renamed successfully",
-      error: "Failed to rename campaign",
-    });
+    try {
+      // Optimistically update the brands state
+      const updatedBrands = brands.map((brand) => {
+        if (brand.id === brandId) {
+          return {
+            ...brand,
+            campaigns: brand.campaigns.map((campaign) =>
+              campaign.id === campaignId
+                ? { ...campaign, title: trimmedName }
+                : campaign
+            ),
+          };
+        }
+        return brand;
+      });
+
+      // Update the store immediately for optimistic UI
+      setBrands(updatedBrands);
+
+      // Then make the API call
+      await updateCampaignName(brandId, campaignId, trimmedName);
+
+      // Invalidate brands query to ensure sync with server
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+
+      toast.success("Campaign renamed successfully");
+    } catch (error) {
+      // Rollback to previous state on error
+      setBrands(previousBrands);
+      toast.error("Failed to rename campaign");
+    }
   };
 
   return (

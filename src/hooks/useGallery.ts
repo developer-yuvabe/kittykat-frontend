@@ -31,13 +31,11 @@ export const useGalleryQuery = (
   const queryClient = useQueryClient();
 
   // Map asset type for filtering
-  const getAssetTypesFromFilter = (): typeof allMediaAssetSources => {
-    if (
-      !filters.selectedFilters?.asset_sources ||
-      filters.selectedFilters.asset_sources.length === 0
-    )
+  // Map asset type for filtering
+  const getAssetTypesFromFilter = () => {
+    if (!filters.assetType || filters.assetType === "all-media")
       return allMediaAssetSources;
-    return filters.selectedFilters.asset_sources;
+    return [filters.assetType];
   };
 
   // Generate query key for current filters

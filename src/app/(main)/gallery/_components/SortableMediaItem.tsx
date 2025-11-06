@@ -168,9 +168,7 @@ export function SortableMediaItem({
       } ${isMediaSelectDialog && !isDisabled ? "cursor-pointer" : ""}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={
-        isMediaSelectDialog && !isDisabled ? handleImageClick : undefined
-      }
+      onClick={handleImageClick}
       // Don't attach dnd-kit attributes here - only on drag handle
       draggable={enableDragToMove && !isMediaSelectDialog} // HTML5 drag for moving to campaigns
       onDragStart={enableDragToMove ? handleDragStart : undefined}
