@@ -750,7 +750,7 @@ const ReferenceImageSelector = ({
           side={popoverSide}
           className={`${
             isSingleMode ? "w-[calc(100vw-2rem)] max-w-[800px]" : "w-[1000px]"
-          } max-h-[500px] p-0 rounded-xl shadow-xl border bg-background overflow-hidden`}
+          } max-h-[min(85vh,700px)] p-0 rounded-xl shadow-xl border bg-background overflow-auto overscroll-contain`}
         >
           <div className="flex h-full">
             {/* LEFT COLUMN - Upload/Drop Area */}
