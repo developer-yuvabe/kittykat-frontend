@@ -243,9 +243,11 @@ export default function CampaignSelector({
           title="Delete Campaign?"
           description={
             <>
-              This will permanently delete <b>{campaignToDelete?.name}</b> and
-              all its moodboards. This action cannot be undone. Are you sure you
-              want to proceed?
+              You’re about to permanently delete{" "}
+              <b>“{campaignToDelete?.name}”</b> and all its moodboards. This
+              action cannot be undone.
+              <br />
+              Are you sure you want to continue?
             </>
           }
           confirmLabel="Delete"
