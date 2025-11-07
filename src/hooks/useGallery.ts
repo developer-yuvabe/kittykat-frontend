@@ -35,6 +35,10 @@ export const useGalleryQuery = (
   const getAssetTypesFromFilter = () => {
     if (!filters.assetType || filters.assetType === "all-media")
       return allMediaAssetSources;
+
+    if (filters.assetType === "reference")
+      return [...allMediaAssetSources, "reference"];
+
     return [filters.assetType];
   };
 

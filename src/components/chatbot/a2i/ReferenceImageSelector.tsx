@@ -136,6 +136,7 @@ const ReferenceImageSelector = ({
           workflow_status: [],
           sort_by: "last_accessed_at",
         },
+        assetType: "reference",
       },
       40,
       true
