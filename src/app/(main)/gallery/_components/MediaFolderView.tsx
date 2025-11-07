@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
@@ -78,6 +78,7 @@ export function MediaFolderView({
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
   const { favorites } = useGalleryFilterStore();
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   // Create shared gallery actions for sidebar drag-drop operations
   const galleryActions = useGalleryQuery(
@@ -129,6 +130,7 @@ export function MediaFolderView({
           setInitialWorkflowStatus={setInitialWorkflowStatus}
           hasNoBrands={hasNoBrands}
           galleryView={galleryView}
+          setSelectedItems={setSelectedItems}
         />
 
         <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -177,6 +179,7 @@ export function MediaFolderView({
           setInitialWorkflowStatus={setInitialWorkflowStatus}
           hasNoBrands={hasNoBrands}
           galleryView={galleryView}
+          setSelectedItems={setSelectedItems}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -238,6 +241,8 @@ export function MediaFolderView({
               favorites={favorites}
               selectedFilters={selectedFilters}
               activeTab={activeTab}
+              setSelectedItems={setSelectedItems}
+              selectedItems={selectedItems}
             />
           </div>
         </div>
