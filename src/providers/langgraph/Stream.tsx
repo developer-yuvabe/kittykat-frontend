@@ -21,6 +21,8 @@ import { fetchThreadState } from "@/services/api/langgraph.service";
 import { useBrandStore } from "@/store/brand.store";
 import { client } from "./langgraph.client";
 import { toast } from "sonner";
+import { logError } from "@/services/actions/log-error";
+import { env } from "@/config/env";
 
 export type StateType = {
   messages: Message[];
@@ -85,7 +87,15 @@ const StreamSession = ({
     fetchStateHistory: {
       limit: 1,
     },
-    onError: () => {
+    onError: (error) => {
+      if (process.env.NODE_ENV === "production") {
+        logError(
+          user?.id || "-",
+          user?.email || "-",
+          env.NEXT_PUBLIC_ENVIRONMENT,
+          `Thread Id: ${user?.thread_id}\n${String(error)}`
+        );
+      }
       toast.error(
         "An error occurred while connecting to the agent. Please try again."
       );
