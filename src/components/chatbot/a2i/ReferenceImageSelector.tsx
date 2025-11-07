@@ -597,6 +597,24 @@ const ReferenceImageSelector = ({
 
   const handleDeleteGalleryItem = useCallback(
     (item: GalleryItemResponse) => {
+      // Remove from reference zones if attached
+      let newMasterReference = masterReference;
+      let newProductReference = productReference;
+
+      if (masterReference.includes(item.asset_url)) {
+        newMasterReference = masterReference.filter(
+          (url) => url !== item.asset_url
+        );
+        onMasterReferenceChange(newMasterReference);
+      }
+
+      if (productReference.includes(item.asset_url)) {
+        newProductReference = productReference.filter(
+          (url) => url !== item.asset_url
+        );
+        onProductReferenceChange(newProductReference);
+      }
+
       if (item.asset_source === "reference") {
         // Delete from gallery if asset_source is "reference"
         deleteItem(item.id);
@@ -613,7 +631,16 @@ const ReferenceImageSelector = ({
         setItems(newItems);
       }
     },
-    [galleryItems, deleteItem, patchItem, setItems]
+    [
+      galleryItems,
+      deleteItem,
+      patchItem,
+      setItems,
+      masterReference,
+      productReference,
+      onMasterReferenceChange,
+      onProductReferenceChange,
+    ]
   );
 
   const handleMediaLibrarySelection = useCallback(
