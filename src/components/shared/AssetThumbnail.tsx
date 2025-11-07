@@ -29,14 +29,13 @@ export const AssetThumbnail = ({
   // Check if the asset is a video
   const isVideo =
     galleryItem?.asset_type === "video" ||
-    galleryItem?.latest_version_asset_type === "video"
+    galleryItem?.latest_version_asset_type === "video" ||
+    assetUrl.endsWith(".mp4");
 
   // Get the appropriate thumbnail URL
   const thumbnailUrl = isVideo
     ? galleryItem?.preview_url || assetUrl
     : assetUrl;
-
-    console.log("AssetThumbnail - isVideo:", isVideo, "thumbnailUrl:", thumbnailUrl);
 
   if (!thumbnailUrl) return null;
 
