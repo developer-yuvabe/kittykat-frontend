@@ -160,8 +160,7 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                             cn(
                               "flex flex-col items-stretch",
                               layoutConfig.marginTop
-                            ),
-                          chatStarted && "grid grid-rows-[1fr_auto]"
+                            )
                         )}
                         contentClassName={cn(
                           layoutConfig.contentPaddingTop,
