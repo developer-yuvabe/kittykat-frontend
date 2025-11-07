@@ -43,6 +43,19 @@ interface CampaignSidebarRowProps {
   ) => void;
   onDragEnd?: () => void;
   isDragging?: boolean;
+  onSectionDragOver?: (
+    e: React.DragEvent,
+    section: "active" | "archived"
+  ) => void;
+  onSectionDrop?: (e: React.DragEvent, section: "active" | "archived") => void;
+  onReorderDragOver?: (e: React.DragEvent, campaignId: string) => void;
+  onReorderDrop?: (
+    e: React.DragEvent,
+    campaignId: string,
+    section: "active" | "archived"
+  ) => void;
+  dropPosition?: "before" | "after" | null;
+  isReorderTarget?: boolean;
 }
 
 export function CampaignSidebarRow({
@@ -62,7 +75,62 @@ export function CampaignSidebarRow({
   onCampaignDragStart,
   onDragEnd,
   isDragging,
+  onSectionDragOver,
+  onSectionDrop,
+  onReorderDragOver,
+  onReorderDrop,
+  dropPosition,
+  isReorderTarget,
 }: CampaignSidebarRowProps) {
+  const handleDragOver = (e: React.DragEvent) => {
+    // Check if dragging a campaign
+    const hasCampaignData = e.dataTransfer.types.includes(
+      "application/campaign-drag"
+    );
+
+    if (hasCampaignData) {
+      // Check if it's for reordering (same section) or archiving (different section)
+      const section = campaign.is_archived ? "archived" : "active";
+
+      // For reordering within same section
+      if (onReorderDragOver) {
+        onReorderDragOver(e, campaign.id);
+      }
+
+      // Still allow section drop for archive/unarchive
+      if (onSectionDragOver) {
+        onSectionDragOver(e, section);
+      }
+    } else if (onAssetDragOver) {
+      // Handle asset drag (moving assets to campaign)
+      onAssetDragOver(e, campaign.id);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    // Check if dragging a campaign
+    const hasCampaignData = e.dataTransfer.types.includes(
+      "application/campaign-drag"
+    );
+
+    if (hasCampaignData) {
+      const section = campaign.is_archived ? "archived" : "active";
+
+      // Try reorder drop first
+      if (onReorderDrop) {
+        onReorderDrop(e, campaign.id, section);
+      }
+
+      // Also allow section drop for archive/unarchive fallback
+      if (onSectionDrop) {
+        onSectionDrop(e, section);
+      }
+    } else if (onAssetDrop) {
+      // Handle asset drop (moving assets to campaign)
+      onAssetDrop(e, campaign.id);
+    }
+  };
+
   return (
     <div
       key={`${selectedBrandId}-${campaign.id}`}
@@ -75,12 +143,15 @@ export function CampaignSidebarRow({
           : undefined
       }
       onDragEnd={onDragEnd}
-      onDragOver={
-        onAssetDragOver ? (e) => onAssetDragOver(e, campaign.id) : undefined
-      }
+      onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
-      onDrop={onAssetDrop ? (e) => onAssetDrop(e, campaign.id) : undefined}
+      onDrop={handleDrop}
     >
+      {/* Drop indicator line */}
+      {isReorderTarget && dropPosition === "before" && (
+        <div className="absolute -top-0.5 left-0 right-0 h-0.5 bg-purple-500 z-10" />
+      )}
+
       <button
         onClick={() => onCampaignSelect(campaign.id)}
         className={cn(
@@ -180,6 +251,11 @@ export function CampaignSidebarRow({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Drop indicator line - after */}
+      {isReorderTarget && dropPosition === "after" && (
+        <div className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-purple-500 z-10" />
+      )}
     </div>
   );
 }

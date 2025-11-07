@@ -4,7 +4,11 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore } from "@/store/brand.store";
 import { cn } from "@/lib/utils";
-import { deleteCampaign, updateCampaign } from "@/services/api/brand.service";
+import {
+  deleteCampaign,
+  patchCampaign,
+  updateCampaign,
+} from "@/services/api/brand.service";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -103,6 +107,10 @@ export function CampaignsSidebar({
   const [draggedCampaignId, setDraggedCampaignId] = useState<string | null>(
     null
   );
+  const [dropPosition, setDropPosition] = useState<"before" | "after" | null>(
+    null
+  );
+  const [reorderTargetId, setReorderTargetId] = useState<string | null>(null);
 
   // Fetch campaign counts
   const { data: countData, isLoading: isCountLoading } =
@@ -124,8 +132,28 @@ export function CampaignsSidebar({
     );
   }, [campaigns, searchQuery]);
 
-  const activeCampaigns = filteredCampaigns.filter((c) => !c.is_archived);
-  const archivedCampaigns = filteredCampaigns.filter((c) => c.is_archived);
+  // Sort campaigns by position (if available), otherwise maintain current order
+  const sortByPosition = (campaignList: typeof campaigns) => {
+    return [...campaignList].sort((a, b) => {
+      // If both have positions, sort by position
+      if (a.position !== undefined && b.position !== undefined) {
+        return a.position - b.position;
+      }
+      // If only 'a' has position, it comes first
+      if (a.position !== undefined) return -1;
+      // If only 'b' has position, it comes first
+      if (b.position !== undefined) return 1;
+      // If neither has position, maintain current order
+      return 0;
+    });
+  };
+
+  const activeCampaigns = sortByPosition(
+    filteredCampaigns.filter((c) => !c.is_archived)
+  );
+  const archivedCampaigns = sortByPosition(
+    filteredCampaigns.filter((c) => c.is_archived)
+  );
 
   // Handlers
   const handleDelete = async () => {
@@ -140,7 +168,11 @@ export function CampaignsSidebar({
         title,
         undoSeconds: 3,
         loadingMessage: `Deleting "${title}"...`,
-        action: () => deleteCampaign(selectedBrandId, campaignId),
+        action: async () => {
+          await deleteCampaign(selectedBrandId, campaignId);
+          // Invalidate brands query to refresh the UI
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
         successMessage: `"${title}" deleted successfully.`,
         errorMessage: `Failed to delete "${title}".`,
       });
@@ -151,7 +183,7 @@ export function CampaignsSidebar({
         campaignTitle: "",
         isDeleting: false,
       });
-    } catch (error) {
+    } catch {
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -193,7 +225,7 @@ export function CampaignsSidebar({
         isArchived: false,
         isProcessing: false,
       });
-    } catch (error) {
+    } catch {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   };
@@ -210,6 +242,26 @@ export function CampaignsSidebar({
       JSON.stringify({ campaignId, isArchived })
     );
     setDraggedCampaignId(campaignId);
+  };
+
+  const handleCampaignReorderDragOver = (
+    e: React.DragEvent,
+    targetCampaignId: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const hasCampaignData = e.dataTransfer.types.includes(
+      "application/campaign-drag"
+    );
+    if (!hasCampaignData) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const position = e.clientY < midpoint ? "before" : "after";
+
+    setReorderTargetId(targetCampaignId);
+    setDropPosition(position);
   };
 
   const handleAssetDragOver = (e: React.DragEvent, campaignId: string) => {
@@ -257,6 +309,146 @@ export function CampaignsSidebar({
     setDraggedCampaignId(null);
     setDragOverCampaignId(null);
     setDragOverSection(null);
+    setReorderTargetId(null);
+    setDropPosition(null);
+  };
+
+  const handleCampaignReorderDrop = async (
+    e: React.DragEvent,
+    targetCampaignId: string,
+    section: "active" | "archived"
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!selectedBrandId) {
+      setReorderTargetId(null);
+      setDropPosition(null);
+      return;
+    }
+
+    try {
+      const data = e.dataTransfer.getData("application/campaign-drag");
+      if (!data) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      const { campaignId: draggedId, isArchived } = JSON.parse(data);
+
+      // Don't reorder if dropped on itself
+      if (draggedId === targetCampaignId) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      const targetIsArchived = section === "archived";
+      const campaignList =
+        section === "active" ? activeCampaigns : archivedCampaigns;
+
+      // Calculate drop position
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const position = e.clientY < midpoint ? "before" : "after";
+
+      // Handle cross-section move (archive/unarchive with position)
+      if (isArchived !== targetIsArchived) {
+        const targetIndex = campaignList.findIndex(
+          (c) => c.id === targetCampaignId
+        );
+
+        if (targetIndex === -1) {
+          setReorderTargetId(null);
+          setDropPosition(null);
+          return;
+        }
+
+        // Calculate insert position for the new section
+        let insertPosition = targetIndex;
+        if (position === "after") {
+          insertPosition = targetIndex + 1;
+        }
+
+        // Create new order for target section (inserting the dragged campaign)
+        const reordered = [...campaignList];
+        // Insert placeholder at the calculated position
+        reordered.splice(insertPosition, 0, { id: draggedId } as any);
+
+        // Update the dragged campaign's archive status and position
+        await patchCampaign(selectedBrandId, draggedId, {
+          is_archived: targetIsArchived,
+          position: insertPosition,
+        });
+
+        // Update positions for all other campaigns in the target section
+        const updatePromises = reordered
+          .filter((c) => c.id !== draggedId)
+          .map((campaign, index) => {
+            const actualIndex = index >= insertPosition ? index + 1 : index;
+            return patchCampaign(selectedBrandId, campaign.id, {
+              position: actualIndex,
+            });
+          });
+
+        await Promise.all(updatePromises);
+        await queryClient.invalidateQueries({ queryKey: ["brands"] });
+
+        toast.success(
+          `Campaign moved to ${
+            section === "active" ? "active" : "archived"
+          } campaigns`
+        );
+
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      // Handle same-section reordering
+      const draggedIndex = campaignList.findIndex((c) => c.id === draggedId);
+      const targetIndex = campaignList.findIndex(
+        (c) => c.id === targetCampaignId
+      );
+
+      if (draggedIndex === -1 || targetIndex === -1) {
+        setReorderTargetId(null);
+        setDropPosition(null);
+        return;
+      }
+
+      // Create new order
+      const reordered = [...campaignList];
+      const [removed] = reordered.splice(draggedIndex, 1);
+
+      let insertIndex = targetIndex;
+      if (position === "after") {
+        insertIndex =
+          draggedIndex < targetIndex ? targetIndex : targetIndex + 1;
+      } else {
+        insertIndex =
+          draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      }
+
+      reordered.splice(insertIndex, 0, removed);
+
+      // Update positions for all campaigns in this section
+      const updatePromises = reordered.map((campaign, index) =>
+        patchCampaign(selectedBrandId, campaign.id, { position: index })
+      );
+
+      await Promise.all(updatePromises);
+      await queryClient.invalidateQueries({ queryKey: ["brands"] });
+
+      toast.success("Campaign order updated");
+    } catch (error) {
+      console.error("Reorder error:", error);
+      toast.error("Failed to reorder campaigns");
+    }
+
+    setReorderTargetId(null);
+    setDropPosition(null);
   };
 
   const handleAssetDropOnCampaign = async (
@@ -382,7 +574,7 @@ export function CampaignsSidebar({
             shouldBeArchived ? "archive" : "unarchive"
           } "${title}".`,
         });
-      } catch (error) {
+      } catch {
         // Error already handled by useUndoableAction
       }
     } catch (error) {
@@ -453,23 +645,54 @@ export function CampaignsSidebar({
       />
 
       {/* Campaigns List */}
+      {/* Campaigns List */}
       <div className="flex-1 overflow-y-auto">
         <Accordion type="multiple" defaultValue={["active"]}>
           {/* Active Campaigns */}
-          <AccordionItem value="active">
+          <AccordionItem
+            value="active"
+            className={cn(
+              "transition-colors",
+              dragOverSection === "active" && "bg-purple-50"
+            )}
+            onDragOver={(e) => handleSectionDragOver(e, "active")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleCampaignDropOnSection(e, "active")}
+          >
             <AccordionTrigger
               className={cn(
                 "text-lg p-4 hover:no-underline font-medium text-gray-800",
-                dragOverSection === "active" && "bg-purple-50"
+                draggedCampaignId && "pointer-events-none"
               )}
               onDragOver={(e) => handleSectionDragOver(e, "active")}
-              onDragLeave={handleDragLeave}
               onDrop={(e) => handleCampaignDropOnSection(e, "active")}
             >
-              Active Campaigns ({activeCampaigns.length})
+              <span className={cn(draggedCampaignId && "pointer-events-auto")}>
+                Active Campaigns ({activeCampaigns.length})
+              </span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-1 p-2">
+              <div
+                className="space-y-1 p-2"
+                onDragOver={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleSectionDragOver(e, "active");
+                  }
+                }}
+                onDrop={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleCampaignDropOnSection(e, "active");
+                  }
+                }}
+              >
                 {activeCampaigns.map((campaign) => (
                   <CampaignSidebarRow
                     key={`${selectedBrandId}-${campaign.id}`}
@@ -510,6 +733,14 @@ export function CampaignsSidebar({
                     onCampaignDragStart={handleCampaignDragStart}
                     onDragEnd={handleDragEnd}
                     isDragging={draggedCampaignId === campaign.id}
+                    onSectionDragOver={handleSectionDragOver}
+                    onSectionDrop={handleCampaignDropOnSection}
+                    onReorderDragOver={handleCampaignReorderDragOver}
+                    onReorderDrop={handleCampaignReorderDrop}
+                    isReorderTarget={reorderTargetId === campaign.id}
+                    dropPosition={
+                      reorderTargetId === campaign.id ? dropPosition : null
+                    }
                   />
                 ))}
                 {activeCampaigns.length === 0 && (
@@ -522,20 +753,50 @@ export function CampaignsSidebar({
           </AccordionItem>
 
           {/* Archived Campaigns */}
-          <AccordionItem value="archived">
+          <AccordionItem
+            value="archived"
+            className={cn(
+              "transition-colors",
+              dragOverSection === "archived" && "bg-gray-100"
+            )}
+            onDragOver={(e) => handleSectionDragOver(e, "archived")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleCampaignDropOnSection(e, "archived")}
+          >
             <AccordionTrigger
               className={cn(
                 "text-lg p-4 hover:no-underline font-medium text-gray-800",
-                dragOverSection === "archived" && "bg-gray-100"
+                draggedCampaignId && "pointer-events-none"
               )}
               onDragOver={(e) => handleSectionDragOver(e, "archived")}
-              onDragLeave={handleDragLeave}
               onDrop={(e) => handleCampaignDropOnSection(e, "archived")}
             >
-              Archived Campaigns ({archivedCampaigns.length})
+              <span className={cn(draggedCampaignId && "pointer-events-auto")}>
+                Archived Campaigns ({archivedCampaigns.length})
+              </span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-1 p-2">
+              <div
+                className="space-y-1 p-2"
+                onDragOver={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleSectionDragOver(e, "archived");
+                  }
+                }}
+                onDrop={(e) => {
+                  // Allow section drop when dragging campaigns
+                  const hasCampaignData = e.dataTransfer.types.includes(
+                    "application/campaign-drag"
+                  );
+                  if (hasCampaignData) {
+                    handleCampaignDropOnSection(e, "archived");
+                  }
+                }}
+              >
                 {archivedCampaigns.map((campaign) => (
                   <CampaignSidebarRow
                     key={`${selectedBrandId}-${campaign.id}`}
@@ -576,6 +837,14 @@ export function CampaignsSidebar({
                     onCampaignDragStart={handleCampaignDragStart}
                     onDragEnd={handleDragEnd}
                     isDragging={draggedCampaignId === campaign.id}
+                    onSectionDragOver={handleSectionDragOver}
+                    onSectionDrop={handleCampaignDropOnSection}
+                    onReorderDragOver={handleCampaignReorderDragOver}
+                    onReorderDrop={handleCampaignReorderDrop}
+                    isReorderTarget={reorderTargetId === campaign.id}
+                    dropPosition={
+                      reorderTargetId === campaign.id ? dropPosition : null
+                    }
                   />
                 ))}
                 {archivedCampaigns.length === 0 && (
@@ -619,7 +888,7 @@ export function CampaignsSidebar({
             Are you sure you want to{" "}
             {archiveDialog.isArchived ? "unarchive" : "move"}{" "}
             <span className="font-semibold text-gray-900">
-              "{archiveDialog.campaignTitle}"
+              &quot;{archiveDialog.campaignTitle}&quot;
             </span>{" "}
             {archiveDialog.isArchived
               ? "back to active campaigns?"
@@ -646,7 +915,7 @@ export function CampaignsSidebar({
           <>
             Are you sure you want to permanently delete{" "}
             <span className="font-semibold text-gray-900">
-              "{deleteDialog.campaignTitle}"
+              &quot;{deleteDialog.campaignTitle}&quot;
             </span>
             ? This action cannot be undone.
           </>
