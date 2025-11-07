@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { Loader2 } from "lucide-react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
@@ -17,6 +17,8 @@ interface FolderGalleryViewProps {
   favorites?: boolean;
   selectedFilters?: EnhancedSelectedFilters;
   activeTab?: string;
+  setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedItems: string[];
 }
 
 export function FolderGalleryView({
@@ -26,8 +28,9 @@ export function FolderGalleryView({
   favorites = false,
   selectedFilters,
   activeTab = "all-media",
+  selectedItems,
+  setSelectedItems,
 }: FolderGalleryViewProps) {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { getSelectedBrand } = useBrandStore();
   const brand = useMemo(() => getSelectedBrand(), [selectedBrandId]);
 

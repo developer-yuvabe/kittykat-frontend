@@ -15,6 +15,7 @@ import { GalleryActions } from "@/hooks/useGallery";
 import { ImageModal } from "@/components/shared/ImageModal";
 import { handleDownloadImage } from "@/lib/utils";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { toast } from "sonner";
 
 // Types
 interface SortableMediaItemProps {
@@ -84,7 +85,15 @@ export function SortableMediaItem({
   };
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
-  const isDisabled = isAlreadySelected && isMultiSelect;
+
+  // Check if max selection has been reached
+  const hasReachedMax =
+    typeof selectedCount === "number" &&
+    typeof maxSelectionCount === "number" &&
+    selectedCount >= maxSelectionCount;
+
+  // Can't select new items if max reached, but can always deselect
+  const canSelect = !hasReachedMax || isSelected || isAlreadySelected;
 
   // Handle HTML5 drag start for drag-to-move functionality
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -135,10 +144,37 @@ export function SortableMediaItem({
   };
 
   const handleImageClick = () => {
-    if (isMediaSelectDialog && !isDisabled) {
-      onSelect(item.id, !isSelected);
+    if (isMediaSelectDialog) {
+      // Allow deselection for already selected items
+      if (isAlreadySelected) {
+        onSelect(item.id, false);
+      }
+      // Allow toggling if item is currently selected
+      else if (isSelected) {
+        onSelect(item.id, false);
+      }
+      // Only allow selection if we haven't reached max
+      else if (canSelect) {
+        onSelect(item.id, true);
+      }
+      // Show toast if max limit reached
+      else if (hasReachedMax) {
+        toast.warning(
+          `Maximum selection limit reached (${maxSelectionCount} items)`,
+          {
+            description: "Please deselect an item before selecting a new one.",
+          }
+        );
+      }
     } else if (!isMediaSelectDialog) {
-      setShowImageModal(true); // Show ImageModal instead of details
+      // If any items are selected, enable easy selection mode
+      if (selectedCount && selectedCount > 0) {
+        // Toggle selection for the clicked item
+        onSelect(item.id, !isSelected);
+      } else {
+        // No items selected, show image modal
+        setShowImageModal(true);
+      }
     }
   };
 
@@ -159,18 +195,26 @@ export function SortableMediaItem({
     ? Math.min(item.dimensions.height / 4, 400)
     : Math.floor(Math.random() * 200) + 200;
 
+  // Enable easy selection mode when items are selected (even in regular gallery)
+  const isEasySelectionMode = selectedCount && selectedCount > 0;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
         isDragging ? "opacity-50 z-50" : ""
-      } ${isMediaSelectDialog && !isDisabled ? "cursor-pointer" : ""}`}
+      } ${isMediaSelectDialog || isEasySelectionMode ? "cursor-pointer" : ""}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       // Don't attach dnd-kit attributes here - only on drag handle
       draggable={enableDragToMove && !isMediaSelectDialog} // HTML5 drag for moving to campaigns
       onDragStart={enableDragToMove ? handleDragStart : undefined}
+      onClick={
+        isMediaSelectDialog || isEasySelectionMode
+          ? handleImageClick
+          : undefined
+      }
     >
       {!isLoaded && (
         <div className="w-full">
@@ -201,6 +245,7 @@ export function SortableMediaItem({
               });
             }}
             isMediaSelectDialog={isMediaSelectDialog}
+            isEasySelectionMode={!!isEasySelectionMode}
           />
         </div>
 
@@ -211,7 +256,6 @@ export function SortableMediaItem({
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
           isAlreadySelected={isAlreadySelected}
-          isDisabled={isDisabled}
           isMultiSelectMode={isMultiSelect}
           maxSelectionCount={maxSelectionCount}
           selectedCount={selectedCount}

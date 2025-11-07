@@ -35,6 +35,10 @@ export const useGalleryQuery = (
   const getAssetTypesFromFilter = () => {
     if (!filters.assetType || filters.assetType === "all-media")
       return allMediaAssetSources;
+
+    if (filters.assetType === "reference")
+      return [...allMediaAssetSources, "reference"];
+
     return [filters.assetType];
   };
 
@@ -379,6 +383,56 @@ export const useGalleryQuery = (
     }) => galleryService.patchGalleryItem(itemId, data),
 
     onMutate: async ({ itemId, data, revalidateAutofillSuggestions }) => {
+      const queryKey = getGalleryQueryKey();
+      await queryClient.cancelQueries({ queryKey });
+
+      // Get the current filters to determine if we need to remove the item
+      const currentCampaignFilter = filters.selectedFilters?.campaigns?.[0];
+      const isMovingToAnotherCampaign =
+        data.campaign_id &&
+        currentCampaignFilter &&
+        data.campaign_id !== currentCampaignFilter;
+
+      // Optimistically update gallery items list
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return old;
+
+        const updated = {
+          ...old,
+          pages: old.pages.map((page: any) => {
+            // If moving to another campaign while viewing a specific campaign, remove it
+            if (isMovingToAnotherCampaign) {
+              return {
+                ...page,
+                gallery_items: page.gallery_items.filter(
+                  (item: GalleryItemResponse) => item.id !== itemId
+                ),
+                pagination: {
+                  ...page.pagination,
+                  total: Math.max(0, page.pagination.total - 1),
+                },
+              };
+            }
+
+            // Otherwise, just update the item
+            return {
+              ...page,
+              gallery_items: page.gallery_items.map(
+                (item: GalleryItemResponse) => {
+                  if (item.id === itemId) {
+                    return { ...item, ...data };
+                  }
+                  return item;
+                }
+              ),
+            };
+          }),
+        };
+
+        return updated;
+      });
+
+      // Update flat array queries
       const galleryQueries = queryClient.getQueriesData({
         queryKey: ["gallery-items"],
         exact: false,
@@ -391,6 +445,13 @@ export const useGalleryQuery = (
           queryKey,
           (prev: GalleryItemResponse[] | undefined) => {
             if (!prev) return prev;
+
+            // Remove if moving to another campaign
+            if (isMovingToAnotherCampaign) {
+              return prev.filter((item) => item.id !== itemId);
+            }
+
+            // Otherwise update
             return prev.map((item) =>
               item.id === itemId ? { ...item, ...data } : item
             );
@@ -400,32 +461,7 @@ export const useGalleryQuery = (
 
       updateAutoFillSuggestionCache(itemId, data.is_favourite!);
 
-      const queryKey = getGalleryQueryKey();
-
-      await queryClient.cancelQueries({ queryKey });
-      // Optimistically update gallery items list
-      queryClient.setQueryData(queryKey, (old: any) => {
-        if (!old) return old;
-
-        const updated = {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            gallery_items: page.gallery_items.map(
-              (item: GalleryItemResponse) => {
-                if (item.id === itemId) {
-                  return { ...item, ...data };
-                }
-                return item;
-              }
-            ),
-          })),
-        };
-
-        return updated;
-      });
-
-      // Update the item in existing bulk query caches (don't remove it)
+      // Update the item in existing bulk query caches
       const bulkQueries = queryClient.getQueriesData({
         queryKey: ["gallery-items-bulk"],
         exact: false,
@@ -438,6 +474,13 @@ export const useGalleryQuery = (
           queryKey,
           (prev: GalleryItemResponse[] | undefined) => {
             if (!prev) return prev;
+
+            // Remove if moving to another campaign
+            if (isMovingToAnotherCampaign) {
+              return prev.filter((item) => item.id !== itemId);
+            }
+
+            // Otherwise update
             return prev.map((item) =>
               item.id === itemId ? { ...item, ...data } : item
             );

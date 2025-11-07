@@ -11,6 +11,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
+import { toast } from "sonner";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -20,7 +21,6 @@ interface MediaOverlayProps {
   isMultiSelectMode?: boolean;
   onSelect: (id: string, selected: boolean) => void;
   isAlreadySelected: boolean;
-  isDisabled?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
@@ -43,7 +43,6 @@ export function MediaOverlay({
   onSelect,
   onToggleFavorite,
   isAlreadySelected,
-  isDisabled = false,
   selectedCount,
   maxSelectionCount,
   onDownload,
@@ -67,7 +66,12 @@ export function MediaOverlay({
     typeof selectedCount === "number" &&
     typeof maxSelectionCount === "number" &&
     selectedCount >= maxSelectionCount;
-  const isCheckboxDisabled = isDisabled || isAlreadySelected || hasReachedMax;
+
+  // Only disable checkbox if:
+  // 1. Max reached AND user is trying to select a NEW item (not currently selected AND not already selected)
+  // Allow unselecting already selected items even when max is reached
+  // Allow unselecting currently selected items even when max is reached
+  const isCheckboxDisabled = hasReachedMax && !isSelected && !isAlreadySelected;
 
   return (
     <>
@@ -81,10 +85,22 @@ export function MediaOverlay({
 
       {/* Selection Controls */}
       <div
-        className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${
+        className={`absolute top-2 left-2 z-30 transition-opacity duration-200 ${
           shouldShowSelection ? "opacity-100" : "opacity-0"
         }`}
-        onClick={(e) => e.stopPropagation()} // Prevent tile click when clicking checkbox
+        onClick={(e) => {
+          e.stopPropagation();
+          // Show toast if trying to select when checkbox is disabled
+          if (isCheckboxDisabled && !isSelected && !isAlreadySelected) {
+            toast.warning(
+              `Maximum selection limit reached (${maxSelectionCount} items)`,
+              {
+                description:
+                  "Please deselect an item before selecting a new one.",
+              }
+            );
+          }
+        }}
       >
         {isMediaSelectDialog || isMultiSelectMode ? (
           // Checkbox for both Single and Multi Select Mode
@@ -114,8 +130,15 @@ export function MediaOverlay({
 
       {/* Disabled Overlay for Already Selected Items */}
       {isAlreadySelected && (
-        <div className="absolute inset-0 bg-black/20 z-5 pointer-events-none">
-          <div className="absolute inset-0 border-2 border-purple-600 " />
+        <div
+          className="absolute inset-0 bg-black/20 z-20 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Always allow deselection of already selected items
+            onSelect(item.id, false);
+          }}
+        >
+          <div className="absolute inset-0 border-2 border-purple-600 pointer-events-none" />
         </div>
       )}
 
