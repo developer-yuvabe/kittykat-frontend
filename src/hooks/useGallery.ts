@@ -379,6 +379,25 @@ export const useGalleryQuery = (
     }) => galleryService.patchGalleryItem(itemId, data),
 
     onMutate: async ({ itemId, data, revalidateAutofillSuggestions }) => {
+      const galleryQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items"],
+        exact: false,
+      });
+
+      galleryQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+            return prev.map((item) =>
+              item.id === itemId ? { ...item, ...data } : item
+            );
+          }
+        );
+      });
+
       updateAutoFillSuggestionCache(itemId, data.is_favourite!);
 
       const queryKey = getGalleryQueryKey();

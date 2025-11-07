@@ -2,7 +2,12 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
 
-import { BaseApiResponse, ThreadCampaign, ThreadDetails } from "@/types/types";
+import {
+  BaseApiResponse,
+  ThreadCampaign,
+  ThreadCampaignUpdate,
+  ThreadDetails,
+} from "@/types/types";
 import axios from "@/config/axios/api-client.config";
 import { BrandResponse, ThreadFileResponse } from "@/types/brand.types";
 
@@ -118,6 +123,19 @@ export async function updateCampaign(
   // console.log("Updating campaign with data:", campaignData);
   return handleApiRequest<ThreadCampaign>(
     axiosInstance.put(`/brands/${brandId}/campaign/${campaignId}`, campaignData)
+  );
+}
+
+export async function patchCampaign(
+  brandId: string,
+  campaignId: string,
+  campaignData: Partial<ThreadCampaignUpdate>
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.patch(
+      `/brands/${brandId}/campaign/${campaignId}`,
+      campaignData
+    )
   );
 }
 
