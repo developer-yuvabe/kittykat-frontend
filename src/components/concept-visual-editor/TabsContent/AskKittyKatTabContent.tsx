@@ -58,7 +58,10 @@ const AskKittyKatTabContent = ({
 
   const handleVersionUpdate = async (updatedVersion: GalleryItemResponse) => {
     // Use the common revalidation function from galleryActions
-    galleryActions.revalidateGalleryItemVersions(currentAsset.id, updatedVersion);
+    galleryActions.revalidateGalleryItemVersions(
+      currentAsset.id,
+      updatedVersion
+    );
 
     // Update the store's assetItems if the updated version is the current asset
     if (updatedVersion.id === currentAsset.id) {
@@ -417,6 +420,29 @@ const AskKittyKatTabContent = ({
               comments: optimisticComments,
             };
             handleVersionUpdate(updatedVersion);
+            //Check if any tasklist comment is left
+            const hasTasklist = updatedVersion.comments?.some(
+              (c) => c.is_tasklist
+            );
+
+            if (!hasTasklist) {
+              //Reset expert workflow
+              galleryActions.patchItem(
+                {
+                  itemId: currentAssetVersion.id,
+                  data: {
+                    workflow_status: "draft",
+                    sent_to_human_queue: false,
+                  },
+                },
+                {
+                  onSuccess(data) {
+                    handleVersionUpdate(data);
+                    setCurrentAssetVersion(data);
+                  },
+                }
+              );
+            }
             toast.success("Comment deleted");
           },
           onError(error) {
@@ -852,7 +878,9 @@ const AskKittyKatTabContent = ({
             <Button
               onClick={() => handleSubmitComment()}
               disabled={
-                isSubmitting || (!newComment.trim() && attachments.length === 0) || isUploading
+                isSubmitting ||
+                (!newComment.trim() && attachments.length === 0) ||
+                isUploading
               }
               className="bg-purple-600 hover:bg-purple-700"
             >
