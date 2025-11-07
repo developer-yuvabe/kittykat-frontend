@@ -168,7 +168,11 @@ export function CampaignsSidebar({
         title,
         undoSeconds: 3,
         loadingMessage: `Deleting "${title}"...`,
-        action: () => deleteCampaign(selectedBrandId, campaignId),
+        action: async () => {
+          await deleteCampaign(selectedBrandId, campaignId);
+          // Invalidate brands query to refresh the UI
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
         successMessage: `"${title}" deleted successfully.`,
         errorMessage: `Failed to delete "${title}".`,
       });
