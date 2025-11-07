@@ -124,9 +124,6 @@ export function CampaignsSidebar({
     };
   }, [brands, selectedBrandId]);
 
-  //selected brand campaigns for debugging
-  console.log("selected brand campaigns", campaigns);
-
   const filteredCampaigns = useMemo(() => {
     if (!searchQuery.trim()) return campaigns;
     const query = searchQuery.toLowerCase();
@@ -343,16 +340,69 @@ export function CampaignsSidebar({
         return;
       }
 
-      // Only allow reordering within the same section
       const targetIsArchived = section === "archived";
+      const campaignList =
+        section === "active" ? activeCampaigns : archivedCampaigns;
+
+      // Calculate drop position
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const position = e.clientY < midpoint ? "before" : "after";
+
+      // Handle cross-section move (archive/unarchive with position)
       if (isArchived !== targetIsArchived) {
+        const targetIndex = campaignList.findIndex(
+          (c) => c.id === targetCampaignId
+        );
+
+        if (targetIndex === -1) {
+          setReorderTargetId(null);
+          setDropPosition(null);
+          return;
+        }
+
+        // Calculate insert position for the new section
+        let insertPosition = targetIndex;
+        if (position === "after") {
+          insertPosition = targetIndex + 1;
+        }
+
+        // Create new order for target section (inserting the dragged campaign)
+        const reordered = [...campaignList];
+        // Insert placeholder at the calculated position
+        reordered.splice(insertPosition, 0, { id: draggedId } as any);
+
+        // Update the dragged campaign's archive status and position
+        await patchCampaign(selectedBrandId, draggedId, {
+          is_archived: targetIsArchived,
+          position: insertPosition,
+        });
+
+        // Update positions for all other campaigns in the target section
+        const updatePromises = reordered
+          .filter((c) => c.id !== draggedId)
+          .map((campaign, index) => {
+            const actualIndex = index >= insertPosition ? index + 1 : index;
+            return patchCampaign(selectedBrandId, campaign.id, {
+              position: actualIndex,
+            });
+          });
+
+        await Promise.all(updatePromises);
+        await queryClient.invalidateQueries({ queryKey: ["brands"] });
+
+        toast.success(
+          `Campaign moved to ${
+            section === "active" ? "active" : "archived"
+          } campaigns`
+        );
+
         setReorderTargetId(null);
         setDropPosition(null);
         return;
       }
 
-      const campaignList =
-        section === "active" ? activeCampaigns : archivedCampaigns;
+      // Handle same-section reordering
       const draggedIndex = campaignList.findIndex((c) => c.id === draggedId);
       const targetIndex = campaignList.findIndex(
         (c) => c.id === targetCampaignId
@@ -363,11 +413,6 @@ export function CampaignsSidebar({
         setDropPosition(null);
         return;
       }
-
-      // Calculate drop position
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      const position = e.clientY < midpoint ? "before" : "after";
 
       // Create new order
       const reordered = [...campaignList];
