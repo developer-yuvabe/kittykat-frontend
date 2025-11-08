@@ -55,6 +55,7 @@ import {
   handleReferenceImageDrop,
   validateFiles,
   updateReferencesByZone,
+  validateImageUrlsBySize,
 } from "@/lib/reference-image.utils";
 import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
@@ -534,46 +535,82 @@ const A2iImageInput = ({
       return;
     }
 
-    const maxLimit = referenceImagesModelInfo.maxLimit;
-    const totalImages = masterReference.length + productReference.length;
+    const validateAndUpdateReferences = async () => {
+      const maxLimit = referenceImagesModelInfo.maxLimit;
+      const maxSizeMB = referenceImagesModelInfo.maxFileSizeLimit;
 
-    if (totalImages > maxLimit) {
-      const masterKeep = masterReference.slice(0, maxLimit);
-      const productKeep = productReference.slice(
-        0,
-        Math.max(0, maxLimit - masterKeep.length)
+      // First validate size for all existing images
+      const allImages = [...masterReference, ...productReference];
+      const { validUrls, invalidUrls } = await validateImageUrlsBySize(
+        allImages,
+        maxSizeMB
       );
 
-      toast.info(
-        `This model only supports ${maxLimit} image${
-          maxLimit > 1 ? "s" : ""
-        }. Extra images have been removed.`
+      if (invalidUrls.length > 0) {
+        toast.info(
+          `${invalidUrls.length} image(s) removed (exceeds ${maxSizeMB}MB limit)`
+        );
+      }
+
+      // Filter master and product references to keep only valid ones
+      let validMaster = masterReference.filter((url) =>
+        validUrls.includes(url)
+      );
+      let validProduct = productReference.filter((url) =>
+        validUrls.includes(url)
       );
 
-      setMasterReference(masterKeep);
-      setProductReference(productKeep);
+      // Then check count limit
+      const validTotalImages = validMaster.length + validProduct.length;
+      if (validTotalImages > maxLimit) {
+        const masterKeep = validMaster.slice(0, maxLimit);
+        const productKeep = validProduct.slice(
+          0,
+          Math.max(0, maxLimit - masterKeep.length)
+        );
 
-      // Update form value with kept images
-      const keptImages = [...masterKeep, ...productKeep];
-      if (keptImages.length > 0) {
-        const value = maxLimit > 1 ? keptImages : keptImages[0];
-        formInstance.setValue(referenceImagesModelInfo.id, value, {
-          shouldValidate: true,
-          shouldDirty: true,
-          shouldTouch: true,
-        });
-      } else {
-        // Clear form value when no images are kept
+        toast.info(
+          `This model only supports ${maxLimit} image${
+            maxLimit > 1 ? "s" : ""
+          }. Extra images have been removed.`
+        );
+
+        validMaster = masterKeep;
+        validProduct = productKeep;
+      }
+
+      // Update state if anything changed
+      if (
+        validMaster.length !== masterReference.length ||
+        validProduct.length !== productReference.length
+      ) {
+        setMasterReference(validMaster);
+        setProductReference(validProduct);
+
+        // Update form value with kept images
+        const keptImages = [...validMaster, ...validProduct];
+        if (keptImages.length > 0) {
+          const value = maxLimit > 1 ? keptImages : keptImages[0];
+          formInstance.setValue(referenceImagesModelInfo.id, value, {
+            shouldValidate: true,
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+        } else {
+          // Clear form value when no images are kept
+          formInstance.setValue(referenceImagesModelInfo.id, undefined, {
+            shouldValidate: true,
+          });
+        }
+      } else if (validTotalImages === 0) {
+        // Clear form value when all reference images are removed
         formInstance.setValue(referenceImagesModelInfo.id, undefined, {
           shouldValidate: true,
         });
       }
-    } else if (totalImages === 0 && referenceImagesModelInfo) {
-      // Clear form value when all reference images are removed
-      formInstance.setValue(referenceImagesModelInfo.id, undefined, {
-        shouldValidate: true,
-      });
-    }
+    };
+
+    validateAndUpdateReferences();
   }, [
     selectedImageGenerationModel?.id,
     referenceImagesModelInfo,
