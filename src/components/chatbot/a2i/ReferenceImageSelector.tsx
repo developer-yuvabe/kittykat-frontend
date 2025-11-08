@@ -780,7 +780,7 @@ const ReferenceImageSelector = ({
             isSingleMode
               ? "w-[calc(100vw-2rem)] max-w-[650px] mr-3"
               : "w-[1000px]"
-          } max-h-[min(85vh,700px)] p-0 rounded-xl shadow-xl border bg-background overflow-auto overscroll-contain`}
+          }  p-0 rounded-xl max-h-[400px] shadow-xl border bg-background overflow-y-scroll`}
         >
           {isSingleMode ? (
             // Single mode - vertical layout with 3 sections

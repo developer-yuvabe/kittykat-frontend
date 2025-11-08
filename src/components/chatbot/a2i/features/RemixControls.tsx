@@ -740,6 +740,7 @@ const RemixControls = ({
                     onTabChange={setReferencePopoverTab}
                     isMagicEnabled={isMagicEnabled}
                     onToggleMagic={handleToggleMagic}
+                    popoverSide="bottom"
                   />
                 ) : (
                   <Tooltip>
