@@ -198,6 +198,13 @@ const A2iImageInput = ({
     setMasterReference([]);
     setProductReference([]);
     clearReferencePrompt();
+
+    // Clear reference image form value if it exists
+    if (referenceImagesModelInfo?.id) {
+      formInstance.setValue(referenceImagesModelInfo.id, undefined, {
+        shouldValidate: true,
+      });
+    }
   }
 
   // Handle file uploads from OS drag-and-drop
@@ -454,6 +461,11 @@ const A2iImageInput = ({
       const referenceImages: string[] = [];
       referenceImages.push(...masterReference, ...productReference);
 
+      // Clean up any stale reference image data from the form
+      if (referenceImagesModelInfo?.id && data[referenceImagesModelInfo.id]) {
+        delete data[referenceImagesModelInfo.id];
+      }
+
       if (referenceImagesModelInfo && referenceImages.length > 0) {
         data[referenceImagesModelInfo.id] =
           referenceImagesModelInfo.maxLimit > 1
@@ -482,6 +494,13 @@ const A2iImageInput = ({
         setMasterReference([]);
         setProductReference([]);
         clearReferencePrompt();
+
+        // Clear reference image form value if it exists
+        if (referenceImagesModelInfo?.id) {
+          formInstance.setValue(referenceImagesModelInfo.id, undefined, {
+            shouldValidate: true,
+          });
+        }
       }
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {
@@ -543,7 +562,17 @@ const A2iImageInput = ({
           shouldDirty: true,
           shouldTouch: true,
         });
+      } else {
+        // Clear form value when no images are kept
+        formInstance.setValue(referenceImagesModelInfo.id, undefined, {
+          shouldValidate: true,
+        });
       }
+    } else if (totalImages === 0 && referenceImagesModelInfo) {
+      // Clear form value when all reference images are removed
+      formInstance.setValue(referenceImagesModelInfo.id, undefined, {
+        shouldValidate: true,
+      });
     }
   }, [
     selectedImageGenerationModel?.id,
