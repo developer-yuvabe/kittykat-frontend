@@ -523,17 +523,56 @@ const RemixControls = ({
   };
 
   useEffect(() => {
-    // Clean up when model changes
-    setMasterReference([]);
-    setProductReference([]);
-    if (referenceImageParam) {
-      form.setValue(referenceImageParam.id, null, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
+    // Handle model changes - only clear if new model doesn't support reference images
+    if (!referenceImageParam) {
+      if (currentImageCount > 0) {
+        toast.info(
+          "This model doesn't support reference images. Uploaded images have been removed."
+        );
+      }
+      setMasterReference([]);
+      setProductReference([]);
+      return;
     }
-  }, [selectedRemixModel?.id]);
+
+    const maxLimit = referenceImageParam.maxLimit;
+    const totalImages = masterReference.length + productReference.length;
+
+    if (totalImages > maxLimit) {
+      const masterKeep = masterReference.slice(0, maxLimit);
+      const productKeep = productReference.slice(
+        0,
+        Math.max(0, maxLimit - masterKeep.length)
+      );
+
+      toast.info(
+        `This model only supports ${maxLimit} image${
+          maxLimit > 1 ? "s" : ""
+        }. Extra images have been removed.`
+      );
+
+      setMasterReference(masterKeep);
+      setProductReference(productKeep);
+
+      // Update form value with kept images
+      const keptImages = [...masterKeep, ...productKeep];
+      if (keptImages.length > 0) {
+        const value = maxLimit > 1 ? keptImages : keptImages[0];
+        form.setValue(referenceImageParam.id, value, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }
+    }
+  }, [
+    selectedRemixModel?.id,
+    referenceImageParam,
+    masterReference.length,
+    productReference.length,
+    form,
+    currentImageCount,
+  ]);
 
   const value = form.watch("max_images");
   const numberOfReferenceImagesUploaded = currentImageCount;

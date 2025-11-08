@@ -243,7 +243,7 @@ export function MediaLibrary({
           });
         }
       } catch {
-        toast.error("Failed to fetch gallery item.");
+        toast.error("Gallery item not found.");
       } finally {
         // Clear the galleryItemId from URL after opening
         setGalleryItemId(null);
