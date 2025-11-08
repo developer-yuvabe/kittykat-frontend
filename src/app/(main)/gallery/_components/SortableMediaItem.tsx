@@ -5,12 +5,17 @@ import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { GalleryItemResponse } from "@/types/gallery.types";
+import type {
+  GalleryItemResponse,
+  GalleryDragPayload,
+} from "@/types/gallery.types";
 import { MediaOverlay } from "./MediaOverlay";
 import { MediaImage } from "./MediaImage";
 import { GalleryActions } from "@/hooks/useGallery";
 import { ImageModal } from "@/components/shared/ImageModal";
 import { handleDownloadImage } from "@/lib/utils";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { toast } from "sonner";
 
 // Types
 interface SortableMediaItemProps {
@@ -31,6 +36,9 @@ interface SortableMediaItemProps {
   onEditClick: (item: GalleryItemResponse) => void;
   onEditMoodboard?: (item: GalleryItemResponse) => void;
   isDraggable: boolean;
+  // New props for drag-to-move functionality
+  selectedItems?: string[]; // IDs of selected items
+  enableDragToMove?: boolean; // Enable drag-to-move (vs drag-to-reorder)
 }
 
 // Main SortableMediaItem Component
@@ -52,6 +60,8 @@ export function SortableMediaItem({
   onEditClick,
   onEditMoodboard,
   isDraggable,
+  selectedItems = [],
+  enableDragToMove = false,
 }: SortableMediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
@@ -66,7 +76,7 @@ export function SortableMediaItem({
     isDragging,
   } = useSortable({
     id: item.id,
-    disabled: !isDraggable,
+    disabled: !isDraggable, // Enable dnd-kit when isDraggable is true
   });
 
   const style = {
@@ -75,7 +85,54 @@ export function SortableMediaItem({
   };
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
-  const isDisabled = isAlreadySelected && isMultiSelect;
+
+  // Check if max selection has been reached
+  const hasReachedMax =
+    typeof selectedCount === "number" &&
+    typeof maxSelectionCount === "number" &&
+    selectedCount >= maxSelectionCount;
+
+  // Can't select new items if max reached, but can always deselect
+  const canSelect = !hasReachedMax || isSelected || isAlreadySelected;
+
+  // Handle HTML5 drag start for drag-to-move functionality
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!enableDragToMove) return;
+
+    // Determine which items to include in the drag payload
+    let itemsToDrag: string[];
+    if (isSelected && selectedItems.length > 0) {
+      // If this item is part of the selection, drag all selected items
+      itemsToDrag = selectedItems;
+    } else {
+      // Otherwise, drag only this item
+      itemsToDrag = [item.id];
+    }
+
+    const payload: GalleryDragPayload = {
+      itemIds: itemsToDrag,
+      sourceBrandId: item.brand_id,
+      sourceCampaignId: item.campaign_id || null,
+      isArchived: item.is_archived || false,
+    };
+
+    // Set the drag data using a custom MIME type
+    e.dataTransfer.setData("application/gallery-drag", JSON.stringify(payload));
+    e.dataTransfer.effectAllowed = "move";
+
+    // Optional: Set drag image to show count if multiple items
+    if (itemsToDrag.length > 1) {
+      const dragImage = document.createElement("div");
+      dragImage.className =
+        "bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg font-medium";
+      dragImage.textContent = `Moving ${itemsToDrag.length} items`;
+      dragImage.style.position = "absolute";
+      dragImage.style.top = "-1000px";
+      document.body.appendChild(dragImage);
+      e.dataTransfer.setDragImage(dragImage, 0, 0);
+      setTimeout(() => document.body.removeChild(dragImage), 0);
+    }
+  };
 
   const handleImageLoad = (event: any) => {
     const target = event.target as HTMLImageElement;
@@ -87,10 +144,37 @@ export function SortableMediaItem({
   };
 
   const handleImageClick = () => {
-    if (isMediaSelectDialog && !isDisabled) {
-      onSelect(item.id, !isSelected);
+    if (isMediaSelectDialog) {
+      // Allow deselection for already selected items
+      if (isAlreadySelected) {
+        onSelect(item.id, false);
+      }
+      // Allow toggling if item is currently selected
+      else if (isSelected) {
+        onSelect(item.id, false);
+      }
+      // Only allow selection if we haven't reached max
+      else if (canSelect) {
+        onSelect(item.id, true);
+      }
+      // Show toast if max limit reached
+      else if (hasReachedMax) {
+        toast.warning(
+          `Maximum selection limit reached (${maxSelectionCount} items)`,
+          {
+            description: "Please deselect an item before selecting a new one.",
+          }
+        );
+      }
     } else if (!isMediaSelectDialog) {
-      setShowImageModal(true); // Show ImageModal instead of details
+      // If any items are selected, enable easy selection mode
+      if (selectedCount && selectedCount > 0) {
+        // Toggle selection for the clicked item
+        onSelect(item.id, !isSelected);
+      } else {
+        // No items selected, show image modal
+        setShowImageModal(true);
+      }
     }
   };
 
@@ -99,10 +183,20 @@ export function SortableMediaItem({
     setShowImageModal(true);
   };
 
-  const aspectRatio = dimensions.width / dimensions.height || 1;
+  const { thumbnailShape } = useGalleryFilterStore();
+
+  // console.log("Thumbnail Shape:", thumbnailShape);
+
+  const aspectRatio =
+    thumbnailShape === "dynamic"
+      ? dimensions.width / dimensions.height || 1
+      : 1;
   const skeletonHeight = item.dimensions?.height
     ? Math.min(item.dimensions.height / 4, 400)
     : Math.floor(Math.random() * 200) + 200;
+
+  // Enable easy selection mode when items are selected (even in regular gallery)
+  const isEasySelectionMode = selectedCount && selectedCount > 0;
 
   return (
     <div
@@ -110,13 +204,17 @@ export function SortableMediaItem({
       style={style}
       className={`mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
         isDragging ? "opacity-50 z-50" : ""
-      } ${isMediaSelectDialog && !isDisabled ? "cursor-pointer" : ""}`}
+      } ${isMediaSelectDialog || isEasySelectionMode ? "cursor-pointer" : ""}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      // Don't attach dnd-kit attributes here - only on drag handle
+      draggable={enableDragToMove && !isMediaSelectDialog} // HTML5 drag for moving to campaigns
+      onDragStart={enableDragToMove ? handleDragStart : undefined}
       onClick={
-        isMediaSelectDialog && !isDisabled ? handleImageClick : undefined
+        isMediaSelectDialog || isEasySelectionMode
+          ? handleImageClick
+          : undefined
       }
-      {...(isDraggable ? attributes : {})}
     >
       {!isLoaded && (
         <div className="w-full">
@@ -147,6 +245,7 @@ export function SortableMediaItem({
               });
             }}
             isMediaSelectDialog={isMediaSelectDialog}
+            isEasySelectionMode={!!isEasySelectionMode}
           />
         </div>
 
@@ -157,7 +256,6 @@ export function SortableMediaItem({
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
           isAlreadySelected={isAlreadySelected}
-          isDisabled={isDisabled}
           isMultiSelectMode={isMultiSelect}
           maxSelectionCount={maxSelectionCount}
           selectedCount={selectedCount}
@@ -179,11 +277,14 @@ export function SortableMediaItem({
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
         )}
 
-        {/* Drag handle for non-dialog mode - same style as A2iImageCard */}
+        {/* Drag handle for reordering - only works when orderBy is manual */}
         {isDraggable && !isMediaSelectDialog && isHovered && (
           <div
             {...listeners}
-            className="w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-20 opacity-60 hover:opacity-100"
+            {...attributes}
+            className="w-16 h-1 bg-white rounded-full cursor-grab active:cursor-grabbing hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-20 opacity-60 hover:opacity-100"
+            draggable={false} // Prevent HTML5 drag on the handle
+            onDragStart={(e) => e.preventDefault()} // Block HTML5 drag
           />
         )}
       </div>

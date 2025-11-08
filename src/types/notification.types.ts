@@ -1,6 +1,7 @@
 export interface AssetNotificationItem {
   gallery_item_id: string;
-  image_url: string;
+  image_url?: string;
+  video_url?: string;
   status: string;
   updated_at: string;
   is_read: boolean;

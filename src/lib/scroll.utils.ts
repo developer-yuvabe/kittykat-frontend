@@ -1,30 +1,17 @@
 /**
  * Scrolls to the bottom of the chat container with smooth behavior
- * Tries multiple selector approaches to ensure compatibility
+ * Uses unique ID for reliable targeting - only scrolls the chat panel, not other panels
  * @param delay - Optional delay before scrolling (default: 100ms)
  */
 export const scrollToBottom = (delay: number = 100): void => {
   setTimeout(() => {
-    // Try multiple approaches to ensure scroll happens
-    const chatContainer = document.querySelector('[class*="StickToBottom"]');
-    const scrollContainer = document.querySelector(
-      '[class*="overflow-y-scroll"]'
+    const chatScrollContainer = document.getElementById(
+      "chat-panel-scroll-container"
     );
 
-    if (chatContainer) {
-      chatContainer.scrollTo({
-        top: chatContainer.scrollHeight,
-        behavior: "smooth",
-      });
-    } else if (scrollContainer) {
-      scrollContainer.scrollTo({
-        top: scrollContainer.scrollHeight,
-        behavior: "smooth",
-      });
-    } else {
-      // Fallback: scroll the window
-      window.scrollTo({
-        top: document.body.scrollHeight,
+    if (chatScrollContainer) {
+      chatScrollContainer.scrollTo({
+        top: chatScrollContainer.scrollHeight,
         behavior: "smooth",
       });
     }

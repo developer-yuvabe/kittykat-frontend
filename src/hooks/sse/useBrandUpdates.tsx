@@ -1,6 +1,6 @@
 import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
-import { ThreadDetails, ThreadCampaign } from "@/types/types";
+import { ThreadDetails } from "@/types/types";
 import { useEffect, useRef } from "react";
 import { useVideoGenStore } from "@/store/video-gen.store";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
-  const previousCampaignInfo = useRef<ThreadCampaign[] | undefined>(undefined);
+  const previousCampaignCount = useRef<number>(0);
   const { setGenerations } = useVideoGenStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
@@ -29,23 +29,23 @@ export function useBrandUpdates() {
     eventSource.addEventListener("brand_info", (event) => {
       const parsed: ThreadDetails = JSON.parse(event.data);
 
-      // Check for campaign_information change
-      const newCampaign = JSON.stringify(parsed.campaign_information || []);
-      const prevCampaign = JSON.stringify(previousCampaignInfo.current || []);
+      // Check for new campaign by comparing count
+      const currentCount = parsed.campaign_information?.length || 0;
+      const hasNewCampaign = currentCount > previousCampaignCount.current;
 
-      if (newCampaign !== prevCampaign) {
+      if (hasNewCampaign) {
         queryClient.invalidateQueries({ queryKey: ["brands"] });
         setIsCampaignCreating(false); // <-- mark creation as done
 
         const latestCreatedCampaign = parsed.campaign_information?.at(-1);
 
         // Allow auto-select only on the main dashboard page for realtime updates
-        if (latestCreatedCampaign && window.location.pathname == "/") {
+        if (latestCreatedCampaign && window.location.pathname === "/") {
           setSelectedCampaignId(latestCreatedCampaign.id);
         }
       }
 
-      previousCampaignInfo.current = parsed.campaign_information;
+      previousCampaignCount.current = currentCount;
       setIsFetchingBrandInfo(false);
       setData(parsed);
 
@@ -65,7 +65,7 @@ export function useBrandUpdates() {
       eventSource.close();
       setIsFetchingBrandInfo(true);
       setData(null);
-      previousCampaignInfo.current = undefined;
+      previousCampaignCount.current = 0;
     };
   }, [selectedBrandId]);
 }

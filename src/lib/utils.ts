@@ -449,3 +449,14 @@ export const convertParameterValue = (
 
   return value;
 };
+
+const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|mkv|avi)$/i;
+
+/**
+ * Returns true if URL looks like a video
+ * Defaults to false (image)
+ */
+export function isVideoUrl(url?: string): boolean {
+  if (!url) return false; // ✅ default = image
+  return VIDEO_EXTENSIONS.test(url);
+}

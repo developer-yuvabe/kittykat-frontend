@@ -1,34 +1,22 @@
 import { Button } from "@/components/ui/button";
-import {
-  LoaderCircle,
-  X,
-  FileText as FileTextIcon,
-  Mic,
-  Check,
-} from "lucide-react";
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-} from "react";
+import { LoaderCircle, X, Mic, Check, Paperclip, Images } from "lucide-react";
+import React, { useState, useCallback, useLayoutEffect, useRef } from "react";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import {
-  getFileIcon,
   addFileWrappers,
   removeFileWrappers,
   getPinnedItemContextMessage,
   ensureToolCallsHaveResponses,
 } from "@/lib/langgraph.utils";
-import { scrollToBottom } from "@/lib/scroll.utils"; // Import your utility function
+import { scrollToBottom } from "@/lib/scroll.utils";
 import { usePinnedContextStore } from "@/store/usePinnedContextStore";
 import { MessageContentFiles } from "@/types/langgraph.types";
 import { PinIcon, SendIcon } from "../ui/custom-icon";
 import { ChatFilePreview } from "./ChatFilePreview";
-import { FileUploadPopover } from "./FileUploadPopover";
 import { useFileUpload } from "@/hooks/useFileUploadToAgent";
-
+import { useChatInputImageHandler } from "@/hooks/useChatInputImageHandler";
+import ReferenceImageSelector from "./a2i/ReferenceImageSelector";
+import { ReferenceZone } from "./a2i/ReferenceZone";
 import { Message } from "@langchain/langgraph-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { useUserStore } from "@/store/user.store";
@@ -44,61 +32,18 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import AgentPdfAttachmentUploader from "./AgentPdfAttachmentUploader";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
+import { ChatInputFileThumbnail } from "./ChatInputFileThumbnail";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
 };
 
-const FileThumbnail = ({
-  url,
-  onRemove,
-  name,
-}: {
-  url: string;
-  onRemove: () => void;
-  name: string;
-}) => {
-  const [FileIcon, setFileIcon] = useState<React.ElementType>(
-    () => FileTextIcon
-  );
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchIcon = async () => {
-      setLoading(true);
-      const icon = await getFileIcon(url);
-      setFileIcon(() => icon);
-      setLoading(false);
-    };
-    fetchIcon();
-  }, [url]);
-
-  return (
-    <div className="relative group w-16 h-16">
-      {loading ? (
-        <LoaderCircle className="w-8 h-8 animate-spin text-gray-400" />
-      ) : (
-        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-          <FileIcon className="w-8 h-8 text-gray-500" />
-          <div className="absolute bottom-0 left-0 right-0 text-xs text-center text-gray-500 truncate">
-            {name}
-          </div>
-        </div>
-      )}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <X className="w-3 h-3" />
-      </button>
-    </div>
-  );
-};
-
 export const ChatInput: React.FC<ChatInputProps> = ({
   setFirstTokenReceived,
 }) => {
+  const { selectedImageGenerationModel } = useModelsStore();
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
@@ -113,10 +58,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   );
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null); // NEW
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const wasCancelledRef = useRef(false);
   const [, setPermissionDenied] = useState(false);
   const [showMicPermissionDialog, setShowMicPermissionDialog] = useState(false);
+
+  // Reference images state
+  const [referenceImages, setReferenceImages] = useState<string[]>([]);
+  const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
   // Request microphone permission
   const requestMicrophonePermission = async () => {
     try {
@@ -217,12 +166,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const {
     contentBlocks,
     setContentBlocks,
-    handleFileUpload,
     dropRef,
     removeBlock,
-    handlePaste,
-    isUploading,
-  } = useFileUpload({ brandId: user?.thread_id || "" });
+    isUploading: isPdfUploading,
+  } = useFileUpload({
+    brandId: user?.thread_id || "",
+    onImageFilesDropped: async (files: File[]) => {
+      // Handle dropped image files using the image handler
+      await handleImageFiles(files);
+    },
+  });
+
+  // Image paste handler only (drag-and-drop now handled by useFileUpload)
+  const { isUploading: isImageUploading, handleImageFiles } =
+    useChatInputImageHandler({
+      brandId: selectedBrandId,
+      referenceImages,
+      onReferenceImagesChange: setReferenceImages,
+      maxTotalSizeMB: 50,
+      maxFileSizeLimit: 10,
+      allowedFileTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+      maxImageCount: 10,
+    });
+
+  const isUploading = isPdfUploading || isImageUploading;
 
   const handleAddFile = useCallback((url: string) => {
     addFileWrappers(url, setFileList);
@@ -238,10 +205,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const resetFiles = useCallback(() => {
     setFileList([]);
     setContentBlocks([]);
+    setReferenceImages([]);
   }, [setContentBlocks]);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!input.trim() || isLoading) return;
 
@@ -262,6 +230,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               : input.trimEnd(),
           },
           ...contentBlocks,
+          // Add reference images as image_url content blocks
+          ...referenceImages.map((url) => ({
+            type: "image_url" as const,
+            image_url: { url },
+          })),
         ] as Message["content"],
       };
 
@@ -288,6 +261,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           previousBrandContextId: stream.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,
+          currentSelectedImageGenerationModelId:
+            selectedImageGenerationModel?.id ?? null,
+          userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
           streamMode: ["values"],
@@ -302,7 +278,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       setInput("");
       resetFiles();
 
-      // Scroll to bottom after sending message using your utility function
+      // Scroll chat panel to bottom after sending message
       scrollToBottom(100);
     },
     [
@@ -312,10 +288,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       pinnedItem,
       contentBlocks,
       fileList,
+      referenceImages,
       resetFiles,
       stream,
       user,
       selectedBrandId,
+      selectedCampaignId,
+      selectedMoodboardId,
+      selectedImageGenerationModel?.id,
     ]
   );
 
@@ -373,7 +353,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               fileWrapper.id.startsWith(RENDER_FILE_ID_PREFIX)
             )
             .map((fileWrapper) => (
-              <FileThumbnail
+              <ChatInputFileThumbnail
                 key={fileWrapper.id}
                 url={fileWrapper.file.text}
                 onRemove={() => handleRemoveFile(fileWrapper.id)}
@@ -391,6 +371,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         className="flex flex-col gap-2 w-full rounded-t-xl"
       >
         <ChatFilePreview blocks={contentBlocks} onRemove={removeBlock} />
+
+        {/* Reference Zone - Show when there are references and popover is closed */}
+        {referenceImages.length > 0 && !isReferencePopoverOpen && (
+          <div className="px-4 pt-3">
+            <ReferenceZone
+              type="master"
+              icon={Paperclip}
+              title="Reference Images"
+              description="Attached reference images"
+              images={referenceImages}
+              isSelected={false}
+              onClick={() => setIsReferencePopoverOpen(true)}
+              onDrop={(e: React.DragEvent) => e.preventDefault()}
+              onDragStart={(e: React.DragEvent, url: string) => {
+                e.dataTransfer.setData("assetUrl", url);
+                e.dataTransfer.setData("source", "master");
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onRemoveImage={(url: string) => {
+                setReferenceImages(referenceImages.filter((u) => u !== url));
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex flex-row justify-between items-center p-6">
           {!(isRecording || isTranscribing) ? (
             <textarea
@@ -414,7 +419,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 showPlaceholder ? "Type your message here..." : "Type here..."
               }
               className="p-2 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 overflow-auto scrollbar"
-              onPaste={handlePaste}
             />
           ) : (
             <div className="w-full h-16 p-4 rounded-lg flex items-center justify-center space-x-1 overflow-hidden ">
@@ -465,9 +469,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </div>
             ) : (
               <>
-                <FileUploadPopover
-                  isFileUploading={isUploading}
-                  handleAddFiles={handleFileUpload}
+                <ReferenceImageSelector
+                  referenceImages={referenceImages}
+                  onReferenceImagesChange={setReferenceImages}
+                  maxLimit={10}
+                  fileTypes={[
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp",
+                    "image/gif",
+                  ]}
+                  maxFileSizeLimit={10}
+                  maxTotalSizeMB={50}
+                  disabled={isLoading || isUploading}
+                  currentCampaignId={selectedCampaignId}
+                  isOpen={isReferencePopoverOpen}
+                  onOpenChange={setIsReferencePopoverOpen}
+                  customTrigger={<Images size={20} className="text-primary" />}
                 />
                 <AgentPdfAttachmentUploader onUploadComplete={handleAddFile} />
                 <button

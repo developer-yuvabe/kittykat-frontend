@@ -56,6 +56,7 @@ const MainLayout = ({
       thread_id: userProfile.thread_id,
       role: userProfile.role,
       is_default_admin: userProfile.is_default_admin,
+      user_preferences: userProfile.user_preferences,
     });
   }, [userProfile]);
 

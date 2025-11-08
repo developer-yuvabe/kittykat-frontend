@@ -10,6 +10,8 @@ import { Agents } from "@/types/types";
 import React from "react";
 import { DisplayField } from "../DisplayField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 interface MoodboardOverviewOverviewProps {
   title?: string;
@@ -24,11 +26,12 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
   tone = [],
 }) => {
   const stream = useStreamContext();
+  const { selectedImageGenerationModel } = useModelsStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
 
-  const handleFieldUpdate = (
+  const handleFieldUpdate = async (
     fieldPath: string,
     oldValue: any,
     newVal: any,
@@ -55,6 +58,9 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }
   };

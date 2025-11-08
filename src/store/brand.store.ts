@@ -58,6 +58,7 @@ type Store = {
   // This is to remember the last selected brand when user tries to create a new brand and then cancels it
   previousSelectedBrandId: string | null;
   setPreviousSelectedBrandId: (brandId: string | null) => void;
+  removeCampaign: (brandId: string, campaignId: string) => void;
 };
 
 export const useBrandStore = create<Store>((set, get) => ({
@@ -82,9 +83,60 @@ export const useBrandStore = create<Store>((set, get) => ({
       campaigns: [...state.campaigns, campaign],
     })),
   removeBrand: (brandId: string) =>
-    set((state) => ({
-      brands: state.brands.filter((brand) => brand.id !== brandId),
-    })),
+    set((state) => {
+      const brandToRemove = state.brands.find((b) => b.id === brandId);
+
+      // Filter out campaigns belonging to this brand
+      const updatedCampaigns = state.campaigns.filter(
+        (campaign) =>
+          !brandToRemove?.campaigns.some((c) => c.id === campaign.id)
+      );
+
+      return {
+        brands: state.brands.filter((brand) => brand.id !== brandId),
+        campaigns: updatedCampaigns,
+        // Clear selections if deleted brand was selected
+        selectedBrandId:
+          state.selectedBrandId === brandId ? null : state.selectedBrandId,
+        selectedCampaignId:
+          state.selectedBrandId === brandId ? null : state.selectedCampaignId,
+      };
+    }),
+
+  removeCampaign: (brandId: string, campaignId: string) => {
+    set((state) => {
+      const updatedBrands = state.brands.map((brand) => {
+        if (brand.id === brandId) {
+          return {
+            ...brand,
+            campaigns: brand.campaigns.filter((c) => c.id !== campaignId),
+          };
+        }
+        return brand;
+      });
+
+      const selectedBrand = updatedBrands.find(
+        (b) => b.id === state.selectedBrandId
+      );
+      const remainingCampaigns = selectedBrand?.campaigns || [];
+
+      // Return new state with cleared selection if no campaigns**
+      if (remainingCampaigns.length === 0) {
+        return {
+          ...state,
+          brands: updatedBrands,
+          campaigns: [],
+          selectedCampaignId: null, // Clear immediately
+        };
+      }
+
+      return {
+        ...state,
+        brands: updatedBrands,
+        campaigns: remainingCampaigns,
+      };
+    });
+  },
 
   campaigns: [],
   setCampaigns: (campaigns: UserBrand["campaigns"]) => set({ campaigns }),
@@ -104,8 +156,8 @@ export const useBrandStore = create<Store>((set, get) => ({
 
       // Reset campaign selection when brand changes
       const isBrandChanging = state.selectedBrandId !== brandId;
-      
-      return { 
+
+      return {
         selectedBrandId: brandId,
         // Clear campaign selection when switching brands
         selectedCampaignId: isBrandChanging ? null : state.selectedCampaignId,

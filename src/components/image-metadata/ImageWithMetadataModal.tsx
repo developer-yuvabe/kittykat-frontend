@@ -21,7 +21,7 @@ import { generateImage } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import { toast } from "sonner";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useModelsStore } from "@/store/models.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { upscaleImage } from "@/services/api/upscale.service";
@@ -68,6 +68,7 @@ const ImageWithMetadataModal = ({
   source,
 }: ImageWithMetadataModalProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { setParameters } = useMetadataActionsStore();
   const [loading, setLoading] = useState({
     manualAuto: false,
@@ -150,6 +151,9 @@ const ImageWithMetadataModal = ({
           paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
         ),
         source_asset_id: galleryItem.id,
+        // Preserve product_reference_images if they exist
+        product_reference_images:
+          data.parameters.product_reference_images || undefined,
       });
 
       onClose();
@@ -180,56 +184,42 @@ const ImageWithMetadataModal = ({
       setSelectedImageGenerationModel(model);
 
       const parameters = data.parameters;
+      const productReferenceImages = parameters.product_reference_images || [];
 
-      // Ensure that refernce images are different files rather than the related urls
+      // Get reference images parameter ID
       const referneceImagesParamId = model.parameters.find(
         (p) => p.type === "file"
       );
 
       let modifiedParameters = { ...parameters };
 
-      if (referneceImagesParamId) {
+      // Instead of re-uploading, we reuse the existing URLs directly
+      // This maintains the connection with gallery items
+      if (referneceImagesParamId && parameters[referneceImagesParamId.id]) {
         const refImageOrImages = parameters[referneceImagesParamId.id];
 
-        if (Array.isArray(refImageOrImages)) {
-          const uploadedUrls = [];
-          for (const imgUrl of refImageOrImages) {
-            const file = await urlToFile(imgUrl);
-            const url = await uploadFileAndReturnUrl(
-              file.name,
-              file.type,
-              "brands",
-              file,
-              selectedBrandId
-            );
-            uploadedUrls.push(url);
-          }
-
-          modifiedParameters = {
-            ...modifiedParameters,
-            [referneceImagesParamId.id]: uploadedUrls,
-          };
-        } else if (typeof refImageOrImages === "string") {
-          const file = await urlToFile(refImageOrImages);
-          const url = await uploadFileAndReturnUrl(
-            file.name,
-            file.type,
-            "brands",
-            file,
-            selectedBrandId
-          );
-
-          modifiedParameters = {
-            ...modifiedParameters,
-            [referneceImagesParamId.id]: url,
-          };
-        }
+        // Keep the reference images as-is (don't re-upload)
+        modifiedParameters = {
+          ...modifiedParameters,
+          [referneceImagesParamId.id]: refImageOrImages,
+        };
       }
 
       setParameters("imageGeneationParameters", modifiedParameters);
 
+      // Set product reference images separately to maintain categorization
+      if (productReferenceImages && productReferenceImages.length > 0) {
+        setParameters("productReferenceImages", productReferenceImages);
+      } else {
+        setParameters("productReferenceImages", null);
+      }
+
       onClose();
-      router.push("/?scrollTo=a2i-input");
+
+      // Only navigate to home page if not already there
+      if (pathname !== "/") {
+        router.push("/?scrollTo=a2i-input");
+      }
 
       toast.info("Pre Selected Model and its parameters have been set.");
     } catch (error) {
@@ -352,7 +342,12 @@ const ImageWithMetadataModal = ({
       setParameters("referenceImage", url);
 
       onClose();
-      router.push("/?scrollTo=a2i-input");
+
+      // Only navigate to home page if not already there
+      if (pathname !== "/") {
+        router.push("/?scrollTo=a2i-input");
+      }
+
       toast.info("Pre Selected Model and Reference Image have been set.");
     } catch (error) {
       console.log(error);

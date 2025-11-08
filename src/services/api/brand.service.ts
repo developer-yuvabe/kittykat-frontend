@@ -2,7 +2,12 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
 
-import { BaseApiResponse, ThreadCampaign, ThreadDetails } from "@/types/types";
+import {
+  BaseApiResponse,
+  ThreadCampaign,
+  ThreadCampaignUpdate,
+  ThreadDetails,
+} from "@/types/types";
 import axios from "@/config/axios/api-client.config";
 import { BrandResponse, ThreadFileResponse } from "@/types/brand.types";
 
@@ -115,8 +120,22 @@ export async function updateCampaign(
   campaignId: string,
   campaignData: Partial<ThreadCampaign>
 ): Promise<ThreadCampaign> {
+  // console.log("Updating campaign with data:", campaignData);
   return handleApiRequest<ThreadCampaign>(
     axiosInstance.put(`/brands/${brandId}/campaign/${campaignId}`, campaignData)
+  );
+}
+
+export async function patchCampaign(
+  brandId: string,
+  campaignId: string,
+  campaignData: Partial<ThreadCampaignUpdate>
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.patch(
+      `/brands/${brandId}/campaign/${campaignId}`,
+      campaignData
+    )
   );
 }
 
@@ -129,6 +148,16 @@ export async function updateCampaignName(
     campaign: { title },
   });
 }
+
+export async function deleteCampaign(
+  brandId: string,
+  campaignId: string
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.delete(`/brands/${brandId}/campaign/${campaignId}`)
+  );
+}
+
 export async function addDeprioritizedIds(
   brandId: string,
   campaignId: string,
@@ -150,4 +179,11 @@ export async function addDeprioritizedIds(
       }
     )
   );
+}
+/**
+ * Delete a brand permanently (Admin only).
+ * Cascade deletes all campaigns and moodboards.
+ */
+export async function deleteBrand(brandId: string): Promise<void> {
+  return handleApiRequest<void>(axiosInstance.delete(`/brands/${brandId}`));
 }

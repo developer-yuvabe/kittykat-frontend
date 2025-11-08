@@ -1,10 +1,9 @@
 import { Checkpoint } from "@langchain/langgraph-sdk";
-import React, { Dispatch, SetStateAction, useCallback, useMemo } from "react";
+import React, { Dispatch, SetStateAction, useMemo } from "react";
 import { HumanMessage } from "../thread/messages/human";
 import { AssistantMessage } from "../thread/messages/ai";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/constants";
 import { useStreamContext } from "@/providers/langgraph/Stream";
-import { parseAsBoolean, useQueryState } from "nuqs";
 import { AssistantMessageLoader } from "../thread/messages/AssistantMessageLoader";
 
 type ChatMessageListProps = {
@@ -18,12 +17,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
   setFirstTokenReceived,
   prevMessageLength,
 }) => {
-  const [hideToolCalls] = useQueryState(
-    "hideToolCalls",
-    parseAsBoolean.withDefault(true)
-  );
-
-  const { messages, isLoading, interrupt, values, submit } = useStreamContext();
+  const { messages, isLoading, interrupt, submit } = useStreamContext();
 
   const handleRegenerate = (
     parentCheckpoint: Checkpoint | null | undefined
@@ -46,18 +40,6 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
   const hasNoAIOrToolMessages = useMemo(() => {
     return !messages.some((m) => m.type === "ai" || m.type === "tool");
   }, [messages]);
-
-  const agentIndicator = useMemo(() => {
-    if (hideToolCalls) return null;
-
-    return (
-      <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg w-max">
-        <h3 className="text-gray-900 text-sm">
-          Agent Triggered: <span className="font-semibold">{values.next}</span>
-        </h3>
-      </div>
-    );
-  }, [hideToolCalls, values.next]);
 
   return (
     <>
@@ -86,8 +68,6 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
       )}
 
       {isLoading && !firstTokenReceived && <AssistantMessageLoader />}
-
-      {agentIndicator}
     </>
   );
 };

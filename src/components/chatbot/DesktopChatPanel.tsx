@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import AgentDebug from "./AgentDebug";
 
 interface DesktopChatPanelProps {
   layoutConfig: any;
@@ -130,6 +131,8 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                     </TooltipProvider>
                   </div>
 
+                  <AgentDebug className="absolute top-4 right-4 z-20" />
+
                   <StickToBottom className="relative justify-end flex-1 rounded-2xl bg-[#F3F4F6]">
                     {false ? (
                       <div
@@ -149,6 +152,7 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                       </div>
                     ) : (
                       <StickyToBottomContent
+                        id="chat-panel-scroll-container"
                         className={cn(
                           "absolute inset-0 overflow-y-scroll scrollbar",
                           layoutConfig.contentPadding,
@@ -156,8 +160,7 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                             cn(
                               "flex flex-col items-stretch",
                               layoutConfig.marginTop
-                            ),
-                          chatStarted && "grid grid-rows-[1fr_auto]"
+                            )
                         )}
                         contentClassName={cn(
                           layoutConfig.contentPaddingTop,
