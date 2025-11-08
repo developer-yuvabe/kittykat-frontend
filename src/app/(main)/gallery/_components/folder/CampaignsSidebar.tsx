@@ -165,6 +165,13 @@ export function CampaignsSidebar({
     const title = deleteDialog.campaignTitle;
     const campaignId = deleteDialog.campaignId;
 
+    setDeleteDialog({
+      open: false,
+      campaignId: "",
+      campaignTitle: "",
+      isDeleting: false,
+    });
+
     try {
       await execute({
         title,
@@ -177,13 +184,6 @@ export function CampaignsSidebar({
         },
         successMessage: `"${title}" deleted successfully.`,
         errorMessage: `Failed to delete "${title}".`,
-      });
-
-      setDeleteDialog({
-        open: false,
-        campaignId: "",
-        campaignTitle: "",
-        isDeleting: false,
       });
     } catch {
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
@@ -198,10 +198,18 @@ export function CampaignsSidebar({
     const title = archiveDialog.campaignTitle;
     const campaignId = archiveDialog.campaignId;
 
+    setArchiveDialog({
+      open: false,
+      campaignId: "",
+      campaignTitle: "",
+      isArchived: false,
+      isProcessing: false,
+    });
+
     try {
       await execute({
         title,
-        undoSeconds: 4,
+        undoSeconds: 3,
         loadingMessage: `${
           shouldBeArchived ? "Archiving" : "Unarchiving"
         } "${title}"...`,
@@ -218,14 +226,6 @@ export function CampaignsSidebar({
         errorMessage: `Failed to ${
           shouldBeArchived ? "archive" : "unarchive"
         } "${title}".`,
-      });
-
-      setArchiveDialog({
-        open: false,
-        campaignId: "",
-        campaignTitle: "",
-        isArchived: false,
-        isProcessing: false,
       });
     } catch {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
@@ -557,7 +557,7 @@ export function CampaignsSidebar({
       try {
         await execute({
           title,
-          undoSeconds: 4,
+          undoSeconds: 3,
           loadingMessage: `${
             shouldBeArchived ? "Archiving" : "Unarchiving"
           } "${title}"...`,

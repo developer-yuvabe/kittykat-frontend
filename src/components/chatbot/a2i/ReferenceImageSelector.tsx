@@ -754,7 +754,7 @@ const ReferenceImageSelector = ({
 
   return (
     <>
-      <Popover open={isOpen} onOpenChange={handleOpenChange}>
+      <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
         <PopoverTrigger asChild>
           {customTrigger || (
             <Button
