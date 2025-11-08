@@ -277,6 +277,8 @@ export function MediaFolderView({
           favorites={favorites}
           selectedFilters={selectedFilters}
           activeTab={activeTab}
+          setSelectedItems={setSelectedItems}
+          selectedItems={selectedItems}
         />
       </div>
     );
