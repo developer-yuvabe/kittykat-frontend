@@ -230,3 +230,41 @@ export const handleReferenceImageDrop = (
   // Unknown source - prevent
   return { shouldPrevent: true };
 };
+
+/**
+ * Validates image URLs by checking their file size
+ * Returns URLs that are within the size limit
+ */
+export const validateImageUrlsBySize = async (
+  urls: string[],
+  maxSizeMB: number
+): Promise<{ validUrls: string[]; invalidUrls: string[] }> => {
+  const validUrls: string[] = [];
+  const invalidUrls: string[] = [];
+
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const response = await fetch(url, { method: "HEAD" });
+        const contentLength = response.headers.get("content-length");
+
+        if (contentLength) {
+          const fileSizeMB = parseInt(contentLength) / (1024 * 1024);
+          if (fileSizeMB <= maxSizeMB) {
+            validUrls.push(url);
+          } else {
+            invalidUrls.push(url);
+          }
+        } else {
+          // If we can't get the size, keep it (avoid false positives)
+          validUrls.push(url);
+        }
+      } catch {
+        // If fetch fails, keep it (avoid false positives)
+        validUrls.push(url);
+      }
+    })
+  );
+
+  return { validUrls, invalidUrls };
+};

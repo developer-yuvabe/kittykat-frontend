@@ -85,7 +85,7 @@ export const ReferenceZone = ({
         {images.map((url) => (
           <div
             key={url}
-            className="relative w-20 h-20 rounded-lg shrink-0"
+            className="relative w-16 h-16 rounded-lg shrink-0"
             draggable
             onDragStart={(e) => onDragStart(e, url)}
             onClick={(e) => e.stopPropagation()}
