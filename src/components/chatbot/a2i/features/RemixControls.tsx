@@ -15,11 +15,6 @@ import {
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
 import {
@@ -723,42 +718,23 @@ const RemixControls = ({
             <div className="flex gap-2 justify-between items-center px-4">
               <div className="flex items-center gap-2">
                 {/* Reference Image Selector - matching A2iImageInput */}
-                {referenceImageParam ? (
-                  <ReferenceImageSelector
-                    masterReference={masterReference}
-                    productReference={productReference}
-                    onMasterReferenceChange={setMasterReference}
-                    onProductReferenceChange={setProductReference}
-                    maxLimit={referenceImageParam.maxLimit}
-                    fileTypes={referenceImageParam.fileTypes}
-                    maxFileSizeLimit={referenceImageParam.maxFileSizeLimit}
-                    disabled={form.formState.isSubmitting}
-                    currentCampaignId={campaignId}
-                    isOpen={isReferencePopoverOpen}
-                    onOpenChange={setIsReferencePopoverOpen}
-                    activeTab={referencePopoverTab}
-                    onTabChange={setReferencePopoverTab}
-                    isMagicEnabled={isMagicEnabled}
-                    onToggleMagic={handleToggleMagic}
-                  />
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          disabled={true}
-                        >
-                          <Images />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      This model does not support attaching reference images
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                <ReferenceImageSelector
+                  masterReference={masterReference}
+                  productReference={productReference}
+                  onMasterReferenceChange={setMasterReference}
+                  onProductReferenceChange={setProductReference}
+                  maxLimit={referenceImageParam?.maxLimit || 0}
+                  fileTypes={referenceImageParam?.fileTypes || []}
+                  maxFileSizeLimit={referenceImageParam?.maxFileSizeLimit || 0}
+                  disabled={form.formState.isSubmitting || !referenceImageParam}
+                  currentCampaignId={campaignId}
+                  isOpen={isReferencePopoverOpen}
+                  onOpenChange={setIsReferencePopoverOpen}
+                  activeTab={referencePopoverTab}
+                  onTabChange={setReferencePopoverTab}
+                  isMagicEnabled={isMagicEnabled}
+                  onToggleMagic={handleToggleMagic}
+                />
 
                 {/* Initial Parameters */}
                 {initialParams.map((param) => {
