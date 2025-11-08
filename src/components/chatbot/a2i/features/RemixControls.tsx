@@ -530,8 +530,6 @@ const RemixControls = ({
           "This model doesn't support reference images. Uploaded images have been removed."
         );
       }
-      setMasterReference([]);
-      setProductReference([]);
       return;
     }
 
@@ -550,9 +548,6 @@ const RemixControls = ({
           maxLimit > 1 ? "s" : ""
         }. Extra images have been removed.`
       );
-
-      setMasterReference(masterKeep);
-      setProductReference(productKeep);
 
       // Update form value with kept images
       const keptImages = [...masterKeep, ...productKeep];
