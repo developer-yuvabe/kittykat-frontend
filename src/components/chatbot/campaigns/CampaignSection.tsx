@@ -29,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { toast } from "sonner";
 import { DisplayField } from "../DisplayField";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -60,6 +62,7 @@ export const CampaignSection: React.FC<{
     setIsCampaignCreating,
   } = useBrandStore();
   const { user } = useUserStore();
+  const { selectedImageGenerationModel } = useModelsStore();
   const stream = useStreamContext();
 
   const [fadeKey, setFadeKey] = useState(0);
@@ -105,6 +108,9 @@ export const CampaignSection: React.FC<{
             currentBrandContextId: selectedBrandId,
             currentCampaignId: selectedCampaignId,
             currentMoodboardId: selectedMoodboardId,
+            currentSelectedImageGenerationModelId:
+              selectedImageGenerationModel?.id ?? null,
+            userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
           });
         }
       } catch (error) {
@@ -125,7 +131,7 @@ export const CampaignSection: React.FC<{
     toast.info("Please create a campaign before creating a moodboard.");
   };
 
-  const handleFieldUpdate = (
+  const handleFieldUpdate = async (
     fieldPath: string,
     oldValue: any,
     newVal: any,
@@ -152,6 +158,9 @@ export const CampaignSection: React.FC<{
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }
   };

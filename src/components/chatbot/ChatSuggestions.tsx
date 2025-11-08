@@ -7,6 +7,8 @@ import { Message } from "@langchain/langgraph-sdk";
 import { ensureToolCallsHaveResponses } from "@/lib/langgraph.utils";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 type ChatSuggestionsProps = {
   setFirstTokenReceived: (value: SetStateAction<boolean>) => void;
@@ -18,6 +20,7 @@ export function ChatSuggestions({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
+  const { selectedImageGenerationModel } = useModelsStore();
   const suggestions = [
     "Help me get started with branding—what do you need to know from me?",
     "I want to set up my brand—can you guide me through the first steps?",
@@ -25,7 +28,7 @@ export function ChatSuggestions({
   ];
 
   const stream = useStreamContext();
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = async (suggestion: string) => {
     setFirstTokenReceived(false);
     const newHumanMessage: Message = {
       id: uuidv4(),
@@ -43,6 +46,9 @@ export function ChatSuggestions({
         previousBrandContextId: stream.values.previousBrandContextId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       },
 
       {

@@ -7,7 +7,7 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import type {
@@ -20,13 +20,7 @@ import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
 import { MediaFolderView } from "./MediaFolderView";
 import { useQueryState } from "nuqs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user.store";
@@ -35,6 +29,14 @@ import { useBrandStore } from "@/store/brand.store";
 import TopicsGrid from "./PexelsTopicGrid";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 import { MediaBulkActions } from "./MediaBulkActions";
+import { toast } from "sonner";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { galleryService } from "@/services/api/gallery.service";
+
+import { MediaFilterDropdown } from "./MediaFilterDropdown";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { Input } from "@/components/ui/input";
+import MediaViewsDropdown from "./MediaViewDropDown";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -68,10 +70,10 @@ export function MediaLibrary({
   closeDialog,
 }: MediaLibraryProps) {
   const router = useRouter();
+  const { openConceptVisual } = useConceptVisualStore();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
-  const [favorites, setFavorites] = useState<boolean>(false);
   const [source, setSource] = useState<string>(activeTab);
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -85,6 +87,18 @@ export function MediaLibrary({
     serialize: (value) => value.join(","),
     history: "push",
   });
+
+  // Get filter state from store
+  const {
+    favorites,
+    hasComments,
+    mediaTypes,
+    dateFrom,
+    dateTo,
+    orderBy,
+    setIsDraggable,
+  } = useGalleryFilterStore();
+
   const {
     selectedBrandId,
     setSelectedBrandId,
@@ -93,9 +107,28 @@ export function MediaLibrary({
     isBrandsFetched,
     getSelectedBrand,
   } = useBrandStore();
+
+  useEffect(() => {
+    if (selectedCampaignId && orderBy === "brand_sort_order") {
+      console.log("selectedCampaignId", selectedCampaignId);
+      console.log("orderBy", orderBy);
+      setIsDraggable(true);
+    } else {
+      setIsDraggable(false);
+    }
+  }, [selectedCampaignId, orderBy]);
   // Get brandId from URL query params
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
     "brandId",
+    {
+      defaultValue: undefined,
+      parse: (value) => value || undefined,
+      serialize: (value) => value || "",
+      history: "push",
+    }
+  );
+  const [galleryItemId, setGalleryItemId] = useQueryState<string | undefined>(
+    "id",
     {
       defaultValue: undefined,
       parse: (value) => value || undefined,
@@ -161,7 +194,18 @@ export function MediaLibrary({
             initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
           brands: [selectedBrandId],
           campaigns: selectedCampaignId ? [selectedCampaignId] : [],
+          asset_types: mediaTypes.length > 0 ? mediaTypes : ["image", "video"],
+          has_comments: hasComments ? true : undefined,
+          sort_by: orderBy,
         } as EnhancedSelectedFilters;
+        if (dateFrom && dateTo) {
+          const fromISO = dateFrom.toISOString();
+          const toISO = dateTo.toISOString();
+          newFilters.created_at_range = [fromISO, toISO];
+        } else {
+          // Otherwise remove it
+          delete newFilters.created_at_range;
+        }
 
         // Only update if something actually changed
         if (JSON.stringify(newFilters) !== JSON.stringify(prev)) {
@@ -170,7 +214,44 @@ export function MediaLibrary({
         return prev;
       });
     }
-  }, [selectedBrandId, initialWorkflowStatus, selectedCampaignId]);
+  }, [
+    selectedBrandId,
+    initialWorkflowStatus,
+    mediaTypes,
+    hasComments,
+    orderBy,
+    selectedCampaignId,
+    dateFrom,
+    dateTo,
+  ]);
+
+  useEffect(() => {
+    if (!galleryItemId) return;
+
+    const fetchGalleryItem = async () => {
+      try {
+        const item = await galleryService.getGalleryItemById(galleryItemId);
+
+        if (item) {
+          openConceptVisual({
+            source: "media-gallery",
+            assetItems: [item],
+            asset: {
+              galleryActions,
+              currentAsset: item,
+            },
+          });
+        }
+      } catch {
+        toast.error("Gallery item not found.");
+      } finally {
+        // Clear the galleryItemId from URL after opening
+        setGalleryItemId(null);
+      }
+    };
+
+    fetchGalleryItem();
+  }, [galleryItemId]);
 
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
@@ -232,6 +313,15 @@ export function MediaLibrary({
     }
   };
 
+  const handleSelectAll = () => {
+    const allIds = galleryItems.map((item) => item.id);
+    if (isMultiSelect) {
+      setMultiSelectItems(allIds);
+    } else {
+      setSelectedItems(allIds);
+    }
+  };
+
   const handleUnselectAll = () => {
     setSelectedItems([]);
     setMultiSelectItems([]);
@@ -259,10 +349,6 @@ export function MediaLibrary({
 
   const handleCreatorChange = (value: string) => {
     setCreator(value);
-  };
-
-  const handleFavoritesChange = (checked: boolean) => {
-    setFavorites(checked);
   };
 
   const toggleFilters = () => {
@@ -364,11 +450,11 @@ export function MediaLibrary({
   );
 
   return (
-    <div className="flex flex-col w-full mx-auto  ">
+    <div className="flex flex-col w-full mx-auto">
       {/* Conditionally render header based on hideHeader prop */}
-      {!hideHeader && (
+      {!hideHeader && galleryView === "grid" && (
         <div
-          className={`flex justify-between mb-2 sticky  top-24 bg-[#F3F4F6FF] pt-4 pb-2 z-50`}
+          className={`flex justify-between mb-2 sticky top-24 bg-[#F3F4F6FF] pt-2 pb-2 z-50`}
         >
           <div className="flex flex-row gap-x-4">
             <h1 className="text-2xl font-bold">Media library</h1>
@@ -391,18 +477,20 @@ export function MediaLibrary({
               />
             )}
           </div>
-          <Select
-            value={galleryView}
-            onValueChange={(val) => setGalleryView(val as "grid" | "folder")}
-          >
-            <SelectTrigger className="w-[130px] text-purple-600 border-purple-600">
-              <SelectValue placeholder="View" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="grid">Grid View</SelectItem>
-              <SelectItem value="folder">Folder View</SelectItem>
-            </SelectContent>
-          </Select>
+
+          <div className="flex justify-end">
+            <MediaFilterDropdown
+              selectedFilters={selectedFilters}
+              setSelectedFilters={setSelectedFilters}
+              setInitialWorkflowStatus={setInitialWorkflowStatus}
+            />
+
+            <MediaViewsDropdown
+              galleryView={galleryView}
+              setGalleryView={setGalleryView}
+              selectedCampaignId={selectedCampaignId}
+            />
+          </div>
         </div>
       )}
       {/* Optional: Simple header for dialog mode (compact) */}
@@ -470,12 +558,17 @@ export function MediaLibrary({
                 setIsUrlDialogOpen={setIsUrlDialogOpen}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
-                favorites={favorites}
-                onFavoritesChange={handleFavoritesChange}
                 selectedFilters={selectedFilters}
                 setSelectedFilters={setSelectedFilters}
                 setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
+                setInitialBrandId={setInitialBrandId}
+                setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+                galleryView={galleryView}
+                setGalleryView={setGalleryView}
+                hasNoBrands={hasNoBrands}
+                handleSearchChange={handleSearchChange}
+                showFilters={showFilters}
               />
             </div>
           )}
@@ -541,11 +634,9 @@ export function MediaLibrary({
                         onSearchChange={handleSearchChange}
                         onSourceChange={handleSourceChange}
                         onCreatorChange={handleCreatorChange}
-                        onFavoritesChange={handleFavoritesChange}
                         onToggleFilters={toggleFilters}
                         source={source}
                         creator={creator}
-                        favorites={favorites}
                         showFilters={showFilters}
                         selectedFilters={selectedFilters}
                         setSelectedFilters={setSelectedFilters}
@@ -604,6 +695,7 @@ export function MediaLibrary({
           <MediaBulkActions
             selectedItems={selectedItemsData}
             onUnselectAll={handleUnselectAll}
+            onSelectAll={handleSelectAll}
             galleryActions={galleryActions}
             brandName={selectedBrandName}
           />

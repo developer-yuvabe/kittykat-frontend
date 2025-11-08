@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { GalleryItemResponse } from "@/types/gallery.types";
+import { isVideoUrl } from "@/lib/utils";
 
 interface AssetThumbnailProps {
   assetUrl: string;
@@ -29,14 +30,13 @@ export const AssetThumbnail = ({
   // Check if the asset is a video
   const isVideo =
     galleryItem?.asset_type === "video" ||
-    galleryItem?.latest_version_asset_type === "video"
+    galleryItem?.latest_version_asset_type === "video" ||
+    isVideoUrl(assetUrl);
 
   // Get the appropriate thumbnail URL
   const thumbnailUrl = isVideo
     ? galleryItem?.preview_url || assetUrl
     : assetUrl;
-
-    console.log("AssetThumbnail - isVideo:", isVideo, "thumbnailUrl:", thumbnailUrl);
 
   if (!thumbnailUrl) return null;
 

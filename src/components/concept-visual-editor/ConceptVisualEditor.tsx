@@ -44,6 +44,7 @@ const ConceptVisualEditor = () => {
   const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>(
     defaultActiveTab ?? (source === "blanket" ? "vton" : "ask-kittykat")
   );
+  const [hasInitializedVersions, setHasInitializedVersions] = useState(false);
 
   const queryClient = useQueryClient();
   const versionsRef = useRef<HTMLDivElement>(null);
@@ -85,15 +86,18 @@ const ConceptVisualEditor = () => {
   };
 
   useEffect(() => {
-    // When currentAsset changes, wait for versions to load
+    // Reset initialization flag when asset changes
     // If versions are already loaded, use the latest version
     // Otherwise, temporarily use currentAsset until versions load
+    setHasInitializedVersions(false);
+    
     if (versions.data && versions.data.length > 0) {
       setCurrentAssetVersion(versions.data[versions.data.length - 1]);
+      setHasInitializedVersions(true);
     } else {
       setCurrentAssetVersion(currentAsset);
     }
-  }, [currentAsset, versions.data]);
+  }, [currentAsset]);
 
   useEffect(() => {
     if (

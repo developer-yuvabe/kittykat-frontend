@@ -25,6 +25,7 @@ import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import Masonry from "react-masonry-css";
 import { SortableMediaItem } from "./SortableMediaItem";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
@@ -34,6 +35,7 @@ interface SortableMediaGridProps {
   inSelectionGalleryIds?: string[];
   maxSelectionCount?: number;
   galleryActions: GalleryActions;
+  enableDragToMove?: boolean; // Enable drag-to-move functionality
 }
 
 export function SortableMediaGrid({
@@ -44,6 +46,7 @@ export function SortableMediaGrid({
   inSelectionGalleryIds,
   maxSelectionCount,
   galleryActions,
+  enableDragToMove = false,
 }: SortableMediaGridProps) {
   const router = useRouter();
   const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
@@ -60,14 +63,21 @@ export function SortableMediaGrid({
     );
   }, [galleryActions]);
 
+  const { thumbnailSize, orderBy } = useGalleryFilterStore();
+
+  // Enable dnd-kit drag-to-reorder when orderBy is manual (brand_sort_order)
+  // This works independently of enableDragToMove (HTML5 drag to campaigns)
+  const isDndKitDraggable = orderBy === "brand_sort_order";
+
   const breakpointColumnsObj = {
-    default: 5,
-    1536: 4,
-    1280: 4,
-    1024: 3,
-    768: 2,
-    640: 2,
-    500: 1,
+    default:
+      thumbnailSize === "small"
+        ? 10
+        : thumbnailSize === "medium"
+        ? 6
+        : thumbnailSize === "large"
+        ? 4
+        : 5,
   };
 
   const sensors = useSensors(
@@ -151,6 +161,8 @@ export function SortableMediaGrid({
               selectedCount={selectedItems.length}
               galleryActions={galleryActions}
               isDraggable={false} // Disable dragging in dialog mode
+              selectedItems={selectedItems}
+              enableDragToMove={false} // No drag-to-move in dialog
             />
           ))}
         </Masonry>
@@ -230,7 +242,9 @@ export function SortableMediaGrid({
                 maxSelectionCount={maxSelectionCount}
                 selectedCount={selectedItems.length}
                 galleryActions={galleryActions}
-                isDraggable={true} // Enable dragging in normal mode
+                isDraggable={isDndKitDraggable} // Enable dnd-kit reorder only when manual order is active
+                selectedItems={selectedItems}
+                enableDragToMove={enableDragToMove}
               />
             ))}
           </Masonry>

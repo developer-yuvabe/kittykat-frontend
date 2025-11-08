@@ -172,6 +172,7 @@ const VideoGenerationInputControls = ({
       });
 
       setParameters("videoParameters", null);
+      form.trigger();
     }
   }, [parameters.videoParameters]);
 

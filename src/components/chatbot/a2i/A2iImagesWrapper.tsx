@@ -12,6 +12,8 @@ import {
   A2iImagePlaceholderCard,
 } from "./A2iImageCard";
 import A2iImageInput from "./A2iImageInput";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { useResizeObserver } from "@/hooks/useResizeObserver";
 import {
   useEffect,
   useState,
@@ -39,8 +41,9 @@ import { useBrandStore } from "@/store/brand.store";
 import A2iImageCardDraggable from "./A2iImageCardDraggable";
 import { toast } from "sonner";
 import { useModelsStore } from "@/store/models.store";
+import { parseMongoDBDate } from "@/lib/a2i.utils";
 import A2iImageInputLoader from "./A2iImageInputLoader";
-import ModelSelector from "./ModelSelector";
+import { useQueryState } from "nuqs";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -66,12 +69,36 @@ export const A2iImagesWrapper = ({
   currentCampaign,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId } = useBrandStore();
-  const {
-    selectedImageGenerationModel,
-    isModelsFetched,
-    setSelectedImageGenerationModel,
-  } = useModelsStore();
+  const { selectedImageGenerationModel, isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+
+  // Track component resize to adjust items per page
+  useResizeObserver({
+    ref: gridContainerRef as React.RefObject<HTMLDivElement>,
+    onResize: (size) => {
+      // Increase items to 25 if container width increases
+      if (size.width && size.width > 800) {
+        setItemsPerPage(28);
+      } else {
+        setItemsPerPage(20);
+      }
+    },
+  });
+
+  // Infinite scroll hook for pagination
+  const { displayedItems, sentinelRef, hasMore, isLoading, reset } =
+    useInfiniteScroll({
+      items,
+      itemsPerPage,
+      loadingDelay: 1500,
+    });
+
+  // Reset pagination when items change significantly
+  useEffect(() => {
+    reset();
+  }, [items.length, reset]);
 
   // Track drag and server update states
   const isUpdatingServer = useRef(false);
@@ -96,6 +123,8 @@ export const A2iImagesWrapper = ({
               upscaleParameters: generation.upscale_parameters,
               video: generation.video,
               isNSFW: generation.is_nsfw_detected || false,
+              createdAt: generation.created_at,
+              updatedAt: generation.updated_at,
             },
           ];
         }
@@ -108,23 +137,23 @@ export const A2iImagesWrapper = ({
           type: generation.type,
           vtonParameters: generation.vton_parameters,
           remixParameters: generation.remix_parameters,
+          upscaleParameters: generation.upscale_parameters,
           video: generation.video,
           isNSFW: generation.is_nsfw_detected || false,
+          createdAt: generation.created_at,
+          updatedAt: generation.updated_at,
         }));
       }
     );
 
-    // Sort by position first, then by creation date (newest first for same position)
     flatImages.sort((a, b) => {
       const aPos = a.image?.position ?? Number.POSITIVE_INFINITY;
       const bPos = b.image?.position ?? Number.POSITIVE_INFINITY;
+      // 1️⃣ Smaller position first (top)
+      if (aPos !== bPos) return aPos - bPos;
 
-      if (aPos !== bPos) {
-        return aPos - bPos;
-      }
-
-      const aDate = new Date(a.image?.created_at ?? "").getTime();
-      const bDate = new Date(b.image?.created_at ?? "").getTime();
+      const aDate = parseMongoDBDate(a.createdAt);
+      const bDate = parseMongoDBDate(b.createdAt);
       return bDate - aDate;
     });
 
@@ -214,82 +243,131 @@ export const A2iImagesWrapper = ({
     return items.map(getExistingId).filter(Boolean) as string[];
   }, [items]);
 
-  const customActions = useMemo(
-    () => (
-      <ModelSelector
-        typeFilter="image"
-        selectedModel={selectedImageGenerationModel}
-        onModelChange={(m) => setSelectedImageGenerationModel(m)}
-      />
-    ),
-    [selectedImageGenerationModel]
-  );
   const contextValue = useMemo(() => ({ data: {} }), []);
 
-  const INITIAL_IMAGE_PLACEHOLDER = 12;
+  const inputContainerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTo, setScrollTo] = useQueryState("scrollTo");
+
+  useEffect(() => {
+    if (scrollTo === "a2i-input") {
+      const observer = new MutationObserver(() => {
+        setTimeout(() => {
+          if (inputContainerRef.current) {
+            inputContainerRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "end",
+            });
+            setScrollTo(null);
+            observer.disconnect();
+          }
+        }, 50);
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
+    }
+  }, [scrollTo]);
 
   return (
     <ContentSection
       title=""
-      customActions={customActions}
       showCopy={false}
       showPin={false}
       context={contextValue}
       ref={formRef}
       content={
-        <div className="relative h-[80vh] bg-muted rounded-md">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={sortableItems}
-              strategy={rectSortingStrategy}
-            >
-              <div className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full relative overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1">
-                {items.map((image) => {
-                  const existingId = getExistingId(image);
-                  const trackingId = getItemTrackingId(image);
+        <div className="flex flex-col gap-4 h-full">
+          {/* Form Section - Above */}
+          <div className="flex-shrink-0">
+            {!isModelsFetched || !selectedImageGenerationModel ? (
+              <A2iImageInputLoader />
+            ) : (
+              <A2iImageInput
+                referenceMoodboardId={referenceMoodboardId}
+                currentCampaign={currentCampaign}
+              />
+            )}
+          </div>
 
-                  if (image.status === "completed" && existingId) {
+          {/* Images Grid Section - Below */}
+          <div className="flex-1 bg-muted rounded-md max-h-[520px] overflow-y-scroll">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sortableItems}
+                strategy={rectSortingStrategy}
+              >
+                <div
+                  ref={gridContainerRef}
+                  className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1"
+                >
+                  {displayedItems.map((image) => {
+                    const existingId = getExistingId(image);
+                    const trackingId = getItemTrackingId(image);
+
+                    if (image.status === "completed" && existingId) {
+                      return (
+                        <A2iImageCardDraggable
+                          key={trackingId}
+                          imageData={image}
+                        />
+                      );
+                    }
+
+                    // For non-completed items or items without existing IDs, use regular card
                     return (
-                      <A2iImageCardDraggable
+                      <A2iImageCard
                         key={trackingId}
-                        imageData={image}
+                        {...image}
+                        disableDrag={!existingId}
                       />
                     );
-                  }
+                  })}
 
-                  // For non-completed items or items without existing IDs, use regular card
-                  return (
-                    <A2iImageCard
-                      key={trackingId}
-                      {...image}
-                      disableDrag={!existingId}
+                  {/* Show placeholder cards if items are less than itemsPerPage and no more pages */}
+                  {!hasMore && displayedItems.length < itemsPerPage && (
+                    <>
+                      {Array.from({
+                        length: itemsPerPage - displayedItems.length,
+                      }).map((_, index) => (
+                        <A2iImagePlaceholderCard
+                          key={`placeholder-${displayedItems.length + index}`}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Loading indicator for pagination */}
+                  {isLoading && (
+                    <>
+                      {Array.from({
+                        length: 20,
+                      }).map((_, index) => (
+                        <A2iImagePlaceholderCard
+                          key={`placeholder-${displayedItems.length + index}`}
+                          loading
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Sentinel element for infinite scroll trigger */}
+                  {hasMore && (
+                    <div
+                      ref={sentinelRef}
+                      className="col-span-full h-4"
+                      aria-label="Load more items"
                     />
-                  );
-                })}
-
-                {Array.from({
-                  length: INITIAL_IMAGE_PLACEHOLDER,
-                }).map((_, index) => (
-                  <A2iImagePlaceholderCard
-                    key={`empty-placeholder-${items.length + index}`}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-          {!isModelsFetched || !selectedImageGenerationModel ? (
-            <A2iImageInputLoader />
-          ) : (
-            <A2iImageInput
-              referenceMoodboardId={referenceMoodboardId}
-              currentCampaign={currentCampaign}
-            />
-          )}
+                  )}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+          <div ref={inputContainerRef}></div>
         </div>
       }
     />

@@ -1,10 +1,9 @@
 "use client";
 
-import { Filter, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
-import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
 import { Label } from "@/components/ui/label";
@@ -20,15 +19,15 @@ import {
 } from "@/components/ui/multi-select";
 import { Options } from "nuqs";
 
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+
 interface MediaSearchFiltersProps {
   onSearchChange: (query: string) => void;
   onSourceChange: (source: string) => void;
   onCreatorChange: (creator: string) => void;
-  onFavoritesChange: (checked: boolean) => void;
   onToggleFilters: () => void;
   source: string;
   creator: string;
-  favorites: boolean;
   showFilters: boolean;
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
@@ -41,15 +40,13 @@ interface MediaSearchFiltersProps {
 
 export function MediaSearchFilters({
   onSearchChange,
-  onFavoritesChange,
-  onToggleFilters,
-  favorites,
   showFilters,
   selectedFilters,
   setSelectedFilters,
   setInitialWorkflowStatus,
   isMediaSelectDialog = false, // Default to false
 }: MediaSearchFiltersProps) {
+  const { favorites, setFavorites } = useGalleryFilterStore();
   const handleWorkflowStatusChange = (values: string[]) => {
     // Handle empty selection (when user unselects all) or "__all__" selection
     if (values.length === 0 || values.includes("__all__")) {
@@ -85,7 +82,7 @@ export function MediaSearchFilters({
           <Checkbox
             id="favorites"
             checked={favorites}
-            onCheckedChange={(checked) => onFavoritesChange(checked as boolean)}
+            onCheckedChange={(checked) => setFavorites(checked as boolean)}
           />
           <label htmlFor="favorites" className="text-sm cursor-pointer">
             Favorites only

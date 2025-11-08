@@ -6,10 +6,12 @@ export function StickyToBottomContent(props: {
   footer?: ReactNode;
   className?: string;
   contentClassName?: string;
+  id?: string;
 }) {
   const context = useStickToBottomContext();
   return (
     <div
+      id={props.id}
       ref={context.scrollRef}
       style={{ width: "100%", height: "100%" }}
       className={props.className}

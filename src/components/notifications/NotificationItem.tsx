@@ -23,18 +23,12 @@ const NotificationItem = ({
   const [showAssets, setShowAssets] = React.useState(false);
   const queryClient = useQueryClient();
 
-  const handleNotificationClick = async () => {
+  const handleNotificationClick = async (galleryItemId: string) => {
     setSelectedCampaignId(null);
-
-    const status = Array.from(
-      new Set(notification.assets.map((a) => a.status))
-    ).join(", ");
 
     // Make sure the campaignId is reset before navigation
     setTimeout(() => {
-      router.replace(
-        `/gallery?brandId=${notification.brand_id}&status=${status}`
-      );
+      router.replace(`/gallery?id=${galleryItemId}`);
     }, 100);
 
     setOpen();
@@ -70,7 +64,7 @@ const NotificationItem = ({
               );
               return (
                 <li
-                  onClick={handleNotificationClick}
+                  onClick={() => handleNotificationClick(asset.gallery_item_id)}
                   key={asset.gallery_item_id}
                   className={cn(
                     `flex items-center justify-between p-2 cursor-pointer hover:bg-muted px-4`,
@@ -80,11 +74,22 @@ const NotificationItem = ({
                   )}
                 >
                   <div className="flex items-center gap-x-2">
-                    <img
-                      src={asset.image_url}
-                      alt="Asset"
-                      className="w-12 h-12 object-cover rounded"
-                    />
+                    {asset.image_url && (
+                      <img
+                        src={asset.image_url}
+                        alt="Asset"
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    )}
+                    {asset.video_url && (
+                      <video
+                        src={asset.video_url}
+                        autoPlay
+                        muted
+                        loop
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    )}
                     <div>
                       {status && (
                         <Badge

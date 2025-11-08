@@ -99,5 +99,9 @@ export type Rule = {
   disableIf: {
     name: string;
     paramId: string;
-  };
+    /*
+      If false, the default value of the parameter will be overridden to the value specified here.
+    */
+    restrict?: boolean;
+  }[];
 };

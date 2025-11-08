@@ -11,6 +11,9 @@ export type User = {
   is_default_admin?: boolean;
   credits?: number;
   kittykat_expert_credits?: number;
+  user_preferences?: {
+    enhance_prompts?: boolean;
+  };
 };
 
 export type UserListItem = {
@@ -68,6 +71,8 @@ export type UserBrand = {
   campaigns: {
     id: string;
     title: string;
+    is_archived?: boolean;
+    position?: number;
   }[];
   created_by: {
     id: string;

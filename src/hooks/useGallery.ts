@@ -16,7 +16,7 @@ import type {
 } from "@/types/gallery.types";
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
-
+import { allMediaAssetSources } from "@/lib/gallery.utils";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import { useMoodboardQuery } from "./useMoodboardQuery";
 
@@ -31,10 +31,15 @@ export const useGalleryQuery = (
   const queryClient = useQueryClient();
 
   // Map asset type for filtering
+  // Map asset type for filtering
   const getAssetTypesFromFilter = () => {
     if (!filters.assetType || filters.assetType === "all-media")
-      return undefined;
-    return filters.assetType;
+      return allMediaAssetSources;
+
+    if (filters.assetType === "reference")
+      return [...allMediaAssetSources, "reference"];
+
+    return [filters.assetType];
   };
 
   // Generate query key for current filters
@@ -72,9 +77,7 @@ export const useGalleryQuery = (
         }
 
         return await galleryService.getAllGalleryItems({
-          asset_sources: [getAssetTypesFromFilter()].filter(
-            (v): v is string => v !== undefined
-          ),
+          asset_sources: getAssetTypesFromFilter(),
           is_favourite:
             filters.favorites ||
             filters.selectedFilters?.is_favourite ||
@@ -111,6 +114,10 @@ export const useGalleryQuery = (
             : undefined,
           skip: pageParam,
           limit: items_per_page,
+          has_comments: filters.selectedFilters?.has_comments ?? undefined,
+          sort_by: filters.selectedFilters?.sort_by ?? undefined,
+          created_at_range:
+            filters.selectedFilters?.created_at_range ?? undefined,
         });
       } catch (error) {
         console.error("Gallery query failed:", error);
@@ -250,6 +257,13 @@ export const useGalleryQuery = (
         queryKey: ["gallery-items"],
       });
 
+      // Invalidate campaign counts for the brand
+      if (_variables.brand_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["campaign-counts", _variables.brand_id],
+        });
+      }
+
       // Update the loading toast to success
       toast.success("Item added to gallery", { id: context?.toastId });
     },
@@ -272,6 +286,14 @@ export const useGalleryQuery = (
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
+
+      // Invalidate campaign counts for the brand
+      if (_variables.brand_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["campaign-counts", _variables.brand_id],
+        });
+      }
+
       toast.success("Items uploaded to gallery", { id: context?.toastId });
     },
     onError: (_error, _variables, context) => {
@@ -293,6 +315,14 @@ export const useGalleryQuery = (
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
+
+      // Invalidate campaign counts for the brand
+      if (_variables.brand_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["campaign-counts", _variables.brand_id],
+        });
+      }
+
       toast.success("Social media scraping initiated", {
         id: context?.toastId,
       });
@@ -345,40 +375,93 @@ export const useGalleryQuery = (
     mutationFn: ({
       itemId,
       data,
+      revalidateAutofillSuggestions = true,
     }: {
       itemId: string;
       data: Partial<GalleryItem>;
+      revalidateAutofillSuggestions?: boolean;
     }) => galleryService.patchGalleryItem(itemId, data),
 
-    onMutate: async ({ itemId, data }) => {
-      updateAutoFillSuggestionCache(itemId, data.is_favourite!);
-
+    onMutate: async ({ itemId, data, revalidateAutofillSuggestions }) => {
       const queryKey = getGalleryQueryKey();
-
       await queryClient.cancelQueries({ queryKey });
+
+      // Get the current filters to determine if we need to remove the item
+      const currentCampaignFilter = filters.selectedFilters?.campaigns?.[0];
+      const isMovingToAnotherCampaign =
+        data.campaign_id &&
+        currentCampaignFilter &&
+        data.campaign_id !== currentCampaignFilter;
+
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
         if (!old) return old;
 
         const updated = {
           ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            gallery_items: page.gallery_items.map(
-              (item: GalleryItemResponse) => {
-                if (item.id === itemId) {
-                  return { ...item, ...data };
+          pages: old.pages.map((page: any) => {
+            // If moving to another campaign while viewing a specific campaign, remove it
+            if (isMovingToAnotherCampaign) {
+              return {
+                ...page,
+                gallery_items: page.gallery_items.filter(
+                  (item: GalleryItemResponse) => item.id !== itemId
+                ),
+                pagination: {
+                  ...page.pagination,
+                  total: Math.max(0, page.pagination.total - 1),
+                },
+              };
+            }
+
+            // Otherwise, just update the item
+            return {
+              ...page,
+              gallery_items: page.gallery_items.map(
+                (item: GalleryItemResponse) => {
+                  if (item.id === itemId) {
+                    return { ...item, ...data };
+                  }
+                  return item;
                 }
-                return item;
-              }
-            ),
-          })),
+              ),
+            };
+          }),
         };
 
         return updated;
       });
 
-      // Update the item in existing bulk query caches (don't remove it)
+      // Update flat array queries
+      const galleryQueries = queryClient.getQueriesData({
+        queryKey: ["gallery-items"],
+        exact: false,
+      });
+
+      galleryQueries.forEach(([queryKey, old]) => {
+        if (!Array.isArray(old)) return;
+
+        queryClient.setQueryData(
+          queryKey,
+          (prev: GalleryItemResponse[] | undefined) => {
+            if (!prev) return prev;
+
+            // Remove if moving to another campaign
+            if (isMovingToAnotherCampaign) {
+              return prev.filter((item) => item.id !== itemId);
+            }
+
+            // Otherwise update
+            return prev.map((item) =>
+              item.id === itemId ? { ...item, ...data } : item
+            );
+          }
+        );
+      });
+
+      updateAutoFillSuggestionCache(itemId, data.is_favourite!);
+
+      // Update the item in existing bulk query caches
       const bulkQueries = queryClient.getQueriesData({
         queryKey: ["gallery-items-bulk"],
         exact: false,
@@ -391,17 +474,27 @@ export const useGalleryQuery = (
           queryKey,
           (prev: GalleryItemResponse[] | undefined) => {
             if (!prev) return prev;
+
+            // Remove if moving to another campaign
+            if (isMovingToAnotherCampaign) {
+              return prev.filter((item) => item.id !== itemId);
+            }
+
+            // Otherwise update
             return prev.map((item) =>
               item.id === itemId ? { ...item, ...data } : item
             );
           }
         );
       });
-      // Invalidate autofill-suggestions queries after patch
-      queryClient.invalidateQueries({
-        queryKey: ["autofill-suggestions"],
-        exact: false,
-      });
+
+      if (revalidateAutofillSuggestions) {
+        // Invalidate autofill-suggestions queries after patch
+        queryClient.invalidateQueries({
+          queryKey: ["autofill-suggestions"],
+          exact: false,
+        });
+      }
 
       // Return context for potential rollback
       return { queryKey };
@@ -413,6 +506,11 @@ export const useGalleryQuery = (
 
     onSuccess: (updatedItem) => {
       updateGalleryItemInCache(updatedItem);
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
+
       // toast.success("Item updated successfully");
     },
   });
@@ -510,6 +608,13 @@ export const useGalleryQuery = (
       // Remove item from single item cache
 
       toast.success("Item deleted successfully");
+
+      // Invalidate all campaign counts
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
+
       // Invalidate bulk items queries
       queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
 
@@ -590,6 +695,12 @@ export const useGalleryQuery = (
         queryClient.removeQueries({ queryKey: ["gallery-item", itemId] });
       });
       toast.success(`${data.length} items deleted successfully`);
+
+      // Invalidate all campaign counts
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
 
       // Invalidate and update bulk items queries
       queryClient.invalidateQueries({ queryKey: ["gallery-items-bulk"] });
