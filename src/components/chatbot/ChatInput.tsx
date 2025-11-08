@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, X, Mic, Check, Paperclip } from "lucide-react";
+import { LoaderCircle, X, Mic, Check, Paperclip, Images } from "lucide-react";
 import React, { useState, useCallback, useLayoutEffect, useRef } from "react";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import {
@@ -485,6 +485,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   currentCampaignId={selectedCampaignId}
                   isOpen={isReferencePopoverOpen}
                   onOpenChange={setIsReferencePopoverOpen}
+                  customTrigger={<Images size={20} className="text-primary" />}
                 />
                 <AgentPdfAttachmentUploader onUploadComplete={handleAddFile} />
                 <button

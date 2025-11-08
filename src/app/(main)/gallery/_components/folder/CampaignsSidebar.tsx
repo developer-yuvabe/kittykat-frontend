@@ -48,6 +48,7 @@ interface CampaignsSidebarProps {
   ) => Promise<URLSearchParams>;
   hasNoBrands: boolean;
   galleryView: "grid" | "folder";
+  setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export function CampaignsSidebar({
@@ -61,6 +62,7 @@ export function CampaignsSidebar({
   setInitialWorkflowStatus,
   hasNoBrands,
   galleryView,
+  setSelectedItems,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { brands } = useBrandStore();
@@ -163,6 +165,13 @@ export function CampaignsSidebar({
     const title = deleteDialog.campaignTitle;
     const campaignId = deleteDialog.campaignId;
 
+    setDeleteDialog({
+      open: false,
+      campaignId: "",
+      campaignTitle: "",
+      isDeleting: false,
+    });
+
     try {
       await execute({
         title,
@@ -175,13 +184,6 @@ export function CampaignsSidebar({
         },
         successMessage: `"${title}" deleted successfully.`,
         errorMessage: `Failed to delete "${title}".`,
-      });
-
-      setDeleteDialog({
-        open: false,
-        campaignId: "",
-        campaignTitle: "",
-        isDeleting: false,
       });
     } catch {
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
@@ -196,10 +198,18 @@ export function CampaignsSidebar({
     const title = archiveDialog.campaignTitle;
     const campaignId = archiveDialog.campaignId;
 
+    setArchiveDialog({
+      open: false,
+      campaignId: "",
+      campaignTitle: "",
+      isArchived: false,
+      isProcessing: false,
+    });
+
     try {
       await execute({
         title,
-        undoSeconds: 4,
+        undoSeconds: 3,
         loadingMessage: `${
           shouldBeArchived ? "Archiving" : "Unarchiving"
         } "${title}"...`,
@@ -216,14 +226,6 @@ export function CampaignsSidebar({
         errorMessage: `Failed to ${
           shouldBeArchived ? "archive" : "unarchive"
         } "${title}".`,
-      });
-
-      setArchiveDialog({
-        open: false,
-        campaignId: "",
-        campaignTitle: "",
-        isArchived: false,
-        isProcessing: false,
       });
     } catch {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
@@ -498,13 +500,12 @@ export function CampaignsSidebar({
           })
         )
       );
+      setSelectedItems([]);
 
       const targetCampaign = campaigns.find((c) => c.id === campaignId);
       toast.success(
         `Successfully moved ${items.length} item(s) to campaign "${targetCampaign?.title}"`
       );
-
-      galleryActions.refetchGalleryItems();
     } catch (error) {
       console.error("Move error:", error);
       toast.error("Failed to move assets. Please try again.");
@@ -556,7 +557,7 @@ export function CampaignsSidebar({
       try {
         await execute({
           title,
-          undoSeconds: 4,
+          undoSeconds: 3,
           loadingMessage: `${
             shouldBeArchived ? "Archiving" : "Unarchiving"
           } "${title}"...`,

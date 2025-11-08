@@ -144,11 +144,12 @@ const ReferenceMoodboard = ({
           return;
         }
 
-        setSelectedMoodboardId(moodboard.id!);
-
         if (moodboard.campaign_id) {
           setSelectedCampaignId(moodboard.campaign_id);
-          setCampaignMoodboardSelection(moodboard.campaign_id, moodboard.id);
+
+          setTimeout(() => {
+            setSelectedMoodboardId(moodboard.id);
+          }, 1000);
         }
 
         if (selectedBrandId && moodboard.id && !isGeneratingPrompts) {

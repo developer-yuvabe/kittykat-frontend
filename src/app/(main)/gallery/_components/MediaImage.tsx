@@ -14,6 +14,7 @@ interface MediaImageProps {
   onEditClick: (item: GalleryItemResponse) => void;
   onToggleFavorite: () => void;
   isMediaSelectDialog?: boolean;
+  isEasySelectionMode?: boolean;
 }
 
 export function MediaImage({
@@ -21,6 +22,7 @@ export function MediaImage({
   onImageLoad,
   onToggleFavorite,
   isMediaSelectDialog = false,
+  isEasySelectionMode = false,
 }: MediaImageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -106,13 +108,17 @@ export function MediaImage({
   };
 
   const handleImageClick = () => {
-    if (!isMediaSelectDialog) {
+    // Don't open modal in media select dialog or easy selection mode
+    if (!isMediaSelectDialog && !isEasySelectionMode) {
       setShowImageModal(true);
     }
   };
 
   const handleVideoClick = () => {
-    setShowVideoModal(true);
+    // Don't open modal in easy selection mode
+    if (!isEasySelectionMode) {
+      setShowVideoModal(true);
+    }
   };
 
   const handleDownload = () => {

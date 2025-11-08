@@ -45,7 +45,9 @@ export const ReferenceGalleryGrid = ({
   }
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div
+      className={cn("grid gap-2", isSingleMode ? "grid-cols-8" : "grid-cols-5")}
+    >
       {items.map((item) => {
         const isMaster = masterReferenceUrls.includes(item.asset_url);
         const isProduct = productReferenceUrls.includes(item.asset_url);
