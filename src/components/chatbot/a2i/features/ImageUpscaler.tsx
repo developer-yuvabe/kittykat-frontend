@@ -100,7 +100,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
-      await upscaleImage(brandId!, data);
+      await upscaleImage(brandId!, data, campaignId);
 
       closeConceptVisual();
       if (source === "blanket") {
