@@ -164,7 +164,8 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                         )}
                         contentClassName={cn(
                           layoutConfig.contentPaddingTop,
-                          "pb-2 ml-auto mr-0 flex flex-col gap-1 w-full"
+                          "pb-2 ml-auto mr-0 flex flex-col gap-1 w-full",
+                          chatStarted && "min-h-full"
                         )}
                         content={
                           <ChatMessageList
