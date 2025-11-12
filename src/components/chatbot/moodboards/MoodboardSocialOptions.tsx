@@ -141,7 +141,7 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
                 <div className="flex-shrink-0 self-start sm:self-center">
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      // checked={selectedOptions.includes(option.id)}
+                      checked={selectedOptions.includes(option.id)}
                       onCheckedChange={() => toggleOption(option.id)}
                       className="w-5 h-5"
                     />
