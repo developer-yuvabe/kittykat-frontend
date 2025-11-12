@@ -216,6 +216,8 @@ const ImageWithMetadataModal = ({
           // Preserve product_reference_images if they exist
           product_reference_images:
             data.parameters.product_reference_images || undefined,
+
+          campaign_id: selectedCampaignId,
         });
       }
 
@@ -348,18 +350,22 @@ const ImageWithMetadataModal = ({
   const handleUpscaleAuto = async () => {
     setLoading((p) => ({ ...p, upscaleAuto: true }));
     try {
-      await upscaleImage(selectedBrandId!, {
-        image_url: galleryItem.asset_url,
-        creativity: 0,
-        scale_factor: "2x",
-        optimized_for: "standard",
-        hdr: 0,
-        resemblance: 0,
-        fractality: 0,
-        engine: "automatic",
-        prompt: "",
-        source_asset_id: galleryItem.id,
-      });
+      await upscaleImage(
+        selectedBrandId!,
+        {
+          image_url: galleryItem.asset_url,
+          creativity: 0,
+          scale_factor: "2x",
+          optimized_for: "standard",
+          hdr: 0,
+          resemblance: 0,
+          fractality: 0,
+          engine: "automatic",
+          prompt: "",
+          source_asset_id: galleryItem.id,
+        },
+        selectedCampaignId
+      );
 
       onClose();
       if (source === "media-gallery") {
@@ -515,6 +521,7 @@ const ImageWithMetadataModal = ({
         prompt,
         model: defaultAnimationModel.model,
         source_asset_id: galleryItem.id,
+        campaign_id: selectedCampaignId,
       });
 
       onClose();
