@@ -258,6 +258,15 @@ export interface ScrapeConfig {
   user_id?: string;
 }
 
+// Website-specific scraping config using Apify
+export interface WebsiteScrapeConfig extends ScrapeConfig {
+  platform: "website";
+  maxPages: number; // Max pages to crawl
+  maxImages: number; // Max images to extract
+  downloadAsZip: boolean; // Download as ZIP
+  globs: Array<{ glob: string }>; // URL patterns to match
+}
+
 export interface BulkGalleryUploadRequest {
   gallery_items?: GalleryItem[]; // Optional if using scrape_only
   brand_id: string;

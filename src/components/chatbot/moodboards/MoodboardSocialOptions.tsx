@@ -38,8 +38,8 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
         return "pinterest_limit";
       case "instagram":
         return "instagram_limit";
-      case "facebook":
-        return "facebook_limit";
+      // case "facebook":
+      //   return "facebook_limit";
       case "website":
         return "website_limit";
       default:
@@ -67,9 +67,7 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
         return (
           <Card
             key={option.id}
-            className={`py-2 rounded-sm ${
-              ["facebook", "website"].includes(option.id) ? "opacity-50" : ""
-            }`}
+            className="py-2 rounded-sm"
           >
             <CardContent className="px-2 m-0 ">
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
@@ -143,12 +141,9 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
                 <div className="flex-shrink-0 self-start sm:self-center">
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      checked={selectedOptions.includes(option.id)}
+                      // checked={selectedOptions.includes(option.id)}
                       onCheckedChange={() => toggleOption(option.id)}
                       className="w-5 h-5"
-                      disabled={
-                        option.id === "facebook" || option.id === "website"
-                      }
                     />
                   </div>
                 </div>
