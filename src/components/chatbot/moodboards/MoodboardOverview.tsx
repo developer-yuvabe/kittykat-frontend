@@ -12,6 +12,7 @@ import { DisplayField } from "../DisplayField";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 interface MoodboardOverviewOverviewProps {
   title?: string;
@@ -31,6 +32,7 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
+  const { chatOnlyMode } = useThreadStore();
 
   const handleFieldUpdate = async (
     fieldPath: string,
@@ -56,6 +58,7 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
         stream,
         text: msg,
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,

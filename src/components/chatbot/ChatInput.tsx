@@ -35,6 +35,8 @@ import AgentPdfAttachmentUploader from "./AgentPdfAttachmentUploader";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
 import { ChatInputFileThumbnail } from "./ChatInputFileThumbnail";
+import ChatOnlyToggle from "./ChatOnlyToggle";
+import { useThreadStore } from "@/store/thread.store";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -45,6 +47,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const { selectedImageGenerationModel, selectedVideoGenearationModel } =
     useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
@@ -258,6 +261,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {
           messages: [...toolMessages, ...messages],
           userId: user!.id,
+          chatOnlyMode,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: stream.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
@@ -400,7 +404,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        <div className="flex flex-row justify-between items-center p-6">
+        <div className="flex flex-col justify-between items-center px-4 pb-4 gap-y-2">
           {!(isRecording || isTranscribing) ? (
             <textarea
               ref={textareaRef}
@@ -422,7 +426,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               placeholder={
                 showPlaceholder ? "Type your message here..." : "Type here..."
               }
-              className="p-2 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0 resize-none pr-24 overflow-auto scrollbar"
+              className="py-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0 resize-none overflow-auto scrollbar"
             />
           ) : (
             <div className="w-full h-16 p-4 rounded-lg flex items-center justify-center space-x-1 overflow-hidden ">
@@ -438,41 +442,44 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-x-4 px-4">
-            {isLoading ? (
+          {isRecording || isTranscribing ? (
+            <div className="flex items-center gap-2">
+              {isTranscribing ? (
+                <LoaderCircle
+                  size={20}
+                  className="animate-spin text-blue-500"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  title="Send Recording"
+                >
+                  <Check size={20} className="text-primary cursor-pointer" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={cancelRecording}
+                className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                title="Cancel Recording"
+              >
+                <X size={20} className="text-primary cursor-pointer" />
+              </button>
+            </div>
+          ) : isLoading ? (
+            <div className="ml-auto">
               <Button key="stop" onClick={() => stop()}>
                 <LoaderCircle className="w-4 h-4 animate-spin" />
                 Cancel
               </Button>
-            ) : isRecording || isTranscribing ? (
-              <div className="flex items-center gap-2">
-                {isTranscribing ? (
-                  <LoaderCircle
-                    size={20}
-                    className="animate-spin text-blue-500"
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={stopRecording}
-                    className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                    title="Send Recording"
-                  >
-                    <Check size={20} className="text-primary cursor-pointer" />
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={cancelRecording}
-                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                  title="Cancel Recording"
-                >
-                  <X size={20} className="text-primary cursor-pointer" />
-                </button>
-              </div>
-            ) : (
-              <>
+            </div>
+          ) : (
+            <div className="flex gap-x-4 justify-between items-center w-full">
+              <ChatOnlyToggle />
+              <div className="flex gap-x-4 items-center">
                 <ReferenceImageSelector
                   referenceImages={referenceImages}
                   onReferenceImagesChange={setReferenceImages}
@@ -514,9 +521,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 >
                   <SendIcon size={10} />
                 </Button>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       </form>
       <Dialog

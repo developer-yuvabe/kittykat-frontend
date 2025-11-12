@@ -22,6 +22,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { isEqual } from "lodash";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 interface CampaignColorsProps {
   colors: string[];
   campaignId: string;
@@ -43,6 +44,7 @@ export const CampaignColorsComponent: React.FC<CampaignColorsProps> = ({
     useBrandStore();
   const { selectedImageGenerationModel, selectedVideoGenearationModel } =
     useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const [validColors, setValidColors] = useState(
     colors.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color))
   );
@@ -88,7 +90,7 @@ export const CampaignColorsComponent: React.FC<CampaignColorsProps> = ({
       submitOptimisticMessage({
         stream,
         text: msg,
-
+        chatOnlyMode,
         userId: user!.id,
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,

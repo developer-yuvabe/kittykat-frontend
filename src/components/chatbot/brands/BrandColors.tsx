@@ -26,6 +26,7 @@ import { useUserStore } from "@/store/user.store";
 import { isEqual } from "lodash";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 interface BrandColorsProps {
   colors: Color[];
@@ -52,6 +53,7 @@ export const BrandColorsComponent: React.FC<BrandColorsProps> = ({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
+  const { chatOnlyMode } = useThreadStore();
   const { selectedImageGenerationModel, selectedVideoGenearationModel } =
     useModelsStore();
 
@@ -140,6 +142,7 @@ export const BrandColorsComponent: React.FC<BrandColorsProps> = ({
           stream,
           text: enhancedMsg,
           userId: user!.id,
+          chatOnlyMode,
           currentBrandContextId: selectedBrandId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,

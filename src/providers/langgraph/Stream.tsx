@@ -28,6 +28,7 @@ export type StateType = {
   messages: Message[];
   next?: string;
   userId: string;
+  chatOnlyMode: boolean;
   currentBrandContextId: string | null;
   previousBrandContextId?: string | null;
 
@@ -49,6 +50,7 @@ const useTypedStream = useStream<
       next?: string;
 
       userId: string;
+      chatOnlyMode: boolean;
       currentBrandContextId: string | null;
       previousBrandContextId?: string | null;
 

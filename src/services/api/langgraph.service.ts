@@ -8,6 +8,7 @@ type SubmitOptions = {
   stream: StreamContextType;
   text: string;
   userId: string;
+  chatOnlyMode: boolean;
   currentBrandContextId: string | null;
   currentCampaignId: string | null;
   currentMoodboardId: string | null;
@@ -20,6 +21,7 @@ export function submitOptimisticMessage({
   stream,
   text,
   userId,
+  chatOnlyMode,
   currentBrandContextId,
   currentCampaignId,
   currentMoodboardId,
@@ -42,6 +44,7 @@ export function submitOptimisticMessage({
     {
       messages: [newMessage],
       userId,
+      chatOnlyMode,
       currentBrandContextId,
       previousBrandContextId: stream.values.previousBrandContextId,
       currentCampaignId: currentCampaignId,
