@@ -62,7 +62,8 @@ export const CampaignSection: React.FC<{
     setIsCampaignCreating,
   } = useBrandStore();
   const { user } = useUserStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const stream = useStreamContext();
 
   const [fadeKey, setFadeKey] = useState(0);
@@ -110,6 +111,8 @@ export const CampaignSection: React.FC<{
             currentMoodboardId: selectedMoodboardId,
             currentSelectedImageGenerationModelId:
               selectedImageGenerationModel?.id ?? null,
+            currentSelectedVideoGenerationModelId:
+              selectedVideoGenearationModel?.id ?? null,
             userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
           });
         }
@@ -160,6 +163,8 @@ export const CampaignSection: React.FC<{
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }

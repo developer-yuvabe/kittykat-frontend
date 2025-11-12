@@ -52,7 +52,8 @@ export const BrandColorsComponent: React.FC<BrandColorsProps> = ({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
 
   const stream = useStreamContext();
 
@@ -144,6 +145,8 @@ export const BrandColorsComponent: React.FC<BrandColorsProps> = ({
           currentMoodboardId: selectedMoodboardId,
           currentSelectedImageGenerationModelId:
             selectedImageGenerationModel?.id ?? null,
+          currentSelectedVideoGenerationModelId:
+            selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         });
       }

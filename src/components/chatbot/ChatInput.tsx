@@ -43,7 +43,8 @@ type ChatInputProps = {
 export const ChatInput: React.FC<ChatInputProps> = ({
   setFirstTokenReceived,
 }) => {
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
@@ -263,6 +264,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           currentMoodboardId: selectedMoodboardId,
           currentSelectedImageGenerationModelId:
             selectedImageGenerationModel?.id ?? null,
+          currentSelectedVideoGenerationModelId:
+            selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
@@ -296,6 +299,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       selectedCampaignId,
       selectedMoodboardId,
       selectedImageGenerationModel?.id,
+      selectedVideoGenearationModel?.id,
     ]
   );
 

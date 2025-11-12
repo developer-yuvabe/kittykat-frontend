@@ -20,7 +20,8 @@ export function ChatSuggestions({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const suggestions = [
     "Help me get started with branding—what do you need to know from me?",
     "I want to set up my brand—can you guide me through the first steps?",
@@ -48,6 +49,8 @@ export function ChatSuggestions({
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       },
 

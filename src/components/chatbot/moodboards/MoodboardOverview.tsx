@@ -26,7 +26,8 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
   tone = [],
 }) => {
   const stream = useStreamContext();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
@@ -60,6 +61,8 @@ export const MoodboardOverview: React.FC<MoodboardOverviewOverviewProps> = ({
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }

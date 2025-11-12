@@ -35,6 +35,7 @@ export type StateType = {
   currentMoodboardId: string | null;
 
   currentSelectedImageGenerationModelId: string | null;
+  currentSelectedVideoGenerationModelId: string | null;
   userAccessToken: string | null;
 
   timestamp: number;
@@ -55,6 +56,7 @@ const useTypedStream = useStream<
       currentMoodboardId: string | null;
 
       currentSelectedImageGenerationModelId: string | null;
+      currentSelectedVideoGenerationModelId: string | null;
       userAccessToken: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;

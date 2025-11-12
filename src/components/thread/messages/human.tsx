@@ -167,7 +167,8 @@ export function HumanMessage({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
 
@@ -203,6 +204,8 @@ export function HumanMessage({
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       },
       {

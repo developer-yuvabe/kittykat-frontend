@@ -59,7 +59,8 @@ export default function useInterruptedActions({
 }: UseInterruptedActionsInput): UseInterruptedActionsValue {
   const thread = useStreamContext();
   const { user } = useUserStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
   const [humanResponse, setHumanResponse] = useState<HumanResponseWithEdits[]>(
@@ -99,6 +100,8 @@ export default function useInterruptedActions({
           currentMoodboardId: selectedMoodboardId,
           currentSelectedImageGenerationModelId:
             selectedImageGenerationModel?.id ?? null,
+          currentSelectedVideoGenerationModelId:
+            selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
@@ -279,6 +282,8 @@ export default function useInterruptedActions({
           currentMoodboardId: selectedMoodboardId,
           currentSelectedImageGenerationModelId:
             selectedImageGenerationModel?.id ?? null,
+          currentSelectedVideoGenerationModelId:
+            selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {

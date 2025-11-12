@@ -86,7 +86,8 @@ export const renderBrandData = (
     selectedCampaignId,
     selectedMoodboardId,
   } = useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const { removePinnedItem } = usePinnedContextStore();
 
   const handleFieldUpdate = async (
@@ -118,6 +119,8 @@ export const renderBrandData = (
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }
@@ -144,6 +147,8 @@ export const renderBrandData = (
         currentMoodboardId: null,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
 

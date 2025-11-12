@@ -301,7 +301,8 @@ export const InitialPlaceHolder: React.FC<{
   const [brandExpanded, setBrandExpanded] = useState(true);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const { setIsCreatingBrand, setSelectedBrandId } = useBrandStore();
 
   // Enhanced function to handle new brand creation with scroll
@@ -326,6 +327,8 @@ export const InitialPlaceHolder: React.FC<{
         currentMoodboardId: null,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
 
