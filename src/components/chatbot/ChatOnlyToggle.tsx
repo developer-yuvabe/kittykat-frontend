@@ -19,7 +19,7 @@ const ChatOnlyToggle = () => {
             onClick={() => setChatOnlyMode(!chatOnlyMode)}
             type="button"
             className={cn(
-              "text-primary border border-primary hover:bg-transparent rounded-md cursor-pointer p-2 transition-colors duration-200 ease-in-out",
+              "text-primary hover:bg-transparent rounded-md cursor-pointer p-2 transition-colors duration-200 ease-in-out",
               {
                 "bg-primary/10 hover:bg-primary/10": chatOnlyMode,
               }
