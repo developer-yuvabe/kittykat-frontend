@@ -492,7 +492,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   ]}
                   maxFileSizeLimit={10}
                   maxTotalSizeMB={50}
-                  disabled={isLoading || isUploading}
+                  disabled={isLoading || isUploading || chatOnlyMode}
                   currentCampaignId={selectedCampaignId}
                   isOpen={isReferencePopoverOpen}
                   onOpenChange={setIsReferencePopoverOpen}
