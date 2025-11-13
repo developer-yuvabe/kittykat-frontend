@@ -44,6 +44,7 @@ const ConceptVisualEditor = () => {
   const [currentTab, setCurrentTab] = useState<ConceptVisualTabs>(
     defaultActiveTab ?? (source === "blanket" ? "vton" : "ask-kittykat")
   );
+  const [hasInitializedVersions, setHasInitializedVersions] = useState(false);
 
   const queryClient = useQueryClient();
   const versionsRef = useRef<HTMLDivElement>(null);
@@ -54,30 +55,24 @@ const ConceptVisualEditor = () => {
     staleTime: Infinity,
   });
 
-  const revalidateGalleryItemVersions = async (data: GalleryItemResponse) => {
-    if (currentAsset?.id) {
-      // Update the versions cache for any version that matches
-      queryClient.setQueryData(
-        ["versions", currentAsset.id],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return oldData.map((version: GalleryItemResponse) =>
-            version.id === data.id ? data : version
-          );
-        }
+  const handleVersionUpdate = async (updatedVersion: GalleryItemResponse) => {
+    if (!currentAsset?.id) return;
+
+    // Use the common revalidation function from galleryActions
+    if (galleryActions?.revalidateGalleryItemVersions) {
+      galleryActions.revalidateGalleryItemVersions(
+        currentAsset.id,
+        updatedVersion
       );
-
-      if (data.id === currentAsset.id) {
-        queryClient.setQueryData(["gallery-item", currentAsset.id], data);
-      }
-
-      setCurrentAssetVersion((prev) => {
-        if (!prev || prev.id !== data.id) {
-          return prev; // Don't update if it's not the current version
-        }
-        return data; // Update if it's the current version
-      });
     }
+
+    // Update local state if this is the currently displayed version
+    setCurrentAssetVersion((prev) => {
+      if (!prev || prev.id !== updatedVersion.id) {
+        return prev;
+      }
+      return updatedVersion;
+    });
   };
 
   const handleNavigateAssetItems = (direction: "next" | "prev") => {
@@ -91,15 +86,28 @@ const ConceptVisualEditor = () => {
   };
 
   useEffect(() => {
-    // When currentAsset changes, wait for versions to load
+    // Reset initialization flag when asset changes
     // If versions are already loaded, use the latest version
     // Otherwise, temporarily use currentAsset until versions load
+    setHasInitializedVersions(false);
+    
     if (versions.data && versions.data.length > 0) {
       setCurrentAssetVersion(versions.data[versions.data.length - 1]);
+      setHasInitializedVersions(true);
     } else {
       setCurrentAssetVersion(currentAsset);
     }
-  }, [currentAsset, versions.data]);
+  }, [currentAsset]);
+
+  useEffect(() => {
+    if (
+      currentAssetVersion?.asset_type === "video" &&
+      currentTab !== "ask-kittykat" &&
+      source !== "blanket"
+    ) {
+      setCurrentTab("ask-kittykat");
+    }
+  }, [currentAssetVersion, currentTab, source]);
 
   return (
     <Dialog
@@ -217,14 +225,15 @@ const ConceptVisualEditor = () => {
                       <div className="bg-gray-200 rounded-lg w-full max-w-4xlh-20 sm:h-[16rem] md:h-[24rem] lg:h-[36rem] xl:h-[40rem]" />
                     </div>
                   ) : currentTab === "video-generation" ? (
-                    <VideoGenerationInput item={currentAssetVersion} />
+                    <VideoGenerationInput
+                      item={currentAssetVersion}
+                      setCurrentItem={setCurrentAssetVersion}
+                    />
                   ) : (
                     <AskKittykatImageSection
                       item={currentAssetVersion}
                       galleryActions={galleryActions!}
-                      revalidateGalleryItemVersions={
-                        revalidateGalleryItemVersions
-                      }
+                      revalidateGalleryItemVersions={handleVersionUpdate}
                       setCurrentItem={setCurrentAssetVersion}
                       currentTab={currentTab}
                     />
@@ -255,7 +264,7 @@ const ConceptVisualEditor = () => {
                     onValueChange={(v) => setCurrentTab(v as ConceptVisualTabs)}
                     className="flex-1 flex flex-col bg-none"
                   >
-                    <AskKittykatTabs />
+                    <AskKittykatTabs currentVersion={currentAssetVersion} />
 
                     {/* Tabs Content */}
 
@@ -303,6 +312,7 @@ const ConceptVisualEditor = () => {
                     >
                       {currentAssetVersion && (
                         <AskKittyKatTabContent
+                          currentAsset={currentAsset!}
                           currentAssetVersion={currentAssetVersion}
                           setCurrentAssetVersion={setCurrentAssetVersion}
                           galleryActions={galleryActions!}

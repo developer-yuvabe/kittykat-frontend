@@ -92,7 +92,9 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
   });
   useEffect(() => {
     if (initialImage) {
-      form.setValue("image_url", initialImage);
+      form.setValue("image_url", initialImage, { shouldValidate: true });
+    } else {
+      form.setValue("image_url", "", { shouldValidate: true });
     }
   }, [initialImage, form]);
 
@@ -102,7 +104,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
 
       closeConceptVisual();
       if (source === "blanket") {
-        router.push("/?scrollTo=a2i");
+        router.push("/?scrollTo=a2i-input");
       }
     } catch (error) {
       if (error instanceof PlatformApiError && error.statusCode === 403) {

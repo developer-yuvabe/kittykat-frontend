@@ -11,6 +11,9 @@ import {
   BulkGalleryItemRequest,
   BulkGalleryUploadRequest,
   GalleryImageParametersResponse,
+  OrderBy,
+  AssetCountRequest,
+  AssetCountResponse,
 } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -95,6 +98,9 @@ class GalleryService {
     workflow_status?: string[];
     is_archived?: boolean;
     moodboard_ids?: string[];
+    has_comments?: boolean;
+    sort_by?: OrderBy;
+    created_at_range?: [string, string];
   }): Promise<GalleryItemsListResponse> {
     const {
       skip = 0,
@@ -297,6 +303,28 @@ class GalleryService {
   ): Promise<void> {
     return handleApiRequest<void>(
       axiosInstance.post(`/gallery/reorder`, { items: reorderData })
+    );
+  }
+
+  /**
+   * Create a new version of an existing gallery item
+   */
+  async createGalleryItemVersion(
+    galleryItem: GalleryItem
+  ): Promise<GalleryItemResponse> {
+    return handleApiRequest<GalleryItemResponse>(
+      axiosInstance.post("/gallery/version", galleryItem)
+    );
+  }
+
+  /**
+   * Get asset count with optional breakdowns by various dimensions
+   */
+  async getAssetCount(
+    request: AssetCountRequest
+  ): Promise<AssetCountResponse> {
+    return handleApiRequest<AssetCountResponse>(
+      axiosInstance.post("/gallery/count", request)
     );
   }
 }

@@ -3,7 +3,7 @@
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 import { useBrandStore } from "@/store/brand.store";
 import { useQueryState } from "nuqs";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import A2iImagesSection from "./a2i/A2iImagesSection";
 import { BrandSection } from "./brands/BrandSection";
 import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
@@ -38,7 +38,9 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
 
   const [selectedCampaignIdFromUrl] = useQueryState("campaignId");
   const currentCampaign = useMemo(() => {
-    if (!campaignInformation || campaignInformation.length === 0) return null;
+    if (!campaignInformation || campaignInformation.length === 0) {
+      return null;
+    }
 
     // If there's a campaignId in the URL, try to find it in the list
     const campaign = campaignInformation.find(
@@ -49,9 +51,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     if (campaign) return campaign;
 
     // If not found, return the latest campaign
-    setSelectedCampaignId(
-      campaignInformation[campaignInformation.length - 1].id
-    );
+
     return campaignInformation[campaignInformation.length - 1];
   }, [
     campaignInformation,
@@ -59,9 +59,15 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     globalSelectedCamapaignId,
   ]);
 
+  useEffect(() => {
+    if (currentCampaign) {
+      setSelectedCampaignId(currentCampaign.id);
+    }
+  }, [currentCampaign]);
+
   return (
     <div
-      className={`relative rounded-2xl p-8 flex flex-col overflow-auto scrollbar ${
+      className={`relative rounded-2xl px-8 pt-8  flex flex-col overflow-auto scrollbar ${
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >

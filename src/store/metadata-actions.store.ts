@@ -7,6 +7,7 @@ type MetadataActionsParameters = {
   videoParameters: Record<string, any> | null;
   upscaleParameters: Record<string, any> | null;
   referenceImage: string | null;
+  productReferenceImages: string[] | null;
 };
 
 type Store = {
@@ -25,6 +26,7 @@ export const useMetadataActionsStore = create<Store>((set) => ({
     videoParameters: null,
     upscaleParameters: null,
     referenceImage: null,
+    productReferenceImages: null,
   },
 
   setParameters: (key, params) =>

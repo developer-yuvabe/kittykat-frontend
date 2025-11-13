@@ -80,7 +80,7 @@ export function AssistantMessage({
   }
 
   return (
-    <div className="flex items-start gap-2 mr-auto group">
+    <div className="flex items-start gap-2 mr-auto group max-w-[80%]">
       {isToolResult ? (
         <ToolResult message={message} />
       ) : (
@@ -93,7 +93,7 @@ export function AssistantMessage({
             )}
 
           {contentString && (
-            <div className="py-1 w-[80%] bg-white p-4 break-words rounded-2xl">
+            <div className="w-full max-w-full bg-white p-4 rounded-2xl overflow-x-auto">
               <MarkdownText>{contentString}</MarkdownText>
             </div>
           )}

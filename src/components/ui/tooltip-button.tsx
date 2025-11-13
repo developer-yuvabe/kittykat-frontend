@@ -24,6 +24,8 @@ export interface TooltipButtonProps
   normalColor?: string;
   /** Color for active/filled state */
   activeColor?: string;
+  /** Whether the button is disabled */
+  disabled?: boolean;
 }
 
 export const TooltipButton = forwardRef<HTMLDivElement, TooltipButtonProps>(
@@ -36,6 +38,7 @@ export const TooltipButton = forwardRef<HTMLDivElement, TooltipButtonProps>(
       isActive = false,
       normalColor = "text-white hover:text-gray-300",
       activeColor = "text-red-500",
+      disabled = false,
       className,
       onClick,
       ...rest
@@ -54,10 +57,11 @@ export const TooltipButton = forwardRef<HTMLDivElement, TooltipButtonProps>(
           <TooltipTrigger asChild>
             <div
               ref={ref}
-              onClick={onClick}
+              onClick={disabled ? undefined : onClick}
               className={cn(
                 "cursor-pointer transition-colors duration-200",
                 isActive ? activeColor : normalColor,
+                disabled && "opacity-50 ",
                 className
               )}
               {...rest}

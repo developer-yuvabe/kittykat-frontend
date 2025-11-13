@@ -19,6 +19,8 @@ import { useUserStore } from "@/store/user.store";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { SearchIcon } from "@/components/ui/custom-icon";
+import { auth } from "@/config/firebase.config";
+import { useModelsStore } from "@/store/models.store";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -299,6 +301,7 @@ export const InitialPlaceHolder: React.FC<{
   const [brandExpanded, setBrandExpanded] = useState(true);
   const stream = useStreamContext();
   const { user } = useUserStore();
+  const { selectedImageGenerationModel } = useModelsStore();
   const { setIsCreatingBrand, setSelectedBrandId } = useBrandStore();
 
   // Enhanced function to handle new brand creation with scroll
@@ -321,6 +324,9 @@ export const InitialPlaceHolder: React.FC<{
         currentBrandContextId: null,
         currentCampaignId: null,
         currentMoodboardId: null,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
 
       // Clear pinned items

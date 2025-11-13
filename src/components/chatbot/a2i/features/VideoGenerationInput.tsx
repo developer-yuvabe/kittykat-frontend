@@ -26,17 +26,22 @@ import { useVideoGenStore } from "@/store/video-gen.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Settings2, X } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
+  setCurrentItem: Dispatch<SetStateAction<GalleryItemResponse | null>>;
 }
 
-const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
+const VideoGenerationInput = ({
+  item,
+  setCurrentItem,
+}: VideoGenerationInputProps) => {
   const {
     isModelsFetched,
     selectedVideoGenearationModel,
@@ -56,14 +61,22 @@ const VideoGenerationInput = ({ item }: VideoGenerationInputProps) => {
               }}
             />
           </div>
-          <VideoGenerationInputControls item={item} key={item?.id} />
+          <VideoGenerationInputControls
+            item={item}
+            key={item?.id}
+            setCurrentItem={setCurrentItem}
+          />
         </>
       )}
     </div>
   );
 };
 
-const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
+const VideoGenerationInputControls = ({
+  item,
+  setCurrentItem,
+}: VideoGenerationInputProps) => {
+  const { source, isConceptVisualOpened } = useConceptVisualStore();
   const { selectedCampaignId: campaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
@@ -130,6 +143,19 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
     };
   }, [selectedVideoGenearationModel]);
 
+  useEffect(() => {
+    if (isConceptVisualOpened) {
+      form.setValue("prompt", "", { shouldValidate: true });
+      form.setValue("negative_prompt", "", { shouldValidate: true });
+      form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+    }
+  }, [isConceptVisualOpened]);
+
+  useEffect(() => {
+    form.setValue("negative_prompt", "", { shouldValidate: true });
+    form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+  }, [selectedVideoGenearationModel]);
+
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
     model: selectedVideoGenearationModel,
@@ -146,10 +172,14 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
       });
 
       setParameters("videoParameters", null);
+      form.trigger();
     }
   }, [parameters.videoParameters]);
 
   const onSubmit = async (data: Record<string, any>) => {
+    if (galleryPickerSource) {
+      return;
+    }
     try {
       if (!selectedBrandId && !item?.brand_id) {
         throw new Error("Brand ID is missing.");
@@ -173,7 +203,10 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
 
       toast.error("Failed to generate video. Please try again.");
     } finally {
-      form.setValue("prompt", "");
+      form.setValue("prompt", "", { shouldValidate: true });
+      if (source === "blanket" && firstFrameParam) {
+        form.setValue(firstFrameParam.id, null, { shouldValidate: true });
+      }
     }
   };
 
@@ -215,18 +248,25 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
                             <span>Choose from Gallery</span>
                           </button>
                         )}
-                        {field.value && !firstFrameParam.required && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
-                            onClick={() =>
-                              form.setValue(firstFrameParam.id, null)
-                            }
-                          >
-                            <X />
-                          </Button>
-                        )}
+                        {field.value &&
+                          (source === "blanket" ||
+                            !firstFrameParam.required) && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
+                              onClick={() => {
+                                form.setValue(firstFrameParam.id, null, {
+                                  shouldValidate: true,
+                                });
+                                if (source === "blanket") {
+                                  setCurrentItem(null);
+                                }
+                              }}
+                            >
+                              <X />
+                            </Button>
+                          )}
                       </div>
                     </FormControl>
                   </FormItem>
@@ -269,7 +309,9 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
                             size="icon"
                             className="absolute top-2 right-2 bg-muted size-6 hover:text-muted-foreground"
                             onClick={() =>
-                              form.setValue(lastFrameParam.id, null)
+                              form.setValue(lastFrameParam.id, null, {
+                                shouldValidate: true,
+                              })
                             }
                           >
                             <X />
@@ -389,8 +431,18 @@ const VideoGenerationInputControls = ({ item }: VideoGenerationInputProps) => {
       </form>
       <MediaLibraryDialog
         onFullMediaItemSelected={async (item) => {
-          if (galleryPickerSource)
-            form.setValue(galleryPickerSource, item.asset_url);
+          if (galleryPickerSource) {
+            form.setValue(galleryPickerSource, item.asset_url, {
+              shouldValidate: true,
+            });
+            if (
+              (source === "blanket" && galleryPickerSource === "first_frame") ||
+              galleryPickerSource === "start_image" ||
+              galleryPickerSource === "image"
+            ) {
+              setCurrentItem(item);
+            }
+          }
           setGalleryPickerSource(null);
         }}
         open={!!galleryPickerSource}

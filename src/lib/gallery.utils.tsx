@@ -491,3 +491,112 @@ export async function batchExecute<T>(
     return results;
   }
 }
+
+export const generateTasklistStatusLogMessage = (
+  status: WorkflowStatus,
+  userName?: string
+): string => {
+  const user = userName || "Admin";
+  const date = new Date().toLocaleDateString();
+
+  const statusMessages: Record<WorkflowStatus, string> = {
+    request_created: `Tasklist status changed as request created by ${user} at ${date}`,
+    draft: `Tasklist marked as draft by ${user} at ${date}`,
+    a2i_media_created: `Tasklist marked as A2I Media Created by ${user} at ${date}`,
+    requested_revision: `Tasklist marked as revision requested by ${user} at ${date}`,
+    approved: `Tasklist marked as approved by ${user} at ${date}`,
+    in_progress: `Tasklist marked as in progress by ${user} at ${date}`,
+    in_review: `Tasklist marked as in review by ${user} at ${date}`,
+  };
+
+  return statusMessages[status] || "";
+};
+export const allMediaAssetSources = [
+  "brand-uploads",
+  "moodboard",
+  "showboard-media",
+  "a2i-media",
+  "all-media",
+];
+
+/**
+ * Parses a file size string (e.g., "143.7 KB", "2.3 MB") and returns size in MB.
+ * Returns null if the size string cannot be parsed.
+ *
+ * @param sizeString - The size string to parse (e.g., "143.7 KB", "2.3 MB")
+ * @returns The size in MB, or null if parsing fails
+ */
+export const parseSizeStringToMB = (
+  sizeString: string | undefined | null
+): number | null => {
+  if (!sizeString) return null;
+
+  const trimmed = sizeString.trim();
+  const match = trimmed.match(/^([\d.]+)\s*(KB|MB|GB|B)$/i);
+
+  if (!match) return null;
+
+  const value = parseFloat(match[1]);
+  const unit = match[2].toUpperCase();
+
+  if (isNaN(value)) return null;
+
+  switch (unit) {
+    case "B":
+      return value / (1024 * 1024);
+    case "KB":
+      return value / 1024;
+    case "MB":
+      return value;
+    case "GB":
+      return value * 1024;
+    default:
+      return null;
+  }
+};
+
+/**
+ * Checks if a file size (from gallery item or URL) exceeds the maximum limit.
+ * First tries to use the gallery item's size string, then falls back to fetching from URL.
+ *
+ * @param url - The URL of the file
+ * @param sizeString - Optional size string from gallery item (e.g., "143.7 KB", "2.3 MB")
+ * @param maxSizeMB - Maximum allowed size in MB
+ * @returns Promise<{isValid: boolean, sizeInMB?: number}> - Whether the size is valid and the actual size
+ */
+export const checkFileSizeLimit = async (
+  url: string,
+  sizeString: string | undefined | null,
+  maxSizeMB: number
+): Promise<{ isValid: boolean; sizeInMB?: number }> => {
+  // First try to parse the size string if available
+  const parsedSize = parseSizeStringToMB(sizeString);
+
+  if (parsedSize !== null) {
+    return {
+      isValid: parsedSize <= maxSizeMB,
+      sizeInMB: parsedSize,
+    };
+  }
+
+  // Fallback: fetch from URL
+  try {
+    const response = await fetch(url, { method: "HEAD" });
+    const contentLength = response.headers.get("content-length");
+
+    if (contentLength) {
+      const sizeInMB = parseInt(contentLength) / (1024 * 1024);
+      return {
+        isValid: sizeInMB <= maxSizeMB,
+        sizeInMB,
+      };
+    }
+
+    // If we can't determine the size, allow it
+    return { isValid: true };
+  } catch (error) {
+    console.error("Error checking file size from URL:", error);
+    // Allow the file if we can't check the size
+    return { isValid: true };
+  }
+};

@@ -1,30 +1,50 @@
 "use client";
 
 import { useCallback } from "react";
-import { useQueryState } from "nuqs";
+import { useBrandStore } from "@/store/brand.store";
+import { useUserStore } from "@/store/user.store";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
 
-export function useFolderState(initialCampaignId?: string) {
-  // URL state management for campaign selection
-  const [selectedCampaignFromUrl, setSelectedCampaignFromUrl] = useQueryState(
-    "campaign",
-    {
-      defaultValue: initialCampaignId || "",
-    }
-  );
+export function useFolderState() {
+  const { selectedCampaignId, setSelectedCampaignId, selectedBrandId } =
+    useBrandStore();
+  const { user } = useUserStore();
+  const stream = useStreamContext();
 
   const handleCampaignSelect = useCallback(
     (campaignId: string) => {
-      setSelectedCampaignFromUrl(campaignId);
+      // Empty string means deselect
+      if (!campaignId) {
+        setSelectedCampaignId(null);
+        return;
+      }
+
+      setSelectedCampaignId(campaignId);
+
+      // Update thread context if available
+      if (user?.thread_id && selectedBrandId) {
+        updateCurrentContextBrandId(
+          user.thread_id,
+          selectedBrandId,
+          stream.values.currentBrandContextId
+        );
+      }
     },
-    [setSelectedCampaignFromUrl]
+    [
+      setSelectedCampaignId,
+      user?.thread_id,
+      selectedBrandId,
+      stream.values.currentBrandContextId,
+    ]
   );
 
   const handleBackToCampaigns = useCallback(() => {
-    setSelectedCampaignFromUrl("");
-  }, [setSelectedCampaignFromUrl]);
+    setSelectedCampaignId(null);
+  }, [setSelectedCampaignId]);
 
   return {
-    selectedCampaignFromUrl,
+    selectedCampaignId,
     handleCampaignSelect,
     handleBackToCampaigns,
   };

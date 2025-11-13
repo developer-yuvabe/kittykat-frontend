@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { GalleryItemResponse } from "@/types/gallery.types";
+import { AssetThumbnail } from "@/components/shared/AssetThumbnail";
 
 interface MediaBulkAssetPreviewProps {
   selectedItems: GalleryItemResponse[];
@@ -40,8 +40,9 @@ export function MediaBulkAssetPreview({
         {/* Main Preview Image */}
         <div className="relative w-full aspect-video">
           {currentItem?.asset_url && (
-            <Image
-              src={currentItem.asset_url}
+            <AssetThumbnail
+              assetUrl={currentItem.asset_url}
+              galleryItem={currentItem}
               alt={`Asset ${currentIndex + 1}`}
               fill
               className="object-contain"
@@ -87,8 +88,9 @@ export function MediaBulkAssetPreview({
               }`}
             >
               {item.asset_url && (
-                <Image
-                  src={item.asset_url}
+                <AssetThumbnail
+                  assetUrl={item.asset_url}
+                  galleryItem={item}
                   alt={`Thumbnail ${idx + 1}`}
                   fill
                   className="object-cover rounded"

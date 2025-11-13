@@ -75,8 +75,8 @@ export const TaskListEditNotesDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Edit Notes
@@ -87,7 +87,7 @@ export const TaskListEditNotesDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 flex-1 overflow-hidden">
+        <div className="space-y-4 py-4 flex-1 overflow-y-auto min-h-0">
           {/* Editor Controls */}
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">Notes Content</Label>
@@ -115,17 +115,17 @@ export const TaskListEditNotesDialog = ({
 
           {/* Markdown Editor Container */}
           <div
-            className="border rounded-lg overflow-hidden"
+            className="border rounded-lg overflow-hidden flex-shrink-0"
             data-color-mode="light"
           >
-            <div style={{ height: "400px", overflow: "auto" }}>
+            <div style={{ height: "300px", overflow: "auto" }}>
               <MDEditor
                 value={notes}
                 onChange={(val) => setNotes(val || "")}
                 preview={isPreviewMode ? "preview" : "edit"}
                 hideToolbar={false}
                 visibleDragbar={false}
-                height={400}
+                height={300}
               />
             </div>
           </div>
@@ -143,7 +143,7 @@ export const TaskListEditNotesDialog = ({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>

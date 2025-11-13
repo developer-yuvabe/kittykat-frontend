@@ -3,7 +3,10 @@ import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { create } from "zustand";
 
-type ConceptVisualSource = "blanket" | "concept-visual-media" | "media-gallery";
+export type ConceptVisualSource =
+  | "blanket"
+  | "concept-visual-media"
+  | "media-gallery";
 type OpenConceptVisualArguments = {
   source: ConceptVisualSource;
   assetItems: GalleryItemResponse[];
@@ -30,6 +33,7 @@ type Store = {
 
   assetItems: GalleryItemResponse[];
   setAssetItems: (items: GalleryItemResponse[]) => void;
+  updateAssetItem: (assetId: string, updatedAsset: GalleryItemResponse) => void;
 
   galleryActions: GalleryActions | null;
 
@@ -58,6 +62,12 @@ export const useConceptVisualStore = create<Store>((set) => ({
 
   assetItems: [],
   setAssetItems: (items) => set({ assetItems: items }),
+  updateAssetItem: (assetId, updatedAsset) =>
+    set((state) => ({
+      assetItems: state.assetItems.map((item) =>
+        item.id === assetId ? updatedAsset : item
+      ),
+    })),
 
   galleryActions: null,
   defaultActiveTab: null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,11 @@ export const TaskListFilters = ({
   const [searchValue, setSearchValue] = useState(filters.search || "");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [tempFilters, setTempFilters] = useState<TasklistFilters>(filters);
+
+  // Sync searchValue with filters.search when it changes externally
+  useEffect(() => {
+    setSearchValue(filters.search || "");
+  }, [filters.search]);
 
   // Debounce search to avoid excessive API calls
   const debouncedSearch = useCallback(
@@ -75,6 +80,7 @@ export const TaskListFilters = ({
 
   const clearAllFilters = () => {
     setSearchValue("");
+    debouncedSearch.cancel(); // Cancel any pending debounced search
     onFiltersChange({ page: 1, page_size: filters.page_size });
   };
 
@@ -83,6 +89,8 @@ export const TaskListFilters = ({
 
     if (key === "search") {
       setSearchValue("");
+      debouncedSearch.cancel(); // Cancel any pending debounced search
+      delete newFilters.search;
     } else if (key === "asset_expert_statuses" && value) {
       const newStatuses = filters.asset_expert_statuses?.filter(
         (s) => s !== value
@@ -135,7 +143,7 @@ export const TaskListFilters = ({
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search tasklists, assets, or requesters..."
+            placeholder="Search requesters, brands, or campaigns..."
             className="pl-9"
             value={searchValue}
             onChange={handleSearchChange}

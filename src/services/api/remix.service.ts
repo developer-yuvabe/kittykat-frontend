@@ -5,12 +5,16 @@ export const remixImageService = async (
   brandId: string,
   campaignId: string | null | undefined,
   data: Record<string, any>,
-  maskImageUrl: string | null
+  maskImageUrl: string | null,
+  product_reference_images?: string[],
+  enhance_prompt_for_products?: boolean
 ) => {
   try {
     const payload: Record<string, any> = {
       ...data,
       campaign_id: campaignId,
+      product_reference_images: product_reference_images || [],
+      enhance_prompt_for_product: enhance_prompt_for_products || false,
     };
 
     if (maskImageUrl) {

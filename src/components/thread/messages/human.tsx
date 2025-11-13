@@ -21,6 +21,8 @@ import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
 import { ContentBlock } from "@/lib/file-upload.utils";
+import { useModelsStore } from "@/store/models.store";
+import { auth } from "@/config/firebase.config";
 
 interface FileAttachmentProps {
   fileUrl: string;
@@ -165,7 +167,7 @@ export function HumanMessage({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
-
+  const { selectedImageGenerationModel } = useModelsStore();
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
 
@@ -187,7 +189,7 @@ export function HumanMessage({
     "source_type" in block &&
     ["file", "image", "audio"].includes((block as any).type);
 
-  const handleSubmitEdit = () => {
+  const handleSubmitEdit = async () => {
     setIsEditing(false);
     const newMessage: Message = { type: "human", content: value };
 
@@ -199,6 +201,9 @@ export function HumanMessage({
         previousBrandContextId: thread.values.previousBrandContextId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       },
       {
         checkpoint: parentCheckpoint,

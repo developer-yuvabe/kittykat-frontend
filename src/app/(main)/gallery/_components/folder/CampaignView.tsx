@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
-import { ArrowLeft, Folder, Loader2 } from "lucide-react";
+import { ArrowLeft, Folder, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { SortableMediaGrid } from "../SortableMediaGrid";
@@ -12,6 +12,9 @@ import { FolderUploadDropzone } from "./FolderUploadDropzone";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { FolderTabs } from "./FolderTabs";
 import { useBrandStore } from "@/store/brand.store";
+import { Input } from "@/components/ui/input";
+import { MediaFilterDropdown } from "../MediaFilterDropdown";
+import MediaViewsDropdown from "../MediaViewDropDown";
 
 interface CampaignViewProps {
   selectedBrandId: string;
@@ -24,9 +27,20 @@ interface CampaignViewProps {
   selectedMoodboardId?: string;
   searchQuery?: string;
   favorites?: boolean;
-  selectedFilters?: EnhancedSelectedFilters;
+  selectedFilters: EnhancedSelectedFilters;
   onTabChange: (value: string) => void;
   showHeader?: boolean; // New prop to control header visibility
+  handleSearchChange: (query: string) => void;
+  showFilters?: boolean;
+  setSelectedFilters: React.Dispatch<
+    React.SetStateAction<EnhancedSelectedFilters>
+  >;
+  setInitialWorkflowStatus: (
+    value: string[] | ((old: string[]) => string[] | null) | null,
+    options?: any
+  ) => Promise<URLSearchParams>;
+  galleryView: "grid" | "folder";
+  setGalleryView: (view: "grid" | "folder") => void;
 }
 
 export function CampaignView({
@@ -42,7 +56,13 @@ export function CampaignView({
   favorites = false,
   selectedFilters,
   onTabChange,
-  showHeader = false, // Default to not showing header (when used with sidebar)
+  showHeader = false,
+  handleSearchChange,
+  showFilters,
+  setSelectedFilters,
+  setInitialWorkflowStatus,
+  galleryView,
+  setGalleryView, // Default to not showing header (when used with sidebar)
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -140,6 +160,13 @@ export function CampaignView({
     setSelectedItems([]);
   };
 
+  const handleSelectAll = () => {
+    const allItemIds = galleryActions.getGalleryItems().map((item) => item.id);
+    setSelectedItems(allItemIds);
+  };
+
+  const { selectedCampaignId } = useBrandStore();
+
   if (!currentCampaign) {
     return (
       <div className="space-y-6">
@@ -168,7 +195,7 @@ export function CampaignView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Campaign Header - Only show if showHeader is true */}
       {showHeader && (
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
@@ -197,39 +224,77 @@ export function CampaignView({
         </div>
       )}
 
-      {/* Upload Dropzone for Campaign - Only show if showHeader is false (sidebar mode) */}
       {!showHeader && (
-        <FolderUploadDropzone
-          activeTab={activeTab}
-          onUploadComplete={onUploadComplete}
-          addToGallery={addToGallery}
-          galleryFilters={{
-            selectedFilters: {
-              brands: [selectedBrandId],
-              campaigns: [campaignId],
-              moodboards: [],
-              product_categories: [],
-              asset_types: [],
-              asset_sources: [],
-              media_format: [],
-              aspect_ratio: [],
-              workflow_status: [],
-            },
-          }}
-          selectedBrandId={selectedBrandId}
-          selectedCampaignId={campaignId}
-          selectedMoodboardId={selectedMoodboardId}
-        />
+        <div className="flex justify-between items-center m-2 mb-2">
+          <div className="relative w-fit mx-4 mb-2">
+            <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search media..."
+              className={`pl-9 transition-all duration-200 ${
+                showFilters ? "w-[400px]" : "w-[300px]"
+              }`}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <MediaFilterDropdown
+              selectedFilters={selectedFilters}
+              setSelectedFilters={setSelectedFilters}
+              setInitialWorkflowStatus={setInitialWorkflowStatus}
+            />
+
+            <MediaViewsDropdown
+              galleryView={galleryView}
+              setGalleryView={setGalleryView}
+              selectedCampaignId={selectedCampaignId}
+            />
+          </div>
+        </div>
       )}
 
-      {/* Folder Tabs for campaign view - Only show if showHeader is false */}
+      {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
+
       {!showHeader && (
-        <FolderTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          title="Subfolders"
-        />
+        <div className="px-4 pb-6">
+          <FolderTabs
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+            title="Subfolders"
+          />
+        </div>
       )}
+
+      {/* Upload Dropzone for Campaign - Only show if showHeader is false (sidebar mode) */}
+      {!showHeader && (
+        <div className="px-4">
+          <FolderUploadDropzone
+            activeTab={activeTab}
+            onUploadComplete={onUploadComplete}
+            addToGallery={addToGallery}
+            galleryFilters={{
+              selectedFilters: {
+                brands: [selectedBrandId],
+                campaigns: [campaignId],
+                moodboards: [],
+                product_categories: [],
+                asset_types: [],
+                asset_sources: [],
+                media_format: [],
+                aspect_ratio: [],
+                workflow_status: [],
+              },
+            }}
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={campaignId}
+            selectedMoodboardId={selectedMoodboardId}
+          />
+        </div>
+      )}
+
+      {/* <MediaSearchFilters {...filterProps} /> */}
+
+      {/* Folder Tabs for campaign view - Only show if showHeader is false */}
 
       {/* Gallery Status Display */}
       <MediaGalleryStatusDisplay
@@ -238,7 +303,7 @@ export function CampaignView({
       />
 
       {/* Gallery Items with minimum height to prevent layout shift */}
-      <div className="min-h-[400px]">
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
         {galleryActions.galleryStatus === "success" &&
           galleryActions.getGalleryItems().length > 0 && (
             <div>
@@ -247,6 +312,7 @@ export function CampaignView({
                 onSelect={handleSelect}
                 galleryActions={galleryActions}
                 isMediaSelectDialog={false} // This is not a dialog
+                enableDragToMove={true}
               />
               {/* Infinite scroll loading indicator */}
               {galleryActions.hasNextPage && (
@@ -276,6 +342,7 @@ export function CampaignView({
         <MediaBulkActions
           selectedItems={selectedItemsData}
           onUnselectAll={handleUnselectAll}
+          onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brandName}
         />

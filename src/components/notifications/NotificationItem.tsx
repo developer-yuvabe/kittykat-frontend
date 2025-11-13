@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { markNotificationsAsRead } from "@/services/api/notification.service";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBrandStore } from "@/store/brand.store";
 
 const NotificationItem = ({
   notification,
@@ -18,8 +19,24 @@ const NotificationItem = ({
   setOpen: () => void;
 }) => {
   const router = useRouter();
+  const { setSelectedCampaignId } = useBrandStore();
   const [showAssets, setShowAssets] = React.useState(false);
   const queryClient = useQueryClient();
+
+  const handleNotificationClick = async (galleryItemId: string) => {
+    setSelectedCampaignId(null);
+
+    // Make sure the campaignId is reset before navigation
+    setTimeout(() => {
+      router.replace(`/gallery?id=${galleryItemId}`);
+    }, 100);
+
+    setOpen();
+    await markNotificationsAsRead(notification.brand_id);
+    queryClient.invalidateQueries({
+      queryKey: ["user-notifications"],
+    });
+  };
 
   return (
     <div className="border-b last:border-b-0 py-2">
@@ -47,21 +64,7 @@ const NotificationItem = ({
               );
               return (
                 <li
-                  onClick={async () => {
-                    const status = Array.from(
-                      new Set(notification.assets.map((a) => a.status))
-                    ).join(", ");
-
-                    router.replace(
-                      `/gallery?brandId=${notification.brand_id}&status=${status}`
-                    );
-
-                    setOpen();
-                    await markNotificationsAsRead(notification.brand_id);
-                    queryClient.invalidateQueries({
-                      queryKey: ["user-notifications"],
-                    });
-                  }}
+                  onClick={() => handleNotificationClick(asset.gallery_item_id)}
                   key={asset.gallery_item_id}
                   className={cn(
                     `flex items-center justify-between p-2 cursor-pointer hover:bg-muted px-4`,
@@ -71,11 +74,22 @@ const NotificationItem = ({
                   )}
                 >
                   <div className="flex items-center gap-x-2">
-                    <img
-                      src={asset.image_url}
-                      alt="Asset"
-                      className="w-12 h-12 object-cover rounded"
-                    />
+                    {asset.image_url && (
+                      <img
+                        src={asset.image_url}
+                        alt="Asset"
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    )}
+                    {asset.video_url && (
+                      <video
+                        src={asset.video_url}
+                        autoPlay
+                        muted
+                        loop
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    )}
                     <div>
                       {status && (
                         <Badge

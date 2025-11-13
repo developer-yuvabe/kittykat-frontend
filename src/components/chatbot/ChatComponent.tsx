@@ -37,6 +37,7 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
         )}
       >
         <StickyToBottomContent
+          id="chat-panel-scroll-container"
           className={cn(
             "absolute inset-0 px-3 overflow-y-scroll scrollbar",
             !chatStarted &&

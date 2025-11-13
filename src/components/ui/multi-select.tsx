@@ -477,7 +477,7 @@ const MultiSelectItem = React.forwardRef<
     return (
       <CommandItem
         {...props}
-        value={value}
+        value={`${value} ${label} `}
         className={ny(
           disabled && "text-muted-foreground cursor-not-allowed",
           className

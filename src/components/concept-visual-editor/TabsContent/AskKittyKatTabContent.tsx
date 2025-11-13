@@ -11,19 +11,20 @@ import { GalleryActions } from "@/hooks/useGallery";
 import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useUserStore } from "@/store/user.store";
 import {
   CommentReply,
   GalleryItemResponse,
   Comment,
 } from "@/types/gallery.types";
-import { useQueryClient } from "@tanstack/react-query";
 import MDEditor from "@uiw/react-md-editor";
 import { Paperclip, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type ImageUpcalerTabContentProps = {
+  currentAsset: GalleryItemResponse;
   currentAssetVersion: GalleryItemResponse;
   setCurrentAssetVersion: React.Dispatch<
     React.SetStateAction<GalleryItemResponse | null>
@@ -32,11 +33,13 @@ type ImageUpcalerTabContentProps = {
 };
 
 const AskKittyKatTabContent = ({
+  currentAsset,
   currentAssetVersion,
   setCurrentAssetVersion,
   galleryActions,
 }: ImageUpcalerTabContentProps) => {
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
+  const { updateAssetItem } = useConceptVisualStore();
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -53,35 +56,25 @@ const AskKittyKatTabContent = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUserStore();
 
-  const queryClient = useQueryClient();
+  const handleVersionUpdate = async (updatedVersion: GalleryItemResponse) => {
+    // Use the common revalidation function from galleryActions
+    galleryActions.revalidateGalleryItemVersions(
+      currentAsset.id,
+      updatedVersion
+    );
 
-  const revalidateGalleryItemVersions = async (data: GalleryItemResponse) => {
-    if (currentAssetVersion?.id) {
-      // Update the versions cache for any version that matches
-      queryClient.setQueryData(
-        ["versions", currentAssetVersion.id],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return oldData.map((version: GalleryItemResponse) =>
-            version.id === data.id ? data : version
-          );
-        }
-      );
-
-      if (data.id === currentAssetVersion.id) {
-        queryClient.setQueryData(
-          ["gallery-item", currentAssetVersion.id],
-          data
-        );
-      }
-
-      setCurrentAssetVersion((prev) => {
-        if (!prev || prev.id !== data.id) {
-          return prev; // Don't update if it's not the current version
-        }
-        return data; // Update if it's the current version
-      });
+    // Update the store's assetItems if the updated version is the current asset
+    if (updatedVersion.id === currentAsset.id) {
+      updateAssetItem(currentAsset.id, updatedVersion);
     }
+
+    // Update local state if this is the currently displayed version
+    setCurrentAssetVersion((prev) => {
+      if (!prev || prev.id !== updatedVersion.id) {
+        return prev;
+      }
+      return updatedVersion;
+    });
   };
 
   useEffect(() => {
@@ -184,7 +177,7 @@ const AskKittyKatTabContent = ({
         {
           onSuccess(data) {
             // Update cache with actual server data
-            revalidateGalleryItemVersions(data);
+            handleVersionUpdate(data);
             // Only update currentAssetVersion if the response is for the current version
             if (data.id === currentAssetVersion?.id) {
               setCurrentAssetVersion(data);
@@ -266,7 +259,7 @@ const AskKittyKatTabContent = ({
         {
           onSuccess(data) {
             // Update cache with actual server data
-            revalidateGalleryItemVersions(data);
+            handleVersionUpdate(data);
             // Only update currentAssetVersion if the response is for the current version
             if (data.id === currentAssetVersion?.id) {
               setCurrentAssetVersion(data);
@@ -310,7 +303,7 @@ const AskKittyKatTabContent = ({
         },
         {
           onSuccess(data) {
-            revalidateGalleryItemVersions(data);
+            handleVersionUpdate(data);
             // Only update currentAssetVersion if the response is for the current version
             if (data.id === currentAssetVersion?.id) {
               setCurrentAssetVersion(data);
@@ -373,7 +366,7 @@ const AskKittyKatTabContent = ({
         },
         {
           onSuccess(data) {
-            revalidateGalleryItemVersions(data);
+            handleVersionUpdate(data);
             // Only update currentAssetVersion if the response is for the current version
             if (data.id === currentAssetVersion?.id) {
               setCurrentAssetVersion(data);
@@ -420,22 +413,33 @@ const AskKittyKatTabContent = ({
           commentId,
         },
         {
-          onSuccess(data) {
-            if (currentAssetVersion?.id) {
-              queryClient.setQueryData(
-                ["versions", currentAssetVersion.id],
-                (oldData: any) => {
-                  if (!oldData) return oldData;
-                  return oldData.map((version: GalleryItemResponse) => {
-                    if (version.id === currentAssetVersion?.id)
-                      return {
-                        ...version,
-                        comments: version.comments?.filter(
-                          (c: Comment) => c.id !== data.id
-                        ),
-                      };
-                    return version;
-                  });
+          onSuccess() {
+            // Update the versions cache to persist the deletion
+            const updatedVersion: GalleryItemResponse = {
+              ...currentAssetVersion,
+              comments: optimisticComments,
+            };
+            handleVersionUpdate(updatedVersion);
+            //Check if any tasklist comment is left
+            const hasTasklist = updatedVersion.comments?.some(
+              (c) => c.is_tasklist
+            );
+
+            if (!hasTasklist) {
+              //Reset expert workflow
+              galleryActions.patchItem(
+                {
+                  itemId: currentAssetVersion.id,
+                  data: {
+                    workflow_status: "draft",
+                    sent_to_human_queue: false,
+                  },
+                },
+                {
+                  onSuccess(data) {
+                    handleVersionUpdate(data);
+                    setCurrentAssetVersion(data);
+                  },
                 }
               );
             }
@@ -493,7 +497,7 @@ const AskKittyKatTabContent = ({
         },
         {
           onSuccess(data) {
-            revalidateGalleryItemVersions(data);
+            handleVersionUpdate(data);
             // Only update currentAssetVersion if the response is for the current version
             if (data.id === currentAssetVersion?.id) {
               setCurrentAssetVersion(data);
@@ -550,7 +554,7 @@ const AskKittyKatTabContent = ({
       },
       {
         onSuccess(data) {
-          revalidateGalleryItemVersions(data);
+          handleVersionUpdate(data);
         },
         onError() {
           setCurrentAssetVersion((prev) =>
@@ -603,7 +607,7 @@ const AskKittyKatTabContent = ({
       },
       {
         onSuccess(data) {
-          revalidateGalleryItemVersions(data);
+          handleVersionUpdate(data);
         },
         onError: () => {
           setCurrentAssetVersion((prev) =>
@@ -654,7 +658,7 @@ const AskKittyKatTabContent = ({
             {
               onSuccess(data) {
                 // Update cache with actual server data
-                revalidateGalleryItemVersions(data);
+                handleVersionUpdate(data);
                 // Only update currentAssetVersion if the response is for the current version
                 if (data.id === currentAssetVersion?.id) {
                   setCurrentAssetVersion(data);
@@ -687,7 +691,7 @@ const AskKittyKatTabContent = ({
             if (data.id === currentAssetVersion?.id) {
               setCurrentAssetVersion(data);
             }
-            revalidateGalleryItemVersions(data);
+            handleVersionUpdate(data);
           },
           onError() {
             // Don't reset currentAssetVersion on error - preserve the current version
@@ -712,7 +716,7 @@ const AskKittyKatTabContent = ({
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentAssetVersion.comments]);
+  }, [currentAssetVersion.comments?.length]);
 
   return (
     <>
@@ -874,7 +878,9 @@ const AskKittyKatTabContent = ({
             <Button
               onClick={() => handleSubmitComment()}
               disabled={
-                isSubmitting || (!newComment.trim() && attachments.length === 0)
+                isSubmitting ||
+                (!newComment.trim() && attachments.length === 0) ||
+                isUploading
               }
               className="bg-purple-600 hover:bg-purple-700"
             >
@@ -892,7 +898,7 @@ const AskKittyKatTabContent = ({
           galleryActions={galleryActions}
           // ** IMPORTANT ** TO DECIDE: Should we pass the current item (versions) or the original item (Version 1) staus here?
           item={currentAssetVersion}
-          revalidateGalleryItemVersions={revalidateGalleryItemVersions}
+          revalidateGalleryItemVersions={handleVersionUpdate}
           setCurrentItem={setCurrentAssetVersion}
         />
       </div>

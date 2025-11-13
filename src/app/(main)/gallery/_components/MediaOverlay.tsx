@@ -8,8 +8,10 @@ import {
   X,
   LayoutGridIcon,
   Expand,
+  MessageCircle,
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
+import { toast } from "sonner";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -19,7 +21,6 @@ interface MediaOverlayProps {
   isMultiSelectMode?: boolean;
   onSelect: (id: string, selected: boolean) => void;
   isAlreadySelected: boolean;
-  isDisabled?: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
   onDownload: (item: GalleryItemResponse, e: React.MouseEvent) => void;
@@ -42,7 +43,6 @@ export function MediaOverlay({
   onSelect,
   onToggleFavorite,
   isAlreadySelected,
-  isDisabled = false,
   selectedCount,
   maxSelectionCount,
   onDownload,
@@ -66,7 +66,12 @@ export function MediaOverlay({
     typeof selectedCount === "number" &&
     typeof maxSelectionCount === "number" &&
     selectedCount >= maxSelectionCount;
-  const isCheckboxDisabled = isDisabled || isAlreadySelected || hasReachedMax;
+
+  // Only disable checkbox if:
+  // 1. Max reached AND user is trying to select a NEW item (not currently selected AND not already selected)
+  // Allow unselecting already selected items even when max is reached
+  // Allow unselecting currently selected items even when max is reached
+  const isCheckboxDisabled = hasReachedMax && !isSelected && !isAlreadySelected;
 
   return (
     <>
@@ -80,10 +85,22 @@ export function MediaOverlay({
 
       {/* Selection Controls */}
       <div
-        className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${
+        className={`absolute top-2 left-2 z-30 transition-opacity duration-200 ${
           shouldShowSelection ? "opacity-100" : "opacity-0"
         }`}
-        onClick={(e) => e.stopPropagation()} // Prevent tile click when clicking checkbox
+        onClick={(e) => {
+          e.stopPropagation();
+          // Show toast if trying to select when checkbox is disabled
+          if (isCheckboxDisabled && !isSelected && !isAlreadySelected) {
+            toast.warning(
+              `Maximum selection limit reached (${maxSelectionCount} items)`,
+              {
+                description:
+                  "Please deselect an item before selecting a new one.",
+              }
+            );
+          }
+        }}
       >
         {isMediaSelectDialog || isMultiSelectMode ? (
           // Checkbox for both Single and Multi Select Mode
@@ -113,8 +130,15 @@ export function MediaOverlay({
 
       {/* Disabled Overlay for Already Selected Items */}
       {isAlreadySelected && (
-        <div className="absolute inset-0 bg-black/20 z-5 pointer-events-none">
-          <div className="absolute inset-0 border-2 border-purple-600 " />
+        <div
+          className="absolute inset-0 bg-black/20 z-20 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Always allow deselection of already selected items
+            onSelect(item.id, false);
+          }}
+        >
+          <div className="absolute inset-0 border-2 border-purple-600 pointer-events-none" />
         </div>
       )}
 
@@ -196,6 +220,29 @@ export function MediaOverlay({
                 }
               />
             )}
+
+            <TooltipButton
+              tooltip={
+                item.comments && item.comments.length > 0
+                  ? `${item.comments.length} comment${
+                      item.comments.length > 1 ? "s" : ""
+                    }`
+                  : "No comments"
+              }
+              icon={
+                <div className="relative">
+                  <MessageCircle
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} text-white`}
+                  />
+                  {item.comments && item.comments.length > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {item.comments.length}
+                    </div>
+                  )}
+                </div>
+              }
+              className="transition-all duration-300"
+            />
           </div>
         )}
 
@@ -203,24 +250,48 @@ export function MediaOverlay({
       {!isMediaSelectDialog &&
         onEditClick &&
         item.asset_source !== "moodboard" && (
-          <div
-            className={`absolute bottom-2 left-2 z-30 transition-opacity duration-200 ${
-              isHovered ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <TooltipButton
-              tooltip="Concept Visual Editor"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                onEditClick(item);
-              }}
-              icon={
-                <PencilIcon
-                  className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                />
-              }
-            />
-          </div>
+          <>
+            <div
+              className={`absolute bottom-2 left-2 z-30 flex items-center gap-2 transition-opacity duration-200 ${
+                isHovered ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <TooltipButton
+                tooltip="Concept Visual Editor"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onEditClick(item);
+                }}
+                icon={
+                  <PencilIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+              <TooltipButton
+                tooltip={
+                  item.comments && item.comments.length > 0
+                    ? `${item.comments.length} comment${
+                        item.comments.length > 1 ? "s" : ""
+                      }`
+                    : "No comments"
+                }
+                icon={
+                  <div className="relative">
+                    <MessageCircle
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} text-white`}
+                    />
+                    {item.comments && item.comments.length > 0 && (
+                      <div className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                        {item.comments.length}
+                      </div>
+                    )}
+                  </div>
+                }
+                className="transition-all duration-300"
+              />
+            </div>
+          </>
         )}
 
       {/* Download and Favorite Buttons - Bottom Right */}
