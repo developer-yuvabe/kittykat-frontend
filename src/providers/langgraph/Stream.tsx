@@ -28,6 +28,7 @@ export type StateType = {
   messages: Message[];
   next?: string;
   userId: string;
+  chatOnlyMode: boolean;
   currentBrandContextId: string | null;
   previousBrandContextId?: string | null;
 
@@ -35,6 +36,7 @@ export type StateType = {
   currentMoodboardId: string | null;
 
   currentSelectedImageGenerationModelId: string | null;
+  currentSelectedVideoGenerationModelId: string | null;
   userAccessToken: string | null;
 
   timestamp: number;
@@ -48,6 +50,7 @@ const useTypedStream = useStream<
       next?: string;
 
       userId: string;
+      chatOnlyMode: boolean;
       currentBrandContextId: string | null;
       previousBrandContextId?: string | null;
 
@@ -55,6 +58,7 @@ const useTypedStream = useStream<
       currentMoodboardId: string | null;
 
       currentSelectedImageGenerationModelId: string | null;
+      currentSelectedVideoGenerationModelId: string | null;
       userAccessToken: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;

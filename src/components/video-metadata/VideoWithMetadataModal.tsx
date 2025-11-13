@@ -62,7 +62,7 @@ const VideoWithMetadataModal = ({
     varyAuto: false,
   });
   const [copied, setCopied] = useState(false);
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId } = useBrandStore();
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
   const { openConceptVisual } = useConceptVisualStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -117,6 +117,7 @@ const VideoWithMetadataModal = ({
           paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
         ),
         source_asset_id: galleryItem.id,
+        campaign_id: selectedCampaignId,
       });
 
       onClose();
