@@ -38,8 +38,6 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
         return "pinterest_limit";
       case "instagram":
         return "instagram_limit";
-      // case "facebook":
-      //   return "facebook_limit";
       case "website":
         return "website_limit";
       default:

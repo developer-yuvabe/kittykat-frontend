@@ -35,7 +35,6 @@ interface Props {
   socialMediaData?: {
     instagram?: string;
     pinterest?: string;
-    // facebook?: string;
     website?: string;
   };
   analysisLogs: AnalysisLogDetail[];
@@ -243,14 +242,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         isEditing: false,
         editValue: socialMediaData?.pinterest || "https://",
       },
-      // {
-      //   id: SocialOptionId.Facebook,
-      //   name: "Use Facebook Images",
-      //   url: socialMediaData?.facebook || "https://www.facebook.com/",
-      //   icon: <FacebookIcon size={44} />,
-      //   isEditing: false,
-      //   editValue: socialMediaData?.facebook || "https://www.facebook.com/",
-      // },
       {
         id: SocialOptionId.Website,
         name: "Use Website Images",
@@ -290,6 +281,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
       try {
         // Step 2: Upload files to GCS and get URLs with progress indication
         const uploadedFiles: UploadedImage[] = [];
+        const toastId = toast.loading(`Uploading ${acceptedFiles.length} file(s)...`);
         
         const uploadPromises = acceptedFiles.map(async (file, index) => {
           try {
@@ -303,38 +295,38 @@ export const BrandAestheticUploader: React.FC<Props> = ({
             );
 
             const uploadedImage = {
-              id: tempImages[index].id, // Keep same ID
-              url: downloadUrl, // Replace with GCS URL
+              id: tempImages[index].id,
+              url: downloadUrl,
               name: file.name,
               file,
             };
             uploadedFiles.push(uploadedImage);
             
-            // Update the thumbnail with actual GCS URL
             setUploadedImages((prev) => 
               prev.map((img) => 
                 img.id === tempImages[index].id ? uploadedImage : img
               )
             );
             
-            // Revoke the temporary URL to free memory
             URL.revokeObjectURL(tempImages[index].url);
-            
             return downloadUrl;
           } catch (error) {
             console.error(`Failed to upload ${file.name}:`, error);
-            throw error;
+            URL.revokeObjectURL(tempImages[index].url);
+            return null;
           }
         });
-
-        // Show upload progress
-        const toastId = toast.loading(`Uploading ${acceptedFiles.length} file(s)...`);
         
-        await Promise.all(uploadPromises);
+        await Promise.allSettled(uploadPromises);
         
-        toast.success(`Successfully uploaded ${acceptedFiles.length} file(s)!`, { id: toastId });
+        const failedCount = acceptedFiles.length - uploadedFiles.length;
+        if (failedCount > 0) {
+          toast.warning(`Uploaded ${uploadedFiles.length} of ${acceptedFiles.length} file(s). ${failedCount} failed.`, { id: toastId });
+        } else {
+          toast.success(`Successfully uploaded ${acceptedFiles.length} file(s)!`, { id: toastId });
+        }
 
-        // Step 3: Automatically add to gallery
+        // Step 3: Add successfully uploaded files to gallery
         if (uploadedFiles.length > 0) {
           const itemsToUpload: GalleryItem[] = uploadedFiles.map((img) => ({
             brand_id: brandId,
@@ -363,17 +355,12 @@ export const BrandAestheticUploader: React.FC<Props> = ({
           // Gallery upload will show its own toast via the mutation
           await bulkUpload(uploadPayload);
           
-          // Clear uploaded images after successful gallery upload
-          setTimeout(() => {
-            setUploadedImages([]);
-          }, 1000); // Small delay to show success state
+          setTimeout(() => setUploadedImages([]), 1000);
         }
         
       } catch (error) {
-        setUploadError("Some files failed to upload. Please try again.");
         console.error("Upload error:", error);
         toast.error("Upload failed. Please try again.");
-        // Clean up temporary URLs on error
         tempImages.forEach(img => URL.revokeObjectURL(img.url));
       } finally {
         setIsUploading(false);

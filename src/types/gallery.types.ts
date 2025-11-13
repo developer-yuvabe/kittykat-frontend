@@ -263,8 +263,6 @@ export interface WebsiteScrapeConfig extends ScrapeConfig {
   platform: "website";
   maxPages: number; // Max pages to crawl
   maxImages: number; // Max images to extract
-  downloadAsZip: boolean; // Download as ZIP
-  globs: Array<{ glob: string }>; // URL patterns to match
 }
 
 export interface BulkGalleryUploadRequest {
