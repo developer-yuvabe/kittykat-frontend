@@ -118,12 +118,10 @@ const ImageWithMetadataModal = ({
 
   const referenceImages = (() => {
     const images: string[] = [];
-    const { models } = useModelsStore.getState();
     const model = models.find((m) => m.model === data?.parameters?.model);
 
-    // Find file-type parameter that looks like reference_images
     const referenceImageParam = model?.parameters?.find(
-      (param) => param.type === "file" && param.id.includes("reference_images")
+      (param) => param.type === "file"
     );
 
     // For editor outputs (remix)
@@ -138,27 +136,26 @@ const ImageWithMetadataModal = ({
           const arr = Array.isArray(refImages) ? refImages : [refImages];
           images.push(...arr);
         }
-      } else if (Array.isArray(data?.parameters?.reference_images)) {
-        // fallback for legacy data
-        images.push(...data.parameters.reference_images);
       }
-    } else {
+    } else if (data?.parameters) {
       // Image generation mode
-      const refImages = referenceImageParam
-        ? data?.parameters?.[referenceImageParam.id]
-        : data?.parameters?.reference_images;
-
-      if (refImages) {
-        const arr = Array.isArray(refImages) ? refImages : [refImages];
-        images.push(...arr);
-      } else if (
-        data?.parameters?.image &&
-        Array.isArray(data.parameters.image) &&
-        data?.parameters?.provider === "replicate"
-      ) {
-        images.push(...data.parameters.image);
-      } else if (data?.parameters?.image_prompt) {
-        images.push(data.parameters.image_prompt);
+      if (referenceImageParam) {
+        const refImages = data?.parameters[referenceImageParam.id];
+        if (refImages) {
+          const arr = Array.isArray(refImages) ? refImages : [refImages];
+          images.push(...arr);
+        }
+      } else {
+        // Provider-specific fallback (replicate)
+        if (
+          data?.parameters?.image &&
+          Array.isArray(data.parameters.image) &&
+          data?.parameters?.provider === "replicate"
+        ) {
+          images.push(...data.parameters.image);
+        } else if (data?.parameters?.image_prompt) {
+          images.push(data.parameters.image_prompt);
+        }
       }
     }
 

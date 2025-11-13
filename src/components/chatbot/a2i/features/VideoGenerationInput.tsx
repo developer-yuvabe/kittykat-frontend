@@ -436,9 +436,9 @@ const VideoGenerationInputControls = ({
               shouldValidate: true,
             });
             if (
-              (source === "blanket" && galleryPickerSource === "first_frame") ||
-              galleryPickerSource === "start_image" ||
-              galleryPickerSource === "image"
+              source === "blanket" &&
+              firstFrameParam &&
+              galleryPickerSource === firstFrameParam.id
             ) {
               setCurrentItem(item);
             }

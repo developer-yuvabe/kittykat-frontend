@@ -177,7 +177,7 @@ const RemixControls = ({
 
     // Dynamically find the reference images parameter ID from the model
     const refParam = selectedRemixModel?.parameters?.find(
-      (param) => param.type === "file" && param.id.includes("reference_images")
+      (param) => param.type === "file"
     );
 
     if (refParam) {
