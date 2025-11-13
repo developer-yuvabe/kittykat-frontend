@@ -103,6 +103,7 @@ const ImageWithMetadataModal = ({
 
   // Update current display item when versions are fetched
   useEffect(() => {
+    if (isFetchingVersions) return;
     if (source === "media-gallery") {
       if (versions && versions.length > 0) {
         // Use the latest version
