@@ -175,21 +175,29 @@ const RemixControls = ({
       }
     }
 
-    // Extract and set references
-    const productImages = p.product_reference_images || [];
-    const allReferenceImages = p.reference_images || [];
-
-    const masterImages = allReferenceImages.filter(
-      (img: string) => !productImages.includes(img)
+    // Dynamically find the reference images parameter ID from the model
+    const refParam = selectedRemixModel?.parameters?.find(
+      (param) => param.type === "file" && param.id.includes("reference_images")
     );
 
-    const master = masterImages.length > 0 ? [masterImages[0]] : [];
-    const products = productImages;
+    if (refParam) {
+      // Extract references using the dynamic parameter ID
+      const productImages = p.product_reference_images || [];
+      const allReferenceImages = p[refParam.id] || [];
 
-    setMasterReference(master);
-    setProductReference(products);
+      // Separate master vs product references
+      const masterImages = allReferenceImages.filter(
+        (img: string) => !productImages.includes(img)
+      );
 
-    // Clear parameters
+      const master = masterImages.length > 0 ? [masterImages[0]] : [];
+      const products = productImages;
+
+      setMasterReference(master);
+      setProductReference(products);
+    }
+
+    // Clear parameters after a tick to avoid race conditions
     requestAnimationFrame(() => {
       setParameters("remixParameters", null);
     });

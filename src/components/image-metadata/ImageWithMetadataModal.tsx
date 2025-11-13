@@ -118,35 +118,47 @@ const ImageWithMetadataModal = ({
 
   const referenceImages = (() => {
     const images: string[] = [];
+    const { models } = useModelsStore.getState();
+    const model = models.find((m) => m.model === data?.parameters?.model);
+
+    // Find file-type parameter that looks like reference_images
+    const referenceImageParam = model?.parameters?.find(
+      (param) => param.type === "file" && param.id.includes("reference_images")
+    );
 
     // For editor outputs (remix)
     if (isEditorOutput && data?.parameters) {
-      //base input image first
       if (data.parameters.base_image) {
         images.push(data.parameters.base_image);
       }
 
-      //reference images contains master product
-      if (
-        data.parameters.reference_images &&
-        Array.isArray(data.parameters.reference_images)
-      ) {
+      if (referenceImageParam) {
+        const refImages = data.parameters[referenceImageParam.id];
+        if (refImages) {
+          const arr = Array.isArray(refImages) ? refImages : [refImages];
+          images.push(...arr);
+        }
+      } else if (Array.isArray(data?.parameters?.reference_images)) {
+        // fallback for legacy data
         images.push(...data.parameters.reference_images);
       }
     } else {
-      //  image generation
-      const refs = Array.isArray(data?.parameters?.reference_images)
-        ? data.parameters.reference_images
-        : data?.parameters?.image &&
-          Array.isArray(data.parameters.image) &&
-          data?.parameters?.provider === "replicate"
-        ? data.parameters.image
-        : data?.parameters?.image_prompt
-        ? [data.parameters.image_prompt]
-        : undefined;
+      // Image generation mode
+      const refImages = referenceImageParam
+        ? data?.parameters?.[referenceImageParam.id]
+        : data?.parameters?.reference_images;
 
-      if (refs) {
-        images.push(...refs);
+      if (refImages) {
+        const arr = Array.isArray(refImages) ? refImages : [refImages];
+        images.push(...arr);
+      } else if (
+        data?.parameters?.image &&
+        Array.isArray(data.parameters.image) &&
+        data?.parameters?.provider === "replicate"
+      ) {
+        images.push(...data.parameters.image);
+      } else if (data?.parameters?.image_prompt) {
+        images.push(data.parameters.image_prompt);
       }
     }
 
@@ -225,12 +237,12 @@ const ImageWithMetadataModal = ({
       if (source === "media-gallery") {
         router.push("/?scrollTo=a2i-input");
       }
+      toast.info("Started Generation of Auto Vary Image.");
     } catch (error) {
       console.error("Error generating image:", error);
       toast.error("Error generating a varied image. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, varyAuto: false }));
-      toast.info("Started Generation of Auto Vary Image.");
     }
   };
 
@@ -371,6 +383,7 @@ const ImageWithMetadataModal = ({
       if (source === "media-gallery") {
         router.push("/?scrollTo=a2i-input");
       }
+      toast.info("Started Upscaling of the Image.");
     } catch (error) {
       console.error("Error upscaling the image:", error);
       toast.error("Error upscaling the image. Please try again.");
