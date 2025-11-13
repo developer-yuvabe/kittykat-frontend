@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardReferenceDropzone } from "../moodboards/MoodboardReferenceDropzone";
-import { MoodboardReferenceUploadStatus } from "../moodboards/MoodboardReferenceUploadStatus";
 import { MoodboardSocialOptions } from "../moodboards/MoodboardSocialOptions";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { updateBrandSocialMediaField } from "@/services/api/brand.service";
@@ -355,7 +354,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
           // Gallery upload will show its own toast via the mutation
           await bulkUpload(uploadPayload);
           
-          setTimeout(() => setUploadedImages([]), 1000);
+          
         }
         
       } catch (error) {
@@ -442,10 +441,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
               <MoodboardReferenceDropzone
                 onDrop={onDrop}
                 uploadedImages={uploadedImages}
-              />
-              <MoodboardReferenceUploadStatus
-                isUploading={isUploading}
-                uploadError={uploadError}
               />
             </div>
             <MoodboardSocialOptions
