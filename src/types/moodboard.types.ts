@@ -8,7 +8,7 @@ import {
 export type LimitsState = {
   pinterest_limit: number;
   instagram_limit: number;
-  facebook_limit: number;
+  // facebook_limit: number;
   website_limit: number;
 };
 

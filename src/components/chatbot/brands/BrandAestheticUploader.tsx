@@ -4,16 +4,15 @@ import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { ContentSection } from "@/components/shared/ContentSection";
 import { MoodboardReferenceDropzone } from "../moodboards/MoodboardReferenceDropzone";
-import { MoodboardReferenceUploadStatus } from "../moodboards/MoodboardReferenceUploadStatus";
 import { MoodboardSocialOptions } from "../moodboards/MoodboardSocialOptions";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { updateBrandSocialMediaField } from "@/services/api/brand.service";
 import {
-  FacebookIcon,
   InstagramIcon,
   PinterestIcon,
 } from "@/components/ui/custom-icon";
 import { GlobeIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { LimitsState, UploadedImage } from "@/types/moodboard.types";
 import { SocialOption, SocialOptionId } from "@/types/campaign.types";
 import { useGalleryQuery } from "@/hooks/useGallery";
@@ -28,7 +27,6 @@ import { AnalysisLogDetail } from "@/types/types";
 import { getPlatformFromOptionId, getDateTimestamp } from "@/lib/logs.utils";
 import { AnalysisStatus } from "@/types/logs.types";
 import { BrandAnalysisLogsPopover } from "./BrandAnalysisLogsPopover";
-import { BrandSocialVerifyDialog } from "./BrandSocialVerifyDialog";
 import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 
 interface Props {
@@ -36,7 +34,6 @@ interface Props {
   socialMediaData?: {
     instagram?: string;
     pinterest?: string;
-    facebook?: string;
     website?: string;
   };
   analysisLogs: AnalysisLogDetail[];
@@ -52,11 +49,10 @@ export const BrandAestheticUploader: React.FC<Props> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [socialOptions, setSocialOptions] = useState<SocialOption[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isScraping, setIsScraping] = useState<Record<string, boolean>>({});
   const [limits, setLimits] = useState<LimitsState>({
     pinterest_limit: 10,
     instagram_limit: 10,
-    facebook_limit: 10,
     website_limit: 10,
   });
 
@@ -124,8 +120,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         return limits.instagram_limit;
       case SocialOptionId.Pinterest:
         return limits.pinterest_limit;
-      case SocialOptionId.Facebook:
-        return limits.facebook_limit;
       case SocialOptionId.Website:
         return limits.website_limit;
       default:
@@ -133,7 +127,7 @@ export const BrandAestheticUploader: React.FC<Props> = ({
     }
   };
 
-  const handleBulkUpload = async () => {
+  const handleScrapeSelected = async () => {
     if (!brandId) {
       toast.error("No brand ID provided.");
       return;
@@ -144,231 +138,88 @@ export const BrandAestheticUploader: React.FC<Props> = ({
       return;
     }
 
-    const hasUploadedImages = uploadedImages.length > 0;
-    const hasSelectedSocialOptions = selectedOptions.length > 0;
-
-    if (!hasUploadedImages && !hasSelectedSocialOptions) {
-      toast.error("Please upload images or select social media options.");
+    if (selectedOptions.length === 0) {
+      toast.error("Please select at least one social media option.");
       return;
     }
 
-    setIsProcessing(true);
+    setIsScraping({ scraping: true });
 
     try {
-      // Case 1: Only social media options selected (scrape only)
-      if (!hasUploadedImages && hasSelectedSocialOptions) {
-        const validationErrors: string[] = [];
+      const validationErrors: string[] = [];
 
-        // Validate all selected options first
-        const validatedOptions = selectedOptions
-          .map((optionId) => {
-            const platform = getPlatformFromOptionId(optionId);
-            const url = getSocialMediaUrl(optionId);
-            const resultsLimit = getResultsLimit(optionId);
+      // Validate all selected options first
+      const validatedOptions = selectedOptions
+        .map((optionId) => {
+          const platform = getPlatformFromOptionId(optionId);
+          const url = getSocialMediaUrl(optionId);
+          const resultsLimit = getResultsLimit(optionId);
 
-            // Validate URL
-            if (!url || url.trim() === "") {
-              validationErrors.push(`Please provide a URL for ${platform}`);
-              return null;
-            }
+          // Validate URL
+          if (!url || url.trim() === "") {
+            validationErrors.push(`Please provide a URL for ${platform}`);
+            return null;
+          }
 
-            // Check for invalid/default URLs
-            const invalidUrls = [
-              "https://",
-              "https://instagram.com/",
-              "https://www.instagram.com/",
-              "https://facebook.com/",
-              "https://www.facebook.com/",
-              "https://pinterest.com/",
-              "https://www.pinterest.com/",
-            ];
+          // Check for invalid/default URLs
+          const invalidUrls = [
+            "https://",
+            "https://instagram.com/",
+            "https://www.instagram.com/",
+            "https://pinterest.com/",
+            "https://www.pinterest.com/",
+          ];
 
-            if (invalidUrls.includes(url.trim()) || url.trim() === "https://") {
-              validationErrors.push(
-                `Please provide a valid ${platform} URL (not just the homepage)`
-              );
-              return null;
-            }
+          if (invalidUrls.includes(url.trim())) {
+            validationErrors.push(
+              `Please provide a valid ${platform} URL (not just the homepage)`
+            );
+            return null;
+          }
 
-            return {
-              optionId,
-              platform,
-              url: url.trim(),
-              resultsLimit: resultsLimit || 10,
-            };
-          })
-          .filter(Boolean);
-
-        // If there are validation errors, show them and return
-        if (validationErrors.length > 0) {
-          toast.error(validationErrors[0]); // Show first error
-          setIsProcessing(false);
-          return;
-        }
-
-        // Process valid options
-        const scrapePromises = validatedOptions.map(async (option) => {
-          if (!option) return;
-
-          const scrapePayload: BulkScrapeRequest = {
-            brand_id: brandId,
-            scrape_config: {
-              url: option.url,
-              platform: option.platform,
-              results_limit: option.resultsLimit,
-              user_id: user.id,
-            },
+          return {
+            optionId,
+            platform,
+            url: url.trim(),
+            resultsLimit: resultsLimit || 10,
           };
-          return scrapeHandles(scrapePayload);
-        });
+        })
+        .filter(Boolean);
 
-        await Promise.all(scrapePromises);
-        toast.success(
-          `Social media scraping initiated for ${validatedOptions.length} platform(s)!`
-        );
+      // If there are validation errors, show them and return
+      if (validationErrors.length > 0) {
+        toast.error(validationErrors[0]); // Show first error
+        setIsScraping({});
         return;
       }
 
-      // Case 2: Only uploaded images (manual upload only)
-      if (hasUploadedImages && !hasSelectedSocialOptions) {
-        const itemsToUpload: GalleryItem[] = uploadedImages.map((img) => ({
-          brand_id: brandId!,
-          asset_url: img.url,
-          asset_title: img.name,
-          asset_type: "image",
-          asset_source: "brand-uploads",
-          size: `${img.file.size}`,
-          search_keywords: [],
-          custom_tags: [],
-          related_asset_ids: [],
-          prompt_modifiers: [],
-          ai_tags: [],
-          visual_style_tags: {},
-          detected_objects: [],
-          detected_emotions: [],
-          detected_colors: [],
-          media_format: getExtensionFromUrl(img.url),
-        }));
+      // Process valid options
+      const scrapePromises = validatedOptions.map(async (option) => {
+        if (!option) return;
 
-        const uploadPayload: BulkGalleryUploadRequest = {
-          gallery_items: itemsToUpload,
+        // Use common payload structure for all platforms (Instagram, Pinterest, Website)
+        const scrapePayload: BulkScrapeRequest = {
           brand_id: brandId,
+          scrape_config: {
+            url: option.url,
+            platform: option.platform,
+            results_limit: option.resultsLimit,
+            user_id: user.id,
+          },
         };
+        
+        return scrapeHandles(scrapePayload);
+      });
 
-        await bulkUpload(uploadPayload);
-        toast.success(
-          `${uploadedImages.length} image(s) uploaded to gallery successfully!`
-        );
-        return;
-      }
-
-      // Case 3: Both uploaded images and social media options selected
-      if (hasUploadedImages && hasSelectedSocialOptions) {
-        // First upload the manual images
-        const itemsToUpload: GalleryItem[] = uploadedImages.map((img) => ({
-          brand_id: brandId!,
-          asset_url: img.url,
-          asset_title: img.name,
-          asset_type: "image",
-          asset_source: "brand-uploads",
-          size: `${img.file.size}`,
-          search_keywords: [],
-          custom_tags: [],
-          related_asset_ids: [],
-          prompt_modifiers: [],
-          ai_tags: [],
-          visual_style_tags: {},
-          detected_objects: [],
-          detected_emotions: [],
-          detected_colors: [],
-          media_format: getExtensionFromUrl(img.url),
-        }));
-
-        const uploadPayload: BulkGalleryUploadRequest = {
-          gallery_items: itemsToUpload,
-          brand_id: brandId,
-        };
-
-        await bulkUpload(uploadPayload);
-
-        // Then process social media scraping
-        const validationErrors: string[] = [];
-
-        // Validate all selected social options
-        const validatedSocialOptions = selectedOptions
-          .map((optionId) => {
-            const platform = getPlatformFromOptionId(optionId);
-            const url = getSocialMediaUrl(optionId);
-            const resultsLimit = getResultsLimit(optionId);
-
-            // Validate URL
-            if (!url || url.trim() === "") {
-              validationErrors.push(`Please provide a URL for ${platform}`);
-              return null;
-            }
-
-            // Check for invalid/default URLs
-            const invalidUrls = [
-              "https://",
-              "https://instagram.com/",
-              "https://www.instagram.com/",
-              "https://facebook.com/",
-              "https://www.facebook.com/",
-              "https://pinterest.com/",
-              "https://www.pinterest.com/",
-            ];
-
-            if (invalidUrls.includes(url.trim()) || url.trim() === "https://") {
-              validationErrors.push(
-                `Please provide a valid ${platform} URL (not just the homepage)`
-              );
-              return null;
-            }
-
-            return {
-              optionId,
-              platform,
-              url: url.trim(),
-              resultsLimit: resultsLimit || 10,
-            };
-          })
-          .filter(Boolean);
-
-        // If there are validation errors, show them and return
-        if (validationErrors.length > 0) {
-          toast.error(validationErrors[0]); // Show first error
-          setIsProcessing(false);
-          return;
-        }
-
-        const scrapePromises = validatedSocialOptions.map(async (option) => {
-          if (!option) return;
-
-          const scrapePayload: BulkScrapeRequest = {
-            brand_id: brandId,
-            scrape_config: {
-              url: option.url,
-              platform: option.platform,
-              results_limit: option.resultsLimit,
-              user_id: user.id,
-            },
-          };
-
-          return scrapeHandles(scrapePayload);
-        });
-
-        await Promise.all(scrapePromises);
-
-        toast.success(
-          `${uploadedImages.length} image(s) uploaded and scraping initiated for ${validatedSocialOptions.length} platform(s)!`
-        );
-      }
+      await Promise.all(scrapePromises);
+      toast.success(
+        `Social media scraping initiated for ${validatedOptions.length} platform(s)!`
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Upload/scraping failed. Please try again.");
+      toast.error("Scraping failed. Please try again.");
     } finally {
-      setIsProcessing(false);
-      setUploadedImages([]);
+      setIsScraping({});
     }
   };
 
@@ -391,14 +242,6 @@ export const BrandAestheticUploader: React.FC<Props> = ({
         editValue: socialMediaData?.pinterest || "https://",
       },
       {
-        id: SocialOptionId.Facebook,
-        name: "Use Facebook Images",
-        url: socialMediaData?.facebook || "https://www.facebook.com/",
-        icon: <FacebookIcon size={44} />,
-        isEditing: false,
-        editValue: socialMediaData?.facebook || "https://www.facebook.com/",
-      },
-      {
         id: SocialOptionId.Website,
         name: "Use Website Images",
         url: socialMediaData?.website || "https://",
@@ -412,45 +255,112 @@ export const BrandAestheticUploader: React.FC<Props> = ({
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
+      if (!brandId) {
+        toast.error("No brand ID provided.");
+        return;
+      }
+
+      if (!user?.id) {
+        toast.error("User not authenticated.");
+        return;
+      }
+
+      // Step 1: IMMEDIATELY show thumbnails using local File URLs
+      const tempImages: UploadedImage[] = acceptedFiles.map((file) => ({
+        id: crypto.randomUUID(),
+        url: URL.createObjectURL(file), // Create temporary local URL for immediate display
+        name: file.name,
+        file,
+      }));
+      
+      setUploadedImages((prev) => [...prev, ...tempImages]);
       setIsUploading(true);
       setUploadError(null);
 
       try {
-        toast.promise(
-          (async () => {
-            const uploadPromises = acceptedFiles.map(async (file) => {
-              const downloadUrl = await uploadFileAndReturnUrl(
-                file.name,
-                file.type,
-                "brands",
-                file,
-                brandId,
-                null
-              );
+        // Step 2: Upload files to GCS and get URLs with progress indication
+        const uploadedFiles: UploadedImage[] = [];
+        const toastId = toast.loading(`Uploading ${acceptedFiles.length} file(s)...`);
+        
+        const uploadPromises = acceptedFiles.map(async (file, index) => {
+          try {
+            const downloadUrl = await uploadFileAndReturnUrl(
+              file.name,
+              file.type,
+              "brands",
+              file,
+              brandId,
+              null
+            );
 
-              setUploadedImages((prev) => [
-                ...prev,
-                {
-                  id: crypto.randomUUID(),
-                  url: downloadUrl,
-                  name: file.name,
-                  file,
-                },
-              ]);
-              return downloadUrl;
-            });
-
-            await Promise.all(uploadPromises);
-          })(),
-          {
-            loading: `Uploading ${acceptedFiles.length} file(s)...`,
-            success: `Successfully uploaded ${acceptedFiles.length} file(s)!`,
-            error: "Failed to upload files. Please try again.",
+            const uploadedImage = {
+              id: tempImages[index].id,
+              url: downloadUrl,
+              name: file.name,
+              file,
+            };
+            uploadedFiles.push(uploadedImage);
+            
+            setUploadedImages((prev) => 
+              prev.map((img) => 
+                img.id === tempImages[index].id ? uploadedImage : img
+              )
+            );
+            
+            URL.revokeObjectURL(tempImages[index].url);
+            return downloadUrl;
+          } catch (error) {
+            console.error(`Failed to upload ${file.name}:`, error);
+            URL.revokeObjectURL(tempImages[index].url);
+            return null;
           }
-        );
+        });
+        
+        await Promise.allSettled(uploadPromises);
+        
+        const failedCount = acceptedFiles.length - uploadedFiles.length;
+        if (failedCount > 0) {
+          toast.warning(`Uploaded ${uploadedFiles.length} of ${acceptedFiles.length} file(s). ${failedCount} failed.`, { id: toastId });
+        } else {
+          toast.success(`Successfully uploaded ${acceptedFiles.length} file(s)!`, { id: toastId });
+        }
+
+        // Step 3: Add successfully uploaded files to gallery
+        if (uploadedFiles.length > 0) {
+          const itemsToUpload: GalleryItem[] = uploadedFiles.map((img) => ({
+            brand_id: brandId,
+            asset_url: img.url,
+            asset_title: img.name,
+            asset_type: "image",
+            asset_source: "brand-uploads",
+            size: `${img.file.size}`,
+            search_keywords: [],
+            custom_tags: [],
+            related_asset_ids: [],
+            prompt_modifiers: [],
+            ai_tags: [],
+            visual_style_tags: {},
+            detected_objects: [],
+            detected_emotions: [],
+            detected_colors: [],
+            media_format: getExtensionFromUrl(img.url),
+          }));
+
+          const uploadPayload: BulkGalleryUploadRequest = {
+            gallery_items: itemsToUpload,
+            brand_id: brandId,
+          };
+
+          // Gallery upload will show its own toast via the mutation
+          await bulkUpload(uploadPayload);
+          
+          
+        }
+        
       } catch (error) {
-        setUploadError("Some files failed to upload. Please try again.");
         console.error("Upload error:", error);
+        toast.error("Upload failed. Please try again.");
+        tempImages.forEach(img => URL.revokeObjectURL(img.url));
       } finally {
         setIsUploading(false);
       }
@@ -517,49 +427,20 @@ export const BrandAestheticUploader: React.FC<Props> = ({
     }
   };
 
-  const getButtonText = () => {
-    const hasImages = uploadedImages.length > 0;
-    const hasSocial = selectedOptions.length > 0;
-
-    if (isProcessing) {
-      if (hasImages && hasSocial) {
-        return "Processing Upload & Scraping...";
-      } else if (hasImages) {
-        return "Uploading to Gallery...";
-      } else if (hasSocial) {
-        return "Initiating Scraping...";
-      }
-    }
-
-    if (hasImages && hasSocial) {
-      return "Upload Images & Scrape Social Media";
-    } else if (hasImages) {
-      return "Upload to Gallery";
-    } else if (hasSocial) {
-      return "Scrape Social Media";
-    }
-    return "Upload to Gallery";
-  };
-
   return (
     <ContentSection
       title="Upload your Brand Images"
       content={
         <div>
-          <p className="text-sm  text-gray-800 mb-4">
-            Upload brand images or connect your Instagram and Pinterest accounts
-            to teach KittyKat your visual style. Then hit &quot;Upload to
-            Gallery&quot; to add everything to your brand library.
+          <p className="text-sm text-gray-800 mb-4">
+            Drag and drop brand images to upload automatically, or scrape images from Instagram, Pinterest, or your website. 
+            All images will be added to your brand library in the gallery.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <MoodboardReferenceDropzone
                 onDrop={onDrop}
                 uploadedImages={uploadedImages}
-              />
-              <MoodboardReferenceUploadStatus
-                isUploading={isUploading}
-                uploadError={uploadError}
               />
             </div>
             <MoodboardSocialOptions
@@ -575,17 +456,19 @@ export const BrandAestheticUploader: React.FC<Props> = ({
             />
 
             <div className="lg:col-span-2 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+          
+              </div>
               <div className="flex items-center gap-3">
-                <BrandSocialVerifyDialog
-                  uploadedImages={uploadedImages}
-                  selectedOptions={selectedOptions}
-                  socialOptions={socialOptions}
-                  isProcessing={isProcessing}
-                  handleBulkUpload={handleBulkUpload}
-                  getButtonText={getButtonText}
-                />
-
-                {/* Enhanced Analysis Logs Popover */}
+                {/* Scrape for Media button - bottom right as per wireframe */}
+                <Button
+                  onClick={handleScrapeSelected}
+                  disabled={selectedOptions.length === 0 || isScraping.scraping}
+                  className="min-w-[150px]"
+                >
+                  {isScraping.scraping ? "Scraping..." : "Scrape for Media"}
+                </Button>
+                {/* Analysis Logs Popover - beside Scrape button as per wireframe */}
                 <BrandAnalysisLogsPopover categorizedLogs={categorizedLogs} />
               </div>
             </div>
