@@ -1,5 +1,5 @@
 import { GalleryItemResponse } from "@/types/gallery.types";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,10 @@ import {
   videoGenerationService,
 } from "@/services/api/video-gen.service";
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
-import { getGalleryImageParameters } from "@/services/api/gallery.service";
+import {
+  getGalleryImageParameters,
+  galleryService,
+} from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
 import ZoomableImage from "../ui/zoomable-image";
 import { Spinner } from "../ui/spinner";
@@ -42,6 +45,7 @@ import {
 } from "../ui/tooltip";
 import { A2iImageGeneration } from "@/types/types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { Skeleton } from "../ui/skeleton";
 
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -70,6 +74,8 @@ const ImageWithMetadataModal = ({
   const router = useRouter();
   const pathname = usePathname();
   const { setParameters } = useMetadataActionsStore();
+  const [currentDisplayItem, setCurrentDisplayItem] =
+    useState<GalleryItemResponse>(galleryItem);
   const [loading, setLoading] = useState({
     manualAuto: false,
     varyAuto: false,
@@ -88,23 +94,52 @@ const ImageWithMetadataModal = ({
     setSelectedRemixModel,
     models,
   } = useModelsStore();
+
+  // Fetch versions if source is media-gallery
+  const { data: versions, isFetching: isFetchingVersions } = useQuery({
+    queryKey: ["versions", galleryItem.id],
+    queryFn: () => galleryService.getGalleryItemVersions(galleryItem.id),
+    enabled: isOpen && source === "media-gallery" && !!galleryItem?.id,
+    staleTime: Infinity,
+  });
+
+  // Update current display item when versions are fetched
+  useEffect(() => {
+    if (source === "media-gallery") {
+      if (versions && versions.length > 0) {
+        // Use the latest version
+        setCurrentDisplayItem(versions[versions.length - 1]);
+      } else if (versions?.length === 0) {
+        // No versions available, use the galleryItem
+        setCurrentDisplayItem(galleryItem);
+      }
+    } else {
+      // For concept-visual-media, always use galleryItem
+      setCurrentDisplayItem(galleryItem);
+    }
+  }, [versions, isFetchingVersions, galleryItem, source]);
+
   const { data, isFetching: isFetchingParams } = useQuery({
     queryKey: [
       "image-parameters",
-      galleryItem.brand_id,
-      galleryItem.id,
-      galleryItem.asset_url,
+      currentDisplayItem.brand_id,
+      currentDisplayItem.id,
+      currentDisplayItem.asset_url,
     ],
     queryFn: () =>
-      getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
-    enabled: !generation && galleryItem.asset_source == "showboard-media",
+      getGalleryImageParameters(
+        currentDisplayItem.brand_id,
+        currentDisplayItem.id
+      ),
+    enabled:
+      !generation && currentDisplayItem.asset_source == "showboard-media",
     placeholderData: generation
       ? {
           type: generation.type,
           parameters: generation.parameters,
         }
       : null,
-    staleTime: 0,
+    staleTime: Infinity,
   });
   const isDisabled = !(
     data?.type === "image_generation" || data?.type === "a2i"
@@ -150,7 +185,7 @@ const ImageWithMetadataModal = ({
         ...Object.fromEntries(
           paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
         ),
-        source_asset_id: galleryItem.id,
+        source_asset_id: currentDisplayItem.id,
         // Preserve product_reference_images if they exist
         product_reference_images:
           data.parameters.product_reference_images || undefined,
@@ -238,9 +273,9 @@ const ImageWithMetadataModal = ({
     onClose();
     openConceptVisual({
       source: "blanket",
-      assetItems: [galleryItem],
+      assetItems: [currentDisplayItem],
       asset: {
-        currentAsset: galleryItem,
+        currentAsset: currentDisplayItem,
         galleryActions: null,
       },
       defaultActiveTab: "upscaler",
@@ -253,7 +288,7 @@ const ImageWithMetadataModal = ({
       await upscaleImage(
         selectedBrandId!,
         {
-          image_url: galleryItem.asset_url,
+          image_url: currentDisplayItem.asset_url,
           creativity: 0,
           scale_factor: "2x",
           optimized_for: "standard",
@@ -262,7 +297,7 @@ const ImageWithMetadataModal = ({
           fractality: 0,
           engine: "automatic",
           prompt: "",
-          source_asset_id: galleryItem.id,
+          source_asset_id: currentDisplayItem.id,
         },
         selectedCampaignId
       );
@@ -291,9 +326,9 @@ const ImageWithMetadataModal = ({
       setSelectedRemixModel(defualtEditModel);
       openConceptVisual({
         source: "blanket",
-        assetItems: [galleryItem],
+        assetItems: [currentDisplayItem],
         asset: {
-          currentAsset: galleryItem,
+          currentAsset: currentDisplayItem,
           galleryActions: null,
         },
         defaultActiveTab: "remix",
@@ -378,9 +413,9 @@ const ImageWithMetadataModal = ({
       setSelectedVideoGenearationModel(defaultAnimationModel);
       openConceptVisual({
         source: "blanket",
-        assetItems: [galleryItem],
+        assetItems: [currentDisplayItem],
         asset: {
-          currentAsset: galleryItem,
+          currentAsset: currentDisplayItem,
           galleryActions: null,
         },
         defaultActiveTab: "video-generation",
@@ -417,10 +452,10 @@ const ImageWithMetadataModal = ({
       const { defaultValues } = useDynamicModelSchema(defaultAnimationModel);
       await videoGenerationService(selectedBrandId!, {
         ...defaultValues,
-        first_frame: galleryItem.asset_url,
+        first_frame: currentDisplayItem.asset_url,
         prompt,
         model: defaultAnimationModel.model,
-        source_asset_id: galleryItem.id,
+        source_asset_id: currentDisplayItem.id,
         campaign_id: selectedCampaignId,
       });
 
@@ -448,7 +483,7 @@ const ImageWithMetadataModal = ({
         <DialogTitle>Expanded Image</DialogTitle>
         <DialogDescription>
           {data?.parameters?.prompt ??
-            galleryItem.input_prompt ??
+            currentDisplayItem.input_prompt ??
             "No description available"}
         </DialogDescription>
       </DialogHeader>
@@ -459,248 +494,267 @@ const ImageWithMetadataModal = ({
         hideCloseIcon
         overflowClassName="bg-black/80"
       >
-        <div className="flex justify-center items-stretch flex-1 min-w-[80dvw] min-h-[80dvh] max-w-[80dvw] max-h-[80dvh]">
-          <div className="relative rounded-l-lg group flex items-center justify-center w-[70%] overflow-hidden bg-white border-r">
-            <img
-              src={galleryItem.asset_url}
-              alt={
-                data?.parameters?.prompt ??
-                galleryItem.input_prompt ??
-                "Expanded image"
-              }
-              className="w-full h-full object-contain relative z-10"
-            />
-            <div
-              className="absolute inset-0 bg-cover bg-center blur-lg scale-105 z-0"
-              style={{
-                backgroundImage: `url(${galleryItem.asset_url}`,
-              }}
-            />
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-20">
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-l-lg" />
-
-              {/* Bottom Right - Actions (Download + Like) */}
-              {(onDownload || onLike) && (
-                <div className="absolute bottom-2 right-3 flex items-center space-x-2">
-                  {onDownload && (
-                    <TooltipButton
-                      tooltip="Download"
-                      icon={<DownloadIcon className="!w-5 !h-5" />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDownload();
-                      }}
-                      className="text-white"
-                    />
-                  )}
-
-                  {onLike && (
-                    <TooltipButton
-                      tooltip="Like"
-                      icon={
-                        <HeartIcon
-                          className={cn("!w-5 !h-5", {
-                            "text-red-500 fill-red-500": isLiked,
-                          })}
-                        />
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onLike();
-                      }}
-                      isActive={isLiked}
-                      normalColor="text-white hover:text-red-500"
-                      activeColor="text-red-500"
-                    />
-                  )}
-                </div>
-              )}
+        {source === "media-gallery" && isFetchingVersions ? (
+          // Loading state while fetching versions
+          <div className="flex justify-center items-stretch flex-1 min-w-[80dvw] min-h-[80dvh] max-w-[80dvw] max-h-[80dvh]">
+            <div className="relative rounded-l-lg flex items-center justify-center w-[70%] bg-muted border-r">
+              <Skeleton className="w-full h-full rounded-l-lg" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Spinner className="size-12 text-muted-foreground" />
+              </div>
             </div>
-          </div>
-          <div className="rounded-r-lg bg-background h-auto w-[30%] p-4 flex flex-col gap-y-4 overflow-y-auto">
-            {isFetchingParams ? (
-              // Loading State
+            <div className="rounded-r-lg bg-background h-auto w-[30%] p-4 flex flex-col gap-y-4 overflow-y-auto">
               <div className="flex items-center justify-center flex-col gap-2 h-full">
                 <Spinner className="size-8 text-muted-foreground" />
               </div>
-            ) : (
-              <>
-                {data?.parameters && (
-                  <>
-                    {/* Prompt */}
-                    {data.parameters.prompt && (
-                      <div className="space-y-2">
-                        <p>Prompt</p>
-                        <div className="relative">
-                          <Textarea
-                            value={data.parameters.prompt}
-                            className="h-40 lg:h-60 focus:outline-none resize-none"
-                            readOnly
-                          />
-                          <TooltipButton
-                            className="absolute top-2 right-2 text-muted-foreground"
-                            tooltip={copied ? "Copied!" : "Copy Prompt"}
-                            onClick={handleCopyPrompt}
-                            icon={
-                              copied ? (
-                                <CheckIcon
-                                  size={14}
-                                  className="text-muted-foreground"
-                                />
-                              ) : (
-                                <CopyIcon
-                                  size={14}
-                                  className="text-muted-foreground"
-                                />
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center items-stretch flex-1 min-w-[80dvw] min-h-[80dvh] max-w-[80dvw] max-h-[80dvh]">
+            <div className="relative rounded-l-lg group flex items-center justify-center w-[70%] overflow-hidden bg-white border-r">
+              <img
+                src={currentDisplayItem.asset_url}
+                alt={
+                  data?.parameters?.prompt ??
+                  currentDisplayItem.input_prompt ??
+                  "Expanded image"
+                }
+                className="w-full h-full object-contain relative z-10"
+              />
+              <div
+                className="absolute inset-0 bg-cover bg-center blur-lg scale-105 z-0"
+                style={{
+                  backgroundImage: `url(${currentDisplayItem.asset_url}`,
+                }}
+              />
+              {/* Hover Overlay */}
+              <div className="absolute inset-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-20">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 rounded-l-lg" />
+
+                {/* Bottom Right - Actions (Download + Like) */}
+                {(onDownload || onLike) && (
+                  <div className="absolute bottom-2 right-3 flex items-center space-x-2">
+                    {onDownload && (
+                      <TooltipButton
+                        tooltip="Download"
+                        icon={<DownloadIcon className="!w-5 !h-5" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDownload();
+                        }}
+                        className="text-white"
+                      />
                     )}
-                    {referenceImages?.length > 0 && (
-                      <div>
-                        <p>Reference Image(s)</p>
-                        <div className="mt-2 w-full overflow-x-auto">
-                          <div className="flex flex-row gap-x-2 w-max">
-                            {referenceImages.map((img: string, idx: number) => (
-                              <ZoomableImage
-                                key={idx}
-                                src={img}
-                                className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
-                                variant="default"
-                              />
-                            ))}
+
+                    {onLike && (
+                      <TooltipButton
+                        tooltip="Like"
+                        icon={
+                          <HeartIcon
+                            className={cn("!w-5 !h-5", {
+                              "text-red-500 fill-red-500": isLiked,
+                            })}
+                          />
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLike();
+                        }}
+                        isActive={isLiked}
+                        normalColor="text-white hover:text-red-500"
+                        activeColor="text-red-500"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="rounded-r-lg bg-background h-auto w-[30%] p-4 flex flex-col gap-y-4 overflow-y-auto">
+              {isFetchingParams ? (
+                // Loading State
+                <div className="flex items-center justify-center flex-col gap-2 h-full">
+                  <Spinner className="size-8 text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {data?.parameters && (
+                    <>
+                      {/* Prompt */}
+                      {data.parameters.prompt && (
+                        <div className="space-y-2">
+                          <p>Prompt</p>
+                          <div className="relative">
+                            <Textarea
+                              value={data.parameters.prompt}
+                              className="h-40 lg:h-60 focus:outline-none resize-none"
+                              readOnly
+                            />
+                            <TooltipButton
+                              className="absolute top-2 right-2 text-muted-foreground"
+                              tooltip={copied ? "Copied!" : "Copy Prompt"}
+                              onClick={handleCopyPrompt}
+                              icon={
+                                copied ? (
+                                  <CheckIcon
+                                    size={14}
+                                    className="text-muted-foreground"
+                                  />
+                                ) : (
+                                  <CopyIcon
+                                    size={14}
+                                    className="text-muted-foreground"
+                                  />
+                                )
+                              }
+                            />
                           </div>
                         </div>
-                      </div>
-                    )}
-                    <p className="text-muted-foreground">
-                      {data.parameters.model}
-                      {getDimensionAndAspectRatioFromParameters(
-                        data.parameters
                       )}
-                    </p>
-                  </>
-                )}
+                      {referenceImages?.length > 0 && (
+                        <div>
+                          <p>Reference Image(s)</p>
+                          <div className="mt-2 w-full overflow-x-auto">
+                            <div className="flex flex-row gap-x-2 w-max">
+                              {referenceImages.map(
+                                (img: string, idx: number) => (
+                                  <ZoomableImage
+                                    key={idx}
+                                    src={img}
+                                    className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                    variant="default"
+                                  />
+                                )
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-muted-foreground">
+                        {data.parameters.model}
+                        {getDimensionAndAspectRatioFromParameters(
+                          data.parameters
+                        )}
+                      </p>
+                    </>
+                  )}
 
-                {/* Metadata Action Buttons (always visible) */}
-                <div className="space-y-4 mt-4">
-                  <h2 className="text-lg border-b pb-2">Creative Actions</h2>
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <p className="w-24">Vary</p>
-                      <div className="flex flex-1 gap-x-2 items-start">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger
-                              asChild
-                              className="disabled:pointer-events-auto"
-                            >
-                              <Button
-                                onClick={
-                                  !isDisabled ? handleVaryAuto : undefined
-                                }
-                                disabled={isDisabled || loading.varyAuto}
-                                loading={!isDisabled && loading.varyAuto}
-                                className={isDisabled ? "opacity-50" : ""}
+                  {/* Metadata Action Buttons (always visible) */}
+                  <div className="space-y-4 mt-4">
+                    <h2 className="text-lg border-b pb-2">Creative Actions</h2>
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <p className="w-24">Vary</p>
+                        <div className="flex flex-1 gap-x-2 items-start">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger
+                                asChild
+                                className="disabled:pointer-events-auto"
                               >
-                                Auto
-                              </Button>
-                            </TooltipTrigger>
+                                <Button
+                                  onClick={
+                                    !isDisabled ? handleVaryAuto : undefined
+                                  }
+                                  disabled={isDisabled || loading.varyAuto}
+                                  loading={!isDisabled && loading.varyAuto}
+                                  className={isDisabled ? "opacity-50" : ""}
+                                >
+                                  Auto
+                                </Button>
+                              </TooltipTrigger>
 
-                            {isDisabled && (
-                              <TooltipContent className="w-40">
-                                The variation feature is available exclusively
-                                for images produced using image generation
-                                models.
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger
-                              asChild
-                              className="disabled:pointer-events-auto"
-                            >
-                              <Button
-                                onClick={
-                                  !isDisabled ? handleVaryManual : undefined
-                                }
-                                loading={loading.manualAuto}
-                                disabled={isDisabled || loading.manualAuto}
-                                className={isDisabled ? "opacity-50" : ""}
+                              {isDisabled && (
+                                <TooltipContent className="w-40">
+                                  The variation feature is available exclusively
+                                  for images produced using image generation
+                                  models.
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger
+                                asChild
+                                className="disabled:pointer-events-auto"
                               >
-                                Manual
-                              </Button>
-                            </TooltipTrigger>
+                                <Button
+                                  onClick={
+                                    !isDisabled ? handleVaryManual : undefined
+                                  }
+                                  loading={loading.manualAuto}
+                                  disabled={isDisabled || loading.manualAuto}
+                                  className={isDisabled ? "opacity-50" : ""}
+                                >
+                                  Manual
+                                </Button>
+                              </TooltipTrigger>
 
-                            {isDisabled && (
-                              <TooltipContent className="w-40">
-                                The variation feature is available exclusively
-                                for images produced using image generation
-                                models.
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TooltipProvider>
+                              {isDisabled && (
+                                <TooltipContent className="w-40">
+                                  The variation feature is available exclusively
+                                  for images produced using image generation
+                                  models.
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex justify-between items-center">
-                      <p className="w-24">Upscale</p>
-                      <div className="flex flex-1 gap-2 items-start flex-wrap">
-                        <Button
-                          disabled={loading.upscaleAuto}
-                          loading={loading.upscaleAuto}
-                          onClick={handleUpscaleAuto}
-                        >
-                          Auto
-                        </Button>
-                        <Button onClick={handleUpscaleManual}>Manual</Button>
+                      <div className="flex justify-between items-center">
+                        <p className="w-24">Upscale</p>
+                        <div className="flex flex-1 gap-2 items-start flex-wrap">
+                          <Button
+                            disabled={loading.upscaleAuto}
+                            loading={loading.upscaleAuto}
+                            onClick={handleUpscaleAuto}
+                          >
+                            Auto
+                          </Button>
+                          <Button onClick={handleUpscaleManual}>Manual</Button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex justify-between items-center">
-                      <p className="w-24">Modify</p>
-                      <div className="flex flex-1 gap-2 items-start flex-wrap">
-                        <Button onClick={handleModifyEdit}>Edit</Button>
-                        <Button
-                          onClick={handleModifyReference}
-                          loading={loading.modifyReference}
-                          disabled={loading.modifyReference}
-                        >
-                          Reference
-                        </Button>
+                      <div className="flex justify-between items-center">
+                        <p className="w-24">Modify</p>
+                        <div className="flex flex-1 gap-2 items-start flex-wrap">
+                          <Button onClick={handleModifyEdit}>Edit</Button>
+                          <Button
+                            onClick={handleModifyReference}
+                            loading={loading.modifyReference}
+                            disabled={loading.modifyReference}
+                          >
+                            Reference
+                          </Button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex justify-between items-center">
-                      <p className="w-24">Animate</p>
-                      <div className="flex flex-1 gap-2 items-start flex-wrap">
-                        <Button
-                          onClick={() => handleAnimatePreset("dynamic")}
-                          disabled={loading.animateDynamic}
-                          loading={loading.animateDynamic}
-                        >
-                          Dynamic
-                        </Button>
-                        <Button
-                          onClick={() => handleAnimatePreset("smooth")}
-                          disabled={loading.animateSmooth}
-                          loading={loading.animateSmooth}
-                        >
-                          Smooth
-                        </Button>
-                        <Button onClick={handleAnimateManual}>Manual</Button>
+                      <div className="flex justify-between items-center">
+                        <p className="w-24">Animate</p>
+                        <div className="flex flex-1 gap-2 items-start flex-wrap">
+                          <Button
+                            onClick={() => handleAnimatePreset("dynamic")}
+                            disabled={loading.animateDynamic}
+                            loading={loading.animateDynamic}
+                          >
+                            Dynamic
+                          </Button>
+                          <Button
+                            onClick={() => handleAnimatePreset("smooth")}
+                            disabled={loading.animateSmooth}
+                            loading={loading.animateSmooth}
+                          >
+                            Smooth
+                          </Button>
+                          <Button onClick={handleAnimateManual}>Manual</Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
