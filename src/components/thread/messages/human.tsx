@@ -23,6 +23,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { ContentBlock } from "@/lib/file-upload.utils";
 import { useModelsStore } from "@/store/models.store";
 import { auth } from "@/config/firebase.config";
+import { useThreadStore } from "@/store/thread.store";
 
 interface FileAttachmentProps {
   fileUrl: string;
@@ -167,7 +168,9 @@ export function HumanMessage({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const meta = thread.getMessagesMetadata(message);
   const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
 
@@ -197,12 +200,15 @@ export function HumanMessage({
       {
         messages: [newMessage],
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: selectedBrandId,
         previousBrandContextId: thread.values.previousBrandContextId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       },
       {

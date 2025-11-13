@@ -166,6 +166,48 @@ const TOOL_LOADING_MESSAGES: Record<
     { message: "Generating insights...", duration: 5 },
     { message: "Finalizing moodboard analysis...", duration: 20 },
   ],
+  generate_image: [
+    {
+      message: "Finalizing prompt for image creation...",
+      duration: 2,
+    },
+    {
+      message: "Choosing best parameters for the visual model...",
+      duration: 3,
+    },
+    {
+      message: "Generating image based on the prompt...",
+      duration: 20,
+    },
+  ],
+  edit_image: [
+    {
+      message: "Preparing image for editing...",
+      duration: 2,
+    },
+    {
+      message: "Applying edits to the image...",
+      duration: 15,
+    },
+    {
+      message: "Finalizing the edited image...",
+      duration: 5,
+    },
+  ],
+  generate_video: [
+    {
+      message: "Finalizing prompt for video creation...",
+      duration: 2,
+    },
+    {
+      message: "Choosing best parameters for the visual model...",
+      duration: 3,
+    },
+    {
+      message: "Generating video based on the prompt and frames attached...",
+      duration: 20,
+    },
+  ],
 };
 
 // Helper function to get loading messages for a tool
