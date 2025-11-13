@@ -21,7 +21,7 @@ import { generateImage } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
 import { toast } from "sonner";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useModelsStore } from "@/store/models.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { upscaleImage } from "@/services/api/upscale.service";
@@ -84,11 +84,13 @@ const ImageWithMetadataModal = ({
     modifyReference: false,
   });
   const [copied, setCopied] = useState(false);
+  const pathname = usePathname();
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
   const { openConceptVisual } = useConceptVisualStore();
   const {
     setSelectedImageGenerationModelByModelId,
     setSelectedVideoGenearationModel,
+    setSelectedImageGenerationModel,
     setSelectedRemixModel,
     models,
   } = useModelsStore();
@@ -200,19 +202,66 @@ const ImageWithMetadataModal = ({
     }
   };
 
-  const handleVaryManual = () => {
-    if (!data?.parameters) return;
+  const handleVaryManual = async () => {
+    try {
+      setLoading((p) => ({ ...p, manualAuto: true }));
+      if (!data?.parameters) return;
 
-    if (data.parameters.model) {
-      setSelectedImageGenerationModelByModelId(data.parameters.model);
-      setParameters("imageGeneationParameters", data.parameters);
+      const model = models.find((m) => m.model === data.parameters.model);
+
+      if (!model) {
+        toast.error("No model found for this image.");
+        return;
+      }
+
+      setSelectedImageGenerationModel(model);
+
+      const parameters = data.parameters;
+      const productReferenceImages = parameters.product_reference_images || [];
+
+      // Get reference images parameter ID
+      const referneceImagesParamId = model.parameters.find(
+        (p) => p.type === "file"
+      );
+
+      let modifiedParameters = { ...parameters };
+
+      // Instead of re-uploading, we reuse the existing URLs directly
+      // This maintains the connection with gallery items
+      if (referneceImagesParamId && parameters[referneceImagesParamId.id]) {
+        const refImageOrImages = parameters[referneceImagesParamId.id];
+
+        // Keep the reference images as-is (don't re-upload)
+        modifiedParameters = {
+          ...modifiedParameters,
+          [referneceImagesParamId.id]: refImageOrImages,
+        };
+      }
+
+      setParameters("imageGeneationParameters", modifiedParameters);
+
+      // Set product reference images separately to maintain categorization
+      if (productReferenceImages && productReferenceImages.length > 0) {
+        setParameters("productReferenceImages", productReferenceImages);
+      } else {
+        setParameters("productReferenceImages", null);
+      }
 
       onClose();
-      router.push("/?scrollTo=a2i-input");
+
+      // Only navigate to home page if not already there
+      if (pathname !== "/") {
+        router.push("/?scrollTo=a2i-input");
+      }
 
       toast.info("Pre Selected Model and its parameters have been set.");
-    } else {
-      toast.error("No model found for this image.");
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        "An error occurred while trying to vary the image. Please try again."
+      );
+    } finally {
+      setLoading((p) => ({ ...p, manualAuto: false }));
     }
   };
 
@@ -327,7 +376,12 @@ const ImageWithMetadataModal = ({
       setParameters("referenceImage", url);
 
       onClose();
-      router.push("/?scrollTo=a2i-input");
+
+      // Only navigate to home page if not already there
+      if (pathname !== "/") {
+        router.push("/?scrollTo=a2i-input");
+      }
+
       toast.info("Pre Selected Model and Reference Image have been set.");
     } catch (error) {
       console.log(error);
