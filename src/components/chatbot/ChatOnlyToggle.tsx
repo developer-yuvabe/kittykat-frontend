@@ -1,4 +1,3 @@
-import { MessageSquareText } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -7,6 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useThreadStore } from "@/store/thread.store";
+import { Switch } from "../ui/switch";
 
 const ChatOnlyToggle = () => {
   const { chatOnlyMode, setChatOnlyMode } = useThreadStore();
@@ -15,18 +15,22 @@ const ChatOnlyToggle = () => {
     <TooltipProvider>
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          <button
-            onClick={() => setChatOnlyMode(!chatOnlyMode)}
-            type="button"
+          <div
             className={cn(
-              "text-primary hover:bg-transparent rounded-md cursor-pointer p-2 transition-colors duration-200 ease-in-out",
+              "text-primary hover:bg-transparent rounded-md cursor-pointer p-2 transition-colors duration-200 ease-in-out text-xs flex items-center gap-2",
               {
                 "bg-primary/10 hover:bg-primary/10": chatOnlyMode,
               }
             )}
           >
-            <MessageSquareText size={20} />
-          </button>
+            Chat Only Mode
+            <Switch
+              className="bg-primary/50"
+              id="chat-only-mode"
+              checked={chatOnlyMode}
+              onCheckedChange={(checked) => setChatOnlyMode(checked)}
+            />
+          </div>
         </TooltipTrigger>
         <TooltipContent side="top">
           <p>
