@@ -191,10 +191,7 @@ export function MediaImage({
       {showImageModal && (
         <ImageWithMetadataModal
           isOpen={showImageModal}
-          galleryItem={{
-            ...item,
-            asset_url: item.preview_url || item.asset_url,
-          }}
+          galleryItem={item}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}
           onLike={handleFavoriteClick}
