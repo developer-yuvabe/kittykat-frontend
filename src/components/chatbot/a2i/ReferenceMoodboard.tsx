@@ -25,6 +25,8 @@ type ReferenceMoodboardProps = {
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
   currentCampaign: ThreadCampaign | null;
+  showPrompts?: boolean;
+  showBorder?: boolean;
 };
 
 const ReferenceMoodboard = ({
@@ -34,6 +36,8 @@ const ReferenceMoodboard = ({
   moodboardInformation,
   formRef,
   currentCampaign,
+  showPrompts = true,
+  showBorder = false,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt, isGeneratingPrompts, setIsGeneratingPrompts } =
     useA2iStore();
@@ -210,6 +214,7 @@ const ReferenceMoodboard = ({
     <ContentSection
       title="Reference Moodboard"
       showCopy={false}
+      showBorder={showBorder}
       showPin={false}
       context={{ data: {} }}
       content={
@@ -239,18 +244,19 @@ const ReferenceMoodboard = ({
                 isSwitching={isSwitchingReferenceMoodboard}
                 noOfImagesForMoodboard={noOfImagesForMoodboard}
               />
-
-              <ReferenceMoodboardPrompts
-                prompts={prompts || null}
-                n={n}
-                setN={setN}
-                selectedMoodboard={selectedMoodboard}
-                referenceMoodboardId={referenceMoodboardId || null}
-                isGenerating={isGeneratingPrompts}
-                onGenerate={handleGeneratePrompts}
-                onEditPrompt={handleEditPrompt}
-                formRef={formRef}
-              />
+              {showPrompts && (
+                <ReferenceMoodboardPrompts
+                  prompts={prompts || null}
+                  n={n}
+                  setN={setN}
+                  selectedMoodboard={selectedMoodboard}
+                  referenceMoodboardId={referenceMoodboardId || null}
+                  isGenerating={isGeneratingPrompts}
+                  onGenerate={handleGeneratePrompts}
+                  onEditPrompt={handleEditPrompt}
+                  formRef={formRef}
+                />
+              )}
             </>
           )}
         </div>
