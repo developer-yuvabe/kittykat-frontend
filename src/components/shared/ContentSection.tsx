@@ -31,6 +31,7 @@ interface ContentSectionProps {
   showPin?: boolean;
   customActions?: React.ReactNode;
   ref?: React.Ref<HTMLDivElement>;
+  showBorder?: boolean;
 }
 
 export function ContentSection({
@@ -49,6 +50,7 @@ export function ContentSection({
   showPin = true,
   ref,
   customActions,
+  showBorder = true,
 }: ContentSectionProps) {
   const [copied, setCopied] = useState(false);
   const { addPinnedItem, removePinnedItem, pinnedItem } =
@@ -195,7 +197,9 @@ export function ContentSection({
   return (
     <div
       ref={ref}
-      className="border border-gray-400 rounded-2xl overflow-hidden"
+      className={` ${
+        showBorder ? "border border-gray-400 rounded-2xl overflow-hidden" : ""
+      }`}
     >
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">

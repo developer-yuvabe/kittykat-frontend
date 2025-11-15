@@ -25,6 +25,9 @@ type ReferenceMoodboardProps = {
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
   currentCampaign: ThreadCampaign | null;
+  showPrompts?: boolean;
+  showBorder?: boolean;
+  isAdvanceMode?: boolean;
 };
 
 const ReferenceMoodboard = ({
@@ -34,6 +37,9 @@ const ReferenceMoodboard = ({
   moodboardInformation,
   formRef,
   currentCampaign,
+  showPrompts = true,
+  showBorder = false,
+  isAdvanceMode = false,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt, isGeneratingPrompts, setIsGeneratingPrompts } =
     useA2iStore();
@@ -152,13 +158,26 @@ const ReferenceMoodboard = ({
           }, 1000);
         }
 
-        if (selectedBrandId && moodboard.id && !isGeneratingPrompts) {
-          generateShowboard({
-            brandId: selectedBrandId,
-            moodboardId: moodboard.id,
-            referenceMoodboardAssets: moodboard.moodboard_assets,
-            numberOfPrompts: Number(n) || 1,
-          });
+        // In advanced mode: update reference moodboard only
+        // In normal mode: generate prompts
+        if (selectedBrandId && moodboard.id) {
+          if (isAdvanceMode) {
+            await updateA2iRefernceMoodboard(
+              selectedBrandId,
+              moodboard.id,
+              moodboard.moodboard_assets
+            );
+          } else {
+            // Normal mode: generate prompts
+            if (!isGeneratingPrompts) {
+              generateShowboard({
+                brandId: selectedBrandId,
+                moodboardId: moodboard.id,
+                referenceMoodboardAssets: moodboard.moodboard_assets,
+                numberOfPrompts: Number(n) || 1,
+              });
+            }
+          }
         }
       } catch (error) {
         console.error("Error in handleMoodboardSelectionChange:", error);
@@ -172,6 +191,7 @@ const ReferenceMoodboard = ({
       generateShowboard,
       n,
       isGeneratingPrompts,
+      isAdvanceMode,
     ]
   );
 
@@ -210,6 +230,7 @@ const ReferenceMoodboard = ({
     <ContentSection
       title="Reference Moodboard"
       showCopy={false}
+      showBorder={showBorder}
       showPin={false}
       context={{ data: {} }}
       content={
@@ -239,18 +260,19 @@ const ReferenceMoodboard = ({
                 isSwitching={isSwitchingReferenceMoodboard}
                 noOfImagesForMoodboard={noOfImagesForMoodboard}
               />
-
-              <ReferenceMoodboardPrompts
-                prompts={prompts || null}
-                n={n}
-                setN={setN}
-                selectedMoodboard={selectedMoodboard}
-                referenceMoodboardId={referenceMoodboardId || null}
-                isGenerating={isGeneratingPrompts}
-                onGenerate={handleGeneratePrompts}
-                onEditPrompt={handleEditPrompt}
-                formRef={formRef}
-              />
+              {showPrompts && (
+                <ReferenceMoodboardPrompts
+                  prompts={prompts || null}
+                  n={n}
+                  setN={setN}
+                  selectedMoodboard={selectedMoodboard}
+                  referenceMoodboardId={referenceMoodboardId || null}
+                  isGenerating={isGeneratingPrompts}
+                  onGenerate={handleGeneratePrompts}
+                  onEditPrompt={handleEditPrompt}
+                  formRef={formRef}
+                />
+              )}
             </>
           )}
         </div>
