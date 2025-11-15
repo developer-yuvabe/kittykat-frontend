@@ -6,7 +6,12 @@ import { DownloadIcon } from "@/components/ui/custom-icon";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import VideoWithMetadataModal from "@/components/video-metadata/VideoWithMetadataModal";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
-import { cn, handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
+import {
+  cn,
+  convertParameterValue,
+  handleDownloadImage,
+  handleDownloadVideo,
+} from "@/lib/utils";
 import { deleteA2iImage } from "@/services/api/a2i.service";
 import { retryGeneration } from "@/services/api/genration.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
@@ -26,6 +31,10 @@ import {
 import Image from "next/image";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useRouter, usePathname } from "next/navigation";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
+import { useModelsStore } from "@/store/models.store";
+import { GalleryItemResponse } from "@/types/gallery.types";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -77,6 +86,16 @@ const A2iImageCard = ({
   const { selectedBrandId } = useBrandStore();
   const videoRef = video ? useRef<HTMLVideoElement>(null) : null;
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const {
+    models,
+    setSelectedImageGenerationModel,
+    setSelectedVideoGenearationModel,
+    setSelectedRemixModel,
+  } = useModelsStore();
+
+  const { setParameters } = useMetadataActionsStore();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const galleryActions = useGalleryQuery(
     {
@@ -138,7 +157,7 @@ const A2iImageCard = ({
   };
 
   const handleCopyPrompt = () => {
-    if ((image || video) && parameters.prompt) {
+    if (parameters.prompt) {
       navigator.clipboard.writeText(parameters.prompt).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -181,6 +200,146 @@ const A2iImageCard = ({
     deletePromise.finally(() => {
       setIsDeleting(false);
     });
+  };
+  const handleReUse = async () => {
+    try {
+      // Video
+      if (video) {
+        const model = models.find((m) => m.model === parameters.model);
+        if (!model) {
+          toast.error("No model found for this video.");
+          return;
+        }
+
+        // Convert all parameters based on model parameter definitions
+        const videoParams = { ...parameters };
+        model.parameters?.forEach((paramDef) => {
+          const paramId = paramDef.id;
+          if (
+            videoParams[paramId] !== undefined &&
+            videoParams[paramId] !== null
+          ) {
+            videoParams[paramId] = convertParameterValue(
+              videoParams[paramId],
+              paramDef
+            );
+          }
+        });
+
+        // Set model and parameters
+        setSelectedVideoGenearationModel(model);
+        setParameters("videoParameters", videoParams);
+
+        // Identify correct preview/start frame
+        const firstFrameParam = model.parameters.find((p) =>
+          ["first_frame", "start_image", "image"].includes(p.id)
+        );
+
+        if (stableItem && firstFrameParam) {
+          openConceptVisual({
+            source: "blanket",
+            assetItems: [stableItem],
+            asset: {
+              currentAsset: {
+                ...stableItem,
+                asset_url: videoParams[firstFrameParam.id] || null,
+              },
+              galleryActions: null,
+            },
+            defaultActiveTab: "video-generation",
+          });
+        }
+
+        toast.info("Video setup restored in Video Generation tab.");
+        return;
+      }
+
+      // Remix Images
+      const isEditorOutput = type === "remix";
+
+      if (isEditorOutput) {
+        try {
+          const model = models.find((m) => m.model === parameters.model);
+          if (!model) {
+            toast.error("No model found for this remix image.");
+            return;
+          }
+
+          // Validate that base image exists
+          const baseInputImageUrl = parameters.base_image;
+          if (!baseInputImageUrl) {
+            toast.error("Base input not available — cannot reuse this image.");
+            return;
+          }
+
+          // Set the remix model
+          setSelectedRemixModel(model);
+
+          // Store full parameters for remix
+          setParameters("remixParameters", parameters);
+
+          // Close modal if any (same behavior)
+          if (showImageModal) setShowImageModal(false);
+
+          // asset object with base_image URL
+          const baseImageAsset: GalleryItemResponse = {
+            ...stableItem!,
+            asset_url: baseInputImageUrl,
+            preview_url: baseInputImageUrl,
+          };
+
+          // Open Concept Visual with base image preloaded
+          openConceptVisual({
+            source: "blanket",
+            assetItems: [baseImageAsset],
+            asset: {
+              currentAsset: baseImageAsset,
+              galleryActions: null,
+            },
+            defaultActiveTab: "remix",
+          });
+
+          toast.info("Remix model and parameters have been restored.");
+          return;
+        } catch (error) {
+          console.log(error);
+          toast.error(
+            "An error occurred while trying to reuse the remix image. Please try again."
+          );
+          return;
+        }
+      }
+
+      const model = models.find((m) => m.model === parameters.model);
+      if (!model) {
+        toast.error("No model found for this image.");
+        return;
+      }
+
+      setSelectedImageGenerationModel(model);
+
+      const referenceParam = model.parameters.find((p) => p.type === "file");
+      const modifiedParameters = { ...parameters };
+
+      if (referenceParam && parameters[referenceParam.id]) {
+        modifiedParameters[referenceParam.id] = parameters[referenceParam.id];
+      }
+
+      setParameters("imageGeneationParameters", modifiedParameters);
+
+      const productReferenceImages = parameters.product_reference_images || [];
+      setParameters(
+        "productReferenceImages",
+        productReferenceImages.length > 0 ? productReferenceImages : null
+      );
+
+      if (pathname !== "/") router.push("/?scrollTo=a2i-input");
+
+      toast.info("Image setup restored in Concept Visual Generator.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to restore setup. Please try again.");
+    }
   };
 
   const handleRetry = async () => {
@@ -362,20 +521,21 @@ const A2iImageCard = ({
         {/* Delete Button - Top Right */}
         {status !== "processing" && (
           <div className="absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-2">
-            {status === "failed" && (
-              <TooltipButton
-                tooltip="Retry generation"
-                size="sm"
-                className={cn(isRetrying && "opacity-50 cursor-not-allowed")}
-                onClick={handleRetry}
-                icon={
-                  <RotateCcw
-                    size={12}
-                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                  />
-                }
-              />
-            )}
+            {status === "failed" &&
+              process.env.NEXT_PUBLIC_ENVIRONMENT !== "prod" && (
+                <TooltipButton
+                  tooltip="Retry generation"
+                  size="sm"
+                  className={cn(isRetrying && "opacity-50 cursor-not-allowed")}
+                  onClick={handleRetry}
+                  icon={
+                    <RotateCcw
+                      size={12}
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                    />
+                  }
+                />
+              )}
             <TooltipButton
               tooltip={`Delete ${
                 image ? "image" : video ? "video" : "generation"
@@ -394,9 +554,9 @@ const A2iImageCard = ({
         )}
 
         {/* Direct Action Icons - Bottom Left */}
-        {(image || video) && (
-          <div className="absolute bottom-2 left-2 z-30 flex items-center gap-2 pointer-events-auto">
-            {/* Concept Visual Editor (Pen) Icon */}
+        <div className="absolute bottom-2 left-2 z-30 flex items-center gap-2 pointer-events-auto">
+          {/* Concept Visual Editor — only when image/video exists */}
+          {(image || video) && (
             <TooltipButton
               tooltip="Concept Visual Editor"
               onClick={(e) => {
@@ -416,30 +576,43 @@ const A2iImageCard = ({
                 />
               }
             />
+          )}
 
-            {/* Copy Prompt Icon */}
-            {parameters.prompt && (
-              <TooltipButton
-                tooltip={copied ? "Copied!" : "Copy Prompt"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyPrompt();
-                }}
-                icon={
-                  copied ? (
-                    <CheckIcon
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                    />
-                  ) : (
-                    <CopyIcon
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                    />
-                  )
-                }
-              />
-            )}
-          </div>
-        )}
+          {/*Always show copy prompt button when prompt exists */}
+          {parameters.prompt && (
+            <TooltipButton
+              tooltip={copied ? "Copied!" : "Copy Prompt"}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyPrompt();
+              }}
+              icon={
+                copied ? (
+                  <CheckIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                ) : (
+                  <CopyIcon
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                )
+              }
+            />
+          )}
+          {/*  Re-Use Icon */}
+          {parameters && (
+            <TooltipButton
+              tooltip="Re-use"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleReUse();
+              }}
+              icon={
+                <RotateCcw className="h-OVERLAY_CONTROL_SIZE w-OVERLAY_CONTROL_SIZE" />
+              }
+            />
+          )}
+        </div>
 
         {/* Download and Favorite Buttons - Bottom Right */}
         {(image || video) && (

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { DownloadIcon } from "../ui/custom-icon";
 import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
-import { cn, convertParameterValue } from "@/lib/utils";
+import { cn, convertParameterValue, PlatformApiError } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { A2iImageGeneration } from "@/types/types";
+import { useCreditsStore } from "@/store/credits.store";
 
 type VideoWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -65,6 +66,7 @@ const VideoWithMetadataModal = ({
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
   const { openConceptVisual } = useConceptVisualStore();
+  const { setShowInsufficientCreditsModal } = useCreditsStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const { data, isFetching: isFetchingParams } = useQuery({
@@ -123,7 +125,11 @@ const VideoWithMetadataModal = ({
       onClose();
       if (source === "media-gallery") router.push("/?scrollTo=a2i-input");
       toast.info("Started Generation of Auto Vary Video.");
-    } catch {
+    } catch (error) {
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error generating varied video. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, varyAuto: false }));
@@ -193,7 +199,11 @@ const VideoWithMetadataModal = ({
   const handleUpscaleManual = () => toast.info("Manual upscaling coming soon.");
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      modal={!setShowInsufficientCreditsModal}
+    >
       <DialogHeader className="sr-only">
         <DialogTitle>Expanded Video</DialogTitle>
         <DialogDescription>

@@ -12,6 +12,7 @@ import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
 import {
   cn,
   getDimensionAndAspectRatioFromParameters,
+  PlatformApiError,
   urlToFile,
 } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
@@ -43,6 +44,8 @@ import {
 import { A2iImageGeneration } from "@/types/types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
+
+import { useCreditsStore } from "@/store/credits.store";
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
   generation?: {
@@ -88,6 +91,9 @@ const ImageWithMetadataModal = ({
     setSelectedRemixModel,
     models,
   } = useModelsStore();
+  const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
+    useCreditsStore();
+
   const { data, isFetching: isFetchingParams } = useQuery({
     queryKey: [
       "image-parameters",
@@ -237,6 +243,10 @@ const ImageWithMetadataModal = ({
       toast.info("Started Generation of Auto Vary Image.");
     } catch (error) {
       console.error("Error generating image:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error generating a varied image. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, varyAuto: false }));
@@ -270,6 +280,8 @@ const ImageWithMetadataModal = ({
         setParameters("remixParameters", data.parameters);
 
         onClose();
+        console.log(data.parameters);
+        console.log("base input", baseInputImageUrl);
 
         // asset object with base_image URL
         const baseImageAsset = {
@@ -383,10 +395,13 @@ const ImageWithMetadataModal = ({
       toast.info("Started Upscaling of the Image.");
     } catch (error) {
       console.error("Error upscaling the image:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error upscaling the image. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, upscaleAuto: false }));
-      toast.info("Started Upscaling of the Image.");
     }
   };
 
@@ -542,6 +557,10 @@ const ImageWithMetadataModal = ({
       toast.info(`Started Video Generation with ${preset} Animation.`);
     } catch (error) {
       console.error("Error animating the image:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error animating the image. Please try again.");
     } finally {
       setLoading((p) => ({
@@ -563,9 +582,17 @@ const ImageWithMetadataModal = ({
         </DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none  flex items-center justify-center focus:outline-none"
-        onPointerDownOutside={onClose}
-        onEscapeKeyDown={onClose}
+        className="p-0 border-none bg-transparent shadow-none flex items-center justify-center focus:outline-none"
+        onPointerDownOutside={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // revent outside click while credits modal open
+          else onClose();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // prevent esc close while credits modal open
+          else onClose();
+        }}
         hideCloseIcon
         overflowClassName="bg-black/80"
       >
