@@ -34,7 +34,8 @@ export const A2iAdvancedPromptReferenceZones: React.FC<
         type="product"
         icon={Image}
         title="Product Reference"
-        description="Add product images to guide the generation."
+        description="Add product images to guide the generation.
+      (Click to add or drag and drop images here.)"
         images={productReference}
         onClick={onProductReferenceClick}
         isSelected={false}
@@ -49,7 +50,8 @@ export const A2iAdvancedPromptReferenceZones: React.FC<
         type="master"
         icon={PanelTop}
         title="Context Reference"
-        description="Add context/style images to guide the generation."
+        description="Add context/style images to guide the generation. 
+        (Click to add or drag and drop images here.)"
         images={contextReference}
         onClick={onContextReferenceClick}
         isSelected={false}

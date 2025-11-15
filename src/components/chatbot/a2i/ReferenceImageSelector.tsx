@@ -54,6 +54,7 @@ interface ReferenceImageSelectorProps {
   popoverAlign?: "start" | "center" | "end";
   popoverSide?: "top" | "bottom" | "left" | "right";
   customTrigger?: React.ReactNode;
+  showPopoverTrigger?: boolean;
 }
 
 const ReferenceImageSelector = ({
@@ -85,6 +86,7 @@ const ReferenceImageSelector = ({
   popoverAlign = "start",
   popoverSide = "top",
   customTrigger,
+  showPopoverTrigger = true,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
@@ -755,24 +757,25 @@ const ReferenceImageSelector = ({
   return (
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
-        <PopoverTrigger asChild>
-          {customTrigger || (
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={disabled}
-              className="relative"
-            >
-              <Images />
-              {currentImageCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                  {currentImageCount}
-                </span>
-              )}
-            </Button>
-          )}
-        </PopoverTrigger>
-
+        {showPopoverTrigger && (
+          <PopoverTrigger asChild>
+            {customTrigger || (
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={disabled}
+                className="relative"
+              >
+                <Images />
+                {currentImageCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                    {currentImageCount}
+                  </span>
+                )}
+              </Button>
+            )}
+          </PopoverTrigger>
+        )}
         <PopoverContent
           align={popoverAlign}
           side={popoverSide}

@@ -27,6 +27,7 @@ type ReferenceMoodboardProps = {
   currentCampaign: ThreadCampaign | null;
   showPrompts?: boolean;
   showBorder?: boolean;
+  isAdvanceMode?: boolean;
 };
 
 const ReferenceMoodboard = ({
@@ -38,6 +39,7 @@ const ReferenceMoodboard = ({
   currentCampaign,
   showPrompts = true,
   showBorder = false,
+  isAdvanceMode = false,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt, isGeneratingPrompts, setIsGeneratingPrompts } =
     useA2iStore();

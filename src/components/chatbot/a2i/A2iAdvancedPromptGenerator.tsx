@@ -2,10 +2,7 @@ import { ThreadA2iImage, ThreadCampaign, ThreadDetails } from "@/types/types";
 import React, { RefObject, useState, useCallback, useEffect } from "react";
 import ReferenceMoodboard from "./ReferenceMoodboard";
 import ReferenceImageSelector from "./ReferenceImageSelector";
-import {
-  A2iAdvancedPromptPresetSelector,
-  MASTER_PRESET_ID,
-} from "./A2iAdvancedPromptPresetSelector";
+import { A2iAdvancedPromptPresetSelector } from "./A2iAdvancedPromptPresetSelector";
 import { A2iAdvancedPromptReferenceZones } from "./A2iAdvancedPromptReferenceZones";
 import { A2iAdvancedPromptInputs } from "./A2iAdvancedPromptInputs";
 import { A2iAdvancedPromptActions } from "./A2iAdvancedPromptActions";
@@ -14,6 +11,7 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useBrandStore } from "@/store/brand.store";
 import { generateAdvancedPrompts } from "@/services/api/moodboard.service";
+import { Input } from "@/components/ui/input";
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -45,9 +43,9 @@ function A2iAdvancedPromptGenerator({
   const generatedPrompts = currentMoodboard?.prompts;
   const conflictNotes = currentMoodboard?.prompt_generation_conflict_notes;
 
-  // State for preset selection - use Master Preset as default if no existing inputs
-  const [selectedPreset, setSelectedPreset] = useState<string>(
-    existingInputs?.preset_id || MASTER_PRESET_ID
+  // State for preset selection - use existing preset or undefined to allow auto-selection
+  const [selectedPreset, setSelectedPreset] = useState<string | undefined>(
+    existingInputs?.preset_id || undefined
   );
 
   // State for reference images
@@ -75,17 +73,33 @@ function A2iAdvancedPromptGenerator({
     "master" | "product"
   >("master");
 
-  // Update state when existing inputs change
+  const handlePresetChange = useCallback((presetId: string) => {
+    setSelectedPreset(presetId);
+  }, []);
+
   useEffect(() => {
-    if (existingInputs) {
-      setSelectedPreset(existingInputs.preset_id || MASTER_PRESET_ID);
-      setProductReference(existingInputs.product_references || []);
-      setContextReference(existingInputs.context_references || []);
-      setPromptValue(existingInputs.prompt || "");
-      setNegativePrompt(existingInputs.negative_prompt || []);
-      setNumberOfPrompts(existingInputs.n || 4);
+    if (currentMoodboard?.prompt_generation_inputs) {
+      const inputs = currentMoodboard.prompt_generation_inputs;
+
+      // Only set preset if there's a valid value, otherwise leave undefined for auto-selection
+      if (inputs.preset_id) {
+        setSelectedPreset(inputs.preset_id);
+      }
+      setProductReference(inputs.product_references || []);
+      setContextReference(inputs.context_references || []);
+      setPromptValue(inputs.prompt || "");
+      setNegativePrompt(inputs.negative_prompt || []);
+      setNumberOfPrompts(inputs.n || 3);
+    } else {
+      // Reset to defaults when no existing inputs
+      setSelectedPreset(undefined);
+      setProductReference([]);
+      setContextReference([]);
+      setPromptValue("");
+      setNegativePrompt([]);
+      setNumberOfPrompts(3);
     }
-  }, [existingInputs]);
+  }, [referenceMoodboardId]);
 
   // Mutation for generating prompts
   const { mutate: generatePrompts, isPending: isGeneratingPrompts } =
@@ -96,7 +110,7 @@ function A2iAdvancedPromptGenerator({
         }
 
         return generateAdvancedPrompts(selectedBrandId, referenceMoodboardId, {
-          preset_id: selectedPreset,
+          preset_id: selectedPreset!,
           product_references: productReference,
           context_references: contextReference,
           prompt: promptValue || undefined,
@@ -202,7 +216,7 @@ function A2iAdvancedPromptGenerator({
         <h1 className="text-2xl font-semibold">Campaign Prompt Generator</h1>
         <A2iAdvancedPromptPresetSelector
           selectedPreset={selectedPreset}
-          onPresetChange={setSelectedPreset}
+          onPresetChange={handlePresetChange}
           disabled={isGenerating || isGeneratingPrompts}
         />
       </div>
@@ -220,6 +234,7 @@ function A2iAdvancedPromptGenerator({
             formRef={formRef}
             currentCampaign={currentCampaign}
             showPrompts={false}
+            isAdvanceMode={true}
           />
 
           {/* Reference Zones */}
@@ -239,17 +254,8 @@ function A2iAdvancedPromptGenerator({
           <A2iAdvancedPromptInputs
             promptValue={promptValue}
             negativePrompt={negativePrompt}
-            numberOfPrompts={numberOfPrompts}
             onPromptChange={setPromptValue}
             onNegativePromptChange={setNegativePrompt}
-            onNumberOfPromptsChange={setNumberOfPrompts}
-            disabled={isGenerating || isGeneratingPrompts}
-          />
-
-          <A2iAdvancedPromptActions
-            onGenerate={handleGeneratePrompts}
-            isGenerating={isGenerating || isGeneratingPrompts}
-            disabled={isGenerating || isGeneratingPrompts}
           />
         </div>
       </div>
@@ -269,13 +275,33 @@ function A2iAdvancedPromptGenerator({
         currentCampaignId={currentCampaign?.id || null}
         isOpen={isReferencePopoverOpen}
         onOpenChange={setIsReferencePopoverOpen}
+        showPopoverTrigger={false}
       />
 
       {/* Generated Prompts Results */}
+      <div className="flex flex-row gap-x-2 justify-end">
+        <A2iAdvancedPromptActions
+          onGenerate={handleGeneratePrompts}
+          isGenerating={isGenerating || isGeneratingPrompts}
+          disabled={isGenerating || isGeneratingPrompts}
+        />
+        <Input
+          id="number-of-prompts"
+          type="number"
+          min={1}
+          max={10}
+          value={numberOfPrompts}
+          onChange={(e) => setNumberOfPrompts(Number(e.target.value))}
+          disabled={isGenerating || isGeneratingPrompts}
+          className="w-16"
+        />
+      </div>
       <A2iAdvancedPromptResults
         prompts={generatedPrompts}
         isGenerating={isGenerating}
         conflictNotes={conflictNotes}
+        numberOfPrompts={numberOfPrompts}
+        onNumberOfPromptsChange={setNumberOfPrompts}
       />
     </div>
   );
