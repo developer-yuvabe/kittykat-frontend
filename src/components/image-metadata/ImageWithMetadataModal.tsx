@@ -112,12 +112,11 @@ const ImageWithMetadataModal = ({
       : null,
     staleTime: 0,
   });
-  const isEditorOutput = data?.type === "remix";
 
   const isDisabled = !(
     data?.type === "image_generation" ||
     data?.type === "a2i" ||
-    isEditorOutput
+    data?.type === "remix"
   )
     ? true
     : false;
@@ -131,7 +130,7 @@ const ImageWithMetadataModal = ({
     );
 
     // For editor outputs (remix)
-    if (isEditorOutput && data?.parameters) {
+    if (data?.type === "remix" && data?.parameters) {
       if (data.parameters.base_image) {
         images.push(data.parameters.base_image);
       }
@@ -190,7 +189,7 @@ const ImageWithMetadataModal = ({
       const paramsResponsibleForVaryingNumberOfOutputs =
         model.parameters.filter((p) => p.type === "image_count");
 
-      if (isEditorOutput) {
+      if (data?.type === "remix") {
         // Extract base parameters for remix
         const remixParams = {
           ...data.parameters,
@@ -258,16 +257,18 @@ const ImageWithMetadataModal = ({
       setLoading((p) => ({ ...p, manualAuto: true }));
       if (!data?.parameters) return;
 
-      const model = models.find((m) => m.model === data.parameters.model);
+      if (data?.type === "remix") {
+        const model = models.find(
+          (m) => m.model === data.parameters.model && m.type === "remix"
+        );
 
-      if (!model) {
-        toast.error("No model found for this image.");
-        return;
-      }
-
-      if (isEditorOutput) {
+        if (!model) {
+          toast.error("No model found for this image.");
+          return;
+        }
         // Validate that base image exists
-        const baseInputImageUrl = data.parameters.base_image;
+        const baseInputImageUrl =
+          data.parameters.base_image || data.parameters.image;
         if (!baseInputImageUrl) {
           toast.error("Base input not available—cannot vary this image.");
           return;
@@ -302,6 +303,14 @@ const ImageWithMetadataModal = ({
         });
         return;
       } else {
+        const model = models.find(
+          (m) => m.model === data.parameters.model && m.type === "image"
+        );
+
+        if (!model) {
+          toast.error("No model found for this image.");
+          return;
+        }
         // Regular image generation workflow
         setSelectedImageGenerationModel(model);
 
