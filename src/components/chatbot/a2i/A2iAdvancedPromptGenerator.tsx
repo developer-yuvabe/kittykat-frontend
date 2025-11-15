@@ -1,5 +1,10 @@
-import { ThreadA2iImage, ThreadCampaign, ThreadDetails } from "@/types/types";
-import React, { RefObject, useState, useCallback, useEffect } from "react";
+import {
+  PromptGenerationInputs,
+  ThreadA2iImage,
+  ThreadCampaign,
+  ThreadDetails,
+} from "@/types/types";
+import React, { RefObject, useCallback, useEffect, useMemo } from "react";
 import ReferenceMoodboard from "./ReferenceMoodboard";
 import ReferenceImageSelector from "./ReferenceImageSelector";
 import { A2iAdvancedPromptPresetSelector } from "./A2iAdvancedPromptPresetSelector";
@@ -12,6 +17,12 @@ import { useMutation } from "@tanstack/react-query";
 import { useBrandStore } from "@/store/brand.store";
 import { generateAdvancedPrompts } from "@/services/api/moodboard.service";
 import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { a2iAdvancedPromptSchema } from "@/types/preset.types";
+
+type A2iAdvancedPromptFormData = z.infer<typeof a2iAdvancedPromptSchema>;
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -20,6 +31,40 @@ type A2iAdvancedPromptGeneratorProps = {
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
   currentCampaign: ThreadCampaign | null;
+};
+
+/**
+ * Get the default form values from existing inputs
+ */
+const getDefaultFormValues = (
+  existingInputs?: PromptGenerationInputs
+): A2iAdvancedPromptFormData => ({
+  selectedPreset: existingInputs?.preset_id || "",
+  productReference: existingInputs?.product_references || [],
+  contextReference: existingInputs?.context_references || [],
+  promptValue: existingInputs?.prompt || "",
+  negativePrompt: existingInputs?.negative_prompt || [],
+  numberOfPrompts: existingInputs?.n || 3,
+});
+
+/**
+ * Validate form data before generating prompts
+ */
+const validatePromptGeneration = (
+  referenceMoodboardId: string | undefined,
+  selectedPreset: string
+): boolean => {
+  if (!referenceMoodboardId) {
+    toast.error("Please select a reference moodboard first");
+    return false;
+  }
+
+  if (!selectedPreset) {
+    toast.error("Please select a preset");
+    return false;
+  }
+
+  return true;
 };
 
 function A2iAdvancedPromptGenerator({
@@ -32,9 +77,9 @@ function A2iAdvancedPromptGenerator({
 }: A2iAdvancedPromptGeneratorProps) {
   const { selectedBrandId } = useBrandStore();
 
-  // Find the current moodboard to check for existing prompt generation inputs
-  const currentMoodboard = moodboardInformation?.find(
-    (m) => m.id === referenceMoodboardId
+  const currentMoodboard = useMemo(
+    () => moodboardInformation?.find((m) => m.id === referenceMoodboardId),
+    [moodboardInformation, referenceMoodboardId]
   );
 
   const existingInputs = currentMoodboard?.prompt_generation_inputs;
@@ -43,129 +88,101 @@ function A2iAdvancedPromptGenerator({
   const generatedPrompts = currentMoodboard?.prompts;
   const conflictNotes = currentMoodboard?.prompt_generation_conflict_notes;
 
-  // State for preset selection - use existing preset or undefined to allow auto-selection
-  const [selectedPreset, setSelectedPreset] = useState<string | undefined>(
-    existingInputs?.preset_id || undefined
-  );
+  // ====== Form Setup ======
+  const form = useForm<A2iAdvancedPromptFormData>({
+    resolver: zodResolver(a2iAdvancedPromptSchema),
+    defaultValues: getDefaultFormValues(existingInputs),
+  });
 
-  // State for reference images
-  const [productReference, setProductReference] = useState<string[]>(
-    existingInputs?.product_references || []
-  );
-  const [contextReference, setContextReference] = useState<string[]>(
-    existingInputs?.context_references || []
-  );
+  // ====== Form Watchers (for reactive UI) ======
+  const watchedNumberOfPrompts = form.watch("numberOfPrompts");
+  const watchedSelectedPreset = form.watch("selectedPreset");
+  const watchedProductReference = form.watch("productReference");
+  const watchedContextReference = form.watch("contextReference");
+  const watchedPromptValue = form.watch("promptValue");
+  const watchedNegativePrompt = form.watch("negativePrompt");
 
-  // State for prompt inputs
-  const [promptValue, setPromptValue] = useState<string>(
-    existingInputs?.prompt || ""
-  );
-  const [negativePrompt, setNegativePrompt] = useState<string[]>(
-    existingInputs?.negative_prompt || []
-  );
-  const [numberOfPrompts, setNumberOfPrompts] = useState<number>(
-    existingInputs?.n || 3
-  );
-
-  // Reference image selector state
-  const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
-  const [referencePopoverTab, setReferencePopoverTab] = useState<
+  // ====== UI State ======
+  const [optimisticIsGenerating, setOptimisticIsGenerating] =
+    React.useState(false);
+  const [isReferencePopoverOpen, setIsReferencePopoverOpen] =
+    React.useState(false);
+  const [referencePopoverTab, setReferencePopoverTab] = React.useState<
     "master" | "product"
   >("master");
 
-  const handlePresetChange = useCallback((presetId: string) => {
-    setSelectedPreset(presetId);
-  }, []);
+  const isAnyGenerating = isGenerating || optimisticIsGenerating;
 
   useEffect(() => {
-    if (currentMoodboard?.prompt_generation_inputs) {
-      const inputs = currentMoodboard.prompt_generation_inputs;
+    form.reset(getDefaultFormValues(existingInputs));
+  }, [referenceMoodboardId, form, existingInputs]);
 
-      // Only set preset if there's a valid value, otherwise leave undefined for auto-selection
-      if (inputs.preset_id) {
-        setSelectedPreset(inputs.preset_id);
+  const { mutate: generatePrompts } = useMutation({
+    mutationFn: async () => {
+      if (!selectedBrandId || !referenceMoodboardId) {
+        throw new Error("Brand ID and Moodboard ID are required");
       }
-      setProductReference(inputs.product_references || []);
-      setContextReference(inputs.context_references || []);
-      setPromptValue(inputs.prompt || "");
-      setNegativePrompt(inputs.negative_prompt || []);
-      setNumberOfPrompts(inputs.n || 3);
-    } else {
-      // Reset to defaults when no existing inputs
-      setSelectedPreset(undefined);
-      setProductReference([]);
-      setContextReference([]);
-      setPromptValue("");
-      setNegativePrompt([]);
-      setNumberOfPrompts(3);
-    }
-  }, [referenceMoodboardId]);
 
-  // Mutation for generating prompts
-  const { mutate: generatePrompts, isPending: isGeneratingPrompts } =
-    useMutation({
-      mutationFn: async () => {
-        if (!selectedBrandId || !referenceMoodboardId) {
-          throw new Error("Brand ID and Moodboard ID are required");
+      return generateAdvancedPrompts(selectedBrandId, referenceMoodboardId, {
+        preset_id: watchedSelectedPreset,
+        product_references: watchedProductReference,
+        context_references: watchedContextReference,
+        prompt: watchedPromptValue || undefined,
+        negative_prompt: watchedNegativePrompt,
+        n: watchedNumberOfPrompts,
+      });
+    },
+    onSuccess: () => {
+      setOptimisticIsGenerating(false);
+      toast.success(
+        "Prompt generation started! Check the moodboard for results.",
+        {
+          description: "The prompts will be generated in the background.",
         }
-
-        return generateAdvancedPrompts(selectedBrandId, referenceMoodboardId, {
-          preset_id: selectedPreset!,
-          product_references: productReference,
-          context_references: contextReference,
-          prompt: promptValue || undefined,
-          negative_prompt: negativePrompt,
-          n: numberOfPrompts,
-        });
-      },
-      onSuccess: () => {
-        toast.success(
-          "Prompt generation started! Check the moodboard for results.",
-          {
-            description: "The prompts will be generated in the background.",
-          }
-        );
-      },
-      onError: (error: any) => {
-        console.error("Error generating prompts:", error);
-        toast.error("Failed to generate prompts. Please try again.", {
-          description: error.message || "An unexpected error occurred.",
-        });
-      },
-    });
+      );
+    },
+    onError: (error: any) => {
+      setOptimisticIsGenerating(false);
+      console.error("Error generating prompts:", error);
+      toast.error("Failed to generate prompts. Please try again.", {
+        description: error.message || "An unexpected error occurred.",
+      });
+    },
+  });
 
   const handleGeneratePrompts = useCallback(() => {
-    // Validation
-    if (!referenceMoodboardId) {
-      toast.error("Please select a reference moodboard first");
-      return;
-    }
+    const isValid = validatePromptGeneration(
+      referenceMoodboardId,
+      watchedSelectedPreset
+    );
 
-    if (!selectedPreset) {
-      toast.error("Please select a preset");
-      return;
-    }
+    if (!isValid) return;
 
-    if (productReference.length === 0 && contextReference.length === 0) {
-      toast.warning(
-        "Consider adding product or context references for better results"
-      );
-    }
-
+    setOptimisticIsGenerating(true);
     generatePrompts();
   }, [
     referenceMoodboardId,
-    selectedPreset,
-    productReference,
-    contextReference,
+    watchedSelectedPreset,
+    watchedProductReference,
+    watchedContextReference,
     generatePrompts,
   ]);
 
-  // Reference zone handlers
-  const openReferencePopover = useCallback((tab: "master" | "product") => {
-    setReferencePopoverTab(tab);
-    setIsReferencePopoverOpen(true);
-  }, []);
+  // Reusable form field change handler
+  const handleFieldChange = useCallback(
+    (fieldName: keyof A2iAdvancedPromptFormData, value: any) => {
+      form.setValue(fieldName, value);
+    },
+    [form]
+  );
+
+  const handleOpenReferencePopover = useCallback(
+    (tab: "master" | "product") => {
+      setReferencePopoverTab(tab);
+      setIsReferencePopoverOpen(true);
+    },
+    []
+  );
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, url: string, source: "product" | "master") => {
@@ -180,33 +197,53 @@ function A2iAdvancedPromptGenerator({
     (e: React.DragEvent, zone: "product" | "master") => {
       e.preventDefault();
       const assetUrl = e.dataTransfer.getData("assetUrl");
-      const source = e.dataTransfer.getData("source");
+      const source = e.dataTransfer.getData("source") as "product" | "master";
 
       if (!assetUrl) return;
 
-      // Handle moving between zones
-      if (source === "product" && zone === "master") {
-        setProductReference((prev) => prev.filter((url) => url !== assetUrl));
-        setContextReference((prev) => [...prev, assetUrl]);
+      const isMovingToContext = source === "product" && zone === "master";
+      const isMovingToProduct = source === "master" && zone === "product";
+
+      if (isMovingToContext) {
+        handleFieldChange(
+          "productReference",
+          watchedProductReference.filter((url) => url !== assetUrl)
+        );
+        handleFieldChange("contextReference", [
+          ...watchedContextReference,
+          assetUrl,
+        ]);
         toast.success("Moved to context reference");
-      } else if (source === "master" && zone === "product") {
-        setContextReference((prev) => prev.filter((url) => url !== assetUrl));
-        setProductReference((prev) => [...prev, assetUrl]);
+      } else if (isMovingToProduct) {
+        handleFieldChange(
+          "contextReference",
+          watchedContextReference.filter((url) => url !== assetUrl)
+        );
+        handleFieldChange("productReference", [
+          ...watchedProductReference,
+          assetUrl,
+        ]);
         toast.success("Moved to product reference");
       }
     },
-    []
+    [handleFieldChange, watchedProductReference, watchedContextReference]
   );
 
   const handleRemoveImage = useCallback(
     (zone: "product" | "master", url: string) => {
       if (zone === "product") {
-        setProductReference((prev) => prev.filter((u) => u !== url));
+        handleFieldChange(
+          "productReference",
+          watchedProductReference.filter((u) => u !== url)
+        );
       } else {
-        setContextReference((prev) => prev.filter((u) => u !== url));
+        handleFieldChange(
+          "contextReference",
+          watchedContextReference.filter((u) => u !== url)
+        );
       }
     },
-    []
+    [handleFieldChange, watchedProductReference, watchedContextReference]
   );
 
   return (
@@ -215,17 +252,18 @@ function A2iAdvancedPromptGenerator({
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Campaign Prompt Generator</h1>
         <A2iAdvancedPromptPresetSelector
-          selectedPreset={selectedPreset}
-          onPresetChange={handlePresetChange}
-          disabled={isGenerating || isGeneratingPrompts}
+          selectedPreset={watchedSelectedPreset}
+          onPresetChange={(presetId) =>
+            handleFieldChange("selectedPreset", presetId)
+          }
+          disabled={isAnyGenerating}
         />
       </div>
 
-      {/* Main Grid */}
+      {/* Main Grid Layout */}
       <div className="grid grid-cols-12 gap-6">
-        {/* Left Column */}
+        {/* Left Column - Reference & Zones */}
         <div className="col-span-7 flex flex-col gap-6">
-          {/* Reference Moodboard */}
           <ReferenceMoodboard
             referenceMoodboardId={referenceMoodboardId}
             referenceMoodboardAssets={referenceMoodboardAssets}
@@ -237,35 +275,42 @@ function A2iAdvancedPromptGenerator({
             isAdvanceMode={true}
           />
 
-          {/* Reference Zones */}
           <A2iAdvancedPromptReferenceZones
-            productReference={productReference}
-            contextReference={contextReference}
-            onProductReferenceClick={() => openReferencePopover("product")}
-            onContextReferenceClick={() => openReferencePopover("master")}
+            productReference={watchedProductReference}
+            contextReference={watchedContextReference}
+            onProductReferenceClick={() =>
+              handleOpenReferencePopover("product")
+            }
+            onContextReferenceClick={() => handleOpenReferencePopover("master")}
             onDragStart={handleDragStart}
             onDrop={handleDropZone}
             onRemoveImage={handleRemoveImage}
           />
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Inputs */}
         <div className="col-span-5 flex flex-col gap-6">
           <A2iAdvancedPromptInputs
-            promptValue={promptValue}
-            negativePrompt={negativePrompt}
-            onPromptChange={setPromptValue}
-            onNegativePromptChange={setNegativePrompt}
+            promptValue={watchedPromptValue}
+            negativePrompt={watchedNegativePrompt}
+            onPromptChange={(value) => handleFieldChange("promptValue", value)}
+            onNegativePromptChange={(value) =>
+              handleFieldChange("negativePrompt", value)
+            }
           />
         </div>
       </div>
 
-      {/* Reference Image Selector */}
+      {/* Reference Image Selector Modal */}
       <ReferenceImageSelector
-        masterReference={contextReference}
-        productReference={productReference}
-        onMasterReferenceChange={setContextReference}
-        onProductReferenceChange={setProductReference}
+        masterReference={watchedContextReference}
+        productReference={watchedProductReference}
+        onMasterReferenceChange={(value) =>
+          handleFieldChange("contextReference", value)
+        }
+        onProductReferenceChange={(value) =>
+          handleFieldChange("productReference", value)
+        }
         activeTab={referencePopoverTab}
         onTabChange={setReferencePopoverTab}
         maxLimit={20}
@@ -278,30 +323,36 @@ function A2iAdvancedPromptGenerator({
         showPopoverTrigger={false}
       />
 
-      {/* Generated Prompts Results */}
+      {/* Actions & Settings */}
       <div className="flex flex-row gap-x-2 justify-end">
         <A2iAdvancedPromptActions
           onGenerate={handleGeneratePrompts}
-          isGenerating={isGenerating || isGeneratingPrompts}
-          disabled={isGenerating || isGeneratingPrompts}
+          isGenerating={isAnyGenerating}
+          disabled={isAnyGenerating}
         />
         <Input
           id="number-of-prompts"
           type="number"
           min={1}
           max={10}
-          value={numberOfPrompts}
-          onChange={(e) => setNumberOfPrompts(Number(e.target.value))}
-          disabled={isGenerating || isGeneratingPrompts}
+          value={watchedNumberOfPrompts}
+          onChange={(e) =>
+            handleFieldChange("numberOfPrompts", Number(e.target.value))
+          }
+          disabled={isAnyGenerating}
           className="w-16"
         />
       </div>
+
+      {/* Results */}
       <A2iAdvancedPromptResults
         prompts={generatedPrompts}
-        isGenerating={isGenerating}
+        isGenerating={isGenerating || optimisticIsGenerating}
         conflictNotes={conflictNotes}
-        numberOfPrompts={numberOfPrompts}
-        onNumberOfPromptsChange={setNumberOfPrompts}
+        numberOfPrompts={watchedNumberOfPrompts}
+        onNumberOfPromptsChange={(value) =>
+          handleFieldChange("numberOfPrompts", value)
+        }
       />
     </div>
   );

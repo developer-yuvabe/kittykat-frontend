@@ -1,3 +1,5 @@
+import z from "zod";
+
 export interface PromptFields {
   moodboard_analysis: string;
   product_analysis: string;
@@ -61,3 +63,16 @@ export interface PromptGenerationRequest {
   n?: number;
   show_timings?: boolean;
 }
+
+// Zod Schema for form validation
+export const a2iAdvancedPromptSchema = z.object({
+  selectedPreset: z.string(),
+  productReference: z.array(z.string()),
+  contextReference: z.array(z.string()),
+  promptValue: z.string(),
+  negativePrompt: z.array(z.string()),
+  numberOfPrompts: z
+    .number()
+    .min(1, "At least one prompt is required")
+    .max(10, "Maximum 10 prompts allowed"),
+});
