@@ -158,13 +158,26 @@ const ReferenceMoodboard = ({
           }, 1000);
         }
 
-        if (selectedBrandId && moodboard.id && !isGeneratingPrompts) {
-          generateShowboard({
-            brandId: selectedBrandId,
-            moodboardId: moodboard.id,
-            referenceMoodboardAssets: moodboard.moodboard_assets,
-            numberOfPrompts: Number(n) || 1,
-          });
+        // In advanced mode: update reference moodboard only
+        // In normal mode: generate prompts
+        if (selectedBrandId && moodboard.id) {
+          if (isAdvanceMode) {
+            await updateA2iRefernceMoodboard(
+              selectedBrandId,
+              moodboard.id,
+              moodboard.moodboard_assets
+            );
+          } else {
+            // Normal mode: generate prompts
+            if (!isGeneratingPrompts) {
+              generateShowboard({
+                brandId: selectedBrandId,
+                moodboardId: moodboard.id,
+                referenceMoodboardAssets: moodboard.moodboard_assets,
+                numberOfPrompts: Number(n) || 1,
+              });
+            }
+          }
         }
       } catch (error) {
         console.error("Error in handleMoodboardSelectionChange:", error);
@@ -178,6 +191,7 @@ const ReferenceMoodboard = ({
       generateShowboard,
       n,
       isGeneratingPrompts,
+      isAdvanceMode,
     ]
   );
 
