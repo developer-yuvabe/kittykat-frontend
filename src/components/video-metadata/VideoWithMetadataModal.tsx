@@ -1,6 +1,6 @@
 // components/video-metadata/VideoWithMetadataModal.tsx
 import { GalleryItemResponse } from "@/types/gallery.types";
-import React, { useState } from "react";
+import React, { useState ,useMemo} from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,8 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { A2iImageGeneration } from "@/types/types";
+import ZoomableImage from "../ui/zoomable-image";
+import { isFrameParam } from "@/types/a2i-media.types";
 
 type VideoWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -76,7 +78,7 @@ const VideoWithMetadataModal = ({
     ],
     queryFn: () =>
       getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
-    enabled: !generation && galleryItem.asset_source == "showboard-media",
+    enabled: !generation && (galleryItem.asset_source == "showboard-media"),
     placeholderData: generation
       ? {
           type: generation.type,
@@ -89,6 +91,28 @@ const VideoWithMetadataModal = ({
   const isDisabled = !(
     data?.type === "video_generation" || data?.type === "video"
   );
+
+  // Extract reference images (base input frames) from video parameters
+  const referenceImages = useMemo(() => {
+    const params = data?.parameters;
+    if (!params) return [];
+    
+    const model = models.find((m) => m.model === params.model);
+    if (!model) return [];
+    
+    const images: Array<{ url: string; label: string }> = [];
+    
+    model.parameters.forEach((paramDef) => {
+      if (isFrameParam(paramDef)) {
+        const value = params[paramDef.id];
+        if (value) {
+          images.push({ url: value, label: paramDef.label });
+        }
+      } 
+    });
+    
+    return images;
+  }, [data?.parameters, models]);
 
   const handleCopyPrompt = () => {
     if (data?.parameters?.prompt) {
@@ -305,6 +329,30 @@ const VideoWithMetadataModal = ({
                               )
                             }
                           />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Reference Images (Base Input Frames) */}
+                    {referenceImages.length > 0 && (
+                      <div className="space-y-2">
+                        <p>Reference Image(s)</p>
+                        <div className="mt-2 w-full overflow-x-auto">
+                          <div className="flex flex-row gap-x-2 w-max">
+                            {referenceImages.map((img, idx) => (
+                              <div key={idx} className="flex flex-col gap-1">
+                                <ZoomableImage
+                                  src={img.url}
+                                  alt={img.label}
+                                  className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                  variant="default"
+                                />
+                                <span className="text-xs text-center text-muted-foreground">
+                                  {img.label}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
