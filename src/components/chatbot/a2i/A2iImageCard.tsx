@@ -259,14 +259,16 @@ const A2iImageCard = ({
 
       if (isEditorOutput) {
         try {
-          const model = models.find((m) => m.model === parameters.model);
+          const model = models.find(
+            (m) => m.model === parameters.model && m.type === "remix"
+          );
           if (!model) {
             toast.error("No model found for this remix image.");
             return;
           }
 
           // Validate that base image exists
-          const baseInputImageUrl = parameters.base_image;
+          const baseInputImageUrl = parameters.base_image || parameters.image;
           if (!baseInputImageUrl) {
             toast.error("Base input not available — cannot reuse this image.");
             return;

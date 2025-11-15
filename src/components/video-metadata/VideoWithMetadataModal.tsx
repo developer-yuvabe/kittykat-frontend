@@ -66,7 +66,8 @@ const VideoWithMetadataModal = ({
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
   const { openConceptVisual } = useConceptVisualStore();
-  const { setShowInsufficientCreditsModal } = useCreditsStore();
+  const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
+    useCreditsStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const { data, isFetching: isFetchingParams } = useQuery({
@@ -199,11 +200,7 @@ const VideoWithMetadataModal = ({
   const handleUpscaleManual = () => toast.info("Manual upscaling coming soon.");
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => !open && onClose()}
-      modal={!setShowInsufficientCreditsModal}
-    >
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogHeader className="sr-only">
         <DialogTitle>Expanded Video</DialogTitle>
         <DialogDescription>
@@ -215,8 +212,16 @@ const VideoWithMetadataModal = ({
 
       <DialogContent
         className="p-0 border-none bg-transparent shadow-none flex items-center justify-center focus:outline-none"
-        onPointerDownOutside={onClose}
-        onEscapeKeyDown={onClose}
+        onPointerDownOutside={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // revent outside click while credits modal open
+          else onClose();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // prevent esc close while credits modal open
+          else onClose();
+        }}
         hideCloseIcon
         overflowClassName="bg-black/80"
       >
