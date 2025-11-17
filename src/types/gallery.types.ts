@@ -395,6 +395,7 @@ export interface GalleryDragPayload {
   sourceCampaignId?: string | null;
   // Whether items are from archived section
   isArchived?: boolean;
+  activeTab?: string;
 }
 
 //
