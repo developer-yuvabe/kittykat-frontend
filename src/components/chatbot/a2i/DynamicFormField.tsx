@@ -365,22 +365,8 @@ export function DynamicFormField<T extends FieldValues>({
             );
 
           case "string":
-            return (
-              <FormItem>
-                <DynamicFormLabel
-                  showLabel={type !== "initial"}
-                  label={param.label}
-                  optional={!param.required}
-                />
-                <FormControl>
-                  <Input {...field} placeholder={param.label} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-
           case "first_frame":
-          case "last_frame":
+          case "last_frame":  
             return (
               <FormItem>
                 <DynamicFormLabel
