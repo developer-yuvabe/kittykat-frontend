@@ -278,9 +278,12 @@ export function DynamicFormField<T extends FieldValues>({
                 >
                   <FormControl>
                     <SelectTrigger
-                      className={cn("w-full !gap-0", {
-                        "w-max": type === "initial",
-                      })}
+                      className={cn(
+                        "w-full !gap-0 transition-all hover:text-primary hover:bg-primary/10 hover:opacity-90 cursor-pointer",
+                        {
+                          "w-max": type === "initial",
+                        }
+                      )}
                       disableDropdown
                     >
                       {(() => {
@@ -366,7 +369,7 @@ export function DynamicFormField<T extends FieldValues>({
 
           case "string":
           case "first_frame":
-          case "last_frame":  
+          case "last_frame":
             return (
               <FormItem>
                 <DynamicFormLabel

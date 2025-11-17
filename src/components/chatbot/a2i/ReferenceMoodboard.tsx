@@ -92,7 +92,6 @@ const ReferenceMoodboard = ({
     },
     onSuccess: () => {
       toast.success("Concept Visual prompts generated successfully!");
-      setIsGeneratingPrompts(false);
     },
     onError: () => {
       toast.error(
@@ -105,6 +104,10 @@ const ReferenceMoodboard = ({
   useEffect(() => {
     if (prompts && prompts.length > 0) {
       setN(prompts.length);
+    }
+
+    if (isGeneratingPrompts) {
+      setIsGeneratingPrompts(false);
     }
   }, [prompts]);
 
