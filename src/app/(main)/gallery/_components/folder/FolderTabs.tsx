@@ -2,6 +2,8 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { GalleryActions } from "@/hooks/useGallery";
 
 interface Tab {
   value: string;
@@ -12,6 +14,8 @@ interface FolderTabsProps {
   activeTab: string;
   onTabChange: (value: string) => void;
   title?: string;
+  galleryActions: GalleryActions; // you’ll use this for patchItem
+  setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const tabs: Tab[] = [
@@ -23,7 +27,77 @@ const tabs: Tab[] = [
   { value: "products", label: "Products" },
 ];
 
-export function FolderTabs({ activeTab, onTabChange }: FolderTabsProps) {
+export function FolderTabs({
+  activeTab,
+  onTabChange,
+  galleryActions,
+  setSelectedItems,
+}: FolderTabsProps) {
+  // ---- Handle drop ----
+  const handleDrop = async (
+    e: React.DragEvent<HTMLButtonElement>,
+    targetTab: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("targetTab:", targetTab);
+
+    const data = e.dataTransfer.getData("application/gallery-drag");
+    if (!data) return;
+
+    const payload = JSON.parse(data);
+    console.log("Drop payload:", payload);
+    const { itemIds, activeTab: sourceTab } = payload;
+    console.log("Target tab:", targetTab, "Source tab:", sourceTab);
+
+    // 1. Block dropping from "all-media" to anywhere
+    if (sourceTab === "all-media") {
+      toast.error("Items from 'All Media' cannot be moved.");
+      return;
+    }
+
+    // 2. Block dropping to "all-media"
+    if (targetTab === "all-media") {
+      toast.error("Items cannot be moved into 'All Media'.");
+      return;
+    }
+
+    // 3. If dropped on same tab → ignore
+    if (targetTab === sourceTab) {
+      toast.info("Items are already in this tab.");
+      return;
+    }
+
+    try {
+      toast.loading("Moving items...", { id: "move-items" });
+
+      await Promise.all(
+        itemIds.map((itemId: string) =>
+          galleryActions.patchItem?.({
+            itemId,
+            data: { asset_source: targetTab },
+            revalidateAutofillSuggestions: false,
+          })
+        )
+      );
+
+      toast.success(`Moved ${itemIds.length} item(s) to ${targetTab}.`, {
+        id: "move-items",
+      });
+      setSelectedItems([]); // Clear selection after move
+    } catch (error) {
+      console.error("Move failed:", error);
+      toast.error("Failed to move items.", { id: "move-items" });
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
+    // Allow drop
+    if (e.dataTransfer.types.includes("application/gallery-drag")) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div className="w-full border-b bg-[#F9FAFB]">
       <div className="grid grid-cols-6 w-full">
@@ -31,6 +105,8 @@ export function FolderTabs({ activeTab, onTabChange }: FolderTabsProps) {
           <button
             key={tab.value}
             onClick={() => onTabChange(tab.value)}
+            onDrop={(e) => handleDrop(e, tab.value)}
+            onDragOver={handleDragOver}
             className={cn(
               "text-sm font-medium text-gray-600 hover:text-gray-900 py-3 px-4 transition-all border-b-2 border-transparent",
               activeTab === tab.value &&

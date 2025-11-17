@@ -393,6 +393,12 @@ export const useGalleryQuery = (
         currentCampaignFilter &&
         data.campaign_id !== currentCampaignFilter;
 
+      const currentTabFilter = filters.assetType;
+      const isMovingToAnotherTab =
+        data.asset_source &&
+        currentTabFilter &&
+        data.asset_source !== currentTabFilter;
+
       // Optimistically update gallery items list
       queryClient.setQueryData(queryKey, (old: any) => {
         if (!old) return old;
@@ -401,7 +407,7 @@ export const useGalleryQuery = (
           ...old,
           pages: old.pages.map((page: any) => {
             // If moving to another campaign while viewing a specific campaign, remove it
-            if (isMovingToAnotherCampaign) {
+            if (isMovingToAnotherCampaign || isMovingToAnotherTab) {
               return {
                 ...page,
                 gallery_items: page.gallery_items.filter(
@@ -447,7 +453,7 @@ export const useGalleryQuery = (
             if (!prev) return prev;
 
             // Remove if moving to another campaign
-            if (isMovingToAnotherCampaign) {
+            if (isMovingToAnotherCampaign || isMovingToAnotherTab) {
               return prev.filter((item) => item.id !== itemId);
             }
 
@@ -476,10 +482,9 @@ export const useGalleryQuery = (
             if (!prev) return prev;
 
             // Remove if moving to another campaign
-            if (isMovingToAnotherCampaign) {
+            if (isMovingToAnotherCampaign || isMovingToAnotherTab) {
               return prev.filter((item) => item.id !== itemId);
             }
-
             // Otherwise update
             return prev.map((item) =>
               item.id === itemId ? { ...item, ...data } : item

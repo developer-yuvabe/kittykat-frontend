@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { Loader2 } from "lucide-react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
@@ -33,6 +33,7 @@ export function FolderGalleryView({
 }: FolderGalleryViewProps) {
   const { getSelectedBrand } = useBrandStore();
   const brand = useMemo(() => getSelectedBrand(), [selectedBrandId]);
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
 
   // Use gallery hook with proper filters
   const galleryActions = useGalleryQuery(
@@ -78,7 +79,7 @@ export function FolderGalleryView({
   // Clear selected items when brand or campaign changes
   useEffect(() => {
     setSelectedItems([]);
-  }, [selectedBrandId, selectedCampaignId]);
+  }, [selectedBrandId, selectedCampaignId, activeTab]);
 
   // Fetch next page when in view
   useEffect(() => {
@@ -101,12 +102,53 @@ export function FolderGalleryView({
     .getGalleryItems()
     .filter((item) => selectedItems.includes(item.id));
 
-  const handleSelect = (id: string, selected: boolean) => {
-    if (selected) {
-      setSelectedItems((prev) => [...prev, id]);
-    } else {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+  const items = useMemo(() => {
+    const items = galleryActions.getGalleryItems();
+    return items;
+  }, [galleryActions]);
+
+  const handleSelect = (id: string, selected: boolean, shiftKey?: boolean) => {
+    console.log("handleSelect called with:", { id, selected, shiftKey });
+
+    // last selected item id (track with useState)
+    const lastId = lastSelectedId;
+
+    // --- SHIFT-CLICK RANGE SELECTION ---
+    if (shiftKey && lastId && lastId !== id) {
+      console.log(`Shift-click detected between ${lastId} and ${id}`);
+
+      let include = false;
+      const idsInRange: string[] = [];
+
+      //  Traverse through items once
+      for (const item of items) {
+        if (item.id === lastId || item.id === id) {
+          // Always include the boundary
+          idsInRange.push(item.id);
+          // Toggle inclusion
+          include = !include;
+
+          // If we’ve already passed both boundaries, stop
+          if (!include) break;
+        } else if (include) {
+          // Include everything between lastId and id
+          idsInRange.push(item.id);
+        }
+      }
+
+      console.log("IDs in range to select:", idsInRange);
+
+      setSelectedItems((prev) => Array.from(new Set([...prev, ...idsInRange])));
+      setLastSelectedId(id); // store for next shift-click
+      return;
     }
+
+    // --- NORMAL CLICK ---
+    setSelectedItems((prev) =>
+      selected ? [...prev, id] : prev.filter((itemId) => itemId !== id)
+    );
+
+    setLastSelectedId(id); // always update last clicked
   };
 
   const handleSelectAll = () => {
@@ -135,6 +177,7 @@ export function FolderGalleryView({
                 onSelect={handleSelect}
                 galleryActions={galleryActions}
                 enableDragToMove={true}
+                activeTab={activeTab}
               />
               {/* Infinite scroll loading indicator */}
               {galleryActions.hasNextPage && (

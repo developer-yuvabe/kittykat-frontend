@@ -115,6 +115,10 @@ export function MediaFolderView({
     "MediaFolderView-Shared"
   );
 
+  const [isCollapsed, setIsCollapsed] = useState(false); // New state for sidebar collapse
+
+  const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
+
   // Show campaign view with sidebar
   if (selectedBrandId && selectedCampaignId) {
     return (
@@ -131,6 +135,8 @@ export function MediaFolderView({
           hasNoBrands={hasNoBrands}
           galleryView={galleryView}
           setSelectedItems={setSelectedItems}
+          isCollapsed={isCollapsed}
+          onToggleCollapsed={toggleCollapsed}
         />
 
         <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -156,6 +162,7 @@ export function MediaFolderView({
               setInitialWorkflowStatus={setInitialWorkflowStatus}
               galleryView={galleryView}
               setGalleryView={setGalleryView}
+              // galleryActions={galleryActions}
             />
           </div>
         </div>
@@ -180,6 +187,8 @@ export function MediaFolderView({
           hasNoBrands={hasNoBrands}
           galleryView={galleryView}
           setSelectedItems={setSelectedItems}
+          isCollapsed={isCollapsed}
+          onToggleCollapsed={toggleCollapsed}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -216,34 +225,37 @@ export function MediaFolderView({
               activeTab={activeTab}
               onTabChange={onTabChange}
               title="Subfolders"
-            />
-          </div>
-
-          <div className="px-4 flex-shrink-0">
-            <FolderUploadDropzone
-              activeTab={activeTab}
-              onUploadComplete={onUploadComplete}
-              addToGallery={addToGallery}
-              selectedBrandId={selectedBrandId}
-              selectedCampaignId={undefined}
-              selectedMoodboardId={selecteMoodboardId}
-            />
-          </div>
-
-          {/* <MediaSearchFilters {...filterProps} /> */}
-
-          {/* 🎞️ Scrollable Gallery */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
-            <FolderGalleryView
-              selectedBrandId={selectedBrandId}
-              selectedCampaignId={undefined}
-              searchQuery={searchQuery}
-              favorites={favorites}
-              selectedFilters={selectedFilters}
-              activeTab={activeTab}
+              galleryActions={galleryActions}
               setSelectedItems={setSelectedItems}
-              selectedItems={selectedItems}
             />
+          </div>
+          <div className="overflow-y-auto">
+            <div className="px-4 flex-shrink-0">
+              <FolderUploadDropzone
+                activeTab={activeTab}
+                onUploadComplete={onUploadComplete}
+                addToGallery={addToGallery}
+                selectedBrandId={selectedBrandId}
+                selectedCampaignId={undefined}
+                selectedMoodboardId={selecteMoodboardId}
+              />
+            </div>
+
+            {/* <MediaSearchFilters {...filterProps} /> */}
+
+            {/* 🎞️ Scrollable Gallery */}
+            <div className="flex-1 px-4 pb-4">
+              <FolderGalleryView
+                selectedBrandId={selectedBrandId}
+                selectedCampaignId={undefined}
+                searchQuery={searchQuery}
+                favorites={favorites}
+                selectedFilters={selectedFilters}
+                activeTab={activeTab}
+                setSelectedItems={setSelectedItems}
+                selectedItems={selectedItems}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -268,6 +280,8 @@ export function MediaFolderView({
           activeTab={activeTab}
           onTabChange={onTabChange}
           title="Subfolders"
+          galleryActions={galleryActions}
+          setSelectedItems={setSelectedItems}
         />
 
         <FolderGalleryView
