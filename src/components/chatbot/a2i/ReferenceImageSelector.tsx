@@ -50,10 +50,12 @@ interface ReferenceImageSelectorProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 
-  // Customization props
+  // UX Mode props
+  variant?: "popover" | "inline"; // Controls the layout/UX
   popoverAlign?: "start" | "center" | "end";
   popoverSide?: "top" | "bottom" | "left" | "right";
   customTrigger?: React.ReactNode;
+  showPopoverTrigger?: boolean;
 }
 
 const ReferenceImageSelector = ({
@@ -81,16 +83,19 @@ const ReferenceImageSelector = ({
   isOpen,
   onOpenChange,
 
-  // Customization props
+  // UX Mode props
+  variant = "popover",
   popoverAlign = "start",
   popoverSide = "top",
   customTrigger,
+  showPopoverTrigger = true,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
 
   // Determine mode based on whether product reference props are provided
   const isSingleMode = !onProductReferenceChangeProp;
+  const isInlineMode = variant === "inline";
 
   // Use master reference for single mode, or separate references for dual mode
   const masterReference = isSingleMode
@@ -752,27 +757,106 @@ const ReferenceImageSelector = ({
     ]
   );
 
+  // Early return for inline variant when closed
+  if (isInlineMode && !isOpen) {
+    return null;
+  }
+
+  // Render inline variant
+  if (isInlineMode) {
+    return (
+      <>
+        <div className="w-full border rounded-xl bg-background p-6">
+          <div className="flex gap-6 h-[450px]">
+            {/* LEFT COLUMN - Upload/Drop Area */}
+            <div className="w-[280px] shrink-0">
+              <ReferenceUploadArea
+                fileTypes={fileTypes}
+                maxFileSizeLimit={maxFileSizeLimit}
+                remainingSlots={remainingSlots}
+                isUploading={isUploading}
+                onDrop={handleDrop}
+                onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
+              />
+            </div>
+
+            {/* RIGHT COLUMN - Gallery */}
+            <div className="flex-1 min-w-0 flex flex-col ml-5">
+              <div
+                className="flex-1 overflow-y-auto"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDropZone(e, activeTab)}
+              >
+                <ReferenceGalleryGrid
+                  items={galleryItems}
+                  isLoading={isLoadingStore}
+                  masterReferenceUrls={masterReference}
+                  productReferenceUrls={productReference}
+                  onItemClick={handleImageClick}
+                  onDragStart={(e, assetUrl, assetId) =>
+                    handleDragStart(e, assetUrl, undefined, assetId)
+                  }
+                  onDeleteItem={handleDeleteGalleryItem}
+                  isSingleMode={false}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <MediaLibraryDialog
+          open={mediaLibraryOpen}
+          onOpenChange={setMediaLibraryOpen}
+          onMultipleMediaItemsSelected={handleMediaLibrarySelection}
+          filters={{
+            brands: [selectedBrandId!],
+            campaigns: [],
+            product_categories: [],
+            has_product: undefined,
+            has_people: undefined,
+            has_lifestyle_context: undefined,
+            asset_types: ["image"],
+            asset_sources: [],
+            media_format: [],
+            aspect_ratio: [],
+            workflow_status: [],
+            is_favourite: undefined,
+            is_archived: undefined,
+            moodboards: [],
+          }}
+          brandId={selectedBrandId!}
+          campaignId={currentCampaignId || undefined}
+          isMultiSelect={true}
+          inSelectionGalleryIds={[...masterReference, ...productReference]}
+          maxSelectionCount={remainingSlots}
+        />
+      </>
+    );
+  }
+
+  // Render popover variant (default)
   return (
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
-        <PopoverTrigger asChild>
-          {customTrigger || (
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={disabled}
-              className="relative"
-            >
-              <Images />
-              {currentImageCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                  {currentImageCount}
-                </span>
-              )}
-            </Button>
-          )}
-        </PopoverTrigger>
-
+        {showPopoverTrigger && (
+          <PopoverTrigger asChild>
+            {customTrigger || (
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={disabled}
+                className="relative"
+              >
+                <Images />
+                {currentImageCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                    {currentImageCount}
+                  </span>
+                )}
+              </Button>
+            )}
+          </PopoverTrigger>
+        )}
         <PopoverContent
           align={popoverAlign}
           side={popoverSide}

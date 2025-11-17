@@ -29,13 +29,14 @@ import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
-  onSelect: (id: string, selected: boolean) => void;
+  onSelect: (id: string, selected: boolean, shiftKey?: boolean) => void;
   isMediaSelectDialog?: boolean;
   isMultiSelect?: boolean;
   inSelectionGalleryIds?: string[];
   maxSelectionCount?: number;
   galleryActions: GalleryActions;
   enableDragToMove?: boolean; // Enable drag-to-move functionality
+  activeTab?: string;
 }
 
 export function SortableMediaGrid({
@@ -47,6 +48,7 @@ export function SortableMediaGrid({
   maxSelectionCount,
   galleryActions,
   enableDragToMove = false,
+  activeTab,
 }: SortableMediaGridProps) {
   const router = useRouter();
   const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
@@ -54,16 +56,13 @@ export function SortableMediaGrid({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const { thumbnailSize, orderBy } = useGalleryFilterStore();
 
   // Get the gallery items and sort them by brand_sort_order
   const galleryItems = useMemo(() => {
     const items = galleryActions.getGalleryItems();
-    return items.sort(
-      (a, b) => (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
-    );
+    return items;
   }, [galleryActions]);
-
-  const { thumbnailSize, orderBy } = useGalleryFilterStore();
 
   // Enable dnd-kit drag-to-reorder when orderBy is manual (brand_sort_order)
   // This works independently of enableDragToMove (HTML5 drag to campaigns)
@@ -163,6 +162,7 @@ export function SortableMediaGrid({
               isDraggable={false} // Disable dragging in dialog mode
               selectedItems={selectedItems}
               enableDragToMove={false} // No drag-to-move in dialog
+              activeTab={activeTab}
             />
           ))}
         </Masonry>
@@ -245,6 +245,7 @@ export function SortableMediaGrid({
                 isDraggable={isDndKitDraggable} // Enable dnd-kit reorder only when manual order is active
                 selectedItems={selectedItems}
                 enableDragToMove={enableDragToMove}
+                activeTab={activeTab}
               />
             ))}
           </Masonry>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import type {
   ThreadA2iImage,
   ThreadCampaign,
@@ -10,6 +11,8 @@ import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
+
+import A2iAdvancedPromptGenerator from "./A2iAdvancedPromptGenerator";
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
   moodboardInformation: ThreadDetails["moodboard_information"];
@@ -24,6 +27,7 @@ const A2iImagesSection = function A2iImagesSection({
 }: A2iImagesSectionProps) {
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLDivElement | null>(null);
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
 
   return (
     <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
@@ -53,20 +57,48 @@ const A2iImagesSection = function A2iImagesSection({
               </div>
             </div>
           </div>
+          {expanded && (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="text-sm font-medium text-[#6e7787]">
+                Advanced Mode
+              </span>
+              <Switch
+                checked={isAdvancedMode}
+                onCheckedChange={setIsAdvancedMode}
+              />
+            </div>
+          )}
         </div>
       </CardHeader>
       {expanded && (
         <CardContent className="px-6  space-y-6">
-          <ReferenceMoodboard
-            referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-            prompts={a2iImageInformation?.prompts}
-            moodboardInformation={moodboardInformation}
-            formRef={formRef}
-            currentCampaign={currentCampaign}
-            referenceMoodboardAssets={
-              a2iImageInformation?.reference_moodboard_assets
-            }
-          />
+          {isAdvancedMode ? (
+            <A2iAdvancedPromptGenerator
+              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+              prompts={a2iImageInformation?.prompts}
+              moodboardInformation={moodboardInformation}
+              formRef={formRef}
+              currentCampaign={currentCampaign}
+              referenceMoodboardAssets={
+                a2iImageInformation?.reference_moodboard_assets
+              }
+            />
+          ) : (
+            <ReferenceMoodboard
+              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
+              prompts={a2iImageInformation?.prompts}
+              moodboardInformation={moodboardInformation}
+              formRef={formRef}
+              currentCampaign={currentCampaign}
+              referenceMoodboardAssets={
+                a2iImageInformation?.reference_moodboard_assets
+              }
+              showBorder={true}
+            />
+          )}
           <A2iImagesWrapper
             formRef={formRef}
             generations={[...(a2iImageInformation?.generations || [])]}

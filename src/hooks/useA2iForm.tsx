@@ -23,7 +23,7 @@ export const useA2iForm = ({
 }: UseA2iFormProps): UseFormReturn<any> => {
   if (!selectedModel) {
     throw new Error(
-      "No model selected. Please select a model before using this reusable form. Cheers!"
+      `No model selected. Please select a model before using this reusable form. Cheers! Debug info: formKey=${formKey}`
     );
   }
 

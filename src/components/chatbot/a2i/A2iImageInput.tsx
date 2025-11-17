@@ -629,7 +629,38 @@ const A2iImageInput = ({
         ...parameters.imageGeneationParameters,
       });
 
-      if (paramName && parameters.imageGeneationParameters[paramName]) {
+      // Check for reference_images parameter (from advanced prompt generator)
+      const referenceImagesParam =
+        parameters.imageGeneationParameters.reference_images;
+
+      if (referenceImagesParam) {
+        const imagesArray = Array.isArray(referenceImagesParam)
+          ? referenceImagesParam
+          : [referenceImagesParam];
+
+        // Get product reference images from parameters or stored state
+        const productRefImages = parameters.productReferenceImages || [];
+
+        // Categorize images: if product_reference_images exists, use it to split
+        if (productRefImages.length > 0) {
+          // Images in productRefImages go to productReference
+          const productImages = imagesArray.filter((img) =>
+            productRefImages.includes(img)
+          );
+          // Remaining images go to masterReference (context references)
+          const masterImages = imagesArray.filter(
+            (img) => !productRefImages.includes(img)
+          );
+
+          setProductReference(productImages);
+          setMasterReference(masterImages);
+        } else {
+          // If no product_reference_images, assign all to master
+          setMasterReference(imagesArray);
+          setProductReference([]);
+        }
+      } else if (paramName && parameters.imageGeneationParameters[paramName]) {
+        // Legacy path: handle existing parameter structure
         const referenceImages = parameters.imageGeneationParameters[paramName];
         const imagesArray = Array.isArray(referenceImages)
           ? referenceImages

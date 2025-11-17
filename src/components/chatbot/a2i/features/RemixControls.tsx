@@ -53,6 +53,7 @@ import {
   updateReferencesByZone,
   validateFiles,
 } from "@/lib/reference-image.utils";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -92,6 +93,9 @@ const RemixControls = ({
   const [isMagicEnabled, setIsMagicEnabled] = useState(
     user?.user_preferences?.enhance_prompts
   );
+  const { parameters, setParameters } = useMetadataActionsStore();
+  const [masterReference, setMasterReference] = useState<string[]>([]);
+  const [productReference, setProductReference] = useState<string[]>([]);
 
   const {
     initialParams,
@@ -157,10 +161,47 @@ const RemixControls = ({
   }, [image]);
 
   useEffect(() => {
-    if (isConceptVisualOpened) {
-      form.setValue("prompt", "", { shouldValidate: true });
+    const p = parameters.remixParameters;
+    if (!p) return;
+
+    // Load prompt
+    if (p.prompt) form.setValue("prompt", p.prompt, { shouldValidate: true });
+
+    // Load all other parameters
+    for (const param of selectedRemixModel?.parameters ?? []) {
+      const id = param.id;
+      if (p[id] !== undefined) {
+        form.setValue(id, p[id], { shouldValidate: true });
+      }
     }
-  }, [isConceptVisualOpened]);
+
+    // Dynamically find the reference images parameter ID from the model
+    const refParam = selectedRemixModel?.parameters?.find(
+      (param) => param.type === "file"
+    );
+
+    if (refParam) {
+      // Extract references using the dynamic parameter ID
+      const productImages = p.product_reference_images || [];
+      const allReferenceImages = p[refParam.id] || [];
+
+      // Separate master vs product references
+      const masterImages = allReferenceImages.filter(
+        (img: string) => !productImages.includes(img)
+      );
+
+      const master = masterImages.length > 0 ? [masterImages[0]] : [];
+      const products = productImages;
+
+      setMasterReference(master);
+      setProductReference(products);
+    }
+
+    // Clear parameters after a tick to avoid race conditions
+    requestAnimationFrame(() => {
+      setParameters("remixParameters", null);
+    });
+  }, [parameters.remixParameters, selectedRemixModel, form, setParameters]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -168,8 +209,7 @@ const RemixControls = ({
   });
 
   // Reference images state - using master/product zones like A2iImageInput
-  const [masterReference, setMasterReference] = useState<string[]>([]);
-  const [productReference, setProductReference] = useState<string[]>([]);
+
   const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
   const [referencePopoverTab, setReferencePopoverTab] = useState<
     "master" | "product"
