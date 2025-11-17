@@ -365,6 +365,8 @@ export function DynamicFormField<T extends FieldValues>({
             );
 
           case "string":
+          case "first_frame":
+          case "last_frame":  
             return (
               <FormItem>
                 <DynamicFormLabel

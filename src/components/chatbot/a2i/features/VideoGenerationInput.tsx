@@ -207,6 +207,9 @@ const VideoGenerationInputControls = ({
       if (source === "blanket" && firstFrameParam) {
         form.setValue(firstFrameParam.id, null, { shouldValidate: true });
       }
+      if (source === "blanket" && lastFrameParam) {
+        form.setValue(lastFrameParam.id, null, { shouldValidate: true });
+      }
     }
   };
 
