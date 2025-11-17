@@ -44,18 +44,9 @@ export const ReferenceGalleryGrid = ({
     );
   }
 
-  const cols = isSingleMode ? 8 : 7;
-  const maxVisibleRows = 2;
-  const itemsInTwoRows = cols * maxVisibleRows;
-  const needsScroll = items.length > itemsInTwoRows;
-
   return (
     <div
-      className={cn(
-        "grid gap-2 pb-2",
-        isSingleMode ? "grid-cols-8" : "grid-cols-7",
-        needsScroll && "overflow-y-auto pr-2"
-      )}
+      className={cn("grid gap-2", isSingleMode ? "grid-cols-8" : "grid-cols-6")}
     >
       {items.map((item) => {
         const isMaster = masterReferenceUrls.includes(item.asset_url);

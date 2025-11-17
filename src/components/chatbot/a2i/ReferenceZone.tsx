@@ -47,11 +47,11 @@ export const ReferenceZone = ({
   return (
     <div
       className={cn(
-        "flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col justify-between",
+        "flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col",
         isSelected
           ? "border-primary ring-2 ring-primary/20"
           : "border-border hover:border-primary/50",
-        isTall ? "p-6 min-h-[160px]" : "p-4"
+        isTall ? "p-6 min-h-40" : "p-4"
       )}
       onClick={onClick}
       onDragOver={(e) => e.preventDefault()}
@@ -112,18 +112,12 @@ export const ReferenceZone = ({
 
       {/* Image Section */}
       <div
-        className={cn(
-          "flex flex-wrap gap-2 items-start",
-          isTall && "gap-3 mt-auto"
-        )}
+        className={cn("flex flex-wrap gap-2 items-start", isTall && "gap-3")}
       >
         {images.map((url) => (
           <div
             key={url}
-            className={cn(
-              "relative rounded-lg shrink-0",
-              isTall ? "w-20 h-20" : "w-16 h-16"
-            )}
+            className={cn("relative rounded-lg shrink-0  w-16 h-16")}
             draggable
             onDragStart={(e) => onDragStart(e, url)}
             onClick={(e) => e.stopPropagation()}

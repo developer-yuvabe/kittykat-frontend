@@ -1,8 +1,10 @@
 import { GeneratedPrompt } from "@/types/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import React from "react";
+import React, { RefObject } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { EditIcon } from "@/components/ui/custom-icon";
 
 interface A2iAdvancedPromptResultsProps {
   prompts: GeneratedPrompt[] | undefined;
@@ -10,6 +12,8 @@ interface A2iAdvancedPromptResultsProps {
   conflictNotes?: string;
   numberOfPrompts: number;
   onNumberOfPromptsChange: (value: number) => void;
+  onEditPrompt: (prompt: GeneratedPrompt) => void;
+  formRef: RefObject<HTMLDivElement | null>;
 }
 
 export const A2iAdvancedPromptResults: React.FC<
@@ -20,11 +24,22 @@ export const A2iAdvancedPromptResults: React.FC<
   conflictNotes,
   numberOfPrompts,
   onNumberOfPromptsChange,
+  onEditPrompt,
+  formRef,
 }) => {
   // Don't render if no prompts and not generating
   if (!prompts?.length && !isGenerating) {
     return null;
   }
+
+  const handleEditClick = (generatedPrompt: GeneratedPrompt) => {
+    if (formRef.current) {
+      onEditPrompt(generatedPrompt);
+      formRef.current.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -98,6 +113,14 @@ export const A2iAdvancedPromptResults: React.FC<
                   readOnly
                   className="min-h-40 max-h-40 scrollbar resize-none"
                 />
+                <Button
+                  variant="ghost"
+                  className="absolute bottom-2 right-2"
+                  size="icon"
+                  onClick={() => handleEditClick(generatedPrompt)}
+                >
+                  <EditIcon />
+                </Button>
               </div>
             ))}
           </div>
