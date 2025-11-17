@@ -12,6 +12,7 @@ import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
 import {
   cn,
   getDimensionAndAspectRatioFromParameters,
+  PlatformApiError,
   urlToFile,
 } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
@@ -42,7 +43,9 @@ import {
 } from "../ui/tooltip";
 import { A2iImageGeneration } from "@/types/types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { remixImageService } from "@/services/api/remix.service";
 
+import { useCreditsStore } from "@/store/credits.store";
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
   generation?: {
@@ -88,6 +91,9 @@ const ImageWithMetadataModal = ({
     setSelectedRemixModel,
     models,
   } = useModelsStore();
+  const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
+    useCreditsStore();
+
   const { data, isFetching: isFetchingParams } = useQuery({
     queryKey: [
       "image-parameters",
@@ -106,21 +112,60 @@ const ImageWithMetadataModal = ({
       : null,
     staleTime: 0,
   });
+
   const isDisabled = !(
-    data?.type === "image_generation" || data?.type === "a2i"
+    data?.type === "image_generation" ||
+    data?.type === "a2i" ||
+    data?.type === "remix"
   )
     ? true
     : false;
 
-  const referenceImages =
-    data?.parameters?.reference_images ||
-    (Array.isArray(data?.parameters?.image) && data?.parameters.image) ||
-    (data?.parameters?.provider === "replicate" &&
-      (data?.parameters?.image ? [data?.parameters?.image] : undefined)) ||
-    (data?.parameters?.image_prompt
-      ? [data?.parameters?.image_prompt]
-      : undefined) ||
-    [];
+  const referenceImages = (() => {
+    const images: string[] = [];
+    const model = models.find((m) => m.model === data?.parameters?.model);
+
+    const referenceImageParam = model?.parameters?.find(
+      (param) => param.type === "file"
+    );
+
+    // For editor outputs (remix)
+    if (data?.type === "remix" && data?.parameters) {
+      if (data.parameters.base_image) {
+        images.push(data.parameters.base_image);
+      }
+
+      if (referenceImageParam) {
+        const refImages = data.parameters[referenceImageParam.id];
+        if (refImages) {
+          const arr = Array.isArray(refImages) ? refImages : [refImages];
+          images.push(...arr);
+        }
+      }
+    } else if (data?.parameters) {
+      // Image generation mode
+      if (referenceImageParam) {
+        const refImages = data?.parameters[referenceImageParam.id];
+        if (refImages) {
+          const arr = Array.isArray(refImages) ? refImages : [refImages];
+          images.push(...arr);
+        }
+      } else {
+        // Provider-specific fallback (replicate)
+        if (
+          data?.parameters?.image &&
+          Array.isArray(data.parameters.image) &&
+          data?.parameters?.provider === "replicate"
+        ) {
+          images.push(...data.parameters.image);
+        } else if (data?.parameters?.image_prompt) {
+          images.push(data.parameters.image_prompt);
+        }
+      }
+    }
+
+    return images.length > 0 ? images : undefined;
+  })();
 
   const handleCopyPrompt = () => {
     if (data?.parameters.prompt) {
@@ -144,30 +189,66 @@ const ImageWithMetadataModal = ({
       const paramsResponsibleForVaryingNumberOfOutputs =
         model.parameters.filter((p) => p.type === "image_count");
 
-      await generateImage(selectedBrandId!, {
-        ...data.parameters,
-        seed: -1,
-        ...Object.fromEntries(
-          paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
-        ),
-        source_asset_id: galleryItem.id,
-        // Preserve product_reference_images if they exist
-        product_reference_images:
-          data.parameters.product_reference_images || undefined,
+      if (data?.type === "remix") {
+        // Extract base parameters for remix
+        const remixParams = {
+          ...data.parameters,
+          seed: -1,
+          ...Object.fromEntries(
+            paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
+          ),
+        };
 
-        campaign_id: selectedCampaignId,
-      });
+        // Extract mask_image
+        const maskImageUrl = data.parameters.mask_image || null;
+
+        // Extract product reference images
+        const productReferenceImages =
+          data.parameters.product_reference_images || [];
+
+        const enhancePromptForProducts =
+          data.parameters.enhance_prompt_for_product || false;
+
+        // Call remix service
+        await remixImageService(
+          selectedBrandId!,
+          selectedCampaignId,
+          remixParams,
+          maskImageUrl,
+          productReferenceImages,
+          enhancePromptForProducts
+        );
+      } else {
+        //image generation
+        await generateImage(selectedBrandId!, {
+          ...data.parameters,
+          seed: -1,
+          ...Object.fromEntries(
+            paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
+          ),
+          source_asset_id: galleryItem.id,
+          // Preserve product_reference_images if they exist
+          product_reference_images:
+            data.parameters.product_reference_images || undefined,
+
+          campaign_id: selectedCampaignId,
+        });
+      }
 
       onClose();
       if (source === "media-gallery") {
         router.push("/?scrollTo=a2i-input");
       }
+      toast.info("Started Generation of Auto Vary Image.");
     } catch (error) {
       console.error("Error generating image:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error generating a varied image. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, varyAuto: false }));
-      toast.info("Started Generation of Auto Vary Image.");
     }
   };
 
@@ -176,54 +257,103 @@ const ImageWithMetadataModal = ({
       setLoading((p) => ({ ...p, manualAuto: true }));
       if (!data?.parameters) return;
 
-      const model = models.find((m) => m.model === data.parameters.model);
+      if (data?.type === "remix") {
+        const model = models.find(
+          (m) => m.model === data.parameters.model && m.type === "remix"
+        );
 
-      if (!model) {
-        toast.error("No model found for this image.");
-        return;
-      }
+        if (!model) {
+          toast.error("No model found for this image.");
+          return;
+        }
+        // Validate that base image exists
+        const baseInputImageUrl =
+          data.parameters.base_image || data.parameters.image;
+        if (!baseInputImageUrl) {
+          toast.error("Base input not available—cannot vary this image.");
+          return;
+        }
 
-      setSelectedImageGenerationModel(model);
+        // Set the remix model
+        setSelectedRemixModel(model);
 
-      const parameters = data.parameters;
-      const productReferenceImages = parameters.product_reference_images || [];
+        // Store full parameters for remix tab
+        setParameters("remixParameters", data.parameters);
 
-      // Get reference images parameter ID
-      const referneceImagesParamId = model.parameters.find(
-        (p) => p.type === "file"
-      );
+        onClose();
+        console.log(data.parameters);
+        console.log("base input", baseInputImageUrl);
 
-      let modifiedParameters = { ...parameters };
-
-      // Instead of re-uploading, we reuse the existing URLs directly
-      // This maintains the connection with gallery items
-      if (referneceImagesParamId && parameters[referneceImagesParamId.id]) {
-        const refImageOrImages = parameters[referneceImagesParamId.id];
-
-        // Keep the reference images as-is (don't re-upload)
-        modifiedParameters = {
-          ...modifiedParameters,
-          [referneceImagesParamId.id]: refImageOrImages,
+        // asset object with base_image URL
+        const baseImageAsset = {
+          ...galleryItem,
+          asset_url: baseInputImageUrl,
+          preview_url: baseInputImageUrl,
         };
-      }
 
-      setParameters("imageGeneationParameters", modifiedParameters);
-
-      // Set product reference images separately to maintain categorization
-      if (productReferenceImages && productReferenceImages.length > 0) {
-        setParameters("productReferenceImages", productReferenceImages);
+        // Open concept visual with base image loaded in canvas
+        openConceptVisual({
+          source: "blanket",
+          assetItems: [baseImageAsset],
+          asset: {
+            currentAsset: baseImageAsset,
+            galleryActions: null,
+          },
+          defaultActiveTab: "remix",
+        });
+        return;
       } else {
-        setParameters("productReferenceImages", null);
+        const model = models.find(
+          (m) => m.model === data.parameters.model && m.type === "image"
+        );
+
+        if (!model) {
+          toast.error("No model found for this image.");
+          return;
+        }
+        // Regular image generation workflow
+        setSelectedImageGenerationModel(model);
+
+        const parameters = data.parameters;
+        const productReferenceImages =
+          parameters.product_reference_images || [];
+
+        // Get reference images parameter ID
+        const referneceImagesParamId = model.parameters.find(
+          (p) => p.type === "file"
+        );
+
+        let modifiedParameters = { ...parameters };
+
+        // Instead of re-uploading, we reuse the existing URLs directly
+        // This maintains the connection with gallery items
+        if (referneceImagesParamId && parameters[referneceImagesParamId.id]) {
+          const refImageOrImages = parameters[referneceImagesParamId.id];
+
+          // Keep the reference images as-is (don't re-upload)
+          modifiedParameters = {
+            ...modifiedParameters,
+            [referneceImagesParamId.id]: refImageOrImages,
+          };
+        }
+
+        setParameters("imageGeneationParameters", modifiedParameters);
+
+        // Set product reference images separately to maintain categorization
+        if (productReferenceImages && productReferenceImages.length > 0) {
+          setParameters("productReferenceImages", productReferenceImages);
+        } else {
+          setParameters("productReferenceImages", null);
+        }
+
+        onClose();
+
+        // Only navigate to home page if not already there
+        if (pathname !== "/") {
+          router.push("/?scrollTo=a2i-input");
+        }
+        toast.info("Pre Selected Model and its parameters have been set.");
       }
-
-      onClose();
-
-      // Only navigate to home page if not already there
-      if (pathname !== "/") {
-        router.push("/?scrollTo=a2i-input");
-      }
-
-      toast.info("Pre Selected Model and its parameters have been set.");
     } catch (error) {
       console.log(error);
       toast.error(
@@ -271,12 +401,16 @@ const ImageWithMetadataModal = ({
       if (source === "media-gallery") {
         router.push("/?scrollTo=a2i-input");
       }
+      toast.info("Started Upscaling of the Image.");
     } catch (error) {
       console.error("Error upscaling the image:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error upscaling the image. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, upscaleAuto: false }));
-      toast.info("Started Upscaling of the Image.");
     }
   };
 
@@ -432,6 +566,10 @@ const ImageWithMetadataModal = ({
       toast.info(`Started Video Generation with ${preset} Animation.`);
     } catch (error) {
       console.error("Error animating the image:", error);
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error animating the image. Please try again.");
     } finally {
       setLoading((p) => ({
@@ -453,9 +591,17 @@ const ImageWithMetadataModal = ({
         </DialogDescription>
       </DialogHeader>
       <DialogContent
-        className="p-0 border-none bg-transparent shadow-none  flex items-center justify-center focus:outline-none"
-        onPointerDownOutside={onClose}
-        onEscapeKeyDown={onClose}
+        className="p-0 border-none bg-transparent shadow-none flex items-center justify-center focus:outline-none"
+        onPointerDownOutside={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // revent outside click while credits modal open
+          else onClose();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // prevent esc close while credits modal open
+          else onClose();
+        }}
         hideCloseIcon
         overflowClassName="bg-black/80"
       >
@@ -559,7 +705,7 @@ const ImageWithMetadataModal = ({
                         </div>
                       </div>
                     )}
-                    {referenceImages?.length > 0 && (
+                    {referenceImages && referenceImages?.length > 0 && (
                       <div>
                         <p>Reference Image(s)</p>
                         <div className="mt-2 w-full overflow-x-auto">

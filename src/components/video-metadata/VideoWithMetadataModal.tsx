@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { DownloadIcon } from "../ui/custom-icon";
 import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
-import { cn, convertParameterValue } from "@/lib/utils";
+import { cn, convertParameterValue, PlatformApiError } from "@/lib/utils";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -33,6 +33,7 @@ import {
 import { A2iImageGeneration } from "@/types/types";
 import ZoomableImage from "../ui/zoomable-image";
 import { isFrameParam } from "@/types/a2i-media.types";
+import { useCreditsStore } from "@/store/credits.store";
 
 type VideoWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -67,6 +68,8 @@ const VideoWithMetadataModal = ({
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
   const { openConceptVisual } = useConceptVisualStore();
+  const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
+    useCreditsStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const { data, isFetching: isFetchingParams } = useQuery({
@@ -147,7 +150,11 @@ const VideoWithMetadataModal = ({
       onClose();
       if (source === "media-gallery") router.push("/?scrollTo=a2i-input");
       toast.info("Started Generation of Auto Vary Video.");
-    } catch {
+    } catch (error) {
+      if (error instanceof PlatformApiError && error.statusCode === 403) {
+        setShowInsufficientCreditsModal(true);
+        return;
+      }
       toast.error("Error generating varied video. Please try again.");
     } finally {
       setLoading((p) => ({ ...p, varyAuto: false }));
@@ -229,8 +236,16 @@ const VideoWithMetadataModal = ({
 
       <DialogContent
         className="p-0 border-none bg-transparent shadow-none flex items-center justify-center focus:outline-none"
-        onPointerDownOutside={onClose}
-        onEscapeKeyDown={onClose}
+        onPointerDownOutside={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // revent outside click while credits modal open
+          else onClose();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (showInsufficientCreditsModal)
+            e.preventDefault(); // prevent esc close while credits modal open
+          else onClose();
+        }}
         hideCloseIcon
         overflowClassName="bg-black/80"
       >

@@ -22,6 +22,7 @@ interface ReferenceZoneProps {
   showAddButton?: boolean;
   isMagicEnabled?: boolean;
   onToggleMagic?: () => void;
+  variant?: "default" | "tall";
 }
 
 export const ReferenceZone = ({
@@ -39,29 +40,57 @@ export const ReferenceZone = ({
   showAddButton = false,
   isMagicEnabled,
   onToggleMagic,
+  variant = "default",
 }: ReferenceZoneProps) => {
+  const isTall = variant === "tall";
+
   return (
     <div
       className={cn(
-        "flex-1 border rounded-xl p-4 bg-background cursor-pointer transition-all min-w-0",
+        "flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col justify-between",
         isSelected
           ? "border-primary ring-2 ring-primary/20"
-          : "border-border hover:border-primary/50"
+          : "border-border hover:border-primary/50",
+        isTall ? "p-6 min-h-[160px]" : "p-4"
       )}
       onClick={onClick}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex flex-row items-center gap-2 mb-2 justify-between">
-        <div className="flex flex-row items-center gap-2 min-w-0">
-          <Icon className="h-5 w-5 shrink-0" />
-          <div className="text-start min-w-0">
-            <p className="font-medium text-sm">{title}</p>
-            <p className="text-xs text-muted-foreground line-clamp-2">
+      {/* Header */}
+      <div
+        className={cn(
+          "flex flex-row items-center justify-between gap-3 mb-4",
+          isTall && "mb-6"
+        )}
+      >
+        <div className="flex flex-row items-center gap-3 min-w-0">
+          <Icon className={cn("shrink-0", isTall ? "h-6 w-6" : "h-5 w-5")} />
+          <div
+            className={cn(
+              "flex flex-col min-w-0 justify-center",
+              isTall ? "gap-1" : "gap-0.5"
+            )}
+          >
+            <p
+              className={cn(
+                "font-semibold leading-tight",
+                isTall ? "text-base" : "text-sm"
+              )}
+            >
+              {title}
+            </p>
+            <p
+              className={cn(
+                "text-muted-foreground leading-snug",
+                isTall ? "text-sm" : "text-xs"
+              )}
+            >
               {description}
             </p>
           </div>
         </div>
+
         {type === "product" && images.length > 0 && onToggleMagic && (
           <div onClick={(e) => e.stopPropagation()} className="shrink-0">
             <TooltipButton
@@ -81,11 +110,20 @@ export const ReferenceZone = ({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      {/* Image Section */}
+      <div
+        className={cn(
+          "flex flex-wrap gap-2 items-start",
+          isTall && "gap-3 mt-auto"
+        )}
+      >
         {images.map((url) => (
           <div
             key={url}
-            className="relative w-16 h-16 rounded-lg shrink-0"
+            className={cn(
+              "relative rounded-lg shrink-0",
+              isTall ? "w-20 h-20" : "w-16 h-16"
+            )}
             draggable
             onDragStart={(e) => onDragStart(e, url)}
             onClick={(e) => e.stopPropagation()}
@@ -107,6 +145,7 @@ export const ReferenceZone = ({
             </button>
           </div>
         ))}
+
         {images.length === 0 && showAddButton && onAddClick && (
           <button
             type="button"
@@ -114,7 +153,10 @@ export const ReferenceZone = ({
               e.stopPropagation();
               onAddClick();
             }}
-            className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary transition-colors flex items-center justify-center bg-background/50 hover:bg-background"
+            className={cn(
+              "rounded-lg border-2 border-dashed border-border hover:border-primary transition-colors flex items-center justify-center bg-background/50 hover:bg-background",
+              isTall ? "w-24 h-24" : "w-20 h-20"
+            )}
           >
             <Plus className="h-8 w-8 text-muted-foreground" />
           </button>
