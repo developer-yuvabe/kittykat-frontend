@@ -274,7 +274,8 @@ function A2iAdvancedPromptGenerator({
       const fileTypes = ["image/jpeg", "image/png", "image/webp"];
       const maxFileSizeLimit = 10;
       const remainingSlots =
-        maxLimit - (watchedProductReference.length + watchedContextReference.length);
+        maxLimit -
+        (watchedProductReference.length + watchedContextReference.length);
 
       if (remainingSlots <= 0) {
         toast.error(`You can only upload ${maxLimit} image(s).`);
@@ -387,7 +388,7 @@ function A2iAdvancedPromptGenerator({
   const handleDropZone = useCallback(
     async (e: React.DragEvent, zone: "product" | "master") => {
       e.preventDefault();
-      
+
       // Handle file drops from OS
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const files = Array.from(e.dataTransfer.files);

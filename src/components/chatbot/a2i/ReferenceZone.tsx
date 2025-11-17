@@ -112,10 +112,7 @@ export const ReferenceZone = ({
 
       {/* Image Section */}
       <div
-        className={cn(
-          "flex flex-wrap gap-2 items-start",
-          isTall && "gap-3"
-        )}
+        className={cn("flex flex-wrap gap-2 items-start", isTall && "gap-3")}
       >
         {images.map((url) => (
           <div
