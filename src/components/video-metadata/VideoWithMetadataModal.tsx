@@ -81,7 +81,7 @@ const VideoWithMetadataModal = ({
     ],
     queryFn: () =>
       getGalleryImageParameters(galleryItem.brand_id, galleryItem.id),
-    enabled: !generation && (galleryItem.asset_source == "showboard-media"),
+    enabled: !generation && galleryItem.asset_source == "showboard-media",
     placeholderData: generation
       ? {
           type: generation.type,
@@ -103,13 +103,14 @@ const VideoWithMetadataModal = ({
     const model = models.find((m) => m.model === params.model);
     if (!model) return [];
     
-    const images: Array<{ url: string; label: string }> = [];
+    const images: string[] = [];
     
+    // Maintain the order of parameters as defined in the model
     model.parameters.forEach((paramDef) => {
       if (isFrameParam(paramDef)) {
         const value = params[paramDef.id];
         if (value) {
-          images.push({ url: value, label: paramDef.label });
+          images.push(value);
         }
       } 
     });
@@ -351,21 +352,16 @@ const VideoWithMetadataModal = ({
                     {/* Reference Images (Base Input Frames) */}
                     {referenceImages.length > 0 && (
                       <div className="space-y-2">
-                        <p>Reference Image(s)</p>
                         <div className="mt-2 w-full overflow-x-auto">
                           <div className="flex flex-row gap-x-2 w-max">
-                            {referenceImages.map((img, idx) => (
-                              <div key={idx} className="flex flex-col gap-1">
-                                <ZoomableImage
-                                  src={img.url}
-                                  alt={img.label}
-                                  className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
-                                  variant="default"
-                                />
-                                <span className="text-xs text-center text-muted-foreground">
-                                  {img.label}
-                                </span>
-                              </div>
+                            {referenceImages.map((imgUrl, idx) => (
+                              <ZoomableImage
+                                key={idx}
+                                src={imgUrl}
+                                alt={`Reference image ${idx + 1}`}
+                                className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                variant="default"
+                              />
                             ))}
                           </div>
                         </div>
