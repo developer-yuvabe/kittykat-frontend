@@ -30,10 +30,7 @@ export const ReferenceMoodboardPrompts = ({
   onEditPrompt,
   formRef,
 }: ReferenceMoodboardPromptsProps) => {
-  if (!prompts || prompts.length === 0) {
-    return null;
-  }
-
+  // Define all functions BEFORE any conditional returns
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
 
@@ -75,6 +72,69 @@ export const ReferenceMoodboardPrompts = ({
     }
   };
 
+  // Determine skeleton count based on user input or existing prompts
+  const skeletonCount =
+    typeof n === "number" && n > 0 ? n : prompts?.length || 3;
+
+  // Show loading skeletons when generating
+  if (isGenerating) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold">Prompts</h3>
+            <Input
+              type="number"
+              value={n}
+              onChange={handleChange}
+              onPaste={(e) => e.preventDefault()}
+              min={1}
+              max={3}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="w-16"
+              disabled
+            />
+          </div>
+          {referenceMoodboardId && (
+            <Button
+              variant={"outline"}
+              className="text-primary border-primary"
+              disabled={true}
+            >
+              <WandSparkles />
+              Generating prompts...
+            </Button>
+          )}
+        </div>
+
+        {/* Same responsive grid as actual prompts */}
+        <div
+          className={`grid gap-4 ${
+            skeletonCount === 1
+              ? "grid-cols-1 max-w-3xl mx-auto"
+              : skeletonCount === 2
+              ? "grid-cols-1 md:grid-cols-2"
+              : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          }`}
+        >
+          {Array.from({ length: skeletonCount }).map((_, i) => (
+            <div
+              key={i}
+              className="group relative rounded-lg border border-border bg-card p-4"
+            >
+              <div className="h-40 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!prompts || prompts.length === 0) {
+    return null;
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -89,6 +149,7 @@ export const ReferenceMoodboardPrompts = ({
             max={3}
             inputMode="numeric"
             pattern="[0-9]*"
+            className="w-16"
           />
         </div>
         {referenceMoodboardId && (
@@ -99,17 +160,31 @@ export const ReferenceMoodboardPrompts = ({
             onClick={handleGenerateClick}
           >
             <WandSparkles />
-            {isGenerating ? "Generating prompts..." : "Generate Prompts"}
+            Generate Prompts
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-3 gap-4 auto">
-        {prompts.map((prompt) => (
-          <div key={prompt} className="relative">
+
+      {/* Updated grid with dynamic columns based on prompt count */}
+      <div
+        className={`grid gap-4 ${
+          prompts.length === 1
+            ? "grid-cols-1 max-w-3xl mx-auto"
+            : prompts.length === 2
+            ? "grid-cols-1 md:grid-cols-2"
+            : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        }`}
+      >
+        {prompts.map((prompt, index) => (
+          <div
+            key={`${prompt}-${index}`}
+            className="group relative rounded-lg border border-border bg-card p-4"
+          >
             <Textarea
               value={prompt}
               readOnly
-              className="min-h-40 max-h-40 scrollbar"
+              tabIndex={-1}
+              className="min-h-40 max-h-40 scrollbar border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none"
             />
             <Button
               variant="ghost"

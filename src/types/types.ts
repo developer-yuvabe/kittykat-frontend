@@ -139,7 +139,7 @@ export type A2iVideoDetail = {
 
 export type A2iImageGeneration = {
   id: string;
-  status: "processing" | "completed" | "failed";
+  status: "processing" | "completed" | "failed" | "enhancing_prompt";
   type:
     | "image_generation"
     | "vton"

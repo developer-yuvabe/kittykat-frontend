@@ -54,6 +54,14 @@ export type TextAreaParam = BaseParam & {
   type: "text_area";
 };
 
+export type FirstFrameParam = BaseParam & {
+  type: "first_frame";
+};
+
+export type LastFrameParam = BaseParam & {
+  type: "last_frame";
+};
+
 export type ModelParameter =
   | StringParam
   | SliderParam
@@ -62,7 +70,16 @@ export type ModelParameter =
   | BooleanParam
   | ImagesCountParam
   | NumberParam
-  | TextAreaParam;
+  | TextAreaParam
+  | FirstFrameParam
+  | LastFrameParam;
+
+// Type guard to check if a parameter is a frame parameter
+export const isFrameParam = (
+  param: ModelParameter
+): param is FirstFrameParam | LastFrameParam => {
+  return param.type === "first_frame" || param.type === "last_frame";
+};
 
 export type Model = {
   id: string;

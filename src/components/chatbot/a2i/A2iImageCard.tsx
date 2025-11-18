@@ -441,7 +441,9 @@ const A2iImageCard = ({
           />
           <div className="flex flex-col items-center justify-center gap-2 h-full px-10">
             <p className="text-sm text-center overflow-hidden text-ellipsis line-clamp-5 max-h-40">
-              {parameters.prompt}
+              {status === "enhancing_prompt"
+                ? "Enhancing prompt..."
+                : parameters.prompt}
             </p>
             {vtonParameters && (
               <div className="flex gap-6">
