@@ -284,7 +284,7 @@ const ReferenceImageSelector = ({
       const response = await bulkUpload({
         gallery_items: uploadedGalleryItems,
         brand_id: selectedBrandId!,
-        showToast: showToast, 
+         
       });
 
       // Add uploaded items to gallery store

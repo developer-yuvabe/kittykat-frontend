@@ -213,7 +213,7 @@ const A2iImageInput = ({
     async (
       files: File[],
       targetZone: "master" | "product",
-      showToast: boolean = true
+      showToast = true
     ): Promise<string[]> => {
       if (!referenceImagesModelInfo) {
         toast.error("This model doesn't support reference images");
@@ -295,7 +295,6 @@ const A2iImageInput = ({
         const response = await bulkUpload({
           gallery_items: uploadedGalleryItems,
           brand_id: selectedBrandId!,
-          showToast: showToast,
         });
 
         // Add uploaded items to gallery store

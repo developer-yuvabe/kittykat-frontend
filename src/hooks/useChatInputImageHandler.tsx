@@ -206,7 +206,6 @@ export function useChatInputImageHandler({
       const response = await bulkUpload({
         gallery_items: uploadedGalleryItems,
         brand_id: brandId,
-        showToast: false,
       });
 
       // Add uploaded items to gallery store

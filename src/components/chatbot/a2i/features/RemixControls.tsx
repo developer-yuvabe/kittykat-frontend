@@ -399,6 +399,54 @@ const RemixControls = ({
     }
   };
 
+  // Handle paste events
+  const handlePaste = useCallback(
+    async (e: React.ClipboardEvent) => {
+      // Only handle if we're in the remix controls container
+      const target = e.target as HTMLElement;
+      if (!target.closest('.remix-controls-container')) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+
+      if (imageFiles.length === 0) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Upload to the active reference zone, default to master
+      const targetZone = referencePopoverTab || "master";
+      const uploadedUrls = await handleFileUpload(imageFiles, targetZone);
+
+      if (uploadedUrls.length > 0) {
+        // Add to references
+        if (targetZone === "master") {
+          setMasterReference([...masterReference, ...uploadedUrls]);
+        } else {
+          setProductReference([...productReference, ...uploadedUrls]);
+        }
+        
+        toast.success(
+          `${uploadedUrls.length} image(s) pasted to ${targetZone} reference`
+        );
+      }
+    },
+    [
+      referencePopoverTab,
+      masterReference,
+      productReference,
+      handleFileUpload,
+    ]
+  );
+
   // Handle drag-and-drop between zones (when popover is closed)
   const handleZoneDrop = useCallback(
     async (e: React.DragEvent, targetZone: "master" | "product") => {
@@ -690,7 +738,7 @@ const RemixControls = ({
       )}
 
       {/* Main Input Container - Matching A2iImageInput Layout */}
-      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4">
+      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4 remix-controls-container">
         <Form {...form}>
           <div
             className="space-y-4"
@@ -698,6 +746,7 @@ const RemixControls = ({
               e.preventDefault();
               form.handleSubmit(onSubmit)();
             }}
+            onPaste={handlePaste}
           >
             {/* Textarea with Lock and Clear buttons */}
             <FormField
