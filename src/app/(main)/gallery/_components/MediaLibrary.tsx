@@ -110,8 +110,6 @@ export function MediaLibrary({
 
   useEffect(() => {
     if (selectedCampaignId && orderBy === "brand_sort_order") {
-      console.log("selectedCampaignId", selectedCampaignId);
-      console.log("orderBy", orderBy);
       setIsDraggable(true);
     } else {
       setIsDraggable(false);

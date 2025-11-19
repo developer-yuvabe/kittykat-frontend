@@ -155,7 +155,7 @@ export async function generateAdvancedPrompts(
     product_references?: string[];
     context_references?: string[];
     prompt?: string;
-    negative_prompt?: string[];
+    negative_prompt?: string;
     n?: number;
   }
 ): Promise<void> {

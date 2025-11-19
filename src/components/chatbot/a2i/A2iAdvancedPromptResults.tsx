@@ -2,7 +2,6 @@ import { GeneratedPrompt } from "@/types/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import React, { RefObject } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EditIcon } from "@/components/ui/custom-icon";
 
@@ -10,23 +9,13 @@ interface A2iAdvancedPromptResultsProps {
   prompts: GeneratedPrompt[] | undefined;
   isGenerating: boolean;
   conflictNotes?: string;
-  numberOfPrompts: number;
-  onNumberOfPromptsChange: (value: number) => void;
   onEditPrompt: (prompt: GeneratedPrompt) => void;
   formRef: RefObject<HTMLDivElement | null>;
 }
 
 export const A2iAdvancedPromptResults: React.FC<
   A2iAdvancedPromptResultsProps
-> = ({
-  prompts,
-  isGenerating,
-  conflictNotes,
-  numberOfPrompts,
-  onNumberOfPromptsChange,
-  onEditPrompt,
-  formRef,
-}) => {
+> = ({ prompts, isGenerating, conflictNotes, onEditPrompt, formRef }) => {
   // Don't render if no prompts and not generating
   if (!prompts?.length && !isGenerating) {
     return null;
@@ -86,21 +75,6 @@ export const A2iAdvancedPromptResults: React.FC<
         <div>
           <div className="flex flex-row gap-x-2 ">
             <h1 className="font-semibold text-lg">Prompts</h1>
-            <Input
-              id="number-of-prompts"
-              type="number"
-              min={1}
-              max={10}
-              value={numberOfPrompts}
-              onChange={(e) => {
-                const value = parseInt(e.target.value, 10);
-                if (!isNaN(value) && value >= 1 && value <= 10) {
-                  onNumberOfPromptsChange(value);
-                }
-              }}
-              disabled={true}
-              className="w-16"
-            />
           </div>
           <div className="grid grid-cols-3 gap-4 mt-3">
             {prompts.map((generatedPrompt, index) => (
