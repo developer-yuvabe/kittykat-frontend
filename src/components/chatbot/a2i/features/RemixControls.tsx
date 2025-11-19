@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
+import { useReferenceImagePaste } from "@/hooks/useReferenceImagePaste";
 import {
   canvasToBlob,
   cn,
@@ -399,53 +400,18 @@ const RemixControls = ({
     }
   };
 
-  // Handle paste events
-  const handlePaste = useCallback(
-    async (e: React.ClipboardEvent) => {
-      // Only handle if we're in the remix controls container
-      const target = e.target as HTMLElement;
-      if (!target.closest('.remix-controls-container')) return;
-
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      const imageFiles: File[] = [];
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith("image/")) {
-          const file = items[i].getAsFile();
-          if (file) imageFiles.push(file);
-        }
-      }
-
-      if (imageFiles.length === 0) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Upload to the active reference zone, default to master
-      const targetZone = referencePopoverTab || "master";
-      const uploadedUrls = await handleFileUpload(imageFiles, targetZone);
-
-      if (uploadedUrls.length > 0) {
-        // Add to references
-        if (targetZone === "master") {
-          setMasterReference([...masterReference, ...uploadedUrls]);
-        } else {
-          setProductReference([...productReference, ...uploadedUrls]);
-        }
-        
-        toast.success(
-          `${uploadedUrls.length} image(s) pasted to ${targetZone} reference`
-        );
-      }
-    },
-    [
-      referencePopoverTab,
-      masterReference,
-      productReference,
-      handleFileUpload,
-    ]
-  );
+  // Use paste hook for handling paste events
+  const { handlePaste } = useReferenceImagePaste({
+    containerSelector: ".remix-controls-container",
+    handleFileUpload,
+    masterReference,
+    productReference,
+    setMasterReference,
+    setProductReference,
+    referencePopoverTab,
+    showToast: true,
+    useDocumentListener: false,
+  });
 
   // Handle drag-and-drop between zones (when popover is closed)
   const handleZoneDrop = useCallback(

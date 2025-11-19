@@ -36,6 +36,7 @@ import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
+import { useReferenceImagePaste } from "@/hooks/useReferenceImagePaste";
 import { useCreditsStore } from "@/store/credits.store";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
@@ -415,15 +416,25 @@ const A2iImageInput = ({
     ]
   );
 
-  // Handle drag-and-drop and paste on prompt textarea
-  const handlePromptDrop = useCallback(
-    async (e: DragEvent | ClipboardEvent) => {
-      // Check if paste event is inside this component
-      if (e instanceof ClipboardEvent) {
-        const target = e.target as HTMLElement;
-        if (!target.closest("#concept-visual-playground")) return;
-      }
+  // Use paste hook for handling paste events
+  useReferenceImagePaste({
+    containerSelector: "#concept-visual-playground",
+    handleFileUpload: async (files: File[], targetZone: "master" | "product") => {
+      const uploadedUrls = await handleFileUpload(files, targetZone, false);
+      return uploadedUrls;
+    },
+    masterReference,
+    productReference,
+    setMasterReference,
+    setProductReference,
+    referencePopoverTab,
+    showToast: true,
+    useDocumentListener: true,
+  });
 
+  // Handle drag-and-drop on prompt textarea
+  const handlePromptDrop = useCallback(
+    async (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -432,22 +443,9 @@ const A2iImageInput = ({
         return;
       }
 
-      // Get files from either drag or paste
-      let files: File[] = [];
-      if (e instanceof ClipboardEvent) {
-        const items = e.clipboardData?.items;
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].type.startsWith("image/")) {
-              const file = items[i].getAsFile();
-              if (file) files.push(file);
-            }
-          }
-        }
-      } else {
-        if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) return;
-        files = Array.from(e.dataTransfer.files);
-      }
+      // Get files from drag
+      if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) return;
+      const files = Array.from(e.dataTransfer.files);
 
       if (files.length === 0) return;
 
@@ -457,9 +455,7 @@ const A2iImageInput = ({
           ? referencePopoverTab
           : "master";
 
-      // For paste events
-      const isPaste = e instanceof ClipboardEvent;
-      const uploadedUrls = await handleFileUpload(files, targetZone, !isPaste);
+      const uploadedUrls = await handleFileUpload(files, targetZone, true);
 
       if (uploadedUrls.length > 0) {
         // Use shared utility to update references
@@ -472,11 +468,6 @@ const A2iImageInput = ({
           );
         setMasterReference(newMasterReference);
         setProductReference(newProductReference);
-        
-        // Show simple toast for paste events
-        if (isPaste) {
-          toast.success(`${uploadedUrls.length} reference image(s) added to ${targetZone} reference`);
-        }
       }
     },
     [
@@ -487,14 +478,6 @@ const A2iImageInput = ({
       handleFileUpload,
     ]
   );
-
-  // Set up paste event listener
-  useEffect(() => {
-    document.addEventListener("paste", handlePromptDrop as any);
-    return () => {
-      document.removeEventListener("paste", handlePromptDrop as any);
-    };
-  }, [handlePromptDrop]);
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
     try {
