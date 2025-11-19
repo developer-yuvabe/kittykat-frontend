@@ -59,7 +59,15 @@ export const getDefaultFormValues = (
   productReference: existingInputs?.product_references || [],
   contextReference: existingInputs?.context_references || [],
   promptValue: existingInputs?.prompt || "",
-  negativePrompt: existingInputs?.negative_prompt || "",
+  // Ensure negativePrompt is always a string for the form. Some backend data
+  // historically stored this as an empty array -> we want to normalize that
+  // here so the form never receives [] and the request doesn't accidentally
+  // send an array for negative_prompt.
+  negativePrompt: existingInputs?.negative_prompt
+    ? Array.isArray(existingInputs.negative_prompt)
+      ? existingInputs.negative_prompt.join(", ")
+      : String(existingInputs.negative_prompt)
+    : "",
   numberOfPrompts: existingInputs?.n || 3,
 });
 

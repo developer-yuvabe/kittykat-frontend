@@ -128,7 +128,6 @@ function A2iAdvancedPromptGenerator({
         product_references: watchedProductReference,
         context_references: watchedContextReference,
         prompt: watchedPromptValue || undefined,
-        negative_prompt: watchedNegativePrompt,
         n: NUMBER_OF_PROMPTS,
       });
     },
@@ -408,7 +407,7 @@ function A2iAdvancedPromptGenerator({
               ...watchedContextReference,
               assetUrl,
             ]);
-            toast.success("Added to context reference");
+            toast.success("Added to master reference");
           }
         }
         return;
@@ -427,7 +426,7 @@ function A2iAdvancedPromptGenerator({
           ...watchedContextReference,
           assetUrl,
         ]);
-        toast.success("Moved to context reference");
+        toast.success("Moved to master reference");
       } else if (isMovingToProduct) {
         handleFieldChange(
           "contextReference",

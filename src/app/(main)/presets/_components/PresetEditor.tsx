@@ -54,6 +54,7 @@ export function PresetEditor({
     presetQuery,
     createPresetMutation,
     updatePresetMutation,
+    patchPresetMutation,
     adjustPromptMutation,
   } = usePresets({ presetId, enabled: mode === PresetEditorMode.EDIT });
 
@@ -76,7 +77,9 @@ export function PresetEditor({
 
   const isLoading = mode === PresetEditorMode.EDIT && presetQuery.isLoading;
   const isSaving =
-    createPresetMutation.isPending || updatePresetMutation.isPending;
+    createPresetMutation.isPending ||
+    updatePresetMutation.isPending ||
+    patchPresetMutation.isPending;
   const [adjustingFields, setAdjustingFields] = useState<Set<string>>(
     new Set()
   );
@@ -139,7 +142,8 @@ export function PresetEditor({
         },
       });
     } else if (presetId) {
-      updatePresetMutation.mutate(
+      // Use PATCH for edits to allow partial updates
+      patchPresetMutation.mutate(
         { presetId, payload },
         {
           onSuccess: () => {
@@ -277,52 +281,54 @@ export function PresetEditor({
               )}
             </div>
 
-            {/* Preset Type Selection */}
-            <div className="space-y-3">
-              <Label>Preset Type *</Label>
-              <div className="flex gap-4">
-                <div
-                  className={`flex-1 p-4 border rounded-lg cursor-pointer transition ${
-                    presetType === "generic"
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-muted/30 hover:bg-muted/50"
-                  }`}
-                  onClick={() => {
-                    form.setValue("type", "generic", {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                    form.setValue("brand_ids", [], {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }}
-                >
-                  <div className="font-medium">Generic</div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Available to all brands - system level preset
-                  </p>
-                </div>
-                <div
-                  className={`flex-1 p-4 border rounded-lg cursor-pointer transition ${
-                    presetType === "custom"
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-muted/30 hover:bg-muted/50"
-                  }`}
-                  onClick={() =>
-                    form.setValue("type", "custom", {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <div className="font-medium">Custom</div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Assign to specific brands
-                  </p>
+            {/* Preset Type Selection - do not show for master presets when editing */}
+            {preset?.is_master && mode === PresetEditorMode.EDIT ? null : (
+              <div className="space-y-3">
+                <Label>Preset Type *</Label>
+                <div className="flex gap-4">
+                  <div
+                    className={`flex-1 p-4 border rounded-lg cursor-pointer transition ${
+                      presetType === "generic"
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-muted/30 hover:bg-muted/50"
+                    }`}
+                    onClick={() => {
+                      form.setValue("type", "generic", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      form.setValue("brand_ids", [], {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                  >
+                    <div className="font-medium">Generic</div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Available to all brands - system level preset
+                    </p>
+                  </div>
+                  <div
+                    className={`flex-1 p-4 border rounded-lg cursor-pointer transition ${
+                      presetType === "custom"
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-muted/30 hover:bg-muted/50"
+                    }`}
+                    onClick={() =>
+                      form.setValue("type", "custom", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                  >
+                    <div className="font-medium">Custom</div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Assign to specific brands
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Brand Selection - Only for Custom */}
             {presetType === "custom" && (
