@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationHoverCard from "../notifications/NotificationHoverCard";
 import { GalleryIcon, HomeIcon } from "../ui/custom-icon";
-
+import { Columns3Cog } from "lucide-react";
 export const ICON_SIZE = 24;
 
 const LINKS = [
@@ -37,6 +37,7 @@ export function NavLinks() {
             path: "/users",
             disabled: false,
           },
+          { name: "Presets", icon: Columns3Cog, path: "/presets" },
         ]
       : []),
   ];

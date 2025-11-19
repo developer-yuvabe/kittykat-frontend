@@ -1,5 +1,4 @@
 import {
-  PromptGenerationInputs,
   ThreadA2iImage,
   ThreadCampaign,
   ThreadDetails,
@@ -24,10 +23,8 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useBrandStore } from "@/store/brand.store";
 import { generateAdvancedPrompts } from "@/services/api/moodboard.service";
-import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { a2iAdvancedPromptSchema } from "@/types/preset.types";
 import { useA2iStore } from "@/store/a2i.store";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
@@ -36,8 +33,11 @@ import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { validateFiles } from "@/lib/reference-image.utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { getExtensionFromUrl } from "@/lib/utils";
-
-type A2iAdvancedPromptFormData = z.infer<typeof a2iAdvancedPromptSchema>;
+import {
+  A2iAdvancedPromptFormData,
+  getDefaultFormValues,
+  validatePromptGeneration,
+} from "@/lib/preset.utils";
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -46,40 +46,6 @@ type A2iAdvancedPromptGeneratorProps = {
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
   currentCampaign: ThreadCampaign | null;
-};
-
-/**
- * Get the default form values from existing inputs
- */
-const getDefaultFormValues = (
-  existingInputs?: PromptGenerationInputs
-): A2iAdvancedPromptFormData => ({
-  selectedPreset: existingInputs?.preset_id || "",
-  productReference: existingInputs?.product_references || [],
-  contextReference: existingInputs?.context_references || [],
-  promptValue: existingInputs?.prompt || "",
-  negativePrompt: existingInputs?.negative_prompt || [],
-  numberOfPrompts: existingInputs?.n || 3,
-});
-
-/**
- * Validate form data before generating prompts
- */
-const validatePromptGeneration = (
-  referenceMoodboardId: string | undefined,
-  selectedPreset: string
-): boolean => {
-  if (!referenceMoodboardId) {
-    toast.error("Please select a reference moodboard first");
-    return false;
-  }
-
-  if (!selectedPreset) {
-    toast.error("Please select a preset");
-    return false;
-  }
-
-  return true;
 };
 
 function A2iAdvancedPromptGenerator({
@@ -127,21 +93,18 @@ function A2iAdvancedPromptGenerator({
   const generatedPrompts = currentMoodboard?.prompts;
   const conflictNotes = currentMoodboard?.prompt_generation_conflict_notes;
 
-  // ====== Form Setup ======
   const form = useForm<A2iAdvancedPromptFormData>({
     resolver: zodResolver(a2iAdvancedPromptSchema),
     defaultValues: getDefaultFormValues(existingInputs),
   });
 
-  // ====== Form Watchers (for reactive UI) ======
-  const watchedNumberOfPrompts = form.watch("numberOfPrompts");
+  const NUMBER_OF_PROMPTS = 3;
   const watchedSelectedPreset = form.watch("selectedPreset");
   const watchedProductReference = form.watch("productReference");
   const watchedContextReference = form.watch("contextReference");
   const watchedPromptValue = form.watch("promptValue");
   const watchedNegativePrompt = form.watch("negativePrompt");
 
-  // ====== UI State ======
   const [optimisticIsGenerating, setOptimisticIsGenerating] = useState(false);
   const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
   const [referencePopoverTab, setReferencePopoverTab] = useState<
@@ -166,7 +129,7 @@ function A2iAdvancedPromptGenerator({
         context_references: watchedContextReference,
         prompt: watchedPromptValue || undefined,
         negative_prompt: watchedNegativePrompt,
-        n: watchedNumberOfPrompts,
+        n: NUMBER_OF_PROMPTS,
       });
     },
     onSuccess: () => {
@@ -596,18 +559,7 @@ function A2iAdvancedPromptGenerator({
           isGenerating={isAnyGenerating}
           disabled={isAnyGenerating}
         />
-        <Input
-          id="number-of-prompts"
-          type="number"
-          min={1}
-          max={10}
-          value={watchedNumberOfPrompts}
-          onChange={(e) =>
-            handleFieldChange("numberOfPrompts", Number(e.target.value))
-          }
-          disabled={isAnyGenerating}
-          className="w-16"
-        />
+        {/* n is always 3 — no input needed */}
       </div>
 
       {/* Results */}
@@ -615,10 +567,6 @@ function A2iAdvancedPromptGenerator({
         prompts={generatedPrompts}
         isGenerating={isGenerating || optimisticIsGenerating}
         conflictNotes={conflictNotes}
-        numberOfPrompts={watchedNumberOfPrompts}
-        onNumberOfPromptsChange={(value) =>
-          handleFieldChange("numberOfPrompts", value)
-        }
         onEditPrompt={handleEditPrompt}
         formRef={formRef}
       />

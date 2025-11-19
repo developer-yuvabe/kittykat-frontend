@@ -7,8 +7,11 @@ import type {
   PresetUpdateRequest,
   PresetPatchRequest,
   PresetResponse,
+  PresetDetailResponse,
   PresetListResponse,
   PromptGenerationRequest,
+  AdjustPromptRequest,
+  PresetsFilterRequest,
 } from "@/types/preset.types";
 
 export async function createPreset(
@@ -19,18 +22,20 @@ export async function createPreset(
   );
 }
 
-export async function getPreset(presetId: string): Promise<PresetResponse> {
-  return handleApiRequest<PresetResponse>(
+export async function getPreset(
+  presetId: string
+): Promise<PresetDetailResponse> {
+  return handleApiRequest<PresetDetailResponse>(
     axiosInstance.get(`/presets/${presetId}`)
   );
 }
 
 export async function listPresets(
-  skip: number = 0,
-  limit: number = 10
+  filter: PresetsFilterRequest = { skip: 0, limit: 10 }
 ): Promise<PresetListResponse> {
+  // The backend now expects a POST body filter for richer queries.
   return handleApiRequest<PresetListResponse>(
-    axiosInstance.get("/presets", { params: { skip, limit } })
+    axiosInstance.post("/presets/filter", filter)
   );
 }
 
@@ -56,6 +61,12 @@ export async function deletePreset(presetId: string): Promise<void> {
   return handleApiRequest<void>(axiosInstance.delete(`/presets/${presetId}`));
 }
 
+export async function clonePreset(presetId: string): Promise<PresetResponse> {
+  return handleApiRequest<PresetResponse>(
+    axiosInstance.post(`/presets/${presetId}/clone`)
+  );
+}
+
 export async function getPresetsForBrand(
   brandId: string,
   skip: number = 0,
@@ -71,5 +82,20 @@ export async function generatePromptsFromPreset(
 ): Promise<PresetResponse> {
   return handleApiRequest<PresetResponse>(
     axiosInstance.post("/presets/generate-prompts", payload)
+  );
+}
+
+export async function getMasterPreset(): Promise<PresetDetailResponse> {
+  return handleApiRequest<PresetDetailResponse>(
+    axiosInstance.get(`/presets/master`)
+  );
+}
+
+export async function adjustPrompt(
+  payload: AdjustPromptRequest
+): Promise<string> {
+  // API returns a string with the modified prompt
+  return handleApiRequest<string>(
+    axiosInstance.post("/presets/adjust-prompt", payload)
   );
 }

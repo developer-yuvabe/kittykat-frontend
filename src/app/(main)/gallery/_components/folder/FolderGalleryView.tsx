@@ -108,15 +108,11 @@ export function FolderGalleryView({
   }, [galleryActions]);
 
   const handleSelect = (id: string, selected: boolean, shiftKey?: boolean) => {
-    console.log("handleSelect called with:", { id, selected, shiftKey });
-
     // last selected item id (track with useState)
     const lastId = lastSelectedId;
 
     // --- SHIFT-CLICK RANGE SELECTION ---
     if (shiftKey && lastId && lastId !== id) {
-      console.log(`Shift-click detected between ${lastId} and ${id}`);
-
       let include = false;
       const idsInRange: string[] = [];
 
@@ -135,8 +131,6 @@ export function FolderGalleryView({
           idsInRange.push(item.id);
         }
       }
-
-      console.log("IDs in range to select:", idsInRange);
 
       setSelectedItems((prev) => Array.from(new Set([...prev, ...idsInRange])));
       setLastSelectedId(id); // store for next shift-click
