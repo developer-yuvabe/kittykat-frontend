@@ -100,8 +100,7 @@ export function usePresets({
   const createPresetMutation = useMutation({
     mutationFn: createPreset,
     onSuccess: () => {
-      // Invalidate list queries
-      queryClient.invalidateQueries({ queryKey: getPresetsListQueryKey() });
+      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
     },
   });
 
@@ -116,8 +115,8 @@ export function usePresets({
     onSuccess: (data, variables) => {
       // Update the single preset cache
       queryClient.setQueryData(getPresetQueryKey(variables.presetId), data);
-      // Invalidate lists
-      queryClient.invalidateQueries({ queryKey: getPresetsListQueryKey() });
+
+      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
     },
   });
 
@@ -130,8 +129,12 @@ export function usePresets({
       payload: PresetPatchRequest;
     }) => patchPreset(presetId, payload),
     onSuccess: (data, variables) => {
-      queryClient.setQueryData(getPresetQueryKey(variables.presetId), data);
-      queryClient.invalidateQueries({ queryKey: getPresetsListQueryKey() });
+      // Invalidate the single preset query to refetch updated data
+      queryClient.invalidateQueries({
+        queryKey: getPresetQueryKey(variables.presetId),
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
     },
   });
 
@@ -140,15 +143,14 @@ export function usePresets({
     onSuccess: (_, presetId) => {
       // Remove from cache
       queryClient.removeQueries({ queryKey: getPresetQueryKey(presetId) });
-      queryClient.invalidateQueries({ queryKey: getPresetsListQueryKey() });
+      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
     },
   });
 
   const clonePresetMutation = useMutation({
     mutationFn: clonePreset,
     onSuccess: () => {
-      // Invalidate lists to refresh with cloned preset
-      queryClient.invalidateQueries({ queryKey: getPresetsListQueryKey() });
+      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
     },
   });
 
