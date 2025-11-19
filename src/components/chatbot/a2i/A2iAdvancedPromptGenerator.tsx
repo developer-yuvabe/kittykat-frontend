@@ -128,7 +128,6 @@ function A2iAdvancedPromptGenerator({
         product_references: watchedProductReference,
         context_references: watchedContextReference,
         prompt: watchedPromptValue || undefined,
-        negative_prompt: watchedNegativePrompt,
         n: NUMBER_OF_PROMPTS,
       });
     },

@@ -167,7 +167,7 @@ export async function generateAdvancedPrompts(
       product_references: payload.product_references || [],
       context_references: payload.context_references || [],
       prompt: payload.prompt || null,
-      negative_prompt: payload.negative_prompt || [],
+      negative_prompt: payload.negative_prompt ?? null,
       n: payload.n || 3,
     })
   );

@@ -18,18 +18,25 @@ import {
 import { MoreHorizontal, Copy, Edit, Trash2, Crown } from "lucide-react";
 import { useBrandStore } from "@/store/brand.store";
 import type { PresetResponse } from "@/types/preset.types";
+import { UserWithoutBrandAccess } from "@/store/user.store";
 
 interface PresetListColumnsProps {
   onEdit: (preset: PresetResponse) => void;
   onClone: (preset: PresetResponse) => void;
   onDelete: (preset: PresetResponse) => void;
+  user: UserWithoutBrandAccess;
 }
 
 export function getPresetColumns({
   onEdit,
   onClone,
   onDelete,
+  user,
 }: PresetListColumnsProps): ColumnDef<PresetResponse>[] {
+  // NOTE: Master presets have special permissions:
+  // - They cannot be deleted (Delete action disabled for all users)
+  // - Only the platform default admin (user.is_default_admin === true) can edit them
+  // Tooltips are shown for disabled actions to explain why they're disabled.
   return [
     {
       accessorKey: "name",
@@ -94,6 +101,7 @@ export function getPresetColumns({
           onEdit={onEdit}
           onClone={onClone}
           onDelete={onDelete}
+          user={user}
         />
       ),
     },
@@ -136,12 +144,18 @@ function PresetActionsCell({
   onEdit,
   onClone,
   onDelete,
+  user,
 }: {
   preset: PresetResponse;
   onEdit: (preset: PresetResponse) => void;
   onClone: (preset: PresetResponse) => void;
   onDelete: (preset: PresetResponse) => void;
+  user?: UserWithoutBrandAccess | null;
 }) {
+  const isMaster = !!preset.is_master;
+  const canEditMaster = user?.is_default_admin === true;
+  const editDisabled = isMaster && !canEditMaster;
+  const deleteDisabled = isMaster;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -151,21 +165,53 @@ function PresetActionsCell({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(preset)} className="gap-2">
-          <Edit className="h-4 w-4" />
-          <span>Edit</span>
-        </DropdownMenuItem>
+        {/* Edit — only default platform admin can edit master presets */}
+        {editDisabled ? (
+          <Tooltip>
+            {/* Tooltip needs pointer events on the trigger — disabled Radix items have pointer-events: none, so we wrap the menu item */}
+            <TooltipTrigger asChild>
+              <div className="w-full">
+                <DropdownMenuItem disabled className="gap-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              You do not have permission to edit master presets
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <DropdownMenuItem onClick={() => onEdit(preset)} className="gap-2">
+            <Edit className="h-4 w-4" />
+            <span>Edit</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => onClone(preset)} className="gap-2">
           <Copy className="h-4 w-4" />
           <span>Clone</span>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => onDelete(preset)}
-          className="gap-2 text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span>Delete</span>
-        </DropdownMenuItem>
+        {deleteDisabled ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full">
+                <DropdownMenuItem disabled className="gap-2 text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Master presets cannot be deleted</TooltipContent>
+          </Tooltip>
+        ) : (
+          <DropdownMenuItem
+            onClick={() => onDelete(preset)}
+            className="gap-2 text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Delete</span>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

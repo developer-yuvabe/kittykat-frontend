@@ -29,8 +29,9 @@ import { getPresetColumns } from "./PresetListColumns";
 import { PresetDeleteDialog } from "./PresetDeleteDialog";
 import { toast } from "sonner";
 import type { PresetResponse } from "@/types/preset.types";
+import { UserWithoutBrandAccess, useUserStore } from "@/store/user.store";
 
-const PRESET_PAGE_SIZE = 10;
+const PRESET_PAGE_SIZE = 15;
 
 export const PresetListTable = () => {
   const router = useRouter();
@@ -42,6 +43,8 @@ export const PresetListTable = () => {
   const [presetToDelete, setPresetToDelete] = useState<PresetResponse | null>(
     null
   );
+
+  const { user } = useUserStore();
 
   const [filters, setFilters] = useState<PresetsFilterRequest>({});
 
@@ -63,9 +66,15 @@ export const PresetListTable = () => {
 
   const handleEdit = useCallback(
     (preset: PresetResponse) => {
+      // block non-platform-default admins from editing a master preset
+      if (preset.is_master && user?.is_default_admin !== true) {
+        toast.error("Only the platform default admin can edit master presets");
+        return;
+      }
+
       router.push(`/presets/${preset.id}`);
     },
-    [router]
+    [router, user]
   );
 
   const handleClone = useCallback(
@@ -83,6 +92,13 @@ export const PresetListTable = () => {
 
   const handleConfirmDelete = useCallback(() => {
     if (presetToDelete) {
+      // Prevent master preset deletion from UI side as well
+      if (presetToDelete.is_master) {
+        toast.error("Master presets cannot be deleted");
+        setDeleteDialogOpen(false);
+        setPresetToDelete(null);
+        return;
+      }
       deletePresetMutation.mutate(presetToDelete.id, {
         onSuccess: () => {
           toast.success("Preset deleted successfully");
@@ -103,8 +119,9 @@ export const PresetListTable = () => {
         onEdit: handleEdit,
         onClone: handleClone,
         onDelete: handleDeleteClick,
+        user: user as UserWithoutBrandAccess,
       }),
-    [handleEdit, handleClone, handleDeleteClick]
+    [handleEdit, handleClone, handleDeleteClick, user]
   );
 
   const table = useReactTable({
@@ -213,7 +230,7 @@ export const PresetListTable = () => {
         </Table>
 
         {/* Scrollable Body */}
-        <div className="flex-1 min-h-0 overflow-auto max-h-[calc(100vh-350px)]">
+        <div className="flex-1 min-h-0 overflow-auto max-h-[calc(100vh-100px)]">
           <Table style={{ tableLayout: "fixed", width: "100%" }}>
             <TableBody>
               {isLoading || isFetching ? (
