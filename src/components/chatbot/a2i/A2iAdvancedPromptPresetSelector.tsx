@@ -10,6 +10,7 @@ import {
   SelectSeparator,
 } from "@/components/ui/select";
 import { useBrandStore } from "@/store/brand.store";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePresets } from "@/hooks/usePresets";
 import React from "react";
@@ -71,17 +72,28 @@ export const A2iAdvancedPromptPresetSelector: React.FC<
   }, [presets, isLoading, selectedPreset, onPresetChange]);
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Preset</span>
+    <div className="relative w-max">
+      <label
+        className={cn(
+          "absolute left-3 transition-all duration-200 text-muted-foreground pointer-events-none",
+          selectedPreset
+            ? "top-0 text-xs font-medium translate-y-[-50%] bg-white px-1"
+            : "top-1/2 -translate-y-1/2 text-sm"
+        )}
+      >
+        Preset
+      </label>
       {isLoading ? (
-        <Skeleton className="h-9 w-56 rounded-md" />
+        <div className="relative">
+          <Skeleton className="h-9 w-56 rounded-md" />
+        </div>
       ) : (
         <Select
           value={selectedPreset || ""}
           onValueChange={onPresetChange}
           disabled={disabled}
         >
-          <SelectTrigger className="w-56">
+          <SelectTrigger className="w-56 pl-3">
             <SelectValue
               placeholder={
                 isLoading ? "Loading presets..." : "Select preset..."
