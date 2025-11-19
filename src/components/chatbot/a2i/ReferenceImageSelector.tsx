@@ -24,6 +24,11 @@ import {
   addReferenceToZone,
   removeReferenceFromZone,
 } from "@/lib/reference-image.utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ReferenceImageSelectorProps {
   // Single-zone mode (for ChatInput)
@@ -839,23 +844,28 @@ const ReferenceImageSelector = ({
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
         {showPopoverTrigger && (
-          <PopoverTrigger asChild>
-            {customTrigger || (
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={disabled}
-                className="relative"
-              >
-                <Images />
-                {currentImageCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                    {currentImageCount}
-                  </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                {customTrigger || (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={disabled}
+                    className="relative"
+                  >
+                    <Images />
+                    {currentImageCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                        {currentImageCount}
+                      </span>
+                    )}
+                  </Button>
                 )}
-              </Button>
-            )}
-          </PopoverTrigger>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Attach Reference Image(s)</TooltipContent>
+          </Tooltip>
         )}
         <PopoverContent
           align={popoverAlign}

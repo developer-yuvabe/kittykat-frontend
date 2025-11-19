@@ -846,13 +846,18 @@ const A2iImageInput = ({
                 );
               })}
 
-              {advancedParams.length > 0 && (
+              {advancedParams.length > 0 ? (
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button size={"icon"} variant={"outline"}>
-                      <Settings2 />
-                    </Button>
-                  </PopoverTrigger>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="outline">
+                          <Settings2 />
+                        </Button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Additional Settings</TooltipContent>
+                  </Tooltip>
                   <PopoverContent
                     forceMount
                     align="center"
@@ -881,6 +886,17 @@ const A2iImageInput = ({
                     </div>
                   </PopoverContent>
                 </Popover>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button size={"icon"} variant={"outline"} disabled={true}>
+                        <Settings2 />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>No Additional Settings</TooltipContent>
+                </Tooltip>
               )}
             </div>
             <div className="flex gap-x-2">
