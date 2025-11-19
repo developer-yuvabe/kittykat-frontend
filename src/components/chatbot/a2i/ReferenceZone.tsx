@@ -23,6 +23,7 @@ interface ReferenceZoneProps {
   isMagicEnabled?: boolean;
   onToggleMagic?: () => void;
   variant?: "default" | "tall";
+  onPaste?: (e: React.ClipboardEvent) => void;
 }
 
 export const ReferenceZone = ({
@@ -41,11 +42,13 @@ export const ReferenceZone = ({
   isMagicEnabled,
   onToggleMagic,
   variant = "default",
+  onPaste,
 }: ReferenceZoneProps) => {
   const isTall = variant === "tall";
 
   return (
     <div
+      id="reference-zone"
       className={cn(
         "flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col",
         isSelected
@@ -56,6 +59,8 @@ export const ReferenceZone = ({
       onClick={onClick}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
+      onPaste={onPaste}
+      tabIndex={0}
     >
       {/* Header */}
       <div

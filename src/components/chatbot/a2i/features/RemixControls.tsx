@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
+import { useReferenceImagePaste } from "@/hooks/useReferenceImagePaste";
 import {
   canvasToBlob,
   cn,
@@ -399,6 +400,19 @@ const RemixControls = ({
     }
   };
 
+  // Use paste hook for handling paste events
+  const { handlePaste } = useReferenceImagePaste({
+    containerSelector: ".remix-controls-container",
+    handleFileUpload,
+    masterReference,
+    productReference,
+    setMasterReference,
+    setProductReference,
+    referencePopoverTab,
+    showToast: true,
+    useDocumentListener: false,
+  });
+
   // Handle drag-and-drop between zones (when popover is closed)
   const handleZoneDrop = useCallback(
     async (e: React.DragEvent, targetZone: "master" | "product") => {
@@ -690,7 +704,7 @@ const RemixControls = ({
       )}
 
       {/* Main Input Container - Matching A2iImageInput Layout */}
-      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4">
+      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4 remix-controls-container">
         <Form {...form}>
           <div
             className="space-y-4"
@@ -698,6 +712,7 @@ const RemixControls = ({
               e.preventDefault();
               form.handleSubmit(onSubmit)();
             }}
+            onPaste={handlePaste}
           >
             {/* Textarea with Lock and Clear buttons */}
             <FormField

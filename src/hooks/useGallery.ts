@@ -302,7 +302,6 @@ export const useGalleryQuery = (
       });
     },
   });
-
   // Scraping mutation for social media scraping with analysis
   const scrapeHandlesMutation = useMutation({
     mutationFn: (body: BulkScrapeRequest) =>
