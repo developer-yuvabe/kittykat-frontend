@@ -19,6 +19,7 @@ import {
   MultiSelect,
   MultiSelectTrigger,
   MultiSelectValue,
+  MultiSelectSearch,
   MultiSelectContent,
   MultiSelectList,
   renderMultiSelectOptions,
@@ -336,18 +337,19 @@ export function PresetEditor({
                 <Label>Assigned Brands *</Label>
                 <MultiSelect
                   value={selectedBrands || []}
-                  onValueChange={(value) =>
-                    form.setValue("brand_ids", value, {
+                  onValueChange={(values: string[]) =>
+                    form.setValue("brand_ids", values, {
                       shouldDirty: true,
                       shouldValidate: true,
                     })
                   }
                   disabled={isSaving}
                 >
-                  <MultiSelectTrigger>
+                  <MultiSelectTrigger className="w-full">
                     <MultiSelectValue placeholder="Select brands..." />
                   </MultiSelectTrigger>
                   <MultiSelectContent>
+                    <MultiSelectSearch placeholder="Search brands..." />
                     <MultiSelectList>
                       {renderMultiSelectOptions(brandOptions)}
                     </MultiSelectList>

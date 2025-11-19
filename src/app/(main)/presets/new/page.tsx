@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { PresetEditor } from "../_components/PresetEditor";
 import { PresetEditorMode } from "@/types/preset.types";
 import { usePresets } from "@/hooks/usePresets";
@@ -18,9 +18,27 @@ export default function NewPresetPage() {
   const { masterPresetQuery } = usePresets({ enabled: !toClone });
   const [mounted, setMounted] = useState(false);
 
+  const router = useRouter();
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Redirect if the clone id is invalid to avoid showing an empty editor
+  useEffect(() => {
+    if (
+      toClone &&
+      (presetQuery.isError || (!presetQuery.isLoading && !presetQuery.data))
+    ) {
+      router.push("/presets");
+    }
+  }, [
+    toClone,
+    presetQuery.isError,
+    presetQuery.isLoading,
+    presetQuery.data,
+    router,
+  ]);
 
   if (!mounted) {
     return null;

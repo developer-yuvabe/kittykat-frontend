@@ -19,6 +19,7 @@ import { MoreHorizontal, Copy, Edit, Trash2, Crown } from "lucide-react";
 import { useBrandStore } from "@/store/brand.store";
 import type { PresetResponse } from "@/types/preset.types";
 import { UserWithoutBrandAccess } from "@/store/user.store";
+import { formatToLocalTime } from "@/lib/utils";
 
 interface PresetListColumnsProps {
   onEdit: (preset: PresetResponse) => void;
@@ -89,8 +90,29 @@ export function getPresetColumns({
       accessorKey: "brand_ids",
       header: "Assigned Brands",
       cell: ({ row }) => (
-        <PresetBrandsList brandIds={row.getValue("brand_ids")} />
+        <PresetBrandsList
+          brandIds={row.getValue("brand_ids")}
+          isMaster={row.original.is_master}
+          type={row.getValue("type") as string}
+        />
       ),
+    },
+    {
+      accessorKey: "updated_at",
+      header: "Last Updated",
+      cell: ({ row }) => {
+        // Prefer updated_at but fall back to created_at; show '-' when no timestamp is available
+        const updatedAt = (row.original.updated_at ||
+          row.original.created_at) as string | undefined;
+        if (!updatedAt)
+          return <span className="text-sm text-muted-foreground">-</span>;
+
+        return (
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatToLocalTime(updatedAt)}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -108,9 +130,24 @@ export function getPresetColumns({
   ];
 }
 
-function PresetBrandsList({ brandIds }: { brandIds?: string[] }) {
+function PresetBrandsList({
+  brandIds,
+  isMaster,
+  type,
+}: {
+  brandIds?: string[];
+  isMaster?: boolean;
+  type?: string;
+}) {
   const brands = useBrandStore((state) => state.brands);
-
+  // Master presets and generic presets are available to all brands
+  if (isMaster || type === "generic") {
+    return (
+      <span className="text-sm text-muted-foreground">
+        Available to all brands
+      </span>
+    );
+  }
   if (!brandIds || brandIds.length === 0) {
     return <span className="text-sm text-muted-foreground">-</span>;
   }

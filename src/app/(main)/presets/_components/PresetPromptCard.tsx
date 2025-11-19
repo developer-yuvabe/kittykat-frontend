@@ -14,6 +14,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
+import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, RotateCcw, RotateCw } from "lucide-react";
@@ -198,28 +199,28 @@ export function PresetPromptCard({
                     )}
                   </Button>
                   <div className="flex gap-1 flex-shrink-0">
-                    <Button
+                    <TooltipIconButton
                       onClick={handleUndo}
                       disabled={!canUndo}
                       size="sm"
                       variant="ghost"
                       className="h-9 w-9 p-0"
-                      title="Undo (Ctrl+Z)"
+                      tooltip="Undo"
                       type="button"
                     >
                       <RotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </TooltipIconButton>
+                    <TooltipIconButton
                       onClick={handleRedo}
                       disabled={!canRedo}
                       size="sm"
                       variant="ghost"
                       className="h-9 w-9 p-0"
-                      title="Redo (Ctrl+Y)"
+                      tooltip="Redo"
                       type="button"
                     >
                       <RotateCw className="h-4 w-4" />
-                    </Button>
+                    </TooltipIconButton>
                   </div>
                 </div>
               </div>
