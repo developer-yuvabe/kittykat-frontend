@@ -128,13 +128,12 @@ export function usePresets({
       presetId: string;
       payload: PresetPatchRequest;
     }) => patchPreset(presetId, payload),
-    onSuccess: (data, variables) => {
-      // Invalidate the single preset query to refetch updated data
-      queryClient.invalidateQueries({
-        queryKey: getPresetQueryKey(variables.presetId),
+    onSuccess: async () => {
+      // Refetch queries to ensure fresh data before navigation
+      await queryClient.refetchQueries({
+        queryKey: ["presets"],
+        exact: false,
       });
-
-      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
     },
   });
 
