@@ -316,9 +316,6 @@ const ImageWithMetadataModal = ({
         setParameters("remixParameters", data.parameters);
 
         onClose();
-        console.log(data.parameters);
-        console.log("base input", baseInputImageUrl);
-
         // asset object with base_image URL
         const baseImageAsset = {
           ...galleryItem,

@@ -3,9 +3,9 @@ import React from "react";
 
 interface A2iAdvancedPromptInputsProps {
   promptValue: string;
-  negativePrompt: string[];
+  negativePrompt: string;
   onPromptChange: (value: string) => void;
-  onNegativePromptChange: (value: string[]) => void;
+  onNegativePromptChange: (value: string) => void;
   disabled?: boolean;
 }
 
@@ -18,16 +18,6 @@ export const A2iAdvancedPromptInputs: React.FC<
   onNegativePromptChange,
   disabled = false,
 }) => {
-  const negativePromptString = negativePrompt.join(", ");
-
-  const handleNegativePromptChange = (value: string) => {
-    const items = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
-    onNegativePromptChange(items);
-  };
-
   return (
     <div className="flex flex-col gap-4 mt-5">
       {/* Prompt Input */}
@@ -52,8 +42,8 @@ export const A2iAdvancedPromptInputs: React.FC<
           className="h-36 w-full resize-none"
           variant="inset-label"
           label="Negative Prompt Controls"
-          value={negativePromptString}
-          onChange={(e) => handleNegativePromptChange(e.target.value)}
+          value={negativePrompt}
+          onChange={(e) => onNegativePromptChange(e.target.value)}
           disabled={disabled}
         />
       </div>
