@@ -69,6 +69,13 @@ export const useReferenceImagePaste = ({
           ? referencePopoverTab
           : "master";
       
+      // Show immediate toast when paste is detected
+      if (showToast) {
+        toast.info(
+          `Processing ${imageFiles.length} reference image(s) for ${targetZone} reference...`
+        );
+      }
+      
       const uploadedUrls = await handleFileUpload(imageFiles, targetZone);
 
       if (uploadedUrls.length > 0) {
