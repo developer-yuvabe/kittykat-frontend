@@ -276,11 +276,17 @@ export const useGalleryQuery = (
 
   // Bulk upload mutation for manual uploads (no scraping/analysis)
   const bulkUploadMutation = useMutation({
-    mutationFn: (body: BulkGalleryUploadRequest) =>
-      galleryService.uploadBulkGalleryItems(body),
-    onMutate: () => {
+    mutationFn: (body: BulkGalleryUploadRequest & { showToast?: boolean }) => {
+      const { showToast, ...uploadBody } = body;
+      return galleryService.uploadBulkGalleryItems(uploadBody);
+    },
+    onMutate: (variables) => {
+      const showToast = variables.showToast !== false; // Default to true
+      if (showToast) {
       const toastId = toast.loading("Uploading items to gallery...");
-      return { toastId };
+        return { toastId, showToast };
+      }
+      return { toastId: undefined, showToast: false };
     },
     onSuccess: (_data, _variables, context) => {
       queryClient.invalidateQueries({
@@ -294,12 +300,16 @@ export const useGalleryQuery = (
         });
       }
 
-      toast.success("Items uploaded to gallery", { id: context?.toastId });
+      if (context?.showToast && context?.toastId) {
+        toast.success("Items uploaded to gallery", { id: context.toastId });
+      }
     },
     onError: (_error, _variables, context) => {
+      if (context?.showToast && context?.toastId) {
       toast.error("Failed to upload items to gallery", {
-        id: context?.toastId,
+          id: context.toastId,
       });
+      }
     },
   });
 

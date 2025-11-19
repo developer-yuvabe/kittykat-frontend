@@ -284,6 +284,7 @@ const ReferenceImageSelector = ({
       const response = await bulkUpload({
         gallery_items: uploadedGalleryItems,
         brand_id: selectedBrandId!,
+        showToast: showToast, 
       });
 
       // Add uploaded items to gallery store
@@ -600,6 +601,48 @@ const ReferenceImageSelector = ({
     ]
   );
 
+  // Extract image files from clipboard
+  const extractImageFiles = useCallback((items: DataTransferItemList): File[] => {
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith("image/")) {
+        const file = items[i].getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    return files;
+  }, []);
+
+  // Handle paste for specific zone
+  const handleZonePaste = useCallback(
+    (zone: "master" | "product") => async (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = extractImageFiles(e.clipboardData.items);
+      if (files.length === 0) return;
+
+      setIsUploading(true);
+      try {
+        const zoneLabel = isSingleMode ? "reference" : `${zone} reference`;
+        await toast.promise(
+          uploadFilesAndAddToZone(files, zone, false),
+          {
+            loading: `Uploading ${files.length} image(s) from clipboard to ${zoneLabel}...`,
+            success: (uploadedUrls) =>
+              `${uploadedUrls.length} image(s) pasted to ${zoneLabel}`,
+            error: "Failed to upload images from clipboard.",
+          }
+        );
+      } catch (error) {
+        console.error("Clipboard paste failed:", error);
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [isSingleMode, uploadFilesAndAddToZone, extractImageFiles]
+  );
+
   const handleDeleteGalleryItem = useCallback(
     (item: GalleryItemResponse) => {
       // Remove from reference zones if attached
@@ -766,7 +809,7 @@ const ReferenceImageSelector = ({
   if (isInlineMode) {
     return (
       <>
-        <div className="w-full border rounded-xl bg-background p-6">
+        <div id="reference-zone" className="w-full border rounded-xl bg-background p-6">
           <div className="flex gap-6 h-[450px]">
             {/* LEFT COLUMN - Upload/Drop Area */}
             <div className="w-[280px] shrink-0">
@@ -858,6 +901,7 @@ const ReferenceImageSelector = ({
           </PopoverTrigger>
         )}
         <PopoverContent
+          id="reference-zone"
           align={popoverAlign}
           side={popoverSide}
           className={`${
@@ -907,7 +951,7 @@ const ReferenceImageSelector = ({
                     type="master"
                     icon={Paperclip}
                     title="Reference Image"
-                    description="Add reference images. (Click or drag to add)"
+                    description="Add reference images. (Click, drag, or paste to add)"
                     images={masterReference}
                     isSelected={false}
                     onClick={() => {}}
@@ -915,6 +959,7 @@ const ReferenceImageSelector = ({
                     onDragStart={(e, url) => handleDragStart(e, url, "master")}
                     onRemoveImage={(url) => handleRemoveImage("master", url)}
                     showAddButton={false}
+                    onPaste={handleZonePaste("master")}
                   />
                 </div>
               </div>
@@ -941,7 +986,7 @@ const ReferenceImageSelector = ({
                       type="master"
                       icon={Paperclip}
                       title="Master Reference"
-                      description="Use elements of an image. (Click or drag to add)"
+                      description="Use elements of an image. (Click, drag, or paste to add)"
                       images={masterReference}
                       isSelected={activeTab === "master"}
                       onClick={openForMaster}
@@ -952,6 +997,7 @@ const ReferenceImageSelector = ({
                       onRemoveImage={(url) => handleRemoveImage("master", url)}
                       showAddButton={productReference.length > 0}
                       onAddClick={openForMaster}
+                      onPaste={handleZonePaste("master")}
                     />
 
                     {/* PRODUCT REFERENCE SECTION */}
@@ -959,7 +1005,7 @@ const ReferenceImageSelector = ({
                       type="product"
                       icon={PanelTop}
                       title="Product Reference"
-                      description="Use a product image. This might alter your prompt. (Click or drag to add)"
+                      description="Use a product image. This might alter your prompt. (Click, drag, or paste to add)"
                       images={productReference}
                       isSelected={activeTab === "product"}
                       onClick={openForProduct}
@@ -972,6 +1018,7 @@ const ReferenceImageSelector = ({
                       onAddClick={openForProduct}
                       isMagicEnabled={isMagicEnabled}
                       onToggleMagic={onToggleMagic}
+                      onPaste={handleZonePaste("product")}
                     />
                   </div>
 
