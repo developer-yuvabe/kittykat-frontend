@@ -45,11 +45,11 @@ export const A2iAdvancedPromptReferenceZones: React.FC<
         variant="tall"
       />
 
-      {/* Context Reference Zone (Master Reference) */}
+      {/* Master Reference Zone */}
       <ReferenceZone
         type="master"
         icon={PanelTop}
-        title="Context Reference"
+        title="Master Reference"
         description="Add context/style images to guide the generation. 
         (Click to add or drag and drop images here.)"
         images={contextReference}
