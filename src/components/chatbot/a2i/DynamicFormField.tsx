@@ -44,6 +44,8 @@ type DynamicFormFieldProps<T extends FieldValues> = {
   sliderSuffix?: string;
   source?: "remix" | "upscale" | "vton";
   allModelParameters?: ModelParameter[];
+  disabled?: boolean;
+  tooltip?: string;
 };
 
 export const DynamicFormLabel = ({
@@ -181,12 +183,21 @@ export function DynamicFormField<T extends FieldValues>({
 
             return type === "initial" ? (
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant={"outline"}>
-                    {field.value}
-                    {sliderSuffix ?? "x"}
-                  </Button>
-                </PopoverTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline">
+                        {field.value}
+                        {sliderSuffix ?? "x"}
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+
+                  {param.tooltip && (
+                    <TooltipContent>{param.tooltip}</TooltipContent>
+                  )}
+                </Tooltip>
+
                 <PopoverContent
                   align="center"
                   side="top"
@@ -256,6 +267,7 @@ export function DynamicFormField<T extends FieldValues>({
             );
 
           case "enum":
+          case "aspect_ratio":
             return (
               <FormItem
                 className={cn("w-full", {
@@ -277,29 +289,37 @@ export function DynamicFormField<T extends FieldValues>({
                   value={field.value}
                 >
                   <FormControl>
-                    <SelectTrigger
-                      className={cn(
-                        "w-full !gap-0 transition-all hover:text-primary hover:bg-primary/10 hover:opacity-90 cursor-pointer",
-                        {
-                          "w-max": type === "initial",
-                        }
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SelectTrigger
+                          className={cn(
+                            "w-full !gap-0 transition-all hover:text-primary hover:bg-primary/10 hover:opacity-90 cursor-pointer",
+                            {
+                              "w-max": type === "initial",
+                            }
+                          )}
+                          disableDropdown
+                        >
+                          {(() => {
+                            const selected = param.options?.find(
+                              (opt) => opt.optionValue === field.value
+                            );
+                            return selected ? (
+                              <div className="flex items-center gap-2">
+                                {selected.optionLabel}
+                              </div>
+                            ) : (
+                              <span>Select</span>
+                            );
+                          })()}
+                        </SelectTrigger>
+                      </TooltipTrigger>
+
+                      {/* Tooltip text coming from param.tooltip */}
+                      {param.tooltip && (
+                        <TooltipContent>{param.tooltip}</TooltipContent>
                       )}
-                      disableDropdown
-                    >
-                      {(() => {
-                        const selected = param.options?.find(
-                          (opt) => opt.optionValue === field.value
-                        );
-                        return selected ? (
-                          <div className="flex items-center gap-2">
-                            {/* {param.icon && <param.icon className="w-4 h-4" />} */}
-                            {selected.optionLabel}
-                          </div>
-                        ) : (
-                          <span>Select</span>
-                        );
-                      })()}
-                    </SelectTrigger>
+                    </Tooltip>
                   </FormControl>
                   <SelectContent
                     className={cn("w-full", {
