@@ -583,7 +583,7 @@ const A2iImageCard = ({
           )}
 
           {/*Always show copy prompt button when prompt exists */}
-          {parameters.prompt && (
+          {parameters.prompt && status === "completed" && (
             <TooltipButton
               tooltip={copied ? "Copied!" : "Copy Prompt"}
               onClick={(e) => {
@@ -604,18 +604,23 @@ const A2iImageCard = ({
             />
           )}
           {/*  Re-Use Icon */}
-          {parameters && (
-            <TooltipButton
-              tooltip="Re-use"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleReUse();
-              }}
-              icon={
-                <RotateCcw className="h-OVERLAY_CONTROL_SIZE w-OVERLAY_CONTROL_SIZE" />
-              }
-            />
-          )}
+          {parameters &&
+            !upscaleParameters &&
+            !vtonParameters &&
+            status === "completed" && ( // hide when still generating
+              <TooltipButton
+                tooltip="Re-use"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReUse();
+                }}
+                icon={
+                  <RotateCcw
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
         </div>
 
         {/* Download and Favorite Buttons - Bottom Right */}
