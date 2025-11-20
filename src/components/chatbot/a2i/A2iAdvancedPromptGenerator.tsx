@@ -1,5 +1,5 @@
+import { Textarea } from "@/components/ui/textarea";
 import {
-  PromptGenerationInputs,
   ThreadA2iImage,
   ThreadCampaign,
   ThreadDetails,
@@ -17,17 +17,14 @@ import ReferenceMoodboard from "./ReferenceMoodboard";
 import ReferenceImageSelector from "./ReferenceImageSelector";
 import { A2iAdvancedPromptPresetSelector } from "./A2iAdvancedPromptPresetSelector";
 import { A2iAdvancedPromptReferenceZones } from "./A2iAdvancedPromptReferenceZones";
-import { A2iAdvancedPromptInputs } from "./A2iAdvancedPromptInputs";
 import { A2iAdvancedPromptActions } from "./A2iAdvancedPromptActions";
 import { A2iAdvancedPromptResults } from "./A2iAdvancedPromptResults";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useBrandStore } from "@/store/brand.store";
 import { generateAdvancedPrompts } from "@/services/api/moodboard.service";
-import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { a2iAdvancedPromptSchema } from "@/types/preset.types";
 import { useA2iStore } from "@/store/a2i.store";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
@@ -36,8 +33,12 @@ import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { validateFiles } from "@/lib/reference-image.utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { getExtensionFromUrl } from "@/lib/utils";
-
-type A2iAdvancedPromptFormData = z.infer<typeof a2iAdvancedPromptSchema>;
+import {
+  A2iAdvancedPromptFormData,
+  getDefaultFormValues,
+  validatePromptGeneration,
+} from "@/lib/preset.utils";
+import { useResizeObserver } from "@/hooks/useResizeObserver";
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -46,40 +47,6 @@ type A2iAdvancedPromptGeneratorProps = {
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
   currentCampaign: ThreadCampaign | null;
-};
-
-/**
- * Get the default form values from existing inputs
- */
-const getDefaultFormValues = (
-  existingInputs?: PromptGenerationInputs
-): A2iAdvancedPromptFormData => ({
-  selectedPreset: existingInputs?.preset_id || "",
-  productReference: existingInputs?.product_references || [],
-  contextReference: existingInputs?.context_references || [],
-  promptValue: existingInputs?.prompt || "",
-  negativePrompt: existingInputs?.negative_prompt || [],
-  numberOfPrompts: existingInputs?.n || 3,
-});
-
-/**
- * Validate form data before generating prompts
- */
-const validatePromptGeneration = (
-  referenceMoodboardId: string | undefined,
-  selectedPreset: string
-): boolean => {
-  if (!referenceMoodboardId) {
-    toast.error("Please select a reference moodboard first");
-    return false;
-  }
-
-  if (!selectedPreset) {
-    toast.error("Please select a preset");
-    return false;
-  }
-
-  return true;
 };
 
 function A2iAdvancedPromptGenerator({
@@ -127,21 +94,18 @@ function A2iAdvancedPromptGenerator({
   const generatedPrompts = currentMoodboard?.prompts;
   const conflictNotes = currentMoodboard?.prompt_generation_conflict_notes;
 
-  // ====== Form Setup ======
   const form = useForm<A2iAdvancedPromptFormData>({
     resolver: zodResolver(a2iAdvancedPromptSchema),
     defaultValues: getDefaultFormValues(existingInputs),
   });
 
-  // ====== Form Watchers (for reactive UI) ======
-  const watchedNumberOfPrompts = form.watch("numberOfPrompts");
+  const NUMBER_OF_PROMPTS = 3;
   const watchedSelectedPreset = form.watch("selectedPreset");
   const watchedProductReference = form.watch("productReference");
   const watchedContextReference = form.watch("contextReference");
   const watchedPromptValue = form.watch("promptValue");
   const watchedNegativePrompt = form.watch("negativePrompt");
 
-  // ====== UI State ======
   const [optimisticIsGenerating, setOptimisticIsGenerating] = useState(false);
   const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
   const [referencePopoverTab, setReferencePopoverTab] = useState<
@@ -165,8 +129,7 @@ function A2iAdvancedPromptGenerator({
         product_references: watchedProductReference,
         context_references: watchedContextReference,
         prompt: watchedPromptValue || undefined,
-        negative_prompt: watchedNegativePrompt,
-        n: watchedNumberOfPrompts,
+        n: NUMBER_OF_PROMPTS,
       });
     },
     onSuccess: () => {
@@ -445,7 +408,7 @@ function A2iAdvancedPromptGenerator({
               ...watchedContextReference,
               assetUrl,
             ]);
-            toast.success("Added to context reference");
+            toast.success("Added to master reference");
           }
         }
         return;
@@ -464,7 +427,7 @@ function A2iAdvancedPromptGenerator({
           ...watchedContextReference,
           assetUrl,
         ]);
-        toast.success("Moved to context reference");
+        toast.success("Moved to master reference");
       } else if (isMovingToProduct) {
         handleFieldChange(
           "contextReference",
@@ -510,24 +473,34 @@ function A2iAdvancedPromptGenerator({
     }
   }, [isGenerating]);
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [initialWidth, setInitialWidth] = useState<number | null>(null);
+  const { width } = useResizeObserver({
+    ref: containerRef as React.RefObject<any>,
+  });
+
+  // Store initial width on mount
+  useEffect(() => {
+    if (width && initialWidth === null) {
+      setInitialWidth(width);
+    }
+  }, [width, initialWidth]);
+
+  // Determine if negative prompt should be moved based on width decrease
+  const shouldMoveNegativePrompt =
+    initialWidth !== null && width !== undefined && width < initialWidth;
+
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full" ref={containerRef}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Campaign Prompt Generator</h1>
-        <A2iAdvancedPromptPresetSelector
-          selectedPreset={watchedSelectedPreset}
-          onPresetChange={(presetId) =>
-            handleFieldChange("selectedPreset", presetId)
-          }
-          disabled={isAnyGenerating}
-        />
       </div>
 
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Left Column - Reference & Zones */}
-        <div className="col-span-7 flex flex-col gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Left Column - Moodboard */}
+        <div className="flex flex-col gap-6">
           <ReferenceMoodboard
             referenceMoodboardId={referenceMoodboardId}
             referenceMoodboardAssets={referenceMoodboardAssets}
@@ -538,7 +511,31 @@ function A2iAdvancedPromptGenerator({
             showPrompts={false}
             isAdvanceMode={true}
           />
+        </div>
 
+        {/* Right Column - Reference Zones & Negative Prompt */}
+        <div className="flex flex-col gap-y-4 mt-1">
+          {/* Reference Image Selector Inline */}
+          <ReferenceImageSelector
+            variant="popover"
+            masterReference={watchedContextReference}
+            productReference={watchedProductReference}
+            onMasterReferenceChange={(value) =>
+              handleFieldChange("contextReference", value)
+            }
+            onProductReferenceChange={(value) =>
+              handleFieldChange("productReference", value)
+            }
+            activeTab={referencePopoverTab}
+            onTabChange={setReferencePopoverTab}
+            maxLimit={20}
+            fileTypes={["image/jpeg", "image/png", "image/webp"]}
+            maxFileSizeLimit={10}
+            maxTotalSizeMB={50}
+            currentCampaignId={currentCampaign?.id || null}
+            isOpen={isReferencePopoverOpen}
+            onOpenChange={setIsReferencePopoverOpen}
+          />
           <A2iAdvancedPromptReferenceZones
             productReference={watchedProductReference}
             contextReference={watchedContextReference}
@@ -552,76 +549,86 @@ function A2iAdvancedPromptGenerator({
             onDrop={handleDropZone}
             onRemoveImage={handleRemoveImage}
           />
-        </div>
 
-        {/* Right Column - Inputs */}
-        <div className="col-span-5 flex flex-col gap-6">
-          <A2iAdvancedPromptInputs
-            promptValue={watchedPromptValue}
-            negativePrompt={watchedNegativePrompt}
-            onPromptChange={(value) => handleFieldChange("promptValue", value)}
-            onNegativePromptChange={(value) =>
-              handleFieldChange("negativePrompt", value)
+          {/* Negative Prompt Only - Show here if NOT moved */}
+          {!shouldMoveNegativePrompt && (
+            <div>
+              <Textarea
+                id="advanced-negative-prompt"
+                title="Negative Prompt Controls"
+                placeholder="More than 2 feet, smoke, warping, distortion..."
+                className="h-[85px] w-full resize-none"
+                variant="inset-label"
+                label="Negative Prompt Controls"
+                value={watchedNegativePrompt}
+                onChange={(e) =>
+                  handleFieldChange("negativePrompt", e.target.value)
+                }
+                disabled={false}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Negative Prompt - Show above main prompt if moved */}
+      {shouldMoveNegativePrompt && (
+        <div className="w-full">
+          <Textarea
+            id="advanced-negative-prompt"
+            title="Negative Prompt Controls"
+            placeholder="More than 2 feet, smoke, warping, distortion..."
+            className="h-16 w-full resize-none"
+            variant="inset-label"
+            label="Negative Prompt Controls"
+            value={watchedNegativePrompt}
+            onChange={(e) =>
+              handleFieldChange("negativePrompt", e.target.value)
             }
+            disabled={false}
+          />
+        </div>
+      )}
+
+      {/* Positive Prompt - Full Width Below Grid */}
+      <div className="w-full relative">
+        <Textarea
+          id="advanced-prompt"
+          title="Positive Prompt Controls"
+          placeholder="Describe what you want to see in the generated images..."
+          className="h-[100px] w-full resize-none mb-[50px]"
+          variant="inset-label"
+          label="Positive Prompt Controls"
+          value={watchedPromptValue}
+          onChange={(e) => handleFieldChange("promptValue", e.target.value)}
+          disabled={false}
+        />
+        <div className="absolute bottom-2 right-2 flex items-center gap-2">
+          <A2iAdvancedPromptPresetSelector
+            selectedPreset={watchedSelectedPreset}
+            onPresetChange={(presetId) =>
+              handleFieldChange("selectedPreset", presetId)
+            }
+            disabled={isAnyGenerating}
+          />
+          <A2iAdvancedPromptActions
+            onGenerate={handleGeneratePrompts}
+            isGenerating={isAnyGenerating}
+            disabled={isAnyGenerating}
           />
         </div>
       </div>
 
-      {/* Reference Image Selector Inline */}
-      <ReferenceImageSelector
-        variant="inline"
-        masterReference={watchedContextReference}
-        productReference={watchedProductReference}
-        onMasterReferenceChange={(value) =>
-          handleFieldChange("contextReference", value)
-        }
-        onProductReferenceChange={(value) =>
-          handleFieldChange("productReference", value)
-        }
-        activeTab={referencePopoverTab}
-        onTabChange={setReferencePopoverTab}
-        maxLimit={20}
-        fileTypes={["image/jpeg", "image/png", "image/webp"]}
-        maxFileSizeLimit={10}
-        maxTotalSizeMB={50}
-        currentCampaignId={currentCampaign?.id || null}
-        isOpen={isReferencePopoverOpen}
-        onOpenChange={setIsReferencePopoverOpen}
-      />
-
-      {/* Actions & Settings */}
-      <div className="flex flex-row gap-x-2 justify-end">
-        <A2iAdvancedPromptActions
-          onGenerate={handleGeneratePrompts}
-          isGenerating={isAnyGenerating}
-          disabled={isAnyGenerating}
-        />
-        <Input
-          id="number-of-prompts"
-          type="number"
-          min={1}
-          max={10}
-          value={watchedNumberOfPrompts}
-          onChange={(e) =>
-            handleFieldChange("numberOfPrompts", Number(e.target.value))
-          }
-          disabled={isAnyGenerating}
-          className="w-16"
+      {/* Results - Full Width Below Grid */}
+      <div className="w-full">
+        <A2iAdvancedPromptResults
+          prompts={generatedPrompts}
+          isGenerating={isGenerating || optimisticIsGenerating}
+          conflictNotes={conflictNotes}
+          onEditPrompt={handleEditPrompt}
+          formRef={formRef}
         />
       </div>
-
-      {/* Results */}
-      <A2iAdvancedPromptResults
-        prompts={generatedPrompts}
-        isGenerating={isGenerating || optimisticIsGenerating}
-        conflictNotes={conflictNotes}
-        numberOfPrompts={watchedNumberOfPrompts}
-        onNumberOfPromptsChange={(value) =>
-          handleFieldChange("numberOfPrompts", value)
-        }
-        onEditPrompt={handleEditPrompt}
-        formRef={formRef}
-      />
     </div>
   );
 }

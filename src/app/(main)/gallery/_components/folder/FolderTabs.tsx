@@ -40,15 +40,12 @@ export function FolderTabs({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("targetTab:", targetTab);
 
     const data = e.dataTransfer.getData("application/gallery-drag");
     if (!data) return;
 
     const payload = JSON.parse(data);
-    console.log("Drop payload:", payload);
     const { itemIds, activeTab: sourceTab } = payload;
-    console.log("Target tab:", targetTab, "Source tab:", sourceTab);
 
     // 1. Block dropping from "all-media" to anywhere
     if (sourceTab === "all-media") {

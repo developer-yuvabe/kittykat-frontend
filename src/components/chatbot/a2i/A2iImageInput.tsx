@@ -36,6 +36,7 @@ import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
+import { useReferenceImagePaste } from "@/hooks/useReferenceImagePaste";
 import { useCreditsStore } from "@/store/credits.store";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
@@ -212,7 +213,8 @@ const A2iImageInput = ({
   const handleFileUpload = useCallback(
     async (
       files: File[],
-      targetZone: "master" | "product"
+      targetZone: "master" | "product",
+      showToast = true
     ): Promise<string[]> => {
       if (!referenceImagesModelInfo) {
         toast.error("This model doesn't support reference images");
@@ -309,15 +311,20 @@ const A2iImageInput = ({
       };
 
       try {
-        const toastPromise = toast.promise(uploadPromise(), {
-          loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
-          success: (data) =>
-            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
-          error: "Failed to upload files. Please try again.",
-        });
+        if (showToast) {
+          const toastPromise = toast.promise(uploadPromise(), {
+            loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
+            success: (data) =>
+              `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+            error: "Failed to upload files. Please try again.",
+          });
 
-        const result = await toastPromise.unwrap();
-        return result.successfulUrls;
+          const result = await toastPromise.unwrap();
+          return result.successfulUrls;
+        } else {
+          const result = await uploadPromise();
+          return result.successfulUrls;
+        }
       } catch (error) {
         console.error("File upload failed:", error);
         return [];
@@ -409,6 +416,22 @@ const A2iImageInput = ({
     ]
   );
 
+  // Use paste hook for handling paste events
+  useReferenceImagePaste({
+    containerSelector: "#concept-visual-playground",
+    handleFileUpload: async (files: File[], targetZone: "master" | "product") => {
+      const uploadedUrls = await handleFileUpload(files, targetZone, false);
+      return uploadedUrls;
+    },
+    masterReference,
+    productReference,
+    setMasterReference,
+    setProductReference,
+    referencePopoverTab,
+    showToast: true,
+    useDocumentListener: true,
+  });
+
   // Handle drag-and-drop on prompt textarea
   const handlePromptDrop = useCallback(
     async (e: DragEvent) => {
@@ -420,12 +443,11 @@ const A2iImageInput = ({
         return;
       }
 
-      // Only handle file drops from OS
-      if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) {
-        return;
-      }
-
+      // Get files from drag
+      if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) return;
       const files = Array.from(e.dataTransfer.files);
+
+      if (files.length === 0) return;
 
       // Determine target zone based on active tab or default to master
       const targetZone =
@@ -433,7 +455,7 @@ const A2iImageInput = ({
           ? referencePopoverTab
           : "master";
 
-      const uploadedUrls = await handleFileUpload(files, targetZone);
+      const uploadedUrls = await handleFileUpload(files, targetZone, true);
 
       if (uploadedUrls.length > 0) {
         // Use shared utility to update references
@@ -958,10 +980,13 @@ const A2iImageInput = ({
                       type="master"
                       icon={Paperclip}
                       title="Master Reference"
-                      description="Use elements of an image. (Drag files or images here)"
+                      description="Drag, drop, or paste images here"
                       images={masterReference}
                       isSelected={referencePopoverTab === "master"}
-                      onClick={() => openReferencePopover("master")}
+                      onClick={() => {
+                        setReferencePopoverTab("master");
+                        openReferencePopover("master");
+                      }}
                       onDrop={(e: DragEvent) => handleZoneDrop(e, "master")}
                       onDragStart={(e: DragEvent, url: string) => {
                         e.dataTransfer.setData("assetUrl", url);
@@ -987,10 +1012,13 @@ const A2iImageInput = ({
                       type="product"
                       icon={PanelTop}
                       title="Product Reference"
-                      description="Use a product image. (Drag files or images here)"
+                      description="Drag, drop, or paste images here"
                       images={productReference}
                       isSelected={referencePopoverTab === "product"}
-                      onClick={() => openReferencePopover("product")}
+                      onClick={() => {
+                        setReferencePopoverTab("product");
+                        openReferencePopover("product");
+                      }}
                       onDrop={(e: DragEvent) => handleZoneDrop(e, "product")}
                       onDragStart={(e: DragEvent, url: string) => {
                         e.dataTransfer.setData("assetUrl", url);

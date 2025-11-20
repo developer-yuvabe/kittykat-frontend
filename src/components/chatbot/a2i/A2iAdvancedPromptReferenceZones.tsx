@@ -28,37 +28,35 @@ export const A2iAdvancedPromptReferenceZones: React.FC<
   onRemoveImage,
 }) => {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col gap-y-4">
       {/* Product Reference Zone */}
       <ReferenceZone
         type="product"
         icon={Image}
         title="Product Reference"
-        description="Add product images to guide the generation.
-      (Click to add or drag and drop images here.)"
+        description="Use a product image (Drag or Click to add)"
         images={productReference}
         onClick={onProductReferenceClick}
         isSelected={false}
         onDragStart={(e, url) => onDragStart(e, url, "product")}
         onDrop={(e) => onDrop(e, "product")}
         onRemoveImage={(url) => onRemoveImage("product", url)}
-        variant="tall"
+        variant="carousel"
       />
 
-      {/* Context Reference Zone (Master Reference) */}
+      {/* Master Reference Zone */}
       <ReferenceZone
         type="master"
         icon={PanelTop}
-        title="Context Reference"
-        description="Add context/style images to guide the generation. 
-        (Click to add or drag and drop images here.)"
+        title="Master Reference"
+        description="Use a master image (Drag or Click to add)"
         images={contextReference}
         onClick={onContextReferenceClick}
         isSelected={false}
         onDragStart={(e, url) => onDragStart(e, url, "master")}
         onDrop={(e) => onDrop(e, "master")}
         onRemoveImage={(url) => onRemoveImage("master", url)}
-        variant="tall"
+        variant="carousel"
       />
     </div>
   );
