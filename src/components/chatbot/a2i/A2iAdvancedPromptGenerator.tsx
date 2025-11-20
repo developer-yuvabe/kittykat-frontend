@@ -505,7 +505,7 @@ function A2iAdvancedPromptGenerator({
             }
             activeTab={referencePopoverTab}
             onTabChange={setReferencePopoverTab}
-            maxLimit={20}
+            maxLimit={10}
             fileTypes={["image/jpeg", "image/png", "image/webp"]}
             maxFileSizeLimit={10}
             maxTotalSizeMB={50}
