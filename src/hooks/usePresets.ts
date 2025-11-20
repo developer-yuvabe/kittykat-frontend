@@ -99,8 +99,12 @@ export function usePresets({
   // Mutations
   const createPresetMutation = useMutation({
     mutationFn: createPreset,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["presets"], exact: false });
+    onSuccess: async () => {
+      // Refetch queries to ensure fresh data before navigation
+      await queryClient.refetchQueries({
+        queryKey: ["presets"],
+        exact: false,
+      });
     },
   });
 
