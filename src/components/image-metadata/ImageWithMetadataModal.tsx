@@ -26,10 +26,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useModelsStore } from "@/store/models.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { upscaleImage } from "@/services/api/upscale.service";
-import {
-  generateAnimationPrompt,
-  videoGenerationService,
-} from "@/services/api/video-gen.service";
+import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useDynamicModelSchema } from "@/hooks/useDynamicModelSchema";
 import {
   getGalleryImageParameters,
@@ -575,19 +572,15 @@ const ImageWithMetadataModal = ({
       if (!defaultAnimationModel) {
         throw new Error("No default animation model found");
       }
-
-      const prompt = await generateAnimationPrompt(
-        preset,
-        data?.parameters?.prompt
-      );
       const { defaultValues } = useDynamicModelSchema(defaultAnimationModel);
       await videoGenerationService(selectedBrandId!, {
         ...defaultValues,
         first_frame: currentDisplayItem.asset_url,
-        prompt,
+        prompt: data?.parameters?.prompt,
         model: defaultAnimationModel.model,
         source_asset_id: currentDisplayItem.id,
         campaign_id: selectedCampaignId,
+        preset: preset,
       });
 
       onClose();
