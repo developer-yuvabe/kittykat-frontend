@@ -846,6 +846,48 @@ const A2iImageInput = ({
                 );
               })}
 
+              {
+                /* Render placeholder for aspect ratio if it does not contain AspectRationParam */
+                !selectedImageGenerationModel?.parameters?.some(
+                  (param) => param.type === "aspect_ratio"
+                ) && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          size={"icon"}
+                          variant={"outline"}
+                          disabled={true}
+                        >
+                          <ImagesIcon />
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      This model does not support aspect ratio selection
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+              {/* Render placeholder for image count if it does not contain ImageCountParam */}
+
+              {!selectedImageGenerationModel?.parameters?.some(
+                (param) => param.type === "image_count"
+              ) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button size={"icon"} variant={"outline"} disabled={true}>
+                        <ImagesIcon />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    This model does not support image count selection
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
               {advancedParams.length > 0 ? (
                 <Popover>
                   <Tooltip>
