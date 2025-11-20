@@ -888,30 +888,29 @@ const ReferenceImageSelector = ({
   return (
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
-        {showPopoverTrigger && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                {customTrigger || (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={disabled}
-                    className="relative"
-                  >
-                    <Images />
-                    {currentImageCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                        {currentImageCount}
-                      </span>
-                    )}
-                  </Button>
-                )}
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent>Attach Reference Image(s)</TooltipContent>
-          </Tooltip>
-        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild hidden={!showPopoverTrigger}>
+              {customTrigger || (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={disabled}
+                  className="relative"
+                >
+                  <Images />
+                  {currentImageCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                      {currentImageCount}
+                    </span>
+                  )}
+                </Button>
+              )}
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Attach Reference Image(s)</TooltipContent>
+        </Tooltip>
+
         <PopoverContent
           id="reference-zone"
           align={popoverAlign}

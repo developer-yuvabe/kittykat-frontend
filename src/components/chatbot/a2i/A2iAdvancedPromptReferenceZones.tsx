@@ -1,5 +1,4 @@
 import { ReferenceZone } from "./ReferenceZone";
-import { PanelTop, Image } from "lucide-react";
 import React from "react";
 
 interface A2iAdvancedPromptReferenceZonesProps {
@@ -32,7 +31,6 @@ export const A2iAdvancedPromptReferenceZones: React.FC<
       {/* Product Reference Zone */}
       <ReferenceZone
         type="product"
-        icon={Image}
         title="Product Reference"
         description="Use a product image (Drag or Click to add)"
         images={productReference}
@@ -47,7 +45,6 @@ export const A2iAdvancedPromptReferenceZones: React.FC<
       {/* Master Reference Zone */}
       <ReferenceZone
         type="master"
-        icon={PanelTop}
         title="Master Reference"
         description="Use a master image (Drag or Click to add)"
         images={contextReference}

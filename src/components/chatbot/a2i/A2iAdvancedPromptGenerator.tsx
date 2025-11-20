@@ -38,7 +38,6 @@ import {
   getDefaultFormValues,
   validatePromptGeneration,
 } from "@/lib/preset.utils";
-import { useResizeObserver } from "@/hooks/useResizeObserver";
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -473,34 +472,12 @@ function A2iAdvancedPromptGenerator({
     }
   }, [isGenerating]);
 
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [initialWidth, setInitialWidth] = useState<number | null>(null);
-  const { width } = useResizeObserver({
-    ref: containerRef as React.RefObject<any>,
-  });
-
-  // Store initial width on mount
-  useEffect(() => {
-    if (width && initialWidth === null) {
-      setInitialWidth(width);
-    }
-  }, [width, initialWidth]);
-
-  // Determine if negative prompt should be moved based on width decrease
-  const shouldMoveNegativePrompt =
-    initialWidth !== null && width !== undefined && width < initialWidth;
-
   return (
-    <div className="flex flex-col gap-6 w-full" ref={containerRef}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Campaign Prompt Generator</h1>
-      </div>
-
+    <div className="flex flex-col gap-6 w-full">
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-1 2xl:gap-1 w-full">
         {/* Left Column - Moodboard */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 min-w-0">
           <ReferenceMoodboard
             referenceMoodboardId={referenceMoodboardId}
             referenceMoodboardAssets={referenceMoodboardAssets}
@@ -514,7 +491,7 @@ function A2iAdvancedPromptGenerator({
         </div>
 
         {/* Right Column - Reference Zones & Negative Prompt */}
-        <div className="flex flex-col gap-y-4 mt-1">
+        <div className="flex flex-col gap-y-6 mt-2 min-w-0">
           {/* Reference Image Selector Inline */}
           <ReferenceImageSelector
             variant="popover"
@@ -535,6 +512,7 @@ function A2iAdvancedPromptGenerator({
             currentCampaignId={currentCampaign?.id || null}
             isOpen={isReferencePopoverOpen}
             onOpenChange={setIsReferencePopoverOpen}
+            showPopoverTrigger={false}
           />
           <A2iAdvancedPromptReferenceZones
             productReference={watchedProductReference}
@@ -550,45 +528,24 @@ function A2iAdvancedPromptGenerator({
             onRemoveImage={handleRemoveImage}
           />
 
-          {/* Negative Prompt Only - Show here if NOT moved */}
-          {!shouldMoveNegativePrompt && (
-            <div>
-              <Textarea
-                id="advanced-negative-prompt"
-                title="Negative Prompt Controls"
-                placeholder="More than 2 feet, smoke, warping, distortion..."
-                className="h-[85px] w-full resize-none"
-                variant="inset-label"
-                label="Negative Prompt Controls"
-                value={watchedNegativePrompt}
-                onChange={(e) =>
-                  handleFieldChange("negativePrompt", e.target.value)
-                }
-                disabled={false}
-              />
-            </div>
-          )}
+          {/* Negative Prompt */}
+          <div>
+            <Textarea
+              id="advanced-negative-prompt"
+              title="Negative Prompt Controls"
+              placeholder="List elements to exclude from the generated images…"
+              className="min-h-[110px] w-full resize-none p-4"
+              variant="inset-label"
+              label="Negative Prompt Controls"
+              value={watchedNegativePrompt}
+              onChange={(e) =>
+                handleFieldChange("negativePrompt", e.target.value)
+              }
+              disabled={false}
+            />
+          </div>
         </div>
       </div>
-
-      {/* Negative Prompt - Show above main prompt if moved */}
-      {shouldMoveNegativePrompt && (
-        <div className="w-full">
-          <Textarea
-            id="advanced-negative-prompt"
-            title="Negative Prompt Controls"
-            placeholder="More than 2 feet, smoke, warping, distortion..."
-            className="h-16 w-full resize-none"
-            variant="inset-label"
-            label="Negative Prompt Controls"
-            value={watchedNegativePrompt}
-            onChange={(e) =>
-              handleFieldChange("negativePrompt", e.target.value)
-            }
-            disabled={false}
-          />
-        </div>
-      )}
 
       {/* Positive Prompt - Full Width Below Grid */}
       <div className="w-full relative">
@@ -596,7 +553,7 @@ function A2iAdvancedPromptGenerator({
           id="advanced-prompt"
           title="Positive Prompt Controls"
           placeholder="Describe what you want to see in the generated images..."
-          className="h-[100px] w-full resize-none mb-[50px]"
+          className="h-[120px] w-full resize-none mb-[50px] p-4"
           variant="inset-label"
           label="Positive Prompt Controls"
           value={watchedPromptValue}
