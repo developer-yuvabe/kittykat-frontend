@@ -603,19 +603,20 @@ export function CampaignsSidebar({
 
   if (isCollapsed)
     return (
-      <div className="fixed top-1/2 left-3 -translate-y-1/2 z-30">
+      <div className="fixed top-1/6 left-3 -translate-y-1/2 z-30">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="ghost"
-                className="flex items-center text-xl xl:text-3xl h-8 w-8 gap-2 hover:bg-white rounded-full"
+                variant="default"
+                className="mb-3"
                 onClick={onToggleCollapsed}
+                size="sm"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">
+            <TooltipContent side="top">
               <p>Open Camapign Sidebar</p>
             </TooltipContent>
           </Tooltip>
@@ -633,9 +634,9 @@ export function CampaignsSidebar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="sm"
-                  className="ml-2 p-1 rounded-full"
+                  className="ml-2 p-1"
                   onClick={onToggleCollapsed}
                 >
                   <ChevronLeft className="w-4 h-4" />
