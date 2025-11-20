@@ -24,6 +24,11 @@ import {
   addReferenceToZone,
   removeReferenceFromZone,
 } from "@/lib/reference-image.utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ReferenceImageSelectorProps {
   // Single-zone mode (for ChatInput)
@@ -51,7 +56,7 @@ interface ReferenceImageSelectorProps {
   onOpenChange: (open: boolean) => void;
 
   // UX Mode props
-  variant?: "popover" | "inline"; // Controls the layout/UX
+  variant?: "popover" | "inline" | "hidden"; // Controls the layout/UX
   popoverAlign?: "start" | "center" | "end";
   popoverSide?: "top" | "bottom" | "left" | "right";
   customTrigger?: React.ReactNode;
@@ -284,7 +289,6 @@ const ReferenceImageSelector = ({
       const response = await bulkUpload({
         gallery_items: uploadedGalleryItems,
         brand_id: selectedBrandId!,
-         
       });
 
       // Add uploaded items to gallery store
@@ -602,16 +606,19 @@ const ReferenceImageSelector = ({
   );
 
   // Extract image files from clipboard
-  const extractImageFiles = useCallback((items: DataTransferItemList): File[] => {
-    const files: File[] = [];
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.startsWith("image/")) {
-        const file = items[i].getAsFile();
-        if (file) files.push(file);
+  const extractImageFiles = useCallback(
+    (items: DataTransferItemList): File[] => {
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) files.push(file);
+        }
       }
-    }
-    return files;
-  }, []);
+      return files;
+    },
+    []
+  );
 
   // Handle paste for specific zone
   const handleZonePaste = useCallback(
@@ -625,15 +632,12 @@ const ReferenceImageSelector = ({
       setIsUploading(true);
       try {
         const zoneLabel = isSingleMode ? "reference" : `${zone} reference`;
-        await toast.promise(
-          uploadFilesAndAddToZone(files, zone, false),
-          {
-            loading: `Uploading ${files.length} image(s) from clipboard to ${zoneLabel}...`,
-            success: (uploadedUrls) =>
-              `${uploadedUrls.length} image(s) pasted to ${zoneLabel}`,
-            error: "Failed to upload images from clipboard.",
-          }
-        );
+        await toast.promise(uploadFilesAndAddToZone(files, zone, false), {
+          loading: `Uploading ${files.length} image(s) from clipboard to ${zoneLabel}...`,
+          success: (uploadedUrls) =>
+            `${uploadedUrls.length} image(s) pasted to ${zoneLabel}`,
+          error: "Failed to upload images from clipboard.",
+        });
       } catch (error) {
         console.error("Clipboard paste failed:", error);
       } finally {
@@ -809,7 +813,10 @@ const ReferenceImageSelector = ({
   if (isInlineMode) {
     return (
       <>
-        <div id="reference-zone" className="w-full border rounded-xl bg-background p-6">
+        <div
+          id="reference-zone"
+          className="w-full border rounded-xl bg-background p-6"
+        >
           <div className="flex gap-6 h-[450px]">
             {/* LEFT COLUMN - Upload/Drop Area */}
             <div className="w-[280px] shrink-0">
@@ -882,23 +889,28 @@ const ReferenceImageSelector = ({
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
         {showPopoverTrigger && (
-          <PopoverTrigger asChild>
-            {customTrigger || (
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={disabled}
-                className="relative"
-              >
-                <Images />
-                {currentImageCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                    {currentImageCount}
-                  </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                {customTrigger || (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={disabled}
+                    className="relative"
+                  >
+                    <Images />
+                    {currentImageCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                        {currentImageCount}
+                      </span>
+                    )}
+                  </Button>
                 )}
-              </Button>
-            )}
-          </PopoverTrigger>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Attach Reference Image(s)</TooltipContent>
+          </Tooltip>
         )}
         <PopoverContent
           id="reference-zone"
@@ -908,7 +920,7 @@ const ReferenceImageSelector = ({
             isSingleMode
               ? "w-[calc(100vw-2rem)] max-w-[650px] mr-3"
               : "w-[1000px]"
-          }  p-0 rounded-xl max-h-[400px] shadow-xl border bg-background overflow-y-scroll`}
+          }  p-0 rounded-xl max-h-[500px] shadow-xl border bg-background overflow-y-scroll`}
         >
           {isSingleMode ? (
             // Single mode - vertical layout with 3 sections
