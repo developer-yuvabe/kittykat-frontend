@@ -62,6 +62,7 @@ import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { GalleryItem } from "@/types/gallery.types";
+import { Select, SelectTrigger } from "@radix-ui/react-select";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -419,7 +420,10 @@ const A2iImageInput = ({
   // Use paste hook for handling paste events
   useReferenceImagePaste({
     containerSelector: "#concept-visual-playground",
-    handleFileUpload: async (files: File[], targetZone: "master" | "product") => {
+    handleFileUpload: async (
+      files: File[],
+      targetZone: "master" | "product"
+    ) => {
       const uploadedUrls = await handleFileUpload(files, targetZone, false);
       return uploadedUrls;
     },
@@ -854,61 +858,109 @@ const A2iImageInput = ({
                   </TooltipContent>
                 </Tooltip>
               )}
+              {/* Render other initial params (exclude aspect_ratio and image_count) */}
+              {initialParams
+                .filter(
+                  (param) =>
+                    param.type !== "aspect_ratio" &&
+                    param.type !== "image_count"
+                )
+                .map((param) => {
+                  return (
+                    <DynamicFormField
+                      key={param.id}
+                      param={param}
+                      form={formInstance}
+                      type="initial"
+                      rules={selectedImageGenerationModel?.rules}
+                      allModelParameters={[...initialParams, ...advancedParams]}
+                    />
+                  );
+                })}
 
-              {initialParams.map((param) => {
+              {/* Aspect Ratio - Always show */}
+              {(() => {
+                const aspectRatioParam =
+                  selectedImageGenerationModel?.parameters?.find(
+                    (param) => param.type === "aspect_ratio"
+                  );
+
+                if (aspectRatioParam) {
+                  return (
+                    <DynamicFormField
+                      key={aspectRatioParam.id}
+                      param={aspectRatioParam}
+                      form={formInstance}
+                      type="initial"
+                      rules={selectedImageGenerationModel?.rules}
+                      allModelParameters={
+                        selectedImageGenerationModel?.parameters
+                      }
+                    />
+                  );
+                }
+
+                // No aspect ratio support - show disabled select
                 return (
-                  <DynamicFormField
-                    key={param.id}
-                    param={param}
-                    form={formInstance}
-                    type="initial"
-                    rules={selectedImageGenerationModel?.rules}
-                    allModelParameters={[...initialParams, ...advancedParams]}
-                  />
-                );
-              })}
-
-              {
-                /* Render placeholder for aspect ratio if it does not contain AspectRationParam */
-                !selectedImageGenerationModel?.parameters?.some(
-                  (param) => param.type === "aspect_ratio"
-                ) && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span>
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          disabled={true}
-                        >
-                          <ImagesIcon />
-                        </Button>
+                        <Select disabled>
+                          <SelectTrigger className="cursor-not-allowed">
+                            <span>1:1</span>
+                          </SelectTrigger>
+                        </Select>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       This model does not support aspect ratio selection
                     </TooltipContent>
                   </Tooltip>
-                )
-              }
-              {/* Render placeholder for image count if it does not contain ImageCountParam */}
+                );
+              })()}
 
-              {!selectedImageGenerationModel?.parameters?.some(
-                (param) => param.type === "image_count"
-              ) && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button size={"icon"} variant={"outline"} disabled={true}>
-                        <ImagesIcon />
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    This model does not support image count selection
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              {/* Image Count - Always show */}
+              {(() => {
+                const imageCountParam =
+                  selectedImageGenerationModel?.parameters?.find(
+                    (param) => param.type === "image_count"
+                  );
+
+                if (imageCountParam) {
+                  return (
+                    <DynamicFormField
+                      key={imageCountParam.id}
+                      param={imageCountParam}
+                      form={formInstance}
+                      type="initial"
+                      rules={selectedImageGenerationModel?.rules}
+                      allModelParameters={
+                        selectedImageGenerationModel?.parameters
+                      }
+                    />
+                  );
+                }
+
+                // No image count support - show disabled button
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          disabled
+                          className="cursor-not-allowed"
+                        >
+                          1x
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      This model does not support no of generations selection
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })()}
 
               {advancedParams.length > 0 ? (
                 <Popover>
