@@ -276,9 +276,21 @@ const A2iImageCard = ({
 
           // Set the remix model
           setSelectedRemixModel(model);
+          //  Convert all remix parameters based on model definitions
+          const convertedRemixParams = { ...parameters };
+
+          model.parameters?.forEach((paramDef) => {
+            const id = paramDef.id;
+            if (convertedRemixParams[id] !== undefined) {
+              convertedRemixParams[id] = convertParameterValue(
+                convertedRemixParams[id],
+                paramDef
+              );
+            }
+          });
 
           // Store full parameters for remix
-          setParameters("remixParameters", parameters);
+          setParameters("remixParameters", convertedRemixParams);
 
           // Close modal if any (same behavior)
           if (showImageModal) setShowImageModal(false);
