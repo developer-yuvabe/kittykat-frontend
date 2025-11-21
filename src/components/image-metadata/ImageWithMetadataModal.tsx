@@ -11,6 +11,7 @@ import { DownloadIcon } from "../ui/custom-icon";
 import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
 import {
   cn,
+  convertParameterValue,
   getDimensionAndAspectRatioFromParameters,
   PlatformApiError,
   urlToFile,
@@ -309,8 +310,21 @@ const ImageWithMetadataModal = ({
         // Set the remix model
         setSelectedRemixModel(model);
 
-        // Store full parameters for remix tab
-        setParameters("remixParameters", data.parameters);
+        // Convert all remix parameters based on model schema
+        const convertedRemixParams = { ...data.parameters };
+
+        model.parameters.forEach((paramDef) => {
+          const id = paramDef.id;
+          if (convertedRemixParams[id] !== undefined) {
+            convertedRemixParams[id] = convertParameterValue(
+              convertedRemixParams[id],
+              paramDef
+            );
+          }
+        });
+
+        // Store schema-correct params
+        setParameters("remixParameters", convertedRemixParams);
 
         onClose();
         // asset object with base_image URL

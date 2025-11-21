@@ -106,6 +106,8 @@ const ReferenceMoodboard = ({
       setN(prompts.length);
     }
 
+    if (isSwitchingReferenceMoodboard) return;
+
     if (isGeneratingPrompts) {
       setIsGeneratingPrompts(false);
     }
