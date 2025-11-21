@@ -33,10 +33,6 @@ interface MediaFolderViewProps {
   setSelectedFilters: React.Dispatch<
     React.SetStateAction<EnhancedSelectedFilters>
   >;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: any
-  ) => Promise<URLSearchParams>;
   // Add tab change prop
   onTabChange: (value: string) => void;
   // setSelectedCampaignInUrl?: (value: string | null) => void;
@@ -72,7 +68,6 @@ export function MediaFolderView({
   setGalleryView,
   hasNoBrands,
   setSelectedFilters,
-  setInitialWorkflowStatus,
   handleSearchChange,
   showFilters,
   setActiveTab,
@@ -134,7 +129,6 @@ export function MediaFolderView({
           setInitialBrandId={setInitialBrandId}
           setSelectedCampaignInUrl={setSelectedCampaignInUrl}
           setSelectedFilters={setSelectedFilters}
-          setInitialWorkflowStatus={setInitialWorkflowStatus}
           hasNoBrands={hasNoBrands}
           galleryView={galleryView}
           setSelectedItems={setSelectedItems}
@@ -162,7 +156,6 @@ export function MediaFolderView({
               handleSearchChange={handleSearchChange}
               showFilters={showFilters}
               setSelectedFilters={setSelectedFilters}
-              setInitialWorkflowStatus={setInitialWorkflowStatus}
               galleryView={galleryView}
               setGalleryView={setGalleryView}
               setActiveTab={setActiveTab}
@@ -187,7 +180,6 @@ export function MediaFolderView({
           setInitialBrandId={setInitialBrandId}
           setSelectedCampaignInUrl={setSelectedCampaignInUrl}
           setSelectedFilters={setSelectedFilters}
-          setInitialWorkflowStatus={setInitialWorkflowStatus}
           hasNoBrands={hasNoBrands}
           galleryView={galleryView}
           setSelectedItems={setSelectedItems}
@@ -212,7 +204,6 @@ export function MediaFolderView({
               <MediaFilterDropdown
                 selectedFilters={selectedFilters}
                 setSelectedFilters={setSelectedFilters}
-                setInitialWorkflowStatus={setInitialWorkflowStatus}
               />
 
               <MediaViewsDropdown

@@ -35,22 +35,16 @@ import {
 } from "@/components/ui/multi-select";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
-import { Options } from "nuqs";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface MediaFilterDropdownProps {
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: Options
-  ) => Promise<URLSearchParams>;
 }
 
 export function MediaFilterDropdown({
   selectedFilters,
   setSelectedFilters,
-  setInitialWorkflowStatus,
 }: MediaFilterDropdownProps) {
   const {
     favorites,
@@ -67,16 +61,15 @@ export function MediaFilterDropdown({
     setDateTo,
     resetFilters,
   } = useGalleryFilterStore();
+
   const handleWorkflowStatusChange = (values: string[]) => {
     if (values.length === 0 || values.includes("__all__")) {
-      setInitialWorkflowStatus([]);
       setWorkflowStatus([]);
       setSelectedFilters({
         ...selectedFilters,
         workflow_status: [],
       });
     } else {
-      setInitialWorkflowStatus(values);
       setWorkflowStatus(values);
       setSelectedFilters({
         ...selectedFilters,
@@ -94,7 +87,6 @@ export function MediaFilterDropdown({
 
   const handleResetFilters = () => {
     resetFilters();
-    setInitialWorkflowStatus([]);
   };
 
   // Calculate active filters count from store
