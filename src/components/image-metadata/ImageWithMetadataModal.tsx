@@ -85,7 +85,12 @@ const ImageWithMetadataModal = ({
   });
   const [copied, setCopied] = useState(false);
   const pathname = usePathname();
-  const { selectedBrandId, selectedCampaignId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
+    useBrandStore();
+
+  //use selected campaign id if available else use latest campaign of selected brand that is not custom
+  const campaignId = selectedCampaignId || defaultCampaignId;
+
   const { openConceptVisual } = useConceptVisualStore();
   const {
     setSelectedImageGenerationModelByModelId,
@@ -244,7 +249,7 @@ const ImageWithMetadataModal = ({
         // Call remix service
         await remixImageService(
           selectedBrandId!,
-          selectedCampaignId,
+          campaignId,
           remixParams,
           maskImageUrl,
           productReferenceImages,
@@ -263,7 +268,7 @@ const ImageWithMetadataModal = ({
           product_reference_images:
             data.parameters.product_reference_images || undefined,
 
-          campaign_id: selectedCampaignId,
+          campaign_id: campaignId,
         });
       }
 
@@ -423,7 +428,7 @@ const ImageWithMetadataModal = ({
           prompt: "",
           source_asset_id: currentDisplayItem.id,
         },
-        selectedCampaignId
+        campaignId
       );
 
       onClose();
@@ -579,7 +584,7 @@ const ImageWithMetadataModal = ({
         prompt: data?.parameters?.prompt,
         model: defaultAnimationModel.model,
         source_asset_id: currentDisplayItem.id,
-        campaign_id: selectedCampaignId,
+        campaign_id: campaignId,
         preset: preset,
       });
 
