@@ -9,6 +9,7 @@ import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignCount = useRef<number>(0);
+  const previousGenerationStatus = useRef<Record<string, string>>({});
   const { setGenerations } = useVideoGenStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
@@ -54,6 +55,27 @@ export function useBrandUpdates() {
         parsed.a2i_image_information.generations.length > 0
       ) {
         setGenerations(parsed.a2i_image_information.generations);
+
+        // Check if any generation just completed
+        const hasNewlyCompletedGenerations =
+          parsed.a2i_image_information.generations.some((gen) => {
+            const previousStatus = previousGenerationStatus.current[gen.id];
+            const isNewlyCompleted =
+              previousStatus !== "completed" && gen.status === "completed";
+
+            // Update the stored status
+            previousGenerationStatus.current[gen.id] = gen.status;
+
+            return isNewlyCompleted;
+          });
+
+        if (hasNewlyCompletedGenerations) {
+          queryClient.invalidateQueries({
+            queryKey: ["gallery-items"],
+            exact: false,
+            refetchType: "all",
+          });
+        }
       }
     });
 

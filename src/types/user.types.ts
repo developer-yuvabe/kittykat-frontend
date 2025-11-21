@@ -73,6 +73,7 @@ export type UserBrand = {
     title: string;
     is_archived?: boolean;
     position?: number;
+    is_custom?: boolean;
   }[];
   created_by: {
     id: string;

@@ -4,6 +4,7 @@ export type BaseParam = {
   category: "initial" | "advanced";
   defaultValue?: any;
   required: boolean;
+  tooltip?: string;
 };
 
 export type StringParam = BaseParam & {
@@ -61,11 +62,20 @@ export type FirstFrameParam = BaseParam & {
 export type LastFrameParam = BaseParam & {
   type: "last_frame";
 };
+export type AspectRatioParam = BaseParam & {
+  type: "aspect_ratio";
+  options: {
+    optionValue: string;
+    optionLabel: string;
+    optionHint?: string;
+  }[];
+};
 
 export type ModelParameter =
   | StringParam
   | SliderParam
   | EnumParam
+  | AspectRatioParam
   | FileParam
   | BooleanParam
   | ImagesCountParam

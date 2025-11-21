@@ -27,7 +27,7 @@ function Textarea({
         <textarea
           id={id}
           className={cn(
-            "text-foreground placeholder:text-muted-foreground/70 flex min-h-14 w-full px-3 pb-2 text-sm focus-visible:outline-none",
+            "text-foreground placeholder:text-muted-foreground/70 flex min-h-4 w-full px-3 pb-2 text-sm focus-visible:outline-none",
             className
           )}
           {...props}

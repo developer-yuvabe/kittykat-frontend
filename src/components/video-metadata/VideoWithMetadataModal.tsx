@@ -1,6 +1,6 @@
 // components/video-metadata/VideoWithMetadataModal.tsx
 import { GalleryItemResponse } from "@/types/gallery.types";
-import React, { useState ,useMemo} from "react";
+import React, { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -65,7 +65,11 @@ const VideoWithMetadataModal = ({
     varyAuto: false,
   });
   const [copied, setCopied] = useState(false);
-  const { selectedBrandId, selectedCampaignId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
+    useBrandStore();
+
+  const campaignId = selectedCampaignId || defaultCampaignId;
+
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
   const { openConceptVisual } = useConceptVisualStore();
   const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
@@ -99,12 +103,12 @@ const VideoWithMetadataModal = ({
   const referenceImages = useMemo(() => {
     const params = data?.parameters;
     if (!params) return [];
-    
+
     const model = models.find((m) => m.model === params.model);
     if (!model) return [];
-    
+
     const images: string[] = [];
-    
+
     // Maintain the order of parameters as defined in the model
     model.parameters.forEach((paramDef) => {
       if (isFrameParam(paramDef)) {
@@ -112,9 +116,9 @@ const VideoWithMetadataModal = ({
         if (value) {
           images.push(value);
         }
-      } 
+      }
     });
-    
+
     return images;
   }, [data?.parameters, models]);
 
@@ -145,7 +149,7 @@ const VideoWithMetadataModal = ({
           paramsResponsibleForVaryingNumberOfOutputs.map((p) => [p.id, 1])
         ),
         source_asset_id: galleryItem.id,
-        campaign_id: selectedCampaignId,
+        campaign_id: campaignId,
       });
 
       onClose();

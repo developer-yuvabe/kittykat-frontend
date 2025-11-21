@@ -276,9 +276,21 @@ const A2iImageCard = ({
 
           // Set the remix model
           setSelectedRemixModel(model);
+          //  Convert all remix parameters based on model definitions
+          const convertedRemixParams = { ...parameters };
+
+          model.parameters?.forEach((paramDef) => {
+            const id = paramDef.id;
+            if (convertedRemixParams[id] !== undefined) {
+              convertedRemixParams[id] = convertParameterValue(
+                convertedRemixParams[id],
+                paramDef
+              );
+            }
+          });
 
           // Store full parameters for remix
-          setParameters("remixParameters", parameters);
+          setParameters("remixParameters", convertedRemixParams);
 
           // Close modal if any (same behavior)
           if (showImageModal) setShowImageModal(false);
@@ -583,7 +595,7 @@ const A2iImageCard = ({
           )}
 
           {/*Always show copy prompt button when prompt exists */}
-          {parameters.prompt && (
+          {parameters.prompt && status === "completed" && (
             <TooltipButton
               tooltip={copied ? "Copied!" : "Copy Prompt"}
               onClick={(e) => {
@@ -604,18 +616,23 @@ const A2iImageCard = ({
             />
           )}
           {/*  Re-Use Icon */}
-          {parameters && (
-            <TooltipButton
-              tooltip="Re-use"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleReUse();
-              }}
-              icon={
-                <RotateCcw className="h-OVERLAY_CONTROL_SIZE w-OVERLAY_CONTROL_SIZE" />
-              }
-            />
-          )}
+          {parameters &&
+            !upscaleParameters &&
+            !vtonParameters &&
+            status === "completed" && ( // hide when still generating
+              <TooltipButton
+                tooltip="Re-use"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReUse();
+                }}
+                icon={
+                  <RotateCcw
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
+                }
+              />
+            )}
         </div>
 
         {/* Download and Favorite Buttons - Bottom Right */}

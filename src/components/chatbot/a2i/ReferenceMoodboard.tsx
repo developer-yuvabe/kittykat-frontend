@@ -106,6 +106,8 @@ const ReferenceMoodboard = ({
       setN(prompts.length);
     }
 
+    if (isSwitchingReferenceMoodboard) return;
+
     if (isGeneratingPrompts) {
       setIsGeneratingPrompts(false);
     }
@@ -251,6 +253,7 @@ const ReferenceMoodboard = ({
                 moodboardInformation={moodboardInformation}
                 isSwitching={isSwitchingReferenceMoodboard}
                 onMoodboardChange={handleMoodboardSelectionChange}
+                isAdvancedMode={isAdvanceMode}
               />
 
               <ReferenceMoodboardGallery

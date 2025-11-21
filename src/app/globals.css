@@ -225,3 +225,15 @@
   margin-bottom: 1rem;
   border-radius: 0.5rem;
 }
+
+@keyframes loader {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+.animate-loader {
+  animation: loader 1s linear infinite;
+}

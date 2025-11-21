@@ -11,6 +11,7 @@ import { DownloadIcon } from "../ui/custom-icon";
 import { CheckIcon, CopyIcon, HeartIcon } from "lucide-react";
 import {
   cn,
+  convertParameterValue,
   getDimensionAndAspectRatioFromParameters,
   PlatformApiError,
   urlToFile,
@@ -85,7 +86,12 @@ const ImageWithMetadataModal = ({
   });
   const [copied, setCopied] = useState(false);
   const pathname = usePathname();
-  const { selectedBrandId, selectedCampaignId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
+    useBrandStore();
+
+  //use selected campaign id if available else use latest campaign of selected brand that is not custom
+  const campaignId = selectedCampaignId || defaultCampaignId;
+
   const { openConceptVisual } = useConceptVisualStore();
   const {
     setSelectedImageGenerationModelByModelId,
@@ -244,7 +250,7 @@ const ImageWithMetadataModal = ({
         // Call remix service
         await remixImageService(
           selectedBrandId!,
-          selectedCampaignId,
+          campaignId,
           remixParams,
           maskImageUrl,
           productReferenceImages,
@@ -263,7 +269,7 @@ const ImageWithMetadataModal = ({
           product_reference_images:
             data.parameters.product_reference_images || undefined,
 
-          campaign_id: selectedCampaignId,
+          campaign_id: campaignId,
         });
       }
 
@@ -309,8 +315,21 @@ const ImageWithMetadataModal = ({
         // Set the remix model
         setSelectedRemixModel(model);
 
-        // Store full parameters for remix tab
-        setParameters("remixParameters", data.parameters);
+        // Convert all remix parameters based on model schema
+        const convertedRemixParams = { ...data.parameters };
+
+        model.parameters.forEach((paramDef) => {
+          const id = paramDef.id;
+          if (convertedRemixParams[id] !== undefined) {
+            convertedRemixParams[id] = convertParameterValue(
+              convertedRemixParams[id],
+              paramDef
+            );
+          }
+        });
+
+        // Store schema-correct params
+        setParameters("remixParameters", convertedRemixParams);
 
         onClose();
         // asset object with base_image URL
@@ -423,7 +442,7 @@ const ImageWithMetadataModal = ({
           prompt: "",
           source_asset_id: currentDisplayItem.id,
         },
-        selectedCampaignId
+        campaignId
       );
 
       onClose();
@@ -579,7 +598,7 @@ const ImageWithMetadataModal = ({
         prompt: data?.parameters?.prompt,
         model: defaultAnimationModel.model,
         source_asset_id: currentDisplayItem.id,
-        campaign_id: selectedCampaignId,
+        campaign_id: campaignId,
         preset: preset,
       });
 
