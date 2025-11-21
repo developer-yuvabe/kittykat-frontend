@@ -16,7 +16,6 @@ import React, {
 import ReferenceMoodboard from "./ReferenceMoodboard";
 import ReferenceImageSelector from "./ReferenceImageSelector";
 import { A2iAdvancedPromptPresetSelector } from "./A2iAdvancedPromptPresetSelector";
-import { A2iAdvancedPromptReferenceZones } from "./A2iAdvancedPromptReferenceZones";
 import { A2iAdvancedPromptActions } from "./A2iAdvancedPromptActions";
 import { A2iAdvancedPromptResults } from "./A2iAdvancedPromptResults";
 import { toast } from "sonner";
@@ -38,7 +37,7 @@ import {
   getDefaultFormValues,
   validatePromptGeneration,
 } from "@/lib/preset.utils";
-import { useResizeObserver } from "@/hooks/useResizeObserver";
+import { ReferenceZone } from "./ReferenceZone";
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -473,34 +472,12 @@ function A2iAdvancedPromptGenerator({
     }
   }, [isGenerating]);
 
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [initialWidth, setInitialWidth] = useState<number | null>(null);
-  const { width } = useResizeObserver({
-    ref: containerRef as React.RefObject<any>,
-  });
-
-  // Store initial width on mount
-  useEffect(() => {
-    if (width && initialWidth === null) {
-      setInitialWidth(width);
-    }
-  }, [width, initialWidth]);
-
-  // Determine if negative prompt should be moved based on width decrease
-  const shouldMoveNegativePrompt =
-    initialWidth !== null && width !== undefined && width < initialWidth;
-
   return (
-    <div className="flex flex-col gap-6 w-full" ref={containerRef}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Campaign Prompt Generator</h1>
-      </div>
-
+    <div className="flex flex-col gap-4 w-full">
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[60%_40%] gap-4 w-full">
         {/* Left Column - Moodboard */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 min-w-0 h-full">
           <ReferenceMoodboard
             referenceMoodboardId={referenceMoodboardId}
             referenceMoodboardAssets={referenceMoodboardAssets}
@@ -514,7 +491,8 @@ function A2iAdvancedPromptGenerator({
         </div>
 
         {/* Right Column - Reference Zones & Negative Prompt */}
-        <div className="flex flex-col gap-y-4 mt-1">
+        {/* Use start alignment so the negative prompt flows right after reference zones */}
+        <div className="flex flex-col gap-4 justify-between min-w-0 h-full min-h-0">
           {/* Reference Image Selector Inline */}
           <ReferenceImageSelector
             variant="popover"
@@ -528,67 +506,61 @@ function A2iAdvancedPromptGenerator({
             }
             activeTab={referencePopoverTab}
             onTabChange={setReferencePopoverTab}
-            maxLimit={20}
+            maxLimit={10}
             fileTypes={["image/jpeg", "image/png", "image/webp"]}
             maxFileSizeLimit={10}
             maxTotalSizeMB={50}
             currentCampaignId={currentCampaign?.id || null}
             isOpen={isReferencePopoverOpen}
             onOpenChange={setIsReferencePopoverOpen}
+            showPopoverTrigger={false}
           />
-          <A2iAdvancedPromptReferenceZones
-            productReference={watchedProductReference}
-            contextReference={watchedContextReference}
-            onProductReferenceClick={() =>
-              handleToggleReferenceSelector("product")
-            }
-            onContextReferenceClick={() =>
-              handleToggleReferenceSelector("master")
-            }
-            onDragStart={handleDragStart}
-            onDrop={handleDropZone}
-            onRemoveImage={handleRemoveImage}
+          <ReferenceZone
+            type="product"
+            title="Product Reference"
+            description="Use a product image (Drag or Click to add)"
+            images={watchedProductReference}
+            onClick={() => handleToggleReferenceSelector("product")}
+            isSelected={false}
+            onDragStart={(e, url) => handleDragStart(e, url, "product")}
+            onDrop={(e) => handleDropZone(e, "product")}
+            onRemoveImage={(url) => handleRemoveImage("product", url)}
+            variant="carousel"
           />
 
-          {/* Negative Prompt Only - Show here if NOT moved */}
-          {!shouldMoveNegativePrompt && (
-            <div>
-              <Textarea
-                id="advanced-negative-prompt"
-                title="Negative Prompt Controls"
-                placeholder="More than 2 feet, smoke, warping, distortion..."
-                className="h-[85px] w-full resize-none"
-                variant="inset-label"
-                label="Negative Prompt Controls"
-                value={watchedNegativePrompt}
-                onChange={(e) =>
-                  handleFieldChange("negativePrompt", e.target.value)
-                }
-                disabled={false}
-              />
-            </div>
-          )}
+          {/* Master Reference Zone */}
+          <ReferenceZone
+            type="master"
+            title="Master Reference"
+            description="Use a master image (Drag or Click to add)"
+            images={watchedContextReference}
+            onClick={() => handleToggleReferenceSelector("master")}
+            isSelected={false}
+            onDragStart={(e, url) => handleDragStart(e, url, "master")}
+            onDrop={(e) => handleDropZone(e, "master")}
+            onRemoveImage={(url) => handleRemoveImage("master", url)}
+            variant="carousel"
+          />
+
+          {/* Negative Prompt */}
+          {/* Keep the negative prompt immediately below the references */}
+          <div className="shrink-0">
+            <Textarea
+              id="advanced-negative-prompt"
+              title="Negative Prompt Controls"
+              placeholder="List elements to exclude from the generated images…"
+              className="min-h-[115px] 2xl:min-h-[125px] w-full resize-none p-4"
+              variant="inset-label"
+              label="Negative Prompt Controls"
+              value={watchedNegativePrompt}
+              onChange={(e) =>
+                handleFieldChange("negativePrompt", e.target.value)
+              }
+              disabled={false}
+            />
+          </div>
         </div>
       </div>
-
-      {/* Negative Prompt - Show above main prompt if moved */}
-      {shouldMoveNegativePrompt && (
-        <div className="w-full">
-          <Textarea
-            id="advanced-negative-prompt"
-            title="Negative Prompt Controls"
-            placeholder="More than 2 feet, smoke, warping, distortion..."
-            className="h-16 w-full resize-none"
-            variant="inset-label"
-            label="Negative Prompt Controls"
-            value={watchedNegativePrompt}
-            onChange={(e) =>
-              handleFieldChange("negativePrompt", e.target.value)
-            }
-            disabled={false}
-          />
-        </div>
-      )}
 
       {/* Positive Prompt - Full Width Below Grid */}
       <div className="w-full relative">
@@ -596,7 +568,7 @@ function A2iAdvancedPromptGenerator({
           id="advanced-prompt"
           title="Positive Prompt Controls"
           placeholder="Describe what you want to see in the generated images..."
-          className="h-[100px] w-full resize-none mb-[50px]"
+          className="h-[120px] w-full resize-none mb-[50px] p-4"
           variant="inset-label"
           label="Positive Prompt Controls"
           value={watchedPromptValue}

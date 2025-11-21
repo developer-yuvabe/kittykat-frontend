@@ -253,6 +253,7 @@ const ReferenceMoodboard = ({
                 moodboardInformation={moodboardInformation}
                 isSwitching={isSwitchingReferenceMoodboard}
                 onMoodboardChange={handleMoodboardSelectionChange}
+                isAdvancedMode={isAdvanceMode}
               />
 
               <ReferenceMoodboardGallery
