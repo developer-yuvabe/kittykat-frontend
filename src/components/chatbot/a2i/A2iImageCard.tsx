@@ -595,7 +595,7 @@ const A2iImageCard = ({
           )}
 
           {/*Always show copy prompt button when prompt exists */}
-          {parameters.prompt && status === "completed" && (
+          {parameters.prompt && status !== "processing" && (
             <TooltipButton
               tooltip={copied ? "Copied!" : "Copy Prompt"}
               onClick={(e) => {
@@ -619,7 +619,7 @@ const A2iImageCard = ({
           {parameters &&
             !upscaleParameters &&
             !vtonParameters &&
-            status === "completed" && ( // hide when still generating
+            status !== "processing" && ( // hide when still generating
               <TooltipButton
                 tooltip="Re-use"
                 onClick={(e) => {
