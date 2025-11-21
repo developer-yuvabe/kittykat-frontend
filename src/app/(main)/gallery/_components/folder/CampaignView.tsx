@@ -36,10 +36,6 @@ interface CampaignViewProps {
   setSelectedFilters: React.Dispatch<
     React.SetStateAction<EnhancedSelectedFilters>
   >;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: any
-  ) => Promise<URLSearchParams>;
   galleryView: "grid" | "folder";
   setGalleryView: (view: "grid" | "folder") => void;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
@@ -62,7 +58,6 @@ export function CampaignView({
   handleSearchChange,
   showFilters,
   setSelectedFilters,
-  setInitialWorkflowStatus,
   galleryView,
   setGalleryView, // Default to not showing header (when used with sidebar)
   setActiveTab,
@@ -281,7 +276,6 @@ export function CampaignView({
             <MediaFilterDropdown
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
-              setInitialWorkflowStatus={setInitialWorkflowStatus}
             />
 
             <MediaViewsDropdown

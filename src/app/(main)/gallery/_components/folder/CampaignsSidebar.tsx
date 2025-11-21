@@ -49,10 +49,6 @@ interface CampaignsSidebarProps {
   setSelectedFilters: React.Dispatch<
     React.SetStateAction<EnhancedSelectedFilters>
   >;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: any
-  ) => Promise<URLSearchParams>;
   hasNoBrands: boolean;
   galleryView: "grid" | "folder";
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
@@ -68,7 +64,6 @@ export function CampaignsSidebar({
   setInitialBrandId,
   setSelectedCampaignInUrl,
   setSelectedFilters,
-  setInitialWorkflowStatus,
   hasNoBrands,
   galleryView,
   setSelectedItems,
@@ -659,7 +654,6 @@ export function CampaignsSidebar({
                 brandId: [brandId],
                 campaigns: campaignId ? [campaignId] : [],
               }));
-              setInitialWorkflowStatus(null);
               setInitialBrandId(null);
               setSelectedCampaignInUrl(null);
             }}

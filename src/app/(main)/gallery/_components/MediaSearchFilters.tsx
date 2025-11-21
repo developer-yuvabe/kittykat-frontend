@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
-import { Options } from "nuqs";
 
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
@@ -19,10 +18,6 @@ interface MediaSearchFiltersProps {
   showFilters: boolean;
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: Options
-  ) => Promise<URLSearchParams>;
   isMediaSelectDialog?: boolean; // Add this prop
 }
 
