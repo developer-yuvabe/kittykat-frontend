@@ -25,6 +25,7 @@ const tabs: Tab[] = [
   { value: "showboard-media", label: "Concept Visuals" },
   { value: "a2i-media", label: "A2i Media" },
   { value: "products", label: "Products" },
+  { value: "pexels", label: "Pexels" },
 ];
 
 export function FolderTabs({
@@ -65,6 +66,11 @@ export function FolderTabs({
       return;
     }
 
+    if (targetTab === "pexels") {
+      toast.error("Items cannot be moved into 'Pexels' Tab.");
+      return;
+    }
+
     try {
       toast.loading("Moving items...", { id: "move-items" });
 
@@ -97,7 +103,7 @@ export function FolderTabs({
 
   return (
     <div className="w-full border-b bg-[#F9FAFB]">
-      <div className="grid grid-cols-6 w-full">
+      <div className="grid grid-cols-7 w-full">
         {tabs.map((tab) => (
           <button
             key={tab.value}

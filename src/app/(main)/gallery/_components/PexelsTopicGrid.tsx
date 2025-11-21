@@ -29,7 +29,7 @@ interface TopicsGridProps {
   selectedCampaignId?: string;
   selecteMoodboardId?: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
-  currentSelectionCount: number;
+  currentSelectionCount?: number;
   onMultipleMediaItemsSelected?: (items: GalleryItemResponse[]) => void;
   isMultiSelect?: boolean;
   isMediaSelectDialog?: boolean;
@@ -118,6 +118,10 @@ export default function TopicsGrid({
       fetchNextPage();
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    setSearch("");
+  }, [selectedBrandId, selectedCampaignId]);
 
   const toggleSelect = (url: string) => {
     setSelected((prev) =>
@@ -279,7 +283,7 @@ export default function TopicsGrid({
   };
 
   return (
-    <div className="p-4 relative">
+    <div className="px-4 relative">
       {/* 🔍 Search Bar (shadcn input + clear button) */}
       <div className="mb-4">
         <div className="relative w-full">

@@ -9,9 +9,9 @@ function MediaLibraryTabs({ isSticky }: MediaLibraryTabsProps) {
     { value: "all-media", label: "All Media" },
     { value: "brand-uploads", label: "Brand Uploads" },
     { value: "moodboard", label: "Moodboards" },
-
     { value: "showboard-media", label: "Concept Visuals" },
     { value: "a2i-media", label: "A2i Media" },
+    { value: "products", label: "Products" },
     { value: "pexels", label: "Pexels" },
   ];
 

@@ -7,7 +7,7 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { Loader2, Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import type {
@@ -35,7 +35,6 @@ import { galleryService } from "@/services/api/gallery.service";
 
 import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
-import { Input } from "@/components/ui/input";
 import MediaViewsDropdown from "./MediaViewDropDown";
 
 type MediaLibraryProps = {
@@ -567,6 +566,7 @@ export function MediaLibrary({
                 hasNoBrands={hasNoBrands}
                 handleSearchChange={handleSearchChange}
                 showFilters={showFilters}
+                setActiveTab={setActiveTab}
               />
             </div>
           )}

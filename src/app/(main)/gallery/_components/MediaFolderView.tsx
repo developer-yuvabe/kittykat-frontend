@@ -15,6 +15,7 @@ import MediaViewsDropdown from "./MediaViewDropDown";
 import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import TopicsGrid from "./PexelsTopicGrid";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -53,6 +54,7 @@ interface MediaFolderViewProps {
   hasNoBrands: boolean;
   handleSearchChange: (query: string) => void;
   showFilters?: boolean;
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export function MediaFolderView({
@@ -73,6 +75,7 @@ export function MediaFolderView({
   setInitialWorkflowStatus,
   handleSearchChange,
   showFilters,
+  setActiveTab,
 }: MediaFolderViewProps) {
   const { selectedBrandId, isBrandsFetched } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
@@ -162,6 +165,7 @@ export function MediaFolderView({
               setInitialWorkflowStatus={setInitialWorkflowStatus}
               galleryView={galleryView}
               setGalleryView={setGalleryView}
+              setActiveTab={setActiveTab}
               // galleryActions={galleryActions}
             />
           </div>
@@ -229,34 +233,44 @@ export function MediaFolderView({
               setSelectedItems={setSelectedItems}
             />
           </div>
-          <div className="overflow-y-auto">
-            <div className="px-4 flex-shrink-0">
-              <FolderUploadDropzone
-                activeTab={activeTab}
-                onUploadComplete={onUploadComplete}
-                addToGallery={addToGallery}
+
+          {activeTab === "pexels" ? (
+            <div className="overflow-y-auto">
+              <TopicsGrid
                 selectedBrandId={selectedBrandId}
-                selectedCampaignId={undefined}
-                selectedMoodboardId={selecteMoodboardId}
+                setActiveTab={setActiveTab}
               />
             </div>
+          ) : (
+            <div className="overflow-y-auto">
+              <div className="px-4 flex-shrink-0">
+                <FolderUploadDropzone
+                  activeTab={activeTab}
+                  onUploadComplete={onUploadComplete}
+                  addToGallery={addToGallery}
+                  selectedBrandId={selectedBrandId}
+                  selectedCampaignId={undefined}
+                  selectedMoodboardId={selecteMoodboardId}
+                />
+              </div>
 
-            {/* <MediaSearchFilters {...filterProps} /> */}
+              {/* <MediaSearchFilters {...filterProps} /> */}
 
-            {/* 🎞️ Scrollable Gallery */}
-            <div className="flex-1 px-4 pb-4">
-              <FolderGalleryView
-                selectedBrandId={selectedBrandId}
-                selectedCampaignId={undefined}
-                searchQuery={searchQuery}
-                favorites={favorites}
-                selectedFilters={selectedFilters}
-                activeTab={activeTab}
-                setSelectedItems={setSelectedItems}
-                selectedItems={selectedItems}
-              />
+              {/* 🎞️ Scrollable Gallery */}
+              <div className="flex-1 px-4 pb-4">
+                <FolderGalleryView
+                  selectedBrandId={selectedBrandId}
+                  selectedCampaignId={undefined}
+                  searchQuery={searchQuery}
+                  favorites={favorites}
+                  selectedFilters={selectedFilters}
+                  activeTab={activeTab}
+                  setSelectedItems={setSelectedItems}
+                  selectedItems={selectedItems}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
