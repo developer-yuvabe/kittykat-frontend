@@ -132,11 +132,16 @@ export function usePresets({
       presetId: string;
       payload: PresetPatchRequest;
     }) => patchPreset(presetId, payload),
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       // Refetch queries to ensure fresh data before navigation
       await queryClient.refetchQueries({
         queryKey: ["presets"],
         exact: false,
+      });
+
+      //invalidate single preset cache
+      queryClient.invalidateQueries({
+        queryKey: getPresetQueryKey(variables.presetId),
       });
     },
   });
