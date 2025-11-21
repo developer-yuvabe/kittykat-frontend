@@ -16,7 +16,6 @@ import React, {
 import ReferenceMoodboard from "./ReferenceMoodboard";
 import ReferenceImageSelector from "./ReferenceImageSelector";
 import { A2iAdvancedPromptPresetSelector } from "./A2iAdvancedPromptPresetSelector";
-import { A2iAdvancedPromptReferenceZones } from "./A2iAdvancedPromptReferenceZones";
 import { A2iAdvancedPromptActions } from "./A2iAdvancedPromptActions";
 import { A2iAdvancedPromptResults } from "./A2iAdvancedPromptResults";
 import { toast } from "sonner";
@@ -38,6 +37,7 @@ import {
   getDefaultFormValues,
   validatePromptGeneration,
 } from "@/lib/preset.utils";
+import { ReferenceZone } from "./ReferenceZone";
 
 type A2iAdvancedPromptGeneratorProps = {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
@@ -473,11 +473,11 @@ function A2iAdvancedPromptGenerator({
   }, [isGenerating]);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-4 w-full">
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-1 2xl:gap-1 w-full">
+      <div className="grid grid-cols-1 xl:grid-cols-[60%_40%] gap-4 w-full">
         {/* Left Column - Moodboard */}
-        <div className="flex flex-col gap-6 min-w-0">
+        <div className="flex flex-col gap-4 min-w-0 h-full">
           <ReferenceMoodboard
             referenceMoodboardId={referenceMoodboardId}
             referenceMoodboardAssets={referenceMoodboardAssets}
@@ -491,7 +491,8 @@ function A2iAdvancedPromptGenerator({
         </div>
 
         {/* Right Column - Reference Zones & Negative Prompt */}
-        <div className="flex flex-col gap-y-6 mt-2 min-w-0">
+        {/* Use start alignment so the negative prompt flows right after reference zones */}
+        <div className="flex flex-col gap-4 justify-between min-w-0 h-full min-h-0">
           {/* Reference Image Selector Inline */}
           <ReferenceImageSelector
             variant="popover"
@@ -514,27 +515,41 @@ function A2iAdvancedPromptGenerator({
             onOpenChange={setIsReferencePopoverOpen}
             showPopoverTrigger={false}
           />
-          <A2iAdvancedPromptReferenceZones
-            productReference={watchedProductReference}
-            contextReference={watchedContextReference}
-            onProductReferenceClick={() =>
-              handleToggleReferenceSelector("product")
-            }
-            onContextReferenceClick={() =>
-              handleToggleReferenceSelector("master")
-            }
-            onDragStart={handleDragStart}
-            onDrop={handleDropZone}
-            onRemoveImage={handleRemoveImage}
+          <ReferenceZone
+            type="product"
+            title="Product Reference"
+            description="Use a product image (Drag or Click to add)"
+            images={watchedProductReference}
+            onClick={() => handleToggleReferenceSelector("product")}
+            isSelected={false}
+            onDragStart={(e, url) => handleDragStart(e, url, "product")}
+            onDrop={(e) => handleDropZone(e, "product")}
+            onRemoveImage={(url) => handleRemoveImage("product", url)}
+            variant="carousel"
+          />
+
+          {/* Master Reference Zone */}
+          <ReferenceZone
+            type="master"
+            title="Master Reference"
+            description="Use a master image (Drag or Click to add)"
+            images={watchedContextReference}
+            onClick={() => handleToggleReferenceSelector("master")}
+            isSelected={false}
+            onDragStart={(e, url) => handleDragStart(e, url, "master")}
+            onDrop={(e) => handleDropZone(e, "master")}
+            onRemoveImage={(url) => handleRemoveImage("master", url)}
+            variant="carousel"
           />
 
           {/* Negative Prompt */}
-          <div>
+          {/* Keep the negative prompt immediately below the references */}
+          <div className="shrink-0">
             <Textarea
               id="advanced-negative-prompt"
               title="Negative Prompt Controls"
               placeholder="List elements to exclude from the generated images…"
-              className="min-h-[110px] w-full resize-none p-4"
+              className="min-h-[115px] 2xl:min-h-[125px] w-full resize-none p-4"
               variant="inset-label"
               label="Negative Prompt Controls"
               value={watchedNegativePrompt}
