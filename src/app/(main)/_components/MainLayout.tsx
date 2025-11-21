@@ -60,7 +60,7 @@ const MainLayout = ({
     });
   }, [userProfile]);
 
-  if (!userProfile || !firebaseUser || true) {
+  if (!userProfile || !firebaseUser) {
     return <Splash />;
   }
 
