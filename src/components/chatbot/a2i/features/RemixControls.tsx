@@ -162,6 +162,14 @@ const RemixControls = ({
   }, [image]);
 
   useEffect(() => {
+    if (isConceptVisualOpened) {
+      form.setValue("prompt", "", { shouldValidate: true });
+      setMasterReference([]);
+      setProductReference([]);
+    }
+  }, [isConceptVisualOpened, form]);
+
+  useEffect(() => {
     const p = parameters.remixParameters;
     if (!p) return;
 
