@@ -15,6 +15,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { Input } from "@/components/ui/input";
 import { MediaFilterDropdown } from "../MediaFilterDropdown";
 import MediaViewsDropdown from "../MediaViewDropDown";
+import TopicsGrid from "../PexelsTopicGrid";
 
 interface CampaignViewProps {
   selectedBrandId: string;
@@ -35,12 +36,9 @@ interface CampaignViewProps {
   setSelectedFilters: React.Dispatch<
     React.SetStateAction<EnhancedSelectedFilters>
   >;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: any
-  ) => Promise<URLSearchParams>;
   galleryView: "grid" | "folder";
   setGalleryView: (view: "grid" | "folder") => void;
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export function CampaignView({
@@ -60,9 +58,9 @@ export function CampaignView({
   handleSearchChange,
   showFilters,
   setSelectedFilters,
-  setInitialWorkflowStatus,
   galleryView,
   setGalleryView, // Default to not showing header (when used with sidebar)
+  setActiveTab,
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -278,7 +276,6 @@ export function CampaignView({
             <MediaFilterDropdown
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
-              setInitialWorkflowStatus={setInitialWorkflowStatus}
             />
 
             <MediaViewsDropdown
@@ -293,7 +290,7 @@ export function CampaignView({
       {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
 
       {!showHeader && (
-        <div className="px-4 pb-6">
+        <div className="px-4 pb-4">
           <FolderTabs
             activeTab={activeTab}
             onTabChange={onTabChange}
@@ -304,81 +301,90 @@ export function CampaignView({
         </div>
       )}
 
-      {/* Upload Dropzone for Campaign - Only show if showHeader is false (sidebar mode) */}
-      <div className="overflow-y-auto">
-        {!showHeader && (
-          <div className="px-4">
-            <FolderUploadDropzone
-              activeTab={activeTab}
-              onUploadComplete={onUploadComplete}
-              addToGallery={addToGallery}
-              galleryFilters={{
-                selectedFilters: {
-                  brands: [selectedBrandId],
-                  campaigns: [campaignId],
-                  moodboards: [],
-                  product_categories: [],
-                  asset_types: [],
-                  asset_sources: [],
-                  media_format: [],
-                  aspect_ratio: [],
-                  workflow_status: [],
-                },
-              }}
-              selectedBrandId={selectedBrandId}
-              selectedCampaignId={campaignId}
-              selectedMoodboardId={selectedMoodboardId}
-            />
-          </div>
-        )}
-
-        {/* <MediaSearchFilters {...filterProps} /> */}
-
-        {/* Folder Tabs for campaign view - Only show if showHeader is false */}
-
-        {/* Gallery Status Display */}
-        <MediaGalleryStatusDisplay
-          galleryStatus={galleryActions.galleryStatus}
-          galleryItemsLength={galleryActions.getGalleryItems().length}
-        />
-
-        {/* Gallery Items with minimum height to prevent layout shift */}
-        <div className="flex-1 px-4 pb-4">
-          {galleryActions.galleryStatus === "success" &&
-            galleryActions.getGalleryItems().length > 0 && (
-              <div>
-                <SortableMediaGrid
-                  selectedItems={selectedItems}
-                  onSelect={handleSelect}
-                  galleryActions={galleryActions}
-                  isMediaSelectDialog={false} // This is not a dialog
-                  enableDragToMove={true}
-                  activeTab={activeTab}
-                />
-                {/* Infinite scroll loading indicator */}
-                {galleryActions.hasNextPage && (
-                  <div
-                    ref={ref}
-                    className="flex justify-center items-center py-8"
-                  >
-                    {galleryActions.isFetchingNextPage ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                    ) : (
-                      <p className="text-sm text-gray-500">Load more</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-          {/* Loading state - maintains space */}
-          {galleryActions.galleryStatus === "pending" && (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      {activeTab === "pexels" ? (
+        <div className="overflow-y-auto">
+          <TopicsGrid
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={selectedCampaignId ?? undefined}
+            setActiveTab={setActiveTab}
+          />
+        </div>
+      ) : (
+        <div className="overflow-y-auto">
+          {!showHeader && (
+            <div className="px-4">
+              <FolderUploadDropzone
+                activeTab={activeTab}
+                onUploadComplete={onUploadComplete}
+                addToGallery={addToGallery}
+                galleryFilters={{
+                  selectedFilters: {
+                    brands: [selectedBrandId],
+                    campaigns: [campaignId],
+                    moodboards: [],
+                    product_categories: [],
+                    asset_types: [],
+                    asset_sources: [],
+                    media_format: [],
+                    aspect_ratio: [],
+                    workflow_status: [],
+                  },
+                }}
+                selectedBrandId={selectedBrandId}
+                selectedCampaignId={campaignId}
+                selectedMoodboardId={selectedMoodboardId}
+              />
             </div>
           )}
+
+          {/* <MediaSearchFilters {...filterProps} /> */}
+
+          {/* Folder Tabs for campaign view - Only show if showHeader is false */}
+
+          {/* Gallery Status Display */}
+          <MediaGalleryStatusDisplay
+            galleryStatus={galleryActions.galleryStatus}
+            galleryItemsLength={galleryActions.getGalleryItems().length}
+          />
+
+          {/* Gallery Items with minimum height to prevent layout shift */}
+          <div className="flex-1 px-4 pb-4">
+            {galleryActions.galleryStatus === "success" &&
+              galleryActions.getGalleryItems().length > 0 && (
+                <div>
+                  <SortableMediaGrid
+                    selectedItems={selectedItems}
+                    onSelect={handleSelect}
+                    galleryActions={galleryActions}
+                    isMediaSelectDialog={false} // This is not a dialog
+                    enableDragToMove={true}
+                    activeTab={activeTab}
+                  />
+                  {/* Infinite scroll loading indicator */}
+                  {galleryActions.hasNextPage && (
+                    <div
+                      ref={ref}
+                      className="flex justify-center items-center py-8"
+                    >
+                      {galleryActions.isFetchingNextPage ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                      ) : (
+                        <p className="text-sm text-gray-500">Load more</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* Loading state - maintains space */}
+            {galleryActions.galleryStatus === "pending" && (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {selectedItems.length > 0 && (
         <MediaBulkActions

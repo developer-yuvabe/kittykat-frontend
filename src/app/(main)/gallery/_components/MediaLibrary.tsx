@@ -7,7 +7,7 @@ import { MediaSearchFilters } from "./MediaSearchFilters";
 import { SortableMediaGrid } from "./SortableMediaGrid";
 
 import { Button } from "@/components/ui/button";
-import { Loader2, Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import type {
@@ -35,7 +35,6 @@ import { galleryService } from "@/services/api/gallery.service";
 
 import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
-import { Input } from "@/components/ui/input";
 import MediaViewsDropdown from "./MediaViewDropDown";
 
 type MediaLibraryProps = {
@@ -79,14 +78,6 @@ export function MediaLibrary({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
-  const [initialWorkflowStatus, setInitialWorkflowStatus] = useQueryState<
-    string[]
-  >("status", {
-    defaultValue: [],
-    parse: (value) => (value ? value.split(",") : []),
-    serialize: (value) => value.join(","),
-    history: "push",
-  });
 
   // Get filter state from store
   const {
@@ -97,6 +88,7 @@ export function MediaLibrary({
     dateTo,
     orderBy,
     setIsDraggable,
+    workflowStatus,
   } = useGalleryFilterStore();
 
   const {
@@ -188,8 +180,7 @@ export function MediaLibrary({
       setSelectedFilters((prev) => {
         const newFilters = {
           ...prev,
-          workflow_status:
-            initialWorkflowStatus?.map((s) => s.trim()) || prev.workflow_status,
+          workflow_status: workflowStatus,
           brands: [selectedBrandId],
           campaigns: selectedCampaignId ? [selectedCampaignId] : [],
           asset_types: mediaTypes.length > 0 ? mediaTypes : ["image", "video"],
@@ -214,7 +205,7 @@ export function MediaLibrary({
     }
   }, [
     selectedBrandId,
-    initialWorkflowStatus,
+    workflowStatus,
     mediaTypes,
     hasComments,
     orderBy,
@@ -273,9 +264,6 @@ export function MediaLibrary({
     setActiveTab(value);
     setSelectedItems([]);
     setMultiSelectItems([]);
-
-    // Reset filters from notification when switching tabs
-    setInitialWorkflowStatus([]);
 
     // Preserve brand-related filters when switching tabs
     setSelectedFilters((currentFilters) => ({
@@ -468,7 +456,6 @@ export function MediaLibrary({
                     campaigns: campaignId ? [campaignId] : [],
                   }));
 
-                  setInitialWorkflowStatus(null);
                   setInitialBrandId(null);
                   setSelectedCampaignInUrl(null);
                 }}
@@ -480,7 +467,6 @@ export function MediaLibrary({
             <MediaFilterDropdown
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
-              setInitialWorkflowStatus={setInitialWorkflowStatus}
             />
 
             <MediaViewsDropdown
@@ -558,7 +544,6 @@ export function MediaLibrary({
                 onSearchChange={handleSearchChange}
                 selectedFilters={selectedFilters}
                 setSelectedFilters={setSelectedFilters}
-                setInitialWorkflowStatus={setInitialWorkflowStatus}
                 onTabChange={handleTabChange}
                 setInitialBrandId={setInitialBrandId}
                 setSelectedCampaignInUrl={setSelectedCampaignInUrl}
@@ -567,6 +552,7 @@ export function MediaLibrary({
                 hasNoBrands={hasNoBrands}
                 handleSearchChange={handleSearchChange}
                 showFilters={showFilters}
+                setActiveTab={setActiveTab}
               />
             </div>
           )}
@@ -638,7 +624,6 @@ export function MediaLibrary({
                         showFilters={showFilters}
                         selectedFilters={selectedFilters}
                         setSelectedFilters={setSelectedFilters}
-                        setInitialWorkflowStatus={setInitialWorkflowStatus}
                         isMediaSelectDialog={isMediaSelectDialog}
                       />
 
