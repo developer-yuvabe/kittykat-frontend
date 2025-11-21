@@ -119,6 +119,10 @@ export default function TopicsGrid({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  useEffect(() => {
+    setSearch("");
+  }, [selectedBrandId, selectedCampaignId]);
+
   const toggleSelect = (url: string) => {
     setSelected((prev) =>
       prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
