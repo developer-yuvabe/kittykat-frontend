@@ -5,7 +5,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
-import Logo from "@/assets/kittykat-logo.svg";
+import Logo from "@/assets/kittykat-logo.png";
 import Image from "next/image";
 import ThreadDetailsPanel from "./ThreadDetailsPanel";
 import { StickToBottom } from "use-stick-to-bottom";
