@@ -8,7 +8,13 @@ import {
   ThreadDetails,
 } from "@/types/types";
 import { useMutation } from "@tanstack/react-query";
-import React, { useEffect, useState, useCallback, RefObject } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  RefObject,
+  useRef,
+} from "react";
 import { toast } from "sonner";
 import { useA2iStore } from "@/store/a2i.store";
 import { updateA2iRefernceMoodboard } from "@/services/api/a2i.service";
@@ -101,6 +107,8 @@ const ReferenceMoodboard = ({
     },
   });
 
+  const prevPromptsRef = useRef(prompts);
+
   useEffect(() => {
     if (prompts && prompts.length > 0) {
       setN(prompts.length);
@@ -108,7 +116,11 @@ const ReferenceMoodboard = ({
 
     if (isSwitchingReferenceMoodboard) return;
 
-    if (isGeneratingPrompts) {
+    const promptsChanged =
+      JSON.stringify(prompts) !== JSON.stringify(prevPromptsRef.current);
+    prevPromptsRef.current = prompts;
+
+    if (isGeneratingPrompts && promptsChanged) {
       setIsGeneratingPrompts(false);
     }
   }, [prompts]);
