@@ -77,7 +77,7 @@ const VideoGenerationInputControls = ({
   setCurrentItem,
 }: VideoGenerationInputProps) => {
   const { source, isConceptVisualOpened } = useConceptVisualStore();
-  const { selectedCampaignId: campaignId } = useBrandStore();
+  const { selectedCampaignId: campaignId, defaultCampaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );
@@ -148,16 +148,17 @@ const VideoGenerationInputControls = ({
       form.setValue("prompt", "", { shouldValidate: true });
       form.setValue("negative_prompt", "", { shouldValidate: true });
       form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+      form.setValue(firstFrameParam?.id ?? "", null, { shouldValidate: true });
     }
-  }, [isConceptVisualOpened, item]);
+  }, [isConceptVisualOpened, item, form, lastFrameParam, firstFrameParam]);
 
   useEffect(() => {
     const currentNegativePrompt = form.getValues("negative_prompt");
     form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
     if (currentNegativePrompt) {
-      form.setValue("negative_prompt", currentNegativePrompt, { shouldValidate: true });
+      form.setValue(currentNegativePrompt, { shouldValidate: true });
     }
-  }, [selectedVideoGenearationModel]);
+  }, [selectedVideoGenearationModel, form]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -189,7 +190,7 @@ const VideoGenerationInputControls = ({
       }
       const { generation_id } = await videoGenerationService(selectedBrandId!, {
         ...data,
-        campaign_id: campaignId,
+        campaign_id: campaignId || defaultCampaignId,
       });
 
       if (Array.isArray(generation_id)) {
@@ -265,9 +266,6 @@ const VideoGenerationInputControls = ({
                                 form.setValue(firstFrameParam.id, null, {
                                   shouldValidate: true,
                                 });
-                                if (source === "blanket") {
-                                  setCurrentItem(null);
-                                }
                               }}
                             >
                               <X />

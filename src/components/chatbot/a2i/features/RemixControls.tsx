@@ -35,7 +35,7 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import { GalleryItem } from "@/types/gallery.types";
 import { updateUser } from "@/services/api/user.service";
-import { Eraser, Images, Redo, Settings2, Undo } from "lucide-react";
+import { Eraser, Redo, Settings2, Undo } from "lucide-react";
 import { LockIcon, LockOpenIcon, TrashIcon } from "@/components/ui/custom-icon";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -88,7 +88,11 @@ const RemixControls = ({
   const { closeConceptVisual, source, isConceptVisualOpened } =
     useConceptVisualStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
-  const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
+  const {
+    selectedBrandId,
+    selectedCampaignId: campaignId,
+    defaultCampaignId,
+  } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
   const { user, setUser } = useUserStore();
   const [isMagicEnabled, setIsMagicEnabled] = useState(
@@ -548,7 +552,7 @@ const RemixControls = ({
 
       await remixImageService(
         brandId ?? selectedBrandId!,
-        campaignId,
+        campaignId || defaultCampaignId,
         data,
         maskUrl,
         productReference,
@@ -790,7 +794,7 @@ const RemixControls = ({
                   fileTypes={referenceImageParam?.fileTypes || []}
                   maxFileSizeLimit={referenceImageParam?.maxFileSizeLimit || 0}
                   disabled={form.formState.isSubmitting || !referenceImageParam}
-                  currentCampaignId={campaignId}
+                  currentCampaignId={campaignId || defaultCampaignId}
                   isOpen={isReferencePopoverOpen}
                   onOpenChange={setIsReferencePopoverOpen}
                   activeTab={referencePopoverTab}
