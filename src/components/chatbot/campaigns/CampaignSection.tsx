@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { DisplayField } from "../DisplayField";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 export const CampaignSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -62,7 +63,9 @@ export const CampaignSection: React.FC<{
     setIsCampaignCreating,
   } = useBrandStore();
   const { user } = useUserStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const stream = useStreamContext();
 
   const [fadeKey, setFadeKey] = useState(0);
@@ -105,11 +108,14 @@ export const CampaignSection: React.FC<{
             stream,
             text: `Let's create a new campaign!`,
             userId: user.id,
+            chatOnlyMode,
             currentBrandContextId: selectedBrandId,
             currentCampaignId: selectedCampaignId,
             currentMoodboardId: selectedMoodboardId,
             currentSelectedImageGenerationModelId:
               selectedImageGenerationModel?.id ?? null,
+            currentSelectedVideoGenerationModelId:
+              selectedVideoGenearationModel?.id ?? null,
             userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
           });
         }
@@ -155,11 +161,14 @@ export const CampaignSection: React.FC<{
         stream,
         text: msg,
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }

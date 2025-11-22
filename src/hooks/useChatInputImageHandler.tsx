@@ -322,6 +322,12 @@ export function useChatInputImageHandler({
   // Handle paste event
   const handlePaste = useCallback(
     async (e: ClipboardEvent) => {
+      // Don't handle paste if it's inside the concept-visual-playground or reference zones
+      const target = e.target as HTMLElement;
+      const isInsidePlayground = target.closest("#concept-visual-playground");
+      const isInsideReferenceZone = target.closest("#reference-zone");
+      if (isInsidePlayground || isInsideReferenceZone) return;
+
       const items = e.clipboardData?.items;
       if (!items) return;
 

@@ -7,6 +7,7 @@ type ReferenceMoodboardHeaderProps = {
   moodboardInformation: MoodboardInformation[] | undefined;
   isSwitching: boolean;
   onMoodboardChange: (moodboard: MoodboardInformation | null) => void;
+  isAdvancedMode: boolean;
 };
 
 export const ReferenceMoodboardHeader = ({
@@ -14,6 +15,7 @@ export const ReferenceMoodboardHeader = ({
   moodboardInformation,
   isSwitching,
   onMoodboardChange,
+  isAdvancedMode,
 }: ReferenceMoodboardHeaderProps) => {
   return (
     <div className="flex justify-between">
@@ -22,7 +24,9 @@ export const ReferenceMoodboardHeader = ({
           <Skeleton className="h-12 w-full" />
         </div>
       ) : (
-        <p className="font-semibold text-sm text-gray-600 break-words max-w-xs">
+        <p
+          className={`font-semibold text-sm text-gray-600 break-words  max-w-xs`}
+        >
           {selectedMoodboard?.title}
         </p>
       )}
@@ -36,6 +40,7 @@ export const ReferenceMoodboardHeader = ({
           isCreatingNew={false}
           onNewMoodboard={() => {}}
           showAllCampaigns={true}
+          isAdvancedMode={isAdvancedMode}
         />
       )}
     </div>

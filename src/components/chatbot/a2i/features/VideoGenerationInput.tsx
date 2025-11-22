@@ -77,7 +77,7 @@ const VideoGenerationInputControls = ({
   setCurrentItem,
 }: VideoGenerationInputProps) => {
   const { source, isConceptVisualOpened } = useConceptVisualStore();
-  const { selectedCampaignId: campaignId } = useBrandStore();
+  const { selectedCampaignId: campaignId, defaultCampaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );
@@ -144,17 +144,21 @@ const VideoGenerationInputControls = ({
   }, [selectedVideoGenearationModel]);
 
   useEffect(() => {
-    if (isConceptVisualOpened) {
+    if (isConceptVisualOpened && !item) {
       form.setValue("prompt", "", { shouldValidate: true });
       form.setValue("negative_prompt", "", { shouldValidate: true });
       form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
+      form.setValue(firstFrameParam?.id ?? "", null, { shouldValidate: true });
     }
-  }, [isConceptVisualOpened]);
+  }, [isConceptVisualOpened, item, form, lastFrameParam, firstFrameParam]);
 
   useEffect(() => {
-    form.setValue("negative_prompt", "", { shouldValidate: true });
+    const currentNegativePrompt = form.getValues("negative_prompt");
     form.setValue(lastFrameParam?.id ?? "", null, { shouldValidate: true });
-  }, [selectedVideoGenearationModel]);
+    if (currentNegativePrompt) {
+      form.setValue(currentNegativePrompt, { shouldValidate: true });
+    }
+  }, [selectedVideoGenearationModel, form]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -186,7 +190,7 @@ const VideoGenerationInputControls = ({
       }
       const { generation_id } = await videoGenerationService(selectedBrandId!, {
         ...data,
-        campaign_id: campaignId,
+        campaign_id: campaignId || defaultCampaignId,
       });
 
       if (Array.isArray(generation_id)) {
@@ -206,6 +210,9 @@ const VideoGenerationInputControls = ({
       form.setValue("prompt", "", { shouldValidate: true });
       if (source === "blanket" && firstFrameParam) {
         form.setValue(firstFrameParam.id, null, { shouldValidate: true });
+      }
+      if (source === "blanket" && lastFrameParam) {
+        form.setValue(lastFrameParam.id, null, { shouldValidate: true });
       }
     }
   };
@@ -259,9 +266,6 @@ const VideoGenerationInputControls = ({
                                 form.setValue(firstFrameParam.id, null, {
                                   shouldValidate: true,
                                 });
-                                if (source === "blanket") {
-                                  setCurrentItem(null);
-                                }
                               }}
                             >
                               <X />
@@ -436,9 +440,9 @@ const VideoGenerationInputControls = ({
               shouldValidate: true,
             });
             if (
-              (source === "blanket" && galleryPickerSource === "first_frame") ||
-              galleryPickerSource === "start_image" ||
-              galleryPickerSource === "image"
+              source === "blanket" &&
+              firstFrameParam &&
+              galleryPickerSource === firstFrameParam.id
             ) {
               setCurrentItem(item);
             }

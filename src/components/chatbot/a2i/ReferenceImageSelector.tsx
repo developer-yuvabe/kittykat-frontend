@@ -24,6 +24,11 @@ import {
   addReferenceToZone,
   removeReferenceFromZone,
 } from "@/lib/reference-image.utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ReferenceImageSelectorProps {
   // Single-zone mode (for ChatInput)
@@ -50,10 +55,12 @@ interface ReferenceImageSelectorProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 
-  // Customization props
+  // UX Mode props
+  variant?: "popover" | "inline" | "hidden"; // Controls the layout/UX
   popoverAlign?: "start" | "center" | "end";
   popoverSide?: "top" | "bottom" | "left" | "right";
   customTrigger?: React.ReactNode;
+  showPopoverTrigger?: boolean;
 }
 
 const ReferenceImageSelector = ({
@@ -81,16 +88,19 @@ const ReferenceImageSelector = ({
   isOpen,
   onOpenChange,
 
-  // Customization props
+  // UX Mode props
+  variant = "popover",
   popoverAlign = "start",
   popoverSide = "top",
   customTrigger,
+  showPopoverTrigger = true,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
 
   // Determine mode based on whether product reference props are provided
   const isSingleMode = !onProductReferenceChangeProp;
+  const isInlineMode = variant === "inline";
 
   // Use master reference for single mode, or separate references for dual mode
   const masterReference = isSingleMode
@@ -595,6 +605,48 @@ const ReferenceImageSelector = ({
     ]
   );
 
+  // Extract image files from clipboard
+  const extractImageFiles = useCallback(
+    (items: DataTransferItemList): File[] => {
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) files.push(file);
+        }
+      }
+      return files;
+    },
+    []
+  );
+
+  // Handle paste for specific zone
+  const handleZonePaste = useCallback(
+    (zone: "master" | "product") => async (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = extractImageFiles(e.clipboardData.items);
+      if (files.length === 0) return;
+
+      setIsUploading(true);
+      try {
+        const zoneLabel = isSingleMode ? "reference" : `${zone} reference`;
+        await toast.promise(uploadFilesAndAddToZone(files, zone, false), {
+          loading: `Uploading ${files.length} image(s) from clipboard to ${zoneLabel}...`,
+          success: (uploadedUrls) =>
+            `${uploadedUrls.length} image(s) pasted to ${zoneLabel}`,
+          error: "Failed to upload images from clipboard.",
+        });
+      } catch (error) {
+        console.error("Clipboard paste failed:", error);
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [isSingleMode, uploadFilesAndAddToZone, extractImageFiles]
+  );
+
   const handleDeleteGalleryItem = useCallback(
     (item: GalleryItemResponse) => {
       // Remove from reference zones if attached
@@ -752,35 +804,125 @@ const ReferenceImageSelector = ({
     ]
   );
 
+  // Early return for inline variant when closed
+  if (isInlineMode && !isOpen) {
+    return null;
+  }
+
+  // Render inline variant
+  if (isInlineMode) {
+    return (
+      <>
+        <div
+          id="reference-zone"
+          className="w-full border rounded-xl bg-background p-6"
+        >
+          <div className="flex gap-6 h-[450px]">
+            {/* LEFT COLUMN - Upload/Drop Area */}
+            <div className="w-[280px] shrink-0">
+              <ReferenceUploadArea
+                fileTypes={fileTypes}
+                maxFileSizeLimit={maxFileSizeLimit}
+                remainingSlots={remainingSlots}
+                isUploading={isUploading}
+                onDrop={handleDrop}
+                onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
+              />
+            </div>
+
+            {/* RIGHT COLUMN - Gallery */}
+            <div className="flex-1 min-w-0 flex flex-col ml-5">
+              <div
+                className="flex-1 overflow-y-auto"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDropZone(e, activeTab)}
+              >
+                <ReferenceGalleryGrid
+                  items={galleryItems}
+                  isLoading={isLoadingStore}
+                  masterReferenceUrls={masterReference}
+                  productReferenceUrls={productReference}
+                  onItemClick={handleImageClick}
+                  onDragStart={(e, assetUrl, assetId) =>
+                    handleDragStart(e, assetUrl, undefined, assetId)
+                  }
+                  onDeleteItem={handleDeleteGalleryItem}
+                  isSingleMode={false}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <MediaLibraryDialog
+          open={mediaLibraryOpen}
+          onOpenChange={setMediaLibraryOpen}
+          onMultipleMediaItemsSelected={handleMediaLibrarySelection}
+          filters={{
+            brands: [selectedBrandId!],
+            campaigns: [],
+            product_categories: [],
+            has_product: undefined,
+            has_people: undefined,
+            has_lifestyle_context: undefined,
+            asset_types: ["image"],
+            asset_sources: [],
+            media_format: [],
+            aspect_ratio: [],
+            workflow_status: [],
+            is_favourite: undefined,
+            is_archived: undefined,
+            moodboards: [],
+          }}
+          brandId={selectedBrandId!}
+          campaignId={currentCampaignId || undefined}
+          isMultiSelect={true}
+          inSelectionGalleryIds={[...masterReference, ...productReference]}
+          maxSelectionCount={remainingSlots}
+        />
+      </>
+    );
+  }
+
+  // Render popover variant (default)
   return (
     <>
       <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
-        <PopoverTrigger asChild>
-          {customTrigger || (
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={disabled}
-              className="relative"
-            >
-              <Images />
-              {currentImageCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                  {currentImageCount}
-                </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild hidden={!showPopoverTrigger}>
+              {customTrigger || (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={disabled}
+                  className="relative"
+                >
+                  <Images />
+                  {currentImageCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+                      {currentImageCount}
+                    </span>
+                  )}
+                </Button>
               )}
-            </Button>
-          )}
-        </PopoverTrigger>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Attach Reference Image(s)</TooltipContent>
+        </Tooltip>
 
         <PopoverContent
+          id="reference-zone"
           align={popoverAlign}
           side={popoverSide}
           className={`${
             isSingleMode
               ? "w-[calc(100vw-2rem)] max-w-[650px] mr-3"
               : "w-[1000px]"
-          }  p-0 rounded-xl max-h-[400px] shadow-xl border bg-background overflow-y-scroll`}
+          }  p-0 rounded-xl max-h-[500px] shadow-xl border bg-background overflow-y-scroll`}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+          }}
         >
           {isSingleMode ? (
             // Single mode - vertical layout with 3 sections
@@ -823,7 +965,7 @@ const ReferenceImageSelector = ({
                     type="master"
                     icon={Paperclip}
                     title="Reference Image"
-                    description="Add reference images. (Click or drag to add)"
+                    description="Add reference images. (Click, drag, or paste to add)"
                     images={masterReference}
                     isSelected={false}
                     onClick={() => {}}
@@ -831,6 +973,7 @@ const ReferenceImageSelector = ({
                     onDragStart={(e, url) => handleDragStart(e, url, "master")}
                     onRemoveImage={(url) => handleRemoveImage("master", url)}
                     showAddButton={false}
+                    onPaste={handleZonePaste("master")}
                   />
                 </div>
               </div>
@@ -857,7 +1000,7 @@ const ReferenceImageSelector = ({
                       type="master"
                       icon={Paperclip}
                       title="Master Reference"
-                      description="Use elements of an image. (Click or drag to add)"
+                      description="Use elements of an image. (Click, drag, or paste to add)"
                       images={masterReference}
                       isSelected={activeTab === "master"}
                       onClick={openForMaster}
@@ -868,6 +1011,7 @@ const ReferenceImageSelector = ({
                       onRemoveImage={(url) => handleRemoveImage("master", url)}
                       showAddButton={productReference.length > 0}
                       onAddClick={openForMaster}
+                      onPaste={handleZonePaste("master")}
                     />
 
                     {/* PRODUCT REFERENCE SECTION */}
@@ -875,7 +1019,7 @@ const ReferenceImageSelector = ({
                       type="product"
                       icon={PanelTop}
                       title="Product Reference"
-                      description="Use a product image. This might alter your prompt. (Click or drag to add)"
+                      description="Use a product image. This might alter your prompt. (Click, drag, or paste to add)"
                       images={productReference}
                       isSelected={activeTab === "product"}
                       onClick={openForProduct}
@@ -888,6 +1032,7 @@ const ReferenceImageSelector = ({
                       onAddClick={openForProduct}
                       isMagicEnabled={isMagicEnabled}
                       onToggleMagic={onToggleMagic}
+                      onPaste={handleZonePaste("product")}
                     />
                   </div>
 

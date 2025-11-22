@@ -51,13 +51,15 @@ export const useA2iForm = ({
   });
 
   useEffect(() => {
-    // Preserve the previous prompt value when switching models
+    // Preserve the previous prompt and negative_prompt values when switching models
     const previousPromptValue = form.getValues("prompt") || "";
+    const previousNegativePromptValue = form.getValues("negative_prompt") || "";
 
     form.reset(
       {
         ...mergedDefaultValues,
         prompt: previousPromptValue,
+        negative_prompt: previousNegativePromptValue,
       },
       {
         keepValues: false,

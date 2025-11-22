@@ -61,6 +61,7 @@ interface MoodboardSelectorProps {
   isCreatingNew: boolean;
   variant?: "combobox" | "select";
   showAllCampaigns?: boolean;
+  isAdvancedMode?: boolean;
 }
 
 export default function MoodboardSelector({
@@ -70,6 +71,7 @@ export default function MoodboardSelector({
   campaignId,
   variant = "combobox",
   showAllCampaigns = false,
+  isAdvancedMode = false,
 }: MoodboardSelectorProps) {
   const { selectedBrandId, setSelectedMoodboardId, campaigns } =
     useBrandStore();
@@ -343,8 +345,15 @@ export default function MoodboardSelector({
               value={selectedMoodboard?.id || ""}
               onValueChange={handleSelectValueChange}
             >
-              <SelectTrigger className="w-60 py-[23px] border-[#7F55E0] border-2">
-                <SelectValue placeholder="Select Moodboard" />
+              <SelectTrigger
+                className={`${
+                  isAdvancedMode ? "w-30 py-2 text-sm" : "w-60 py-[23px]"
+                } border-[#7F55E0] border-2`}
+              >
+                <SelectValue
+                  placeholder="Select Moodboard"
+                  className="peer-data-placeholder:text-xs"
+                />
               </SelectTrigger>
               <SelectContent>
                 {selectMoodboards.map((mb) => (
@@ -379,7 +388,9 @@ export default function MoodboardSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA] overflow-hidden"
+            className={` justify-start font-light text-gray-800 border-[#BCC1CA] overflow-hidden ${
+              isAdvancedMode ? "w-30" : "w-60"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <SearchIcon size={10} className="text-black" />

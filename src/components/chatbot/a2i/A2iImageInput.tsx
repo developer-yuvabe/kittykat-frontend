@@ -36,6 +36,7 @@ import { useA2iStore } from "@/store/a2i.store";
 import useModelPricing from "@/hooks/useModelPricing";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { useA2iForm } from "@/hooks/useA2iForm";
+import { useReferenceImagePaste } from "@/hooks/useReferenceImagePaste";
 import { useCreditsStore } from "@/store/credits.store";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
@@ -61,6 +62,7 @@ import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { GalleryItem } from "@/types/gallery.types";
+import { Select, SelectTrigger } from "@radix-ui/react-select";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -212,7 +214,8 @@ const A2iImageInput = ({
   const handleFileUpload = useCallback(
     async (
       files: File[],
-      targetZone: "master" | "product"
+      targetZone: "master" | "product",
+      showToast = true
     ): Promise<string[]> => {
       if (!referenceImagesModelInfo) {
         toast.error("This model doesn't support reference images");
@@ -309,15 +312,20 @@ const A2iImageInput = ({
       };
 
       try {
-        const toastPromise = toast.promise(uploadPromise(), {
-          loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
-          success: (data) =>
-            `${data.count} file(s) uploaded to ${data.targetZone} reference`,
-          error: "Failed to upload files. Please try again.",
-        });
+        if (showToast) {
+          const toastPromise = toast.promise(uploadPromise(), {
+            loading: `Uploading ${validFiles.length} file(s) to ${targetZone} reference...`,
+            success: (data) =>
+              `${data.count} file(s) uploaded to ${data.targetZone} reference`,
+            error: "Failed to upload files. Please try again.",
+          });
 
-        const result = await toastPromise.unwrap();
-        return result.successfulUrls;
+          const result = await toastPromise.unwrap();
+          return result.successfulUrls;
+        } else {
+          const result = await uploadPromise();
+          return result.successfulUrls;
+        }
       } catch (error) {
         console.error("File upload failed:", error);
         return [];
@@ -409,6 +417,25 @@ const A2iImageInput = ({
     ]
   );
 
+  // Use paste hook for handling paste events
+  useReferenceImagePaste({
+    containerSelector: "#concept-visual-playground",
+    handleFileUpload: async (
+      files: File[],
+      targetZone: "master" | "product"
+    ) => {
+      const uploadedUrls = await handleFileUpload(files, targetZone, false);
+      return uploadedUrls;
+    },
+    masterReference,
+    productReference,
+    setMasterReference,
+    setProductReference,
+    referencePopoverTab,
+    showToast: true,
+    useDocumentListener: true,
+  });
+
   // Handle drag-and-drop on prompt textarea
   const handlePromptDrop = useCallback(
     async (e: DragEvent) => {
@@ -420,12 +447,11 @@ const A2iImageInput = ({
         return;
       }
 
-      // Only handle file drops from OS
-      if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) {
-        return;
-      }
-
+      // Get files from drag
+      if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) return;
       const files = Array.from(e.dataTransfer.files);
+
+      if (files.length === 0) return;
 
       // Determine target zone based on active tab or default to master
       const targetZone =
@@ -433,7 +459,7 @@ const A2iImageInput = ({
           ? referencePopoverTab
           : "master";
 
-      const uploadedUrls = await handleFileUpload(files, targetZone);
+      const uploadedUrls = await handleFileUpload(files, targetZone, true);
 
       if (uploadedUrls.length > 0) {
         // Use shared utility to update references
@@ -629,7 +655,38 @@ const A2iImageInput = ({
         ...parameters.imageGeneationParameters,
       });
 
-      if (paramName && parameters.imageGeneationParameters[paramName]) {
+      // Check for reference_images parameter (from advanced prompt generator)
+      const referenceImagesParam =
+        parameters.imageGeneationParameters.reference_images;
+
+      if (referenceImagesParam) {
+        const imagesArray = Array.isArray(referenceImagesParam)
+          ? referenceImagesParam
+          : [referenceImagesParam];
+
+        // Get product reference images from parameters or stored state
+        const productRefImages = parameters.productReferenceImages || [];
+
+        // Categorize images: if product_reference_images exists, use it to split
+        if (productRefImages.length > 0) {
+          // Images in productRefImages go to productReference
+          const productImages = imagesArray.filter((img) =>
+            productRefImages.includes(img)
+          );
+          // Remaining images go to masterReference (context references)
+          const masterImages = imagesArray.filter(
+            (img) => !productRefImages.includes(img)
+          );
+
+          setProductReference(productImages);
+          setMasterReference(masterImages);
+        } else {
+          // If no product_reference_images, assign all to master
+          setMasterReference(imagesArray);
+          setProductReference([]);
+        }
+      } else if (paramName && parameters.imageGeneationParameters[paramName]) {
+        // Legacy path: handle existing parameter structure
         const referenceImages = parameters.imageGeneationParameters[paramName];
         const imagesArray = Array.isArray(referenceImages)
           ? referenceImages
@@ -801,27 +858,122 @@ const A2iImageInput = ({
                   </TooltipContent>
                 </Tooltip>
               )}
+              {/* Render other initial params (exclude aspect_ratio and image_count) */}
+              {initialParams
+                .filter(
+                  (param) =>
+                    param.type !== "aspect_ratio" &&
+                    param.type !== "image_count"
+                )
+                .map((param) => {
+                  return (
+                    <DynamicFormField
+                      key={param.id}
+                      param={param}
+                      form={formInstance}
+                      type="initial"
+                      rules={selectedImageGenerationModel?.rules}
+                      allModelParameters={[...initialParams, ...advancedParams]}
+                    />
+                  );
+                })}
 
-              {initialParams.map((param) => {
+              {/* Aspect Ratio - Always show */}
+              {(() => {
+                const aspectRatioParam =
+                  selectedImageGenerationModel?.parameters?.find(
+                    (param) => param.type === "aspect_ratio"
+                  );
+
+                if (aspectRatioParam) {
+                  return (
+                    <DynamicFormField
+                      key={aspectRatioParam.id}
+                      param={aspectRatioParam}
+                      form={formInstance}
+                      type="initial"
+                      rules={selectedImageGenerationModel?.rules}
+                      allModelParameters={
+                        selectedImageGenerationModel?.parameters
+                      }
+                    />
+                  );
+                }
+
+                // No aspect ratio support - show disabled select
                 return (
-                  <DynamicFormField
-                    key={param.id}
-                    param={param}
-                    form={formInstance}
-                    type="initial"
-                    rules={selectedImageGenerationModel?.rules}
-                    allModelParameters={[...initialParams, ...advancedParams]}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Select disabled>
+                          <SelectTrigger className="cursor-not-allowed">
+                            <span>1:1</span>
+                          </SelectTrigger>
+                        </Select>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      This model does not support aspect ratio selection
+                    </TooltipContent>
+                  </Tooltip>
                 );
-              })}
+              })()}
 
-              {advancedParams.length > 0 && (
+              {/* Image Count - Always show */}
+              {(() => {
+                const imageCountParam =
+                  selectedImageGenerationModel?.parameters?.find(
+                    (param) => param.type === "image_count"
+                  );
+
+                if (imageCountParam) {
+                  return (
+                    <DynamicFormField
+                      key={imageCountParam.id}
+                      param={imageCountParam}
+                      form={formInstance}
+                      type="initial"
+                      rules={selectedImageGenerationModel?.rules}
+                      allModelParameters={
+                        selectedImageGenerationModel?.parameters
+                      }
+                    />
+                  );
+                }
+
+                // No image count support - show disabled button
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          disabled
+                          className="cursor-not-allowed"
+                        >
+                          1x
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      This model does not support no of generations selection
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })()}
+
+              {advancedParams.length > 0 ? (
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button size={"icon"} variant={"outline"}>
-                      <Settings2 />
-                    </Button>
-                  </PopoverTrigger>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="outline">
+                          <Settings2 />
+                        </Button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Additional Settings</TooltipContent>
+                  </Tooltip>
                   <PopoverContent
                     forceMount
                     align="center"
@@ -850,6 +1002,17 @@ const A2iImageInput = ({
                     </div>
                   </PopoverContent>
                 </Popover>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button size={"icon"} variant={"outline"} disabled={true}>
+                        <Settings2 />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>No Additional Settings</TooltipContent>
+                </Tooltip>
               )}
             </div>
             <div className="flex gap-x-2">
@@ -911,10 +1074,13 @@ const A2iImageInput = ({
                       type="master"
                       icon={Paperclip}
                       title="Master Reference"
-                      description="Use elements of an image. (Drag files or images here)"
+                      description="Drag, drop, or paste images here"
                       images={masterReference}
                       isSelected={referencePopoverTab === "master"}
-                      onClick={() => openReferencePopover("master")}
+                      onClick={() => {
+                        setReferencePopoverTab("master");
+                        openReferencePopover("master");
+                      }}
                       onDrop={(e: DragEvent) => handleZoneDrop(e, "master")}
                       onDragStart={(e: DragEvent, url: string) => {
                         e.dataTransfer.setData("assetUrl", url);
@@ -940,10 +1106,13 @@ const A2iImageInput = ({
                       type="product"
                       icon={PanelTop}
                       title="Product Reference"
-                      description="Use a product image. (Drag files or images here)"
+                      description="Drag, drop, or paste images here"
                       images={productReference}
                       isSelected={referencePopoverTab === "product"}
-                      onClick={() => openReferencePopover("product")}
+                      onClick={() => {
+                        setReferencePopoverTab("product");
+                        openReferencePopover("product");
+                      }}
                       onDrop={(e: DragEvent) => handleZoneDrop(e, "product")}
                       onDragStart={(e: DragEvent, url: string) => {
                         e.dataTransfer.setData("assetUrl", url);

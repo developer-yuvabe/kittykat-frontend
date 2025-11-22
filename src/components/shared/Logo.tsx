@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import LogoImg from "@/assets/kittykat-logo.svg";
+import LogoImg from "@/assets/kittykat-logo.png";
 
 const Logo = ({
   className,

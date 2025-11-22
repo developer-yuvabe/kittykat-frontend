@@ -9,6 +9,7 @@ import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 type ChatSuggestionsProps = {
   setFirstTokenReceived: (value: SetStateAction<boolean>) => void;
@@ -20,7 +21,9 @@ export function ChatSuggestions({
   const { user } = useUserStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
   const suggestions = [
     "Help me get started with branding—what do you need to know from me?",
     "I want to set up my brand—can you guide me through the first steps?",
@@ -42,12 +45,15 @@ export function ChatSuggestions({
       {
         messages: [...toolMessages, newHumanMessage],
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: selectedBrandId,
         previousBrandContextId: stream.values.previousBrandContextId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       },
 
