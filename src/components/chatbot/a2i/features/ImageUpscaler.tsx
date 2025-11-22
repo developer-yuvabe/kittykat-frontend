@@ -66,8 +66,11 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
   const router = useRouter();
   const { closeConceptVisual, source } = useConceptVisualStore();
   const { selectedUpscaleModel } = useModelsStore();
-  const { selectedBrandId: brandId, selectedCampaignId: campaignId } =
-    useBrandStore();
+  const {
+    selectedBrandId: brandId,
+    selectedCampaignId: campaignId,
+    defaultCampaignId,
+  } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { models } = useModelsStore();
 
@@ -83,7 +86,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
       fractality: 0,
       engine: "automatic",
       prompt: "",
-      campaign_id: campaignId || null,
+      campaign_id: campaignId || defaultCampaignId,
     },
   });
   const { credits, isCalculatingCredits } = useModelPricing({
@@ -100,7 +103,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
-      await upscaleImage(brandId!, data, campaignId);
+      await upscaleImage(brandId!, data, campaignId || defaultCampaignId);
 
       closeConceptVisual();
       if (source === "blanket") {

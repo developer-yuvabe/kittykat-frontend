@@ -63,7 +63,7 @@ export const ReferenceZone = ({
           isSelected
             ? "border-primary ring-2 ring-primary/20"
             : "border-border hover:border-primary/50",
-          "w-full min-h-20 2xl:min-h-32 "
+          "w-full min-h-20 2xl:min-h-28 "
         )}
         onClick={onClick}
         onDragOver={(e) => e.preventDefault()}

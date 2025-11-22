@@ -24,7 +24,11 @@ type VirtualTryOnProps = {
 const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
   const router = useRouter();
   const { closeConceptVisual, source } = useConceptVisualStore();
-  const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
+  const {
+    selectedBrandId,
+    selectedCampaignId: campaignId,
+    defaultCampaignId,
+  } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { selectedVtonModel, setSelectedVtonModel } = useModelsStore();
   const form = useA2iForm({
@@ -51,7 +55,11 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
   const onSubmit = async (data: Record<string, any>) => {
     setLoading(true);
     try {
-      await createVtonImage(selectedBrandId!, campaignId || null, data);
+      await createVtonImage(
+        selectedBrandId!,
+        campaignId || defaultCampaignId,
+        data
+      );
       closeConceptVisual();
 
       if (source === "blanket") {
@@ -183,7 +191,7 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
                 moodboards: [],
               }}
               brandId={selectedBrandId!}
-              campaignId={campaignId ?? undefined}
+              campaignId={campaignId || defaultCampaignId || undefined}
             />
           </div>
         </div>
