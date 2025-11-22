@@ -17,6 +17,7 @@ import { useUserStore } from "@/store/user.store";
 import { useBrandStore } from "@/store/brand.store";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 interface UseInterruptedActionsInput {
   interrupt: HumanInterrupt;
@@ -59,7 +60,9 @@ export default function useInterruptedActions({
 }: UseInterruptedActionsInput): UseInterruptedActionsValue {
   const thread = useStreamContext();
   const { user } = useUserStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const { selectedBrandId, selectedCampaignId, selectedMoodboardId } =
     useBrandStore();
   const [humanResponse, setHumanResponse] = useState<HumanResponseWithEdits[]>(
@@ -93,12 +96,15 @@ export default function useInterruptedActions({
       thread.submit(
         {
           userId: user!.id,
+          chatOnlyMode,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: thread.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,
           currentSelectedImageGenerationModelId:
             selectedImageGenerationModel?.id ?? null,
+          currentSelectedVideoGenerationModelId:
+            selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {
@@ -273,12 +279,15 @@ export default function useInterruptedActions({
       thread.submit(
         {
           userId: user!.id,
+          chatOnlyMode,
           currentBrandContextId: selectedBrandId,
           previousBrandContextId: thread.values.previousBrandContextId,
           currentCampaignId: selectedCampaignId,
           currentMoodboardId: selectedMoodboardId,
           currentSelectedImageGenerationModelId:
             selectedImageGenerationModel?.id ?? null,
+          currentSelectedVideoGenerationModelId:
+            selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
         },
         {

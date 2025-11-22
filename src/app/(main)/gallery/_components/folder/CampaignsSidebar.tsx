@@ -27,6 +27,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CampaignsSidebarProps {
   selectedBrandId: string | null;
@@ -42,13 +49,11 @@ interface CampaignsSidebarProps {
   setSelectedFilters: React.Dispatch<
     React.SetStateAction<EnhancedSelectedFilters>
   >;
-  setInitialWorkflowStatus: (
-    value: string[] | ((old: string[]) => string[] | null) | null,
-    options?: any
-  ) => Promise<URLSearchParams>;
   hasNoBrands: boolean;
   galleryView: "grid" | "folder";
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
+  isCollapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 export function CampaignsSidebar({
@@ -59,10 +64,11 @@ export function CampaignsSidebar({
   setInitialBrandId,
   setSelectedCampaignInUrl,
   setSelectedFilters,
-  setInitialWorkflowStatus,
   hasNoBrands,
   galleryView,
   setSelectedItems,
+  isCollapsed,
+  onToggleCollapsed,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { brands } = useBrandStore();
@@ -590,11 +596,53 @@ export function CampaignsSidebar({
     return null;
   }
 
+  if (isCollapsed)
+    return (
+      <div className="fixed top-1/6 left-3 -translate-y-1/2 z-30">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                className="mb-3"
+                onClick={onToggleCollapsed}
+                size="sm"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Open Camapign Sidebar</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-1/3 rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-[30%] rounded-sm">
       {/* Brand Selector and Title */}
       <div className="flex flex-col px-4 gap-y-3 mt-4">
-        <h1 className="text-2xl font-bold">Media library</h1>
+        <div className="flex justify-between">
+          <h1 className="text-2xl font-bold">Media library</h1>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="ml-2 p-1"
+                  onClick={onToggleCollapsed}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Close Camapign Sidebar</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         {!hasNoBrands && (
           <BrandSelector
             showCampaigns={galleryView === "grid"}
@@ -606,7 +654,6 @@ export function CampaignsSidebar({
                 brandId: [brandId],
                 campaigns: campaignId ? [campaignId] : [],
               }));
-              setInitialWorkflowStatus(null);
               setInitialBrandId(null);
               setSelectedCampaignInUrl(null);
             }}

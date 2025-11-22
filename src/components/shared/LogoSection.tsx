@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import LogoImg from "@/assets/kittykat-logo.svg";
+import LogoImg from "@/assets/kittykat-logo.png";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export function LogoSection() {

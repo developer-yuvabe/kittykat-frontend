@@ -68,7 +68,7 @@ export const A2iImagesWrapper = ({
   referenceMoodboardId,
   currentCampaign,
 }: A2iImagesWrapperProps) => {
-  const { selectedBrandId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId } = useBrandStore();
   const { selectedImageGenerationModel, isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -106,7 +106,13 @@ export const A2iImagesWrapper = ({
   const dragEndTime = useRef(0);
 
   useEffect(() => {
-    const flatImages = generations.flatMap(
+    const filteredGenerations = selectedCampaignId
+      ? generations.filter(
+          (gen) => gen.parameters?.campaign_id === selectedCampaignId
+        )
+      : generations;
+
+    const flatImages = filteredGenerations.flatMap(
       (generation): A2iImageCardProps[] => {
         const images = generation.images;
 
@@ -158,7 +164,7 @@ export const A2iImagesWrapper = ({
     });
 
     setItems(flatImages);
-  }, [generations]);
+  }, [generations, selectedCampaignId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

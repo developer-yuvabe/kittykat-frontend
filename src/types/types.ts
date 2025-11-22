@@ -139,7 +139,7 @@ export type A2iVideoDetail = {
 
 export type A2iImageGeneration = {
   id: string;
-  status: "processing" | "completed" | "failed";
+  status: "processing" | "completed" | "failed" | "enhancing_prompt";
   type:
     | "image_generation"
     | "vton"
@@ -293,6 +293,10 @@ export interface MoodboardInformation {
   moodboard_preview: {
     url: string;
   };
+  prompts?: GeneratedPrompt[];
+  prompt_generation_inputs?: PromptGenerationInputs;
+  is_prompt_generation_in_progress?: boolean;
+  prompt_generation_conflict_notes?: string;
 }
 
 export interface VisualImage {
@@ -323,4 +327,21 @@ export interface SourceHandle {
   platform: string; // e.g., 'facebook', 'instagram'
   url?: string | null;
   selected: boolean;
+}
+
+// For advanced prompt generation mode
+export interface GeneratedPrompt {
+  prompt: string;
+  conflict_notes?: string;
+  product_references: string[];
+  context_references: string[];
+}
+
+export interface PromptGenerationInputs {
+  preset_id: string;
+  product_references: string[];
+  context_references: string[];
+  prompt?: string;
+  negative_prompt: string;
+  n: number;
 }

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, PaperclipIcon } from "lucide-react";
 import { MAX_PDF_UPLOAD_SIZE } from "@/lib/constants";
+import { useThreadStore } from "@/store/thread.store";
 
 interface AgentPdfAttachmentUploaderProps {
   onUploadComplete: (url: string) => void;
@@ -11,6 +12,7 @@ interface AgentPdfAttachmentUploaderProps {
 export default function AgentPdfAttachmentUploader({
   onUploadComplete,
 }: AgentPdfAttachmentUploaderProps) {
+  const { chatOnlyMode } = useThreadStore();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,7 +65,7 @@ export default function AgentPdfAttachmentUploader({
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        disabled={uploading}
+        disabled={uploading || chatOnlyMode}
       />
 
       {uploading ? (

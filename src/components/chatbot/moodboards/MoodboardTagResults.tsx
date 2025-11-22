@@ -84,9 +84,6 @@ function MoodboardTagResults({
   const { mutate: generateShowboard } = useMutation({
     mutationFn: () =>
       generateA2iShowboard(selectedBrandId!, moodboardId!, moodboardAssets),
-    onMutate: () => {
-      setIsGeneratingPrompts(true);
-    },
     onSettled: () => {
       setIsGeneratingPrompts(false);
     },
@@ -129,6 +126,9 @@ function MoodboardTagResults({
 
     try {
       setIsGeneratingScreenshot(true);
+
+      // Set generating state BEFORE starting the mutation
+      setIsGeneratingPrompts(true);
 
       // Prepare selected_moodboard_tags payload first
       const selectedTagsPayload: Record<string, string[]> = {};
@@ -209,6 +209,7 @@ function MoodboardTagResults({
           toast.error(
             "Failed to generate Concept Visual prompts. Please try again."
           );
+          setIsGeneratingPrompts(false);
         },
       });
 
@@ -220,6 +221,7 @@ function MoodboardTagResults({
       console.error("Error in handleGenerate:", err);
       toast.error("Failed to start generation process.");
       setIsGeneratingScreenshot(false);
+      setIsGeneratingPrompts(false);
     }
   };
 

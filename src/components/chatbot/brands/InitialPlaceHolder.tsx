@@ -21,6 +21,7 @@ import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { SearchIcon } from "@/components/ui/custom-icon";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 // Skeleton CSS styles
 const skeletonStyles = `
@@ -301,7 +302,9 @@ export const InitialPlaceHolder: React.FC<{
   const [brandExpanded, setBrandExpanded] = useState(true);
   const stream = useStreamContext();
   const { user } = useUserStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const { setIsCreatingBrand, setSelectedBrandId } = useBrandStore();
 
   // Enhanced function to handle new brand creation with scroll
@@ -321,11 +324,14 @@ export const InitialPlaceHolder: React.FC<{
         stream,
         text: "Let's create a new brand.",
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: null,
         currentCampaignId: null,
         currentMoodboardId: null,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
 
