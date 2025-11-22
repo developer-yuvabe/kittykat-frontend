@@ -920,6 +920,9 @@ const ReferenceImageSelector = ({
               ? "w-[calc(100vw-2rem)] max-w-[650px] mr-3"
               : "w-[1000px]"
           }  p-0 rounded-xl max-h-[500px] shadow-xl border bg-background overflow-y-scroll`}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+          }}
         >
           {isSingleMode ? (
             // Single mode - vertical layout with 3 sections
