@@ -87,6 +87,7 @@ export function MediaLibrary({
     dateFrom,
     dateTo,
     orderBy,
+    setOrderBy,
     setIsDraggable,
     workflowStatus,
   } = useGalleryFilterStore();
@@ -99,6 +100,10 @@ export function MediaLibrary({
     isBrandsFetched,
     getSelectedBrand,
   } = useBrandStore();
+
+  useEffect(() => {
+    if (!selectedCampaignId) setOrderBy("created_at_descending");
+  }, [selectedBrandId, selectedCampaignId]);
 
   useEffect(() => {
     if (selectedCampaignId && orderBy === "brand_sort_order") {

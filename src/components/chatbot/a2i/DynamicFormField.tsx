@@ -325,6 +325,9 @@ export function DynamicFormField<T extends FieldValues>({
                     className={cn("w-full", {
                       "w-max": type === "initial",
                     })}
+                    onCloseAutoFocus={(e) => {
+                      e.preventDefault();
+                    }}
                   >
                     {param.options?.map(
                       ({ optionValue, optionLabel, optionHint }) => {
