@@ -8,10 +8,12 @@ type SubmitOptions = {
   stream: StreamContextType;
   text: string;
   userId: string;
+  chatOnlyMode: boolean;
   currentBrandContextId: string | null;
   currentCampaignId: string | null;
   currentMoodboardId: string | null;
   currentSelectedImageGenerationModelId: string | null;
+  currentSelectedVideoGenerationModelId: string | null;
   userAccessToken: string | null;
 };
 
@@ -19,10 +21,12 @@ export function submitOptimisticMessage({
   stream,
   text,
   userId,
+  chatOnlyMode,
   currentBrandContextId,
   currentCampaignId,
   currentMoodboardId,
   currentSelectedImageGenerationModelId,
+  currentSelectedVideoGenerationModelId,
   userAccessToken,
 }: SubmitOptions) {
   const newMessage: Message = {
@@ -40,11 +44,13 @@ export function submitOptimisticMessage({
     {
       messages: [newMessage],
       userId,
+      chatOnlyMode,
       currentBrandContextId,
       previousBrandContextId: stream.values.previousBrandContextId,
       currentCampaignId: currentCampaignId,
       currentMoodboardId: currentMoodboardId,
       currentSelectedImageGenerationModelId,
+      currentSelectedVideoGenerationModelId,
       userAccessToken,
     },
     {

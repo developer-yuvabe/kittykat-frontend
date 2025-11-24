@@ -42,25 +42,28 @@ export const CustomGalleryGrid = forwardRef<
   HTMLDivElement,
   CustomGalleryGridProps<any>
 >(
-  ({
-    allItems,
-    photos,
-    layout,
-    containerHeight,
-    noOfImagesForMoodboard,
-    moodboard,
-    onGallerySelection,
-    onPhotoLike,
-    hasUnsavedChanges,
-    handleExpandImage,
-    isDraggable,
-    setItems,
-    minImagesRequired,
-    setNoOfImagesForMoodboard,
-    showLiked,
-    isPreview,
-    galleryActions,
-  }) => {
+  (
+    {
+      allItems,
+      photos,
+      layout,
+      containerHeight,
+      noOfImagesForMoodboard,
+      moodboard,
+      onGallerySelection,
+      onPhotoLike,
+      hasUnsavedChanges,
+      handleExpandImage,
+      isDraggable,
+      setItems,
+      minImagesRequired,
+      setNoOfImagesForMoodboard,
+      showLiked,
+      isPreview,
+      galleryActions,
+    },
+    ref
+  ) => {
     const gridRef = useRef<HTMLDivElement>(null);
 
     const handlePhotoLike = async (index: number, liked: boolean) => {

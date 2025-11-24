@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface MediaOverlayProps {
   item: GalleryItemResponse;
@@ -19,7 +20,7 @@ interface MediaOverlayProps {
   isHovered: boolean;
   isMediaSelectDialog?: boolean;
   isMultiSelectMode?: boolean;
-  onSelect: (id: string, selected: boolean) => void;
+  onSelect: (id: string, selected: boolean, shiftKey?: boolean) => void;
   isAlreadySelected: boolean;
   selectedCount?: number;
   maxSelectionCount?: number;
@@ -61,6 +62,7 @@ export function MediaOverlay({
   };
 
   const shouldShowSelection = isHovered || isSelected || isAlreadySelected;
+  const [shiftPressed, setShiftPressed] = useState(false);
 
   const hasReachedMax =
     typeof selectedCount === "number" &&
@@ -108,9 +110,13 @@ export function MediaOverlay({
             <Checkbox
               checked={isSelected || isAlreadySelected}
               disabled={isCheckboxDisabled}
+              // Capture shift BEFORE checkbox toggles
+              onPointerDown={(e) => {
+                setShiftPressed(e.shiftKey);
+              }}
               onCheckedChange={(checked) => {
                 if (!isCheckboxDisabled) {
-                  onSelect(item.id, checked as boolean);
+                  onSelect(item.id, checked as boolean, shiftPressed);
                 }
               }}
               className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
@@ -120,7 +126,12 @@ export function MediaOverlay({
           // Regular Gallery Mode - Checkbox (existing behavior)
           <Checkbox
             checked={isSelected}
-            onCheckedChange={(checked) => onSelect(item.id, checked as boolean)}
+            onPointerDown={(e) => {
+              setShiftPressed(e.shiftKey);
+            }}
+            onCheckedChange={(checked) =>
+              onSelect(item.id, checked as boolean, shiftPressed)
+            }
             className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} border-2 border-white bg-black/30 
         data-[state=checked]:border-white data-[state=checked]:bg-white 
         data-[state=checked]:text-black transition-all duration-200 hover:border-gray-200`}

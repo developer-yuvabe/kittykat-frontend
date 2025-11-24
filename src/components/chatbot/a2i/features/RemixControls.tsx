@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useA2iForm } from "@/hooks/useA2iForm";
 import useModelPricing from "@/hooks/useModelPricing";
+import { useReferenceImagePaste } from "@/hooks/useReferenceImagePaste";
 import {
   canvasToBlob,
   cn,
@@ -34,7 +35,7 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { FileParam, ModelParameter } from "@/types/a2i-media.types";
 import { GalleryItem } from "@/types/gallery.types";
 import { updateUser } from "@/services/api/user.service";
-import { Eraser, Images, Redo, Settings2, Undo } from "lucide-react";
+import { Eraser, Redo, Settings2, Undo } from "lucide-react";
 import { LockIcon, LockOpenIcon, TrashIcon } from "@/components/ui/custom-icon";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ import {
   updateReferencesByZone,
   validateFiles,
 } from "@/lib/reference-image.utils";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 
 export type RemixControlsProps = {
   canUndo: boolean;
@@ -86,12 +88,19 @@ const RemixControls = ({
   const { closeConceptVisual, source, isConceptVisualOpened } =
     useConceptVisualStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
-  const { selectedBrandId, selectedCampaignId: campaignId } = useBrandStore();
+  const {
+    selectedBrandId,
+    selectedCampaignId: campaignId,
+    defaultCampaignId,
+  } = useBrandStore();
   const { selectedRemixModel, setSelectedRemixModel } = useModelsStore();
   const { user, setUser } = useUserStore();
   const [isMagicEnabled, setIsMagicEnabled] = useState(
     user?.user_preferences?.enhance_prompts
   );
+  const { parameters, setParameters } = useMetadataActionsStore();
+  const [masterReference, setMasterReference] = useState<string[]>([]);
+  const [productReference, setProductReference] = useState<string[]>([]);
 
   const {
     initialParams,
@@ -159,8 +168,53 @@ const RemixControls = ({
   useEffect(() => {
     if (isConceptVisualOpened) {
       form.setValue("prompt", "", { shouldValidate: true });
+      setMasterReference([]);
+      setProductReference([]);
     }
-  }, [isConceptVisualOpened]);
+  }, [isConceptVisualOpened, form]);
+
+  useEffect(() => {
+    const p = parameters.remixParameters;
+    if (!p) return;
+
+    // Load prompt
+    if (p.prompt) form.setValue("prompt", p.prompt, { shouldValidate: true });
+
+    // Load all other parameters
+    for (const param of selectedRemixModel?.parameters ?? []) {
+      const id = param.id;
+      if (p[id] !== undefined) {
+        form.setValue(id, p[id], { shouldValidate: true });
+      }
+    }
+
+    // Dynamically find the reference images parameter ID from the model
+    const refParam = selectedRemixModel?.parameters?.find(
+      (param) => param.type === "file"
+    );
+
+    if (refParam) {
+      // Extract references using the dynamic parameter ID
+      const productImages = p.product_reference_images || [];
+      const allReferenceImages = p[refParam.id] || [];
+
+      // Separate master vs product references
+      const masterImages = allReferenceImages.filter(
+        (img: string) => !productImages.includes(img)
+      );
+
+      const master = masterImages.length > 0 ? [masterImages[0]] : [];
+      const products = productImages;
+
+      setMasterReference(master);
+      setProductReference(products);
+    }
+
+    // Clear parameters after a tick to avoid race conditions
+    requestAnimationFrame(() => {
+      setParameters("remixParameters", null);
+    });
+  }, [parameters.remixParameters, selectedRemixModel, form, setParameters]);
 
   const { credits, isCalculatingCredits } = useModelPricing({
     form,
@@ -168,8 +222,7 @@ const RemixControls = ({
   });
 
   // Reference images state - using master/product zones like A2iImageInput
-  const [masterReference, setMasterReference] = useState<string[]>([]);
-  const [productReference, setProductReference] = useState<string[]>([]);
+
   const [isReferencePopoverOpen, setIsReferencePopoverOpen] = useState(false);
   const [referencePopoverTab, setReferencePopoverTab] = useState<
     "master" | "product"
@@ -359,6 +412,19 @@ const RemixControls = ({
     }
   };
 
+  // Use paste hook for handling paste events
+  const { handlePaste } = useReferenceImagePaste({
+    containerSelector: ".remix-controls-container",
+    handleFileUpload,
+    masterReference,
+    productReference,
+    setMasterReference,
+    setProductReference,
+    referencePopoverTab,
+    showToast: true,
+    useDocumentListener: false,
+  });
+
   // Handle drag-and-drop between zones (when popover is closed)
   const handleZoneDrop = useCallback(
     async (e: React.DragEvent, targetZone: "master" | "product") => {
@@ -486,7 +552,7 @@ const RemixControls = ({
 
       await remixImageService(
         brandId ?? selectedBrandId!,
-        campaignId,
+        campaignId || defaultCampaignId,
         data,
         maskUrl,
         productReference,
@@ -650,7 +716,7 @@ const RemixControls = ({
       )}
 
       {/* Main Input Container - Matching A2iImageInput Layout */}
-      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4">
+      <div className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4 remix-controls-container">
         <Form {...form}>
           <div
             className="space-y-4"
@@ -658,6 +724,7 @@ const RemixControls = ({
               e.preventDefault();
               form.handleSubmit(onSubmit)();
             }}
+            onPaste={handlePaste}
           >
             {/* Textarea with Lock and Clear buttons */}
             <FormField
@@ -727,7 +794,7 @@ const RemixControls = ({
                   fileTypes={referenceImageParam?.fileTypes || []}
                   maxFileSizeLimit={referenceImageParam?.maxFileSizeLimit || 0}
                   disabled={form.formState.isSubmitting || !referenceImageParam}
-                  currentCampaignId={campaignId}
+                  currentCampaignId={campaignId || defaultCampaignId}
                   isOpen={isReferencePopoverOpen}
                   onOpenChange={setIsReferencePopoverOpen}
                   activeTab={referencePopoverTab}

@@ -420,13 +420,19 @@ const AskKittyKatTabContent = ({
               comments: optimisticComments,
             };
             handleVersionUpdate(updatedVersion);
-            //Check if any tasklist comment is left
+            // Only reset the workflow if the comment we deleted was a tasklist
+            // and after deletion there are no remaining tasklist comments.
+            const deletedComment = previousComments.find(
+              (c) => c.id === commentId
+            );
+            const deletedWasTasklist = !!deletedComment?.is_tasklist;
+
             const hasTasklist = updatedVersion.comments?.some(
               (c) => c.is_tasklist
             );
 
-            if (!hasTasklist) {
-              //Reset expert workflow
+            if (deletedWasTasklist && !hasTasklist) {
+              // Reset expert workflow
               galleryActions.patchItem(
                 {
                   itemId: currentAssetVersion.id,

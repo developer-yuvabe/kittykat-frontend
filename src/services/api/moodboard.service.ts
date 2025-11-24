@@ -138,6 +138,41 @@ export const enhancePrompt = async (
   );
 };
 
+/**
+ * Generate prompts from a preset with advanced inputs.
+ * This initiates a background task that will update the moodboard upon completion.
+ *
+ * @param brandId - Brand ID
+ * @param moodboardId - Moodboard ID to store generated prompts
+ * @param payload - Prompt generation request payload
+ * @returns Response indicating the task has been initiated (202 Accepted)
+ */
+export async function generateAdvancedPrompts(
+  brandId: string,
+  moodboardId: string,
+  payload: {
+    preset_id: string;
+    product_references?: string[];
+    context_references?: string[];
+    prompt?: string;
+    negative_prompt?: string;
+    n?: number;
+  }
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.post(`/presets/generate-prompts`, {
+      brand_id: brandId,
+      moodboard_id: moodboardId,
+      preset_id: payload.preset_id,
+      product_references: payload.product_references || [],
+      context_references: payload.context_references || [],
+      prompt: payload.prompt || null,
+      negative_prompt: payload.negative_prompt ?? null,
+      n: payload.n || 3,
+    })
+  );
+}
+
 export async function getAutoFillMoodboardSuggestedImages(
   brandId: string,
   campaignId: string,

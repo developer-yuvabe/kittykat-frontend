@@ -8,7 +8,13 @@ import {
   ThreadDetails,
 } from "@/types/types";
 import { useMutation } from "@tanstack/react-query";
-import React, { useEffect, useState, useCallback, RefObject } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  RefObject,
+  useRef,
+} from "react";
 import { toast } from "sonner";
 import { useA2iStore } from "@/store/a2i.store";
 import { updateA2iRefernceMoodboard } from "@/services/api/a2i.service";
@@ -25,6 +31,9 @@ type ReferenceMoodboardProps = {
   moodboardInformation: ThreadDetails["moodboard_information"];
   formRef: RefObject<HTMLDivElement | null>;
   currentCampaign: ThreadCampaign | null;
+  showPrompts?: boolean;
+  showBorder?: boolean;
+  isAdvanceMode?: boolean;
 };
 
 const ReferenceMoodboard = ({
@@ -34,6 +43,9 @@ const ReferenceMoodboard = ({
   moodboardInformation,
   formRef,
   currentCampaign,
+  showPrompts = true,
+  showBorder = false,
+  isAdvanceMode = false,
 }: ReferenceMoodboardProps) => {
   const { setReferencePrompt, isGeneratingPrompts, setIsGeneratingPrompts } =
     useA2iStore();
@@ -86,7 +98,6 @@ const ReferenceMoodboard = ({
     },
     onSuccess: () => {
       toast.success("Concept Visual prompts generated successfully!");
-      setIsGeneratingPrompts(false);
     },
     onError: () => {
       toast.error(
@@ -96,9 +107,21 @@ const ReferenceMoodboard = ({
     },
   });
 
+  const prevPromptsRef = useRef(prompts);
+
   useEffect(() => {
     if (prompts && prompts.length > 0) {
       setN(prompts.length);
+    }
+
+    if (isSwitchingReferenceMoodboard) return;
+
+    const promptsChanged =
+      JSON.stringify(prompts) !== JSON.stringify(prevPromptsRef.current);
+    prevPromptsRef.current = prompts;
+
+    if (isGeneratingPrompts && promptsChanged) {
+      setIsGeneratingPrompts(false);
     }
   }, [prompts]);
 
@@ -152,13 +175,26 @@ const ReferenceMoodboard = ({
           }, 1000);
         }
 
-        if (selectedBrandId && moodboard.id && !isGeneratingPrompts) {
-          generateShowboard({
-            brandId: selectedBrandId,
-            moodboardId: moodboard.id,
-            referenceMoodboardAssets: moodboard.moodboard_assets,
-            numberOfPrompts: Number(n) || 1,
-          });
+        // In advanced mode: update reference moodboard only
+        // In normal mode: generate prompts
+        if (selectedBrandId && moodboard.id) {
+          if (isAdvanceMode) {
+            await updateA2iRefernceMoodboard(
+              selectedBrandId,
+              moodboard.id,
+              moodboard.moodboard_assets
+            );
+          } else {
+            // Normal mode: generate prompts
+            if (!isGeneratingPrompts) {
+              generateShowboard({
+                brandId: selectedBrandId,
+                moodboardId: moodboard.id,
+                referenceMoodboardAssets: moodboard.moodboard_assets,
+                numberOfPrompts: Number(n) || 1,
+              });
+            }
+          }
         }
       } catch (error) {
         console.error("Error in handleMoodboardSelectionChange:", error);
@@ -172,6 +208,7 @@ const ReferenceMoodboard = ({
       generateShowboard,
       n,
       isGeneratingPrompts,
+      isAdvanceMode,
     ]
   );
 
@@ -210,6 +247,7 @@ const ReferenceMoodboard = ({
     <ContentSection
       title="Reference Moodboard"
       showCopy={false}
+      showBorder={showBorder}
       showPin={false}
       context={{ data: {} }}
       content={
@@ -227,6 +265,7 @@ const ReferenceMoodboard = ({
                 moodboardInformation={moodboardInformation}
                 isSwitching={isSwitchingReferenceMoodboard}
                 onMoodboardChange={handleMoodboardSelectionChange}
+                isAdvancedMode={isAdvanceMode}
               />
 
               <ReferenceMoodboardGallery
@@ -239,18 +278,19 @@ const ReferenceMoodboard = ({
                 isSwitching={isSwitchingReferenceMoodboard}
                 noOfImagesForMoodboard={noOfImagesForMoodboard}
               />
-
-              <ReferenceMoodboardPrompts
-                prompts={prompts || null}
-                n={n}
-                setN={setN}
-                selectedMoodboard={selectedMoodboard}
-                referenceMoodboardId={referenceMoodboardId || null}
-                isGenerating={isGeneratingPrompts}
-                onGenerate={handleGeneratePrompts}
-                onEditPrompt={handleEditPrompt}
-                formRef={formRef}
-              />
+              {showPrompts && (
+                <ReferenceMoodboardPrompts
+                  prompts={prompts || null}
+                  n={n}
+                  setN={setN}
+                  selectedMoodboard={selectedMoodboard}
+                  referenceMoodboardId={referenceMoodboardId || null}
+                  isGenerating={isGeneratingPrompts}
+                  onGenerate={handleGeneratePrompts}
+                  onEditPrompt={handleEditPrompt}
+                  formRef={formRef}
+                />
+              )}
             </>
           )}
         </div>

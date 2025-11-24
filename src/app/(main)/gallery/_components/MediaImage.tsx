@@ -11,7 +11,7 @@ import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 interface MediaImageProps {
   item: GalleryItemResponse;
   onImageLoad: (event: any) => void;
-  onEditClick: (item: GalleryItemResponse) => void;
+  onEditClick?: (item: GalleryItemResponse) => void;
   onToggleFavorite: () => void;
   isMediaSelectDialog?: boolean;
   isEasySelectionMode?: boolean;

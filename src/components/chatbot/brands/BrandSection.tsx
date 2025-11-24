@@ -27,6 +27,7 @@ import BrandSelector from "./BrandSelector";
 import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
+import { useThreadStore } from "@/store/thread.store";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -86,7 +87,9 @@ export const renderBrandData = (
     selectedCampaignId,
     selectedMoodboardId,
   } = useBrandStore();
-  const { selectedImageGenerationModel } = useModelsStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
+  const { chatOnlyMode } = useThreadStore();
   const { removePinnedItem } = usePinnedContextStore();
 
   const handleFieldUpdate = async (
@@ -113,11 +116,14 @@ export const renderBrandData = (
         stream,
         text: msg,
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: selectedBrandId,
         currentCampaignId: selectedCampaignId,
         currentMoodboardId: selectedMoodboardId,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
     }
@@ -139,11 +145,14 @@ export const renderBrandData = (
         stream,
         text: "Let's create a new brand.",
         userId: user!.id,
+        chatOnlyMode,
         currentBrandContextId: null,
         currentCampaignId: null,
         currentMoodboardId: null,
         currentSelectedImageGenerationModelId:
           selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
       });
 
