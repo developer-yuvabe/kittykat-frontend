@@ -64,7 +64,7 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
 
         return (
           <Card key={option.id} className="py-2 rounded-sm">
-            <CardContent className="px-2 m-0 ">
+            <CardContent className="px-3 m-0 py-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
                 <div className="flex-shrink-0">{option.icon}</div>
                 <div className="flex-1 min-w-0">

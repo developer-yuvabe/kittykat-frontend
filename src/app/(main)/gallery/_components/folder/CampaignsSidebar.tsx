@@ -604,9 +604,9 @@ export function CampaignsSidebar({
             <TooltipTrigger asChild>
               <Button
                 variant="default"
-                className="mb-3"
+                className="mb-3 rounded-2xl"
                 onClick={onToggleCollapsed}
-                size="sm"
+                size="xs"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -630,8 +630,8 @@ export function CampaignsSidebar({
               <TooltipTrigger asChild>
                 <Button
                   variant="default"
-                  size="sm"
-                  className="ml-2 p-1"
+                  size="xs"
+                  className="rounded-2xl"
                   onClick={onToggleCollapsed}
                 >
                   <ChevronLeft className="w-4 h-4" />
