@@ -38,7 +38,7 @@ export const UsersTable = () => {
   });
   const columns = useMemo(
     () => getUserTableColumns(page, limit, searchTerm),
-    [page, limit]
+    [page, limit, searchTerm]
   );
 
   const debouncedSearch = useCallback(
