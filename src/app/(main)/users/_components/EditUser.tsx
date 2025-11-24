@@ -298,38 +298,96 @@ export function EditUser({
                             }}
                           >
                             <MultiSelectGroup>
-                              {brands.map((brand) => (
-                                <MultiSelectItem
-                                  key={brand.id}
-                                  value={brand.id}
-                                  badgeLabel={brand.name}
-                                  disabled={selectedRole === UserRoleId.ADMIN}
-                                >
-                                  <div className="flex items-start justify-between group gap-0">
-                                    <div className="flex items-start min-w-0 w-full">
-                                      <Avatar className="h-6 w-6 mr-2">
-                                        <AvatarFallback className="bg-blue-500 text-white">
-                                          {brand.name
-                                            ?.charAt(0)
-                                            .toUpperCase() || "B"}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="flex flex-col space-y-1">
-                                        <span className="line-clamp- break-words">
-                                          {brand.name}
-                                        </span>
-                                        <span className="italic text-xs">
-                                          Created by{" "}
-                                          {brand.created_by.id ===
-                                          currentLoggedInUser?.id
-                                            ? "You"
-                                            : brand.created_by.name}
-                                        </span>
+                              {brands.map((brand) => {
+                                // Protect brands that were created by the user being edited
+
+                                const createdByEditedUser =
+                                  brand.created_by?.id === user.id;
+
+                                // Brand should be disabled for unselecting if current role is Admin
+                                // or if brand was created by the user being edited
+                                const itemDisabled =
+                                  selectedRole === UserRoleId.ADMIN ||
+                                  createdByEditedUser;
+
+                                if (createdByEditedUser) {
+                                  return (
+                                    <TooltipProvider key={brand.id}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="relative">
+                                            <MultiSelectItem
+                                              value={brand.id}
+                                              badgeLabel={brand.name}
+                                              disabled={itemDisabled}
+                                              className="pointer-events-none"
+                                            >
+                                              <div className="flex items-start justify-between group gap-0 w-full">
+                                                <div className="flex items-start min-w-0 w-full">
+                                                  <Avatar className="h-6 w-6 mr-2">
+                                                    <AvatarFallback className="bg-blue-500 text-white">
+                                                      {brand.name
+                                                        ?.charAt(0)
+                                                        .toUpperCase() || "B"}
+                                                    </AvatarFallback>
+                                                  </Avatar>
+                                                  <div className="flex flex-col space-y-1">
+                                                    <span className="line-clamp- break-words text-muted-foreground">
+                                                      {brand.name}
+                                                    </span>
+                                                    <span className="italic text-xs text-muted-foreground">
+                                                      Created by{" "}
+                                                      {brand.created_by.name}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </MultiSelectItem>
+                                            <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right">
+                                          This brand was created by this user
+                                          and can&apos;t be removed.
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                }
+
+                                return (
+                                  <MultiSelectItem
+                                    key={brand.id}
+                                    value={brand.id}
+                                    badgeLabel={brand.name}
+                                    disabled={itemDisabled}
+                                  >
+                                    <div className="flex items-start justify-between group gap-0 w-full">
+                                      <div className="flex items-start min-w-0 w-full">
+                                        <Avatar className="h-6 w-6 mr-2">
+                                          <AvatarFallback className="bg-blue-500 text-white">
+                                            {brand.name
+                                              ?.charAt(0)
+                                              .toUpperCase() || "B"}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col space-y-1">
+                                          <span className="line-clamp- break-words">
+                                            {brand.name}
+                                          </span>
+                                          <span className="italic text-xs">
+                                            Created by{" "}
+                                            {brand.created_by.id ===
+                                            currentLoggedInUser?.id
+                                              ? "You"
+                                              : brand.created_by.name}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </MultiSelectItem>
-                              ))}
+                                  </MultiSelectItem>
+                                );
+                              })}
                             </MultiSelectGroup>
                           </MultiSelectContent>
                         </MultiSelect>
