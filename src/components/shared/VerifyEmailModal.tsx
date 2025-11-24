@@ -12,8 +12,9 @@ import Logo from "@/components/shared/Logo";
 import { toast } from "sonner";
 import { sendEmailVerificationLink } from "@/services/api/user.service";
 import { Mail } from "lucide-react";
-import { reload, User } from "firebase/auth";
+import { reload, signOut, User } from "firebase/auth";
 import { auth } from "@/config/firebase.config";
+import { useRouter } from "next/navigation";
 
 const VerifyEmailModal = ({
   email,
@@ -24,6 +25,15 @@ const VerifyEmailModal = ({
 }) => {
   const [isSending, setIsSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const router = useRouter();
+
+  async function handleLogout() {
+    await signOut(auth);
+    await fetch("/api/logout");
+    // reload the page to ensure the user is logged out
+    window.location.reload();
+    router.push("/login");
+  }
 
   const handleSendEmailVerification = async () => {
     try {
@@ -94,6 +104,9 @@ const VerifyEmailModal = ({
                 <Mail />
               </>
             )}
+          </Button>
+          <Button variant={"link"} onClick={handleLogout}>
+            Change email address?
           </Button>
         </div>
       </DialogContent>
