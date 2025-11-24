@@ -260,7 +260,7 @@ export function CampaignView({
       )}
 
       {!showHeader && (
-        <div className="flex justify-between items-center m-2 mb-2">
+        <div className="flex justify-between items-center mt-1 mb-2">
           <div className="relative w-fit mx-4 mb-2">
             <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -272,7 +272,7 @@ export function CampaignView({
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end mr-8">
             <MediaFilterDropdown
               selectedFilters={selectedFilters}
               setSelectedFilters={setSelectedFilters}
@@ -290,7 +290,7 @@ export function CampaignView({
       {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
 
       {!showHeader && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 mr-4">
           <FolderTabs
             activeTab={activeTab}
             onTabChange={onTabChange}

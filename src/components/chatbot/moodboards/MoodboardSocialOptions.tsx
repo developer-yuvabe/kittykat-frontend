@@ -57,18 +57,15 @@ export const MoodboardSocialOptions: React.FC<MoodboardSocialOptionsProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col justify-between">
       {socialOptions.map((option) => {
         const limitKey = getLimitKey(option.id);
         const currentLimit = limitKey ? limits[limitKey] : null;
 
         return (
-          <Card
-            key={option.id}
-            className="py-2 rounded-sm"
-          >
+          <Card key={option.id} className="py-2 rounded-sm">
             <CardContent className="px-2 m-0 ">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
                 <div className="flex-shrink-0">{option.icon}</div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900 text-sm sm:text-base flex flex-row gap-x-2">

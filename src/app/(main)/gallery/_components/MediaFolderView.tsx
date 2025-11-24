@@ -188,7 +188,7 @@ export function MediaFolderView({
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center m-2 mb-2">
+          <div className="flex justify-between items-center mt-1 mb-2">
             <div className="relative w-fit mx-4 mb-2">
               <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -200,7 +200,7 @@ export function MediaFolderView({
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end mr-8">
               <MediaFilterDropdown
                 selectedFilters={selectedFilters}
                 setSelectedFilters={setSelectedFilters}
@@ -215,7 +215,7 @@ export function MediaFolderView({
           </div>
 
           {/* Top Section (Static) */}
-          <div className="px-4 pb-6 flex-shrink-0">
+          <div className="px-4 pb-6 flex-shrink-0 mr-4">
             <FolderTabs
               activeTab={activeTab}
               onTabChange={onTabChange}
