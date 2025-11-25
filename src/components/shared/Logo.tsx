@@ -4,8 +4,8 @@ import LogoImg from "@/assets/kittykat-logo.png";
 
 const Logo = ({
   className,
-  width = 180,
-  height = 180,
+  width = 240,
+  height = 80,
 }: {
   className?: string;
   width?: number;
