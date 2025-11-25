@@ -598,15 +598,15 @@ export function CampaignsSidebar({
 
   if (isCollapsed)
     return (
-      <div className="fixed top-1/6 left-3 -translate-y-1/2 z-30">
+      <div className="fixed mt-7 left-3 -translate-y-1/2 z-30">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="default"
-                className="mb-3"
+                className="mb-3 rounded-2xl"
                 onClick={onToggleCollapsed}
-                size="sm"
+                size="xs"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -620,9 +620,9 @@ export function CampaignsSidebar({
     );
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-[99%] w-[30%] rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-[100%] w-[30%] rounded-sm">
       {/* Brand Selector and Title */}
-      <div className="flex flex-col px-4 gap-y-3 mt-4">
+      <div className="flex flex-col px-4 gap-y-3 mt-2">
         <div className="flex justify-between">
           <h1 className="text-2xl font-bold">Media library</h1>
           <TooltipProvider>
@@ -630,8 +630,8 @@ export function CampaignsSidebar({
               <TooltipTrigger asChild>
                 <Button
                   variant="default"
-                  size="sm"
-                  className="ml-2 p-1"
+                  size="xs"
+                  className="rounded-2xl"
                   onClick={onToggleCollapsed}
                 >
                   <ChevronLeft className="w-4 h-4" />
