@@ -9,19 +9,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/store/user.store";
-import { CreditCard, GemIcon, LifeBuoy, LogOut } from "lucide-react";
+import { GemIcon, LifeBuoy, LogOut } from "lucide-react";
 import { CreditIcon } from "../ui/custom-icon";
 import QueueProgress from "./QueueProgress";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/config/firebase.config";
-import { useCreditsStore } from "@/store/credits.store";
 
 export function UserProfileMenu({}) {
   const { user, credits, kittykatExpertCredits } = useUserStore();
   const router = useRouter();
-  const { setShowPurchaseCreditsModal } = useCreditsStore();
 
   async function handleLogout() {
     await signOut(auth);
@@ -90,10 +88,7 @@ export function UserProfileMenu({}) {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setShowPurchaseCreditsModal(true)}>
-            <CreditCard />
-            Purchase Credits
-          </DropdownMenuItem>
+
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
               <Link href={"/help"}>

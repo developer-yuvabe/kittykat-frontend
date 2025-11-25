@@ -5,8 +5,6 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
-import Logo from "@/assets/kittykat-logo.png";
-import Image from "next/image";
 import ThreadDetailsPanel from "./ThreadDetailsPanel";
 import { StickToBottom } from "use-stick-to-bottom";
 import { ChatSkeleton } from "../thread/messages/message-skeleton";
@@ -178,15 +176,6 @@ const DesktopChatPanel: React.FC<DesktopChatPanelProps> = ({
                           <div className="sticky bottom-0 flex flex-col w-full bg-transparent rounded-2xl">
                             {!chatStarted && (
                               <>
-                                <div className="flex items-center justify-center gap-3">
-                                  <Image
-                                    src={Logo || "/placeholder.svg"}
-                                    alt="KittyKat Logo"
-                                    width={layoutConfig.logoSize.width}
-                                    height={layoutConfig.logoSize.height}
-                                    className="flex-shrink-0"
-                                  />
-                                </div>
                                 <div className="flex justify-center">
                                   <ChatSuggestions
                                     setFirstTokenReceived={

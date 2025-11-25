@@ -33,7 +33,7 @@ const Splash = ({
 
   return (
     <div className="h-dvh w-dvw flex flex-col gap-y-16 items-center justify-center">
-      <Logo className="w-80 lg:100" />
+      <Logo />
       <div className="relative w-[20vw] h-1 overflow-hidden rounded-full bg-gray-300">
         <div className="absolute inset-0 w-1/2 bg-[#718BC0] animate-loader"></div>
         <div className="absolute inset-0 w-1/2 bg-[#D66E98] animate-loader delay-150"></div>
