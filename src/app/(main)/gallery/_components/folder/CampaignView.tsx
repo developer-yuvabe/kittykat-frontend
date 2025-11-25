@@ -260,9 +260,9 @@ export function CampaignView({
       )}
 
       {!showHeader && (
-        <div className="flex justify-between items-center m-2 mb-2">
+        <div className="flex justify-between items-center mt-1 mb-2">
           <div className="relative w-fit mx-4 mb-2">
-            <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search media..."
               className={`pl-9 transition-all duration-200 ${
@@ -290,7 +290,7 @@ export function CampaignView({
       {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
 
       {!showHeader && (
-        <div className="px-4 pb-4">
+        <div className="pl-4 pb-4">
           <FolderTabs
             activeTab={activeTab}
             onTabChange={onTabChange}
@@ -310,9 +310,9 @@ export function CampaignView({
           />
         </div>
       ) : (
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto scrollbar">
           {!showHeader && (
-            <div className="px-4">
+            <div className="pl-4">
               <FolderUploadDropzone
                 activeTab={activeTab}
                 onUploadComplete={onUploadComplete}
@@ -348,7 +348,7 @@ export function CampaignView({
           />
 
           {/* Gallery Items with minimum height to prevent layout shift */}
-          <div className="flex-1 px-4 pb-4">
+          <div className="flex-1 pl-4 pb-4">
             {galleryActions.galleryStatus === "success" &&
               galleryActions.getGalleryItems().length > 0 && (
                 <div>
