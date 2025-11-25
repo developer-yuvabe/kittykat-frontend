@@ -389,7 +389,7 @@ const A2iImageCard = ({
       )}
       style={style}
     >
-      {image && (
+      {status === "completed" && image && (
         <div
           className="relative w-full h-full cursor-pointer group/image hover:brightness-110 transition-all duration-200 z-10"
           onClick={handleItemClick}
@@ -405,7 +405,7 @@ const A2iImageCard = ({
         </div>
       )}
 
-      {video && (
+      {status === "completed" && video && (
         <div
           className="relative w-full h-full cursor-pointer"
           onClick={() => setShowVideoModal(true)} // Open modal

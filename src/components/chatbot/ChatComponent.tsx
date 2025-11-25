@@ -3,10 +3,8 @@ import { cn } from "@/lib/utils";
 import { StickToBottom } from "use-stick-to-bottom";
 import { StickyToBottomContent } from "./StickyToBottomContent";
 import { ChatMessageList } from "./ChatMessageList";
-import Logo from "@/assets/kittykat-logo.png";
 import { ChatSuggestions } from "./ChatSuggestions";
 import { ChatInput } from "./ChatInput";
-import Image from "next/image";
 
 type ChatComponentProps = {
   isMobile?: boolean;
@@ -56,15 +54,6 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
             <div className="sticky bottom-0 flex flex-col w-full bg-transparent">
               {!chatStarted && (
                 <>
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <Image
-                      src={Logo || "/placeholder.svg"}
-                      alt="KittyKat Logo"
-                      width={100}
-                      height={40}
-                      className="flex-shrink-0"
-                    />
-                  </div>
                   <div className="flex justify-center mb-4">
                     <ChatSuggestions
                       setFirstTokenReceived={setFirstTokenReceived}
