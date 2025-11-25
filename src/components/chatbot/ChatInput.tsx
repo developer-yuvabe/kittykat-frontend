@@ -182,7 +182,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   });
 
   // Image paste handler only (drag-and-drop now handled by useFileUpload)
-  const { isUploading: isImageUploading, handleImageFiles } =
+  const { isUploading: isImageUploading, handleImageFiles, handleA2iImageDrop } =
     useChatInputImageHandler({
       brandId: selectedBrandId,
       referenceImages,
@@ -307,6 +307,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     ]
   );
 
+  const handlePromptDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const assetUrl = e.dataTransfer.getData("assetUrl");
+      const source = e.dataTransfer.getData("source");
+      const galleryItemId = e.dataTransfer.getData("galleryItemId");
+
+      // Handle internal A2I drag (from generated images)
+      const isInternalA2iDrag =
+        source === "a2i" ||
+        Boolean(galleryItemId) ||
+        (assetUrl &&
+          !(e.dataTransfer?.files && e.dataTransfer.files.length > 0));
+
+      if (isInternalA2iDrag && assetUrl) {
+        await handleA2iImageDrop(assetUrl, galleryItemId);
+        return;
+      }
+
+      // Handle file drops from OS
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter((file) =>
+          file.type.startsWith("image/")
+        );
+
+        if (imageFiles.length > 0) {
+          await handleImageFiles(imageFiles);
+        }
+      }
+    },
+    [handleA2iImageDrop, handleImageFiles]
+  );
+
   // Inside ChatInput component
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -422,6 +458,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   const form = el?.closest("form");
                   form?.requestSubmit();
                 }
+              }}
+              onDrop={handlePromptDrop}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
               }}
               placeholder={
                 showPlaceholder ? "Type your message here..." : "Type here..."
