@@ -55,6 +55,10 @@ export const useUserBrands = () => {
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
     };
+
+    return () => {
+      eventSource.close();
+    };
   }, [user]);
 
   return null;

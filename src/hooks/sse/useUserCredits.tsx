@@ -2,10 +2,9 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { useEffect } from "react";
 
-
 export const useUserCredits = () => {
-  const { setCredits, setKittykatExpertCredits,user } = useUserStore();
- 
+  const { setCredits, setKittykatExpertCredits, user } = useUserStore();
+
   useEffect(() => {
     if (!user) return;
 
@@ -25,6 +24,10 @@ export const useUserCredits = () => {
 
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
+    };
+
+    return () => {
+      eventSource.close();
     };
   }, [user]);
 
