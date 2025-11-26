@@ -120,7 +120,7 @@ export function MediaFolderView({
   // Show campaign view with sidebar
   if (selectedBrandId && selectedCampaignId) {
     return (
-      <div className="flex gap-0 h-[calc(100vh-200px)]">
+      <div className="flex gap-0 h-[calc(100vh-165px)] py-auto px-auto">
         <CampaignsSidebar
           selectedBrandId={selectedBrandId}
           selectedCampaignId={selectedCampaignId}
@@ -171,7 +171,7 @@ export function MediaFolderView({
 
   if (selectedBrandId && isBrandsFetched) {
     return (
-      <div className="w-full h-[calc(100vh-200px)] flex overflow-hidden">
+      <div className="w-full h-[calc(100vh-165px)] flex overflow-hidden">
         <CampaignsSidebar
           selectedBrandId={selectedBrandId}
           selectedCampaignId={null}
@@ -188,7 +188,7 @@ export function MediaFolderView({
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center m-2 mb-2">
+          <div className="flex justify-between items-center mt-1 mb-2">
             <div className="relative w-fit mx-4 mb-2">
               <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -215,7 +215,7 @@ export function MediaFolderView({
           </div>
 
           {/* Top Section (Static) */}
-          <div className="px-4 pb-6 flex-shrink-0">
+          <div className="pl-4 pb-4 flex-shrink-0">
             <FolderTabs
               activeTab={activeTab}
               onTabChange={onTabChange}
@@ -233,8 +233,8 @@ export function MediaFolderView({
               />
             </div>
           ) : (
-            <div className="overflow-y-auto">
-              <div className="px-4 flex-shrink-0">
+            <div className="overflow-y-auto scrollbar">
+              <div className="pl-4 flex-shrink-0">
                 <FolderUploadDropzone
                   activeTab={activeTab}
                   onUploadComplete={onUploadComplete}
@@ -248,7 +248,7 @@ export function MediaFolderView({
               {/* <MediaSearchFilters {...filterProps} /> */}
 
               {/* 🎞️ Scrollable Gallery */}
-              <div className="flex-1 px-4 pb-4">
+              <div className="flex-1 pl-4 pb-4">
                 <FolderGalleryView
                   selectedBrandId={selectedBrandId}
                   selectedCampaignId={undefined}

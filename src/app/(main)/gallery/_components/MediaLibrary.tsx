@@ -441,7 +441,7 @@ export function MediaLibrary({
   );
 
   return (
-    <div className="flex flex-col w-full mx-auto">
+    <div className="flex flex-col w-full h-full mx-auto">
       {/* Conditionally render header based on hideHeader prop */}
       {!hideHeader && galleryView === "grid" && (
         <div
@@ -525,6 +525,23 @@ export function MediaLibrary({
         </div>
       ) : !selectedBrandId && isBrandsFetched ? (
         <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+          {!hasNoBrands && galleryView === "folder" && (
+            <BrandSelector
+              showCampaigns={false}
+              showSelectedValue
+              className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+              onBrandSelect={(brandId, campaignId) => {
+                setSelectedFilters((prev) => ({
+                  ...prev,
+                  brandId: [brandId],
+                  campaigns: campaignId ? [campaignId] : [],
+                }));
+
+                setInitialBrandId(null);
+                setSelectedCampaignInUrl(null);
+              }}
+            />
+          )}
           <h2 className="text-xl font-semibold text-gray-800">
             No brand selected
           </h2>
@@ -578,7 +595,7 @@ export function MediaLibrary({
               </div>
               <TabsContent
                 value={activeTab}
-                className="p-3 rounded-3xl bg-white mt-0 "
+                className="p-3 rounded-3xl bg-white mt-0 flex flex-col flex-grow min-h-0"
               >
                 {activeTab !== "pexels" &&
                   (activeTab !== "a2i-media" ||
