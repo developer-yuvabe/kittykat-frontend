@@ -10,7 +10,7 @@ import {
 } from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { EllipsisIcon } from "lucide-react";
+import { CircleMinus, Copy, EllipsisIcon, Send, UserPen } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -204,6 +204,11 @@ export const getUserTableColumns = (
         });
       };
 
+      const handleCopyInviteLink = () => {
+        navigator.clipboard.writeText(row.original.invitation_link!);
+        toast.success("Invitation link copied to clipboard.");
+      };
+
       return (
         <>
           <DropdownMenu>
@@ -221,6 +226,7 @@ export const getUserTableColumns = (
                     }
                     onClick={() => setOpen(true)}
                   >
+                    <UserPen />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -230,8 +236,21 @@ export const getUserTableColumns = (
                 <>
                   <DropdownMenuItem
                     disabled={isActionsDisabled}
+                    onClick={handleCopyInviteLink}
+                  >
+                    <Copy />
+                    Copy Invite Link
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {row.original.invitation_link && (
+                <>
+                  <DropdownMenuItem
+                    disabled={isActionsDisabled}
                     onClick={handleResendInvite}
                   >
+                    <Send />
                     Resend Invite
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -243,6 +262,7 @@ export const getUserTableColumns = (
                 disabled={isActionsDisabled || row.original.is_default_admin}
                 onClick={handleRevokeAccess}
               >
+                <CircleMinus />
                 Revoke Access
               </DropdownMenuItem>
             </DropdownMenuContent>
