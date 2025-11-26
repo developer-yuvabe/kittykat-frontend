@@ -77,7 +77,6 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
         created_by: "system",
         created_at: now,
         updated_at: now,
-        // required fields from GalleryItem
         brand_id: payload.brand_id || "",
         asset_type: "image",
         latest_version_asset_type: "image",
@@ -86,12 +85,7 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
         asset_url: payload.asset_url,
         preview_url: payload.preview_url ?? payload.asset_url,
         size: "",
-        size_bytes: undefined,
-        dimensions: undefined,
-        is_master: false,
         is_favourite: false,
-        to_ignore: false,
-        is_archived: false,
         processing_status: "ready",
         last_accessed_at: now,
       } as unknown as GalleryItemResponse;
