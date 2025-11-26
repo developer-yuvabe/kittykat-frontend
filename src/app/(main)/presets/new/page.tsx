@@ -7,6 +7,8 @@ import { PresetEditorMode } from "@/types/preset.types";
 import { usePresets } from "@/hooks/usePresets";
 import { PresetEditorSkeleton } from "../_components/PresetEditorSkeleton";
 
+export const dynamic = "force-dynamic";
+
 export default function NewPresetPage() {
   const searchParams = useSearchParams();
   const toClone = searchParams.get("to_clone") ?? undefined;
