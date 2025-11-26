@@ -393,6 +393,18 @@ const A2iImageCard = ({
         <div
           className="relative w-full h-full cursor-pointer group/image hover:brightness-110 transition-all duration-200 z-10"
           onClick={handleItemClick}
+          draggable
+          onDragStart={(e) => {
+            try {
+              e.dataTransfer.setData("assetUrl", image.url);
+              e.dataTransfer.setData("source", "a2i");
+              // image.id is used in many places as gallery item id
+              if (image.id) e.dataTransfer.setData("galleryItemId", image.id);
+              e.dataTransfer.effectAllowed = "copy";
+            } catch (err) {
+              console.warn("drag start dataTransfer failed", err);
+            }
+          }}
         >
           <Image
             src={image.url}

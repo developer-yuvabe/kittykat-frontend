@@ -171,13 +171,23 @@ export function useFileUpload({
     };
 
     const handleDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
       // CRITICAL FIX: Only handle drop if it's within the chat input area
       if (!isDropTargetInChatArea(e.target)) {
         return; // Let other drop handlers handle this
       }
+
+      // Check if this is an internal drag (A2I image, gallery, etc.) - let textarea handle it
+      const hasAssetUrl = e.dataTransfer?.getData("assetUrl");
+      const hasGalleryItemId = e.dataTransfer?.getData("galleryItemId");
+      const hasSource = e.dataTransfer?.getData("source");
+      
+      if (hasAssetUrl || hasGalleryItemId || hasSource) {
+        // This is an internal drag (A2I image), don't intercept it
+        return; // Let the textarea's onDrop handler deal with it
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
 
       if (!e.dataTransfer) return;
 
