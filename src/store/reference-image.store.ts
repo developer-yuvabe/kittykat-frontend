@@ -59,7 +59,6 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
       });
     },
 
-
     // Add a single item optimistically by URL or ID (used for drag-drop from A2I)
     addOptimisticItem: (payload: {
       id: string;
@@ -69,7 +68,6 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
     }) => {
       const { items } = get();
       const now = new Date().toISOString();
-
 
       // Build a minimal GalleryItemResponse-like object
       const optimisticItem: GalleryItemResponse = {
@@ -88,8 +86,7 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
         is_favourite: false,
         processing_status: "ready",
         last_accessed_at: now,
-      } as unknown as GalleryItemResponse;
-
+      };
 
       // Avoid duplicating existing items by id / url
       const exists = items.some(
@@ -99,10 +96,8 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
       );
       if (exists) return;
 
-
       set({ items: [optimisticItem, ...items].slice(0, 40) });
     },
-
 
     // Optimistically update last_accessed_at
     updateLastAccessed: (itemId) => {
