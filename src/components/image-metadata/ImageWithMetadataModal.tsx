@@ -48,6 +48,7 @@ import { remixImageService } from "@/services/api/remix.service";
 import { Skeleton } from "../ui/skeleton";
 
 import { useCreditsStore } from "@/store/credits.store";
+import { useUserStore } from "@/store/user.store";
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
   generation?: {
@@ -88,6 +89,8 @@ const ImageWithMetadataModal = ({
   const pathname = usePathname();
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
+
+  const { user } = useUserStore();
 
   //use selected campaign id if available else use latest campaign of selected brand that is not custom
   const campaignId = selectedCampaignId || defaultCampaignId;
@@ -270,6 +273,7 @@ const ImageWithMetadataModal = ({
             data.parameters.product_reference_images || undefined,
 
           campaign_id: campaignId,
+          team_id: user?.active_team_id,
         });
       }
 

@@ -57,6 +57,7 @@ const MainLayout = ({
       role: userProfile.role,
       is_default_admin: userProfile.is_default_admin,
       user_preferences: userProfile.user_preferences,
+      active_team_id: userProfile.active_team_id,
     });
   }, [userProfile]);
 

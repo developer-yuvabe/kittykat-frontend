@@ -35,7 +35,7 @@ export const updateUser = async (
     model_access?: string[];
     contentFilterDisabled?: boolean;
     credits?: number;
-    kittykat_expert_credits?: number;
+    tokens?: number;
     user_preferences?: {
       enhance_prompts?: boolean;
     };
@@ -49,7 +49,7 @@ export const updateUser = async (
       model_access: userData.model_access,
       content_filter_disabled: userData.contentFilterDisabled,
       credits: userData.credits,
-      kittykat_expert_credits: userData.kittykat_expert_credits,
+      tokens: userData.tokens,
       user_preferences: userData.user_preferences,
     };
 
@@ -113,6 +113,24 @@ export const fetchUserBrands = async (
   }
 };
 
+export const updateUserActiveTeam = async (
+  userId: string,
+  active_team_id: string | null
+): Promise<UserListItem> => {
+  try {
+    const data = await handleApiRequest<UserListItem>(
+      axiosInstance.patch(`/users/${userId}/active-team`, {
+        active_team_id,
+      })
+    );
+
+    return data;
+  } catch (error) {
+    console.error("Error updating user active team:", error);
+    throw error;
+  }
+};
+
 export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
   try {
     const response = await handleApiRequest<UserListItem>(
@@ -124,7 +142,7 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
         base_url: window.location.origin,
         content_filter_disabled: data.contentFilterDisabled,
         credits: data.credits,
-        kittykat_expert_credits: data.kittykat_expert_credits,
+        tokens: data.tokens,
       })
     );
 

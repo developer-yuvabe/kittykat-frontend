@@ -10,10 +10,11 @@ export type User = {
   role: UserRole;
   is_default_admin?: boolean;
   credits?: number;
-  kittykat_expert_credits?: number;
+  tokens?: number;
   user_preferences?: {
     enhance_prompts?: boolean;
   };
+  active_team_id: string;
 };
 
 export type UserListItem = {
@@ -26,7 +27,7 @@ export type UserListItem = {
   invitation_link?: string;
   is_default_admin?: boolean;
   credits?: number;
-  kittykat_expert_credits?: number;
+  tokens?: number;
   content_filter_disabled?: boolean;
   brand_access?: {
     id: string;

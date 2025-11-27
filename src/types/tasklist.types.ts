@@ -80,6 +80,7 @@ export interface CreateTasklistRequest {
   brand_name?: string;
   campaign_name?: string;
   is_bulk_request?: boolean; // Flag to indicate bulk tasklist
+  team_id:string;
 }
 
 export interface UpdateTasklistRequest {

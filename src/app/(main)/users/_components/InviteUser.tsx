@@ -80,7 +80,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       modelAccess: [],
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
     },
     mode: "onSubmit",
   });
@@ -92,10 +92,10 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     "image-upscale": "Image upscale",
   };
   const addKittyKatExpertCredits = (amount: number) => {
-    const currentValue = form.getValues("kittykat_expert_credits") || 0;
+    const currentValue = form.getValues("credits") || 0;
     const newValue = currentValue + amount;
     if (newValue <= AppConfig.CREDITS.MAX) {
-      form.setValue("kittykat_expert_credits", newValue);
+      form.setValue("credits", newValue);
     }
   };
   // Initialize base models when component mounts or models load
@@ -116,7 +116,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
     };
     form.reset(defaultValues);
   };
@@ -187,7 +187,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
     });
   };
 
@@ -620,7 +620,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                     />
                     <FormField
                       control={form.control}
-                      name="kittykat_expert_credits"
+                      name="credits"
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <div className="flex items-center gap-2 h-6">

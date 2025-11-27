@@ -112,7 +112,7 @@ export const getUserTableColumns = (
   },
   {
     header: "Tokens",
-    accessorKey: "credits",
+    accessorKey: "tokens",
     cell: ({ row }) => (
       <p className="font-medium">
         {Number(row.original.credits ?? 0).toLocaleString()}
@@ -121,10 +121,10 @@ export const getUserTableColumns = (
   },
   {
     header: "KittyKat Expert Credits",
-    accessorKey: "kittykat_expert_credits",
+    accessorKey: "credits",
     cell: ({ row }) => (
       <div className="font-medium">
-        {Number(row.original.kittykat_expert_credits ?? 0).toLocaleString()}
+        {Number(row.original.credits ?? 0).toLocaleString()}
       </div>
     ),
   },

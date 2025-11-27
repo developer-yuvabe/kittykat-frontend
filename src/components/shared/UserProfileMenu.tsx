@@ -9,17 +9,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/store/user.store";
-import { GemIcon, LifeBuoy, LogOut } from "lucide-react";
+import { GemIcon, LifeBuoy, LogOut, Check } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CreditIcon } from "../ui/custom-icon";
 import QueueProgress from "./QueueProgress";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/config/firebase.config";
+import { useTeams } from "@/hooks/useTeams";
+import useUsers from "@/hooks/useUsers";
+import { useEffect } from "react";
 
 export function UserProfileMenu({}) {
   const { user, credits, kittykatExpertCredits } = useUserStore();
+  const { myTeamsQuery } = useTeams();
+
+  useEffect(() => {
+    console.log(myTeamsQuery.data);
+  }, [myTeamsQuery.data]);
+
+  const { updateActiveTeam } = useUsers();
   const router = useRouter();
+  const setUser = useUserStore((s) => s.setUser);
 
   async function handleLogout() {
     await signOut(auth);
@@ -87,6 +99,64 @@ export function UserProfileMenu({}) {
               </div>
             </div>
           </DropdownMenuLabel>
+          <div className="px-1 py-2">
+            <div className="text-xs font-semibold text-muted-foreground mb-2">
+              Workspaces
+            </div>
+
+            {/* Team workspaces only - Individual workspace removed: always use team flow */}
+
+            {/* Teams list */}
+            <div className="mt-2 space-y-1">
+              {myTeamsQuery.isLoading && (
+                <>
+                  {/* Render a few skeleton placeholders that match the team item layout */}
+                  {[0, 1, 2].map((i) => (
+                    <DropdownMenuItem asChild key={`skeleton-${i}`}>
+                      <button
+                        disabled
+                        className={`flex items-center justify-between gap-2 p-2 rounded-md w-full text-left hover:bg-accent/30 pointer-events-none bg-transparent`}
+                        aria-hidden
+                      >
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-6 w-6 rounded-sm" />
+                          <Skeleton className="h-4 w-28 rounded" />
+                        </div>
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </button>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+              {myTeamsQuery.data?.teams?.map((team) => (
+                <DropdownMenuItem asChild key={team.id}>
+                  <button
+                    className={`flex items-center justify-between gap-2 p-2 rounded-md w-full text-left hover:bg-accent/30 ${
+                      user?.active_team_id === team.id ? "bg-accent/20" : ""
+                    }`}
+                    onClick={() => {
+                      if (!user) return;
+                      setUser({ ...user, active_team_id: team.id });
+                      updateActiveTeam({
+                        userId: user.id,
+                        active_team_id: team.id,
+                      });
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-6 w-6 rounded-sm bg-primary/20 flex items-center justify-center text-xs text-primary">
+                        {team.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-sm truncate">{team.name}</div>
+                    </div>
+                    {user?.active_team_id === team.id && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </button>
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </div>
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>

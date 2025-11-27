@@ -89,7 +89,7 @@ export function EditUser({
       modelAccess: user.model_access?.map((model) => model.id) || baseModelIds, // Default to base models if no access defined
       contentFilterDisabled: user.content_filter_disabled || false,
       credits: user.credits || 0,
-      kittykat_expert_credits: user.kittykat_expert_credits || 0,
+      tokens: user.tokens || 0,
     },
     mode: "onSubmit",
   });
@@ -118,7 +118,7 @@ export function EditUser({
           user.role.id === UserRoleId.ADMIN ? [] : combinedModelAccess, // ✅ FIXED SYNTAX ERROR
         contentFilterDisabled: user.content_filter_disabled ?? false,
         credits: user.credits ?? 0,
-        kittykat_expert_credits: user.kittykat_expert_credits ?? 0, // ✅ ADDED
+        tokens: user.tokens ?? 0, // ✅ ADDED
       });
     }
   }, [isOpen, user, form, baseModelIds]);
@@ -133,7 +133,7 @@ export function EditUser({
         model_access: data.modelAccess,
         contentFilterDisabled: data.contentFilterDisabled,
         credits: data.credits,
-        kittykat_expert_credits: data.kittykat_expert_credits,
+        tokens: data.tokens,
       }),
       {
         loading: "Updating user...",
@@ -579,7 +579,7 @@ export function EditUser({
 
                   <FormField
                     control={form.control}
-                    name="credits"
+                    name="tokens"
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <div className="flex items-center gap-2 h-6">
@@ -712,7 +712,7 @@ export function EditUser({
 
                   <FormField
                     control={form.control}
-                    name="kittykat_expert_credits"
+                    name="credits"
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <div className="flex items-center gap-2 h-6">
