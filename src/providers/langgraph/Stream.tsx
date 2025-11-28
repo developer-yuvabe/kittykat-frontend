@@ -17,12 +17,17 @@ import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
 import Splash from "@/components/shared/Splash";
-import { fetchThreadState } from "@/services/api/langgraph.service";
+import {
+  fetchSuggestions,
+  fetchThreadState,
+} from "@/services/api/langgraph.service";
 import { useBrandStore } from "@/store/brand.store";
 import { client } from "./langgraph.client";
 import { toast } from "sonner";
 import { logError } from "@/services/actions/log-error";
 import { env } from "@/config/env";
+import { useThreadStore } from "@/store/thread.store";
+import { NextSuggestions } from "@/types/langgraph.types";
 
 export type StateType = {
   messages: Message[];
@@ -38,6 +43,7 @@ export type StateType = {
   currentSelectedImageGenerationModelId: string | null;
   currentSelectedVideoGenerationModelId: string | null;
   userAccessToken: string | null;
+  suggestions?: NextSuggestions[];
 
   timestamp: number;
 };
@@ -60,6 +66,8 @@ const useTypedStream = useStream<
       currentSelectedImageGenerationModelId: string | null;
       currentSelectedVideoGenerationModelId: string | null;
       userAccessToken: string | null;
+
+      suggestions?: NextSuggestions[];
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }
@@ -81,6 +89,7 @@ const StreamSession = ({
   cahedData?: StateType | null;
 }) => {
   const { user, setUser } = useUserStore();
+  const { setSuggestions } = useThreadStore();
 
   const streamValue = useTypedStream({
     apiUrl,
@@ -90,6 +99,12 @@ const StreamSession = ({
     reconnectOnMount: true,
     fetchStateHistory: {
       limit: 1,
+    },
+    onFinish: async () => {
+      if (user?.thread_id) {
+        const suggestions = await fetchSuggestions(user.thread_id);
+        setSuggestions(suggestions || []);
+      }
     },
     onError: (error) => {
       if (process.env.NODE_ENV === "production") {

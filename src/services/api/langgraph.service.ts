@@ -1,6 +1,9 @@
+import axiosInstance from "@/config/axios/api-client.config";
 import { scrollToBottom } from "@/lib/scroll.utils";
+import { handleApiRequest } from "@/lib/utils";
 import { client } from "@/providers/langgraph/langgraph.client";
 import { StateType, StreamContextType } from "@/providers/langgraph/Stream";
+import { NextSuggestions } from "@/types/langgraph.types";
 import { Message } from "@langchain/langgraph-sdk";
 import { v4 as uuidv4 } from "uuid";
 
@@ -80,4 +83,16 @@ export const updateCurrentContextBrandId = async (
       previousBrandContextId,
     },
   });
+};
+
+export const fetchSuggestions = async (threadId: string) => {
+  try {
+    const suggestions = await handleApiRequest<NextSuggestions[]>(
+      axiosInstance.get(`/threads/${threadId}/suggestions`)
+    );
+
+    return suggestions;
+  } catch (error) {
+    console.error(`Failed to fetch suggestions`, error);
+  }
 };
