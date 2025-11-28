@@ -62,6 +62,7 @@ interface MoodboardSelectorProps {
   variant?: "combobox" | "select";
   showAllCampaigns?: boolean;
   isAdvancedMode?: boolean;
+  onMoodboardTitleChange?: (newTitle: string) => void;
 }
 
 export default function MoodboardSelector({
@@ -72,6 +73,7 @@ export default function MoodboardSelector({
   variant = "combobox",
   showAllCampaigns = false,
   isAdvancedMode = false,
+  onMoodboardTitleChange,
 }: MoodboardSelectorProps) {
   const { selectedBrandId, setSelectedMoodboardId, campaigns } =
     useBrandStore();
@@ -378,6 +380,83 @@ export default function MoodboardSelector({
       </div>
     );
   }
+  // Add these states
+  const [editingMoodboardId, setEditingMoodboardId] = useState<string | null>(
+    null
+  );
+  const [editingTitle, setEditingTitle] = useState("");
+
+  // Handler for rename
+  const handleRenameMoodboard = async (moodboardId: string) => {
+    if (!selectedBrandId || !editingTitle.trim()) {
+      cancelEditing();
+      return;
+    }
+
+    const newTitle = editingTitle.trim();
+    if (selectedMoodboard?.id === moodboardId && onMoodboardTitleChange) {
+      onMoodboardTitleChange(newTitle);
+    }
+
+    // Update UI immediately
+    setTransformedMoodboards((prev) =>
+      prev.map((mb) =>
+        mb.id === moodboardId
+          ? {
+              ...mb,
+              displayName: newTitle,
+              raw: { ...mb.raw, title: newTitle },
+            }
+          : mb
+      )
+    );
+
+    setFilteredMoodboards((prev) =>
+      prev.map((mb) =>
+        mb.id === moodboardId
+          ? {
+              ...mb,
+              displayName: newTitle,
+              raw: { ...mb.raw, title: newTitle },
+            }
+          : mb
+      )
+    );
+
+    // Update selected moodboard if it's the one being renamed
+    if (selectedMoodboard?.id === moodboardId) {
+      setSelectedMoodboard({
+        ...selectedMoodboard,
+        title: newTitle,
+      });
+    }
+
+    //  Exit editing mode immediately
+    setEditingMoodboardId(null);
+    setEditingTitle("");
+
+    //  API call in background
+    try {
+      await patchMoodboard(selectedBrandId, moodboardId, {
+        title: newTitle,
+      });
+    } catch (error) {
+      console.error("Rename error:", error);
+      toast.error("Failed to sync rename");
+    }
+  };
+
+  // Start editing
+  const startEditing = (moodboardId: string, currentTitle: string) => {
+    setEditingMoodboardId(moodboardId);
+    setEditingTitle(currentTitle);
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingMoodboardId(null);
+    setEditingTitle("");
+  };
 
   // Render combobox variant (default)
   return (
@@ -456,7 +535,11 @@ export default function MoodboardSelector({
                             <CommandItem
                               key={`moodboard-${mb.id}`}
                               value={`${displayName}::${mb.id}`}
-                              onSelect={() => handleSelect(mb.id)}
+                              onSelect={() => {
+                                if (editingMoodboardId !== mb.id) {
+                                  handleSelect(mb.id);
+                                }
+                              }}
                               onClick={(e) => e.stopPropagation()}
                               className={cn(
                                 "flex items-center justify-between my-0.5",
@@ -472,29 +555,105 @@ export default function MoodboardSelector({
                                     {initial}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="truncate">{displayName}</span>
-                              </div>
-                              <div className="flex items-center">
-                                {selectedMoodboardId === mb.id && (
-                                  <Check className="h-4 w-4" />
+
+                                {/* Input field when editing */}
+                                {editingMoodboardId === mb.id ? (
+                                  <Input
+                                    value={editingTitle}
+                                    onChange={(e) =>
+                                      setEditingTitle(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        handleRenameMoodboard(mb.id);
+                                      } else if (e.key === "Escape") {
+                                        cancelEditing();
+                                      }
+                                    }}
+                                    className="h-8 text-sm flex-1"
+                                    autoFocus
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                ) : (
+                                  <span className="flex-1 truncate text-sm font-medium">
+                                    {displayName}
+                                  </span>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpen(false);
-                                    setMoodboardToDelete({
-                                      id: mb.id,
-                                      title: mb.title || "Untitled",
-                                    });
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  disabled={loading}
-                                  className="hover:bg-red-200"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                {selectedMoodboardId === mb.id &&
+                                  editingMoodboardId !== mb.id && (
+                                    <Check className="h-4 w-4" />
+                                  )}
+
+                                {/* editing */}
+                                {editingMoodboardId === mb.id ? (
+                                  <>
+                                    {/* Save Icon */}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRenameMoodboard(mb.id);
+                                      }}
+                                      disabled={loading}
+                                    >
+                                      <Save className="h-3.5 w-3.5" />
+                                    </Button>
+
+                                    {/* Cancel Icon */}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        cancelEditing();
+                                      }}
+                                      disabled={loading}
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    {/* Pencil Icon - Start editing */}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startEditing(mb.id, displayName);
+                                      }}
+                                      disabled={loading}
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+
+                                    {/* Trash Icon - Delete */}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpen(false);
+                                        setMoodboardToDelete({
+                                          id: mb.id,
+                                          title: mb.title || "Untitled",
+                                        });
+                                        setShowDeleteDialog(true);
+                                      }}
+                                      disabled={loading}
+                                      className="hover:bg-red-200"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             </CommandItem>
                           );
@@ -510,7 +669,11 @@ export default function MoodboardSelector({
                     <CommandItem
                       key={mb.id}
                       value={mb.searchKey}
-                      onSelect={() => handleSelect(mb.id)}
+                      onSelect={() => {
+                        if (editingMoodboardId !== mb.id) {
+                          handleSelect(mb.id);
+                        }
+                      }}
                       onClick={(e) => e.stopPropagation()}
                       className="flex items-center justify-between"
                     >
@@ -520,29 +683,101 @@ export default function MoodboardSelector({
                             {mb.initial}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="truncate">{mb.displayName}</span>
-                      </div>
-                      <div className="flex items-center">
-                        {selectedMoodboardId === mb.id && (
-                          <Check className="h-4 w-4" />
+
+                        {/* Input field when editing */}
+                        {editingMoodboardId === mb.id ? (
+                          <Input
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleRenameMoodboard(mb.id);
+                              } else if (e.key === "Escape") {
+                                cancelEditing();
+                              }
+                            }}
+                            className="h-8 text-sm flex-1"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span className="truncate">{mb.displayName}</span>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpen(false);
-                            setMoodboardToDelete({
-                              id: mb.id,
-                              title: mb.displayName || "Untitled",
-                            });
-                            setShowDeleteDialog(true);
-                          }}
-                          disabled={loading}
-                          className="hover:bg-red-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {selectedMoodboardId === mb.id &&
+                          editingMoodboardId !== mb.id && (
+                            <Check className="h-4 w-4" />
+                          )}
+
+                        {/* editing  */}
+                        {editingMoodboardId === mb.id ? (
+                          <>
+                            {/* Save Icon */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRenameMoodboard(mb.id);
+                              }}
+                              disabled={loading}
+                            >
+                              <Save className="h-3.5 w-3.5" />
+                            </Button>
+
+                            {/* Cancel Icon */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cancelEditing();
+                              }}
+                              disabled={loading}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Pencil Icon - Start editing */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditing(mb.id, mb.displayName);
+                              }}
+                              disabled={loading}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+
+                            {/* Trash Icon - Delete */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpen(false);
+                                setMoodboardToDelete({
+                                  id: mb.id,
+                                  title: mb.displayName || "Untitled",
+                                });
+                                setShowDeleteDialog(true);
+                              }}
+                              disabled={loading}
+                              className="hover:bg-red-200"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </CommandItem>
                   ))}
