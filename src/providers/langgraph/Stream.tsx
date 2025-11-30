@@ -100,9 +100,16 @@ const StreamSession = ({
     fetchStateHistory: {
       limit: 1,
     },
-    onFinish: async () => {
+    onFinish: async (state) => {
       if (user?.thread_id) {
-        const suggestions = await fetchSuggestions(user.thread_id);
+        const { messages, ...restState } = state.values;
+        const lastMessages = messages.slice(-5);
+
+        const suggestions = await fetchSuggestions(
+          user.thread_id,
+          lastMessages,
+          restState
+        );
         setSuggestions(suggestions || []);
       }
     },

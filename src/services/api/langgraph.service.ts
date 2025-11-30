@@ -85,10 +85,17 @@ export const updateCurrentContextBrandId = async (
   });
 };
 
-export const fetchSuggestions = async (threadId: string) => {
+export const fetchSuggestions = async (
+  threadId: string,
+  messages: Message[],
+  state: Record<string, any>
+) => {
   try {
     const suggestions = await handleApiRequest<NextSuggestions[]>(
-      axiosInstance.get(`/threads/${threadId}/suggestions`)
+      axiosInstance.post(`/threads/${threadId}/suggestions`, {
+        messages,
+        state,
+      })
     );
 
     return suggestions;
