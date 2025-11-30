@@ -182,16 +182,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   });
 
   // Image paste handler only (drag-and-drop now handled by useFileUpload)
-  const { isUploading: isImageUploading, handleImageFiles, handleA2iImageDrop } =
-    useChatInputImageHandler({
-      brandId: selectedBrandId,
-      referenceImages,
-      onReferenceImagesChange: setReferenceImages,
-      maxTotalSizeMB: 50,
-      maxFileSizeLimit: 10,
-      allowedFileTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
-      maxImageCount: 10,
-    });
+  const {
+    isUploading: isImageUploading,
+    handleImageFiles,
+    handleA2iImageDrop,
+  } = useChatInputImageHandler({
+    brandId: selectedBrandId,
+    referenceImages,
+    onReferenceImagesChange: setReferenceImages,
+    maxTotalSizeMB: 50,
+    maxFileSizeLimit: 10,
+    allowedFileTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    maxImageCount: 10,
+  });
 
   const isUploading = isPdfUploading || isImageUploading;
 
@@ -271,6 +274,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           currentSelectedVideoGenerationModelId:
             selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+          activeTeamId: user?.active_team_id || null,
         },
         {
           streamMode: ["values"],

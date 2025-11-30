@@ -1,25 +1,59 @@
 import { getSSEBaseUrl } from "@/lib/utils";
-import { fetchUserBrands } from "@/services/api/user.service";
+import { getTeamBrands } from "@/services/api/team.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
 import { UserBrand } from "@/types/user.types";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
 
 export const useUserBrands = () => {
   const {
     setBrands,
     addBrand,
     removeBrand,
+    isBrandsFetched,
+    brands,
     setIsBrandsFetched,
     setSelectedBrandId,
     setIsCreatingBrand,
+    selectedBrandId,
   } = useBrandStore();
   const { user } = useUserStore();
+
+  useEffect(() => {
+    if (!isBrandsFetched || !user) return;
+    const sortedBrands = [...brands].sort((a, b) => {
+      return a.name.localeCompare(b.name);
+    });
+
+    //  If there's already a selectedBrandId and it belongs to the current team,
+    //    do nothing — no need to switch or update the context.
+    if (selectedBrandId && brands.some((b) => b.id === selectedBrandId)) {
+      return;
+    }
+    //  If there are brands after sorting, select the ID of the first brand
+    //    in the sorted array and update the current context thread if available.
+    if (sortedBrands.length > 0) {
+      const firstId = sortedBrands[0].id;
+      setSelectedBrandId(firstId);
+
+      if (user?.thread_id) {
+        updateCurrentContextBrandId(user.thread_id, firstId, null);
+      }
+    } else {
+      // If there are no brands in this team, clear selected brand and update context
+      setSelectedBrandId(null);
+      if (user?.thread_id) {
+        updateCurrentContextBrandId(user.thread_id, null, null);
+      }
+    }
+  }, [isBrandsFetched, user?.active_team_id, selectedBrandId, user?.thread_id]);
+
   useQuery({
-    queryKey: ["brands"],
+    queryKey: ["brands", user?.active_team_id],
     queryFn: async () => {
-      const brands = await fetchUserBrands(user!.id);
+      const brands = await getTeamBrands(user!.active_team_id);
 
       if (brands) setBrands(brands);
       setIsBrandsFetched(true);

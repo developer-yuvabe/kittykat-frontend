@@ -162,8 +162,7 @@ export function useUsers({
 
     sendEmailVerificationLink: sendEmailVerificationMutation.mutate,
     isSendingEmailVerificationLink: sendEmailVerificationMutation.isPending,
-    // Active team
-    updateActiveTeam: updateActiveTeamMutation.mutate,
+    updateActiveTeamAsync: updateActiveTeamMutation.mutateAsync,
     isUpdatingActiveTeam: updateActiveTeamMutation.isPending,
   };
 }

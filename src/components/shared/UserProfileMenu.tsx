@@ -19,19 +19,26 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/config/firebase.config";
 import { useTeams } from "@/hooks/useTeams";
 import useUsers from "@/hooks/useUsers";
+import { useBrandStore } from "@/store/brand.store";
 import { useEffect } from "react";
+import { useStreamContext } from "@/providers/langgraph/Stream";
+import { updateActiveTeamIdinThread } from "@/services/api/langgraph.service";
 
 export function UserProfileMenu({}) {
-  const { user, credits, kittykatExpertCredits } = useUserStore();
+  const {
+    user,
+    credits,
+    kittykatExpertCredits,
+    setIsSwitchingTeam,
+    isSwitchingTeam,
+  } = useUserStore();
   const { myTeamsQuery } = useTeams();
 
-  useEffect(() => {
-    console.log(myTeamsQuery.data);
-  }, [myTeamsQuery.data]);
-
-  const { updateActiveTeam } = useUsers();
+  const { updateActiveTeamAsync } = useUsers();
   const router = useRouter();
   const setUser = useUserStore((s) => s.setUser);
+  const { setIsBrandsFetched } = useBrandStore();
+  const { values } = useStreamContext();
 
   async function handleLogout() {
     await signOut(auth);
@@ -50,19 +57,50 @@ export function UserProfileMenu({}) {
     ).toUpperCase();
   };
 
+  //check if thread has actvive team id , if there leave it else update it
+  useEffect(() => {
+    const updateThreadActiveTeam = async () => {
+      // only update the langgraph thread state when we have an active team and a valid thread id
+      if (user?.active_team_id && user?.thread_id) {
+        if (!values.activeTeamId) {
+          console.log("Updating thread active team ID");
+          try {
+            await updateActiveTeamIdinThread(
+              user.thread_id,
+              user.active_team_id
+            );
+          } catch (err) {
+            console.error("Failed to update thread active team id", err);
+          }
+        }
+      }
+    };
+
+    updateThreadActiveTeam();
+  }, [user?.active_team_id, user?.thread_id, values.activeTeamId]);
+
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">
       {kittykatExpertCredits !== null && (
         <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
-          <span className="text-xs">
-            {kittykatExpertCredits.toLocaleString()}
-          </span>
+          {isSwitchingTeam ? (
+            <Skeleton className="h-4 w-8" />
+          ) : (
+            <span className="text-xs">
+              {kittykatExpertCredits.toLocaleString()}
+            </span>
+          )}
+
           <GemIcon className="w-6 h-4" />
         </div>
       )}
       {credits !== null && (
         <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full h-10 cursor-pointer">
-          <span className="text-xs">{credits.toLocaleString()}</span>
+          {isSwitchingTeam ? (
+            <Skeleton className="h-4 w-8" />
+          ) : (
+            <span className="text-xs">{credits.toLocaleString()}</span>
+          )}
           <CreditIcon className="w-2 h-2" />
         </div>
       )}
@@ -111,7 +149,7 @@ export function UserProfileMenu({}) {
               {myTeamsQuery.isLoading && (
                 <>
                   {/* Render a few skeleton placeholders that match the team item layout */}
-                  {[0, 1, 2].map((i) => (
+                  {[0, 1].map((i) => (
                     <DropdownMenuItem asChild key={`skeleton-${i}`}>
                       <button
                         disabled
@@ -134,13 +172,30 @@ export function UserProfileMenu({}) {
                     className={`flex items-center justify-between gap-2 p-2 rounded-md w-full text-left hover:bg-accent/30 ${
                       user?.active_team_id === team.id ? "bg-accent/20" : ""
                     }`}
-                    onClick={() => {
+                    onClick={async () => {
                       if (!user) return;
-                      setUser({ ...user, active_team_id: team.id });
-                      updateActiveTeam({
-                        userId: user.id,
-                        active_team_id: team.id,
-                      });
+                      setIsSwitchingTeam(true);
+                      setIsBrandsFetched(false);
+                      try {
+                        await updateActiveTeamAsync({
+                          userId: user.id,
+                          active_team_id: team.id,
+                        });
+                        // update the activeTeamId in the langgraph thread state
+                        // this must use the *thread* id (user.thread_id), not the user's id
+                        if (user.thread_id) {
+                          await updateActiveTeamIdinThread(
+                            user.thread_id,
+                            team.id
+                          );
+                        }
+
+                        setUser({ ...user, active_team_id: team.id });
+                      } catch (err) {
+                        console.error("Failed to update active team", err);
+                      } finally {
+                        setIsSwitchingTeam(false);
+                      }
                     }}
                   >
                     <div className="flex items-center gap-3">

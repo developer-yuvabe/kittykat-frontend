@@ -9,6 +9,7 @@ import type {
   TeamsListResponse,
   TeamNamesListResponse,
 } from "@/types/team.types";
+import { UserBrand } from "@/types/user.types";
 
 export async function createTeam(
   payload: TeamCreateRequest
@@ -65,8 +66,10 @@ export async function removeMember(
   );
 }
 
-export async function getTeamBrands(teamId: string): Promise<any[]> {
-  return handleApiRequest<any[]>(axiosInstance.get(`/teams/${teamId}/brands`));
+export async function getTeamBrands(teamId: string): Promise<UserBrand[]> {
+  return handleApiRequest<UserBrand[]>(
+    axiosInstance.get(`/teams/${teamId}/brands`)
+  );
 }
 
 export async function getMyTeamNames(): Promise<TeamNamesListResponse> {

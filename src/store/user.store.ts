@@ -15,6 +15,9 @@ type Store = {
 
   kittykatExpertCredits: number | null;
   setKittykatExpertCredits: (credits: number | null) => void;
+
+  isSwitchingTeam: boolean;
+  setIsSwitchingTeam: (isSwitching: boolean) => void;
 };
 
 export const useUserStore = create<Store>()((set) => ({
@@ -27,4 +30,7 @@ export const useUserStore = create<Store>()((set) => ({
   kittykatExpertCredits: null,
   setKittykatExpertCredits: (credits) =>
     set({ kittykatExpertCredits: credits }),
+
+  isSwitchingTeam: false,
+  setIsSwitchingTeam: (isSwitching) => set({ isSwitchingTeam: isSwitching }),
 }));

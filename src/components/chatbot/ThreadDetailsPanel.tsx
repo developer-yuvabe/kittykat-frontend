@@ -9,6 +9,7 @@ import { BrandSection } from "./brands/BrandSection";
 import { InitialPlaceHolder } from "./brands/InitialPlaceHolder";
 import { CampaignSection } from "./campaigns/CampaignSection";
 import { MoodboardSection } from "./moodboards/MoodboardSection";
+import { useUserStore } from "@/store/user.store";
 
 interface ThreadDetailsPanelProps {
   isLargeScreen: boolean;
@@ -26,6 +27,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     selectedCampaignId: globalSelectedCamapaignId,
     setSelectedCampaignId,
   } = useBrandStore();
+  const { isSwitchingTeam } = useUserStore();
   const { isFetchingBrandInfo, data } = useBrandUpdatesStore();
 
   const brandingInformation = data?.brand_information;
@@ -71,9 +73,12 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
         isLargeScreen ? "w-full min-h-full h-full" : ""
       }`}
     >
-      {isFetchingBrandInfo || isCreatingBrand ? (
+      {isFetchingBrandInfo ||
+      isCreatingBrand ||
+      isSwitchingTeam ||
+      !isBrandsFetched ? (
         <InitialPlaceHolder
-          isLoading={isFetchingBrandInfo || !isBrandsFetched}
+          isLoading={isFetchingBrandInfo || !isBrandsFetched || isSwitchingTeam}
           isCreatingNewBrand={isCreatingBrand}
         />
       ) : (

@@ -40,6 +40,7 @@ export type StateType = {
   userAccessToken: string | null;
 
   timestamp: number;
+  activeTeamId: string | null;
 };
 
 const useTypedStream = useStream<
@@ -60,6 +61,7 @@ const useTypedStream = useStream<
       currentSelectedImageGenerationModelId: string | null;
       currentSelectedVideoGenerationModelId: string | null;
       userAccessToken: string | null;
+      activeTeamId: string | null;
     };
     CustomEventType: UIMessage | RemoveUIMessage;
   }

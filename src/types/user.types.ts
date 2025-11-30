@@ -81,4 +81,5 @@ export type UserBrand = {
     name: string;
     email: string;
   };
+  created_by_team_id?: string;
 };
