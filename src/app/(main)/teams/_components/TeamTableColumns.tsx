@@ -58,10 +58,14 @@ export function getTeamTableColumns(
       header: "Owner",
       cell: ({ row }) => {
         const team = row.original;
+        const { user } = useUserStore();
+        const isCurrentUser = user?.id === team.owner?.id;
 
         return (
           <span className="text-sm">
-            {team.owner ? `${team.owner.name}` : "Unknown"}
+            {team.owner
+              ? `${team.owner.name}${isCurrentUser ? " (You)" : ""}`
+              : "Unknown"}
           </span>
         );
       },

@@ -18,10 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  formatTeamRole,
-  getRoleBadgeVariant,
-} from "@/lib/team.utils";
+import { formatTeamRole, getRoleBadgeVariant } from "@/lib/team.utils";
 import { TeamMember, TeamResponse, TeamRolesEnum } from "@/types/team.types";
 import {
   ColumnDef,
@@ -30,12 +27,11 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight,  Search, Trash2,  } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-
+import { useUserStore } from "@/store/user.store";
 
 export const MembersTable = ({
   members,
@@ -78,23 +74,28 @@ export const MembersTable = ({
       {
         accessorKey: "name",
         header: "Name",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                {row.original.name?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="font-medium text-sm">
-                {row.original.name || "Unknown"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {row.original.email}
-              </span>
+        cell: ({ row }) => {
+          const { user } = useUserStore();
+          const isCurrentUser = user?.id === row.original.id;
+          return (
+            <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                  {row.original.name?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-medium text-sm">
+                  {row.original.name || "Unknown"}
+                  {isCurrentUser && " (You)"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {row.original.email}
+                </span>
+              </div>
             </div>
-          </div>
-        ),
+          );
+        },
       },
       {
         accessorKey: "role",
@@ -226,15 +227,23 @@ export const MembersTable = ({
                     <TableRow key={row.id}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
-                      {searchQuery ? "No members found matching your search" : "No team members yet"}
+                    <TableCell
+                      colSpan={columns.length}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      {searchQuery
+                        ? "No members found matching your search"
+                        : "No team members yet"}
                     </TableCell>
                   </TableRow>
                 )}
@@ -265,15 +274,23 @@ export const MembersTable = ({
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
-                    {searchQuery ? "No members found matching your search" : "No team members yet"}
+                  <TableCell
+                    colSpan={columns.length}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    {searchQuery
+                      ? "No members found matching your search"
+                      : "No team members yet"}
                   </TableCell>
                 </TableRow>
               )}
@@ -286,7 +303,8 @@ export const MembersTable = ({
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {table.getRowModel().rows.length} of {filteredMembers.length} members
+            Showing {table.getRowModel().rows.length} of{" "}
+            {filteredMembers.length} members
           </p>
           <div className="flex items-center gap-2">
             <Button
