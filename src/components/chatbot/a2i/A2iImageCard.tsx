@@ -550,7 +550,7 @@ const A2iImageCard = ({
         {status !== "processing" && (
           <div className="absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-2">
             {status === "failed" &&
-              process.env.NEXT_PUBLIC_ENVIRONMENT !== "prfod" && (
+              process.env.NEXT_PUBLIC_ENVIRONMENT !== "prod" && (
                 <TooltipButton
                   tooltip="Retry generation"
                   size="sm"
