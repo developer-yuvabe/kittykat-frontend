@@ -110,24 +110,6 @@ export const getUserTableColumns = (
       </Badge>
     ),
   },
-  {
-    header: "Tokens",
-    accessorKey: "credits",
-    cell: ({ row }) => (
-      <p className="font-medium">
-        {Number(row.original.credits ?? 0).toLocaleString()}
-      </p>
-    ),
-  },
-  {
-    header: "KittyKat Expert Credits",
-    accessorKey: "kittykat_expert_credits",
-    cell: ({ row }) => (
-      <div className="font-medium">
-        {Number(row.original.kittykat_expert_credits ?? 0).toLocaleString()}
-      </div>
-    ),
-  },
 
   {
     header: "Brand Access",

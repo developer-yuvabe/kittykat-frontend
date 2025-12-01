@@ -176,6 +176,7 @@ export function AskKittyKatConfirmationDialog({
         brand_name: brandName,
         campaign_name: campaignName,
         is_bulk_request: false, // Single asset request
+        team_id: user?.active_team_id,
       };
 
       await createTaskListMutation.mutateAsync(createRequest);

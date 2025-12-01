@@ -36,6 +36,6 @@ export const AppConfig = {
     MIN: 0,
     MAX: Number.MAX_SAFE_INTEGER, // 9,007,199,254,740,991 - Maximum safe integer in JavaScript (within MongoDB's 64-bit range)
   },
-  DEFAULT_CREDITS: 10000,
-  DEFAULT_KITTYKAT_EXPERT_CREDITS: 1000,
+  DEFAULT_CREDITS: 1000,
+  DEFAULT_TOKENS: 10000,
 };

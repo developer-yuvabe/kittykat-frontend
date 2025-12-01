@@ -46,6 +46,7 @@ export type StateType = {
   suggestions?: NextSuggestions[];
 
   timestamp: number;
+  activeTeamId: string | null;
 };
 
 const useTypedStream = useStream<
@@ -66,6 +67,7 @@ const useTypedStream = useStream<
       currentSelectedImageGenerationModelId: string | null;
       currentSelectedVideoGenerationModelId: string | null;
       userAccessToken: string | null;
+      activeTeamId: string | null;
 
       suggestions?: NextSuggestions[];
     };

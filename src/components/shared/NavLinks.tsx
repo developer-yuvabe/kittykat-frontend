@@ -2,7 +2,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useUserStore } from "@/store/user.store";
-import { Image, ListTodo, Users } from "lucide-react";
+import { Image, ListTodo, Users, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationHoverCard from "../notifications/NotificationHoverCard";
@@ -14,7 +14,9 @@ const LINKS = [
   { name: "Home", icon: HomeIcon, path: "/", disabled: true },
   { name: "Gallery", icon: GalleryIcon, path: "/gallery" },
   { name: "Task Lists", icon: ListTodo, path: "/tasklist" },
+  { name: "Teams", icon: Users2, path: "/teams" },
 ];
+
 
 export function NavLinks() {
   const pathname = usePathname();

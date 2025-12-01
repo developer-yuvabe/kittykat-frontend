@@ -12,9 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBrandStore } from "@/store/brand.store";
 import { useModelsStore } from "@/store/models.store";
-import { GemIcon, Info, Plus, X } from "lucide-react";
+import { Info, Plus, X } from "lucide-react";
 import { inviationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
 import {
@@ -48,14 +47,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CreditIcon } from "@/components/ui/custom-icon";
-import { NumberInput } from "@/components/ui/number-input";
 
 type InviteUserFormData = z.infer<typeof inviationSchema>;
 
 export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const [open, setOpen] = React.useState(false);
-  const { brands } = useBrandStore();
   const { models } = useModelsStore();
   const { user } = useUserStore();
   const queryClient = useQueryClient();
@@ -76,11 +72,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     defaultValues: {
       email: "",
       role: UserRoleId.USER,
-      brandAccess: [],
       modelAccess: [],
       contentFilterDisabled: false,
-      credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
     },
     mode: "onSubmit",
   });
@@ -91,13 +84,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     remix: "In painting",
     "image-upscale": "Image upscale",
   };
-  const addKittyKatExpertCredits = (amount: number) => {
-    const currentValue = form.getValues("kittykat_expert_credits") || 0;
-    const newValue = currentValue + amount;
-    if (newValue <= AppConfig.CREDITS.MAX) {
-      form.setValue("kittykat_expert_credits", newValue);
-    }
-  };
+
   // Initialize base models when component mounts or models load
   useEffect(() => {
     if (baseModelIds.length > 0) {
@@ -116,7 +103,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
     };
     form.reset(defaultValues);
   };
@@ -158,7 +145,6 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
 
   useEffect(() => {
     if (selectedRole === UserRoleId.ADMIN) {
-      form.setValue("brandAccess", []);
       form.setValue("modelAccess", []);
     } else {
       // Ensure base models are included when switching to user role
@@ -170,24 +156,13 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     }
   }, [selectedRole, baseModelIds, form]);
 
-  const addCredits = (amount: number) => {
-    const currentValue = form.getValues("credits") || 0;
-    const newValue = currentValue + amount;
-    if (newValue <= AppConfig.CREDITS.MAX) {
-      form.setValue("credits", newValue);
-    }
-  };
-
   const handleClose = () => {
     setOpen(false);
     form.reset({
       email: "",
       role: UserRoleId.USER,
-      brandAccess: [],
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
-      credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
     });
   };
 
@@ -276,78 +251,6 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
 
                   {/* Updated Brand Access and Model Access Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Brand Access */}
-                    <FormField
-                      control={form.control}
-                      name="brandAccess"
-                      render={({ field }) => (
-                        <FormItem className="pb-2">
-                          <FormLabel>Brand Access</FormLabel>
-                          <MultiSelect
-                            values={field.value}
-                            onValuesChange={field.onChange}
-                          >
-                            <FormControl>
-                              <MultiSelectTrigger
-                                className="w-full"
-                                disabled={selectedRole === UserRoleId.ADMIN}
-                              >
-                                <MultiSelectValue
-                                  overflowBehavior="cutoff"
-                                  placeholder={
-                                    selectedRole === UserRoleId.ADMIN
-                                      ? "Admin has access to all brands"
-                                      : "Select brands"
-                                  }
-                                />
-                              </MultiSelectTrigger>
-                            </FormControl>
-                            <MultiSelectContent
-                              search={{
-                                placeholder: "Search brands...",
-                                emptyMessage: "No brands found",
-                              }}
-                            >
-                              <MultiSelectGroup>
-                                {brands.map((brand) => (
-                                  <MultiSelectItem
-                                    key={brand.id}
-                                    value={brand.id}
-                                    badgeLabel={brand.name}
-                                    disabled={selectedRole === UserRoleId.ADMIN}
-                                  >
-                                    <div className="flex items-start justify-between group gap-0">
-                                      <div className="flex items-start min-w-0 w-full">
-                                        <Avatar className="h-6 w-6 mr-2">
-                                          <AvatarFallback className="bg-blue-500 text-white">
-                                            {brand.name
-                                              ?.charAt(0)
-                                              .toUpperCase() || "B"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col space-y-1">
-                                          <span className="line-clamp- break-words">
-                                            {brand.name}
-                                          </span>
-                                          <span className="italic text-xs">
-                                            Created by{" "}
-                                            {brand.created_by.id === user?.id
-                                              ? "You"
-                                              : brand.created_by.name}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </MultiSelectItem>
-                                ))}
-                              </MultiSelectGroup>
-                            </MultiSelectContent>
-                          </MultiSelect>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     {/* Model Access */}
                     <FormField
                       control={form.control}
@@ -517,203 +420,6 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               )}
                             </MultiSelectContent>
                           </MultiSelect>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Content Filter and Credits */}
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <FormField
-                      control={form.control}
-                      name="credits"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <div className="flex items-center gap-2 h-6">
-                            <FormLabel>Tokens</FormLabel>
-                          </div>
-                          <FormControl>
-                            <div className="space-y-3">
-                              {user?.is_default_admin ? (
-                                <NumberInput
-                                  min={AppConfig.CREDITS.MIN}
-                                  max={AppConfig.CREDITS.MAX}
-                                  {...field}
-                                  onChange={field.onChange}
-                                  placeholder="Enter tokens"
-                                  className="w-full"
-                                />
-                              ) : (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div
-                                        className="w-full"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onSubmit={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        <Input
-                                          type="number"
-                                          value={field.value}
-                                          disabled
-                                          className="bg-muted w-full pointer-events-none"
-                                          placeholder="Enter tokens"
-                                          tabIndex={-1}
-                                        />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side={"bottom"}>
-                                      You do not have permission to edit Tokens.
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-
-                              {/* Quick add buttons with proper validation */}
-                              {user?.is_default_admin && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addCredits(5000)}
-                                  >
-                                    +5000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addCredits(10000)}
-                                  >
-                                    +10000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addCredits(50000)}
-                                  >
-                                    +50000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="kittykat_expert_credits"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <div className="flex items-center gap-2 h-6">
-                            <FormLabel>Kittykat Expert Credits</FormLabel>
-                          </div>
-                          <FormControl>
-                            <div className="space-y-3">
-                              {user?.is_default_admin ? (
-                                <NumberInput
-                                  min={AppConfig.CREDITS.MIN}
-                                  max={AppConfig.CREDITS.MAX}
-                                  {...field}
-                                  onChange={field.onChange}
-                                  placeholder="Enter credits"
-                                  className="w-full"
-                                />
-                              ) : (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div
-                                        className="w-full"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onSubmit={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        <Input
-                                          type="number"
-                                          value={field.value}
-                                          disabled
-                                          className="bg-muted w-full pointer-events-none"
-                                          placeholder="Enter credits amount"
-                                          tabIndex={-1}
-                                        />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side={"bottom"}>
-                                      You do not have permission to edit
-                                      kittykat expert credits.
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-
-                              {/* Quick add buttons with proper validation */}
-                              {user?.is_default_admin && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      addKittyKatExpertCredits(500)
-                                    }
-                                  >
-                                    +500
-                                    <GemIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      addKittyKatExpertCredits(1000)
-                                    }
-                                  >
-                                    +1000
-                                    <GemIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      addKittyKatExpertCredits(5000)
-                                    }
-                                  >
-                                    +5000
-                                    <GemIcon size={14} className="ml-1" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
