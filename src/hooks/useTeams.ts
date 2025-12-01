@@ -5,13 +5,17 @@ import {
   listTeams,
   updateTeam as updateTeamService,
   deleteTeam as deleteTeamService,
-  addMember as addMemberService,
-  removeMember as removeMemberService,
+  addMembers as addMemberService,
+  removeMembers as removeMemberService,
   getTeamBrands as getTeamBrandsService,
   getMyTeamNames,
 } from "@/services/api/team.service";
 
-import type { TeamCreateRequest, TeamUpdateRequest } from "@/types/team.types";
+import type {
+  TeamCreateRequest,
+  TeamUpdateRequest,
+  TeamRolesEnum,
+} from "@/types/team.types";
 
 interface UseTeamsOptions {
   teamId?: string;
@@ -104,16 +108,14 @@ export function useTeams({
     },
   });
 
-  const addMemberMutation = useMutation({
+  const addMembersMutation = useMutation({
     mutationFn: ({
       teamId,
-      memberId,
-      role,
+      members,
     }: {
       teamId: string;
-      memberId: string;
-      role?: string;
-    }) => addMemberService(teamId, memberId, role),
+      members: { id: string; role?: TeamRolesEnum }[];
+    }) => addMemberService(teamId, members),
     onSuccess: (_, variables) => {
       // Refetch team and team lists to reflect membership changes
       queryClient.invalidateQueries({
@@ -124,9 +126,14 @@ export function useTeams({
     },
   });
 
-  const removeMemberMutation = useMutation({
-    mutationFn: ({ teamId, memberId }: { teamId: string; memberId: string }) =>
-      removeMemberService(teamId, memberId),
+  const removeMembersMutation = useMutation({
+    mutationFn: ({
+      teamId,
+      memberIds,
+    }: {
+      teamId: string;
+      memberIds: string[];
+    }) => removeMemberService(teamId, memberIds),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: getTeamQueryKey(variables.teamId),
@@ -153,10 +160,10 @@ export function useTeams({
     deleteTeam: deleteTeamMutation.mutate,
     isDeletingTeam: deleteTeamMutation.isPending,
 
-    addMember: addMemberMutation.mutate,
-    isAddingMember: addMemberMutation.isPending,
+    addMembers: addMembersMutation.mutate,
+    isAddingMembers: addMembersMutation.isPending,
 
-    removeMember: removeMemberMutation.mutate,
-    isRemovingMember: removeMemberMutation.isPending,
+    removeMembers: removeMembersMutation.mutate,
+    isRemovingMembers: removeMembersMutation.isPending,
   };
 }

@@ -8,6 +8,7 @@ import type {
   TeamResponse,
   TeamsListResponse,
   TeamNamesListResponse,
+  TeamRolesEnum,
 } from "@/types/team.types";
 import { UserBrand } from "@/types/user.types";
 
@@ -45,24 +46,24 @@ export async function deleteTeam(teamId: string): Promise<void> {
   return handleApiRequest<void>(axiosInstance.delete(`/teams/${teamId}`));
 }
 
-export async function addMember(
+export async function addMembers(
   teamId: string,
-  memberId: string,
-  role?: string
+  members: { id: string; role?: TeamRolesEnum }[]
 ): Promise<void> {
   return handleApiRequest<void>(
-    axiosInstance.post(`/teams/${teamId}/members`, undefined, {
-      params: { member_id: memberId, role },
-    })
+    axiosInstance.post(`/teams/${teamId}/members`, { members })
   );
 }
 
-export async function removeMember(
+export async function removeMembers(
   teamId: string,
-  memberId: string
+  memberIds: string[]
 ): Promise<void> {
   return handleApiRequest<void>(
-    axiosInstance.delete(`/teams/${teamId}/members/${memberId}`)
+    // axios delete with body requires 'data' property in config
+    axiosInstance.delete(`/teams/${teamId}/members`, {
+      data: { member_ids: memberIds },
+    })
   );
 }
 

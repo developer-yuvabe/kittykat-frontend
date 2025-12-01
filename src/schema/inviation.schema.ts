@@ -8,13 +8,8 @@ export const inviationSchema = z.object({
   role: z.enum([UserRoleId.ADMIN, UserRoleId.USER], {
     errorMap: () => ({ message: "Please select a role" }),
   }),
-  brandAccess: z.array(z.string()),
   modelAccess: z.array(z.string()),
   contentFilterDisabled: z.boolean(),
-  tokens: z.number().min(0, "Tokens must be a positive number"),
-  credits: z
-    .number()
-    .min(0, "KittyKat Expert Credits must be a positive number"),
 });
 
 export const invitationAcceptSchema = z.object({

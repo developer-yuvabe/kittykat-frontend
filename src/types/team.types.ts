@@ -1,6 +1,16 @@
+export enum TeamRolesEnum {
+  OWNER = "TEAM-OWNER",
+  MEMBER = "TEAM-MEMBER",
+  ADMIN = "TEAM-ADMIN",
+}
+
 export interface TeamMember {
   id: string;
-  role?: string;
+  role?: TeamRolesEnum;
+  name?: string;
+  email?: string;
+  consumed_credits?: number;
+  consumed_tokens?: number;
 }
 
 export interface TeamCreateRequest {
@@ -8,7 +18,7 @@ export interface TeamCreateRequest {
   credits?: number;
   tokens?: number;
   members?: TeamMember[];
-  brands?: string[];
+  accessible_brands?: string[];
 }
 
 export interface TeamUpdateRequest {
@@ -16,18 +26,21 @@ export interface TeamUpdateRequest {
   credits?: number | null;
   tokens?: number | null;
   members?: TeamMember[];
-  brands?: string[];
+  accessible_brands?: string[];
 }
 
 export interface TeamResponse {
   id: string;
   name: string;
-  owner_id: string;
-  role?: string | null;
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+  };
   credits: number;
   tokens: number;
-  members?: Array<Record<string, any>> | null;
-  brands?: Array<Record<string, any>> | null;
+  members: TeamMember[];
+  accessible_brands?: string[];
   created_at: string;
   updated_at: string;
 }

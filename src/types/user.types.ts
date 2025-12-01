@@ -5,12 +5,9 @@ export type User = {
   name: string;
   email: string;
   thread_id?: string | null;
-  brand_access?: UserBrand[];
   model_access?: ModelAccess[];
   role: UserRole;
   is_default_admin?: boolean;
-  credits?: number;
-  tokens?: number;
   user_preferences?: {
     enhance_prompts?: boolean;
   };
@@ -26,8 +23,6 @@ export type UserListItem = {
   status: UserStatus;
   invitation_link?: string;
   is_default_admin?: boolean;
-  credits?: number;
-  tokens?: number;
   content_filter_disabled?: boolean;
   brand_access?: {
     id: string;
@@ -81,5 +76,4 @@ export type UserBrand = {
     name: string;
     email: string;
   };
-  created_by_team_id?: string;
 };
