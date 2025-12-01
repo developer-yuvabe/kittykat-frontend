@@ -7,6 +7,7 @@ import {
   deleteTeam as deleteTeamService,
   addMembers as addMemberService,
   removeMembers as removeMemberService,
+  updateMemberRole as updateMemberRoleService,
   getTeamBrands as getTeamBrandsService,
   getMyTeamNames,
 } from "@/services/api/team.service";
@@ -143,6 +144,24 @@ export function useTeams({
     },
   });
 
+  const updateMemberRoleMutation = useMutation({
+    mutationFn: ({
+      teamId,
+      memberId,
+      newRole,
+    }: {
+      teamId: string;
+      memberId: string;
+      newRole: TeamRolesEnum;
+    }) => updateMemberRoleService(teamId, memberId, newRole),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: getTeamQueryKey(variables.teamId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["teams"], exact: false });
+    },
+  });
+
   return {
     // Queries
     teamQuery,
@@ -165,5 +184,8 @@ export function useTeams({
 
     removeMembers: removeMembersMutation.mutate,
     isRemovingMembers: removeMembersMutation.isPending,
+
+    updateMemberRole: updateMemberRoleMutation.mutate,
+    isUpdatingMemberRole: updateMemberRoleMutation.isPending,
   };
 }

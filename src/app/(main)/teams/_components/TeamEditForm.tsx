@@ -27,8 +27,9 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { AppConfig } from "@/config/app.config";
 import { CreditIcon } from "@/components/ui/custom-icon";
-import { GemIcon } from "lucide-react";
+import { GemIcon, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 
 type TeamUpdateFormData = z.infer<typeof teamUpdateSchema>;
 
@@ -40,6 +41,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
   const { user } = useUserStore();
   const { updateTeam, isUpdatingTeam } = useTeams();
   const canEdit = canEditTeamDetails(user);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const form = useForm<TeamUpdateFormData>({
     resolver: zodResolver(teamUpdateSchema),
@@ -56,7 +58,10 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
         updateTeam(
           { teamId: team.id, payload: data },
           {
-            onSuccess: () => resolve(true),
+            onSuccess: () => {
+              setIsEditMode(false);
+              resolve(true);
+            },
             onError: (error) => reject(error),
           }
         );
@@ -69,10 +74,32 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
     );
   };
 
+  const handleCancel = () => {
+    form.reset({
+      name: team.name,
+      credits: team.credits,
+      tokens: team.tokens,
+    });
+    setIsEditMode(false);
+  };
+
+  const isDirty = form.formState.isDirty;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Team Details</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Team Details</CardTitle>
+          {canEdit && !isEditMode && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsEditMode(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -85,16 +112,12 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                 <FormItem>
                   <FormLabel>Team Name</FormLabel>
                   <FormControl>
-                    {canEdit ? (
-                      <Input placeholder="Team name" {...field} />
-                    ) : (
-                      <Input
-                        placeholder="Team name"
-                        {...field}
-                        disabled
-                        className="bg-muted"
-                      />
-                    )}
+                    <Input
+                      placeholder="Team name"
+                      {...field}
+                      disabled={!isEditMode}
+                      className="disabled:opacity-100"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,9 +134,10 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                     <FormLabel>Tokens</FormLabel>
                     <FormControl>
                       <div className="space-y-3">
-                        {canEdit ? (
+                        {canEdit && isEditMode ? (
                           <>
                             <Input
+                              className="disabled:opacity-100"
                               type="text"
                               inputMode="numeric"
                               min={AppConfig.CREDITS.MIN}
@@ -183,12 +207,14 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                     type="number"
                                     value={field.value || 0}
                                     disabled
-                                    className="bg-muted"
+                                    className="disabled:opacity-100"
                                   />
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                Only KK-ADMIN can edit tokens
+                                {!canEdit
+                                  ? "You do not have permission to edit tokens"
+                                  : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -208,7 +234,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                     <FormLabel>Credits</FormLabel>
                     <FormControl>
                       <div className="space-y-3">
-                        {canEdit ? (
+                        {canEdit && isEditMode ? (
                           <>
                             <Input
                               type="text"
@@ -280,12 +306,14 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                     type="number"
                                     value={field.value || 0}
                                     disabled
-                                    className="bg-muted"
+                                    className="disabled:opacity-100"
                                   />
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                Only KK-ADMIN can edit credits
+                                {!canEdit
+                                  ? "Only KK-ADMIN can edit credits"
+                                  : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -298,9 +326,17 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
               />
             </div>
 
-            {canEdit && (
-              <div className="flex justify-end">
-                <Button type="submit" disabled={isUpdatingTeam}>
+            {canEdit && isEditMode && (
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isUpdatingTeam}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isUpdatingTeam || !isDirty}>
                   {isUpdatingTeam ? "Saving..." : "Save Changes"}
                 </Button>
               </div>

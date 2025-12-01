@@ -67,6 +67,18 @@ export async function removeMembers(
   );
 }
 
+export async function updateMemberRole(
+  teamId: string,
+  memberId: string,
+  newRole: TeamRolesEnum
+): Promise<void> {
+  return handleApiRequest<void>(
+    axiosInstance.patch(`/teams/${teamId}/members/${memberId}/role`, newRole, {
+      headers: { "Content-Type": "application/json" },
+    })
+  );
+}
+
 export async function getTeamBrands(teamId: string): Promise<UserBrand[]> {
   return handleApiRequest<UserBrand[]>(
     axiosInstance.get(`/teams/${teamId}/brands`)
