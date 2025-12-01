@@ -30,12 +30,11 @@ import {
 import { cn } from "@/lib/utils";
 import { updateInvitedUserSchema } from "@/schema/user.schema";
 import { updateUser } from "@/services/api/user.service";
-import { useBrandStore } from "@/store/brand.store";
 import { useModelsStore } from "@/store/models.store";
 import { UserListItem, UserListResponse, UserRoleId } from "@/types/user.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { GemIcon, Info, X } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -46,9 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CreditIcon } from "@/components/ui/custom-icon";
 import { useUserStore } from "@/store/user.store";
-import { AppConfig } from "@/config/app.config";
 
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
@@ -64,7 +61,6 @@ export function EditUser({
   queryKey: (string | number)[];
 }) {
   const { user: currentLoggedInUser } = useUserStore();
-  const { brands } = useBrandStore();
   const { models } = useModelsStore();
   const queryClient = useQueryClient();
 
@@ -88,8 +84,6 @@ export function EditUser({
         : undefined,
       modelAccess: user.model_access?.map((model) => model.id) || baseModelIds, // Default to base models if no access defined
       contentFilterDisabled: user.content_filter_disabled || false,
-      credits: user.credits || 0,
-      tokens: user.tokens || 0,
     },
     mode: "onSubmit",
   });
@@ -117,8 +111,6 @@ export function EditUser({
         modelAccess:
           user.role.id === UserRoleId.ADMIN ? [] : combinedModelAccess, // ✅ FIXED SYNTAX ERROR
         contentFilterDisabled: user.content_filter_disabled ?? false,
-        credits: user.credits ?? 0,
-        tokens: user.tokens ?? 0, // ✅ ADDED
       });
     }
   }, [isOpen, user, form, baseModelIds]);
@@ -265,137 +257,6 @@ export function EditUser({
 
                 {/* Brand Access and Model Access Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Brand Access */}
-                  <FormField
-                    control={form.control}
-                    name="brandAccess"
-                    render={({ field }) => (
-                      <FormItem className="pb-2">
-                        <FormLabel>Brand Access</FormLabel>
-                        <MultiSelect
-                          values={field.value}
-                          onValuesChange={field.onChange}
-                        >
-                          <FormControl>
-                            <MultiSelectTrigger
-                              className="w-full"
-                              disabled={selectedRole === UserRoleId.ADMIN}
-                            >
-                              <MultiSelectValue
-                                overflowBehavior="cutoff"
-                                placeholder={
-                                  selectedRole === UserRoleId.ADMIN
-                                    ? "Admin has access to all brands"
-                                    : "Select brands"
-                                }
-                              />
-                            </MultiSelectTrigger>
-                          </FormControl>
-                          <MultiSelectContent
-                            search={{
-                              placeholder: "Search brands...",
-                              emptyMessage: "No brands found",
-                            }}
-                          >
-                            <MultiSelectGroup>
-                              {brands.map((brand) => {
-                                // Protect brands that were created by the user being edited
-
-                                const createdByEditedUser =
-                                  brand.created_by?.id === user.id;
-
-                                // Brand should be disabled for unselecting if current role is Admin
-                                // or if brand was created by the user being edited
-                                const itemDisabled =
-                                  selectedRole === UserRoleId.ADMIN ||
-                                  createdByEditedUser;
-
-                                if (createdByEditedUser) {
-                                  return (
-                                    <TooltipProvider key={brand.id}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="relative">
-                                            <MultiSelectItem
-                                              value={brand.id}
-                                              badgeLabel={brand.name}
-                                              disabled={itemDisabled}
-                                              className="pointer-events-none"
-                                            >
-                                              <div className="flex items-start justify-between group gap-0 w-full">
-                                                <div className="flex items-start min-w-0 w-full">
-                                                  <Avatar className="h-6 w-6 mr-2">
-                                                    <AvatarFallback className="bg-blue-500 text-white">
-                                                      {brand.name
-                                                        ?.charAt(0)
-                                                        .toUpperCase() || "B"}
-                                                    </AvatarFallback>
-                                                  </Avatar>
-                                                  <div className="flex flex-col space-y-1">
-                                                    <span className="line-clamp- break-words text-muted-foreground">
-                                                      {brand.name}
-                                                    </span>
-                                                    <span className="italic text-xs text-muted-foreground">
-                                                      Created by{" "}
-                                                      {brand.created_by.name}
-                                                    </span>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </MultiSelectItem>
-                                            <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right">
-                                          This brand was created by this user
-                                          and can&apos;t be removed.
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  );
-                                }
-
-                                return (
-                                  <MultiSelectItem
-                                    key={brand.id}
-                                    value={brand.id}
-                                    badgeLabel={brand.name}
-                                    disabled={itemDisabled}
-                                  >
-                                    <div className="flex items-start justify-between group gap-0 w-full">
-                                      <div className="flex items-start min-w-0 w-full">
-                                        <Avatar className="h-6 w-6 mr-2">
-                                          <AvatarFallback className="bg-blue-500 text-white">
-                                            {brand.name
-                                              ?.charAt(0)
-                                              .toUpperCase() || "B"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col space-y-1">
-                                          <span className="line-clamp- break-words">
-                                            {brand.name}
-                                          </span>
-                                          <span className="italic text-xs">
-                                            Created by{" "}
-                                            {brand.created_by.id ===
-                                            currentLoggedInUser?.id
-                                              ? "You"
-                                              : brand.created_by.name}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </MultiSelectItem>
-                                );
-                              })}
-                            </MultiSelectGroup>
-                          </MultiSelectContent>
-                        </MultiSelect>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   {/* Model Access */}
                   <FormField
                     control={form.control}
@@ -568,276 +429,6 @@ export function EditUser({
                             )}
                           </MultiSelectContent>
                         </MultiSelect>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                {/* Content Filter and Credits */}
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* Credits */}
-
-                  <FormField
-                    control={form.control}
-                    name="tokens"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <div className="flex items-center gap-2 h-6">
-                          <FormLabel>Tokens</FormLabel>
-                        </div>
-                        <FormControl>
-                          <div className="space-y-3">
-                            {currentLoggedInUser?.is_default_admin ? (
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                min={AppConfig.CREDITS.MIN}
-                                max={AppConfig.CREDITS.MAX}
-                                {...field}
-                                value={
-                                  typeof field.value === "number"
-                                    ? field.value.toLocaleString()
-                                    : field.value || ""
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/,/g, "");
-                                  if (raw === "") {
-                                    field.onChange(0);
-                                  } else {
-                                    const numValue = parseInt(raw, 10);
-                                    if (
-                                      !isNaN(numValue) &&
-                                      numValue >= AppConfig.CREDITS.MIN &&
-                                      numValue <= AppConfig.CREDITS.MAX
-                                    ) {
-                                      field.onChange(numValue);
-                                    }
-                                  }
-                                }}
-                                placeholder="Enter tokens amount"
-                                className="w-full"
-                              />
-                            ) : (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div
-                                      className="w-full"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onSubmit={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                    >
-                                      <Input
-                                        type="number"
-                                        value={field.value}
-                                        disabled
-                                        className="bg-muted w-full pointer-events-none"
-                                        placeholder="Enter tokens amount"
-                                        tabIndex={-1}
-                                      />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side={"bottom"}>
-                                    You do not have permission to edit Tokens.
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-
-                            {/* Quick add buttons */}
-                            {currentLoggedInUser?.is_default_admin && (
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 5000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +5000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 10000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +10000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 50000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +50000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="credits"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <div className="flex items-center gap-2 h-6">
-                          <FormLabel>Kittykat Expert Credits</FormLabel>
-                        </div>
-                        <FormControl>
-                          <div className="space-y-3">
-                            {currentLoggedInUser?.is_default_admin ? (
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                min={AppConfig.CREDITS.MIN}
-                                max={AppConfig.CREDITS.MAX}
-                                {...field}
-                                value={
-                                  typeof field.value === "number"
-                                    ? field.value.toLocaleString()
-                                    : field.value || ""
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/,/g, "");
-                                  if (raw === "") {
-                                    field.onChange(0);
-                                  } else {
-                                    const numValue = parseInt(raw, 10);
-                                    if (
-                                      !isNaN(numValue) &&
-                                      numValue >= AppConfig.CREDITS.MIN &&
-                                      numValue <= AppConfig.CREDITS.MAX
-                                    ) {
-                                      field.onChange(numValue);
-                                    }
-                                  }
-                                }}
-                                placeholder="Enter credits amount"
-                                className="w-full"
-                              />
-                            ) : (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div
-                                      className="w-full"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onSubmit={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                    >
-                                      <Input
-                                        type="number"
-                                        value={field.value}
-                                        disabled
-                                        className="bg-muted w-full pointer-events-none"
-                                        placeholder="Enter credits amount"
-                                        tabIndex={-1}
-                                      />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side={"bottom"}>
-                                    You do not have permission to edit credits.
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-
-                            {/* Quick add buttons */}
-                            {currentLoggedInUser?.is_default_admin && (
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 500;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +500
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 1000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +1000
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 5000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +5000
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
