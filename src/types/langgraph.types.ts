@@ -87,3 +87,8 @@ export interface PinnedMoodboardItem {
   title: string;
   moodboard: MoodboardPinnedItem["moodboard"];
 }
+
+export type NextSuggestions = {
+  title: string;
+  prompt: string;
+};

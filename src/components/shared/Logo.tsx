@@ -18,6 +18,7 @@ const Logo = ({
       width={width}
       height={height}
       className={className}
+      priority
     />
   );
 };
