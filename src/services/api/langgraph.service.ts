@@ -98,7 +98,8 @@ export const updateActiveTeamIdinThread = async (
       activeTeamId,
     },
   });
-  
+};
+
 export const fetchSuggestions = async (
   threadId: string,
   messages: Message[],

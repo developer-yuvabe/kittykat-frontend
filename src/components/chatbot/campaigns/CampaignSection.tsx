@@ -117,6 +117,7 @@ export const CampaignSection: React.FC<{
             currentSelectedVideoGenerationModelId:
               selectedVideoGenearationModel?.id ?? null,
             userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+            activeTeamId: user!.active_team_id!,
           });
         }
       } catch (error) {
@@ -170,6 +171,7 @@ export const CampaignSection: React.FC<{
         currentSelectedVideoGenerationModelId:
           selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+        activeTeamId: user!.active_team_id!,
       });
     }
   };

@@ -137,12 +137,9 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
       axiosInstance.post("/invitations", {
         email: data.email,
         role: data.role,
-        brand_access: data.brandAccess,
         model_access: data.modelAccess,
         base_url: window.location.origin,
         content_filter_disabled: data.contentFilterDisabled,
-        credits: data.credits,
-        tokens: data.tokens,
       })
     );
 

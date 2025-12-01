@@ -11,15 +11,21 @@ export function isKKAdmin(user: User | null): boolean {
 /**
  * Check if the current user is the owner of the team
  */
-export function isTeamOwner(user: User | null, team: TeamResponse | null): boolean {
+export function isTeamOwner(
+  user: User | null,
+  team: TeamResponse | null
+): boolean {
   if (!user || !team) return false;
-  return team.owner_id === user.id;
+  return team.owner.id === user.id;
 }
 
 /**
  * Check if the current user is a team admin (has TEAM-ADMIN role)
  */
-export function isTeamAdmin(user: User | null, team: TeamResponse | null): boolean {
+export function isTeamAdmin(
+  user: User | null,
+  team: TeamResponse | null
+): boolean {
   if (!user || !team) return false;
   const member = team.members.find((m) => m.id === user.id);
   return member?.role === TeamRolesEnum.ADMIN;
@@ -45,7 +51,10 @@ export function canAddMembers(user: User | null): boolean {
  * Check if the current user can remove members from the team
  * KK-ADMIN or team OWNER/ADMIN can remove members
  */
-export function canRemoveMembers(user: User | null, team: TeamResponse | null): boolean {
+export function canRemoveMembers(
+  user: User | null,
+  team: TeamResponse | null
+): boolean {
   if (!user || !team) return false;
   return isKKAdmin(user) || isTeamOwner(user, team) || isTeamAdmin(user, team);
 }
@@ -71,7 +80,7 @@ export function canDeleteTeam(user: User | null): boolean {
  */
 export function formatTeamRole(role?: TeamRolesEnum): string {
   if (!role) return "Member";
-  
+
   switch (role) {
     case TeamRolesEnum.OWNER:
       return "Owner";
@@ -87,7 +96,10 @@ export function formatTeamRole(role?: TeamRolesEnum): string {
 /**
  * Get team member by user ID
  */
-export function getTeamMember(team: TeamResponse | null, userId: string): TeamMember | undefined {
+export function getTeamMember(
+  team: TeamResponse | null,
+  userId: string
+): TeamMember | undefined {
   if (!team) return undefined;
   return team.members.find((m) => m.id === userId);
 }
@@ -95,9 +107,11 @@ export function getTeamMember(team: TeamResponse | null, userId: string): TeamMe
 /**
  * Get role badge color based on role
  */
-export function getRoleBadgeVariant(role?: TeamRolesEnum): "default" | "secondary" | "destructive" | "outline" {
+export function getRoleBadgeVariant(
+  role?: TeamRolesEnum
+): "default" | "secondary" | "destructive" | "outline" {
   if (!role) return "secondary";
-  
+
   switch (role) {
     case TeamRolesEnum.OWNER:
       return "default";
