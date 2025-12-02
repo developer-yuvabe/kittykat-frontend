@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { RegenerateIcon } from "@/components/ui/custom-icon";
 import type { Photo } from "react-photo-album";
 import { SortablePhoto } from "@/components/gallery/CustomGalleryContainer";
@@ -42,6 +42,7 @@ function MoodboardControls({
             className="flex items-center gap-1 py-1 whitespace-nowrap"
             onClick={handleClearClick}
           >
+            <Trash2 className="h-4 w-4" />
             <span>Clear Moodboard</span>
           </Button>
         )}
