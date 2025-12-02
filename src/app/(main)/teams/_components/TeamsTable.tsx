@@ -48,8 +48,6 @@ export const TeamsTable = () => {
 
   const { data, isLoading, refetch, isRefetching } = teamsListQuery;
 
-  console.log("Teams Data:", data);
-
   const columns = useMemo(
     () => getTeamTableColumns(page, limit),
     [page, limit]

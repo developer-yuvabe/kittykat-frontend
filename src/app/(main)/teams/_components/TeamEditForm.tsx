@@ -312,7 +312,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                               </TooltipTrigger>
                               <TooltipContent>
                                 {!canEdit
-                                  ? "Only KK-ADMIN can edit credits"
+                                  ? "You do not have permission to edit credits"
                                   : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>

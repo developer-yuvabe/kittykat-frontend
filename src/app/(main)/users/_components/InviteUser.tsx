@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/select";
 import { useModelsStore } from "@/store/models.store";
 import { Info, Plus, X } from "lucide-react";
-import { inviationSchema } from "@/schema/inviation.schema";
+import { invitationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
+import { TeamRolesEnum } from "@/types/team.types";
 import {
   Form,
   FormControl,
@@ -47,14 +48,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTeams } from "@/hooks/useTeams";
 
-type InviteUserFormData = z.infer<typeof inviationSchema>;
+type InviteUserFormData = z.infer<typeof invitationSchema>;
 
 export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const [open, setOpen] = React.useState(false);
   const { models } = useModelsStore();
   const { user } = useUserStore();
   const queryClient = useQueryClient();
+  const { teamsListQuery } = useTeams();
+
+  const teams = teamsListQuery.data?.teams ?? [];
 
   // Get base models (models without finetune_id) and sort models
   const { baseModelIds, sortedModels } = useMemo(() => {
@@ -68,15 +73,21 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   }, [models]);
 
   const form = useForm<InviteUserFormData>({
-    resolver: zodResolver(inviationSchema),
+    resolver: zodResolver(invitationSchema),
     defaultValues: {
       email: "",
       role: UserRoleId.USER,
       modelAccess: [],
       contentFilterDisabled: false,
+      credits: AppConfig.DEFAULT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
+      teamId: undefined,
+      teamRole: undefined,
     },
     mode: "onSubmit",
   });
+
+  const selectedTeamId = form.watch("teamId");
   const typeLabelMap: Record<string, string> = {
     vton: "Virtual try-on",
     image: "Image generation",
@@ -95,15 +106,15 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   // Reset form with base models when dialog opens
   const handleOpen = () => {
     setOpen(true);
-    // Reset form with default values including base models
     const defaultValues = {
       email: "",
       role: UserRoleId.USER,
-      brandAccess: [],
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
+      teamId: undefined,
+      teamRole: undefined,
     };
     form.reset(defaultValues);
   };
@@ -156,6 +167,13 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     }
   }, [selectedRole, baseModelIds, form]);
 
+  // Clear team role when team is cleared
+  useEffect(() => {
+    if (!selectedTeamId) {
+      form.setValue("teamRole", undefined);
+    }
+  }, [selectedTeamId, form]);
+
   const handleClose = () => {
     setOpen(false);
     form.reset({
@@ -163,6 +181,10 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       role: UserRoleId.USER,
       modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
       contentFilterDisabled: false,
+      credits: AppConfig.DEFAULT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
+      teamId: undefined,
+      teamRole: undefined,
     });
   };
 
@@ -198,7 +220,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-8"
+                  className="space-y-6"
                 >
                   <div className="flex flex-col md:flex-row w-full gap-4 items-start">
                     <FormField
@@ -249,9 +271,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                     />
                   </div>
 
-                  {/* Updated Brand Access and Model Access Grid */}
+                  {/* Model Access */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Model Access */}
                     <FormField
                       control={form.control}
                       name="modelAccess"
@@ -424,6 +445,149 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         </FormItem>
                       )}
                     />
+                  </div>
+                  {/* Personal Credits & Tokens */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="credits"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel> Credits</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="Enter credits"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="tokens"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel> Tokens</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="Enter tokens"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Team Assignment (Optional) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="teamId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Team{" "}
+                            <span className="text-muted-foreground font-normal">
+                              (Optional)
+                            </span>
+                          </FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(
+                                value === "none" ? undefined : value
+                              );
+                              if (value === "none") {
+                                form.setValue("teamRole", undefined);
+                              }
+                            }}
+                            value={field.value ?? "none"}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a team" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">No team</SelectItem>
+                              {teams.map((team) => (
+                                <SelectItem key={team.id} value={team.id}>
+                                  {team.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {selectedTeamId && (
+                      <FormField
+                        control={form.control}
+                        name="teamRole"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Team Role{" "}
+                              <span className="text-muted-foreground font-normal">
+                                (Optional)
+                              </span>
+                            </FormLabel>
+                            <Select
+                              onValueChange={(value) =>
+                                field.onChange(
+                                  value === "none" ? undefined : value
+                                )
+                              }
+                              value={field.value ?? "none"}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  Default (Member)
+                                </SelectItem>
+                                <SelectItem value={TeamRolesEnum.MEMBER}>
+                                  Member
+                                </SelectItem>
+                                <SelectItem value={TeamRolesEnum.ADMIN}>
+                                  Admin
+                                </SelectItem>
+                                <SelectItem value={TeamRolesEnum.OWNER}>
+                                  Owner
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
 
                   {/* Content Filter */}

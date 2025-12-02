@@ -1,5 +1,3 @@
-"use client";
-
 import { TeamsTable } from "./_components/TeamsTable";
 
 const page = () => {

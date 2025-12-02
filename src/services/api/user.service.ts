@@ -1,6 +1,6 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
-import { inviationSchema } from "@/schema/inviation.schema";
+import { invitationSchema } from "@/schema/inviation.schema";
 import { PaginationMeta } from "@/types/types";
 import {
   User,
@@ -131,7 +131,7 @@ export const updateUserActiveTeam = async (
   }
 };
 
-export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
+export const inviteUser = async (data: z.infer<typeof invitationSchema>) => {
   try {
     const response = await handleApiRequest<UserListItem>(
       axiosInstance.post("/invitations", {
@@ -140,6 +140,10 @@ export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
         model_access: data.modelAccess,
         base_url: window.location.origin,
         content_filter_disabled: data.contentFilterDisabled,
+        credits: data.credits,
+        tokens: data.tokens,
+        team_id: data.teamId,
+        team_role: data.teamRole,
       })
     );
 

@@ -24,7 +24,7 @@ import { useTeams } from "@/hooks/useTeams";
 import useUsers from "@/hooks/useUsers";
 import { canEditTeamDetails } from "@/lib/team.utils";
 import { useUserStore } from "@/store/user.store";
-import { TeamResponse } from "@/types/team.types";
+import { TeamBrand, TeamResponse } from "@/types/team.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Briefcase, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -32,6 +32,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+// ============================================================================
+// Schema & Types
+// ============================================================================
 const brandUpdateSchema = z.object({
   accessible_brands: z.array(z.string()).optional(),
 });
@@ -42,25 +45,91 @@ interface TeamBrandsSectionProps {
   team: TeamResponse;
 }
 
+// ============================================================================
+// Components
+// ============================================================================
+const BrandBadge = ({ brand }: { brand: TeamBrand }) => (
+  <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
+    <Avatar className="h-5 w-5">
+      <AvatarFallback className="bg-blue-500 text-white text-xs">
+        {brand.name?.charAt(0).toUpperCase() || "B"}
+      </AvatarFallback>
+    </Avatar>
+    <span className="text-sm">{brand.name}</span>
+  </div>
+);
+
+const BrandsReadOnlyView = ({ brands }: { brands: TeamBrand[] }) => {
+  if (brands.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">No brands assigned yet.</p>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {brands.map((brand) => (
+        <BrandBadge key={brand.id} brand={brand} />
+      ))}
+    </div>
+  );
+};
+
+// ============================================================================
+// Main Component
+// ============================================================================
 export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
   const { user: currentUser } = useUserStore();
+  const canEdit = canEditTeamDetails(currentUser);
+
+  // If user can't edit, show read-only view
+  if (!canEdit) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
+            Brand Access ({team.accessible_brands?.length || 0})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BrandsReadOnlyView brands={team.accessible_brands || []} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Editable view for users with permission
+  return <TeamBrandsEditableSection team={team} currentUser={currentUser!} />;
+}
+
+// ============================================================================
+// Editable Section (Only for users with edit permission)
+// ============================================================================
+function TeamBrandsEditableSection({
+  team,
+  currentUser,
+}: {
+  team: TeamResponse;
+  currentUser: { id: string };
+}) {
   const { userBrandsQuery } = useUsers({ userId: currentUser?.id });
   const { updateTeam, isUpdatingTeam } = useTeams();
-  const canEdit = canEditTeamDetails(currentUser);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const form = useForm<BrandUpdateFormData>({
     resolver: zodResolver(brandUpdateSchema),
     defaultValues: {
-      accessible_brands: team.accessible_brands || [],
+      accessible_brands: team.accessible_brands?.map((brand) => brand.id) || [],
     },
   });
+
   const { data: brands, isLoading: isBrandsLoading } = userBrandsQuery;
 
   // Update form when team changes
   useEffect(() => {
     form.reset({
-      accessible_brands: team.accessible_brands || [],
+      accessible_brands: team.accessible_brands?.map((brand) => brand.id) || [],
     });
   }, [team, form]);
 
@@ -91,14 +160,26 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
 
   const handleCancel = () => {
     form.reset({
-      accessible_brands: team.accessible_brands || [],
+      accessible_brands: team.accessible_brands?.map((brand) => brand.id) || [],
     });
     setIsEditMode(false);
   };
 
   const isDirty = form.formState.isDirty;
+  const selectedBrandIds = form.watch("accessible_brands") || [];
 
-  const selectedBrands = form.watch("accessible_brands") || [];
+  // Get selected brands for display
+  const getSelectedBrands = (): TeamBrand[] => {
+    if (isEditMode && brands) {
+      return selectedBrandIds
+        .map((id) => {
+          const brand = brands.find((b) => b.id === id);
+          return brand ? { id: brand.id, name: brand.name } : null;
+        })
+        .filter((b): b is TeamBrand => b !== null);
+    }
+    return team.accessible_brands || [];
+  };
 
   return (
     <Card>
@@ -106,9 +187,9 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            Brand Access ({selectedBrands.length})
+            Brand Access ({selectedBrandIds.length})
           </CardTitle>
-          {canEdit && !isEditMode && (
+          {!isEditMode && (
             <Button
               variant="ghost"
               size="icon"
@@ -120,7 +201,7 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {isBrandsLoading ? (
+        {isBrandsLoading && isEditMode ? (
           <div className="space-y-4">
             <div className="space-y-2">
               <Skeleton className="h-4 w-16" />
@@ -135,7 +216,7 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
               </div>
             </div>
           </div>
-        ) : (
+        ) : isEditMode ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -149,19 +230,10 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
                       onValuesChange={field.onChange}
                     >
                       <FormControl>
-                        <MultiSelectTrigger
-                          className="w-full disabled:opacity-100"
-                          disabled={!isEditMode}
-                        >
+                        <MultiSelectTrigger className="w-full">
                           <MultiSelectValue
                             overflowBehavior="cutoff"
-                            placeholder={
-                              !canEdit
-                                ? "You do not have permission to edit brands"
-                                : !isEditMode
-                                ? "Click edit to modify"
-                                : "Select brands"
-                            }
+                            placeholder="Select brands"
                           />
                         </MultiSelectTrigger>
                       </FormControl>
@@ -206,49 +278,35 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
                 )}
               />
 
-              {/* Display selected brands */}
-              {selectedBrands.length > 0 && userBrandsQuery.isFetched && (
+              {/* Selected brands preview */}
+              {selectedBrandIds.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Selected Brands:</p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedBrands.map((brandId) => {
-                      const brand = brands?.find((b) => b.id === brandId);
-                      if (!brand) return null;
-                      return (
-                        <div
-                          key={brandId}
-                          className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md"
-                        >
-                          <Avatar className="h-5 w-5">
-                            <AvatarFallback className="bg-blue-500 text-white text-xs">
-                              {brand.name?.charAt(0).toUpperCase() || "B"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">{brand.name}</span>
-                        </div>
-                      );
-                    })}
+                    {getSelectedBrands().map((brand) => (
+                      <BrandBadge key={brand.id} brand={brand} />
+                    ))}
                   </div>
                 </div>
               )}
 
-              {canEdit && isEditMode && (
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={isUpdatingTeam}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isUpdatingTeam || !isDirty}>
-                    {isUpdatingTeam ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
-              )}
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isUpdatingTeam}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isUpdatingTeam || !isDirty}>
+                  {isUpdatingTeam ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </form>
           </Form>
+        ) : (
+          <BrandsReadOnlyView brands={team.accessible_brands || []} />
         )}
       </CardContent>
     </Card>

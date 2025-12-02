@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
+import { Plus, UserRoundPlus, Users } from "lucide-react";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,20 +30,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { useTeams } from "@/hooks/useTeams";
-import {
-  canAddMembers,
-  canChangeRoles,
-  canRemoveMembers,
-} from "@/lib/team.utils";
+import { canManageTeam, isKKAdmin } from "@/lib/team.utils";
 import { useUserStore } from "@/store/user.store";
-import {  TeamResponse, TeamRolesEnum } from "@/types/team.types";
-import {  Plus, Users } from "lucide-react";
-import {  useState } from "react";
-import { toast } from "sonner";
+import { TeamResponse, TeamRolesEnum } from "@/types/team.types";
+
+import { InviteMemberDialog } from "./InviteMemberDialog";
 import { MembersTable } from "./TeamMembersTable";
 
-
+// ============================================================================
+// Types
+// ============================================================================
 interface TeamMembersSectionProps {
   team: TeamResponse;
 }
@@ -49,7 +51,9 @@ interface AddMemberRequest {
   role: TeamRolesEnum;
 }
 
-
+// ============================================================================
+// Component
+// ============================================================================
 export function TeamMembersSection({ team }: TeamMembersSectionProps) {
   const { user } = useUserStore();
   const {
@@ -61,17 +65,22 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
     isUpdatingMemberRole,
   } = useTeams();
 
+  // Dialog states
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedNewMembers, setSelectedNewMembers] = useState<
     AddMemberRequest[]
   >([]);
 
-  const canAdd = canAddMembers(user);
-  const canRemove = canRemoveMembers(user, team);
-  const canChangeRole = canChangeRoles(user);
+  // Permissions - simplified: canManage = owner/admin/kk-admin can do everything
+  const canManage = canManageTeam(user, team);
+  const canAddExistingMembers = isKKAdmin(user); // Only KK-ADMIN can add existing users
 
   const selectedMemberIds = selectedNewMembers.map((m) => m.id);
 
+  // -------------------------------------------------------------------------
+  // Handlers
+  // -------------------------------------------------------------------------
   const handleAddMembers = () => {
     if (selectedNewMembers.length === 0) {
       toast.error("Please select at least one member");
@@ -138,6 +147,9 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
     );
   };
 
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
   return (
     <>
       <Card>
@@ -147,20 +159,31 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
               <Users className="h-5 w-5" />
               Team Members ({team.members.length})
             </CardTitle>
-            {canAdd && (
-              <Button onClick={() => setAddDialogOpen(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Members
-              </Button>
-            )}
+            <div className="flex flex-row gap-2">
+              {canManage && (
+                <Button
+                  onClick={() => setInviteDialogOpen(true)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <UserRoundPlus className="h-4 w-4 mr-2" />
+                  Invite Member
+                </Button>
+              )}
+              {canAddExistingMembers && (
+                <Button onClick={() => setAddDialogOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Members
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <MembersTable
             members={team.members}
             team={team}
-            canChangeRole={canChangeRole}
-            canRemove={canRemove}
+            canManage={canManage}
             onRemove={handleRemoveMember}
             onRoleChange={handleRoleChange}
             isRemoving={isRemovingMembers}
@@ -169,7 +192,14 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
         </CardContent>
       </Card>
 
-      {/* Add Members Dialog */}
+      {/* Invite Member Dialog (New Flow) */}
+      <InviteMemberDialog
+        team={team}
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+      />
+
+      {/* Add Existing Members Dialog (Original Flow) */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
