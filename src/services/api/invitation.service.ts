@@ -1,7 +1,7 @@
 // src/services/api/invitation.service.ts
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
-import type { PlatformInvitationInput } from "@/schema/inviation.schema";
+import type { InvitationInput } from "@/schema/inviation.schema";
 import type { TeamInvitationResponse, TeamRolesEnum } from "@/types/team.types";
 import type { UserListItem } from "@/types/user.types";
 
@@ -69,7 +69,7 @@ export interface TeamInvitationValidationResponse {
  * Invite a user to the platform (admin-only)
  */
 export async function inviteUserToPlatform(
-  data: PlatformInvitationInput
+  data: InvitationInput
 ): Promise<UserListItem> {
   const payload: InvitationCreatePayload = {
     email: data.email,

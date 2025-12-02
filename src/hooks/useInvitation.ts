@@ -13,7 +13,7 @@ import {
   type InvitationCreateInput,
   type TeamInvitationValidationResponse,
 } from "@/services/api/invitation.service";
-import type { PlatformInvitationInput } from "@/schema/inviation.schema";
+import type { InvitationInput } from "@/schema/inviation.schema";
 import { getTeamQueryKey, getMyTeamsQueryKey } from "./useTeams";
 
 // ============================================================================
@@ -36,7 +36,7 @@ export function useInvitation() {
   // Platform Invitation Mutations
   // -------------------------------------------------------------------------
   const inviteToPlatformMutation = useMutation({
-    mutationFn: (data: PlatformInvitationInput) => inviteUserToPlatform(data),
+    mutationFn: (data: InvitationInput) => inviteUserToPlatform(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"], exact: false });
     },
