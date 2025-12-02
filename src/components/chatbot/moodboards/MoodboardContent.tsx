@@ -127,15 +127,9 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
       );
 
       setPhotos(placeholders);
-      setOriginalPhotos(placeholders);
 
       toast.success("Moodboard cleared successfully");
-    }, [
-      noOfImagesForMoodboard,
-      setPhotos,
-      setOriginalPhotos,
-      createPlaceholderPhoto,
-    ]);
+    }, [noOfImagesForMoodboard, setPhotos, createPlaceholderPhoto]);
 
     // Custom hook for loading effects
     useMoodboardLoadingEffects({
