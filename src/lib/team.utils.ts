@@ -32,26 +32,10 @@ export function isTeamAdmin(
 }
 
 /**
- * Check if the current user can edit team details (name, credits, tokens)
- * Only KK-ADMIN can edit
+ * Check if the current user can manage the team (invite, remove, change roles)
+ * KK-ADMIN, team OWNER, or team ADMIN can manage
  */
-export function canEditTeamDetails(user: User | null): boolean {
-  return isKKAdmin(user);
-}
-
-/**
- * Check if the current user can add members to the team
- * Only KK-ADMIN can add members
- */
-export function canAddMembers(user: User | null): boolean {
-  return isKKAdmin(user);
-}
-
-/**
- * Check if the current user can remove members from the team
- * KK-ADMIN or team OWNER/ADMIN can remove members
- */
-export function canRemoveMembers(
+export function canManageTeam(
   user: User | null,
   team: TeamResponse | null
 ): boolean {
@@ -60,10 +44,10 @@ export function canRemoveMembers(
 }
 
 /**
- * Check if the current user can change member roles
- * Only KK-ADMIN can change roles
+ * Check if the current user can edit team details (name, credits, tokens)
+ * Only KK-ADMIN can edit
  */
-export function canChangeRoles(user: User | null): boolean {
+export function canEditTeamDetails(user: User | null): boolean {
   return isKKAdmin(user);
 }
 
