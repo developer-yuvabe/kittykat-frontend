@@ -19,6 +19,7 @@ import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
 import { allMediaAssetSources } from "@/lib/gallery.utils";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import { useMoodboardQuery } from "./useMoodboardQuery";
+import { useBrandStore } from "@/store/brand.store";
 
 export const ITEMS_PER_PAGE = 20;
 
@@ -87,7 +88,11 @@ export const useGalleryQuery = (
             : undefined,
           campaign_ids: filters.selectedFilters?.campaigns?.length
             ? filters.selectedFilters.campaigns
-            : undefined,
+            : useBrandStore
+                .getState()
+                .campaigns.filter((c) => !c.is_archived)
+                .map((c) => c.id),
+
           moodboard_ids: filters?.selectedFilters?.moodboards?.length
             ? filters?.selectedFilters?.moodboards
             : undefined,
@@ -387,6 +392,13 @@ export const useGalleryQuery = (
 
       // Get the current filters to determine if we need to remove the item
       const currentCampaignFilter = filters.selectedFilters?.campaigns?.[0];
+      const isGlobalGallery = !currentCampaignFilter;
+      const destinationCampaign = useBrandStore
+        .getState()
+        .campaigns.find((c) => c.id === data.campaign_id);
+
+      const isMovingToArchivedCampaign = !!destinationCampaign?.is_archived;
+
       const isMovingToAnotherCampaign =
         data.campaign_id &&
         currentCampaignFilter &&
@@ -399,14 +411,19 @@ export const useGalleryQuery = (
         data.asset_source !== currentTabFilter;
 
       // Optimistically update gallery items list
+      const shouldRemove =
+        isMovingToAnotherCampaign ||
+        isMovingToAnotherTab ||
+        (isGlobalGallery && isMovingToArchivedCampaign);
+
+      // Optimistic cache update
       queryClient.setQueryData(queryKey, (old: any) => {
         if (!old) return old;
 
         const updated = {
           ...old,
           pages: old.pages.map((page: any) => {
-            // If moving to another campaign while viewing a specific campaign, remove it
-            if (isMovingToAnotherCampaign || isMovingToAnotherTab) {
+            if (shouldRemove) {
               return {
                 ...page,
                 gallery_items: page.gallery_items.filter(
