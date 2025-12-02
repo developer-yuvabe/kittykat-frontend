@@ -35,7 +35,7 @@ function MoodboardControls({
     <>
       <div className="flex gap-2 items-center justify-end">
         {/* Clear Moodboard Button*/}
-        {photos.length > 0 && (
+        {photos.some((photo) => !photo.is_placeholder) && (
           <Button
             size="lg"
             disabled={isAutoFillLoading}
