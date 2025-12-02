@@ -263,6 +263,7 @@ export const useMoodboardPhotos = ({
     currentMoodboardId,
     forceLoadImagesWithCurrentData,
     loadImagesWithCurrentData,
+    createPlaceholderPhoto,
     hasUnsavedChanges: useMemo(() => {
       // If both are empty, there are no unsaved changes
       if (photos.length === 0 && originalPhotos.length === 0) {

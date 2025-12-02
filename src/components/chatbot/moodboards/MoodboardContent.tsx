@@ -55,6 +55,7 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
       forceLoadImagesWithCurrentData,
       loadImagesWithCurrentData,
       hasUnsavedChanges,
+      createPlaceholderPhoto,
     } = useMoodboardPhotos({
       moodboard,
       bulkGalleryItems,
@@ -120,27 +121,21 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
     });
 
     const handleClearMoodboard = useCallback(() => {
-      // Generate empty placeholders
-      const emptyPlaceholders = Array.from(
+      const placeholders = Array.from(
         { length: noOfImagesForMoodboard },
-        (_, index) => ({
-          id: `placeholder-${index}`,
-          src: "",
-          width: 300,
-          height: 300,
-          alt: `Placeholder ${index + 1}`,
-          liked: false,
-          is_placeholder: true,
-          position: index,
-        })
+        (_, i) => createPlaceholderPhoto(`placeholder-${i}`, i)
       );
 
-      // Update state immediately
-      setPhotos(emptyPlaceholders);
+      setPhotos(placeholders);
+      setOriginalPhotos(placeholders);
 
-      // Show toast immediately
       toast.success("Moodboard cleared successfully");
-    }, [noOfImagesForMoodboard, setPhotos]);
+    }, [
+      noOfImagesForMoodboard,
+      setPhotos,
+      setOriginalPhotos,
+      createPlaceholderPhoto,
+    ]);
 
     // Custom hook for loading effects
     useMoodboardLoadingEffects({
