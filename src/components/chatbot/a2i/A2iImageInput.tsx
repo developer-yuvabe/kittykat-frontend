@@ -796,12 +796,14 @@ const A2iImageInput = ({
           data,
           null,
           productReference,
-          isMagicEnabled && productReference.length > 0
+          isMagicEnabled && productReference.length > 0,
+          user?.active_team_id
         );
       } else if (conceptVisualGeneratorMode === "video_generator") {
         await videoGenerationService(selectedBrandId!, {
           ...data,
           campaign_id: currentCampaign?.id || null,
+          team_id: user?.active_team_id,
         });
       }
 
@@ -822,6 +824,7 @@ const A2iImageInput = ({
         }
       }
     } catch (error) {
+      console.error("Error generating image:", error);
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
         return;

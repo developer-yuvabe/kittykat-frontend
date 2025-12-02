@@ -261,6 +261,7 @@ const VideoFrameSelector = ({
       }
       if (acceptedFiles.length === 0) return;
 
+      // Only allow one file like your original logic
       if (acceptedFiles.length > 1) {
         toast.warning("Only one frame allowed per zone. Using the first file.");
       }
@@ -270,21 +271,15 @@ const VideoFrameSelector = ({
 
       try {
         const zoneLabel = `${activeTab} frame`;
-        // const uploadedUrl = await toast.promise(
-        //   uploadFileAndAddToGallery(file),
-        //   {
-        //     loading: `Uploading to ${zoneLabel}...`,
-        //     success: "File uploaded successfully",
-        //     error: "Failed to upload file. Please try again.",
-        //   }
-        // );
-        const uploadedUrl = await uploadFileAndAddToGallery(file);
-        toast.promise(Promise.resolve(uploadedUrl), {
+
+        const toastPromise = toast.promise(uploadFileAndAddToGallery(file), {
           loading: `Uploading to ${zoneLabel}...`,
-          success: "File uploaded successfully",
+          success: `File uploaded successfully to ${zoneLabel}`,
           error: "Failed to upload file. Please try again.",
         });
-        // setFrame(activeTab as "start" | "end", uploadedUrl);
+
+        const uploadedUrl = await toastPromise.unwrap();
+
         setFrame(activeTab === "start_frame" ? "start" : "end", uploadedUrl);
       } catch (error) {
         console.error("File upload failed:", error);
@@ -329,7 +324,11 @@ const VideoFrameSelector = ({
       }
 
       setFrame(zone, assetUrl);
-      toast.success(`Added to ${activeTab} frame`);
+      if (zone === "start") {
+        toast.success(`Added to start frame`);
+      } else {
+        toast.success(`Added to end frame`);
+      }
 
       updateLastAccessed(assetId);
 
@@ -744,7 +743,7 @@ const VideoFrameSelector = ({
             has_product: undefined,
             has_people: undefined,
             has_lifestyle_context: undefined,
-            asset_types: ["image"],
+            asset_types: [],
             asset_sources: [],
             media_format: [],
             aspect_ratio: [],
@@ -906,7 +905,7 @@ const VideoFrameSelector = ({
             has_product: undefined,
             has_people: undefined,
             has_lifestyle_context: undefined,
-            asset_types: ["image", "video"],
+            asset_types: [],
             asset_sources: [],
             media_format: [],
             aspect_ratio: [],
