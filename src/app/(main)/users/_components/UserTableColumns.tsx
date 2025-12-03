@@ -208,7 +208,7 @@ export const getUserTableColumns = (
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-max">
-              {row.original.status === UserStatus.ACTIVE && (
+              {
                 <>
                   <DropdownMenuItem
                     disabled={
@@ -220,7 +220,7 @@ export const getUserTableColumns = (
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
-              )}
+              }
               {row.original.invitation_link && (
                 <>
                   <DropdownMenuItem

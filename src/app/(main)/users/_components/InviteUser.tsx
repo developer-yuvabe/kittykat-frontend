@@ -96,20 +96,13 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     "image-upscale": "Image upscale",
   };
 
-  // Initialize base models when component mounts or models load
-  useEffect(() => {
-    if (baseModelIds.length > 0) {
-      form.setValue("modelAccess", baseModelIds);
-    }
-  }, [baseModelIds, form]);
-
-  // Reset form with base models when dialog opens
+  // Reset form when dialog opens
   const handleOpen = () => {
     setOpen(true);
     const defaultValues = {
       email: "",
       role: UserRoleId.USER,
-      modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
+      modelAccess: baseModelIds, // Pre-select base models by default
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
@@ -157,15 +150,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   useEffect(() => {
     if (selectedRole === UserRoleId.ADMIN) {
       form.setValue("modelAccess", []);
-    } else {
-      // Ensure base models are included when switching to user role
-      const currentSelection = form.getValues("modelAccess") || [];
-      const combinedSelection = [
-        ...new Set([...baseModelIds, ...currentSelection]),
-      ];
-      form.setValue("modelAccess", combinedSelection);
     }
-  }, [selectedRole, baseModelIds, form]);
+  }, [selectedRole, form]);
 
   // Clear team role when team is cleared
   useEffect(() => {
@@ -179,7 +165,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     form.reset({
       email: "",
       role: UserRoleId.USER,
-      modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
+      modelAccess: baseModelIds, // Pre-select base models by default
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
@@ -282,11 +268,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                           <MultiSelect
                             values={field.value || []}
                             onValuesChange={(newValues) => {
-                              // Ensure base models are always included
-                              const combinedValues = [
-                                ...new Set([...baseModelIds, ...newValues]),
-                              ];
-                              field.onChange(combinedValues);
+                              field.onChange(newValues);
                             }}
                           >
                             <FormControl>
@@ -332,7 +314,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                               models.map((model) => model.id)
                                             );
                                           } else {
-                                            field.onChange(baseModelIds);
+                                            field.onChange([]);
                                           }
                                         }}
                                         disabled={
@@ -352,57 +334,6 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                     {sortedModels.map((model) => {
                                       const isBaseModel = !model.finetune_id;
 
-                                      if (isBaseModel) {
-                                        return (
-                                          <TooltipProvider key={model.id}>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <div className="relative">
-                                                  <MultiSelectItem
-                                                    value={model.id}
-                                                    badgeLabel={model.name}
-                                                    disabled={
-                                                      selectedRole ===
-                                                        UserRoleId.ADMIN ||
-                                                      isBaseModel
-                                                    }
-                                                    className="pointer-events-none"
-                                                  >
-                                                    <div className="flex items-start justify-between group gap-0 w-full">
-                                                      <div className="flex items-start min-w-0 w-full">
-                                                        <Avatar className="h-6 w-6 mr-2">
-                                                          <AvatarFallback className="bg-green-500 text-white opacity-60">
-                                                            {model.name
-                                                              ?.charAt(0)
-                                                              .toUpperCase() ||
-                                                              "M"}
-                                                          </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex flex-col space-y-1">
-                                                          <span className="line-clamp- break-words text-muted-foreground">
-                                                            {model.name}
-                                                          </span>
-                                                          <span className="italic text-xs text-muted-foreground">
-                                                            Use Case:{" "}
-                                                            {typeLabelMap[
-                                                              model.type
-                                                            ] ?? model.type}
-                                                          </span>
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  </MultiSelectItem>
-                                                  <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
-                                                </div>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="right">
-                                                Cannot unselect base models
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        );
-                                      }
-
                                       return (
                                         <MultiSelectItem
                                           key={model.id}
@@ -415,17 +346,24 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                           <div className="flex items-start justify-between group gap-0 w-full">
                                             <div className="flex items-start min-w-0 w-full">
                                               <Avatar className="h-6 w-6 mr-2">
-                                                <AvatarFallback className="bg-green-500 text-white">
+                                                <AvatarFallback
+                                                  className={cn(
+                                                    "text-white",
+                                                    isBaseModel
+                                                      ? "bg-green-500"
+                                                      : "bg-blue-500"
+                                                  )}
+                                                >
                                                   {model.name
                                                     ?.charAt(0)
                                                     .toUpperCase() || "M"}
                                                 </AvatarFallback>
                                               </Avatar>
                                               <div className="flex flex-col space-y-1">
-                                                <span className="line-clamp- break-words">
+                                                <span className="line-clamp-1 break-words">
                                                   {model.name}
                                                 </span>
-                                                <span className="italic text-xs">
+                                                <span className="italic text-xs text-muted-foreground">
                                                   Use Case:{" "}
                                                   {typeLabelMap[model.type] ??
                                                     model.type}
