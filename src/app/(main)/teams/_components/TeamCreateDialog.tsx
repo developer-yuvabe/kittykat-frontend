@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { GemIcon, Info, Plus, X } from "lucide-react";
 import { teamCreateSchema } from "@/schema/team.schema";
 import {
   Form,
@@ -39,9 +39,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreditIcon } from "@/components/ui/custom-icon";
-import { GemIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllUsers } from "@/services/api/user.service";
+import { isKKAdmin } from "@/lib/team.utils";
 
 type TeamCreateFormData = z.infer<typeof teamCreateSchema>;
 
@@ -75,6 +81,7 @@ export function TeamCreateDialog() {
       tokens: AppConfig.DEFAULT_TOKENS,
       members: [],
       brands: [],
+      has_all_brands_access: false,
     },
     mode: "onSubmit",
   });
@@ -88,6 +95,7 @@ export function TeamCreateDialog() {
       tokens: AppConfig.DEFAULT_TOKENS,
       members: [],
       brands: [],
+      has_all_brands_access: false,
     });
   };
 
@@ -99,6 +107,8 @@ export function TeamCreateDialog() {
     const payload = {
       ...data,
       members: selectedMembers,
+      // If has_all_brands_access is true, clear the brands array
+      brands: data.has_all_brands_access ? [] : data.brands,
     };
 
     toast.promise(createTeam(payload), {
@@ -329,65 +339,108 @@ export function TeamCreateDialog() {
                   </div>
 
                   {/* Brand Access */}
-                  <FormField
-                    control={form.control}
-                    name="brands"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Brand Access</FormLabel>
-                        <MultiSelect
-                          values={field.value || []}
-                          onValuesChange={field.onChange}
-                        >
-                          <FormControl>
-                            <MultiSelectTrigger className="w-full">
-                              <MultiSelectValue
-                                overflowBehavior="cutoff"
-                                placeholder="Select brands"
+                  <div className="space-y-4">
+                    <FormLabel>Brand Access</FormLabel>
+
+                    {/* All Brands Access Toggle - Only visible to KK-ADMIN */}
+                    {isKKAdmin(currentUser) && (
+                      <FormField
+                        control={form.control}
+                        name="has_all_brands_access"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                            <div className="flex items-center gap-2">
+                              <FormLabel className="text-sm font-normal cursor-pointer mb-0">
+                                Allow access to all brands
+                              </FormLabel>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p>
+                                    When enabled, this team will have access to
+                                    all existing and future brands without
+                                    needing to select them individually.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
-                            </MultiSelectTrigger>
-                          </FormControl>
-                          <MultiSelectContent
-                            search={{
-                              placeholder: "Search brands...",
-                              emptyMessage: "No brands found",
-                            }}
-                          >
-                            <MultiSelectGroup>
-                              {brands.map((brand) => (
-                                <MultiSelectItem
-                                  key={brand.id}
-                                  value={brand.id}
-                                  badgeLabel={brand.name}
-                                >
-                                  <div className="flex items-start gap-2 w-full">
-                                    <Avatar className="h-6 w-6">
-                                      <AvatarFallback className="bg-blue-500 text-white">
-                                        {brand.name?.charAt(0).toUpperCase() ||
-                                          "B"}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col">
-                                      <span className="break-words">
-                                        {brand.name}
-                                      </span>
-                                      <span className="italic text-xs text-muted-foreground">
-                                        Created by{" "}
-                                        {brand.created_by.id === currentUser?.id
-                                          ? "You"
-                                          : brand.created_by.name}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </MultiSelectItem>
-                              ))}
-                            </MultiSelectGroup>
-                          </MultiSelectContent>
-                        </MultiSelect>
-                        <FormMessage />
-                      </FormItem>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
+
+                    {/* Brand Selection - Hidden when has_all_brands_access is true */}
+                    {!form.watch("has_all_brands_access") && (
+                      <FormField
+                        control={form.control}
+                        name="brands"
+                        render={({ field }) => (
+                          <FormItem>
+                            <MultiSelect
+                              values={field.value || []}
+                              onValuesChange={field.onChange}
+                            >
+                              <FormControl>
+                                <MultiSelectTrigger className="w-full">
+                                  <MultiSelectValue
+                                    overflowBehavior="cutoff"
+                                    placeholder="Select brands"
+                                  />
+                                </MultiSelectTrigger>
+                              </FormControl>
+                              <MultiSelectContent
+                                search={{
+                                  placeholder: "Search brands...",
+                                  emptyMessage: "No brands found",
+                                }}
+                              >
+                                <MultiSelectGroup>
+                                  {brands.map((brand) => (
+                                    <MultiSelectItem
+                                      key={brand.id}
+                                      value={brand.id}
+                                      badgeLabel={brand.name}
+                                    >
+                                      <div className="flex items-start gap-2 w-full">
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarFallback className="bg-blue-500 text-white">
+                                            {brand.name
+                                              ?.charAt(0)
+                                              .toUpperCase() || "B"}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col">
+                                          <span className="break-words">
+                                            {brand.name}
+                                          </span>
+                                          <span className="italic text-xs text-muted-foreground">
+                                            Created by{" "}
+                                            {brand.created_by.id ===
+                                            currentUser?.id
+                                              ? "You"
+                                              : brand.created_by.name}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </MultiSelectItem>
+                                  ))}
+                                </MultiSelectGroup>
+                              </MultiSelectContent>
+                            </MultiSelect>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
 
                   {/* Members */}
                   <div className="space-y-3">

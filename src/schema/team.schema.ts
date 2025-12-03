@@ -7,19 +7,36 @@ export const teamMemberSchema = z.object({
 });
 
 export const teamCreateSchema = z.object({
-  name: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
+  name: z
+    .string()
+    .min(1, "Team name is required")
+    .max(100, "Team name is too long"),
   credits: z.number().min(0, "Credits must be non-negative").optional(),
   tokens: z.number().min(0, "Tokens must be non-negative").optional(),
   members: z.array(teamMemberSchema).optional(),
   brands: z.array(z.string()).optional(),
+  has_all_brands_access: z.boolean().optional(),
 });
 
 export const teamUpdateSchema = z.object({
-  name: z.string().min(1, "Team name is required").max(100, "Team name is too long").optional(),
-  credits: z.number().min(0, "Credits must be non-negative").nullable().optional(),
-  tokens: z.number().min(0, "Tokens must be non-negative").nullable().optional(),
+  name: z
+    .string()
+    .min(1, "Team name is required")
+    .max(100, "Team name is too long")
+    .optional(),
+  credits: z
+    .number()
+    .min(0, "Credits must be non-negative")
+    .nullable()
+    .optional(),
+  tokens: z
+    .number()
+    .min(0, "Tokens must be non-negative")
+    .nullable()
+    .optional(),
   members: z.array(teamMemberSchema).optional(),
   brands: z.array(z.string()).optional(),
+  has_all_brands_access: z.boolean().optional(),
 });
 
 export const addMembersSchema = z.object({
