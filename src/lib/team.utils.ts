@@ -44,11 +44,23 @@ export function canManageTeam(
 }
 
 /**
- * Check if the current user can edit team details (name, credits, tokens)
+ * Check if the current user can edit team details (credits, tokens)
  * Only KK-ADMIN can edit
  */
 export function canEditTeamDetails(user: User | null): boolean {
   return isKKAdmin(user);
+}
+
+/**
+ * Check if the current user can edit team name and avatar
+ * Team owner, team admin, or KK-ADMIN can edit
+ */
+export function canEditTeamNameAndAvatar(
+  user: User | null,
+  team: TeamResponse | null
+): boolean {
+  if (!user || !team) return false;
+  return isKKAdmin(user) || isTeamOwner(user, team) || isTeamAdmin(user, team);
 }
 
 /**

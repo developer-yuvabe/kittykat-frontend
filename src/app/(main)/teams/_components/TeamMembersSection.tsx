@@ -16,20 +16,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  MultiSelect,
-  MultiSelectContent,
-  MultiSelectGroup,
-  MultiSelectItem,
-  MultiSelectTrigger,
-  MultiSelectValue,
-} from "@/components/ui/multi-select-dropdown";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  UserMultiSelect,
+  type SelectedUser,
+} from "@/components/ui/user-multi-select";
 
 import { useTeams } from "@/hooks/useTeams";
 import { canManageTeam, isKKAdmin } from "@/lib/team.utils";
@@ -51,6 +47,10 @@ interface AddMemberRequest {
   role: TeamRolesEnum;
 }
 
+interface SelectedMemberWithRole extends SelectedUser {
+  role: TeamRolesEnum;
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -69,14 +69,15 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedNewMembers, setSelectedNewMembers] = useState<
-    AddMemberRequest[]
+    SelectedMemberWithRole[]
   >([]);
 
   // Permissions - simplified: canManage = owner/admin/kk-admin can do everything
   const canManage = canManageTeam(user, team);
   const canAddExistingMembers = isKKAdmin(user); // Only KK-ADMIN can add existing users
 
-  const selectedMemberIds = selectedNewMembers.map((m) => m.id);
+  // Get IDs of existing team members to exclude from the multi-select
+  const existingMemberIds = team.members.map((m) => m.id);
 
   // -------------------------------------------------------------------------
   // Handlers
@@ -87,10 +88,15 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
       return;
     }
 
+    const membersToAdd: AddMemberRequest[] = selectedNewMembers.map((m) => ({
+      id: m.id,
+      role: m.role,
+    }));
+
     toast.promise(
       new Promise<void>((resolve, reject) => {
         addMembers(
-          { teamId: team.id, members: selectedNewMembers },
+          { teamId: team.id, members: membersToAdd },
           {
             onSuccess: () => {
               setAddDialogOpen(false);
@@ -107,6 +113,15 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
         error: "Failed to add members.",
       }
     );
+  };
+
+  const handleUserSelectionChange = (users: SelectedUser[]) => {
+    // Map new users to include role, preserving existing roles
+    const updatedMembers: SelectedMemberWithRole[] = users.map((user) => {
+      const existing = selectedNewMembers.find((m) => m.id === user.id);
+      return existing || { ...user, role: TeamRolesEnum.MEMBER };
+    });
+    setSelectedNewMembers(updatedMembers);
   };
 
   const handleRemoveMember = (memberId: string) => {
@@ -209,117 +224,63 @@ export function TeamMembersSection({ team }: TeamMembersSectionProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <MultiSelect
-              values={selectedMemberIds}
-              onValuesChange={(values) => {
-                const newMembers = values.map((userId) => {
-                  const existing = selectedNewMembers.find(
-                    (m) => m.id === userId
-                  );
-                  return existing || { id: userId, role: TeamRolesEnum.MEMBER };
-                });
-                setSelectedNewMembers(newMembers);
-              }}
-            >
-              <MultiSelectTrigger className="w-full">
-                <MultiSelectValue
-                  overflowBehavior="cutoff"
-                  placeholder="Select users to add..."
-                />
-              </MultiSelectTrigger>
-              <MultiSelectContent
-                search={{
-                  placeholder: "Search users...",
-                  emptyMessage: "No available users",
-                }}
-              >
-                <MultiSelectGroup>
-                  {team.members.length === 0 ? (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      No more users to add
-                    </div>
-                  ) : (
-                    team.members.map((user) => (
-                      <MultiSelectItem
-                        key={user.id}
-                        value={user.id}
-                        badgeLabel={user.name}
-                      >
-                        <div className="flex items-start gap-2 w-full">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                              {user.name?.charAt(0).toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="break-words text-sm">
-                              {user.name}
-                            </span>
-                            <span className="italic text-xs text-muted-foreground">
-                              {user.email}
-                            </span>
-                          </div>
-                        </div>
-                      </MultiSelectItem>
-                    ))
-                  )}
-                </MultiSelectGroup>
-              </MultiSelectContent>
-            </MultiSelect>
+            <UserMultiSelect
+              selectedUsers={selectedNewMembers}
+              onSelectionChange={handleUserSelectionChange}
+              excludeUserIds={existingMemberIds}
+              placeholder="Search and select users to add..."
+            />
 
             {selectedNewMembers.length > 0 && (
               <div className="space-y-3">
                 <p className="text-sm font-semibold">Assign Roles:</p>
                 <div className="space-y-2 max-h-80 overflow-y-auto border rounded-lg p-3 bg-muted/50">
-                  {selectedNewMembers.map((member) => {
-                    const user = team.members.find((u) => u.id === member.id);
-                    return (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between gap-3 p-3 bg-background rounded-md border"
-                      >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Avatar className="h-7 w-7 shrink-0">
-                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                              {user?.name?.charAt(0).toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium truncate">
-                              {user?.name || "Unknown"}
-                            </span>
-                            <span className="text-xs text-muted-foreground truncate">
-                              {user?.email}
-                            </span>
-                          </div>
+                  {selectedNewMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between gap-3 p-3 bg-background rounded-md border"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Avatar className="h-7 w-7 shrink-0">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            {member.name?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-medium truncate">
+                            {member.name || "Unknown"}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {member.email}
+                          </span>
                         </div>
-                        <Select
-                          value={member.role}
-                          onValueChange={(value) => {
-                            setSelectedNewMembers((prev) =>
-                              prev.map((m) =>
-                                m.id === member.id
-                                  ? { ...m, role: value as TeamRolesEnum }
-                                  : m
-                              )
-                            );
-                          }}
-                        >
-                          <SelectTrigger className="w-32 h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={TeamRolesEnum.ADMIN}>
-                              Admin
-                            </SelectItem>
-                            <SelectItem value={TeamRolesEnum.MEMBER}>
-                              Member
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
-                    );
-                  })}
+                      <Select
+                        value={member.role}
+                        onValueChange={(value) => {
+                          setSelectedNewMembers((prev) =>
+                            prev.map((m) =>
+                              m.id === member.id
+                                ? { ...m, role: value as TeamRolesEnum }
+                                : m
+                            )
+                          );
+                        }}
+                      >
+                        <SelectTrigger className="w-32 h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={TeamRolesEnum.ADMIN}>
+                            Admin
+                          </SelectItem>
+                          <SelectItem value={TeamRolesEnum.MEMBER}>
+                            Member
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
