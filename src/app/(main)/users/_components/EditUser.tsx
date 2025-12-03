@@ -65,27 +65,22 @@ export function EditUser({
   const queryClient = useQueryClient();
 
   // Get base models (models without finetune_id) and sort models
-  const { baseModelIds, sortedModels } = useMemo(() => {
+  const sortedModels = useMemo(() => {
     const baseModels = models.filter((model) => !model.finetune_id);
     const finetunedModels = models.filter((model) => model.finetune_id);
 
-    return {
-      baseModelIds: baseModels.map((model) => model.id),
-      sortedModels: [...baseModels, ...finetunedModels],
-    };
+    return [...baseModels, ...finetunedModels];
   }, [models]);
 
   const form = useForm<EditUserFormData>({
     resolver: zodResolver(updateInvitedUserSchema),
     defaultValues: {
       role: user.role.id,
-      brandAccess: user.brand_access
-        ? user.brand_access.map((brand) => brand.id)
-        : undefined,
-      modelAccess: user.model_access?.map((model) => model.id) || baseModelIds, // Default to base models if no access defined
+      modelAccess: user.model_access?.map((model) => model.id) || [],
       contentFilterDisabled: user.content_filter_disabled || false,
+      name: user.name || "",
     },
-    mode: "onSubmit",
+    mode: "onChange",
   });
   const typeLabelMap: Record<string, string> = {
     vton: "Virtual try-on",
@@ -97,23 +92,16 @@ export function EditUser({
   // Reset form values when user prop changes or dialog opens
   useEffect(() => {
     if (isOpen && user) {
-      // Ensure base models are always included in model access
       const userModelAccess = user.model_access?.map((model) => model.id) || [];
-      const combinedModelAccess = [
-        ...new Set([...baseModelIds, ...userModelAccess]),
-      ];
 
       form.reset({
         role: user.role.id,
-        brandAccess: user.brand_access
-          ? user.brand_access.map((brand) => brand.id)
-          : undefined,
-        modelAccess:
-          user.role.id === UserRoleId.ADMIN ? [] : combinedModelAccess, // ✅ FIXED SYNTAX ERROR
+        modelAccess: user.role.id === UserRoleId.ADMIN ? [] : userModelAccess,
         contentFilterDisabled: user.content_filter_disabled ?? false,
+        name: user.name || "",
       });
     }
-  }, [isOpen, user, form, baseModelIds]);
+  }, [isOpen, user, form]);
 
   const onSubmit = async (data: EditUserFormData) => {
     setIsOpen(false);
@@ -121,11 +109,9 @@ export function EditUser({
     toast.promise(
       updateUser(user.id, {
         roleId: data.role,
-        brand_access: data.brandAccess,
         model_access: data.modelAccess,
         contentFilterDisabled: data.contentFilterDisabled,
-        credits: data.credits,
-        tokens: data.tokens,
+        name: data.name,
       }),
       {
         loading: "Updating user...",
@@ -154,27 +140,18 @@ export function EditUser({
 
   useEffect(() => {
     if (selectedRole === UserRoleId.ADMIN) {
-      form.setValue("brandAccess", []);
       form.setValue("modelAccess", []);
-    } else {
-      // Only reset to original brand access if currently empty or was admin
-      const currentBrandAccess = form.getValues("brandAccess");
-      const currentModelAccess = form.getValues("modelAccess") || [];
-
-      if (!currentBrandAccess || currentBrandAccess.length === 0) {
-        form.setValue(
-          "brandAccess",
-          user.brand_access?.map((brand) => brand.id) || []
-        );
+    } else if (selectedRole === UserRoleId.USER) {
+      // When switching to User role, pre-select base models if modelAccess is empty
+      const currentModelAccess = form.getValues("modelAccess");
+      if (!currentModelAccess || currentModelAccess.length === 0) {
+        const baseModelIds = models
+          .filter((model) => !model.finetune_id)
+          .map((model) => model.id);
+        form.setValue("modelAccess", baseModelIds, { shouldDirty: true });
       }
-
-      // Always ensure base models are included
-      const combinedModelAccess = [
-        ...new Set([...baseModelIds, ...currentModelAccess]),
-      ];
-      form.setValue("modelAccess", combinedModelAccess);
     }
-  }, [selectedRole, form, user.brand_access, user.model_access, baseModelIds]);
+  }, [selectedRole, form, models]);
 
   const handleClose = () => {
     form.reset(); // Reset form when closing
@@ -212,13 +189,26 @@ export function EditUser({
               >
                 {/* Name and Email */}
                 <div className="flex flex-col md:flex-row gap-4">
-                  <FormItem className="flex-1">
-                    <FormLabel>Name</FormLabel>
-                    <Input disabled value={user.name} />
-                  </FormItem>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter name"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormItem className="flex-1">
                     <FormLabel>Email</FormLabel>
-                    <Input disabled value={user.email} />
+                    <Input disabled readOnly defaultValue={user.email} />
                   </FormItem>
                 </div>
 
@@ -267,11 +257,7 @@ export function EditUser({
                         <MultiSelect
                           values={field.value || []}
                           onValuesChange={(newValues) => {
-                            // Ensure base models are always included
-                            const combinedValues = [
-                              ...new Set([...baseModelIds, ...newValues]),
-                            ];
-                            field.onChange(combinedValues);
+                            field.onChange(newValues);
                           }}
                         >
                           <FormControl>
@@ -318,8 +304,8 @@ export function EditUser({
                                             models.map((model) => model.id)
                                           );
                                         } else {
-                                          // Keep only base models (cannot deselect them)
-                                          field.onChange(baseModelIds);
+                                          // Deselect all models
+                                          field.onChange([]);
                                         }
                                       }}
                                       disabled={
@@ -339,58 +325,6 @@ export function EditUser({
                                   {sortedModels.map((model) => {
                                     const isBaseModel = !model.finetune_id;
 
-                                    if (isBaseModel) {
-                                      return (
-                                        <TooltipProvider key={model.id}>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <div className="relative">
-                                                <MultiSelectItem
-                                                  value={model.id}
-                                                  badgeLabel={model.name}
-                                                  disabled={
-                                                    selectedRole ===
-                                                      UserRoleId.ADMIN ||
-                                                    isBaseModel
-                                                  }
-                                                  className="pointer-events-none"
-                                                >
-                                                  <div className="flex items-start justify-between group gap-0 w-full">
-                                                    <div className="flex items-start min-w-0 w-full">
-                                                      <Avatar className="h-6 w-6 mr-2">
-                                                        <AvatarFallback className="bg-green-500 text-white opacity-60">
-                                                          {model.name
-                                                            ?.charAt(0)
-                                                            .toUpperCase() ||
-                                                            "M"}
-                                                        </AvatarFallback>
-                                                      </Avatar>
-                                                      <div className="flex flex-col space-y-1">
-                                                        <span className="line-clamp- break-words text-muted-foreground">
-                                                          {model.name}
-                                                        </span>
-                                                        <span className="italic text-xs text-muted-foreground">
-                                                          Use Case:{" "}
-                                                          {typeLabelMap[
-                                                            model.type
-                                                          ] ?? model.type}
-                                                        </span>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </MultiSelectItem>
-                                                {/* Invisible overlay for hover events */}
-                                                <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
-                                              </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="right">
-                                              Cannot unselect base models
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      );
-                                    }
-
                                     return (
                                       <MultiSelectItem
                                         key={model.id}
@@ -403,17 +337,24 @@ export function EditUser({
                                         <div className="flex items-start justify-between group gap-0 w-full">
                                           <div className="flex items-start min-w-0 w-full">
                                             <Avatar className="h-6 w-6 mr-2">
-                                              <AvatarFallback className="bg-green-500 text-white">
+                                              <AvatarFallback
+                                                className={cn(
+                                                  "text-white",
+                                                  isBaseModel
+                                                    ? "bg-green-500"
+                                                    : "bg-blue-500"
+                                                )}
+                                              >
                                                 {model.name
                                                   ?.charAt(0)
                                                   .toUpperCase() || "M"}
                                               </AvatarFallback>
                                             </Avatar>
                                             <div className="flex flex-col space-y-1">
-                                              <span className="line-clamp- break-words">
+                                              <span className="line-clamp-1 break-words">
                                                 {model.name}
                                               </span>
-                                              <span className="italic text-xs">
+                                              <span className="italic text-xs text-muted-foreground">
                                                 Use Case:{" "}
                                                 {typeLabelMap[model.type] ??
                                                   model.type}
@@ -487,7 +428,12 @@ export function EditUser({
                   <Button variant="outline" type="button" onClick={handleClose}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={!form.formState.isDirty}>
+                  <Button
+                    type="submit"
+                    disabled={
+                      !form.formState.isDirty || form.formState.isSubmitting
+                    }
+                  >
                     Update user
                   </Button>
                 </div>

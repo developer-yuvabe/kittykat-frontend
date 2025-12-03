@@ -58,17 +58,16 @@ export function MultiSelect({
   const [items, setItems] = useState<Map<string, ReactNode>>(new Map());
 
   function toggleValue(value: string) {
-    const getNewSet = (prev: Set<string>) => {
-      const newSet = new Set(prev);
-      if (newSet.has(value)) {
-        newSet.delete(value);
-      } else {
-        newSet.add(value);
-      }
-      return newSet;
-    };
-    setSelectedValues(getNewSet);
-    onValuesChange?.([...getNewSet(selectedValues)]);
+    // Use the controlled values prop if provided, otherwise use internal state
+    const currentValues = values ? new Set(values) : selectedValues;
+    const newSet = new Set(currentValues);
+    if (newSet.has(value)) {
+      newSet.delete(value);
+    } else {
+      newSet.add(value);
+    }
+    setSelectedValues(newSet);
+    onValuesChange?.([...newSet]);
   }
 
   const onItemAdded = useCallback((value: string, label: ReactNode) => {

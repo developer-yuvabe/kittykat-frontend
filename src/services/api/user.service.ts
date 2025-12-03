@@ -30,6 +30,7 @@ export const createUser = async (userData: {
 export const updateUser = async (
   userId: string,
   userData: Pick<User, "thread_id"> & {
+    name?: string;
     roleId?: string;
     brand_access?: string[];
     model_access?: string[];
@@ -43,6 +44,7 @@ export const updateUser = async (
 ): Promise<UserListItem> => {
   try {
     const fieldsToUpdate = {
+      name: userData.name,
       role_id: userData.roleId,
       thread_id: userData.thread_id,
       brand_access: userData.brand_access,
