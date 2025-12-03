@@ -78,7 +78,9 @@ export const useGalleryQuery = (
         }
 
         return await galleryService.getAllGalleryItems({
-          asset_sources: getAssetTypesFromFilter(),
+          asset_sources: filters.selectedFilters?.asset_sources?.length
+            ? filters.selectedFilters.asset_sources
+            : getAssetTypesFromFilter(),
           is_favourite:
             filters.favorites ||
             filters.selectedFilters?.is_favourite ||

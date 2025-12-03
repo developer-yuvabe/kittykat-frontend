@@ -294,9 +294,7 @@ function MoodboardTagResults({
                 {isPatching || isGeneratingPrompts || isGeneratingScreenshot ? (
                   <Loader />
                 ) : (
-                  <>
-                    <Brain /> Concept Visual Generation
-                  </>
+                  <>Use Moodboard for Concept Visual Generation</>
                 )}
               </Button>
             </span>
