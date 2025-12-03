@@ -79,6 +79,7 @@ export interface TeamUpdateRequest {
   members?: TeamMember[];
   accessible_brands?: string[];
   has_all_brands_access?: boolean;
+  avatar_url?: string | null;
 }
 
 export interface TeamResponse {
@@ -96,10 +97,32 @@ export interface TeamResponse {
   created_at: string;
   updated_at: string;
   has_all_brands_access?: boolean;
+  is_personal_team: boolean;
+  avatar_url?: string;
+}
+
+// List API specific response type
+export interface TeamListResponse {
+  id: string;
+  name: string;
+  role?: string;
+  credits: number;
+  tokens: number;
+  members_count: number;
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  brands_count: number;
+  created_at: string;
+  updated_at: string;
+  is_personal_team: boolean;
+  avatar_url?: string;
 }
 
 export interface TeamsListResponse {
-  teams: TeamResponse[];
+  teams: TeamListResponse[];
   total: number;
   skip?: number;
   limit?: number;

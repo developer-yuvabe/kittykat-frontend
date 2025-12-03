@@ -28,6 +28,8 @@ import { TeamCreateDialog } from "./TeamCreateDialog";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { canEditTeamDetails } from "@/lib/team.utils";
+import { AdminTabNavigation } from "@/components/shared/AdminTabNavigation";
+import { AdminProtectedComponent } from "@/components/shared/AdminProtectedComponent";
 
 export const TeamsTable = () => {
   const router = useRouter();
@@ -79,9 +81,7 @@ export const TeamsTable = () => {
     <div className="w-full space-y-4 h-full flex flex-col">
       {/* --- Top Controls --- */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold leading-0">Team Management</h1>
-        </div>
+        <h1 className="text-2xl font-semibold">Team Management</h1>
         <div className="flex items-center gap-2 rounded-md w-max">
           <Button
             size={"icon"}
@@ -110,6 +110,9 @@ export const TeamsTable = () => {
             />
           </div>
           {canCreate && <TeamCreateDialog />}
+          <AdminProtectedComponent>
+            <AdminTabNavigation />
+          </AdminProtectedComponent>
         </div>
       </div>
       {/* --- Table Wrapper --- */}

@@ -8,7 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { TeamResponse } from "@/types/team.types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { TeamListResponse } from "@/types/team.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, MoreHorizontal, Trash2, Users } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +26,7 @@ import { format } from "date-fns";
 export function getTeamTableColumns(
   page: number,
   limit: number
-): ColumnDef<TeamResponse>[] {
+): ColumnDef<TeamListResponse>[] {
   return [
     {
       id: "serial",
@@ -71,14 +76,14 @@ export function getTeamTableColumns(
       },
     },
     {
-      accessorKey: "members",
+      accessorKey: "members_count",
       header: "Members",
       cell: ({ row }) => {
         const team = row.original;
         return (
           <Badge variant="secondary" className="gap-1">
             <Users className="h-3 w-3" />
-            {team.members.length}
+            {team.members_count}
           </Badge>
         );
       },
@@ -108,14 +113,13 @@ export function getTeamTableColumns(
       },
     },
     {
-      accessorKey: "brands",
+      accessorKey: "brands_count",
       header: "Brands",
       cell: ({ row }) => {
         const team = row.original;
-        const brandCount = team.accessible_brands?.length || 0;
         return (
           <Badge variant="outline" className="gap-1">
-            {brandCount}
+            {team.brands_count}
           </Badge>
         );
       },
@@ -139,7 +143,6 @@ export function getTeamTableColumns(
         const team = row.original;
         const { user } = useUserStore();
         const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-        const canDelete = canDeleteTeam(user);
 
         return (
           <>
@@ -160,16 +163,36 @@ export function getTeamTableColumns(
                     View Details
                   </Link>
                 </DropdownMenuItem>
-                {canDelete && (
+                {canDeleteTeam(user) && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setDeleteDialogOpen(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Team
-                    </DropdownMenuItem>
+                    {team.is_personal_team ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem
+                              disabled
+                              className="text-muted-foreground"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Team
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                          <p>This team can&apos;t be deleted.</p>
+                          <p>To delete, you need to delete the owner.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={() => setDeleteDialogOpen(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Team
+                      </DropdownMenuItem>
+                    )}
                   </>
                 )}
               </DropdownMenuContent>

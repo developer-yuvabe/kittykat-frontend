@@ -26,6 +26,8 @@ import { getUserTableColumns } from "./UserTableColumns";
 import { debounce } from "lodash";
 import { InviteUser } from "./InviteUser";
 import { cn } from "@/lib/utils";
+import { AdminTabNavigation } from "@/components/shared/AdminTabNavigation";
+import { AdminProtectedComponent } from "@/components/shared/AdminProtectedComponent";
 
 export const UsersTable = () => {
   const [page, setPage] = useState(1);
@@ -67,9 +69,7 @@ export const UsersTable = () => {
     <div className="w-full space-y-4 h-full flex flex-col">
       {/* --- Top Controls --- */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold leading-0">User Management</h1>
-        </div>
+        <h1 className="text-2xl font-semibold">User Management</h1>
         <div className="flex items-center gap-2 rounded-md w-max">
           <Button
             size={"icon"}
@@ -98,6 +98,9 @@ export const UsersTable = () => {
             />
           </div>
           <InviteUser queryKey={["users", page, limit, searchTerm]} />
+          <AdminProtectedComponent>
+            <AdminTabNavigation />
+          </AdminProtectedComponent>
         </div>
       </div>
       {/* --- Table Wrapper --- */}

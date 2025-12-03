@@ -247,10 +247,12 @@ export function MultiSelectValue({
 export function MultiSelectContent({
   search = true,
   children,
+  onScrollCapture,
   ...props
 }: {
   search?: boolean | { placeholder?: string; emptyMessage?: string };
   children: ReactNode;
+  onScrollCapture?: (e: React.UIEvent<HTMLDivElement>) => void;
 } & Omit<ComponentPropsWithoutRef<typeof Command>, "children">) {
   const canSearch = typeof search === "object" ? true : search;
 
@@ -277,7 +279,7 @@ export function MultiSelectContent({
           ) : (
             <button autoFocus aria-hidden="true" className="sr-only" />
           )}
-          <CommandList>
+          <CommandList onScrollCapture={onScrollCapture}>
             {canSearch && (
               <CommandEmpty>
                 {typeof search === "object" ? search.emptyMessage : undefined}

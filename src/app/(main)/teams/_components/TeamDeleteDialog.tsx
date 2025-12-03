@@ -9,13 +9,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTeams } from "@/hooks/useTeams";
-import { TeamResponse } from "@/types/team.types";
+import { TeamListResponse } from "@/types/team.types";
 import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface TeamDeleteDialogProps {
-  team: TeamResponse;
+  team: TeamListResponse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -57,22 +57,6 @@ export function TeamDeleteDialog({
             undone.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <div className="bg-muted p-4 rounded-md space-y-2">
-            <p className="text-sm">
-              <strong>Team ID:</strong> {team.id}
-            </p>
-            <p className="text-sm">
-              <strong>Members:</strong> {team.members.length}
-            </p>
-            <p className="text-sm">
-              <strong>Credits:</strong> {team.credits.toLocaleString()}
-            </p>
-            <p className="text-sm">
-              <strong>Tokens:</strong> {team.tokens.toLocaleString()}
-            </p>
-          </div>
-        </div>
         <DialogFooter>
           <Button
             variant="outline"
