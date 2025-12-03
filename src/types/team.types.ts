@@ -69,6 +69,7 @@ export interface TeamCreateRequest {
   tokens?: number;
   members?: TeamMember[];
   accessible_brands?: string[];
+  has_all_brands_access?: boolean;
 }
 
 export interface TeamUpdateRequest {
@@ -77,6 +78,7 @@ export interface TeamUpdateRequest {
   tokens?: number | null;
   members?: TeamMember[];
   accessible_brands?: string[];
+  has_all_brands_access?: boolean;
 }
 
 export interface TeamResponse {
@@ -93,6 +95,7 @@ export interface TeamResponse {
   accessible_brands?: TeamBrand[];
   created_at: string;
   updated_at: string;
+  has_all_brands_access?: boolean;
 }
 
 export interface TeamsListResponse {

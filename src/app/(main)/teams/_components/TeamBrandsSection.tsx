@@ -20,13 +20,19 @@ import {
   MultiSelectTrigger,
   MultiSelectValue,
 } from "@/components/ui/multi-select-dropdown";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useTeams } from "@/hooks/useTeams";
 import useUsers from "@/hooks/useUsers";
-import { canEditTeamDetails } from "@/lib/team.utils";
+import { canEditTeamDetails, isKKAdmin } from "@/lib/team.utils";
 import { useUserStore } from "@/store/user.store";
 import { TeamBrand, TeamResponse } from "@/types/team.types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Briefcase, Pencil } from "lucide-react";
+import { Briefcase, Globe, Info, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -37,6 +43,7 @@ import * as z from "zod";
 // ============================================================================
 const brandUpdateSchema = z.object({
   accessible_brands: z.array(z.string()).optional(),
+  has_all_brands_access: z.boolean().optional(),
 });
 
 type BrandUpdateFormData = z.infer<typeof brandUpdateSchema>;
@@ -59,7 +66,26 @@ const BrandBadge = ({ brand }: { brand: TeamBrand }) => (
   </div>
 );
 
-const BrandsReadOnlyView = ({ brands }: { brands: TeamBrand[] }) => {
+const AllBrandsAccessBadge = () => (
+  <div className="flex items-center gap-2 px-4 py-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+    <Globe className="h-5 w-5 text-green-600 dark:text-green-400" />
+    <span className="text-sm font-medium text-green-700 dark:text-green-300">
+      Access to all brands
+    </span>
+  </div>
+);
+
+const BrandsReadOnlyView = ({
+  brands,
+  hasAllBrandsAccess,
+}: {
+  brands: TeamBrand[];
+  hasAllBrandsAccess?: boolean;
+}) => {
+  if (hasAllBrandsAccess) {
+    return <AllBrandsAccessBadge />;
+  }
+
   if (brands.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No brands assigned yet.</p>
@@ -82,6 +108,11 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
   const { user: currentUser } = useUserStore();
   const canEdit = canEditTeamDetails(currentUser);
 
+  // Determine brand count display
+  const brandCountDisplay = team.has_all_brands_access
+    ? "All"
+    : team.accessible_brands?.length || 0;
+
   // If user can't edit, show read-only view
   if (!canEdit) {
     return (
@@ -89,11 +120,14 @@ export function TeamBrandsSection({ team }: TeamBrandsSectionProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            Brand Access ({team.accessible_brands?.length || 0})
+            Brand Access ({brandCountDisplay})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <BrandsReadOnlyView brands={team.accessible_brands || []} />
+          <BrandsReadOnlyView
+            brands={team.accessible_brands || []}
+            hasAllBrandsAccess={team.has_all_brands_access}
+          />
         </CardContent>
       </Card>
     );
@@ -113,6 +147,7 @@ function TeamBrandsEditableSection({
   team: TeamResponse;
   currentUser: { id: string };
 }) {
+  const { user } = useUserStore();
   const { userBrandsQuery } = useUsers({ userId: currentUser?.id });
   const { updateTeam, isUpdatingTeam } = useTeams();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -121,6 +156,7 @@ function TeamBrandsEditableSection({
     resolver: zodResolver(brandUpdateSchema),
     defaultValues: {
       accessible_brands: team.accessible_brands?.map((brand) => brand.id) || [],
+      has_all_brands_access: team.has_all_brands_access || false,
     },
   });
 
@@ -130,6 +166,7 @@ function TeamBrandsEditableSection({
   useEffect(() => {
     form.reset({
       accessible_brands: team.accessible_brands?.map((brand) => brand.id) || [],
+      has_all_brands_access: team.has_all_brands_access || false,
     });
   }, [team, form]);
 
@@ -139,7 +176,12 @@ function TeamBrandsEditableSection({
         updateTeam(
           {
             teamId: team.id,
-            payload: { accessible_brands: data.accessible_brands },
+            payload: {
+              accessible_brands: data.has_all_brands_access
+                ? []
+                : data.accessible_brands,
+              has_all_brands_access: data.has_all_brands_access,
+            },
           },
           {
             onSuccess: () => {
@@ -161,12 +203,17 @@ function TeamBrandsEditableSection({
   const handleCancel = () => {
     form.reset({
       accessible_brands: team.accessible_brands?.map((brand) => brand.id) || [],
+      has_all_brands_access: team.has_all_brands_access || false,
     });
     setIsEditMode(false);
   };
 
   const isDirty = form.formState.isDirty;
   const selectedBrandIds = form.watch("accessible_brands") || [];
+  const hasAllBrandsAccess = form.watch("has_all_brands_access");
+
+  // Determine brand count display
+  const brandCountDisplay = hasAllBrandsAccess ? "All" : selectedBrandIds.length;
 
   // Get selected brands for display
   const getSelectedBrands = (): TeamBrand[] => {
@@ -187,7 +234,7 @@ function TeamBrandsEditableSection({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            Brand Access ({selectedBrandIds.length})
+            Brand Access ({brandCountDisplay})
           </CardTitle>
           {!isEditMode && (
             <Button
@@ -219,67 +266,105 @@ function TeamBrandsEditableSection({
         ) : isEditMode ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="accessible_brands"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Brands</FormLabel>
-                    <MultiSelect
-                      values={field.value || []}
-                      onValuesChange={field.onChange}
-                    >
+              {/* All Brands Access Toggle - Only visible to KK-ADMIN */}
+              {isKKAdmin(user) && (
+                <FormField
+                  control={form.control}
+                  name="has_all_brands_access"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="flex items-center gap-2">
+                        <FormLabel className="text-sm font-normal cursor-pointer mb-0">
+                          Allow access to all brands
+                        </FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p>
+                              When enabled, this team will have access to all
+                              existing and future brands without needing to
+                              select them individually.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <FormControl>
-                        <MultiSelectTrigger className="w-full">
-                          <MultiSelectValue
-                            overflowBehavior="cutoff"
-                            placeholder="Select brands"
-                          />
-                        </MultiSelectTrigger>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
-                      <MultiSelectContent
-                        search={{
-                          placeholder: "Search brands...",
-                          emptyMessage: "No brands found",
-                        }}
-                      >
-                        <MultiSelectGroup>
-                          {brands?.map((brand) => (
-                            <MultiSelectItem
-                              key={brand.id}
-                              value={brand.id}
-                              badgeLabel={brand.name}
-                            >
-                              <div className="flex items-start gap-2 w-full">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarFallback className="bg-blue-500 text-white">
-                                    {brand.name?.charAt(0).toUpperCase() || "B"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                  <span className="break-words">
-                                    {brand.name}
-                                  </span>
-                                  <span className="italic text-xs text-muted-foreground">
-                                    Created by{" "}
-                                    {brand.created_by.id === currentUser?.id
-                                      ? "You"
-                                      : brand.created_by.name}
-                                  </span>
-                                </div>
-                              </div>
-                            </MultiSelectItem>
-                          ))}
-                        </MultiSelectGroup>
-                      </MultiSelectContent>
-                    </MultiSelect>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-              {/* Selected brands preview */}
-              {selectedBrandIds.length > 0 && (
+              {/* Brand Selection - Hidden when has_all_brands_access is true */}
+              {!hasAllBrandsAccess && (
+                <FormField
+                  control={form.control}
+                  name="accessible_brands"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Brands</FormLabel>
+                      <MultiSelect
+                        values={field.value || []}
+                        onValuesChange={field.onChange}
+                      >
+                        <FormControl>
+                          <MultiSelectTrigger className="w-full">
+                            <MultiSelectValue
+                              overflowBehavior="cutoff"
+                              placeholder="Select brands"
+                            />
+                          </MultiSelectTrigger>
+                        </FormControl>
+                        <MultiSelectContent
+                          search={{
+                            placeholder: "Search brands...",
+                            emptyMessage: "No brands found",
+                          }}
+                        >
+                          <MultiSelectGroup>
+                            {brands?.map((brand) => (
+                              <MultiSelectItem
+                                key={brand.id}
+                                value={brand.id}
+                                badgeLabel={brand.name}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarFallback className="bg-blue-500 text-white">
+                                      {brand.name?.charAt(0).toUpperCase() || "B"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex flex-col">
+                                    <span className="break-words">
+                                      {brand.name}
+                                    </span>
+                                    <span className="italic text-xs text-muted-foreground">
+                                      Created by{" "}
+                                      {brand.created_by.id === currentUser?.id
+                                        ? "You"
+                                        : brand.created_by.name}
+                                    </span>
+                                  </div>
+                                </div>
+                              </MultiSelectItem>
+                            ))}
+                          </MultiSelectGroup>
+                        </MultiSelectContent>
+                      </MultiSelect>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Selected brands preview - only show when not using all brands access */}
+              {!hasAllBrandsAccess && selectedBrandIds.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Selected Brands:</p>
                   <div className="flex flex-wrap gap-2">
@@ -289,6 +374,9 @@ function TeamBrandsEditableSection({
                   </div>
                 </div>
               )}
+
+              {/* Show all brands access badge in edit mode when enabled */}
+              {hasAllBrandsAccess && <AllBrandsAccessBadge />}
 
               <div className="flex justify-end gap-2">
                 <Button
@@ -306,7 +394,10 @@ function TeamBrandsEditableSection({
             </form>
           </Form>
         ) : (
-          <BrandsReadOnlyView brands={team.accessible_brands || []} />
+          <BrandsReadOnlyView
+            brands={team.accessible_brands || []}
+            hasAllBrandsAccess={team.has_all_brands_access}
+          />
         )}
       </CardContent>
     </Card>
