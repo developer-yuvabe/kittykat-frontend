@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +44,9 @@ export function getTeamTableColumns(
         return (
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
+              {team.avatar_url && (
+                <AvatarImage src={team.avatar_url} alt={team.name} />
+              )}
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {team.name?.charAt(0).toUpperCase() || "T"}
               </AvatarFallback>

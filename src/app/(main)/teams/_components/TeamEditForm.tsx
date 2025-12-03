@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeams } from "@/hooks/useTeams";
-import { canEditTeamDetails } from "@/lib/team.utils";
+import { canEditTeamDetails, canEditTeamNameAndAvatar } from "@/lib/team.utils";
 import { teamUpdateSchema } from "@/schema/team.schema";
 import { useUserStore } from "@/store/user.store";
 import { TeamResponse } from "@/types/team.types";
@@ -27,9 +27,11 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { AppConfig } from "@/config/app.config";
 import { CreditIcon } from "@/components/ui/custom-icon";
-import { GemIcon, Pencil } from "lucide-react";
+import { Camera, GemIcon, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 
 type TeamUpdateFormData = z.infer<typeof teamUpdateSchema>;
 
@@ -40,8 +42,12 @@ interface TeamEditFormProps {
 export function TeamEditForm({ team }: TeamEditFormProps) {
   const { user } = useUserStore();
   const { updateTeam, isUpdatingTeam } = useTeams();
-  const canEdit = canEditTeamDetails(user);
+  const canEditCredits = canEditTeamDetails(user);
+  const canEditNameAvatar = canEditTeamNameAndAvatar(user, team);
+  const canEdit = canEditCredits || canEditNameAvatar;
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<TeamUpdateFormData>({
     resolver: zodResolver(teamUpdateSchema),
@@ -49,6 +55,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
       name: team.name,
       credits: team.credits,
       tokens: team.tokens,
+      avatar_url: team.avatar_url || "",
     },
   });
 
@@ -79,11 +86,55 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
       name: team.name,
       credits: team.credits,
       tokens: team.tokens,
+      avatar_url: team.avatar_url || "",
     });
     setIsEditMode(false);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const url = await uploadFileAndReturnUrl(
+        `team-avatar-${team.id}`,
+        file.type,
+        "brands",
+        file
+      );
+      form.setValue("avatar_url", url, { shouldDirty: true });
+      toast.success("Avatar uploaded successfully");
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+      console.error("Avatar upload error:", error);
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    form.setValue("avatar_url", null, { shouldDirty: true });
+  };
+
   const isDirty = form.formState.isDirty;
+  const watchedAvatarUrl = form.watch("avatar_url");
 
   return (
     <Card>
@@ -104,25 +155,87 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Team Name */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Team name"
-                      {...field}
-                      disabled={!isEditMode}
-                      className="disabled:opacity-100"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Avatar and Team Name Section */}
+            <div className="flex items-start gap-6">
+              {/* Avatar with Upload */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative group">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={watchedAvatarUrl || undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                      {form.watch("name")?.charAt(0).toUpperCase() || "T"}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {/* Upload overlay - only show in edit mode */}
+                  {isEditMode && canEditNameAvatar && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {isUploadingAvatar ? (
+                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 text-white animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="p-1.5 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                          >
+                            <Camera className="h-4 w-4 text-white" />
+                          </button>
+                          {watchedAvatarUrl && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveAvatar}
+                              className="p-1.5 bg-white/20 rounded-full hover:bg-red-500/80 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4 text-white" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+
+                {isEditMode && canEditNameAvatar && (
+                  <span className="text-xs text-muted-foreground">
+                    Hover to change
+                  </span>
+                )}
+              </div>
+
+              {/* Team Name Field */}
+              <div className="flex-1">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Team name"
+                          {...field}
+                          disabled={!isEditMode || !canEditNameAvatar}
+                          className="disabled:opacity-100"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             {/* Credits and Tokens */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,7 +247,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                     <FormLabel>Tokens</FormLabel>
                     <FormControl>
                       <div className="space-y-3">
-                        {canEdit && isEditMode ? (
+                        {canEditCredits && isEditMode ? (
                           <>
                             <Input
                               className="disabled:opacity-100"
@@ -212,8 +325,8 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {!canEdit
-                                  ? "You do not have permission to edit tokens"
+                                {!canEditCredits
+                                  ? "Only KK-ADMIN can edit tokens"
                                   : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>
@@ -234,7 +347,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                     <FormLabel>Credits</FormLabel>
                     <FormControl>
                       <div className="space-y-3">
-                        {canEdit && isEditMode ? (
+                        {canEditCredits && isEditMode ? (
                           <>
                             <Input
                               type="text"
@@ -311,8 +424,8 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {!canEdit
-                                  ? "You do not have permission to edit credits"
+                                {!canEditCredits
+                                  ? "Only KK-ADMIN can edit credits"
                                   : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>

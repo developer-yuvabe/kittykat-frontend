@@ -37,6 +37,7 @@ export const teamUpdateSchema = z.object({
   members: z.array(teamMemberSchema).optional(),
   brands: z.array(z.string()).optional(),
   has_all_brands_access: z.boolean().optional(),
+  avatar_url: z.string().url("Please enter a valid URL").nullable().optional(),
 });
 
 export const addMembersSchema = z.object({
