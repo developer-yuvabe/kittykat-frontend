@@ -1,6 +1,7 @@
 import { getSSEBaseUrl } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { useEffect } from "react";
+import { refetchTeamData } from "../useTeams";
 
 export const useUserCredits = () => {
   const { setCredits, setKittykatExpertCredits, user } = useUserStore();
@@ -26,8 +27,9 @@ export const useUserCredits = () => {
         };
 
         setCredits(tokens);
-
         setKittykatExpertCredits(teamCredits);
+
+        refetchTeamData(activeTeamId);
       } catch (err) {
         console.error("Error parsing team credits SSE event:", err);
       }

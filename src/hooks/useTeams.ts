@@ -11,6 +11,7 @@ import {
   getTeamBrands as getTeamBrandsService,
   getMyTeamNames,
 } from "@/services/api/team.service";
+import { queryClient } from "@/providers/react-query-provider";
 
 import type {
   TeamCreateRequest,
@@ -220,4 +221,14 @@ export function useTeams({
     updateMemberRole: updateMemberRoleMutation.mutate,
     isUpdatingMemberRole: updateMemberRoleMutation.isPending,
   };
+}
+
+// Refetch team data to reflect updated credits in team detail page and tables
+export function refetchTeamData(teamId: string) {
+  queryClient.invalidateQueries({
+    queryKey: getTeamQueryKey(teamId),
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["teams"],
+  });
 }
