@@ -90,12 +90,19 @@ export const MoodboardSection: React.FC<{
       moodboards: [],
       product_categories: [],
       asset_types: ["image"],
-      asset_sources: [],
+      asset_sources: ["brand-uploads"],
       media_format: [],
       aspect_ratio: [],
       workflow_status: [],
+      sort_by: "created_at_descending",
     },
   });
+  const handleMoodboardTitleChange = useCallback(
+    (newTitle: string) => {
+      setMoodboardTitle(newTitle);
+    },
+    [setMoodboardTitle]
+  );
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -460,6 +467,7 @@ export const MoodboardSection: React.FC<{
                 setSelectedMoodboard={handleMoodboardSelect}
                 onNewMoodboard={handleCreateNewMoodboard}
                 isCreatingNew={false}
+                onMoodboardTitleChange={handleMoodboardTitleChange}
               />
             ) : (
               <Popover open={openPopover} onOpenChange={setOpenPopover}>

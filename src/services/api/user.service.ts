@@ -1,6 +1,6 @@
 import axiosInstance from "@/config/axios/api-client.config";
 import { handleApiRequest } from "@/lib/utils";
-import { inviationSchema } from "@/schema/inviation.schema";
+import { invitationSchema } from "@/schema/inviation.schema";
 import { PaginationMeta } from "@/types/types";
 import {
   User,
@@ -30,12 +30,13 @@ export const createUser = async (userData: {
 export const updateUser = async (
   userId: string,
   userData: Pick<User, "thread_id"> & {
+    name?: string;
     roleId?: string;
     brand_access?: string[];
     model_access?: string[];
     contentFilterDisabled?: boolean;
     credits?: number;
-    kittykat_expert_credits?: number;
+    tokens?: number;
     user_preferences?: {
       enhance_prompts?: boolean;
     };
@@ -43,13 +44,14 @@ export const updateUser = async (
 ): Promise<UserListItem> => {
   try {
     const fieldsToUpdate = {
+      name: userData.name,
       role_id: userData.roleId,
       thread_id: userData.thread_id,
       brand_access: userData.brand_access,
       model_access: userData.model_access,
       content_filter_disabled: userData.contentFilterDisabled,
       credits: userData.credits,
-      kittykat_expert_credits: userData.kittykat_expert_credits,
+      tokens: userData.tokens,
       user_preferences: userData.user_preferences,
     };
 
@@ -113,18 +115,37 @@ export const fetchUserBrands = async (
   }
 };
 
-export const inviteUser = async (data: z.infer<typeof inviationSchema>) => {
+export const updateUserActiveTeam = async (
+  userId: string,
+  active_team_id: string | null
+): Promise<UserListItem> => {
+  try {
+    const data = await handleApiRequest<UserListItem>(
+      axiosInstance.patch(`/users/${userId}/active-team`, {
+        active_team_id,
+      })
+    );
+
+    return data;
+  } catch (error) {
+    console.error("Error updating user active team:", error);
+    throw error;
+  }
+};
+
+export const inviteUser = async (data: z.infer<typeof invitationSchema>) => {
   try {
     const response = await handleApiRequest<UserListItem>(
       axiosInstance.post("/invitations", {
         email: data.email,
         role: data.role,
-        brand_access: data.brandAccess,
         model_access: data.modelAccess,
         base_url: window.location.origin,
         content_filter_disabled: data.contentFilterDisabled,
         credits: data.credits,
-        kittykat_expert_credits: data.kittykat_expert_credits,
+        tokens: data.tokens,
+        team_id: data.teamId,
+        team_role: data.teamRole,
       })
     );
 

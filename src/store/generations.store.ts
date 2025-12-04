@@ -8,9 +8,13 @@ type Store = {
   currentSessionGenerationIds: string[];
   addCurrentSessionGenerationId: (id: string) => void;
   clearCurrentSessionGenerationIds: () => void;
+
+  optimisitcallyDeletedGenerationIds: string[];
+  addOptimisticallyDeletedGenerationId: (id: string) => void;
+  removeOptimisticallyDeletedGenerationId: (id: string) => void;
 };
 
-export const useVideoGenStore = create<Store>()((set) => {
+export const useGenerationsStore = create<Store>()((set) => {
   return {
     generations: [],
     setGenerations: (generations: A2iImageGeneration[]) =>
@@ -23,5 +27,21 @@ export const useVideoGenStore = create<Store>()((set) => {
       })),
     clearCurrentSessionGenerationIds: () =>
       set(() => ({ currentSessionGenerationIds: [] })),
+
+    optimisitcallyDeletedGenerationIds: [],
+    addOptimisticallyDeletedGenerationId: (id: string) =>
+      set((state) => ({
+        optimisitcallyDeletedGenerationIds: [
+          id,
+          ...state.optimisitcallyDeletedGenerationIds,
+        ],
+      })),
+    removeOptimisticallyDeletedGenerationId: (id: string) =>
+      set((state) => ({
+        optimisitcallyDeletedGenerationIds:
+          state.optimisitcallyDeletedGenerationIds.filter(
+            (genId) => genId !== id
+          ),
+      })),
   };
 });

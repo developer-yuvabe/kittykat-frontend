@@ -1,8 +1,13 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { UserListItem, UserListResponse, UserStatus } from "@/types/user.types";
+import { cn, getRoleLabel } from "@/lib/utils";
+import {
+  UserListItem,
+  UserListResponse,
+  UserRoleId,
+  UserStatus,
+} from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisIcon } from "lucide-react";
@@ -74,7 +79,7 @@ export const getUserTableColumns = (
             row.original.role.id === "KK-USER",
         })}
       >
-        {row.original.role.id === "KK-ADMIN" ? "Admin" : "User"}
+        {getRoleLabel(row.original.role.id, row.original.is_default_admin)}
       </Badge>
     ),
   },
@@ -110,66 +115,7 @@ export const getUserTableColumns = (
       </Badge>
     ),
   },
-  {
-    header: "Tokens",
-    accessorKey: "credits",
-    cell: ({ row }) => (
-      <p className="font-medium">
-        {Number(row.original.credits ?? 0).toLocaleString()}
-      </p>
-    ),
-  },
-  {
-    header: "KittyKat Expert Credits",
-    accessorKey: "kittykat_expert_credits",
-    cell: ({ row }) => (
-      <div className="font-medium">
-        {Number(row.original.kittykat_expert_credits ?? 0).toLocaleString()}
-      </div>
-    ),
-  },
 
-  {
-    header: "Brand Access",
-    accessorKey: "brand_access",
-    cell: ({ row }) => {
-      const INIT_BRANDS_TO_SHOW = 3;
-      const [showAllBrands, setShowAllBrands] = useState(false);
-      const role = row.original.role?.id;
-      if (role === "KK-ADMIN") {
-        return <p className="italic">All brands</p>;
-      }
-
-      return row.original.brand_access!.length ? (
-        <div className="flex flex-wrap gap-2">
-          {row.original
-            .brand_access!.slice(
-              0,
-              showAllBrands ? undefined : INIT_BRANDS_TO_SHOW
-            )
-            .map((brand) => (
-              <Badge key={brand.id} className="border">
-                {brand.name}
-              </Badge>
-            ))}
-          {row.original.brand_access!.length > INIT_BRANDS_TO_SHOW && (
-            <Button
-              variant="link"
-              size="sm"
-              className="text-muted-foreground"
-              onClick={() => setShowAllBrands((p) => !p)}
-            >
-              {showAllBrands
-                ? "Show Less"
-                : `Show all (${row.original.brand_access!.length})`}
-            </Button>
-          )}
-        </div>
-      ) : (
-        "—"
-      );
-    },
-  },
   {
     header: "Model Access",
     accessorKey: "model_access",
@@ -178,7 +124,7 @@ export const getUserTableColumns = (
       const [showAllModels, setShowAllModels] = useState(false);
       const role = row.original.role?.id;
 
-      if (role === "KK-ADMIN") {
+      if (role === UserRoleId.ADMIN || role === UserRoleId.KK_CREATIVE_USER) {
         return <p className="italic">All models</p>;
       }
 
@@ -267,7 +213,7 @@ export const getUserTableColumns = (
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-max">
-              {row.original.status === UserStatus.ACTIVE && (
+              {
                 <>
                   <DropdownMenuItem
                     disabled={
@@ -279,7 +225,7 @@ export const getUserTableColumns = (
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
-              )}
+              }
               {row.original.invitation_link && (
                 <>
                   <DropdownMenuItem

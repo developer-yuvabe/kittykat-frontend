@@ -6,6 +6,8 @@ export const videoGenerationService = async (
   brandId: string,
   data: Record<string, any>
 ) => {
+  // console.log("Video generation data:", data);
+  // console.log("Brand ID:", brandId);
   try {
     return await handleApiRequest<A2iVideoGenerationResponse>(
       axiosInstance.post(`/brands/${brandId}/a2i/video-generation`, {
@@ -54,6 +56,7 @@ export const toggleA2iVideoLike = async (
 export const estimateVideoGenerationCredits = async (
   data: Record<string, any>
 ) => {
+  console.log("Estimating video generation credits with data:", data);
   try {
     const credits = await handleApiRequest<number | null>(
       axiosInstance.post(`/credits/estimate/video-generation`, data)

@@ -7,7 +7,8 @@ export const remixImageService = async (
   data: Record<string, any>,
   maskImageUrl: string | null,
   product_reference_images?: string[],
-  enhance_prompt_for_products?: boolean
+  enhance_prompt_for_products?: boolean,
+  team_id?: string
 ) => {
   try {
     const payload: Record<string, any> = {
@@ -15,6 +16,7 @@ export const remixImageService = async (
       campaign_id: campaignId,
       product_reference_images: product_reference_images || [],
       enhance_prompt_for_product: enhance_prompt_for_products || false,
+      team_id: team_id || undefined,
     };
 
     if (maskImageUrl) {
@@ -32,6 +34,7 @@ export const remixImageService = async (
 
 export const estimateRemixCredits = async (data: Record<string, any>) => {
   try {
+    // console.log("Estimating remix credits with data:", data);
     const credits = await handleApiRequest<number | null>(
       axiosInstance.post(`/credits/estimate/remix`, data)
     );

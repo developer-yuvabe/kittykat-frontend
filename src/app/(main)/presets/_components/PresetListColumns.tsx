@@ -15,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { MoreHorizontal, Copy, Edit, Trash2, Crown } from "lucide-react";
+import { MoreHorizontal, Copy, Edit, Trash2, Crown, Eye } from "lucide-react";
 import { useBrandStore } from "@/store/brand.store";
 import type { PresetResponse } from "@/types/preset.types";
 import { UserWithoutBrandAccess } from "@/store/user.store";
@@ -23,16 +23,20 @@ import { formatToLocalTime } from "@/lib/utils";
 
 interface PresetListColumnsProps {
   onEdit: (preset: PresetResponse) => void;
+  onView: (preset: PresetResponse) => void;
   onClone: (preset: PresetResponse) => void;
   onDelete: (preset: PresetResponse) => void;
   user: UserWithoutBrandAccess;
+  isViewOnly?: boolean;
 }
 
 export function getPresetColumns({
   onEdit,
+  onView,
   onClone,
   onDelete,
   user,
+  isViewOnly = false,
 }: PresetListColumnsProps): ColumnDef<PresetResponse>[] {
   // NOTE: Master presets have special permissions:
   // - They cannot be deleted (Delete action disabled for all users)
@@ -121,9 +125,11 @@ export function getPresetColumns({
         <PresetActionsCell
           preset={row.original}
           onEdit={onEdit}
+          onView={onView}
           onClone={onClone}
           onDelete={onDelete}
           user={user}
+          isViewOnly={isViewOnly}
         />
       ),
     },
@@ -179,20 +185,24 @@ function PresetBrandsList({
 function PresetActionsCell({
   preset,
   onEdit,
+  onView,
   onClone,
   onDelete,
   user,
+  isViewOnly = false,
 }: {
   preset: PresetResponse;
   onEdit: (preset: PresetResponse) => void;
+  onView: (preset: PresetResponse) => void;
   onClone: (preset: PresetResponse) => void;
   onDelete: (preset: PresetResponse) => void;
   user?: UserWithoutBrandAccess | null;
+  isViewOnly?: boolean;
 }) {
   const isMaster = !!preset.is_master;
   const canEditMaster = user?.is_default_admin === true;
-  const editDisabled = isMaster && !canEditMaster;
-  const deleteDisabled = isMaster;
+  const deleteDisabled = isViewOnly || isMaster;
+  const cloneDisabled = isViewOnly;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -202,32 +212,58 @@ function PresetActionsCell({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {/* Edit — only default platform admin can edit master presets */}
-        {editDisabled ? (
+        {/* View action - always available for view-only users */}
+        {isViewOnly && (
+          <DropdownMenuItem onClick={() => onView(preset)} className="gap-2">
+            <Eye className="h-4 w-4" />
+            <span>View</span>
+          </DropdownMenuItem>
+        )}
+        {/* Edit — only default platform admin can edit master presets, view-only users cannot edit */}
+        {!isViewOnly &&
+          (isMaster && !canEditMaster ? (
+            <Tooltip>
+              {/* Tooltip needs pointer events on the trigger — disabled Radix items have pointer-events: none, so we wrap the menu item */}
+              <TooltipTrigger asChild>
+                <div className="w-full">
+                  <DropdownMenuItem disabled className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    <span>Edit</span>
+                  </DropdownMenuItem>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isViewOnly
+                  ? "You have view-only access to presets"
+                  : "You do not have permission to edit master presets"}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <DropdownMenuItem onClick={() => onEdit(preset)} className="gap-2">
+              <Edit className="h-4 w-4" />
+              <span>Edit</span>
+            </DropdownMenuItem>
+          ))}
+        {cloneDisabled ? (
           <Tooltip>
-            {/* Tooltip needs pointer events on the trigger — disabled Radix items have pointer-events: none, so we wrap the menu item */}
             <TooltipTrigger asChild>
               <div className="w-full">
                 <DropdownMenuItem disabled className="gap-2">
-                  <Edit className="h-4 w-4" />
-                  <span>Edit</span>
+                  <Copy className="h-4 w-4" />
+                  <span>Clone</span>
                 </DropdownMenuItem>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              You do not have permission to edit master presets
+              You have view-only access to presets
             </TooltipContent>
           </Tooltip>
         ) : (
-          <DropdownMenuItem onClick={() => onEdit(preset)} className="gap-2">
-            <Edit className="h-4 w-4" />
-            <span>Edit</span>
+          <DropdownMenuItem onClick={() => onClone(preset)} className="gap-2">
+            <Copy className="h-4 w-4" />
+            <span>Clone</span>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={() => onClone(preset)} className="gap-2">
-          <Copy className="h-4 w-4" />
-          <span>Clone</span>
-        </DropdownMenuItem>
         {deleteDisabled ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -238,7 +274,11 @@ function PresetActionsCell({
                 </DropdownMenuItem>
               </div>
             </TooltipTrigger>
-            <TooltipContent>Master presets cannot be deleted</TooltipContent>
+            <TooltipContent>
+              {isViewOnly
+                ? "You have view-only access to presets"
+                : "Master presets cannot be deleted"}
+            </TooltipContent>
           </Tooltip>
         ) : (
           <DropdownMenuItem

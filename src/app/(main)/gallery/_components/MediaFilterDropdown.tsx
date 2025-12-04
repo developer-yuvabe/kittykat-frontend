@@ -33,18 +33,28 @@ import {
   MultiSelectEmpty,
   MultiSelectValue,
 } from "@/components/ui/multi-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { WORKFLOW_STATUS_OPTIONS } from "@/lib/gallery.utils";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { useBrandStore } from "@/store/brand.store";
 
 interface MediaFilterDropdownProps {
   selectedFilters: EnhancedSelectedFilters;
   setSelectedFilters: (filters: EnhancedSelectedFilters) => void;
+  showCampaignFilter?: boolean; // Only show campaign filter in certain contexts
 }
 
 export function MediaFilterDropdown({
   selectedFilters,
   setSelectedFilters,
+  showCampaignFilter = false, // Default to false
 }: MediaFilterDropdownProps) {
   const {
     favorites,
@@ -62,6 +72,14 @@ export function MediaFilterDropdown({
     resetFilters,
   } = useGalleryFilterStore();
 
+  const { brands, selectedBrandId } = useBrandStore();
+
+  // Get campaigns for the selected brand
+  const availableCampaigns = React.useMemo(() => {
+    const selectedBrand = brands.find((b) => b.id === selectedBrandId);
+    return selectedBrand?.campaigns || [];
+  }, [brands, selectedBrandId]);
+
   const handleWorkflowStatusChange = (values: string[]) => {
     if (values.length === 0 || values.includes("__all__")) {
       setWorkflowStatus([]);
@@ -76,6 +94,13 @@ export function MediaFilterDropdown({
         workflow_status: values,
       });
     }
+  };
+
+  const handleCampaignChange = (value: string) => {
+    setSelectedFilters({
+      ...selectedFilters,
+      campaigns: value ? [value] : [],
+    });
   };
 
   const handleMediaTypeChange = (type: string, checked: boolean) => {
@@ -136,7 +161,7 @@ export function MediaFilterDropdown({
         {/* Accordion Sections */}
         <Accordion
           type="multiple"
-          defaultValue={["tags", "media", "status", "range"]}
+          defaultValue={["tags", "media", "campaign", "status", "range"]}
           className="divide-y"
         >
           {/* Tags */}
@@ -204,6 +229,32 @@ export function MediaFilterDropdown({
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          {/* Campaign Filter */}
+          {showCampaignFilter && availableCampaigns.length > 0 && (
+            <AccordionItem value="campaign">
+              <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
+                Campaign
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <Select
+                  value={selectedFilters.campaigns?.[0] ?? ""}
+                  onValueChange={handleCampaignChange}
+                >
+                  <SelectTrigger className="w-full h-9 text-sm">
+                    <SelectValue placeholder="Select campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCampaigns.map((campaign) => (
+                      <SelectItem key={campaign.id} value={campaign.id}>
+                        {campaign.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
           {/* Expert Status */}
           <AccordionItem value="status">

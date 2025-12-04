@@ -21,6 +21,9 @@ type MoodboardStore = {
   setExpanded: (expanded: boolean) => void;
   toggleExpanded: () => void;
 
+  triggerMoodboardSave: (() => Promise<void>) | null;
+  setTriggerMoodboardSave: (handler: (() => Promise<void>) | null) => void;
+
   // Actions
   resetMoodboardSettings: () => void;
   updateImageCountFromMoodboard: (
@@ -72,6 +75,8 @@ export const useMoodboardStore = create<MoodboardStore>((set) => ({
   setExpanded: (expanded: boolean) => set({ expanded }),
   toggleExpanded: () => set((state) => ({ expanded: !state.expanded })),
 
+  triggerMoodboardSave: null,
+  setTriggerMoodboardSave: (handler) => set({ triggerMoodboardSave: handler }),
   // Actions
   resetMoodboardSettings: () =>
     set({

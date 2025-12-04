@@ -106,6 +106,7 @@ export default function useInterruptedActions({
           currentSelectedVideoGenerationModelId:
             selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+          activeTeamId: user!.active_team_id!,
         },
         {
           command: {
@@ -289,6 +290,7 @@ export default function useInterruptedActions({
           currentSelectedVideoGenerationModelId:
             selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+          activeTeamId: user!.active_team_id!,
         },
         {
           command: {

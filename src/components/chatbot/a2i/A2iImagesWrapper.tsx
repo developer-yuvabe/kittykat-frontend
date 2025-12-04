@@ -44,6 +44,7 @@ import { useModelsStore } from "@/store/models.store";
 import { parseMongoDBDate } from "@/lib/a2i.utils";
 import A2iImageInputLoader from "./A2iImageInputLoader";
 import { useQueryState } from "nuqs";
+import { useGenerationsStore } from "@/store/generations.store";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -73,6 +74,7 @@ export const A2iImagesWrapper = ({
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const { optimisitcallyDeletedGenerationIds } = useGenerationsStore();
 
   // Track component resize to adjust items per page
   useResizeObserver({
@@ -311,28 +313,35 @@ export const A2iImagesWrapper = ({
                   ref={gridContainerRef}
                   className="grid grid-cols-[repeat(auto-fill,_minmax(240px,_1fr))] h-full overflow-y-auto scrollbar gap-[1px] content-start justify-center p-1"
                 >
-                  {displayedItems.map((image) => {
-                    const existingId = getExistingId(image);
-                    const trackingId = getItemTrackingId(image);
+                  {displayedItems
+                    .filter(
+                      (i) =>
+                        !optimisitcallyDeletedGenerationIds.includes(
+                          i.generationId
+                        )
+                    )
+                    .map((image) => {
+                      const existingId = getExistingId(image);
+                      const trackingId = getItemTrackingId(image);
 
-                    if (image.status === "completed" && existingId) {
+                      if (image.status === "completed" && existingId) {
+                        return (
+                          <A2iImageCardDraggable
+                            key={trackingId}
+                            imageData={image}
+                          />
+                        );
+                      }
+
+                      // For non-completed items or items without existing IDs, use regular card
                       return (
-                        <A2iImageCardDraggable
+                        <A2iImageCard
                           key={trackingId}
-                          imageData={image}
+                          {...image}
+                          disableDrag={!existingId}
                         />
                       );
-                    }
-
-                    // For non-completed items or items without existing IDs, use regular card
-                    return (
-                      <A2iImageCard
-                        key={trackingId}
-                        {...image}
-                        disableDrag={!existingId}
-                      />
-                    );
-                  })}
+                    })}
 
                   {/* Show placeholder cards if items are less than itemsPerPage and no more pages */}
                   {!hasMore && displayedItems.length < itemsPerPage && (

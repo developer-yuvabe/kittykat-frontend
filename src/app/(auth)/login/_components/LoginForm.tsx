@@ -27,13 +27,16 @@ import { processAuthError } from "@/lib/utils";
 import { loginSchema } from "@/schema/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const LoginForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
+
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -60,7 +63,10 @@ const LoginForm = () => {
       });
 
       router.refresh();
-      router.push(AppConfig.HOME_ROUTE);
+
+      // Redirect to the original URL if provided, otherwise go to home
+      const destination = redirectUrl || AppConfig.HOME_ROUTE;
+      router.push(destination);
     } catch (e) {
       const errorMsg = processAuthError(e);
 

@@ -22,7 +22,7 @@ import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useVideoGenStore } from "@/store/video-gen.store";
+import { useGenerationsStore } from "@/store/generations.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Settings2, X } from "lucide-react";
@@ -81,7 +81,7 @@ const VideoGenerationInputControls = ({
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );
-  const { addCurrentSessionGenerationId } = useVideoGenStore();
+  const { addCurrentSessionGenerationId } = useGenerationsStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();

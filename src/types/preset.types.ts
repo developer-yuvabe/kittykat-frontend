@@ -138,6 +138,7 @@ export enum PresetEditorMode {
   NEW = "new",
   EDIT = "edit",
   CLONE = "clone",
+  VIEW = "view",
 }
 
 export const a2iAdvancedPromptSchema = z.object({

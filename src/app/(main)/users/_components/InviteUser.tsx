@@ -12,11 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBrandStore } from "@/store/brand.store";
 import { useModelsStore } from "@/store/models.store";
-import { GemIcon, Info, Plus, X } from "lucide-react";
-import { inviationSchema } from "@/schema/inviation.schema";
+import { Info, Plus, X } from "lucide-react";
+import { invitationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
+import { TeamRolesEnum } from "@/types/team.types";
 import {
   Form,
   FormControl,
@@ -48,17 +48,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CreditIcon } from "@/components/ui/custom-icon";
-import { NumberInput } from "@/components/ui/number-input";
+import { useTeams } from "@/hooks/useTeams";
 
-type InviteUserFormData = z.infer<typeof inviationSchema>;
+type InviteUserFormData = z.infer<typeof invitationSchema>;
 
 export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const [open, setOpen] = React.useState(false);
-  const { brands } = useBrandStore();
   const { models } = useModelsStore();
   const { user } = useUserStore();
   const queryClient = useQueryClient();
+  const { teamsListQuery } = useTeams();
+
+  const teams = teamsListQuery.data?.teams ?? [];
 
   // Get base models (models without finetune_id) and sort models
   const { baseModelIds, sortedModels } = useMemo(() => {
@@ -72,18 +73,21 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   }, [models]);
 
   const form = useForm<InviteUserFormData>({
-    resolver: zodResolver(inviationSchema),
+    resolver: zodResolver(invitationSchema),
     defaultValues: {
       email: "",
       role: UserRoleId.USER,
-      brandAccess: [],
       modelAccess: [],
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
+      teamId: undefined,
+      teamRole: undefined,
     },
     mode: "onSubmit",
   });
+
+  const selectedTeamId = form.watch("teamId");
   const typeLabelMap: Record<string, string> = {
     vton: "Virtual try-on",
     image: "Image generation",
@@ -91,32 +95,19 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     remix: "In painting",
     "image-upscale": "Image upscale",
   };
-  const addKittyKatExpertCredits = (amount: number) => {
-    const currentValue = form.getValues("kittykat_expert_credits") || 0;
-    const newValue = currentValue + amount;
-    if (newValue <= AppConfig.CREDITS.MAX) {
-      form.setValue("kittykat_expert_credits", newValue);
-    }
-  };
-  // Initialize base models when component mounts or models load
-  useEffect(() => {
-    if (baseModelIds.length > 0) {
-      form.setValue("modelAccess", baseModelIds);
-    }
-  }, [baseModelIds, form]);
 
-  // Reset form with base models when dialog opens
+  // Reset form when dialog opens
   const handleOpen = () => {
     setOpen(true);
-    // Reset form with default values including base models
     const defaultValues = {
       email: "",
       role: UserRoleId.USER,
-      brandAccess: [],
-      modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
+      modelAccess: baseModelIds, // Pre-select base models by default
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
+      teamId: undefined,
+      teamRole: undefined,
     };
     form.reset(defaultValues);
   };
@@ -157,37 +148,32 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const selectedRole = form.watch("role");
 
   useEffect(() => {
-    if (selectedRole === UserRoleId.ADMIN) {
-      form.setValue("brandAccess", []);
+    if (
+      selectedRole === UserRoleId.ADMIN ||
+      selectedRole === UserRoleId.KK_CREATIVE_USER
+    ) {
       form.setValue("modelAccess", []);
-    } else {
-      // Ensure base models are included when switching to user role
-      const currentSelection = form.getValues("modelAccess") || [];
-      const combinedSelection = [
-        ...new Set([...baseModelIds, ...currentSelection]),
-      ];
-      form.setValue("modelAccess", combinedSelection);
     }
-  }, [selectedRole, baseModelIds, form]);
+  }, [selectedRole, form]);
 
-  const addCredits = (amount: number) => {
-    const currentValue = form.getValues("credits") || 0;
-    const newValue = currentValue + amount;
-    if (newValue <= AppConfig.CREDITS.MAX) {
-      form.setValue("credits", newValue);
+  // Clear team role when team is cleared
+  useEffect(() => {
+    if (!selectedTeamId) {
+      form.setValue("teamRole", undefined);
     }
-  };
+  }, [selectedTeamId, form]);
 
   const handleClose = () => {
     setOpen(false);
     form.reset({
       email: "",
       role: UserRoleId.USER,
-      brandAccess: [],
-      modelAccess: baseModelIds.length > 0 ? baseModelIds : [],
+      modelAccess: baseModelIds, // Pre-select base models by default
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
-      kittykat_expert_credits: AppConfig.DEFAULT_KITTYKAT_EXPERT_CREDITS,
+      tokens: AppConfig.DEFAULT_TOKENS,
+      teamId: undefined,
+      teamRole: undefined,
     });
   };
 
@@ -223,7 +209,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-8"
+                  className="space-y-6"
                 >
                   <div className="flex flex-col md:flex-row w-full gap-4 items-start">
                     <FormField
@@ -261,7 +247,10 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               }}
                             >
                               <SelectItem value={UserRoleId.ADMIN}>
-                                Admin
+                                Creative Admin
+                              </SelectItem>
+                              <SelectItem value={UserRoleId.KK_CREATIVE_USER}>
+                                Creative User
                               </SelectItem>
                               <SelectItem value={UserRoleId.USER}>
                                 User
@@ -274,81 +263,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                     />
                   </div>
 
-                  {/* Updated Brand Access and Model Access Grid */}
+                  {/* Model Access */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Brand Access */}
-                    <FormField
-                      control={form.control}
-                      name="brandAccess"
-                      render={({ field }) => (
-                        <FormItem className="pb-2">
-                          <FormLabel>Brand Access</FormLabel>
-                          <MultiSelect
-                            values={field.value}
-                            onValuesChange={field.onChange}
-                          >
-                            <FormControl>
-                              <MultiSelectTrigger
-                                className="w-full"
-                                disabled={selectedRole === UserRoleId.ADMIN}
-                              >
-                                <MultiSelectValue
-                                  overflowBehavior="cutoff"
-                                  placeholder={
-                                    selectedRole === UserRoleId.ADMIN
-                                      ? "Admin has access to all brands"
-                                      : "Select brands"
-                                  }
-                                />
-                              </MultiSelectTrigger>
-                            </FormControl>
-                            <MultiSelectContent
-                              search={{
-                                placeholder: "Search brands...",
-                                emptyMessage: "No brands found",
-                              }}
-                            >
-                              <MultiSelectGroup>
-                                {brands.map((brand) => (
-                                  <MultiSelectItem
-                                    key={brand.id}
-                                    value={brand.id}
-                                    badgeLabel={brand.name}
-                                    disabled={selectedRole === UserRoleId.ADMIN}
-                                  >
-                                    <div className="flex items-start justify-between group gap-0">
-                                      <div className="flex items-start min-w-0 w-full">
-                                        <Avatar className="h-6 w-6 mr-2">
-                                          <AvatarFallback className="bg-blue-500 text-white">
-                                            {brand.name
-                                              ?.charAt(0)
-                                              .toUpperCase() || "B"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col space-y-1">
-                                          <span className="line-clamp- break-words">
-                                            {brand.name}
-                                          </span>
-                                          <span className="italic text-xs">
-                                            Created by{" "}
-                                            {brand.created_by.id === user?.id
-                                              ? "You"
-                                              : brand.created_by.name}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </MultiSelectItem>
-                                ))}
-                              </MultiSelectGroup>
-                            </MultiSelectContent>
-                          </MultiSelect>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Model Access */}
                     <FormField
                       control={form.control}
                       name="modelAccess"
@@ -358,23 +274,23 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                           <MultiSelect
                             values={field.value || []}
                             onValuesChange={(newValues) => {
-                              // Ensure base models are always included
-                              const combinedValues = [
-                                ...new Set([...baseModelIds, ...newValues]),
-                              ];
-                              field.onChange(combinedValues);
+                              field.onChange(newValues);
                             }}
                           >
                             <FormControl>
                               <MultiSelectTrigger
                                 className="w-full"
-                                disabled={selectedRole === UserRoleId.ADMIN}
+                                disabled={
+                                  selectedRole === UserRoleId.ADMIN ||
+                                  selectedRole === UserRoleId.KK_CREATIVE_USER
+                                }
                               >
                                 <MultiSelectValue
                                   overflowBehavior="cutoff"
                                   placeholder={
-                                    selectedRole === UserRoleId.ADMIN
-                                      ? "Admin has access to all models"
+                                    selectedRole === UserRoleId.ADMIN ||
+                                    selectedRole === UserRoleId.KK_CREATIVE_USER
+                                      ? "Has access to all models"
                                       : sortedModels.length === 0
                                       ? "Loading models..."
                                       : "Select models"
@@ -408,11 +324,13 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                               models.map((model) => model.id)
                                             );
                                           } else {
-                                            field.onChange(baseModelIds);
+                                            field.onChange([]);
                                           }
                                         }}
                                         disabled={
-                                          selectedRole === UserRoleId.ADMIN
+                                          selectedRole === UserRoleId.ADMIN ||
+                                          selectedRole ===
+                                            UserRoleId.KK_CREATIVE_USER
                                         }
                                       />
                                       <label
@@ -428,80 +346,38 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                     {sortedModels.map((model) => {
                                       const isBaseModel = !model.finetune_id;
 
-                                      if (isBaseModel) {
-                                        return (
-                                          <TooltipProvider key={model.id}>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <div className="relative">
-                                                  <MultiSelectItem
-                                                    value={model.id}
-                                                    badgeLabel={model.name}
-                                                    disabled={
-                                                      selectedRole ===
-                                                        UserRoleId.ADMIN ||
-                                                      isBaseModel
-                                                    }
-                                                    className="pointer-events-none"
-                                                  >
-                                                    <div className="flex items-start justify-between group gap-0 w-full">
-                                                      <div className="flex items-start min-w-0 w-full">
-                                                        <Avatar className="h-6 w-6 mr-2">
-                                                          <AvatarFallback className="bg-green-500 text-white opacity-60">
-                                                            {model.name
-                                                              ?.charAt(0)
-                                                              .toUpperCase() ||
-                                                              "M"}
-                                                          </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex flex-col space-y-1">
-                                                          <span className="line-clamp- break-words text-muted-foreground">
-                                                            {model.name}
-                                                          </span>
-                                                          <span className="italic text-xs text-muted-foreground">
-                                                            Use Case:{" "}
-                                                            {typeLabelMap[
-                                                              model.type
-                                                            ] ?? model.type}
-                                                          </span>
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  </MultiSelectItem>
-                                                  <div className="absolute inset-0 pointer-events-auto cursor-not-allowed" />
-                                                </div>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="right">
-                                                Cannot unselect base models
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        );
-                                      }
-
                                       return (
                                         <MultiSelectItem
                                           key={model.id}
                                           value={model.id}
                                           badgeLabel={model.name}
                                           disabled={
-                                            selectedRole === UserRoleId.ADMIN
+                                            selectedRole === UserRoleId.ADMIN ||
+                                            selectedRole ===
+                                              UserRoleId.KK_CREATIVE_USER
                                           }
                                         >
                                           <div className="flex items-start justify-between group gap-0 w-full">
                                             <div className="flex items-start min-w-0 w-full">
                                               <Avatar className="h-6 w-6 mr-2">
-                                                <AvatarFallback className="bg-green-500 text-white">
+                                                <AvatarFallback
+                                                  className={cn(
+                                                    "text-white",
+                                                    isBaseModel
+                                                      ? "bg-green-500"
+                                                      : "bg-blue-500"
+                                                  )}
+                                                >
                                                   {model.name
                                                     ?.charAt(0)
                                                     .toUpperCase() || "M"}
                                                 </AvatarFallback>
                                               </Avatar>
                                               <div className="flex flex-col space-y-1">
-                                                <span className="line-clamp- break-words">
+                                                <span className="line-clamp-1 break-words">
                                                   {model.name}
                                                 </span>
-                                                <span className="italic text-xs">
+                                                <span className="italic text-xs text-muted-foreground">
                                                   Use Case:{" "}
                                                   {typeLabelMap[model.type] ??
                                                     model.type}
@@ -522,97 +398,28 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                       )}
                     />
                   </div>
-
-                  {/* Content Filter and Credits */}
-                  <div className="flex flex-col md:flex-row gap-4">
+                  {/* Personal Credits & Tokens */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="credits"
                       render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <div className="flex items-center gap-2 h-6">
-                            <FormLabel>Tokens</FormLabel>
-                          </div>
+                        <FormItem>
+                          <FormLabel> Credits</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              {user?.is_default_admin ? (
-                                <NumberInput
-                                  min={AppConfig.CREDITS.MIN}
-                                  max={AppConfig.CREDITS.MAX}
-                                  {...field}
-                                  onChange={field.onChange}
-                                  placeholder="Enter tokens"
-                                  className="w-full"
-                                />
-                              ) : (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div
-                                        className="w-full"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onSubmit={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        <Input
-                                          type="number"
-                                          value={field.value}
-                                          disabled
-                                          className="bg-muted w-full pointer-events-none"
-                                          placeholder="Enter tokens"
-                                          tabIndex={-1}
-                                        />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side={"bottom"}>
-                                      You do not have permission to edit Tokens.
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-
-                              {/* Quick add buttons with proper validation */}
-                              {user?.is_default_admin && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addCredits(5000)}
-                                  >
-                                    +5000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addCredits(10000)}
-                                  >
-                                    +10000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addCredits(50000)}
-                                  >
-                                    +50000
-                                    <CreditIcon size={14} className="ml-1" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="Enter credits"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -620,104 +427,119 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                     />
                     <FormField
                       control={form.control}
-                      name="kittykat_expert_credits"
+                      name="tokens"
                       render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <div className="flex items-center gap-2 h-6">
-                            <FormLabel>Kittykat Expert Credits</FormLabel>
-                          </div>
+                        <FormItem>
+                          <FormLabel> Tokens</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              {user?.is_default_admin ? (
-                                <NumberInput
-                                  min={AppConfig.CREDITS.MIN}
-                                  max={AppConfig.CREDITS.MAX}
-                                  {...field}
-                                  onChange={field.onChange}
-                                  placeholder="Enter credits"
-                                  className="w-full"
-                                />
-                              ) : (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div
-                                        className="w-full"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onSubmit={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        <Input
-                                          type="number"
-                                          value={field.value}
-                                          disabled
-                                          className="bg-muted w-full pointer-events-none"
-                                          placeholder="Enter credits amount"
-                                          tabIndex={-1}
-                                        />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side={"bottom"}>
-                                      You do not have permission to edit
-                                      kittykat expert credits.
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-
-                              {/* Quick add buttons with proper validation */}
-                              {user?.is_default_admin && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      addKittyKatExpertCredits(500)
-                                    }
-                                  >
-                                    +500
-                                    <GemIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      addKittyKatExpertCredits(1000)
-                                    }
-                                  >
-                                    +1000
-                                    <GemIcon size={14} className="ml-1" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      addKittyKatExpertCredits(5000)
-                                    }
-                                  >
-                                    +5000
-                                    <GemIcon size={14} className="ml-1" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="Enter tokens"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* Team Assignment (Optional) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="teamId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Team{" "}
+                            <span className="text-muted-foreground font-normal">
+                              (Optional)
+                            </span>
+                          </FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(
+                                value === "none" ? undefined : value
+                              );
+                              if (value === "none") {
+                                form.setValue("teamRole", undefined);
+                              }
+                            }}
+                            value={field.value ?? "none"}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a team" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">No team</SelectItem>
+                              {teams.map((team) => (
+                                <SelectItem key={team.id} value={team.id}>
+                                  {team.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {selectedTeamId && (
+                      <FormField
+                        control={form.control}
+                        name="teamRole"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Team Role{" "}
+                              <span className="text-muted-foreground font-normal">
+                                (Optional)
+                              </span>
+                            </FormLabel>
+                            <Select
+                              onValueChange={(value) =>
+                                field.onChange(
+                                  value === "none" ? undefined : value
+                                )
+                              }
+                              value={field.value ?? "none"}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  Default (Member)
+                                </SelectItem>
+                                <SelectItem value={TeamRolesEnum.MEMBER}>
+                                  Member
+                                </SelectItem>
+                                <SelectItem value={TeamRolesEnum.ADMIN}>
+                                  Admin
+                                </SelectItem>
+                                <SelectItem value={TeamRolesEnum.OWNER}>
+                                  Owner
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
 
                   {/* Content Filter */}
