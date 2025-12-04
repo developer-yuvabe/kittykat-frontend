@@ -80,7 +80,7 @@ export function TeamCreateDialog() {
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
       members: [],
-      brands: [],
+      accessible_brands: [],
       has_all_brands_access: false,
     },
     mode: "onSubmit",
@@ -94,7 +94,7 @@ export function TeamCreateDialog() {
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
       members: [],
-      brands: [],
+      accessible_brands: [],
       has_all_brands_access: false,
     });
   };
@@ -107,8 +107,10 @@ export function TeamCreateDialog() {
     const payload = {
       ...data,
       members: selectedMembers,
-      // If has_all_brands_access is true, clear the brands array
-      brands: data.has_all_brands_access ? [] : data.brands,
+      // If has_all_brands_access is true, clear the accessible_brands array
+      accessible_brands: data.has_all_brands_access
+        ? []
+        : data.accessible_brands,
     };
 
     toast.promise(createTeam(payload), {
@@ -381,7 +383,7 @@ export function TeamCreateDialog() {
                     {!form.watch("has_all_brands_access") && (
                       <FormField
                         control={form.control}
-                        name="brands"
+                        name="accessible_brands"
                         render={({ field }) => (
                           <FormItem>
                             <MultiSelect

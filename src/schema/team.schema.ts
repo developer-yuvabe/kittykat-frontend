@@ -14,7 +14,7 @@ export const teamCreateSchema = z.object({
   credits: z.number().min(0, "Credits must be non-negative").optional(),
   tokens: z.number().min(0, "Tokens must be non-negative").optional(),
   members: z.array(teamMemberSchema).optional(),
-  brands: z.array(z.string()).optional(),
+  accessible_brands: z.array(z.string()).optional(),
   has_all_brands_access: z.boolean().optional(),
 });
 
