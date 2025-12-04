@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeams } from "@/hooks/useTeams";
-import { canEditTeamDetails, canEditTeamNameAndAvatar } from "@/lib/team.utils";
+import { canEditTeamCredits, canEditTeamNameAndAvatar } from "@/lib/team.utils";
 import { teamUpdateSchema } from "@/schema/team.schema";
 import { useUserStore } from "@/store/user.store";
 import { TeamResponse } from "@/types/team.types";
@@ -42,7 +42,7 @@ interface TeamEditFormProps {
 export function TeamEditForm({ team }: TeamEditFormProps) {
   const { user } = useUserStore();
   const { updateTeam, isUpdatingTeam } = useTeams();
-  const canEditCredits = canEditTeamDetails(user);
+  const canEditCredits = canEditTeamCredits(user);
   const canEditNameAvatar = canEditTeamNameAndAvatar(user, team);
   const canEdit = canEditCredits || canEditNameAvatar;
   const [isEditMode, setIsEditMode] = useState(false);
@@ -326,7 +326,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                               </TooltipTrigger>
                               <TooltipContent>
                                 {!canEditCredits
-                                  ? "Only KK-ADMIN can edit tokens"
+                                  ? "Only System Admin can edit tokens"
                                   : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>
@@ -425,7 +425,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                               </TooltipTrigger>
                               <TooltipContent>
                                 {!canEditCredits
-                                  ? "Only KK-ADMIN can edit credits"
+                                  ? "Only System Admin can edit credits"
                                   : "Click edit to modify"}
                               </TooltipContent>
                             </Tooltip>

@@ -47,6 +47,14 @@ export function canManageTeam(
  * Check if the current user can edit team details (credits, tokens)
  * Only KK-ADMIN can edit
  */
+export function canEditTeamCredits(user: User | null): boolean {
+  return isKKAdmin(user) && user?.is_default_admin === true;
+}
+
+/**
+ * Check if the current user can edit team details
+ * Only KK-ADMIN can edit
+ */
 export function canEditTeamDetails(user: User | null): boolean {
   return isKKAdmin(user);
 }

@@ -1,8 +1,13 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { UserListItem, UserListResponse, UserStatus } from "@/types/user.types";
+import { cn, getRoleLabel } from "@/lib/utils";
+import {
+  UserListItem,
+  UserListResponse,
+  UserRoleId,
+  UserStatus,
+} from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisIcon } from "lucide-react";
@@ -74,7 +79,7 @@ export const getUserTableColumns = (
             row.original.role.id === "KK-USER",
         })}
       >
-        {row.original.role.id === "KK-ADMIN" ? "Admin" : "User"}
+        {getRoleLabel(row.original.role.id, row.original.is_default_admin)}
       </Badge>
     ),
   },
@@ -119,7 +124,7 @@ export const getUserTableColumns = (
       const [showAllModels, setShowAllModels] = useState(false);
       const role = row.original.role?.id;
 
-      if (role === "KK-ADMIN") {
+      if (role === UserRoleId.ADMIN || role === UserRoleId.KK_CREATIVE_USER) {
         return <p className="italic">All models</p>;
       }
 

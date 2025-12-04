@@ -30,6 +30,7 @@ import { PresetDeleteDialog } from "./PresetDeleteDialog";
 import { toast } from "sonner";
 import type { PresetResponse } from "@/types/preset.types";
 import { UserWithoutBrandAccess, useUserStore } from "@/store/user.store";
+import { UserRoleId } from "@/types/user.types";
 
 const PRESET_PAGE_SIZE = 15;
 
@@ -45,6 +46,9 @@ export const PresetListTable = () => {
   );
 
   const { user } = useUserStore();
+
+  // KK_CREATIVE_USER has view-only access to presets
+  const isViewOnly = user?.role.id === UserRoleId.KK_CREATIVE_USER;
 
   const [filters, setFilters] = useState<PresetsFilterRequest>({});
 
@@ -75,6 +79,13 @@ export const PresetListTable = () => {
       router.push(`/presets/${preset.id}`);
     },
     [router, user]
+  );
+
+  const handleView = useCallback(
+    (preset: PresetResponse) => {
+      router.push(`/presets/${preset.id}`);
+    },
+    [router]
   );
 
   const handleClone = useCallback(
@@ -117,11 +128,13 @@ export const PresetListTable = () => {
     () =>
       getPresetColumns({
         onEdit: handleEdit,
+        onView: handleView,
         onClone: handleClone,
         onDelete: handleDeleteClick,
         user: user as UserWithoutBrandAccess,
+        isViewOnly,
       }),
-    [handleEdit, handleClone, handleDeleteClick, user]
+    [handleEdit, handleView, handleClone, handleDeleteClick, user, isViewOnly]
   );
 
   const table = useReactTable({
@@ -180,10 +193,12 @@ export const PresetListTable = () => {
             }}
           />
 
-          <Button size="sm" onClick={handleNewPreset} className="h-9">
-            <Plus className="h-4 w-4 mr-2" />
-            New Preset
-          </Button>
+          {!isViewOnly && (
+            <Button size="sm" onClick={handleNewPreset} className="h-9">
+              <Plus className="h-4 w-4 mr-2" />
+              New Preset
+            </Button>
+          )}
           <Button
             size="icon"
             variant="outline"

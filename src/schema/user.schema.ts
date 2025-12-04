@@ -4,9 +4,12 @@ import { z } from "zod";
 export const updateInvitedUserSchema = z
   .object({
     contentFilterDisabled: z.boolean(),
-    role: z.enum([UserRoleId.ADMIN, UserRoleId.USER], {
-      errorMap: () => ({ message: "Please select a role" }),
-    }),
+    role: z.enum(
+      [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
+      {
+        errorMap: () => ({ message: "Please select a role" }),
+      }
+    ),
     modelAccess: z.array(z.string()).optional(),
     name: z.string().optional(),
   })

@@ -148,7 +148,10 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const selectedRole = form.watch("role");
 
   useEffect(() => {
-    if (selectedRole === UserRoleId.ADMIN) {
+    if (
+      selectedRole === UserRoleId.ADMIN ||
+      selectedRole === UserRoleId.KK_CREATIVE_USER
+    ) {
       form.setValue("modelAccess", []);
     }
   }, [selectedRole, form]);
@@ -244,7 +247,10 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               }}
                             >
                               <SelectItem value={UserRoleId.ADMIN}>
-                                Admin
+                                Creative Admin
+                              </SelectItem>
+                              <SelectItem value={UserRoleId.KK_CREATIVE_USER}>
+                                Creative User
                               </SelectItem>
                               <SelectItem value={UserRoleId.USER}>
                                 User
@@ -274,13 +280,17 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                             <FormControl>
                               <MultiSelectTrigger
                                 className="w-full"
-                                disabled={selectedRole === UserRoleId.ADMIN}
+                                disabled={
+                                  selectedRole === UserRoleId.ADMIN ||
+                                  selectedRole === UserRoleId.KK_CREATIVE_USER
+                                }
                               >
                                 <MultiSelectValue
                                   overflowBehavior="cutoff"
                                   placeholder={
-                                    selectedRole === UserRoleId.ADMIN
-                                      ? "Admin has access to all models"
+                                    selectedRole === UserRoleId.ADMIN ||
+                                    selectedRole === UserRoleId.KK_CREATIVE_USER
+                                      ? "Has access to all models"
                                       : sortedModels.length === 0
                                       ? "Loading models..."
                                       : "Select models"
@@ -318,7 +328,9 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                           }
                                         }}
                                         disabled={
-                                          selectedRole === UserRoleId.ADMIN
+                                          selectedRole === UserRoleId.ADMIN ||
+                                          selectedRole ===
+                                            UserRoleId.KK_CREATIVE_USER
                                         }
                                       />
                                       <label
@@ -340,7 +352,9 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                           value={model.id}
                                           badgeLabel={model.name}
                                           disabled={
-                                            selectedRole === UserRoleId.ADMIN
+                                            selectedRole === UserRoleId.ADMIN ||
+                                            selectedRole ===
+                                              UserRoleId.KK_CREATIVE_USER
                                           }
                                         >
                                           <div className="flex items-start justify-between group gap-0 w-full">
