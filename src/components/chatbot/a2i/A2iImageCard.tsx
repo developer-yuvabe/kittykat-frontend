@@ -34,8 +34,9 @@ import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useModelsStore } from "@/store/models.store";
-import { GalleryItemResponse } from "@/types/gallery.types";
 import { useA2iStore } from "@/store/a2i.store";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
+import { useGenerationsStore } from "@/store/generations.store";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -77,6 +78,8 @@ const A2iImageCard = ({
   video,
   isNSFW,
 }: A2iImageCardProps) => {
+  const { data, setData } = useBrandUpdatesStore();
+  const { addOptimisticallyDeletedGenerationId } = useGenerationsStore();
   const [copied, setCopied] = useState(false);
   const { openConceptVisual } = useConceptVisualStore();
   const [showImageModal, setShowImageModal] = useState(false);
@@ -198,16 +201,35 @@ const A2iImageCard = ({
       }
     })();
 
-    toast.promise(deletePromise, {
-      loading: "Deleting...",
-      success: "Deleted successfully!",
-      error: "Could not delete item. Please try again.",
-    });
+    if (status !== "failed") {
+      toast.promise(deletePromise, {
+        loading: "Deleting...",
+        success: "Deleted successfully!",
+        error: "Could not delete item. Please try again.",
+      });
 
-    deletePromise.finally(() => {
-      setIsDeleting(false);
-    });
+      deletePromise.finally(() => {
+        setIsDeleting(false);
+      });
+    } else {
+      // Optimistic deletion for failed items
+
+      setData({
+        ...data,
+        a2i_image_information: data?.a2i_image_information
+          ? {
+              ...data.a2i_image_information,
+              generations: data.a2i_image_information.generations.filter(
+                (gen) => gen.id !== generationId
+              ),
+            }
+          : undefined,
+      });
+
+      addOptimisticallyDeletedGenerationId(generationId);
+    }
   };
+
   const handleReUse = async () => {
     try {
       // Video
@@ -603,7 +625,8 @@ const A2iImageCard = ({
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                setShowDeleteDialog(true);
+                if (status === "failed") handleRemoveItem();
+                else setShowDeleteDialog(true);
               }}
               icon={
                 <X

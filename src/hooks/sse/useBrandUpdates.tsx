@@ -2,7 +2,7 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails } from "@/types/types";
 import { useEffect, useRef } from "react";
-import { useVideoGenStore } from "@/store/video-gen.store";
+import { useGenerationsStore } from "@/store/generations.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 
@@ -10,7 +10,7 @@ export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignCount = useRef<number>(0);
   const previousGenerationStatus = useRef<Record<string, string>>({});
-  const { setGenerations } = useVideoGenStore();
+  const { setGenerations } = useGenerationsStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
   const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
