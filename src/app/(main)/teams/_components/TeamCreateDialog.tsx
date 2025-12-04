@@ -540,12 +540,9 @@ export function TeamCreateDialog() {
                                   }
                                 >
                                   <SelectTrigger className="w-32">
-                                    <SelectValue />
+                                    <SelectValue placeholder={member.role} />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value={TeamRolesEnum.OWNER}>
-                                      Owner
-                                    </SelectItem>
                                     <SelectItem value={TeamRolesEnum.ADMIN}>
                                       Admin
                                     </SelectItem>

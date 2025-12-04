@@ -153,11 +153,44 @@ export function useTeams({
       memberId: string;
       newRole: TeamRolesEnum;
     }) => updateMemberRoleService(teamId, memberId, newRole),
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: getTeamQueryKey(variables.teamId),
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<any>(
+        getTeamQueryKey(variables.teamId)
+      );
+
+      // Optimistically update the cache
+      if (previousData) {
+        queryClient.setQueryData(getTeamQueryKey(variables.teamId), {
+          ...previousData,
+          members: previousData.members.map((member: any) =>
+            member.id === variables.memberId
+              ? { ...member, role: variables.newRole }
+              : member
+          ),
+        });
+      }
+
+      return { previousData };
+    },
+    onError: (_, __, context) => {
+      // Rollback to previous data on error
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          getTeamQueryKey(context.previousData.id),
+          context.previousData
+        );
+      }
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: getTeamQueryKey(variables.teamId),
       });
-      queryClient.invalidateQueries({ queryKey: ["teams"], exact: false });
     },
   });
 

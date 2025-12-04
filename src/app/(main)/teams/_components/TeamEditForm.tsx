@@ -26,7 +26,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { AppConfig } from "@/config/app.config";
-import { CreditIcon } from "@/components/ui/custom-icon";
 import { Camera, GemIcon, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRef, useState } from "react";
@@ -391,7 +390,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                 }}
                               >
                                 +500
-                                <CreditIcon size={14} className="ml-1" />
+                                <GemIcon size={14} className="ml-1" />
                               </Button>
                               <Button
                                 type="button"
@@ -406,7 +405,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                 }}
                               >
                                 +1000
-                                <CreditIcon size={14} className="ml-1" />
+                                <GemIcon size={14} className="ml-1" />
                               </Button>
                             </div>
                           </>
