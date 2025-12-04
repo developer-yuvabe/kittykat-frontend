@@ -35,9 +35,12 @@ export const teamInvitationSchema = z.object({
 // ============================================================================
 export const invitationSchema = z.object({
   email: z.string().email({ message: FORM_MESSAGES.INVALID_EMAIL }),
-  role: z.enum([UserRoleId.ADMIN, UserRoleId.USER], {
-    errorMap: () => ({ message: "Please select a role" }),
-  }),
+  role: z.enum(
+    [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
+    {
+      errorMap: () => ({ message: "Please select a role" }),
+    }
+  ),
   modelAccess: z.array(z.string()),
   contentFilterDisabled: z.boolean(),
   // Team invitation fields (optional)

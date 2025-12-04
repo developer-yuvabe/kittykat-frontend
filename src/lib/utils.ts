@@ -479,25 +479,25 @@ export const NAVIGATION_LINKS: NavLink[] = [
     icon: HomeIcon,
     path: "/",
     disabled: true,
-    roles: [UserRoleId.ADMIN, UserRoleId.USER],
+    roles: [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
   },
   {
     name: "Gallery",
     icon: GalleryIcon,
     path: "/gallery",
-    roles: [UserRoleId.ADMIN, UserRoleId.USER],
+    roles: [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
   },
   {
     name: "Task Lists",
     icon: ListTodo,
     path: "/tasklist",
-    roles: [UserRoleId.ADMIN, UserRoleId.USER],
+    roles: [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
   },
   {
     name: "Teams",
     icon: Users2,
     path: "/teams",
-    roles: [UserRoleId.USER],
+    roles: [UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
   },
   {
     name: "Users",
@@ -509,7 +509,7 @@ export const NAVIGATION_LINKS: NavLink[] = [
     name: "Presets",
     icon: Columns3Cog,
     path: "/presets",
-    roles: [UserRoleId.ADMIN],
+    roles: [UserRoleId.ADMIN, UserRoleId.KK_CREATIVE_USER],
   },
 ];
 
@@ -525,10 +525,16 @@ export function filterLinksByRole(
   });
 }
 
-export function splitLinksForLayout(links: NavLink[]) {
-  const midpoint = Math.ceil(links.length / 2);
-  return {
-    firstHalf: links.slice(0, midpoint),
-    secondHalf: links.slice(midpoint),
-  };
+export function getRoleLabel(
+  role: UserRoleId,
+  isDefaultAdmin?: boolean
+): string {
+  switch (role) {
+    case UserRoleId.ADMIN:
+      return isDefaultAdmin ? "System Admin" : "Creative Admin";
+    case UserRoleId.USER:
+      return "User";
+    case UserRoleId.KK_CREATIVE_USER:
+      return "Creative User";
+  }
 }

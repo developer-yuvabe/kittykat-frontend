@@ -48,6 +48,7 @@ export type UserListResponse = {
 export enum UserRoleId {
   ADMIN = "KK-ADMIN",
   USER = "KK-USER",
+  KK_CREATIVE_USER = "KK-CREATIVE-USER",
 }
 
 export type UserRole = {

@@ -96,7 +96,11 @@ export function EditUser({
 
       form.reset({
         role: user.role.id,
-        modelAccess: user.role.id === UserRoleId.ADMIN ? [] : userModelAccess,
+        modelAccess:
+          user.role.id === UserRoleId.ADMIN ||
+          user.role.id === UserRoleId.KK_CREATIVE_USER
+            ? []
+            : userModelAccess,
         contentFilterDisabled: user.content_filter_disabled ?? false,
         name: user.name || "",
       });
@@ -139,7 +143,10 @@ export function EditUser({
   const selectedRole = form.watch("role");
 
   useEffect(() => {
-    if (selectedRole === UserRoleId.ADMIN) {
+    if (
+      selectedRole === UserRoleId.ADMIN ||
+      selectedRole === UserRoleId.KK_CREATIVE_USER
+    ) {
       form.setValue("modelAccess", []);
     } else if (selectedRole === UserRoleId.USER) {
       // When switching to User role, pre-select base models if modelAccess is empty
@@ -235,7 +242,10 @@ export function EditUser({
                           }}
                         >
                           <SelectItem value={UserRoleId.ADMIN}>
-                            Admin
+                            Creative Admin
+                          </SelectItem>
+                          <SelectItem value={UserRoleId.KK_CREATIVE_USER}>
+                            Creative User
                           </SelectItem>
                           <SelectItem value={UserRoleId.USER}>User</SelectItem>
                         </SelectContent>
@@ -263,13 +273,17 @@ export function EditUser({
                           <FormControl>
                             <MultiSelectTrigger
                               className="w-full"
-                              disabled={selectedRole === UserRoleId.ADMIN}
+                              disabled={
+                                selectedRole === UserRoleId.ADMIN ||
+                                selectedRole === UserRoleId.KK_CREATIVE_USER
+                              }
                             >
                               <MultiSelectValue
                                 overflowBehavior="cutoff"
                                 placeholder={
-                                  selectedRole === UserRoleId.ADMIN
-                                    ? "Admin has access to all models"
+                                  selectedRole === UserRoleId.ADMIN ||
+                                  selectedRole === UserRoleId.KK_CREATIVE_USER
+                                    ? "Has access to all models"
                                     : sortedModels.length === 0
                                     ? "Loading models..."
                                     : "Select models"
@@ -309,7 +323,9 @@ export function EditUser({
                                         }
                                       }}
                                       disabled={
-                                        selectedRole === UserRoleId.ADMIN
+                                        selectedRole === UserRoleId.ADMIN ||
+                                        selectedRole ===
+                                          UserRoleId.KK_CREATIVE_USER
                                       }
                                     />
                                     <label
@@ -331,7 +347,9 @@ export function EditUser({
                                         value={model.id}
                                         badgeLabel={model.name}
                                         disabled={
-                                          selectedRole === UserRoleId.ADMIN
+                                          selectedRole === UserRoleId.ADMIN ||
+                                          selectedRole ===
+                                            UserRoleId.KK_CREATIVE_USER
                                         }
                                       >
                                         <div className="flex items-start justify-between group gap-0 w-full">

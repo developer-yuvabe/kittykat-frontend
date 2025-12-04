@@ -57,7 +57,7 @@ export function PresetEditor({
     updatePresetMutation,
     patchPresetMutation,
     adjustPromptMutation,
-  } = usePresets({ presetId, enabled: mode === PresetEditorMode.EDIT });
+  } = usePresets({ presetId, enabled: mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW });
 
   const form = useForm<PresetFormData>({
     resolver: zodResolver(presetFormSchema),
@@ -76,7 +76,8 @@ export function PresetEditor({
   const prompts = form.watch("prompts");
   const { isDirty } = useFormState({ control: form.control });
 
-  const isLoading = mode === PresetEditorMode.EDIT && presetQuery.isLoading;
+  const isLoading = (mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW) && presetQuery.isLoading;
+  const isViewOnly = mode === PresetEditorMode.VIEW;
   const isSaving =
     createPresetMutation.isPending ||
     updatePresetMutation.isPending ||
@@ -107,8 +108,8 @@ export function PresetEditor({
             ? (preset as PresetDetailResponse).prompts
             : DEFAULT_EMPTY_PROMPTS) || DEFAULT_EMPTY_PROMPTS,
       });
-    } else if (mode === PresetEditorMode.EDIT && presetQuery.data) {
-      // Edit existing preset
+    } else if ((mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW) && presetQuery.data) {
+      // Edit or View existing preset
       const preset = presetQuery.data;
       form.reset({
         name: preset.name || "",
@@ -227,6 +228,8 @@ export function PresetEditor({
               ? "Create New Preset"
               : mode === PresetEditorMode.CLONE
               ? "Clone Preset"
+              : mode === PresetEditorMode.VIEW
+              ? "View Preset"
               : "Edit Preset"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -234,6 +237,8 @@ export function PresetEditor({
               ? "Create a new preset with custom prompts"
               : mode === PresetEditorMode.CLONE
               ? "Create a copy of this preset"
+              : mode === PresetEditorMode.VIEW
+              ? "View preset details and prompts (read-only)"
               : "Update the preset details and prompts"}
           </p>
         </div>
@@ -256,7 +261,7 @@ export function PresetEditor({
                 id="name"
                 {...form.register("name")}
                 placeholder="e.g., E-commerce Product Shots"
-                disabled={isSaving}
+                disabled={isSaving || isViewOnly}
               />
               {form.formState.errors.name && (
                 <p className="text-sm text-destructive">
@@ -273,7 +278,7 @@ export function PresetEditor({
                 {...form.register("description")}
                 placeholder="Optional description of this preset's purpose"
                 className="min-h-20 resize-none"
-                disabled={isSaving}
+                disabled={isSaving || isViewOnly}
               />
               {form.formState.errors.description && (
                 <p className="text-sm text-destructive">
@@ -282,8 +287,8 @@ export function PresetEditor({
               )}
             </div>
 
-            {/* Preset Type Selection - do not show for master presets when editing */}
-            {preset?.is_master && mode === PresetEditorMode.EDIT ? null : (
+            {/* Preset Type Selection - do not show for master presets when editing or for view mode */}
+            {(preset?.is_master && mode === PresetEditorMode.EDIT) || isViewOnly ? null : (
               <div className="space-y-3">
                 <Label>Preset Type *</Label>
                 <div className="flex gap-4">
@@ -343,7 +348,7 @@ export function PresetEditor({
                       shouldValidate: true,
                     })
                   }
-                  disabled={isSaving}
+                  disabled={isSaving || isViewOnly}
                 >
                   <MultiSelectTrigger className="w-full">
                     <MultiSelectValue placeholder="Select brands..." />
@@ -396,6 +401,7 @@ export function PresetEditor({
                     presetId={presetId || preset?.id || ""}
                     isAdjusting={adjustingFields.has(fieldType)}
                     isExpanded={false}
+                    isViewOnly={isViewOnly}
                   />
                   {form.formState.errors.prompts?.[fieldType] && (
                     <p className="text-sm text-destructive mt-2">
@@ -414,34 +420,36 @@ export function PresetEditor({
                 onClick={() => router.push("/presets")}
                 disabled={isSaving}
               >
-                Cancel
+                {isViewOnly ? "Back to Presets" : "Cancel"}
               </Button>
-              <Button
-                type="submit"
-                disabled={
-                  // In edit mode require changes to be made before enabling save
-                  // Do not block save strictly on `isValid` here — handleSubmit will run validation and show errors.
-                  (mode === PresetEditorMode.EDIT && !isDirty) || isSaving
-                }
-                className="gap-2"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    {mode === PresetEditorMode.NEW ||
-                    mode === PresetEditorMode.CLONE
-                      ? "Creating..."
-                      : "Saving..."}
-                  </>
-                ) : (
-                  <>
-                    {mode === PresetEditorMode.NEW ||
-                    mode === PresetEditorMode.CLONE
-                      ? "Create Preset"
-                      : "Save Changes"}
-                  </>
-                )}
-              </Button>
+              {!isViewOnly && (
+                <Button
+                  type="submit"
+                  disabled={
+                    // In edit mode require changes to be made before enabling save
+                    // Do not block save strictly on `isValid` here — handleSubmit will run validation and show errors.
+                    (mode === PresetEditorMode.EDIT && !isDirty) || isSaving
+                  }
+                  className="gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      {mode === PresetEditorMode.NEW ||
+                      mode === PresetEditorMode.CLONE
+                        ? "Creating..."
+                        : "Saving..."}
+                    </>
+                  ) : (
+                    <>
+                      {mode === PresetEditorMode.NEW ||
+                      mode === PresetEditorMode.CLONE
+                        ? "Create Preset"
+                        : "Save Changes"}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>
