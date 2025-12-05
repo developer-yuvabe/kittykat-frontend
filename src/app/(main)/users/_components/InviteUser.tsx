@@ -408,57 +408,74 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         <FormItem>
                           <FormLabel>Credits</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                min={0}
-                                placeholder="Enter credits"
-                                {...field}
-                                value={
-                                  typeof field.value === "number"
-                                    ? field.value.toLocaleString()
-                                    : field.value || ""
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/,/g, "");
-                                  if (raw === "") {
-                                    field.onChange(undefined);
-                                  } else {
-                                    const numValue = parseInt(raw, 10);
-                                    if (!isNaN(numValue)) {
-                                      field.onChange(numValue);
-                                    }
-                                  }
-                                }}
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    field.onChange(currentValue + 500);
-                                  }}
-                                >
-                                  +500
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    field.onChange(currentValue + 1000);
-                                  }}
-                                >
-                                  +1000
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                              </div>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="space-y-3">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      min={0}
+                                      placeholder="Enter credits"
+                                      disabled={!user?.is_default_admin}
+                                      {...field}
+                                      value={
+                                        typeof field.value === "number"
+                                          ? field.value.toLocaleString()
+                                          : field.value || ""
+                                      }
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(
+                                          /,/g,
+                                          ""
+                                        );
+                                        if (raw === "") {
+                                          field.onChange(undefined);
+                                        } else {
+                                          const numValue = parseInt(raw, 10);
+                                          if (!isNaN(numValue)) {
+                                            field.onChange(numValue);
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 500);
+                                        }}
+                                      >
+                                        +500
+                                        <GemIcon size={14} className="ml-1" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 1000);
+                                        }}
+                                      >
+                                        +1000
+                                        <GemIcon size={14} className="ml-1" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                {!user?.is_default_admin && (
+                                  <TooltipContent>
+                                    Only System Admin can edit credits.
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -471,57 +488,80 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                         <FormItem>
                           <FormLabel>Tokens</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                min={0}
-                                placeholder="Enter tokens"
-                                {...field}
-                                value={
-                                  typeof field.value === "number"
-                                    ? field.value.toLocaleString()
-                                    : field.value || ""
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/,/g, "");
-                                  if (raw === "") {
-                                    field.onChange(undefined);
-                                  } else {
-                                    const numValue = parseInt(raw, 10);
-                                    if (!isNaN(numValue)) {
-                                      field.onChange(numValue);
-                                    }
-                                  }
-                                }}
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    field.onChange(currentValue + 5000);
-                                  }}
-                                >
-                                  +5000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    field.onChange(currentValue + 10000);
-                                  }}
-                                >
-                                  +10000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                              </div>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="space-y-3">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      min={0}
+                                      placeholder="Enter tokens"
+                                      disabled={!user?.is_default_admin}
+                                      {...field}
+                                      value={
+                                        typeof field.value === "number"
+                                          ? field.value.toLocaleString()
+                                          : field.value || ""
+                                      }
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(
+                                          /,/g,
+                                          ""
+                                        );
+                                        if (raw === "") {
+                                          field.onChange(undefined);
+                                        } else {
+                                          const numValue = parseInt(raw, 10);
+                                          if (!isNaN(numValue)) {
+                                            field.onChange(numValue);
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 5000);
+                                        }}
+                                      >
+                                        +5000
+                                        <CreditIcon
+                                          size={14}
+                                          className="ml-1"
+                                        />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 10000);
+                                        }}
+                                      >
+                                        +10000
+                                        <CreditIcon
+                                          size={14}
+                                          className="ml-1"
+                                        />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                {!user?.is_default_admin && (
+                                  <TooltipContent>
+                                    Only System Admin can edit tokens.
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

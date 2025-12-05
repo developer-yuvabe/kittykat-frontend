@@ -43,6 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
@@ -196,68 +197,99 @@ export function TeamCreateDialog() {
                         <FormItem>
                           <FormLabel>Tokens</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                min={AppConfig.CREDITS.MIN}
-                                max={AppConfig.CREDITS.MAX}
-                                {...field}
-                                value={
-                                  typeof field.value === "number"
-                                    ? field.value.toLocaleString()
-                                    : field.value || ""
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/,/g, "");
-                                  if (raw === "") {
-                                    field.onChange(0);
-                                  } else {
-                                    const numValue = parseInt(raw, 10);
-                                    if (
-                                      !isNaN(numValue) &&
-                                      numValue >= AppConfig.CREDITS.MIN &&
-                                      numValue <= AppConfig.CREDITS.MAX
-                                    ) {
-                                      field.onChange(numValue);
-                                    }
-                                  }
-                                }}
-                                placeholder="Enter tokens"
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 5000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +5000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 10000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +10000
-                                  <CreditIcon size={14} className="ml-1" />
-                                </Button>
-                              </div>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="space-y-3">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      min={AppConfig.CREDITS.MIN}
+                                      max={AppConfig.CREDITS.MAX}
+                                      disabled={!currentUser?.is_default_admin}
+                                      {...field}
+                                      value={
+                                        typeof field.value === "number"
+                                          ? field.value.toLocaleString()
+                                          : field.value || ""
+                                      }
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(
+                                          /,/g,
+                                          ""
+                                        );
+                                        if (raw === "") {
+                                          field.onChange(0);
+                                        } else {
+                                          const numValue = parseInt(raw, 10);
+                                          if (
+                                            !isNaN(numValue) &&
+                                            numValue >= AppConfig.CREDITS.MIN &&
+                                            numValue <= AppConfig.CREDITS.MAX
+                                          ) {
+                                            field.onChange(numValue);
+                                          }
+                                        }
+                                      }}
+                                      placeholder="Enter tokens"
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={
+                                          !currentUser?.is_default_admin
+                                        }
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          const newValue = currentValue + 5000;
+                                          if (
+                                            newValue <= AppConfig.CREDITS.MAX
+                                          ) {
+                                            field.onChange(newValue);
+                                          }
+                                        }}
+                                      >
+                                        +5000
+                                        <CreditIcon
+                                          size={14}
+                                          className="ml-1"
+                                        />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={
+                                          !currentUser?.is_default_admin
+                                        }
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          const newValue = currentValue + 10000;
+                                          if (
+                                            newValue <= AppConfig.CREDITS.MAX
+                                          ) {
+                                            field.onChange(newValue);
+                                          }
+                                        }}
+                                      >
+                                        +10000
+                                        <CreditIcon
+                                          size={14}
+                                          className="ml-1"
+                                        />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                {!currentUser?.is_default_admin && (
+                                  <TooltipContent>
+                                    Only System Admin can edit tokens.
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -271,68 +303,93 @@ export function TeamCreateDialog() {
                         <FormItem>
                           <FormLabel>Credits</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                min={AppConfig.CREDITS.MIN}
-                                max={AppConfig.CREDITS.MAX}
-                                {...field}
-                                value={
-                                  typeof field.value === "number"
-                                    ? field.value.toLocaleString()
-                                    : field.value || ""
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/,/g, "");
-                                  if (raw === "") {
-                                    field.onChange(0);
-                                  } else {
-                                    const numValue = parseInt(raw, 10);
-                                    if (
-                                      !isNaN(numValue) &&
-                                      numValue >= AppConfig.CREDITS.MIN &&
-                                      numValue <= AppConfig.CREDITS.MAX
-                                    ) {
-                                      field.onChange(numValue);
-                                    }
-                                  }
-                                }}
-                                placeholder="Enter credits"
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 500;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +500
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentValue = field.value || 0;
-                                    const newValue = currentValue + 1000;
-                                    if (newValue <= AppConfig.CREDITS.MAX) {
-                                      field.onChange(newValue);
-                                    }
-                                  }}
-                                >
-                                  +1000
-                                  <GemIcon size={14} className="ml-1" />
-                                </Button>
-                              </div>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="space-y-3">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      min={AppConfig.CREDITS.MIN}
+                                      max={AppConfig.CREDITS.MAX}
+                                      disabled={!currentUser?.is_default_admin}
+                                      {...field}
+                                      value={
+                                        typeof field.value === "number"
+                                          ? field.value.toLocaleString()
+                                          : field.value || ""
+                                      }
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(
+                                          /,/g,
+                                          ""
+                                        );
+                                        if (raw === "") {
+                                          field.onChange(0);
+                                        } else {
+                                          const numValue = parseInt(raw, 10);
+                                          if (
+                                            !isNaN(numValue) &&
+                                            numValue >= AppConfig.CREDITS.MIN &&
+                                            numValue <= AppConfig.CREDITS.MAX
+                                          ) {
+                                            field.onChange(numValue);
+                                          }
+                                        }
+                                      }}
+                                      placeholder="Enter credits"
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={
+                                          !currentUser?.is_default_admin
+                                        }
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          const newValue = currentValue + 500;
+                                          if (
+                                            newValue <= AppConfig.CREDITS.MAX
+                                          ) {
+                                            field.onChange(newValue);
+                                          }
+                                        }}
+                                      >
+                                        +500
+                                        <GemIcon size={14} className="ml-1" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={
+                                          !currentUser?.is_default_admin
+                                        }
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          const newValue = currentValue + 1000;
+                                          if (
+                                            newValue <= AppConfig.CREDITS.MAX
+                                          ) {
+                                            field.onChange(newValue);
+                                          }
+                                        }}
+                                      >
+                                        +1000
+                                        <GemIcon size={14} className="ml-1" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                {!currentUser?.is_default_admin && (
+                                  <TooltipContent>
+                                    Only System Admin can edit credits.
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
