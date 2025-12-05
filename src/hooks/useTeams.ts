@@ -11,6 +11,7 @@ import {
   getTeamBrands as getTeamBrandsService,
   getMyTeamNames,
 } from "@/services/api/team.service";
+import { queryClient } from "@/providers/react-query-provider";
 
 import type {
   TeamCreateRequest,
@@ -95,9 +96,12 @@ export function useTeams({
       teamId: string;
       payload: TeamUpdateRequest;
     }) => updateTeamService(teamId, payload),
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(getTeamQueryKey(variables.teamId), data);
-      queryClient.invalidateQueries({ queryKey: ["teams"], exact: false });
+    onSuccess: async (_, variables) => {
+      // Invalidate the individual team query to refresh the team details
+      await queryClient.invalidateQueries({
+        queryKey: getTeamQueryKey(variables.teamId),
+      });
+      await queryClient.refetchQueries({ queryKey: ["teams"], exact: false });
     },
   });
 
@@ -154,11 +158,44 @@ export function useTeams({
       memberId: string;
       newRole: TeamRolesEnum;
     }) => updateMemberRoleService(teamId, memberId, newRole),
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: getTeamQueryKey(variables.teamId),
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<any>(
+        getTeamQueryKey(variables.teamId)
+      );
+
+      // Optimistically update the cache
+      if (previousData) {
+        queryClient.setQueryData(getTeamQueryKey(variables.teamId), {
+          ...previousData,
+          members: previousData.members.map((member: any) =>
+            member.id === variables.memberId
+              ? { ...member, role: variables.newRole }
+              : member
+          ),
+        });
+      }
+
+      return { previousData };
+    },
+    onError: (_, __, context) => {
+      // Rollback to previous data on error
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          getTeamQueryKey(context.previousData.id),
+          context.previousData
+        );
+      }
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: getTeamQueryKey(variables.teamId),
       });
-      queryClient.invalidateQueries({ queryKey: ["teams"], exact: false });
     },
   });
 
@@ -188,4 +225,14 @@ export function useTeams({
     updateMemberRole: updateMemberRoleMutation.mutate,
     isUpdatingMemberRole: updateMemberRoleMutation.isPending,
   };
+}
+
+// Refetch team data to reflect updated credits in team detail page and tables
+export function refetchTeamData(teamId: string) {
+  queryClient.invalidateQueries({
+    queryKey: getTeamQueryKey(teamId),
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["teams"],
+  });
 }

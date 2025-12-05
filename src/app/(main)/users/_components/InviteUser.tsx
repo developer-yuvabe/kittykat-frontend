@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useModelsStore } from "@/store/models.store";
-import { Info, Plus, X } from "lucide-react";
+import { Info, Plus, X, GemIcon } from "lucide-react";
 import { invitationSchema } from "@/schema/inviation.schema";
 import { UserListResponse, UserRoleId } from "@/types/user.types";
 import { TeamRolesEnum } from "@/types/team.types";
@@ -49,6 +49,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeams } from "@/hooks/useTeams";
+import { CreditIcon } from "@/components/ui/custom-icon";
 
 type InviteUserFormData = z.infer<typeof invitationSchema>;
 
@@ -264,7 +265,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                   </div>
 
                   {/* Model Access */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1  gap-6">
                     <FormField
                       control={form.control}
                       name="modelAccess"
@@ -405,21 +406,76 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                       name="credits"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel> Credits</FormLabel>
+                          <FormLabel>Credits</FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              placeholder="Enter credits"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value
-                                    ? Number(e.target.value)
-                                    : undefined
-                                )
-                              }
-                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="space-y-3">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      min={0}
+                                      placeholder="Enter credits"
+                                      disabled={!user?.is_default_admin}
+                                      {...field}
+                                      value={
+                                        typeof field.value === "number"
+                                          ? field.value.toLocaleString()
+                                          : field.value || ""
+                                      }
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(
+                                          /,/g,
+                                          ""
+                                        );
+                                        if (raw === "") {
+                                          field.onChange(undefined);
+                                        } else {
+                                          const numValue = parseInt(raw, 10);
+                                          if (!isNaN(numValue)) {
+                                            field.onChange(numValue);
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 500);
+                                        }}
+                                      >
+                                        +500
+                                        <GemIcon size={14} className="ml-1" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 1000);
+                                        }}
+                                      >
+                                        +1000
+                                        <GemIcon size={14} className="ml-1" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                {!user?.is_default_admin && (
+                                  <TooltipContent>
+                                    Only System Admin can edit credits.
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -430,21 +486,82 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                       name="tokens"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel> Tokens</FormLabel>
+                          <FormLabel>Tokens</FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              placeholder="Enter tokens"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value
-                                    ? Number(e.target.value)
-                                    : undefined
-                                )
-                              }
-                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="space-y-3">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      min={0}
+                                      placeholder="Enter tokens"
+                                      disabled={!user?.is_default_admin}
+                                      {...field}
+                                      value={
+                                        typeof field.value === "number"
+                                          ? field.value.toLocaleString()
+                                          : field.value || ""
+                                      }
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(
+                                          /,/g,
+                                          ""
+                                        );
+                                        if (raw === "") {
+                                          field.onChange(undefined);
+                                        } else {
+                                          const numValue = parseInt(raw, 10);
+                                          if (!isNaN(numValue)) {
+                                            field.onChange(numValue);
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 5000);
+                                        }}
+                                      >
+                                        +5000
+                                        <CreditIcon
+                                          size={14}
+                                          className="ml-1"
+                                        />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!user?.is_default_admin}
+                                        onClick={() => {
+                                          const currentValue = field.value || 0;
+                                          field.onChange(currentValue + 10000);
+                                        }}
+                                      >
+                                        +10000
+                                        <CreditIcon
+                                          size={14}
+                                          className="ml-1"
+                                        />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                {!user?.is_default_admin && (
+                                  <TooltipContent>
+                                    Only System Admin can edit tokens.
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -513,7 +630,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                   value === "none" ? undefined : value
                                 )
                               }
-                              value={field.value ?? "none"}
+                              value={field.value ?? TeamRolesEnum.MEMBER}
                             >
                               <FormControl>
                                 <SelectTrigger className="w-full">
@@ -521,17 +638,11 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="none">
-                                  Default (Member)
-                                </SelectItem>
                                 <SelectItem value={TeamRolesEnum.MEMBER}>
                                   Member
                                 </SelectItem>
                                 <SelectItem value={TeamRolesEnum.ADMIN}>
                                   Admin
-                                </SelectItem>
-                                <SelectItem value={TeamRolesEnum.OWNER}>
-                                  Owner
                                 </SelectItem>
                               </SelectContent>
                             </Select>
