@@ -96,7 +96,11 @@ export function useTeams({
       teamId: string;
       payload: TeamUpdateRequest;
     }) => updateTeamService(teamId, payload),
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
+      // Invalidate the individual team query to refresh the team details
+      await queryClient.invalidateQueries({
+        queryKey: getTeamQueryKey(variables.teamId),
+      });
       await queryClient.refetchQueries({ queryKey: ["teams"], exact: false });
     },
   });

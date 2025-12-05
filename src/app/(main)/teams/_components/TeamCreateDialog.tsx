@@ -239,7 +239,7 @@ export function TeamCreateDialog() {
                                   }}
                                 >
                                   +5000
-                                  <GemIcon size={14} className="ml-1" />
+                                  <CreditIcon size={14} className="ml-1" />
                                 </Button>
                                 <Button
                                   type="button"
@@ -254,7 +254,7 @@ export function TeamCreateDialog() {
                                   }}
                                 >
                                   +10000
-                                  <GemIcon size={14} className="ml-1" />
+                                  <CreditIcon size={14} className="ml-1" />
                                 </Button>
                               </div>
                             </div>
@@ -314,7 +314,7 @@ export function TeamCreateDialog() {
                                   }}
                                 >
                                   +500
-                                  <CreditIcon size={14} className="ml-1" />
+                                  <GemIcon size={14} className="ml-1" />
                                 </Button>
                                 <Button
                                   type="button"
@@ -329,7 +329,7 @@ export function TeamCreateDialog() {
                                   }}
                                 >
                                   +1000
-                                  <CreditIcon size={14} className="ml-1" />
+                                  <GemIcon size={14} className="ml-1" />
                                 </Button>
                               </div>
                             </div>

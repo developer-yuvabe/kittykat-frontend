@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
+import { CreditIcon } from "@/components/ui/custom-icon";
 
 type TeamUpdateFormData = z.infer<typeof teamUpdateSchema>;
 
@@ -291,7 +292,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                 }}
                               >
                                 +5000
-                                <GemIcon size={14} className="ml-1" />
+                                <CreditIcon size={14} className="ml-1" />
                               </Button>
                               <Button
                                 type="button"
@@ -306,7 +307,7 @@ export function TeamEditForm({ team }: TeamEditFormProps) {
                                 }}
                               >
                                 +10000
-                                <GemIcon size={14} className="ml-1" />
+                                <CreditIcon size={14} className="ml-1" />
                               </Button>
                             </div>
                           </>

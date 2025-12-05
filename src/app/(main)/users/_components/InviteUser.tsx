@@ -265,7 +265,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                   </div>
 
                   {/* Model Access */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1  gap-6">
                     <FormField
                       control={form.control}
                       name="modelAccess"
@@ -590,7 +590,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                   value === "none" ? undefined : value
                                 )
                               }
-                              value={field.value ?? "none"}
+                              value={field.value ?? TeamRolesEnum.MEMBER}
                             >
                               <FormControl>
                                 <SelectTrigger className="w-full">
