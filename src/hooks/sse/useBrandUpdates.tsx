@@ -10,6 +10,7 @@ export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignCount = useRef<number>(0);
   const previousGenerationStatus = useRef<Record<string, string>>({});
+  const completedGenerationsProcessed = useRef<Set<string>>(new Set()); // Track processed completions
   const { setGenerations } = useGenerationsStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
@@ -61,10 +62,18 @@ export function useBrandUpdates() {
           parsed.a2i_image_information.generations.some((gen) => {
             const previousStatus = previousGenerationStatus.current[gen.id];
             const isNewlyCompleted =
-              previousStatus !== "completed" && gen.status === "completed";
+              previousStatus &&
+              previousStatus !== "completed" &&
+              gen.status === "completed" &&
+              !completedGenerationsProcessed.current.has(gen.id); // Check if not already processed
 
             // Update the stored status
             previousGenerationStatus.current[gen.id] = gen.status;
+
+            // Mark as processed if completed
+            if (gen.status === "completed") {
+              completedGenerationsProcessed.current.add(gen.id);
+            }
 
             return isNewlyCompleted;
           });
@@ -88,6 +97,8 @@ export function useBrandUpdates() {
       setIsFetchingBrandInfo(true);
       setData(null);
       previousCampaignCount.current = 0;
+      previousGenerationStatus.current = {};
+      completedGenerationsProcessed.current.clear();
     };
   }, [selectedBrandId]);
 }
