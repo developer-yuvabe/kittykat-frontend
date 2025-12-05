@@ -15,7 +15,6 @@ import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { ReferenceUploadArea } from "./ReferenceUploadArea";
-import { ReferenceGalleryGrid } from "./ReferenceGalleryGrid";
 import { allMediaAssetSources, checkFileSizeLimit } from "@/lib/gallery.utils";
 import { VideoFrameZone } from "./VideoFrameZone";
 import { VideoFrameGalleryGrid } from "./VideoFrameGalleryGrid";
@@ -79,17 +78,8 @@ const VideoFrameSelector = ({
 }: VideoFrameSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
-
-  const isInlineMode = variant === "inline";
-
-  // Use separate frames for dual mode
   const startFrame: string | null = startFrameProp || null;
   const endFrame: string | null = endFrameProp || null;
-  // console.log("VideoFrameSelector render:", {
-  //   startFrame,
-  //   endFrame,
-  // });
-  // const { startFrame, setStartFrame, endFrame, setEndFrame } = useA2iStore();
   const activeTab = activeTabProp;
 
   const onStartFrameChange = onStartFrameChangeProp;
