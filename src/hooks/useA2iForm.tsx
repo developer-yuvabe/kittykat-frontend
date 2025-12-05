@@ -21,18 +21,18 @@ export const useA2iForm = ({
   formKey,
   dynamicDefualtValues,
 }: UseA2iFormProps): UseFormReturn<any> => {
-  if (!selectedModel) {
-    throw new Error(
-      `No model selected. Please select a model before using this reusable form. Cheers! Debug info: formKey=${formKey}`
-    );
-  }
-
-  const unqueFormKey = `${formKey}-${selectedModel.id}`;
+  const unqueFormKey = `${formKey}-${selectedModel?.id}`;
   const { setSessionItem, getSessionItem } = useSessionStorage();
   const localStoredValues = getSessionItem(unqueFormKey);
 
   const { schema, defaultValues } = useMemo(() => {
-    return useDynamicModelSchema(selectedModel, dynamicDefualtValues || {});
+    if (selectedModel) {
+      return useDynamicModelSchema(selectedModel, dynamicDefualtValues || {});
+    }
+    return {
+      schema: z.object({}),
+      defaultValues: {},
+    };
   }, [selectedModel?.id, dynamicDefualtValues]);
 
   // Merge local values with schema defaults
@@ -66,7 +66,7 @@ export const useA2iForm = ({
         keepDefaultValues: false,
       }
     );
-  }, [selectedModel.id]);
+  }, [selectedModel?.id]);
 
   // Watch form values and persist to sessionStorage
   useEffect(() => {
