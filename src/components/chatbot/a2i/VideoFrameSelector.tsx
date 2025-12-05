@@ -15,7 +15,6 @@ import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { ReferenceUploadArea } from "./ReferenceUploadArea";
-import { ReferenceGalleryGrid } from "./ReferenceGalleryGrid";
 import { allMediaAssetSources, checkFileSizeLimit } from "@/lib/gallery.utils";
 import { VideoFrameZone } from "./VideoFrameZone";
 import { VideoFrameGalleryGrid } from "./VideoFrameGalleryGrid";
@@ -79,17 +78,8 @@ const VideoFrameSelector = ({
 }: VideoFrameSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
-
-  const isInlineMode = variant === "inline";
-
-  // Use separate frames for dual mode
   const startFrame: string | null = startFrameProp || null;
   const endFrame: string | null = endFrameProp || null;
-  // console.log("VideoFrameSelector render:", {
-  //   startFrame,
-  //   endFrame,
-  // });
-  // const { startFrame, setStartFrame, endFrame, setEndFrame } = useA2iStore();
   const activeTab = activeTabProp;
 
   const onStartFrameChange = onStartFrameChangeProp;
@@ -117,7 +107,7 @@ const VideoFrameSelector = ({
           campaigns: [],
           moodboards: [],
           product_categories: [],
-          asset_types: [],
+          asset_types: ["image"],
           asset_sources: [...allMediaAssetSources, "reference"],
           media_format: [],
           aspect_ratio: [],
@@ -253,6 +243,11 @@ const VideoFrameSelector = ({
   const handleDrop = useCallback(
     async (acceptedFiles: File[], fileRejections?: FileRejection[]) => {
       if (fileRejections && fileRejections.length > 0) {
+        const rejectedFile = fileRejections[0]?.file;
+        if (rejectedFile && rejectedFile.type?.startsWith("video/")) {
+          toast.info("Can't upload Video Asset. Coming Soon ...");
+          return;
+        }
         toast.warning(
           `Some files were rejected. Allowed: ${fileTypes.join(
             ", "
@@ -618,6 +613,10 @@ const VideoFrameSelector = ({
       }
 
       const item = items[0];
+      if (item.asset_type == "video") {
+        toast.info("Can't upload Video Asset. Coming Soon...");
+        return;
+      }
       const { isValid, sizeInMB } = await checkFileSizeLimit(
         item.asset_url,
         item.size,
@@ -686,81 +685,6 @@ const VideoFrameSelector = ({
   const inSelectionIds = [startFrame || "", endFrame || ""].filter(
     Boolean
   ) as string[];
-
-  // Render inline variant
-  if (isInlineMode) {
-    return (
-      <>
-        <div
-          id="reference-zone"
-          className="w-full border rounded-xl bg-background p-6"
-        >
-          <div className="flex gap-6 h-[450px]">
-            {/* LEFT COLUMN - Upload/Drop Area */}
-            <div className="w-[280px] shrink-0">
-              <ReferenceUploadArea
-                fileTypes={fileTypes}
-                maxFileSizeLimit={maxFileSizeLimit}
-                remainingSlots={remainingSlots}
-                isUploading={isUploading}
-                onDrop={handleDrop}
-                onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
-              />
-            </div>
-
-            {/* RIGHT COLUMN - Gallery */}
-            <div className="flex-1 min-w-0 flex flex-col ml-5">
-              <div
-                className="flex-1 overflow-y-auto"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => handleDropZone(e, activeTab as "start" | "end")}
-              >
-                <ReferenceGalleryGrid
-                  items={galleryItems}
-                  isLoading={isLoadingStore}
-                  masterReferenceUrls={startFrame ? [startFrame] : []}
-                  productReferenceUrls={endFrame ? [endFrame] : []}
-                  onItemClick={handleImageClick}
-                  onDragStart={(e, assetUrl, assetId) =>
-                    handleDragStart(e, assetUrl, undefined, assetId)
-                  }
-                  onDeleteItem={handleDeleteGalleryItem}
-                  isSingleMode={false}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <MediaLibraryDialog
-          open={mediaLibraryOpen}
-          onOpenChange={setMediaLibraryOpen}
-          onMultipleMediaItemsSelected={handleMediaLibrarySelection}
-          filters={{
-            brands: [selectedBrandId!],
-            campaigns: [],
-            product_categories: [],
-            has_product: undefined,
-            has_people: undefined,
-            has_lifestyle_context: undefined,
-            asset_types: [],
-            asset_sources: [],
-            media_format: [],
-            aspect_ratio: [],
-            workflow_status: [],
-            is_favourite: undefined,
-            is_archived: undefined,
-            moodboards: [],
-          }}
-          brandId={selectedBrandId!}
-          campaignId={currentCampaignId || undefined}
-          isMultiSelect={false}
-          inSelectionGalleryIds={inSelectionIds}
-          maxSelectionCount={1}
-        />
-      </>
-    );
-  }
 
   // Render popover variant (default)
   return (

@@ -75,6 +75,7 @@ import { remixImageService } from "@/services/api/remix.service";
 import { BaseImageUploadArea } from "./BaseImageUploadArea";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import VideoFrameSelector from "./VideoFrameSelector";
+import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -1146,6 +1147,9 @@ const A2iImageInput = ({
   }, [currentImageCount, value, formInstance]);
 
   const handleBaseImageDrop = async (file: File) => {
+    // Show loading toast
+    const toastId = toast.loading("Uploading base image...");
+
     setIsUploading(true);
     try {
       const uploadedUrl = await uploadFileAndReturnUrl(
@@ -1155,11 +1159,18 @@ const A2iImageInput = ({
         file,
         selectedBrandId
       );
+
       setBaseImageUrl(uploadedUrl);
-      toast.success("Base image uploaded successfully");
+
+      // Update the toast to success
+      toast.success("Base image uploaded successfully", { id: toastId });
     } catch (error) {
       console.error("Base image upload failed:", error);
-      toast.error("Failed to upload base image. Please try again.");
+
+      // Update the toast to error
+      toast.error("Failed to upload base image. Please try again.", {
+        id: toastId,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -1251,19 +1262,20 @@ const A2iImageInput = ({
                 />
               </div>
 
-              {conceptVisualGeneratorMode === "image_editor" && (
-                <div>
-                  <BaseImageUploadArea
-                    fileTypes={["image/jpeg", "image/png", "image/webp"]}
-                    maxFileSizeLimit={10}
-                    isUploading={isUploading}
-                    onDrop={handleBaseImageDrop}
-                    onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
-                    baseImageUrl={baseImageUrl}
-                    setBaseImageUrl={setBaseImageUrl}
-                  />
-                </div>
-              )}
+              {conceptVisualGeneratorMode === "image_editor" &&
+                currentModel && (
+                  <div>
+                    <BaseImageUploadArea
+                      fileTypes={["image/jpeg", "image/png", "image/webp"]}
+                      maxFileSizeLimit={10}
+                      isUploading={isUploading}
+                      onDrop={handleBaseImageDrop}
+                      onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
+                      baseImageUrl={baseImageUrl}
+                      setBaseImageUrl={setBaseImageUrl}
+                    />
+                  </div>
+                )}
 
               <div className="flex-1 w-full p-2">
                 <FormField
@@ -1298,7 +1310,19 @@ const A2iImageInput = ({
                             className={cn(
                               "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt- h-auto min-h-20 max-h-[300px] overflow-y-auto align-top"
                             )}
-                            placeholder="Describe what you want to see ..."
+                            placeholder={
+                              conceptVisualGeneratorMode === "image_generator"
+                                ? "Describe what you want to see ..."
+                                : conceptVisualGeneratorMode === "image_editor"
+                                ? getRemixInputPlaceholderMessage({
+                                    supportsReferenceImage:
+                                      !!referenceImagesModelInfo,
+                                  })
+                                : conceptVisualGeneratorMode ===
+                                  "video_generator"
+                                ? "Describe what you want to see in the video ..."
+                                : "Describe what you want to see ..."
+                            }
                           />
                         </div>
                       </FormControl>
@@ -1550,7 +1574,10 @@ const A2iImageInput = ({
                   disabled={
                     !formInstance.formState.isValid ||
                     formInstance.formState.isSubmitting ||
-                    isEnhancingPrompt
+                    isEnhancingPrompt ||
+                    !currentModel ||
+                    (conceptVisualGeneratorMode === "image_editor" &&
+                      !baseImageUrl)
                   }
                   isCalculatingTokens={isCalculatingTokens}
                 />
@@ -1560,7 +1587,7 @@ const A2iImageInput = ({
             {/* Reference Zones - Show when there are references */}
             {(masterReference.length > 0 || productReference.length > 0) &&
               !isReferencePopoverOpen && (
-                <div className="w-full px-4">
+                <div className="w-full px-2">
                   <div className="flex gap-4 w-full">
                     {/* MASTER REFERENCE SECTION */}
                     <div className="flex-1">
@@ -1631,36 +1658,31 @@ const A2iImageInput = ({
                 </div>
               )}
 
-            {conceptVisualGeneratorMode === "video_generator" && (
-              <div>
-                <VideoFrameSelector
-                  startFrame={startFrame}
-                  endFrame={endFrame}
-                  onStartFrameChange={setStartFrame}
-                  onEndFrameChange={setEndFrame}
-                  activeTab={videoFramesPopoverTab}
-                  onTabChange={setVideoFramesPopoverTab}
-                  maxLimit={1}
-                  fileTypes={[
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp",
-                    "video/mp4",
-                  ]}
-                  maxFileSizeLimit={10}
-                  disabled={formInstance.formState.isSubmitting}
-                  // disabled={false}
-                  currentCampaignId={currentCampaign?.id}
-                  isOpen={isVideoFramesPopoverOpen}
-                  onOpenChange={setIsVideoFramesPopoverOpen}
-                  variant="popover"
-                  showPopoverTrigger={showPopoverTrigger}
-                  setShowPopoverTrigger={setShowPopoverTrigger}
-                  popoverSide="top"
-                  isEndFrameAvailable={lastFrameParam !== null}
-                />
-              </div>
-            )}
+            {conceptVisualGeneratorMode === "video_generator" &&
+              currentModel && (
+                <div className="px-2">
+                  <VideoFrameSelector
+                    startFrame={startFrame}
+                    endFrame={endFrame}
+                    onStartFrameChange={setStartFrame}
+                    onEndFrameChange={setEndFrame}
+                    activeTab={videoFramesPopoverTab}
+                    onTabChange={setVideoFramesPopoverTab}
+                    maxLimit={1}
+                    fileTypes={["image/jpeg", "image/png", "image/webp"]}
+                    maxFileSizeLimit={10}
+                    disabled={formInstance.formState.isSubmitting}
+                    currentCampaignId={currentCampaign?.id}
+                    isOpen={isVideoFramesPopoverOpen}
+                    onOpenChange={setIsVideoFramesPopoverOpen}
+                    variant="popover"
+                    showPopoverTrigger={showPopoverTrigger}
+                    setShowPopoverTrigger={setShowPopoverTrigger}
+                    popoverSide="top"
+                    isEndFrameAvailable={lastFrameParam !== null}
+                  />
+                </div>
+              )}
           </div>
         </Form>
       </div>
