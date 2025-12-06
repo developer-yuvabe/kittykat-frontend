@@ -29,6 +29,7 @@ import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
+import { useUserStore } from "@/store/user.store";
 
 const upscalerSchema = z.object({
   image_url: z.string().min(1, "Image URL is required"),
@@ -73,6 +74,7 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
   } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { models } = useModelsStore();
+  const { user } = useUserStore();
 
   const form = useForm<z.infer<typeof upscalerSchema>>({
     resolver: zodResolver(upscalerSchema),
@@ -103,7 +105,11 @@ const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ initialImage }) => {
 
   const onSubmit = async (data: z.infer<typeof upscalerSchema>) => {
     try {
-      await upscaleImage(brandId!, data, campaignId || defaultCampaignId);
+      await upscaleImage(
+        brandId!,
+        { ...data, team_id: user?.active_team_id },
+        campaignId || defaultCampaignId
+      );
 
       closeConceptVisual();
       if (source === "blanket") {
