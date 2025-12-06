@@ -9,7 +9,7 @@ import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignCount = useRef<number>(0);
-  const previousGenerationStatus = useRef<Record<string, string>>({});
+  const previousCompletedCount = useRef<number>(0); // Track completed generations count
   const { setGenerations } = useGenerationsStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
@@ -56,26 +56,25 @@ export function useBrandUpdates() {
       ) {
         setGenerations(parsed.a2i_image_information.generations);
 
-        // Check if any generation just completed
-        const hasNewlyCompletedGenerations =
-          parsed.a2i_image_information.generations.some((gen) => {
-            const previousStatus = previousGenerationStatus.current[gen.id];
-            const isNewlyCompleted =
-              previousStatus !== "completed" && gen.status === "completed";
+        // Count how many generations are completed
+        const currentCompletedCount =
+          parsed.a2i_image_information.generations.filter(
+            (gen) => gen.status === "completed"
+          ).length;
 
-            // Update the stored status
-            previousGenerationStatus.current[gen.id] = gen.status;
+        // Only invalidate if completed count increased
+        const hasNewCompletions =
+          currentCompletedCount > previousCompletedCount.current;
 
-            return isNewlyCompleted;
-          });
-
-        if (hasNewlyCompletedGenerations) {
+        if (hasNewCompletions) {
           queryClient.invalidateQueries({
             queryKey: ["gallery-items"],
             exact: false,
             refetchType: "all",
           });
         }
+
+        previousCompletedCount.current = currentCompletedCount;
       }
     });
 
@@ -88,6 +87,7 @@ export function useBrandUpdates() {
       setIsFetchingBrandInfo(true);
       setData(null);
       previousCampaignCount.current = 0;
+      previousCompletedCount.current = 0;
     };
   }, [selectedBrandId]);
 }
