@@ -2,7 +2,6 @@
 
 import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
-import VerifyEmailModal from "@/components/shared/VerifyEmailModal";
 import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { useUserBrands } from "@/hooks/sse/useUserBrands";
@@ -72,12 +71,12 @@ const MainLayout = ({
         {children}
 
         {/* Verify Email Modal */}
-        {!firebaseUser.emailVerified && (
+        {/* {!firebaseUser.emailVerified && (
           <VerifyEmailModal
             email={userProfile.email}
             setFirebaseUser={(u) => setFirebaseUser(u)}
           />
-        )}
+        )} */}
       </main>
     </StreamProvider>
   );

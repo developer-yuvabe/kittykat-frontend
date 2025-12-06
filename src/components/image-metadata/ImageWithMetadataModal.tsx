@@ -446,6 +446,7 @@ const ImageWithMetadataModal = ({
           engine: "automatic",
           prompt: "",
           source_asset_id: currentDisplayItem.id,
+          team_id: user?.active_team_id,
         },
         campaignId
       );
