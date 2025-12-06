@@ -1199,7 +1199,8 @@ const A2iImageInput = ({
                 disabled={
                   !formInstance.formState.isValid ||
                   formInstance.formState.isSubmitting ||
-                  isEnhancingPrompt
+                  isEnhancingPrompt ||
+                  !selectedImageGenerationModel
                 }
                 isCalculatingTokens={isCalculatingTokens}
               />
