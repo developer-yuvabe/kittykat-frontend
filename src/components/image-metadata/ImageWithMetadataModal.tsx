@@ -257,7 +257,8 @@ const ImageWithMetadataModal = ({
           remixParams,
           maskImageUrl,
           productReferenceImages,
-          enhancePromptForProducts
+          enhancePromptForProducts,
+          user?.active_team_id
         );
       } else {
         //image generation
@@ -604,6 +605,7 @@ const ImageWithMetadataModal = ({
         source_asset_id: currentDisplayItem.id,
         campaign_id: campaignId,
         preset: preset,
+        team_id: user?.active_team_id,
       });
 
       onClose();

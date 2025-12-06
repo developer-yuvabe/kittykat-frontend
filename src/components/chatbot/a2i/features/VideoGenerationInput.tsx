@@ -32,6 +32,7 @@ import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useUserStore } from "@/store/user.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
@@ -76,6 +77,7 @@ const VideoGenerationInputControls = ({
   item,
   setCurrentItem,
 }: VideoGenerationInputProps) => {
+  const { user } = useUserStore();
   const { source, isConceptVisualOpened } = useConceptVisualStore();
   const { selectedCampaignId: campaignId, defaultCampaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
@@ -191,6 +193,7 @@ const VideoGenerationInputControls = ({
       const { generation_id } = await videoGenerationService(selectedBrandId!, {
         ...data,
         campaign_id: campaignId || defaultCampaignId,
+        team_id: user?.active_team_id,
       });
 
       if (Array.isArray(generation_id)) {
