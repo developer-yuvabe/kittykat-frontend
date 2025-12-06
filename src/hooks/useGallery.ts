@@ -90,10 +90,13 @@ export const useGalleryQuery = (
             : undefined,
           campaign_ids: filters.selectedFilters?.campaigns?.length
             ? filters.selectedFilters.campaigns
-            : useBrandStore
-                .getState()
-                .campaigns.filter((c) => !c.is_archived)
-                .map((c) => c.id),
+            : [
+                null,
+                ...useBrandStore
+                  .getState()
+                  .campaigns.filter((c) => !c.is_archived)
+                  .map((c) => c.id),
+              ],
 
           moodboard_ids: filters?.selectedFilters?.moodboards?.length
             ? filters?.selectedFilters?.moodboards
