@@ -35,6 +35,7 @@ interface PresetPromptCardProps {
   presetId?: string;
   isAdjusting?: boolean;
   isExpanded?: boolean;
+  isViewOnly?: boolean;
 }
 
 export function PresetPromptCard({
@@ -47,6 +48,7 @@ export function PresetPromptCard({
   presetId,
   isAdjusting = false,
   isExpanded: initialExpanded = false,
+  isViewOnly = false,
 }: PresetPromptCardProps) {
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [adjustmentInstruction, setAdjustmentInstruction] = useState("");
@@ -155,11 +157,13 @@ export function PresetPromptCard({
                 onChange={(e) => handleValueChange(e.target.value)}
                 placeholder="Enter your prompt here..."
                 className="min-h-32 resize-none"
+                disabled={isViewOnly}
+                readOnly={isViewOnly}
               />
             </div>
 
-            {/* AI Adjust Section */}
-            {onAdjust && (
+            {/* AI Adjust Section - Hidden in view-only mode */}
+            {onAdjust && !isViewOnly && (
               <div className="space-y-2 bg-muted/50 p-3 rounded-lg border">
                 <label className="text-sm font-medium">
                   AI Prompt Adjustment

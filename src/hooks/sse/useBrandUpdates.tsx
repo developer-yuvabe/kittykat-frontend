@@ -2,15 +2,15 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { ThreadDetails } from "@/types/types";
 import { useEffect, useRef } from "react";
-import { useVideoGenStore } from "@/store/video-gen.store";
+import { useGenerationsStore } from "@/store/generations.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignCount = useRef<number>(0);
-  const previousGenerationStatus = useRef<Record<string, string>>({});
-  const { setGenerations } = useVideoGenStore();
+  const previousCompletedCount = useRef<number>(0); // Track completed generations count
+  const { setGenerations } = useGenerationsStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
   const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
@@ -56,26 +56,25 @@ export function useBrandUpdates() {
       ) {
         setGenerations(parsed.a2i_image_information.generations);
 
-        // Check if any generation just completed
-        const hasNewlyCompletedGenerations =
-          parsed.a2i_image_information.generations.some((gen) => {
-            const previousStatus = previousGenerationStatus.current[gen.id];
-            const isNewlyCompleted =
-              previousStatus !== "completed" && gen.status === "completed";
+        // Count how many generations are completed
+        const currentCompletedCount =
+          parsed.a2i_image_information.generations.filter(
+            (gen) => gen.status === "completed"
+          ).length;
 
-            // Update the stored status
-            previousGenerationStatus.current[gen.id] = gen.status;
+        // Only invalidate if completed count increased
+        const hasNewCompletions =
+          currentCompletedCount > previousCompletedCount.current;
 
-            return isNewlyCompleted;
-          });
-
-        if (hasNewlyCompletedGenerations) {
+        if (hasNewCompletions) {
           queryClient.invalidateQueries({
             queryKey: ["gallery-items"],
             exact: false,
             refetchType: "all",
           });
         }
+
+        previousCompletedCount.current = currentCompletedCount;
       }
     });
 
@@ -88,6 +87,7 @@ export function useBrandUpdates() {
       setIsFetchingBrandInfo(true);
       setData(null);
       previousCampaignCount.current = 0;
+      previousCompletedCount.current = 0;
     };
   }, [selectedBrandId]);
 }

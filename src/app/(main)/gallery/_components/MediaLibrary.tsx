@@ -79,6 +79,13 @@ export function MediaLibrary({
   const [showFilters, setShowFilters] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
 
+  // Reset search query when dialog opens in select mode
+  useEffect(() => {
+    if (isMediaSelectDialog) {
+      setSearchQuery("");
+    }
+  }, [isMediaSelectDialog]);
+
   // Get filter state from store
   const {
     favorites,
@@ -176,18 +183,13 @@ export function MediaLibrary({
   }, [initialBrandId, brands]);
 
   useEffect(() => {
-    // Skip this effect in dialog mode
-    if (isMediaSelectDialog) {
-      return;
-    }
-
     if (selectedBrandId) {
       setSelectedFilters((prev) => {
         const newFilters = {
           ...prev,
           workflow_status: workflowStatus,
           brands: [selectedBrandId],
-          campaigns: selectedCampaignId ? [selectedCampaignId] : [],
+          campaigns: isMediaSelectDialog ? [] : (selectedCampaignId ? [selectedCampaignId] : []),
           asset_types: mediaTypes.length > 0 ? mediaTypes : ["image", "video"],
           has_comments: hasComments ? true : undefined,
           sort_by: orderBy,
@@ -217,6 +219,7 @@ export function MediaLibrary({
     selectedCampaignId,
     dateFrom,
     dateTo,
+    isMediaSelectDialog,
   ]);
 
   useEffect(() => {
@@ -498,7 +501,12 @@ export function MediaLibrary({
           </div>
 
           {/* Compact actions aligned top-right */}
-          <div className="ml-4">
+          <div className="ml-4 flex items-center gap-2">
+            <MediaFilterDropdown
+              selectedFilters={selectedFilters}
+              setSelectedFilters={setSelectedFilters}
+              showCampaignFilter={true}
+            />
             <MediaDialogMultiSelectHeader
               isActive={isMultiSelect && isMediaSelectDialog}
               currentSelectionCount={currentSelectionCount}

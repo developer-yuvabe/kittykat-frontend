@@ -1,6 +1,9 @@
+import axiosInstance from "@/config/axios/api-client.config";
 import { scrollToBottom } from "@/lib/scroll.utils";
+import { handleApiRequest } from "@/lib/utils";
 import { client } from "@/providers/langgraph/langgraph.client";
 import { StateType, StreamContextType } from "@/providers/langgraph/Stream";
+import { NextSuggestions } from "@/types/langgraph.types";
 import { Message } from "@langchain/langgraph-sdk";
 import { v4 as uuidv4 } from "uuid";
 
@@ -15,6 +18,7 @@ type SubmitOptions = {
   currentSelectedImageGenerationModelId: string | null;
   currentSelectedVideoGenerationModelId: string | null;
   userAccessToken: string | null;
+  activeTeamId: string;
 };
 
 export function submitOptimisticMessage({
@@ -28,6 +32,7 @@ export function submitOptimisticMessage({
   currentSelectedImageGenerationModelId,
   currentSelectedVideoGenerationModelId,
   userAccessToken,
+  activeTeamId,
 }: SubmitOptions) {
   const newMessage: Message = {
     id: uuidv4(),
@@ -52,6 +57,7 @@ export function submitOptimisticMessage({
       currentSelectedImageGenerationModelId,
       currentSelectedVideoGenerationModelId,
       userAccessToken,
+      activeTeamId,
     },
     {
       streamMode: ["values"],
@@ -80,4 +86,35 @@ export const updateCurrentContextBrandId = async (
       previousBrandContextId,
     },
   });
+};
+
+//update active team ID
+export const updateActiveTeamIdinThread = async (
+  threadId: string,
+  activeTeamId: string | null
+) => {
+  await client!.threads.updateState(threadId, {
+    values: {
+      activeTeamId,
+    },
+  });
+};
+
+export const fetchSuggestions = async (
+  threadId: string,
+  messages: Message[],
+  state: Record<string, any>
+) => {
+  try {
+    const suggestions = await handleApiRequest<NextSuggestions[]>(
+      axiosInstance.post(`/threads/${threadId}/suggestions`, {
+        messages,
+        state,
+      })
+    );
+
+    return suggestions;
+  } catch (error) {
+    console.error(`Failed to fetch suggestions`, error);
+  }
 };

@@ -6,6 +6,7 @@ import { GalleryItem } from "@/types/gallery.types";
 import { useGalleryQuery } from "./useGallery";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { allMediaAssetSources } from "@/lib/gallery.utils";
+import { handleReferenceImageDrop } from "@/lib/reference-image.utils";
 
 interface UseChatInputImageHandlerOptions {
   brandId: string | null;
@@ -34,7 +35,7 @@ export function useChatInputImageHandler({
 }: UseChatInputImageHandlerOptions) {
   const [isUploading, setIsUploading] = useState(false);
 
-  const { bulkUpload } = useGalleryQuery(
+  const { bulkUpload, patchItem, refetchGalleryItems } = useGalleryQuery(
     {
       selectedFilters: {
         brands: [brandId!],
@@ -53,7 +54,7 @@ export function useChatInputImageHandler({
     true
   );
 
-  const { addItems } = useReferenceImagesStore();
+  const { addItems, addOptimisticItem } = useReferenceImagesStore();
 
   // Validate file type
   const isValidFileType = useCallback(
@@ -319,6 +320,66 @@ export function useChatInputImageHandler({
     ]
   );
 
+  // Handle drag drop from A2I images (already in gallery, just add as reference)
+  const handleA2iImageDrop = useCallback(
+    async (assetUrl: string, galleryItemId: string | null): Promise<boolean> => {
+      if (!brandId) return false;
+
+      // Check if already selected
+      if (referenceImages.includes(assetUrl)) {
+        toast.error("This image is already selected as a reference.");
+        return false;
+      }
+
+      // Check max limit
+      if (referenceImages.length >= maxImageCount) {
+        toast.error(`You can only upload ${maxImageCount} image(s).`);
+        return false;
+      }
+
+      // Add to reference images (no upload needed, already in gallery)
+      onReferenceImagesChange([...referenceImages, assetUrl]);
+
+      // Optimistically add to reference store for UI consistency
+      try {
+        if (galleryItemId) {
+          addOptimisticItem({
+            id: galleryItemId,
+            asset_url: assetUrl,
+            preview_url: assetUrl,
+            brand_id: brandId,
+          });
+
+          // Update last_accessed_at to track usage
+          try {
+            patchItem({
+              itemId: galleryItemId,
+              data: { last_accessed_at: new Date().toISOString() },
+              revalidateAutofillSuggestions: false,
+            });
+            await refetchGalleryItems();
+          } catch (err) {
+            console.warn("patchItem failed after A2I drop to chat", err);
+          }
+        }
+      } catch (err) {
+        console.warn("addOptimisticItem failed for chat drop", err);
+      }
+
+      toast.success("Reference image added");
+      return true;
+    },
+    [
+      brandId,
+      referenceImages,
+      maxImageCount,
+      onReferenceImagesChange,
+      addOptimisticItem,
+      patchItem,
+      refetchGalleryItems,
+    ]
+  );
+
   // Handle paste event
   const handlePaste = useCallback(
     async (e: ClipboardEvent) => {
@@ -364,5 +425,6 @@ export function useChatInputImageHandler({
   return {
     isUploading,
     handleImageFiles,
+    handleA2iImageDrop,
   };
 }

@@ -213,6 +213,7 @@ export function MediaBulkAskKittyKatDialog({
           brand_name: brandName,
           campaign_name: undefined,
           is_bulk_request: false,
+          team_id: user?.active_team_id,
         };
 
         const tasklist = await createTaskListMutation.mutateAsync(

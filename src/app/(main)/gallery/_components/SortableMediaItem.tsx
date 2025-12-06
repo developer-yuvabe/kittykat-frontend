@@ -81,8 +81,8 @@ export function SortableMediaItem({
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
 
-  console.log("enableDragToMove:", enableDragToMove);
-  console.log("isDraggable:", isDraggable);
+  // console.log("enableDragToMove:", enableDragToMove);
+  // console.log("isDraggable:", isDraggable);
 
   // Check if max selection has been reached
   const hasReachedMax =

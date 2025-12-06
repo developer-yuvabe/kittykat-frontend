@@ -91,7 +91,7 @@ export const MoodboardVisualImages: React.FC<MoodboardVisualImagesProps> = ({
           <div className="text-sm text-gray-500">
             {galleryActions.isFetching
               ? "Loading images..."
-              : "No images available. Please add images to your gallery."}
+              : "No brand uploads found yet — try uploading images."}
           </div>
         </div>
       </div>
