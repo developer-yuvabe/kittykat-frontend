@@ -70,7 +70,7 @@ export const A2iImagesWrapper = ({
   currentCampaign,
 }: A2iImagesWrapperProps) => {
   const { selectedBrandId, selectedCampaignId } = useBrandStore();
-  const { selectedImageGenerationModel, isModelsFetched } = useModelsStore();
+  const { isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -287,7 +287,7 @@ export const A2iImagesWrapper = ({
         <div className="flex flex-col gap-4 h-full">
           {/* Form Section - Above */}
           <div className="flex-shrink-0">
-            {!isModelsFetched || !selectedImageGenerationModel ? (
+            {!isModelsFetched ? (
               <A2iImageInputLoader />
             ) : (
               <A2iImageInput

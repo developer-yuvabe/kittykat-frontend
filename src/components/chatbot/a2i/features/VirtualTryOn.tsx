@@ -16,6 +16,7 @@ import ModelSelector from "../ModelSelector";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { useRouter } from "next/navigation";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
+import { useUserStore } from "@/store/user.store";
 
 type VirtualTryOnProps = {
   modelImage?: string;
@@ -52,14 +53,15 @@ const VirtualTryOn = ({ modelImage }: VirtualTryOnProps) => {
     );
   }, [selectedVtonModel]);
 
+  const { user } = useUserStore();
+
   const onSubmit = async (data: Record<string, any>) => {
     setLoading(true);
     try {
-      await createVtonImage(
-        selectedBrandId!,
-        campaignId || defaultCampaignId,
-        data
-      );
+      await createVtonImage(selectedBrandId!, campaignId || defaultCampaignId, {
+        ...data,
+        team_id: user?.active_team_id,
+      });
       closeConceptVisual();
 
       if (source === "blanket") {

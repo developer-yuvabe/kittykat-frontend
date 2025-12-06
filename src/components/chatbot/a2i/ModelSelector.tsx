@@ -49,6 +49,16 @@ export default function ModelSelector({
     );
   }
 
+  if (filteredModels.length === 0) {
+    return (
+      <div className="p-1 rounded-md w-44 h-10 border-2 flex items-center justify-center">
+        <p className="text-xs italic text-muted-foreground">
+          No models available.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-max">
       <label
