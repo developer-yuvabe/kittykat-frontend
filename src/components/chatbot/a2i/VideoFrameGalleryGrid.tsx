@@ -2,6 +2,7 @@ import { Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAssetTypeFromUrlCooked } from "@/lib/gallery.utils";
 
 interface VideoFrameGalleryGridProps {
   items: GalleryItemResponse[];
@@ -52,6 +53,7 @@ export const VideoFrameGalleryGrid = ({
         const isStartFrame = startFrameUrl === item.asset_url;
         const isEndFrame = endFrameUrl === item.asset_url;
         const isSelected = isStartFrame || isEndFrame;
+        // const type = getAssetTypeFromUrlCooked(item.asset_url);
 
         return (
           <div
@@ -71,6 +73,21 @@ export const VideoFrameGalleryGrid = ({
               alt={item.asset_title || "Gallery item"}
               className="w-full h-full object-cover"
             />
+            {/* Render image or video */}
+            {/* {type === "image" ? (
+              <img
+                src={item.asset_url}
+                alt={item.asset_title || "Gallery item"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <video
+                src={item.asset_url}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+              />
+            )} */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
 
             {isSelected && !isSingleMode && (

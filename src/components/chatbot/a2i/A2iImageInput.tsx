@@ -1669,9 +1669,15 @@ const A2iImageInput = ({
                     activeTab={videoFramesPopoverTab}
                     onTabChange={setVideoFramesPopoverTab}
                     maxLimit={1}
-                    fileTypes={["image/jpeg", "image/png", "image/webp"]}
+                    fileTypes={[
+                      "image/jpeg",
+                      "image/png",
+                      "image/webp",
+                      "video/mp4",
+                    ]}
                     maxFileSizeLimit={10}
                     disabled={formInstance.formState.isSubmitting}
+                    // disabled={false}
                     currentCampaignId={currentCampaign?.id}
                     isOpen={isVideoFramesPopoverOpen}
                     onOpenChange={setIsVideoFramesPopoverOpen}
