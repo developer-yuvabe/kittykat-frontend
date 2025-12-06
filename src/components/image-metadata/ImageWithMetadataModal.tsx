@@ -46,9 +46,9 @@ import { A2iImageGeneration } from "@/types/types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { Skeleton } from "../ui/skeleton";
+
 import { useCreditsStore } from "@/store/credits.store";
 import { useUserStore } from "@/store/user.store";
-import { useA2iStore } from "@/store/a2i.store";
 type ImageWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
   generation?: {
@@ -90,17 +90,10 @@ const ImageWithMetadataModal = ({
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
 
+  const { user } = useUserStore();
+
   //use selected campaign id if available else use latest campaign of selected brand that is not custom
   const campaignId = selectedCampaignId || defaultCampaignId;
-
-  const {
-    setConceptVisualGeneratorMode,
-    setStartFrame,
-    setEndFrame,
-    setBaseImageUrl,
-  } = useA2iStore();
-
-  const { user } = useUserStore();
 
   const { openConceptVisual } = useConceptVisualStore();
   const {
@@ -323,15 +316,11 @@ const ImageWithMetadataModal = ({
           return;
         }
 
-        // setConceptVisualGeneratorMode("image_editor");
-
         // Set the remix model
         setSelectedRemixModel(model);
 
         // Convert all remix parameters based on model schema
         const convertedRemixParams = { ...data.parameters };
-
-        // console.log("Converting remix params:", convertedRemixParams);
 
         model.parameters.forEach((paramDef) => {
           const id = paramDef.id;
@@ -345,26 +334,25 @@ const ImageWithMetadataModal = ({
 
         // Store schema-correct params
         setParameters("remixParameters", convertedRemixParams);
-        // console.log("remixParameters set:", convertedRemixParams);
 
         onClose();
         // asset object with base_image URL
-        // const baseImageAsset = {
-        //   ...galleryItem,
-        //   asset_url: baseInputImageUrl,
-        //   preview_url: baseInputImageUrl,
-        // };
+        const baseImageAsset = {
+          ...galleryItem,
+          asset_url: baseInputImageUrl,
+          preview_url: baseInputImageUrl,
+        };
 
         // Open concept visual with base image loaded in canvas
-        // openConceptVisual({
-        //   source: "blanket",
-        //   assetItems: [baseImageAsset],
-        //   asset: {
-        //     currentAsset: baseImageAsset,
-        //     galleryActions: null,
-        //   },
-        //   defaultActiveTab: "remix",
-        // });
+        openConceptVisual({
+          source: "blanket",
+          assetItems: [baseImageAsset],
+          asset: {
+            currentAsset: baseImageAsset,
+            galleryActions: null,
+          },
+          defaultActiveTab: "remix",
+        });
         return;
       } else {
         const model = models.find(
@@ -487,17 +475,15 @@ const ImageWithMetadataModal = ({
       }
 
       setSelectedRemixModel(defualtEditModel);
-      setConceptVisualGeneratorMode("image_editor");
-      setBaseImageUrl(currentDisplayItem.asset_url);
-      // openConceptVisual({
-      //   source: "blanket",
-      //   assetItems: [currentDisplayItem],
-      //   asset: {
-      //     currentAsset: currentDisplayItem,
-      //     galleryActions: null,
-      //   },
-      //   defaultActiveTab: "remix",
-      // });
+      openConceptVisual({
+        source: "blanket",
+        assetItems: [currentDisplayItem],
+        asset: {
+          currentAsset: currentDisplayItem,
+          galleryActions: null,
+        },
+        defaultActiveTab: "remix",
+      });
 
       onClose();
     } catch (error) {
@@ -510,7 +496,6 @@ const ImageWithMetadataModal = ({
 
   const handleModifyReference = async () => {
     try {
-      setConceptVisualGeneratorMode("image_generator");
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
 
@@ -577,18 +562,15 @@ const ImageWithMetadataModal = ({
       }
 
       setSelectedVideoGenearationModel(defaultAnimationModel);
-      setConceptVisualGeneratorMode("video_generator");
-      setStartFrame(currentDisplayItem.asset_url);
-      setEndFrame(null);
-      // openConceptVisual({
-      //   source: "blanket",
-      //   assetItems: [currentDisplayItem],
-      //   asset: {
-      //     currentAsset: currentDisplayItem,
-      //     galleryActions: null,
-      //   },
-      //   defaultActiveTab: "video-generation",
-      // });
+      openConceptVisual({
+        source: "blanket",
+        assetItems: [currentDisplayItem],
+        asset: {
+          currentAsset: currentDisplayItem,
+          galleryActions: null,
+        },
+        defaultActiveTab: "video-generation",
+      });
 
       onClose();
     } catch (error) {
