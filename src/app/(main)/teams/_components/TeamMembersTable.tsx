@@ -8,11 +8,13 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronLeft,
   ChevronRight,
   Link2,
   MoreHorizontal,
+  RefreshCw,
   Search,
   UserX,
 } from "lucide-react";
@@ -46,6 +48,7 @@ import {
 } from "@/components/ui/table";
 
 import { formatTeamRole, getRoleBadgeVariant } from "@/lib/team.utils";
+import { getTeamQueryKey } from "@/hooks/useTeams";
 import { useUserStore } from "@/store/user.store";
 import {
   TeamMember,
@@ -233,8 +236,19 @@ export const MembersTable = ({
   isUpdatingRole,
 }: MembersTableProps) => {
   const { user } = useUserStore();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({
+      queryKey: getTeamQueryKey(team.id),
+    });
+
+    setIsRefreshing(false);
+  };
 
   // Filter members based on search query
   const filteredMembers = useMemo(() => {
@@ -383,15 +397,27 @@ export const MembersTable = ({
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search members by name or email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search and Refresh */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search members by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+        </Button>
       </div>
 
       {/* Table */}
