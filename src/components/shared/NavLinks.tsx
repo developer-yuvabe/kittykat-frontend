@@ -69,15 +69,15 @@ export function NavLinks() {
     </div>
   );
 
-  // Split links: first 2 links, then Notification, then Visual Editor, then rest
-  const firstLinks = visibleLinks.slice(0, 2);
-  const restLinks = visibleLinks.slice(2);
+  // Split links: first link, then Notification (2nd), then Visual Editor, then rest
+  const firstLink = visibleLinks.slice(0, 1);
+  const restLinks = visibleLinks.slice(1);
 
   if (!isLarge) {
     return (
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex items-center justify-around px-4 py-2">
-          {firstLinks.map(renderNavLink)}
+          {firstLink.map(renderNavLink)}
           <NotificationHoverCard />
           {renderVisualEditor()}
           {restLinks.map(renderNavLink)}
@@ -89,7 +89,7 @@ export function NavLinks() {
   return (
     <nav className="flex items-center justify-center flex-1">
       <div className="flex items-center space-x-8 md:space-x-16">
-        {firstLinks.map(renderNavLink)}
+        {firstLink.map(renderNavLink)}
         <NotificationHoverCard />
         {renderVisualEditor()}
         {restLinks.map(renderNavLink)}

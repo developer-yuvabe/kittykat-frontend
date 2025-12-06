@@ -13,15 +13,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { TeamListResponse } from "@/types/team.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, MoreHorizontal, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { TeamDeleteDialog } from "./TeamDeleteDialog";
 import { useUserStore } from "@/store/user.store";
 import { canDeleteTeam } from "@/lib/team.utils";
+import { useTeams } from "@/hooks/useTeams";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export function getTeamTableColumns(
   page: number,
@@ -145,7 +147,23 @@ export function getTeamTableColumns(
       cell: ({ row }) => {
         const team = row.original;
         const { user } = useUserStore();
+        const { deleteTeam } = useTeams();
         const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+        const [isDeleting, setIsDeleting] = useState(false);
+
+        const handleDelete = async () => {
+          setIsDeleting(true);
+          try {
+            deleteTeam(team.id);
+            toast.success(`Team "${team.name}" deleted successfully`);
+            setDeleteDialogOpen(false);
+          } catch (error) {
+            toast.error("Failed to delete team");
+            console.error("Error deleting team:", error);
+          } finally {
+            setIsDeleting(false);
+          }
+        };
 
         return (
           <>
@@ -209,13 +227,22 @@ export function getTeamTableColumns(
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {deleteDialogOpen && (
-              <TeamDeleteDialog
-                team={team}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              />
-            )}
+            <ReusableAlertDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+              title="Delete Team"
+              description={
+                <>
+                  Are you sure you want to delete the team{" "}
+                  <strong>&quot;{team.name}&quot;</strong>? This action cannot
+                  be undone.
+                </>
+              }
+              confirmLabel="Delete Team"
+              onConfirm={handleDelete}
+              isLoading={isDeleting}
+              danger
+            />
           </>
         );
       },
