@@ -9,8 +9,7 @@ import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
   const previousCampaignCount = useRef<number>(0);
-  const previousGenerationStatus = useRef<Record<string, string>>({});
-  const completedGenerationsProcessed = useRef<Set<string>>(new Set()); // Track processed completions
+  const previousCompletedCount = useRef<number>(0); // Track completed generations count
   const { setGenerations } = useGenerationsStore();
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
@@ -57,34 +56,25 @@ export function useBrandUpdates() {
       ) {
         setGenerations(parsed.a2i_image_information.generations);
 
-        // Check if any generation just completed
-        const hasNewlyCompletedGenerations =
-          parsed.a2i_image_information.generations.some((gen) => {
-            const previousStatus = previousGenerationStatus.current[gen.id];
-            const isNewlyCompleted =
-              previousStatus &&
-              previousStatus !== "completed" &&
-              gen.status === "completed" &&
-              !completedGenerationsProcessed.current.has(gen.id); // Check if not already processed
+        // Count how many generations are completed
+        const currentCompletedCount =
+          parsed.a2i_image_information.generations.filter(
+            (gen) => gen.status === "completed"
+          ).length;
 
-            // Update the stored status
-            previousGenerationStatus.current[gen.id] = gen.status;
+        // Only invalidate if completed count increased
+        const hasNewCompletions =
+          currentCompletedCount > previousCompletedCount.current;
 
-            // Mark as processed if completed
-            if (gen.status === "completed") {
-              completedGenerationsProcessed.current.add(gen.id);
-            }
-
-            return isNewlyCompleted;
-          });
-
-        if (hasNewlyCompletedGenerations) {
+        if (hasNewCompletions) {
           queryClient.invalidateQueries({
             queryKey: ["gallery-items"],
             exact: false,
             refetchType: "all",
           });
         }
+
+        previousCompletedCount.current = currentCompletedCount;
       }
     });
 
@@ -97,8 +87,7 @@ export function useBrandUpdates() {
       setIsFetchingBrandInfo(true);
       setData(null);
       previousCampaignCount.current = 0;
-      previousGenerationStatus.current = {};
-      completedGenerationsProcessed.current.clear();
+      previousCompletedCount.current = 0;
     };
   }, [selectedBrandId]);
 }
