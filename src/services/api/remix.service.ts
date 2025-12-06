@@ -34,7 +34,6 @@ export const remixImageService = async (
 
 export const estimateRemixCredits = async (data: Record<string, any>) => {
   try {
-    // console.log("Estimating remix credits with data:", data);
     const credits = await handleApiRequest<number | null>(
       axiosInstance.post(`/credits/estimate/remix`, data)
     );

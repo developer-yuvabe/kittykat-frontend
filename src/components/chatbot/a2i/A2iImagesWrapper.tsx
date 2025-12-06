@@ -287,7 +287,7 @@ export const A2iImagesWrapper = ({
         <div className="flex flex-col gap-4 h-full">
           {/* Form Section - Above */}
           <div className="flex-shrink-0">
-            {!isModelsFetched ? (
+            {!isModelsFetched || !selectedImageGenerationModel ? (
               <A2iImageInputLoader />
             ) : (
               <A2iImageInput

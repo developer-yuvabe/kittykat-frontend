@@ -34,6 +34,7 @@ import { A2iImageGeneration } from "@/types/types";
 import ZoomableImage from "../ui/zoomable-image";
 import { isFrameParam } from "@/types/a2i-media.types";
 import { useCreditsStore } from "@/store/credits.store";
+import { useUserStore } from "@/store/user.store";
 
 type VideoWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -69,6 +70,7 @@ const VideoWithMetadataModal = ({
     useBrandStore();
 
   const campaignId = selectedCampaignId || defaultCampaignId;
+  const { user } = useUserStore();
 
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
   const { openConceptVisual } = useConceptVisualStore();
@@ -150,6 +152,7 @@ const VideoWithMetadataModal = ({
         ),
         source_asset_id: galleryItem.id,
         campaign_id: campaignId,
+        team_id: user?.active_team_id,
       });
 
       onClose();
@@ -195,22 +198,22 @@ const VideoWithMetadataModal = ({
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
 
-      // openConceptVisual({
-      //   source: "blanket",
-      //   assetItems: [galleryItem],
-      //   asset: {
-      //     currentAsset: {
-      //       ...galleryItem,
-      //       asset_url:
-      //         data.parameters.first_frame ||
-      //         data.parameters.image ||
-      //         data.parameters.start_image ||
-      //         null,
-      //     },
-      //     galleryActions: null,
-      //   },
-      //   defaultActiveTab: "video-generation",
-      // });
+      openConceptVisual({
+        source: "blanket",
+        assetItems: [galleryItem],
+        asset: {
+          currentAsset: {
+            ...galleryItem,
+            asset_url:
+              data.parameters.first_frame ||
+              data.parameters.image ||
+              data.parameters.start_image ||
+              null,
+          },
+          galleryActions: null,
+        },
+        defaultActiveTab: "video-generation",
+      });
 
       onClose();
 
