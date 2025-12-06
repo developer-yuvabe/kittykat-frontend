@@ -13,6 +13,10 @@ import {
   GeminiIcon,
 } from "@/components/ui/custom-icon";
 import { ComponentIcon } from "lucide-react";
+// config/navigation.config.ts
+import { HomeIcon, GalleryIcon } from "@/components/ui/custom-icon";
+import { ListTodo, Users, Users2, Columns3Cog } from "lucide-react";
+import { UserRoleId } from "@/types/user.types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -459,4 +463,78 @@ const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|mkv|avi)$/i;
 export function isVideoUrl(url?: string): boolean {
   if (!url) return false; // ✅ default = image
   return VIDEO_EXTENSIONS.test(url);
+}
+
+export interface NavLink {
+  name: string;
+  icon: any;
+  path: string;
+  disabled?: boolean;
+  roles?: UserRoleId[];
+}
+
+export const NAVIGATION_LINKS: NavLink[] = [
+  {
+    name: "Home",
+    icon: HomeIcon,
+    path: "/",
+    disabled: true,
+    roles: [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
+  },
+  {
+    name: "Gallery",
+    icon: GalleryIcon,
+    path: "/gallery",
+    roles: [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
+  },
+  {
+    name: "Task Lists",
+    icon: ListTodo,
+    path: "/tasklist",
+    roles: [UserRoleId.ADMIN, UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
+  },
+  {
+    name: "Teams",
+    icon: Users2,
+    path: "/teams",
+    roles: [UserRoleId.USER, UserRoleId.KK_CREATIVE_USER],
+  },
+  {
+    name: "Users",
+    icon: Users,
+    path: "/users",
+    roles: [UserRoleId.ADMIN],
+  },
+  {
+    name: "Presets",
+    icon: Columns3Cog,
+    path: "/presets",
+    roles: [UserRoleId.ADMIN, UserRoleId.KK_CREATIVE_USER],
+  },
+];
+
+export function filterLinksByRole(
+  links: NavLink[],
+  userRole: UserRoleId | undefined
+): NavLink[] {
+  if (!userRole) return links.filter((link) => !link.roles);
+
+  return links.filter((link) => {
+    if (!link.roles || link.roles.length === 0) return true;
+    return link.roles.includes(userRole);
+  });
+}
+
+export function getRoleLabel(
+  role: UserRoleId,
+  isDefaultAdmin?: boolean
+): string {
+  switch (role) {
+    case UserRoleId.ADMIN:
+      return isDefaultAdmin ? "System Admin" : "Creative Admin";
+    case UserRoleId.USER:
+      return "User";
+    case UserRoleId.KK_CREATIVE_USER:
+      return "Creative User";
+  }
 }

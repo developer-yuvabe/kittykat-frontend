@@ -22,7 +22,7 @@ import { videoGenerationService } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useModelsStore } from "@/store/models.store";
-import { useVideoGenStore } from "@/store/video-gen.store";
+import { useGenerationsStore } from "@/store/generations.store";
 import { FileParam } from "@/types/a2i-media.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Settings2, X } from "lucide-react";
@@ -32,6 +32,7 @@ import { DynamicFormField, DynamicFormLabel } from "../DynamicFormField";
 import ModelSelector from "../ModelSelector";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
+import { useUserStore } from "@/store/user.store";
 
 interface VideoGenerationInputProps {
   item: GalleryItemResponse | null;
@@ -76,12 +77,13 @@ const VideoGenerationInputControls = ({
   item,
   setCurrentItem,
 }: VideoGenerationInputProps) => {
+  const { user } = useUserStore();
   const { source, isConceptVisualOpened } = useConceptVisualStore();
   const { selectedCampaignId: campaignId, defaultCampaignId } = useBrandStore();
   const [galleryPickerSource, setGalleryPickerSource] = useState<string | null>(
     null
   );
-  const { addCurrentSessionGenerationId } = useVideoGenStore();
+  const { addCurrentSessionGenerationId } = useGenerationsStore();
   const { selectedVideoGenearationModel } = useModelsStore();
   const { selectedBrandId } = useBrandStore();
   const { setShowInsufficientCreditsModal } = useCreditsStore();
@@ -191,6 +193,7 @@ const VideoGenerationInputControls = ({
       const { generation_id } = await videoGenerationService(selectedBrandId!, {
         ...data,
         campaign_id: campaignId || defaultCampaignId,
+        team_id: user?.active_team_id,
       });
 
       if (Array.isArray(generation_id)) {

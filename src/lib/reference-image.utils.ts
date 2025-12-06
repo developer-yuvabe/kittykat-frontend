@@ -184,7 +184,8 @@ export const handleReferenceImageDrop = (
   }
 
   // Handle drop from gallery (adding new images - check limit)
-  if (source === "gallery") {
+  // Also accept drops originating from A2I list (source === 'a2i') as a gallery-like add
+  if (source === "gallery" || source === "a2i") {
     // Check if already selected
     if (
       masterReference.includes(assetUrl) ||

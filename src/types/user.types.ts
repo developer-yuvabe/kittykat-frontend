@@ -5,15 +5,13 @@ export type User = {
   name: string;
   email: string;
   thread_id?: string | null;
-  brand_access?: UserBrand[];
   model_access?: ModelAccess[];
   role: UserRole;
   is_default_admin?: boolean;
-  credits?: number;
-  kittykat_expert_credits?: number;
   user_preferences?: {
     enhance_prompts?: boolean;
   };
+  active_team_id: string;
 };
 
 export type UserListItem = {
@@ -25,8 +23,6 @@ export type UserListItem = {
   status: UserStatus;
   invitation_link?: string;
   is_default_admin?: boolean;
-  credits?: number;
-  kittykat_expert_credits?: number;
   content_filter_disabled?: boolean;
   brand_access?: {
     id: string;
@@ -52,6 +48,7 @@ export type UserListResponse = {
 export enum UserRoleId {
   ADMIN = "KK-ADMIN",
   USER = "KK-USER",
+  KK_CREATIVE_USER = "KK-CREATIVE-USER",
 }
 
 export type UserRole = {

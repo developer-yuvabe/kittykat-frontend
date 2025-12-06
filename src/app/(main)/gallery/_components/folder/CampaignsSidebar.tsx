@@ -162,6 +162,46 @@ export function CampaignsSidebar({
   const archivedCampaigns = sortByPosition(
     filteredCampaigns.filter((c) => c.is_archived)
   );
+  // Instantly update gallery when a campaign is archived/unarchived
+  const updateGalleryForCampaignArchive = (
+    campaignId: string,
+    shouldBeArchived: boolean
+  ) => {
+    queryClient.setQueriesData({ queryKey: ["gallery-items"] }, (old: any) => {
+      if (!old?.pages) return old;
+
+      return {
+        ...old,
+        pages: old.pages.map((page: any) => {
+          const itemsInThisCampaign = page.gallery_items.filter(
+            (item: any) => item.campaign_id === campaignId
+          );
+
+          // If we're archiving → remove them
+          // If we're unarchiving → keep them (they should now appear)
+          const shouldKeep = !shouldBeArchived;
+
+          return {
+            ...page,
+            gallery_items: shouldKeep
+              ? page.gallery_items
+              : page.gallery_items.filter(
+                  (item: any) => item.campaign_id !== campaignId
+                ),
+            pagination: {
+              ...page.pagination,
+              total: shouldKeep
+                ? page.pagination.total
+                : Math.max(
+                    0,
+                    page.pagination.total - itemsInThisCampaign.length
+                  ),
+            },
+          };
+        }),
+      };
+    });
+  };
 
   // Handlers
   const handleDelete = async () => {
@@ -223,6 +263,7 @@ export function CampaignsSidebar({
           await updateCampaign(selectedBrandId, campaignId, {
             is_archived: shouldBeArchived,
           });
+          updateGalleryForCampaignArchive(campaignId, shouldBeArchived);
           // Invalidate brands query to refresh the UI
           await queryClient.invalidateQueries({ queryKey: ["brands"] });
         },

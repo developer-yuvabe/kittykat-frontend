@@ -86,7 +86,7 @@ const AgentDebug = ({ className }: AgentDebugProps) => {
                           {key.replace(/_/g, " ")}
                         </td>
                         <td className="px-3 py-2 text-gray-600">
-                          {((value ?? "-") as string) || null}
+                          {((JSON.stringify(value) ?? "-") as string) || null}
                         </td>
                       </tr>
                     ))}

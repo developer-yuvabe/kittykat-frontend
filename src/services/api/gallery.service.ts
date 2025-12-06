@@ -84,7 +84,7 @@ class GalleryService {
     asset_types?: string[];
     asset_sources?: string[];
     is_favourite?: boolean;
-    campaign_ids?: string[];
+    campaign_ids?: (string | null)[];
     brand_ids?: string[];
     skip?: number;
     limit?: number;
@@ -320,9 +320,7 @@ class GalleryService {
   /**
    * Get asset count with optional breakdowns by various dimensions
    */
-  async getAssetCount(
-    request: AssetCountRequest
-  ): Promise<AssetCountResponse> {
+  async getAssetCount(request: AssetCountRequest): Promise<AssetCountResponse> {
     return handleApiRequest<AssetCountResponse>(
       axiosInstance.post("/gallery/count", request)
     );

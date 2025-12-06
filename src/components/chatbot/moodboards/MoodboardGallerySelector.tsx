@@ -6,6 +6,7 @@ import { addImageToMoodboard } from "@/services/api/moodboard.service";
 import { SelectIcon } from "@/components/ui/custom-icon";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Button } from "@/components/ui/button";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 export function MoodboardGallerySelector({
   brandId,
@@ -30,6 +31,7 @@ export function MoodboardGallerySelector({
   const [mediaLibraryOpen, setMediaLibraryOpen] = React.useState<
     null | "model" | "product" | "all-media"
   >(null);
+  const { resetFilters } = useGalleryFilterStore();
 
   return (
     <div>
@@ -39,6 +41,8 @@ export function MoodboardGallerySelector({
         variant={"outline"}
         onClick={(e) => {
           e.stopPropagation();
+          // Reset all filters when opening moodboard selector
+          resetFilters();
           setMediaLibraryOpen("all-media");
         }}
         className="rounded-t-none w-28"
@@ -55,11 +59,15 @@ export function MoodboardGallerySelector({
             id: item.id,
           });
           setMediaLibraryOpen(null);
+          // Reset filters when closing dialog
+          resetFilters();
         }}
         open={!!mediaLibraryOpen}
         onOpenChange={(o) => {
           if (!o) {
             setMediaLibraryOpen(null);
+            // Reset filters when closing dialog
+            resetFilters();
           }
         }}
         filters={{
@@ -84,6 +92,8 @@ export function MoodboardGallerySelector({
         isMultiSelect
         onMultipleMediaItemsSelected={async (items) => {
           setMediaLibraryOpen(null);
+          // Reset filters when closing dialog
+          resetFilters();
           onGallerySelection?.(items, placeHolderIndex);
         }}
         inSelectionGalleryIds={inSelectionGalleryIds}

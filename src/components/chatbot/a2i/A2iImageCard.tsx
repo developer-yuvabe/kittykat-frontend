@@ -35,6 +35,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useModelsStore } from "@/store/models.store";
 import { GalleryItemResponse } from "@/types/gallery.types";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
+import { useGenerationsStore } from "@/store/generations.store";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -76,6 +78,8 @@ const A2iImageCard = ({
   video,
   isNSFW,
 }: A2iImageCardProps) => {
+  const { data, setData } = useBrandUpdatesStore();
+  const { addOptimisticallyDeletedGenerationId } = useGenerationsStore();
   const [copied, setCopied] = useState(false);
   const { openConceptVisual } = useConceptVisualStore();
   const [showImageModal, setShowImageModal] = useState(false);
@@ -191,16 +195,35 @@ const A2iImageCard = ({
       }
     })();
 
-    toast.promise(deletePromise, {
-      loading: "Deleting...",
-      success: "Deleted successfully!",
-      error: "Could not delete item. Please try again.",
-    });
+    if (status !== "failed") {
+      toast.promise(deletePromise, {
+        loading: "Deleting...",
+        success: "Deleted successfully!",
+        error: "Could not delete item. Please try again.",
+      });
 
-    deletePromise.finally(() => {
-      setIsDeleting(false);
-    });
+      deletePromise.finally(() => {
+        setIsDeleting(false);
+      });
+    } else {
+      // Optimistic deletion for failed items
+
+      setData({
+        ...data,
+        a2i_image_information: data?.a2i_image_information
+          ? {
+              ...data.a2i_image_information,
+              generations: data.a2i_image_information.generations.filter(
+                (gen) => gen.id !== generationId
+              ),
+            }
+          : undefined,
+      });
+
+      addOptimisticallyDeletedGenerationId(generationId);
+    }
   };
+
   const handleReUse = async () => {
     try {
       // Video
@@ -393,6 +416,18 @@ const A2iImageCard = ({
         <div
           className="relative w-full h-full cursor-pointer group/image hover:brightness-110 transition-all duration-200 z-10"
           onClick={handleItemClick}
+          draggable
+          onDragStart={(e) => {
+            try {
+              e.dataTransfer.setData("assetUrl", image.url);
+              e.dataTransfer.setData("source", "a2i");
+              // image.id is used in many places as gallery item id
+              if (image.id) e.dataTransfer.setData("galleryItemId", image.id);
+              e.dataTransfer.effectAllowed = "copy";
+            } catch (err) {
+              console.warn("drag start dataTransfer failed", err);
+            }
+          }}
         >
           <Image
             src={image.url}
@@ -558,7 +593,8 @@ const A2iImageCard = ({
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                setShowDeleteDialog(true);
+                if (status === "failed") handleRemoveItem();
+                else setShowDeleteDialog(true);
               }}
               icon={
                 <X

@@ -76,10 +76,18 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
           children
         );
 
-      // Null / Undefined
+      // Null / Undefined - make them editable
       if (value == null) {
         return withWrap(
-          <div className={`text-sm italic text-gray-400`}>None</div>
+          <InlineEditableField
+            key={String(value)}
+            label={key}
+            value="None"
+            onSave={async (newVal) => handleSave(key, newVal === "None" ? null : newVal)}
+            textClassName={cn("text-sm italic text-gray-400", textClassName)}
+            showLabel={!title}
+            isTextarea={false}
+          />
         );
       }
 

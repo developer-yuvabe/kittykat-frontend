@@ -100,6 +100,7 @@ export const CampaignColorsComponent: React.FC<CampaignColorsProps> = ({
         currentSelectedVideoGenerationModelId:
           selectedVideoGenearationModel?.id ?? null,
         userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+        activeTeamId: user!.active_team_id!,
       });
     }
 

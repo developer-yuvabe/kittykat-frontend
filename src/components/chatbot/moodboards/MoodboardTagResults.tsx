@@ -28,6 +28,7 @@ import type {
   GalleryItem,
   BulkGalleryUploadRequest,
 } from "@/types/gallery.types";
+import { useMoodboardStore } from "@/store/moodboard.store";
 
 type Props = {
   moodboard_tags?: Record<string, string[]>;
@@ -53,6 +54,8 @@ function MoodboardTagResults({
   >({});
 
   const { selectedBrandId, isMoodboardSaving } = useBrandStore();
+
+  const { triggerMoodboardSave } = useMoodboardStore();
 
   const { isGeneratingPrompts, setIsGeneratingPrompts } = useA2iStore();
 
@@ -129,6 +132,9 @@ function MoodboardTagResults({
 
       // Set generating state BEFORE starting the mutation
       setIsGeneratingPrompts(true);
+      if (triggerMoodboardSave) {
+        await triggerMoodboardSave();
+      }
 
       // Prepare selected_moodboard_tags payload first
       const selectedTagsPayload: Record<string, string[]> = {};
@@ -294,9 +300,7 @@ function MoodboardTagResults({
                 {isPatching || isGeneratingPrompts || isGeneratingScreenshot ? (
                   <Loader />
                 ) : (
-                  <>
-                    <Brain /> Concept Visual Generation
-                  </>
+                  <>Use Moodboard for Concept Visual Generation</>
                 )}
               </Button>
             </span>

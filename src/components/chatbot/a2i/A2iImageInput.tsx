@@ -93,7 +93,7 @@ const A2iImageInput = ({
   );
 
   // Add gallery query and store for reference images
-  const { bulkUpload } = useGalleryQuery(
+  const { bulkUpload, refetchGalleryItems, patchItem } = useGalleryQuery(
     {
       selectedFilters: {
         brands: [selectedBrandId!],
@@ -112,7 +112,7 @@ const A2iImageInput = ({
     true
   );
 
-  const { addItems } = useReferenceImagesStore();
+  const { addItems, addOptimisticItem } = useReferenceImagesStore();
 
   const { mutate: handleEnhancePrompt, isPending: isEnhancingPrompt } =
     useMutation({
@@ -354,6 +354,68 @@ const A2iImageInput = ({
 
       const assetUrl = e.dataTransfer.getData("assetUrl");
       const source = e.dataTransfer.getData("source");
+      const galleryItemId = e.dataTransfer.getData("galleryItemId");
+
+      const isInternalA2iDrag =
+        source === "a2i" ||
+        Boolean(galleryItemId) ||
+        (assetUrl &&
+          !(e.dataTransfer?.files && e.dataTransfer.files.length > 0));
+
+      if (isInternalA2iDrag) {
+        if (!assetUrl) return;
+
+        const result = handleReferenceImageDrop(
+          assetUrl,
+          source,
+          targetZone,
+          masterReference,
+          productReference,
+          referenceImagesModelInfo.maxLimit
+        );
+
+        if (result.shouldPrevent) {
+          if (result.toastMessage) {
+            toast[result.toastMessage.type](result.toastMessage.message);
+          }
+          return;
+        }
+
+        if (result.newMasterReference !== undefined)
+          setMasterReference(result.newMasterReference);
+        if (result.newProductReference !== undefined)
+          setProductReference(result.newProductReference);
+
+        if (result.toastMessage)
+          toast[result.toastMessage.type](result.toastMessage.message);
+
+        // Optimistically add the asset to the reference-image store so selectors see it
+        try {
+          const galleryItemId = e.dataTransfer.getData("galleryItemId");
+          addOptimisticItem({
+            id: galleryItemId,
+            asset_url: assetUrl,
+            preview_url: assetUrl,
+            brand_id: selectedBrandId!,
+          });
+          if (galleryItemId) {
+            try {
+              patchItem({
+                itemId: galleryItemId,
+                data: { last_accessed_at: new Date().toISOString() },
+                revalidateAutofillSuggestions: false,
+              });
+              await refetchGalleryItems();
+            } catch (err) {
+              console.warn("patchItem failed after A2I drop", err);
+            }
+          }
+        } catch (err) {
+          console.warn("addOptimisticItem or refetch failed", err);
+        }
+
+        return;
+      }
 
       // Handle file drops from OS
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -414,6 +476,9 @@ const A2iImageInput = ({
       masterReference,
       productReference,
       handleFileUpload,
+      addOptimisticItem,
+      refetchGalleryItems,
+      selectedBrandId,
     ]
   );
 
@@ -444,6 +509,80 @@ const A2iImageInput = ({
 
       if (!referenceImagesModelInfo) {
         toast.error("This model doesn't support reference images");
+        return;
+      }
+
+      const assetUrl = e.dataTransfer.getData("assetUrl");
+      const source = e.dataTransfer.getData("source");
+      const galleryItemId = e.dataTransfer.getData("galleryItemId");
+
+      // If this is an internal A2I drag or contains an assetUrl but no files,
+      // handle it as an internal reference add instead of uploading files.
+      const isInternalA2iDrag =
+        source === "a2i" ||
+        Boolean(galleryItemId) ||
+        (assetUrl &&
+          !(e.dataTransfer?.files && e.dataTransfer.files.length > 0));
+
+      if (isInternalA2iDrag) {
+        if (!assetUrl) return;
+
+        const targetZone =
+          masterReference.length > 0 || productReference.length > 0
+            ? referencePopoverTab
+            : "master";
+
+        const result = handleReferenceImageDrop(
+          assetUrl,
+          source,
+          targetZone,
+          masterReference,
+          productReference,
+          referenceImagesModelInfo.maxLimit
+        );
+
+        if (result.shouldPrevent) {
+          if (result.toastMessage)
+            toast[result.toastMessage.type](result.toastMessage.message);
+          return;
+        }
+
+        if (result.newMasterReference !== undefined)
+          setMasterReference(result.newMasterReference);
+        if (result.newProductReference !== undefined)
+          setProductReference(result.newProductReference);
+
+        // Optimistic add to reference store and refetch metadata
+        try {
+          addOptimisticItem({
+            id: galleryItemId,
+            asset_url: assetUrl,
+            preview_url: assetUrl,
+            brand_id: selectedBrandId!,
+          });
+
+          // If we added a real gallery item id, update its last_accessed_at using the gallery id
+          if (galleryItemId) {
+            try {
+              patchItem({
+                itemId: galleryItemId,
+                data: { last_accessed_at: new Date().toISOString() },
+                revalidateAutofillSuggestions: false,
+              });
+              await refetchGalleryItems();
+            } catch (err) {
+              console.warn("patchItem failed after A2I prompt drop", err);
+            }
+          }
+        } catch (err) {
+          console.warn("failed to add optimistic item for prompt drop", err);
+        }
+
+        // Show success toast
+        if (result.toastMessage) {
+          toast[result.toastMessage.type](result.toastMessage.message);
+        }
+
         return;
       }
 
@@ -480,6 +619,9 @@ const A2iImageInput = ({
       productReference,
       referencePopoverTab,
       handleFileUpload,
+      addOptimisticItem,
+      refetchGalleryItems,
+      selectedBrandId,
     ]
   );
 
@@ -514,6 +656,7 @@ const A2iImageInput = ({
         enhance_prompt_for_product:
           isMagicEnabled && productReference.length > 0,
         product_reference_images: productReference,
+        team_id: user?.active_team_id,
       });
 
       if (!isLocked) {
@@ -1056,7 +1199,8 @@ const A2iImageInput = ({
                 disabled={
                   !formInstance.formState.isValid ||
                   formInstance.formState.isSubmitting ||
-                  isEnhancingPrompt
+                  isEnhancingPrompt ||
+                  !selectedImageGenerationModel
                 }
                 isCalculatingTokens={isCalculatingTokens}
               />

@@ -194,7 +194,7 @@ export const MoodboardVisualSectionHeader = ({
               Loading images...
             </div>
           ) : (
-            `${galleryActions.totalItems} images of ${brandName} found...`
+            `${galleryActions.totalItems} images found in ${brandName} Brand Uploads`
           )}
         </div>
 

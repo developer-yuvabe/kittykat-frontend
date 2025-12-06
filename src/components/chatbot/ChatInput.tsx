@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, X, Mic, Check, Paperclip, Images } from "lucide-react";
-import React, { useState, useCallback, useLayoutEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useEffect,
+} from "react";
 import { RENDER_FILE_ID_PREFIX } from "@/lib/constants";
 import {
   addFileWrappers,
@@ -37,6 +43,7 @@ import { useModelsStore } from "@/store/models.store";
 import { ChatInputFileThumbnail } from "./ChatInputFileThumbnail";
 import ChatOnlyToggle from "./ChatOnlyToggle";
 import { useThreadStore } from "@/store/thread.store";
+import { Badge } from "../ui/badge";
 
 type ChatInputProps = {
   setFirstTokenReceived: (value: boolean) => void;
@@ -47,13 +54,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const { selectedImageGenerationModel, selectedVideoGenearationModel } =
     useModelsStore();
+  const { suggestions, previousSuggestions, setSuggestions } = useThreadStore();
   const { chatOnlyMode } = useThreadStore();
   const { removePinnedItem, pinnedItem } = usePinnedContextStore();
   const { user } = useUserStore();
   const { selectedBrandId, selectedMoodboardId, selectedCampaignId } =
     useBrandStore();
   const stream = useStreamContext();
-  const { isLoading, stop } = stream;
+  const { isLoading, stop, values } = stream;
 
   const [input, setInput] = useState("");
   const [fileList, setFileList] = useState<MessageContentFiles[]>([]);
@@ -182,16 +190,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   });
 
   // Image paste handler only (drag-and-drop now handled by useFileUpload)
-  const { isUploading: isImageUploading, handleImageFiles } =
-    useChatInputImageHandler({
-      brandId: selectedBrandId,
-      referenceImages,
-      onReferenceImagesChange: setReferenceImages,
-      maxTotalSizeMB: 50,
-      maxFileSizeLimit: 10,
-      allowedFileTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
-      maxImageCount: 10,
-    });
+  const {
+    isUploading: isImageUploading,
+    handleImageFiles,
+    handleA2iImageDrop,
+  } = useChatInputImageHandler({
+    brandId: selectedBrandId,
+    referenceImages,
+    onReferenceImagesChange: setReferenceImages,
+    maxTotalSizeMB: 50,
+    maxFileSizeLimit: 10,
+    allowedFileTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    maxImageCount: 10,
+  });
 
   const isUploading = isPdfUploading || isImageUploading;
 
@@ -211,6 +222,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setContentBlocks([]);
     setReferenceImages([]);
   }, [setContentBlocks]);
+
+  useEffect(() => {
+    if (isLoading) {
+      setSuggestions([]);
+    }
+  }, [isLoading]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -271,6 +288,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           currentSelectedVideoGenerationModelId:
             selectedVideoGenearationModel?.id ?? null,
           userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+          activeTeamId: user?.active_team_id || null,
         },
         {
           streamMode: ["values"],
@@ -307,6 +325,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     ]
   );
 
+  const handlePromptDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const assetUrl = e.dataTransfer.getData("assetUrl");
+      const source = e.dataTransfer.getData("source");
+      const galleryItemId = e.dataTransfer.getData("galleryItemId");
+
+      // Handle internal A2I drag (from generated images)
+      const isInternalA2iDrag =
+        source === "a2i" ||
+        Boolean(galleryItemId) ||
+        (assetUrl &&
+          !(e.dataTransfer?.files && e.dataTransfer.files.length > 0));
+
+      if (isInternalA2iDrag && assetUrl) {
+        await handleA2iImageDrop(assetUrl, galleryItemId);
+        return;
+      }
+
+      // Handle file drops from OS
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter((file) =>
+          file.type.startsWith("image/")
+        );
+
+        if (imageFiles.length > 0) {
+          await handleImageFiles(imageFiles);
+        }
+      }
+    },
+    [handleA2iImageDrop, handleImageFiles]
+  );
+
   // Inside ChatInput component
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -328,230 +382,263 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, []);
 
   return (
-    <div
-      ref={dropRef}
-      className="relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col"
-    >
-      {pinnedItem && (
-        <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
-          <div className="flex gap-2 flex-wrap items-center">
-            <PinIcon className="text-gray-700" />
-            <div className="flex flex-col gap-1 flex-1 border-l pl-3 border-gray-900">
-              <span className="text-xs text-gray-500">Focused only on</span>
-              <div className="relative group flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-900">
-                  {pinnedItem.title}
-                </span>
-              </div>
-              <button
-                onClick={() => removePinnedItem()}
-                className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
+    <div>
+      {!isLoading &&
+        (suggestions.length > 0 ||
+          (previousSuggestions.length === 0 &&
+            values.suggestions &&
+            values.suggestions?.length > 0)) && (
+          <div className="flex gap-3 flex-wrap pt-2 mb-2 rounded-lg w-max">
+            {(suggestions.length > 0
+              ? suggestions
+              : values.suggestions ?? []
+            ).map((suggestion) => (
+              <Badge
+                key={suggestion.title}
+                variant="outline"
+                className="cursor-pointer bg-white hover:bg-gray-100"
+                onClick={() => setInput(suggestion.prompt)}
               >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {fileList.length > 0 && (
-        <div className="p-3 border-b flex space-x-2 overflow-x-auto">
-          {fileList
-            .filter((fileWrapper) =>
-              fileWrapper.id.startsWith(RENDER_FILE_ID_PREFIX)
-            )
-            .map((fileWrapper) => (
-              <ChatInputFileThumbnail
-                key={fileWrapper.id}
-                url={fileWrapper.file.text}
-                onRemove={() => handleRemoveFile(fileWrapper.id)}
-                name={
-                  new URL(fileWrapper.file.text).pathname.split("/").pop() ||
-                  "Uploaded File"
-                }
-              />
+                {suggestion.title}
+              </Badge>
             ))}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-2 w-full rounded-t-xl"
-      >
-        <ChatFilePreview blocks={contentBlocks} onRemove={removeBlock} />
-
-        {/* Reference Zone - Show when there are references and popover is closed */}
-        {referenceImages.length > 0 && !isReferencePopoverOpen && (
-          <div className="px-4 pt-3">
-            <ReferenceZone
-              type="master"
-              icon={Paperclip}
-              title="Reference Images"
-              description="Attached reference images"
-              images={referenceImages}
-              isSelected={false}
-              onClick={() => setIsReferencePopoverOpen(true)}
-              onDrop={(e: React.DragEvent) => e.preventDefault()}
-              onDragStart={(e: React.DragEvent, url: string) => {
-                e.dataTransfer.setData("assetUrl", url);
-                e.dataTransfer.setData("source", "master");
-                e.dataTransfer.effectAllowed = "move";
-              }}
-              onRemoveImage={(url: string) => {
-                setReferenceImages(referenceImages.filter((u) => u !== url));
-              }}
-            />
           </div>
         )}
 
-        <div className="flex flex-col justify-between items-center px-4 pb-4 gap-y-2">
-          {!(isRecording || isTranscribing) ? (
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (
-                  e.key === "Enter" &&
-                  !e.shiftKey &&
-                  !e.metaKey &&
-                  !e.nativeEvent.isComposing
-                ) {
-                  e.preventDefault();
-                  const el = e.target as HTMLElement | undefined;
-                  const form = el?.closest("form");
-                  form?.requestSubmit();
-                }
-              }}
-              placeholder={
-                showPlaceholder ? "Type your message here..." : "Type here..."
-              }
-              className="py-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0 resize-none overflow-auto scrollbar"
-            />
-          ) : (
-            <div className="w-full h-16 p-4 rounded-lg flex items-center justify-center space-x-1 overflow-hidden ">
-              {[...Array(35)].map((_, index) => (
-                <div
-                  key={index}
-                  className="frequency-bar w-2 bg-gray-300 rounded"
-                  style={{
-                    height: `${Math.random() * 40 + 30}px`,
-                  }}
-                ></div>
-              ))}
-            </div>
-          )}
-
-          {isRecording || isTranscribing ? (
-            <div className="flex items-center gap-2">
-              {isTranscribing ? (
-                <LoaderCircle
-                  size={20}
-                  className="animate-spin text-blue-500"
-                />
-              ) : (
+      <div
+        ref={dropRef}
+        className="relative z-10 w-full min-w-full mb-3 border shadow-xs bg-muted rounded-2xl flex flex-col"
+      >
+        {pinnedItem && (
+          <div className="p-3 bg-[#DEE1E6] rounded-t-2xl">
+            <div className="flex gap-2 flex-wrap items-center">
+              <PinIcon className="text-gray-700" />
+              <div className="flex flex-col gap-1 flex-1 border-l pl-3 border-gray-900">
+                <span className="text-xs text-gray-500">Focused only on</span>
+                <div className="relative group flex items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-900">
+                    {pinnedItem.title}
+                  </span>
+                </div>
                 <button
-                  type="button"
-                  onClick={stopRecording}
-                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                  title="Send Recording"
+                  onClick={() => removePinnedItem()}
+                  className="top-2 absolute right-2 rounded-full text-gray-400 hover:text-red-500 transition-opacity"
                 >
-                  <Check size={20} className="text-primary cursor-pointer" />
+                  <X size={16} />
                 </button>
-              )}
-
-              <button
-                type="button"
-                onClick={cancelRecording}
-                className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                title="Cancel Recording"
-              >
-                <X size={20} className="text-primary cursor-pointer" />
-              </button>
-            </div>
-          ) : isLoading ? (
-            <div className="ml-auto">
-              <Button key="stop" onClick={() => stop()}>
-                <LoaderCircle className="w-4 h-4 animate-spin" />
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-x-4 justify-between items-center w-full">
-              <ChatOnlyToggle />
-              <div className="flex gap-x-4 items-center">
-                <ReferenceImageSelector
-                  referenceImages={referenceImages}
-                  onReferenceImagesChange={setReferenceImages}
-                  maxLimit={10}
-                  fileTypes={[
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp",
-                    "image/gif",
-                  ]}
-                  maxFileSizeLimit={10}
-                  maxTotalSizeMB={50}
-                  disabled={isLoading || isUploading || chatOnlyMode}
-                  currentCampaignId={selectedCampaignId}
-                  isOpen={isReferencePopoverOpen}
-                  onOpenChange={setIsReferencePopoverOpen}
-                  customTrigger={<Images size={20} className="text-primary" />}
-                />
-                <AgentPdfAttachmentUploader onUploadComplete={handleAddFile} />
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  title="Start Recording"
-                  disabled={isTranscribing}
-                >
-                  <Mic size={20} className="text-primary cursor-pointer" />
-                </button>
-                <Button
-                  type="submit"
-                  variant="default"
-                  size="sm"
-                  disabled={
-                    isLoading ||
-                    !input.trim() ||
-                    isUploading ||
-                    isTranscribing ||
-                    isRecording
-                  }
-                >
-                  <SendIcon size={10} />
-                </Button>
               </div>
             </div>
-          )}
-        </div>
-      </form>
-      <Dialog
-        open={showMicPermissionDialog}
-        onOpenChange={setShowMicPermissionDialog}
-      >
-        <DialogContent hideCloseIcon>
-          <DialogHeader>
-            <DialogTitle>Microphone Permission Denied</DialogTitle>
-          </DialogHeader>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>
-              Your browser has blocked access to the microphone. Please allow
-              microphone access from your browser settings and try again.
-            </p>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button
-                variant="default"
-                onClick={() => setShowMicPermissionDialog(false)}
-              >
-                Close
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+
+        {fileList.length > 0 && (
+          <div className="p-3 border-b flex space-x-2 overflow-x-auto">
+            {fileList
+              .filter((fileWrapper) =>
+                fileWrapper.id.startsWith(RENDER_FILE_ID_PREFIX)
+              )
+              .map((fileWrapper) => (
+                <ChatInputFileThumbnail
+                  key={fileWrapper.id}
+                  url={fileWrapper.file.text}
+                  onRemove={() => handleRemoveFile(fileWrapper.id)}
+                  name={
+                    new URL(fileWrapper.file.text).pathname.split("/").pop() ||
+                    "Uploaded File"
+                  }
+                />
+              ))}
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-2 w-full rounded-t-xl"
+        >
+          <ChatFilePreview blocks={contentBlocks} onRemove={removeBlock} />
+
+          {/* Reference Zone - Show when there are references and popover is closed */}
+          {referenceImages.length > 0 && !isReferencePopoverOpen && (
+            <div className="px-4 pt-3">
+              <ReferenceZone
+                type="master"
+                icon={Paperclip}
+                title="Reference Images"
+                description="Attached reference images"
+                images={referenceImages}
+                isSelected={false}
+                onClick={() => setIsReferencePopoverOpen(true)}
+                onDrop={(e: React.DragEvent) => e.preventDefault()}
+                onDragStart={(e: React.DragEvent, url: string) => {
+                  e.dataTransfer.setData("assetUrl", url);
+                  e.dataTransfer.setData("source", "master");
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onRemoveImage={(url: string) => {
+                  setReferenceImages(referenceImages.filter((u) => u !== url));
+                }}
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col justify-between items-center px-4 pb-4 gap-y-2">
+            {!(isRecording || isTranscribing) ? (
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.metaKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    const el = e.target as HTMLElement | undefined;
+                    const form = el?.closest("form");
+                    form?.requestSubmit();
+                  }
+                }}
+                onDrop={handlePromptDrop}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                placeholder={
+                  showPlaceholder ? "Type your message here..." : "Type here..."
+                }
+                className="py-6 border-none bg-transparent w-full placeholder:text-gray-400 shadow-none placeholder:text-sm lg:placeholder:text-base ring-0 outline-none focus:outline-none focus:ring-0 resize-none overflow-auto scrollbar"
+              />
+            ) : (
+              <div className="w-full h-16 p-4 rounded-lg flex items-center justify-center space-x-1 overflow-hidden ">
+                {[...Array(35)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="frequency-bar w-2 bg-gray-300 rounded"
+                    style={{
+                      height: `${Math.random() * 40 + 30}px`,
+                    }}
+                  ></div>
+                ))}
+              </div>
+            )}
+
+            {isRecording || isTranscribing ? (
+              <div className="flex items-center gap-2">
+                {isTranscribing ? (
+                  <LoaderCircle
+                    size={20}
+                    className="animate-spin text-blue-500"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                    title="Send Recording"
+                  >
+                    <Check size={20} className="text-primary cursor-pointer" />
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={cancelRecording}
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  title="Cancel Recording"
+                >
+                  <X size={20} className="text-primary cursor-pointer" />
+                </button>
+              </div>
+            ) : isLoading ? (
+              <div className="ml-auto">
+                <Button key="stop" onClick={() => stop()}>
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-x-4 justify-between items-center w-full">
+                <ChatOnlyToggle />
+                <div className="flex gap-x-4 items-center">
+                  <ReferenceImageSelector
+                    referenceImages={referenceImages}
+                    onReferenceImagesChange={setReferenceImages}
+                    maxLimit={10}
+                    fileTypes={[
+                      "image/jpeg",
+                      "image/png",
+                      "image/webp",
+                      "image/gif",
+                    ]}
+                    maxFileSizeLimit={10}
+                    maxTotalSizeMB={50}
+                    disabled={isLoading || isUploading || chatOnlyMode}
+                    currentCampaignId={selectedCampaignId}
+                    isOpen={isReferencePopoverOpen}
+                    onOpenChange={setIsReferencePopoverOpen}
+                    customTrigger={
+                      <Images size={20} className="text-primary" />
+                    }
+                  />
+                  <AgentPdfAttachmentUploader
+                    onUploadComplete={handleAddFile}
+                  />
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    title="Start Recording"
+                    disabled={isTranscribing}
+                  >
+                    <Mic size={20} className="text-primary cursor-pointer" />
+                  </button>
+                  <Button
+                    type="submit"
+                    variant="default"
+                    size="sm"
+                    disabled={
+                      isLoading ||
+                      !input.trim() ||
+                      isUploading ||
+                      isTranscribing ||
+                      isRecording
+                    }
+                  >
+                    <SendIcon size={10} />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </form>
+        <Dialog
+          open={showMicPermissionDialog}
+          onOpenChange={setShowMicPermissionDialog}
+        >
+          <DialogContent hideCloseIcon>
+            <DialogHeader>
+              <DialogTitle>Microphone Permission Denied</DialogTitle>
+            </DialogHeader>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>
+                Your browser has blocked access to the microphone. Please allow
+                microphone access from your browser settings and try again.
+              </p>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button
+                  variant="default"
+                  onClick={() => setShowMicPermissionDialog(false)}
+                >
+                  Close
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

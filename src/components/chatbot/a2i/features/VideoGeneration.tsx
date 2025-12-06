@@ -6,7 +6,7 @@ import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { cn, handleDownloadVideo } from "@/lib/utils";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
-import { useVideoGenStore } from "@/store/video-gen.store";
+import { useGenerationsStore } from "@/store/generations.store";
 import { A2iImageGeneration } from "@/types/types";
 import {
   Check,
@@ -47,7 +47,7 @@ const VideoGeneration = ({ heightRef }: VideoGenerationOnProps) => {
   );
   const [currentVideoItem, setCurrentVideoItem] =
     useState<A2iImageGeneration>();
-  const { currentSessionGenerationIds, generations } = useVideoGenStore();
+  const { currentSessionGenerationIds, generations } = useGenerationsStore();
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentSessionGenerations, setCurrentSessionGenerations] = useState<
     A2iImageGeneration[]

@@ -556,7 +556,8 @@ const RemixControls = ({
         data,
         maskUrl,
         productReference,
-        isMagicEnabled && productReference.length > 0
+        isMagicEnabled && productReference.length > 0,
+        user?.active_team_id
       );
 
       if (!isLocked) {

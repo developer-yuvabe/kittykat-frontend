@@ -6,10 +6,15 @@ import { PresetEditor } from "../_components/PresetEditor";
 import { PresetEditorMode } from "@/types/preset.types";
 import { usePresets } from "@/hooks/usePresets";
 import { PresetEditorSkeleton } from "../_components/PresetEditorSkeleton";
+import { useUserStore } from "@/store/user.store";
+import { UserRoleId } from "@/types/user.types";
+
+export const dynamic = "force-dynamic";
 
 export default function NewPresetPage() {
   const searchParams = useSearchParams();
   const toClone = searchParams.get("to_clone") ?? undefined;
+  const { user } = useUserStore();
 
   // If `to_clone` param is present, fetch only that preset to use as the
   // source for cloning; otherwise, fetch the master preset for the new
@@ -23,6 +28,13 @@ export default function NewPresetPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Redirect KK_CREATIVE_USER - they have view-only access to presets
+  useEffect(() => {
+    if (user?.role.id === UserRoleId.KK_CREATIVE_USER) {
+      router.push("/presets");
+    }
+  }, [user, router]);
 
   // Redirect if the clone id is invalid to avoid showing an empty editor
   useEffect(() => {
@@ -41,6 +53,11 @@ export default function NewPresetPage() {
   ]);
 
   if (!mounted) {
+    return null;
+  }
+
+  // Don't show the editor to view-only users
+  if (user?.role.id === UserRoleId.KK_CREATIVE_USER) {
     return null;
   }
 

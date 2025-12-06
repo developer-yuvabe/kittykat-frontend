@@ -16,6 +16,7 @@ interface MoodboardHeaderProps {
   photos: SortablePhoto<Photo>[];
   isAutoFillLoading: boolean;
   autoFillPlaceholders: () => void;
+  clearMoodboard: () => void;
 }
 
 function MoodboardHeader({
@@ -26,6 +27,7 @@ function MoodboardHeader({
   photos,
   isAutoFillLoading,
   autoFillPlaceholders,
+  clearMoodboard,
 }: MoodboardHeaderProps) {
   return (
     <div className="w-full flex flex-col gap-3">
@@ -34,14 +36,9 @@ function MoodboardHeader({
         {/* Left side - Title and Save Indicator */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 flex-1 min-w-0">
           <div className="min-w-[200px]">
-            <EditableInput
-              value={moodboard.title}
-              onSave={async (newValue) => {
-                await patchMoodboard(brandId, moodboard.id, {
-                  title: newValue,
-                });
-              }}
-            />
+            <div className="font-semibold flex flex-row gap-x-2">
+              {moodboard.title}
+            </div>
           </div>
           <MoodboardSaveIndicator
             isMoodboardSaving={isMoodboardSaving}
@@ -55,6 +52,7 @@ function MoodboardHeader({
             photos={photos}
             isAutoFillLoading={isAutoFillLoading}
             autoFillPlaceholders={autoFillPlaceholders}
+            clearMoodboard={clearMoodboard}
           />
         </div>
       </div>

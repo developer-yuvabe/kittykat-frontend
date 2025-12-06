@@ -15,7 +15,8 @@ import { useBrandStore } from "@/store/brand.store";
 import { CarouselDndProvider } from "@/contexts/CarouselDndContext";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { toast } from "sonner";
-import { forwardRef, useState, useCallback } from "react";
+import { forwardRef, useState, useCallback, useEffect } from "react";
+import { useMoodboardStore } from "@/store/moodboard.store";
 
 interface MoodboardContentProps {
   moodboard: MoodboardInformation;
@@ -26,6 +27,7 @@ interface MoodboardContentProps {
 const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
   ({ moodboard, brandId, carouselHeader }, ref) => {
     const { isMoodboardSaving, setIsMoodboardSaving } = useBrandStore();
+    const { setTriggerMoodboardSave } = useMoodboardStore();
 
     // State to force re-render of CarouselDndProvider when gallery selection happens
     const [gallerySelectionKey, setGallerySelectionKey] = useState(0);
@@ -55,6 +57,7 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
       forceLoadImagesWithCurrentData,
       loadImagesWithCurrentData,
       hasUnsavedChanges,
+      createPlaceholderPhoto,
     } = useMoodboardPhotos({
       moodboard,
       bulkGalleryItems,
@@ -107,7 +110,8 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
     );
 
     // Custom hook for save functionality
-    useMoodboardSave({
+    // Custom hook for save functionality
+    const { handleSaveChanges } = useMoodboardSave({
       photos,
       originalPhotos,
       setOriginalPhotos,
@@ -118,6 +122,25 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
       isMoodboardSaving,
       setIsMoodboardSaving,
     });
+
+    useEffect(() => {
+      setTriggerMoodboardSave(handleSaveChanges);
+
+      return () => {
+        setTriggerMoodboardSave(null);
+      };
+    }, [handleSaveChanges, setTriggerMoodboardSave]);
+
+    const handleClearMoodboard = useCallback(() => {
+      const placeholders = Array.from(
+        { length: noOfImagesForMoodboard },
+        (_, i) => createPlaceholderPhoto(`placeholder-${i}`, i)
+      );
+
+      setPhotos(placeholders);
+
+      toast.success("Moodboard cleared successfully");
+    }, [noOfImagesForMoodboard, setPhotos, createPlaceholderPhoto]);
 
     // Custom hook for loading effects
     useMoodboardLoadingEffects({
@@ -172,6 +195,7 @@ const MoodboardContent = forwardRef<HTMLDivElement, MoodboardContentProps>(
             photos={photos}
             isAutoFillLoading={isAutoFillLoading}
             autoFillPlaceholders={autoFillPlaceholders}
+            clearMoodboard={handleClearMoodboard}
           />
 
           <MoodboardGalleryView
