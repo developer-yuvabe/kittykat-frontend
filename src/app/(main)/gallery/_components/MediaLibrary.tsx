@@ -190,7 +190,7 @@ export function MediaLibrary({
           workflow_status: workflowStatus,
           brands: [selectedBrandId],
           campaigns: isMediaSelectDialog ? [] : (selectedCampaignId ? [selectedCampaignId] : []),
-          asset_types: mediaTypes.length > 0 ? mediaTypes : ["image", "video"],
+          asset_types: mediaTypes.length > 0 ? mediaTypes : (isMediaSelectDialog ? ["image"] : ["image", "video"]),
           has_comments: hasComments ? true : undefined,
           sort_by: orderBy,
         } as EnhancedSelectedFilters;
