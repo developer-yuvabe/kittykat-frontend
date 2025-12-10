@@ -35,13 +35,13 @@ export const BaseImageUploadArea = ({
   });
 
   return (
-    <div className="w-[320px] h-[300px] bg-muted/5 p-5 flex flex-col justify-center">
+    <div className="w-[320px] h-[300px] bg-muted/5 flex flex-col justify-center">
       {/* 👉 IF IMAGE EXISTS SHOW PREVIEW */}
       {baseImageUrl ? (
-        <div className="relative border rounded-xl overflow-hidden bg-background p-2">
+        <div className="relative rounded-xl overflow-hidden bg-background p-2">
           {/* Close Button */}
           <button
-            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full"
+            className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full"
             onClick={() => setBaseImageUrl(null)}
           >
             <X className="w-4 h-4" />

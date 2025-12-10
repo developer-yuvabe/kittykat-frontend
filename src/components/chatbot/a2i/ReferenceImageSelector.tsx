@@ -139,7 +139,7 @@ const ReferenceImageSelector = ({
           campaigns: [],
           moodboards: [],
           product_categories: [],
-          asset_types: [],
+          asset_types: ["image"],
           asset_sources: [...allMediaAssetSources, "reference"],
           media_format: [],
           aspect_ratio: [],

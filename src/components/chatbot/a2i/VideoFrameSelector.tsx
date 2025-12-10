@@ -21,11 +21,6 @@ import { VideoFrameGalleryGrid } from "./VideoFrameGalleryGrid";
 import { useA2iStore } from "@/store/a2i.store";
 
 interface VideoFrameSelectorProps {
-  // Dual-zone props
-  startFrame: string | null;
-  endFrame: string | null;
-  onStartFrameChange?: (url: string | null) => void;
-  onEndFrameChange?: (url: string | null) => void;
   activeTab?: "start_frame" | "end_frame";
   onTabChange?: (tab: "start_frame" | "end_frame") => void;
 
@@ -51,10 +46,6 @@ interface VideoFrameSelectorProps {
 
 const VideoFrameSelector = ({
   // Dual-zone props
-  startFrame: startFrameProp,
-  endFrame: endFrameProp,
-  onStartFrameChange: onStartFrameChangeProp,
-  onEndFrameChange: onEndFrameChangeProp,
   activeTab: activeTabProp,
   onTabChange: onTabChangeProp,
 
@@ -103,18 +94,8 @@ const VideoFrameSelector = ({
   const lastStartFrame = lastZoneFrames.find((f) => f.type === "start")?.url;
   const lastEndFrame = lastZoneFrames.find((f) => f.type === "end")?.url;
 
-  // Use separate frames for dual mode
-  const startFrame: string | null = startFrameProp || null;
-  const endFrame: string | null = endFrameProp || null;
-  // console.log("VideoFrameSelector render:", {
-  //   startFrame,
-  //   endFrame,
-  // });
-  // const { startFrame, setStartFrame, endFrame, setEndFrame } = useA2iStore();
+  const { startFrame, setStartFrame, endFrame, setEndFrame } = useA2iStore();
   const activeTab = activeTabProp;
-
-  const onStartFrameChange = onStartFrameChangeProp;
-  const onEndFrameChange = onEndFrameChangeProp;
 
   const onTabChange = onTabChangeProp || (() => {});
 
@@ -196,9 +177,9 @@ const VideoFrameSelector = ({
     (zone: "start" | "end", url: string | null) => {
       if (url === null) {
         if (zone === "start") {
-          onStartFrameChange?.(null);
+          setStartFrame?.(null);
         } else {
-          onEndFrameChange?.(null);
+          setEndFrame?.(null);
         }
         return;
       }
@@ -208,20 +189,20 @@ const VideoFrameSelector = ({
       const otherCurrent = otherZone === "start" ? startFrame : endFrame;
       if (otherCurrent === url) {
         if (otherZone === "start") {
-          onStartFrameChange?.(null);
+          setStartFrame?.(null);
         } else {
-          onEndFrameChange?.(null);
+          setEndFrame?.(null);
         }
       }
 
       // Set to this zone
       if (zone === "start") {
-        onStartFrameChange?.(url);
+        setStartFrame?.(url);
       } else {
-        onEndFrameChange?.(url);
+        setEndFrame?.(url);
       }
     },
-    [startFrame, endFrame, onStartFrameChange, onEndFrameChange]
+    [startFrame, endFrame, setStartFrame, setEndFrame]
   );
 
   // Upload single file and add to gallery
@@ -757,12 +738,12 @@ const VideoFrameSelector = ({
       let cleared = false;
 
       if (startFrame === url) {
-        onStartFrameChange?.(null);
+        setStartFrame?.(null);
         cleared = true;
       }
 
       if (endFrame === url) {
-        onEndFrameChange?.(null);
+        setEndFrame?.(null);
         cleared = true;
       }
 
@@ -791,8 +772,8 @@ const VideoFrameSelector = ({
       setItems,
       startFrame,
       endFrame,
-      onStartFrameChange,
-      onEndFrameChange,
+      setStartFrame,
+      setEndFrame,
     ]
   );
 

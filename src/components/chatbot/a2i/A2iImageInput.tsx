@@ -1261,7 +1261,7 @@ const A2iImageInput = ({
               </div>
 
               {conceptVisualGeneratorMode === "image_editor" && (
-                <div>
+                <div className="p-4">
                   <BaseImageUploadArea
                     fileTypes={["image/jpeg", "image/png", "image/webp"]}
                     maxFileSizeLimit={10}
@@ -1644,10 +1644,6 @@ const A2iImageInput = ({
             {conceptVisualGeneratorMode === "video_generator" && (
               <div>
                 <VideoFrameSelector
-                  startFrame={startFrame}
-                  endFrame={endFrame}
-                  onStartFrameChange={setStartFrame}
-                  onEndFrameChange={setEndFrame}
                   activeTab={videoFramesPopoverTab}
                   onTabChange={setVideoFramesPopoverTab}
                   maxLimit={1}
@@ -1657,7 +1653,7 @@ const A2iImageInput = ({
                     "image/webp",
                     "video/mp4",
                   ]}
-                  maxFileSizeLimit={10}
+                  maxFileSizeLimit={32}
                   disabled={formInstance.formState.isSubmitting}
                   // disabled={false}
                   currentCampaignId={currentCampaign?.id}
