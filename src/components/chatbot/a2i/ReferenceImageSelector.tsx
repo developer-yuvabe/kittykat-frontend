@@ -149,7 +149,9 @@ const ReferenceImageSelector = ({
         assetType: "reference",
       },
       40,
-      true
+      true,
+      undefined,
+      false
     );
 
   const {

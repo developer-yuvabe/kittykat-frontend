@@ -101,7 +101,6 @@ const A2iImageInput = ({
     baseImageUrl,
     setBaseImageUrl,
   } = useA2iStore();
-  console.log("start frame and end frame", startFrame, endFrame);
 
   const {
     selectedImageGenerationModel,
@@ -172,7 +171,7 @@ const A2iImageInput = ({
         campaigns: [],
         moodboards: [],
         product_categories: [],
-        asset_types: ["image"],
+        asset_types: ["image", "video"],
         asset_sources: ["reference"],
         media_format: [],
         aspect_ratio: [],
@@ -181,7 +180,9 @@ const A2iImageInput = ({
       },
     },
     40,
-    true
+    true,
+    undefined,
+    false
   );
 
   const { addItems, addOptimisticItem } = useReferenceImagesStore();

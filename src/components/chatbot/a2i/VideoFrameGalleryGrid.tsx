@@ -2,12 +2,11 @@ import { Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useA2iStore } from "@/store/a2i.store";
 
 interface VideoFrameGalleryGridProps {
   items: GalleryItemResponse[];
   isLoading: boolean;
-  startFrameUrl?: string;
-  endFrameUrl?: string;
   onItemClick: (assetUrl: string, assetId: string, assetType: string) => void;
   onDragStart: (
     e: React.DragEvent,
@@ -16,22 +15,19 @@ interface VideoFrameGalleryGridProps {
     assetId?: string
   ) => void;
   onDeleteItem: (item: GalleryItemResponse) => void;
-  isSingleMode?: boolean;
 }
 
 export const VideoFrameGalleryGrid = ({
   items,
   isLoading,
-  startFrameUrl,
-  endFrameUrl,
   onItemClick,
   onDragStart,
   onDeleteItem,
-  isSingleMode = false,
 }: VideoFrameGalleryGridProps) => {
+  const { startFrame, endFrame } = useA2iStore();
   if (isLoading && items.length === 0) {
     return (
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-6 gap-2">
         {Array.from({ length: 10 }).map((_, index) => (
           <Skeleton key={index} className="aspect-square rounded-lg" />
         ))}
@@ -50,12 +46,10 @@ export const VideoFrameGalleryGrid = ({
   }
 
   return (
-    <div
-      className={cn("grid gap-2", isSingleMode ? "grid-cols-8" : "grid-cols-6")}
-    >
+    <div className="grid grid-cols-6 gap-2">
       {items.map((item) => {
-        const isStartFrame = startFrameUrl === item.asset_url;
-        const isEndFrame = endFrameUrl === item.asset_url;
+        const isStartFrame = startFrame === item.asset_url;
+        const isEndFrame = endFrame === item.asset_url;
         const isSelected = isStartFrame || isEndFrame;
         const type = item.asset_type;
 
@@ -93,7 +87,7 @@ export const VideoFrameGalleryGrid = ({
             )}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
 
-            {isSelected && !isSingleMode && (
+            {isSelected && (
               <div className="absolute top-1 right-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
                 {isStartFrame ? "Start" : "End"}
               </div>

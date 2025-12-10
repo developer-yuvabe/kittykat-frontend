@@ -68,31 +68,13 @@ const VideoFrameSelector = ({
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
   const { addOtherFrame, removeOtherFrame, otherFrames } = useA2iStore();
-  console.log("otherFrames in VideoFrameSelector:", otherFrames);
-
-  // UI Toggle State for each zone
+  // console.log("otherFrames in VideoFrameSelector:", otherFrames);
   const [selectedTypeFirst, setSelectedTypeFirst] = useState<"start" | "end">(
     "start"
   );
   const [selectedTypeLast, setSelectedTypeLast] = useState<"start" | "end">(
     "start"
   );
-
-  // ---- Extract frames for FIRST zone ----
-  const firstZoneFrames = useMemo(
-    () => otherFrames.filter((f) => f.zone === "first"),
-    [otherFrames]
-  );
-  const firstStartFrame = firstZoneFrames.find((f) => f.type === "start")?.url;
-  const firstEndFrame = firstZoneFrames.find((f) => f.type === "end")?.url;
-
-  // ---- Extract frames for LAST zone ----
-  const lastZoneFrames = useMemo(
-    () => otherFrames.filter((f) => f.zone === "last"),
-    [otherFrames]
-  );
-  const lastStartFrame = lastZoneFrames.find((f) => f.type === "start")?.url;
-  const lastEndFrame = lastZoneFrames.find((f) => f.type === "end")?.url;
 
   const { startFrame, setStartFrame, endFrame, setEndFrame } = useA2iStore();
   const activeTab = activeTabProp;
@@ -129,7 +111,9 @@ const VideoFrameSelector = ({
         assetType: "reference",
       },
       40,
-      true
+      true,
+      undefined,
+      false
     );
 
   const {
@@ -160,12 +144,13 @@ const VideoFrameSelector = ({
     if (selectedBrandId && !isFetching) {
       setItems(getGalleryItems()); // getGalleryItems() is fine here (no dep needed)
     }
+    setIsLoading(isFetching);
   }, [selectedBrandId, isFetching]); // Only changes that matter
 
-  // Effect 2: Sync loading (minimal deps)
-  useEffect(() => {
-    setIsLoading(isFetching);
-  }, [isFetching]); // isFetching is primitive
+  // // Effect 2: Sync loading (minimal deps)
+  // useEffect(() => {
+  //   setIsLoading(isFetching);
+  // }, [isFetching]); // isFetching is primitive
 
   // Helper function to get file size in MB
   const getFileSizeInMB = useCallback(async (file: File): Promise<number> => {
@@ -903,8 +888,6 @@ const VideoFrameSelector = ({
                   showAddButton={!!endFrame}
                   onAddClick={openForStart}
                   onPaste={handleZonePaste("start")}
-                  startFrame={firstStartFrame}
-                  endFrame={firstEndFrame}
                   selectedOtherType={selectedTypeFirst}
                   onSelectType={(type) => setSelectedTypeFirst(type)}
                   setFrame={setFrame}
@@ -927,9 +910,6 @@ const VideoFrameSelector = ({
                     showAddButton={!!startFrame}
                     onAddClick={openForEnd}
                     onPaste={handleZonePaste("end")}
-                    // extracted frames for this zone
-                    startFrame={lastStartFrame}
-                    endFrame={lastEndFrame}
                     selectedOtherType={selectedTypeLast}
                     onSelectType={(type) => setSelectedTypeLast(type)}
                     setFrame={setFrame}
@@ -984,8 +964,6 @@ const VideoFrameSelector = ({
                       showAddButton={!!endFrame}
                       onAddClick={openForStart}
                       onPaste={handleZonePaste("start")}
-                      startFrame={firstStartFrame}
-                      endFrame={firstEndFrame}
                       selectedOtherType={selectedTypeFirst}
                       onSelectType={(type) => setSelectedTypeFirst(type)}
                       setFrame={setFrame}
@@ -1007,8 +985,6 @@ const VideoFrameSelector = ({
                         showAddButton={!!startFrame}
                         onAddClick={openForEnd}
                         onPaste={handleZonePaste("end")}
-                        startFrame={lastStartFrame}
-                        endFrame={lastEndFrame}
                         selectedOtherType={selectedTypeLast}
                         onSelectType={(type) => setSelectedTypeLast(type)}
                         setFrame={setFrame}
@@ -1024,8 +1000,6 @@ const VideoFrameSelector = ({
                     <VideoFrameGalleryGrid
                       items={galleryItems}
                       isLoading={isLoadingStore}
-                      startFrameUrl={startFrame || undefined}
-                      endFrameUrl={endFrame || undefined}
                       onDragStart={(e, assetUrl, assetType, assetId) =>
                         handleDragStart(
                           e,
@@ -1037,7 +1011,6 @@ const VideoFrameSelector = ({
                       }
                       onItemClick={handleItemClick}
                       onDeleteItem={handleDeleteGalleryItem}
-                      isSingleMode={false}
                     />
                   </div>
                 </div>

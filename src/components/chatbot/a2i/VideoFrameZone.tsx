@@ -1,6 +1,8 @@
 import { LucideIcon, Plus, SkipBack, SkipForward, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ZoomableImage from "@/components/ui/zoomable-image";
+import { useMemo } from "react";
+import { useA2iStore } from "@/store/a2i.store";
 
 interface VideoFrameZoneProps {
   zone: "first" | "last";
@@ -8,10 +10,6 @@ interface VideoFrameZoneProps {
   title: string;
   description: string;
   assets: string[];
-
-  // --- NEW FOR OTHER FRAMES ---
-  startFrame?: string;
-  endFrame?: string;
   selectedOtherType?: "start" | "end";
   onSelectType?: (type: "start" | "end") => void;
 
@@ -32,8 +30,6 @@ export const VideoFrameZone = ({
   title,
   description,
   assets,
-  startFrame,
-  endFrame,
   selectedOtherType,
   onSelectType,
   isSelected,
@@ -46,6 +42,27 @@ export const VideoFrameZone = ({
   onPaste,
   setFrame,
 }: VideoFrameZoneProps) => {
+  const { otherFrames } = useA2iStore();
+
+  // ---- Extract frames for FIRST zone ----
+  const firstZoneFrames = useMemo(
+    () => otherFrames.filter((f) => f.zone === "first"),
+    [otherFrames]
+  );
+  const firstStartFrame = firstZoneFrames.find((f) => f.type === "start")?.url;
+  const firstEndFrame = firstZoneFrames.find((f) => f.type === "end")?.url;
+
+  // ---- Extract frames for LAST zone ----
+  const lastZoneFrames = useMemo(
+    () => otherFrames.filter((f) => f.zone === "last"),
+    [otherFrames]
+  );
+  const lastStartFrame = lastZoneFrames.find((f) => f.type === "start")?.url;
+  const lastEndFrame = lastZoneFrames.find((f) => f.type === "end")?.url;
+
+  const startFrame = zone === "first" ? firstStartFrame : lastStartFrame;
+  const endFrame = zone === "first" ? firstEndFrame : lastEndFrame;
+
   const hasOtherFrames = !!startFrame || !!endFrame;
 
   const getSelectedFrame = () => {
