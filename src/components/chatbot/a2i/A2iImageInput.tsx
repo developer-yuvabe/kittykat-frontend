@@ -75,6 +75,7 @@ import { remixImageService } from "@/services/api/remix.service";
 import { BaseImageUploadArea } from "./BaseImageUploadArea";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import VideoFrameSelector from "./VideoFrameSelector";
+import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -1307,7 +1308,19 @@ const A2iImageInput = ({
                             className={cn(
                               "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt- h-auto min-h-20 max-h-[300px] overflow-y-auto align-top"
                             )}
-                            placeholder="Describe what you want to see ..."
+                            placeholder={
+                              conceptVisualGeneratorMode === "image_generator"
+                                ? "Describe what you want to see ..."
+                                : conceptVisualGeneratorMode === "image_editor"
+                                ? getRemixInputPlaceholderMessage({
+                                    supportsReferenceImage:
+                                      !!referenceImagesModelInfo,
+                                  })
+                                : conceptVisualGeneratorMode ===
+                                  "video_generator"
+                                ? "Describe what you want to see in the video ..."
+                                : "Describe what you want to see ..."
+                            }
                           />
                         </div>
                       </FormControl>
