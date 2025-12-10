@@ -67,7 +67,7 @@ export const VideoFrameGalleryGrid = ({
               onDragStart(e, item.asset_url, item.asset_type, item.id)
             }
             onClick={() =>
-              onItemClick(item.asset_url, item.asset_type, item.id)
+              onItemClick(item.asset_url, item.id, item.asset_type)
             }
             className={cn(
               "relative aspect-square rounded-lg group cursor-pointer border-2 transition-all overflow-hidden",
