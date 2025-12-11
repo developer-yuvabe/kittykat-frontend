@@ -73,7 +73,6 @@ const VideoWithMetadataModal = ({
   const { user } = useUserStore();
 
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
-  const { openConceptVisual } = useConceptVisualStore();
   const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
     useCreditsStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -197,23 +196,6 @@ const VideoWithMetadataModal = ({
       //  Set model + parameters
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
-
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [galleryItem],
-        asset: {
-          currentAsset: {
-            ...galleryItem,
-            asset_url:
-              data.parameters.first_frame ||
-              data.parameters.image ||
-              data.parameters.start_image ||
-              null,
-          },
-          galleryActions: null,
-        },
-        defaultActiveTab: "video-generation",
-      });
 
       onClose();
 

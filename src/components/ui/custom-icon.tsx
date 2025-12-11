@@ -1852,3 +1852,131 @@ export const LockOpenIcon: React.FC<CustomIconProps> = ({
     />
   </svg>
 );
+
+export const ImageGeneratorIcon: React.FC<CustomIconProps> = ({
+  size = 24,
+  color = "#171A1F",
+  ...props
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 40 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M10.54 26.87L14.84 21.71L18.28 25.15L24.3 18.27L29.46 24.29"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M29.46 12.26L10.54 12.26L10.54 27.74L29.46 27.74L29.46 12.26Z"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+    <path
+      d="M17.43 18.29C18.3799 18.29 19.15 17.5199 19.15 16.57C19.15 15.62 18.3799 14.85 17.43 14.85C16.48 14.85 15.71 15.62 15.71 16.57C15.71 17.5199 16.48 18.29 17.43 18.29Z"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+  </svg>
+);
+
+export const ImageEditorIcon: React.FC<CustomIconProps> = ({
+  size = 24,
+  color = "#171A1F",
+  ...props
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 40 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <g clipPath="url(#clip0_8_191)">
+      <path
+        d="M23.456 17.678L23.314 17.536C22.6448 16.8907 21.8223 16.4264 20.924 16.187C18.017 15.409 15.225 17.056 14.432 20.017C14.389 20.177 14.366 20.357 14.328 20.808C14.174 22.678 13.734 24.073 12.528 25.488C14.788 26.376 17.466 27.002 19.502 27.002C21.9902 26.9989 24.167 25.3271 24.812 22.924C25.3131 21.0585 24.7983 19.067 23.456 17.678ZM21.29 14.216L26.229 10.375C26.6268 10.0659 27.1925 10.101 27.549 10.457L30.544 13.451C30.9005 13.8076 30.9357 14.374 30.626 14.772L26.786 19.71C27.3346 21.9477 26.825 24.3134 25.4037 26.1267C23.9824 27.9401 21.807 29.0001 19.503 29.002C16 29.002 11.5 27.5 9 26C12.98 23 12.047 21.19 12.5 19.5C13.558 15.55 17.342 13.243 21.289 14.216H21.29ZM24.703 16.095C24.768 16.158 24.833 16.223 24.896 16.289L26.031 17.423L28.506 14.241L26.76 12.495L23.578 14.97L24.703 16.095Z"
+        fill={color}
+      />
+    </g>
+    <defs>
+      <clipPath id="clip0_8_191">
+        <rect width="24" height="24" fill="white" transform="translate(8 8)" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+export const VideoGeneratorIcon: React.FC<CustomIconProps> = ({
+  size = 24,
+  color = "#171A1F",
+  ...props
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 40 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M11.4 14.86L28.6 14.86"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M20 11.4L20 28.6"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M15.71 11.42V14.86"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M24.29 11.42V14.86"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M11.4 25.14L28.6 25.14"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M15.71 28.58V25.14"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M24.29 28.58V25.14"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+    />
+    <path
+      d="M28.6 11.4L11.4 11.4L11.4 28.6L28.6 28.6L28.6 11.4Z"
+      stroke={color}
+      strokeWidth="2.064"
+      strokeMiterlimit="10"
+      strokeLinecap="square"
+    />
+  </svg>
+);

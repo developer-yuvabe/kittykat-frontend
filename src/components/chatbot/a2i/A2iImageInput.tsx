@@ -41,7 +41,14 @@ import { useCreditsStore } from "@/store/credits.store";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import TokenGenerateButton from "@/components/shared/TokenGenerateButton";
 import ModelSelector from "./ModelSelector";
-import { LockIcon, LockOpenIcon, TrashIcon } from "@/components/ui/custom-icon";
+import {
+  LockIcon,
+  LockOpenIcon,
+  TrashIcon,
+  ImageGeneratorIcon,
+  ImageEditorIcon,
+  VideoGeneratorIcon,
+} from "@/components/ui/custom-icon";
 import ReferenceImageSelector from "./ReferenceImageSelector";
 import { useUserStore } from "@/store/user.store";
 import { updateUser } from "@/services/api/user.service";
@@ -62,7 +69,13 @@ import { getExtensionFromUrl } from "@/lib/utils";
 import { useGalleryQuery } from "@/hooks/useGallery";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { GalleryItem } from "@/types/gallery.types";
-import { Select, SelectTrigger } from "@radix-ui/react-select";
+import { Select, SelectTrigger } from "@/components/ui/select";
+import { videoGenerationService } from "@/services/api/video-gen.service";
+import { remixImageService } from "@/services/api/remix.service";
+import { BaseImageUploadArea } from "./BaseImageUploadArea";
+import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
+import VideoFrameSelector from "./VideoFrameSelector";
+import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -72,17 +85,75 @@ const A2iImageInput = ({
   currentCampaign: ThreadCampaign | null;
 }) => {
   const { parameters, setParameters } = useMetadataActionsStore();
-  const { selectedImageGenerationModel, setSelectedImageGenerationModel } =
-    useModelsStore();
+  const { selectedCampaignId, defaultCampaignId } = useBrandStore();
+  const [isUploading, setIsUploading] = useState(false);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const [isVideoFramesPopoverOpen, setIsVideoFramesPopoverOpen] =
+    useState(false);
+  const {
+    startFrame,
+    setStartFrame,
+    endFrame,
+    setEndFrame,
+    clearOtherFrames,
+    conceptVisualGeneratorMode,
+    setConceptVisualGeneratorMode,
+    baseImageUrl,
+    setBaseImageUrl,
+  } = useA2iStore();
+
+  const {
+    selectedImageGenerationModel,
+    setSelectedImageGenerationModel,
+    selectedVideoGenearationModel,
+    setSelectedVideoGenearationModel,
+    selectedRemixModel,
+    setSelectedRemixModel,
+  } = useModelsStore();
+
+  // Compute current model based on mode
+  const currentModel = useMemo(() => {
+    switch (conceptVisualGeneratorMode) {
+      case "image_generator":
+        return selectedImageGenerationModel;
+      case "image_editor":
+        return selectedRemixModel;
+      case "video_generator":
+        return selectedVideoGenearationModel;
+      default:
+        return null;
+    }
+  }, [
+    conceptVisualGeneratorMode,
+    selectedImageGenerationModel,
+    selectedRemixModel,
+    selectedVideoGenearationModel,
+  ]);
+
+  // Compute formKey based on mode
+  const formKey = useMemo(() => {
+    switch (conceptVisualGeneratorMode) {
+      case "image_generator":
+        return "image-generation";
+      case "image_editor":
+        return "remix";
+      case "video_generator":
+        return "video-generation";
+      default:
+        return "image-generation";
+    }
+  }, [conceptVisualGeneratorMode]);
+
   const formInstance = useA2iForm({
-    formKey: `image-generation`,
-    selectedModel: selectedImageGenerationModel,
+    formKey,
+    selectedModel: currentModel,
   });
+
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { credits, isCalculatingCredits: isCalculatingTokens } =
     useModelPricing({
       form: formInstance,
-      model: selectedImageGenerationModel,
+      model: currentModel,
     });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
@@ -100,7 +171,7 @@ const A2iImageInput = ({
         campaigns: [],
         moodboards: [],
         product_categories: [],
-        asset_types: [],
+        asset_types: ["image"],
         asset_sources: ["reference"],
         media_format: [],
         aspect_ratio: [],
@@ -109,7 +180,9 @@ const A2iImageInput = ({
       },
     },
     40,
-    true
+    true,
+    undefined,
+    false
   );
 
   const { addItems, addOptimisticItem } = useReferenceImagesStore();
@@ -158,28 +231,52 @@ const A2iImageInput = ({
     }
   };
 
-  const { referenceImagesModelInfo, initialParams, advancedParams } =
-    useMemo(() => {
-      let fileParam: FileParam | null = null;
-      const initialParams: ModelParameter[] = [];
-      const advancedParams: ModelParameter[] = [];
+  const {
+    referenceImagesModelInfo,
+    initialParams,
+    advancedParams,
+    baseImageParam,
+    firstFrameParam,
+    lastFrameParam,
+  } = useMemo(() => {
+    let fileParam: FileParam | null = null;
+    const initialParams: ModelParameter[] = [];
+    const advancedParams: ModelParameter[] = [];
+    let baseImageParam = null;
+    let firstFrameParam = null;
+    let lastFrameParam = null;
 
-      for (const param of selectedImageGenerationModel?.parameters ?? []) {
-        if (param.type === "file") {
-          fileParam = param as FileParam;
-        } else if (param.category === "initial" && param.id !== "prompt") {
-          initialParams.push(param);
-        } else if (param.category === "advanced") {
-          advancedParams.push(param);
-        }
+    for (const param of currentModel?.parameters ?? []) {
+      // console.log("param", param);
+      if (param.type === "file") {
+        fileParam = param as FileParam;
+      } else if (param.type === "first_frame") {
+        firstFrameParam = param;
+      } else if (param.type === "last_frame") {
+        lastFrameParam = param;
+      } else if (["base_image", "image"].includes(param.id)) {
+        baseImageParam = param;
+      } else if (param.category === "initial" && param.id !== "prompt") {
+        initialParams.push(param);
+      } else if (param.category === "advanced") {
+        advancedParams.push(param);
       }
+    }
 
-      return {
-        referenceImagesModelInfo: fileParam,
-        initialParams,
-        advancedParams,
-      };
-    }, [selectedImageGenerationModel]);
+    return {
+      referenceImagesModelInfo: fileParam,
+      initialParams,
+      advancedParams,
+      baseImageParam,
+      firstFrameParam,
+      lastFrameParam,
+    };
+  }, [currentModel]);
+
+  // console.log("referenceImagesModelInfo", referenceImagesModelInfo);
+  // console.log("initialParams", initialParams);
+  // console.log("advancedParams", advancedParams);
+  // console.log("baseImageRemix", baseImageParam);
 
   const [masterReference, setMasterReference] = useState<string[]>([]);
   const [productReference, setProductReference] = useState<string[]>([]);
@@ -188,6 +285,10 @@ const A2iImageInput = ({
   const [referencePopoverTab, setReferencePopoverTab] = useState<
     "master" | "product"
   >("master");
+  const [videoFramesPopoverTab, setVideoFramesPopoverTab] = useState<
+    "start_frame" | "end_frame"
+  >("start_frame");
+  const [showPopoverTrigger, setShowPopoverTrigger] = useState(true);
 
   const currentImageCount = masterReference.length + productReference.length;
 
@@ -201,6 +302,10 @@ const A2iImageInput = ({
     setMasterReference([]);
     setProductReference([]);
     clearReferencePrompt();
+    setBaseImageUrl(null);
+    setStartFrame(null);
+    setEndFrame(null);
+    clearOtherFrames();
 
     // Clear reference image form value if it exists
     if (referenceImagesModelInfo?.id) {
@@ -625,6 +730,29 @@ const A2iImageInput = ({
     ]
   );
 
+  // Compute current setter for model changes
+  const currentSetter = useCallback(
+    (model: any) => {
+      switch (conceptVisualGeneratorMode) {
+        case "image_generator":
+          setSelectedImageGenerationModel(model);
+          break;
+        case "image_editor":
+          setSelectedRemixModel(model);
+          break;
+        case "video_generator":
+          setSelectedVideoGenearationModel(model);
+          break;
+      }
+    },
+    [
+      conceptVisualGeneratorMode,
+      setSelectedImageGenerationModel,
+      setSelectedRemixModel,
+      setSelectedVideoGenearationModel,
+    ]
+  );
+
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
     try {
       const referenceImages: string[] = [];
@@ -642,28 +770,62 @@ const A2iImageInput = ({
             : referenceImages[0];
       }
 
-      if (selectedImageGenerationModel?.prefix) {
-        data.prompt = `${selectedImageGenerationModel.prefix} ${data.prompt}`;
+      if (baseImageParam) {
+        data[baseImageParam.id] = baseImageUrl;
       }
 
-      if (selectedImageGenerationModel?.finetune_id) {
-        data.finetune_id = selectedImageGenerationModel.finetune_id;
+      if (firstFrameParam) {
+        data[firstFrameParam.id] = startFrame;
       }
 
-      await generateImage(selectedBrandId!, {
-        ...data,
-        campaign_id: currentCampaign?.id || null,
-        enhance_prompt_for_product:
+      if (lastFrameParam) {
+        data[lastFrameParam.id] = endFrame;
+      }
+
+      if (currentModel?.prefix) {
+        data.prompt = `${currentModel.prefix} ${data.prompt}`;
+      }
+
+      if (currentModel?.finetune_id) {
+        data.finetune_id = currentModel.finetune_id;
+      }
+
+      if (conceptVisualGeneratorMode === "image_generator") {
+        await generateImage(selectedBrandId!, {
+          ...data,
+          campaign_id: currentCampaign?.id || null,
+          enhance_prompt_for_product:
+            isMagicEnabled && productReference.length > 0,
+          product_reference_images: productReference,
+          team_id: user?.active_team_id,
+        });
+      } else if (conceptVisualGeneratorMode === "image_editor") {
+        await remixImageService(
+          selectedBrandId!,
+          selectedCampaignId || defaultCampaignId,
+          data,
+          null,
+          productReference,
           isMagicEnabled && productReference.length > 0,
-        product_reference_images: productReference,
-        team_id: user?.active_team_id,
-      });
+          user?.active_team_id
+        );
+      } else if (conceptVisualGeneratorMode === "video_generator") {
+        await videoGenerationService(selectedBrandId!, {
+          ...data,
+          campaign_id: currentCampaign?.id || null,
+          team_id: user?.active_team_id,
+        });
+      }
 
       if (!isLocked) {
         formInstance.setValue("prompt", "", { shouldValidate: true });
         setMasterReference([]);
         setProductReference([]);
         clearReferencePrompt();
+        setBaseImageUrl(null);
+        setStartFrame(null);
+        setEndFrame(null);
+        clearOtherFrames();
 
         // Clear reference image form value if it exists
         if (referenceImagesModelInfo?.id) {
@@ -673,6 +835,7 @@ const A2iImageInput = ({
         }
       }
     } catch (error) {
+      console.error("Error generating image:", error);
       if (error instanceof PlatformApiError && error.statusCode === 403) {
         setShowInsufficientCreditsModal(true);
         return;
@@ -791,6 +954,7 @@ const A2iImageInput = ({
 
   useEffect(() => {
     if (parameters.imageGeneationParameters) {
+      setConceptVisualGeneratorMode("image_generator");
       const paramName = referenceImagesModelInfo?.id;
 
       formInstance.reset({
@@ -869,6 +1033,81 @@ const A2iImageInput = ({
       });
     }
 
+    if (parameters.remixParameters) {
+      setConceptVisualGeneratorMode("image_editor");
+      const p = parameters.remixParameters;
+      // console.log("loading remix parameters", p);
+      if (!p) return;
+
+      // Load prompt
+      if (p.prompt)
+        formInstance.setValue("prompt", p.prompt, { shouldValidate: true });
+
+      // Load all other parameters
+      for (const param of selectedRemixModel?.parameters ?? []) {
+        const id = param.id;
+        if (p[id] !== undefined) {
+          formInstance.setValue(id, p[id], { shouldValidate: true });
+        }
+      }
+
+      // Dynamically find the reference images parameter ID from the model
+      const refParam = selectedRemixModel?.parameters?.find(
+        (param) => param.type === "file"
+      );
+      // console.log("remix refParam", refParam);
+
+      setBaseImageUrl(p.base_image || p.image || null);
+
+      if (refParam) {
+        // Extract references using the dynamic parameter ID
+        const productImages = p.product_reference_images || [];
+        const allReferenceImages = p[refParam.id] || [];
+
+        // Separate master vs product references
+        const masterImages = allReferenceImages.filter(
+          (img: string) => !productImages.includes(img)
+        );
+
+        const master = masterImages.length > 0 ? [masterImages[0]] : [];
+        // console.log("master images from params", master);
+        // console.log("product images from params", productImages);
+        const products = productImages;
+
+        setMasterReference(master);
+        setProductReference(products);
+      }
+
+      // Clear parameters after a tick to avoid race conditions
+      requestAnimationFrame(() => {
+        setParameters("remixParameters", null);
+      });
+    }
+
+    if (parameters.videoParameters) {
+      setConceptVisualGeneratorMode("video_generator");
+      const p = parameters.videoParameters;
+      if (!p) return;
+      // Load prompt
+      if (p.prompt)
+        formInstance.setValue("prompt", p.prompt, { shouldValidate: true });
+      // Load all other parameters
+      for (const param of selectedVideoGenearationModel?.parameters ?? []) {
+        const id = param.id;
+        if (p[id] !== undefined) {
+          formInstance.setValue(id, p[id], { shouldValidate: true });
+        }
+      }
+      // Load start and end frames
+      if (firstFrameParam?.id) {
+        // console.log("setting start frame", p[firstFrameParam.id]);
+        setStartFrame(p[firstFrameParam.id]);
+      }
+      if (lastFrameParam?.id) {
+        setEndFrame(p[lastFrameParam.id]);
+      }
+    }
+
     if (parameters.referenceImage) {
       const referenceImageUrl = parameters.referenceImage;
       setMasterReference([referenceImageUrl]);
@@ -878,6 +1117,30 @@ const A2iImageInput = ({
       });
     }
   }, [parameters]);
+
+  useEffect(() => {
+    if (conceptVisualGeneratorMode === "video_generator") {
+      const p = parameters.videoParameters;
+      if (!p) return;
+
+      if (p.prompt)
+        formInstance.setValue("prompt", p.prompt, { shouldValidate: true });
+      // Load all other parameters
+      for (const param of selectedVideoGenearationModel?.parameters ?? []) {
+        const id = param.id;
+        if (p[id] !== undefined) {
+          formInstance.setValue(id, p[id], { shouldValidate: true });
+        }
+      }
+
+      if (firstFrameParam?.id) {
+        setStartFrame(p[firstFrameParam.id] ?? null);
+      }
+      if (lastFrameParam?.id) {
+        setEndFrame(p[lastFrameParam.id] ?? null);
+      }
+    }
+  }, [conceptVisualGeneratorMode]);
 
   const value = formInstance.watch("max_images");
 
@@ -893,395 +1156,562 @@ const A2iImageInput = ({
     }
   }, [currentImageCount, value, formInstance]);
 
+  const handleBaseImageDrop = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const uploadedUrl = await uploadFileAndReturnUrl(
+        file.name,
+        file.type,
+        "brands",
+        file,
+        selectedBrandId
+      );
+      setBaseImageUrl(uploadedUrl);
+      toast.success("Base image uploaded successfully");
+    } catch (error) {
+      console.error("Base image upload failed:", error);
+      toast.error("Failed to upload base image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div
-      className="flex flex-col items-stretch w-full mx-auto border resize-none rounded-2xl bottom-8 h-max bg-background scrollbar overflow-hidden pb-4"
+      className="flex flex-col w-full border resize-none rounded-2xl bottom-8 h-max scrollbar overflow-hidden pb-4 bg-"
       id="concept-visual-playground"
     >
-      <Form {...formInstance}>
-        <div
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            formInstance.handleSubmit(onSubmit)();
-          }}
-        >
-          <FormField
-            control={formInstance.control}
-            name="prompt"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="relative h-full">
-                    <Textarea
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                        if (referencePrompt) {
-                          clearReferencePrompt();
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && e.shiftKey) {
-                          return;
-                        }
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          formInstance.handleSubmit(onSubmit)();
-                        }
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onDrop={handlePromptDrop}
-                      className={cn(
-                        "relative w-full resize-none mt-5 border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt-4 h-auto min-h-20 max-h-[200px] overflow-y-auto align-top"
-                      )}
-                      placeholder="Describe what you want to see ..."
-                    />
-                    <div className="absolute top-2 right-2 flex gap-1">
-                      <TooltipButton
-                        tooltip="Keep prompt and reference images"
-                        icon={
-                          isLocked ? (
-                            <LockIcon color="#7F55E0" size={20} />
-                          ) : (
-                            <LockOpenIcon color="#7F55E0" size={20} />
-                          )
-                        }
-                        size="md"
-                        className="px-2 py-2"
-                        onClick={() => setIsLocked(!isLocked)}
-                      />
-                      <TooltipButton
-                        tooltip="Clear prompt and references"
-                        icon={<TrashIcon color="#7F55E0" size={20} />}
-                        size="md"
-                        className="px-2 py-2"
-                        onClick={() => clearPromptAndReferences()}
-                      />
-                    </div>
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="flex gap-2 justify-between items-center px-4">
-            <div className="flex items-center gap-2">
-              {referenceImagesModelInfo ? (
-                <ReferenceImageSelector
-                  masterReference={masterReference}
-                  productReference={productReference}
-                  onMasterReferenceChange={setMasterReference}
-                  onProductReferenceChange={setProductReference}
-                  maxLimit={referenceImagesModelInfo.maxLimit}
-                  fileTypes={referenceImagesModelInfo.fileTypes}
-                  maxFileSizeLimit={referenceImagesModelInfo.maxFileSizeLimit}
-                  disabled={formInstance.formState.isSubmitting}
-                  currentCampaignId={currentCampaign?.id}
-                  isOpen={isReferencePopoverOpen}
-                  onOpenChange={setIsReferencePopoverOpen}
-                  activeTab={referencePopoverTab}
-                  onTabChange={setReferencePopoverTab}
-                  isMagicEnabled={isMagicEnabled}
-                  onToggleMagic={handleToggleMagic}
+      <div className="flex flex-row w-full p- relative">
+        <Form {...formInstance}>
+          <div
+            className="space-y-4 flex-1 w-full"
+            onSubmit={(e) => {
+              e.preventDefault();
+              formInstance.handleSubmit(onSubmit)();
+            }}
+          >
+            <div className="absolute top- right-3 flex gap-1">
+              <TooltipButton
+                tooltip="Keep prompt and reference images"
+                icon={
+                  isLocked ? (
+                    <LockIcon color="#7F55E0" size={20} />
+                  ) : (
+                    <LockOpenIcon color="#7F55E0" size={20} />
+                  )
+                }
+                size="md"
+                className="px-2 py-2"
+                onClick={() => setIsLocked(!isLocked)}
+              />
+              <TooltipButton
+                tooltip="Clear prompt and references"
+                icon={<TrashIcon color="#7F55E0" size={20} />}
+                size="md"
+                className="px-2 py-2"
+                onClick={() => clearPromptAndReferences()}
+              />
+            </div>
+            <div className="flex flex-row w-full mt-6">
+              <div className="flex flex-col gap-1 bg- h-fit">
+                <TooltipButton
+                  tooltip="Image Generator"
+                  icon={
+                    conceptVisualGeneratorMode === "image_generator" ? (
+                      <ImageGeneratorIcon color="#7F55E0" size={30} />
+                    ) : (
+                      <ImageGeneratorIcon size={30} />
+                    )
+                  }
+                  size="md"
+                  className="px-2 py-2"
+                  onClick={() =>
+                    setConceptVisualGeneratorMode("image_generator")
+                  }
+                  side="right"
                 />
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button size={"icon"} variant={"outline"} disabled={true}>
-                        <ImagesIcon />
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    This model does not support attaching reference images
-                  </TooltipContent>
-                </Tooltip>
+                <TooltipButton
+                  tooltip="Image Editor"
+                  icon={
+                    conceptVisualGeneratorMode === "image_editor" ? (
+                      <ImageEditorIcon color="#7F55E0" size={30} />
+                    ) : (
+                      <ImageEditorIcon size={30} />
+                    )
+                  }
+                  size="md"
+                  className="px-2 py-2"
+                  onClick={() => setConceptVisualGeneratorMode("image_editor")}
+                  side="right"
+                />
+                <TooltipButton
+                  tooltip="Video Generator"
+                  icon={
+                    conceptVisualGeneratorMode === "video_generator" ? (
+                      <VideoGeneratorIcon color="#7F55E0" size={30} />
+                    ) : (
+                      <VideoGeneratorIcon size={30} />
+                    )
+                  }
+                  size="md"
+                  className="px-2 py-2"
+                  onClick={() =>
+                    setConceptVisualGeneratorMode("video_generator")
+                  }
+                  side="right"
+                />
+              </div>
+
+              {conceptVisualGeneratorMode === "image_editor" && (
+                <div className="p-4">
+                  <BaseImageUploadArea
+                    fileTypes={["image/jpeg", "image/png", "image/webp"]}
+                    maxFileSizeLimit={10}
+                    isUploading={isUploading}
+                    onDrop={handleBaseImageDrop}
+                    onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
+                    baseImageUrl={baseImageUrl}
+                    setBaseImageUrl={setBaseImageUrl}
+                  />
+                </div>
               )}
-              {/* Render other initial params (exclude aspect_ratio and image_count) */}
-              {initialParams
-                .filter(
-                  (param) =>
-                    param.type !== "aspect_ratio" &&
-                    param.type !== "image_count"
-                )
-                .map((param) => {
-                  return (
-                    <DynamicFormField
-                      key={param.id}
-                      param={param}
-                      form={formInstance}
-                      type="initial"
-                      rules={selectedImageGenerationModel?.rules}
-                      allModelParameters={[...initialParams, ...advancedParams]}
-                    />
-                  );
-                })}
 
-              {/* Aspect Ratio - Always show */}
-              {(() => {
-                const aspectRatioParam =
-                  selectedImageGenerationModel?.parameters?.find(
-                    (param) => param.type === "aspect_ratio"
-                  );
-
-                if (aspectRatioParam) {
-                  return (
-                    <DynamicFormField
-                      key={aspectRatioParam.id}
-                      param={aspectRatioParam}
-                      form={formInstance}
-                      type="initial"
-                      rules={selectedImageGenerationModel?.rules}
-                      allModelParameters={
-                        selectedImageGenerationModel?.parameters
-                      }
-                    />
-                  );
-                }
-
-                // No aspect ratio support - show disabled select
-                return (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Select disabled>
-                          <SelectTrigger className="cursor-not-allowed">
-                            <span>1:1</span>
-                          </SelectTrigger>
-                        </Select>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      This model does not support aspect ratio selection
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })()}
-
-              {/* Image Count - Always show */}
-              {(() => {
-                const imageCountParam =
-                  selectedImageGenerationModel?.parameters?.find(
-                    (param) => param.type === "image_count"
-                  );
-
-                if (imageCountParam) {
-                  return (
-                    <DynamicFormField
-                      key={imageCountParam.id}
-                      param={imageCountParam}
-                      form={formInstance}
-                      type="initial"
-                      rules={selectedImageGenerationModel?.rules}
-                      allModelParameters={
-                        selectedImageGenerationModel?.parameters
-                      }
-                    />
-                  );
-                }
-
-                // No image count support - show disabled button
-                return (
+              <div className="flex-1 w-full p-2">
+                <FormField
+                  control={formInstance.control}
+                  name="prompt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative h-full">
+                          <Textarea
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              if (referencePrompt) {
+                                clearReferencePrompt();
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && e.shiftKey) {
+                                return;
+                              }
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                formInstance.handleSubmit(onSubmit)();
+                              }
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onDrop={handlePromptDrop}
+                            className={cn(
+                              "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt- h-auto min-h-20 max-h-[300px] overflow-y-auto align-top"
+                            )}
+                            placeholder={
+                              conceptVisualGeneratorMode === "image_generator"
+                                ? "Describe what you want to see ..."
+                                : conceptVisualGeneratorMode === "image_editor"
+                                ? getRemixInputPlaceholderMessage({
+                                    supportsReferenceImage:
+                                      !!referenceImagesModelInfo,
+                                  })
+                                : conceptVisualGeneratorMode ===
+                                  "video_generator"
+                                ? "Describe what you want to see in the video ..."
+                                : "Describe what you want to see ..."
+                            }
+                          />
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-between items-center px-2">
+              <div className="flex items-center gap-2">
+                {referenceImagesModelInfo ? (
+                  <ReferenceImageSelector
+                    masterReference={masterReference}
+                    productReference={productReference}
+                    onMasterReferenceChange={setMasterReference}
+                    onProductReferenceChange={setProductReference}
+                    maxLimit={referenceImagesModelInfo.maxLimit}
+                    fileTypes={referenceImagesModelInfo.fileTypes}
+                    maxFileSizeLimit={referenceImagesModelInfo.maxFileSizeLimit}
+                    disabled={formInstance.formState.isSubmitting}
+                    currentCampaignId={currentCampaign?.id}
+                    isOpen={isReferencePopoverOpen}
+                    onOpenChange={setIsReferencePopoverOpen}
+                    activeTab={referencePopoverTab}
+                    onTabChange={setReferencePopoverTab}
+                    isMagicEnabled={isMagicEnabled}
+                    onToggleMagic={handleToggleMagic}
+                  />
+                ) : (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span>
                         <Button
-                          variant="outline"
-                          disabled
-                          className="cursor-not-allowed"
+                          size={"icon"}
+                          variant={"outline"}
+                          disabled={true}
                         >
-                          1x
+                          <ImagesIcon />
                         </Button>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      This model does not support no of generations selection
+                      This model does not support attaching reference images
                     </TooltipContent>
                   </Tooltip>
-                );
-              })()}
+                )}
 
-              {advancedParams.length > 0 ? (
-                <Popover>
+                {/* Aspect Ratio - Always show */}
+                {(() => {
+                  const aspectRatioParam = currentModel?.parameters?.find(
+                    (param) => param.type === "aspect_ratio"
+                  );
+
+                  if (aspectRatioParam) {
+                    return (
+                      <DynamicFormField
+                        key={aspectRatioParam.id}
+                        param={aspectRatioParam}
+                        form={formInstance}
+                        type="initial"
+                        rules={currentModel?.rules}
+                        allModelParameters={currentModel?.parameters}
+                      />
+                    );
+                  }
+
+                  // No aspect ratio support - show disabled select
+                  return (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Select disabled>
+                            <SelectTrigger disableDropdown>
+                              <span>Auto</span>
+                            </SelectTrigger>
+                          </Select>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        This model does not support aspect ratio selection
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })()}
+
+                {initialParams
+                  .filter(
+                    (param) =>
+                      param.id == "resolution" || param.id == "duration"
+                  )
+                  .map((param) => {
+                    return (
+                      <DynamicFormField
+                        key={param.id}
+                        param={param}
+                        form={formInstance}
+                        type="initial"
+                        rules={currentModel?.rules}
+                        allModelParameters={[
+                          ...initialParams,
+                          ...advancedParams,
+                        ]}
+                        sliderSuffix={param.id === "duration" ? "s" : undefined}
+                      />
+                    );
+                  })}
+
+                {/* Image Count - Always show */}
+                {(() => {
+                  const imageCountParam = currentModel?.parameters?.find(
+                    (param) => param.type === "image_count"
+                  );
+
+                  if (imageCountParam) {
+                    return (
+                      <DynamicFormField
+                        key={imageCountParam.id}
+                        param={imageCountParam}
+                        form={formInstance}
+                        type="initial"
+                        rules={currentModel?.rules}
+                        allModelParameters={currentModel?.parameters}
+                      />
+                    );
+                  }
+
+                  // No image count support - show disabled button
+                  return (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            variant="outline"
+                            disabled
+                            className="cursor-not-allowed"
+                          >
+                            1x
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        This model does not support no of generations selection
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })()}
+
+                {advancedParams.length > 0 ? (
+                  <Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="outline">
+                            <Settings2 />
+                          </Button>
+                        </PopoverTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Additional Settings</TooltipContent>
+                    </Tooltip>
+                    <PopoverContent
+                      forceMount
+                      align="center"
+                      side="top"
+                      className="space-y-2 w-64"
+                    >
+                      <div className="space-y-4">
+                        <FormLabel className="py-0 text-xs">
+                          Advance Parameters
+                        </FormLabel>
+                        {advancedParams.map((param) => {
+                          return (
+                            <DynamicFormField
+                              key={param.id}
+                              param={param}
+                              form={formInstance}
+                              type="advanced"
+                              rules={currentModel?.rules}
+                              allModelParameters={[
+                                ...initialParams,
+                                ...advancedParams,
+                              ]}
+                            />
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <PopoverTrigger asChild>
-                        <Button size="icon" variant="outline">
+                      <span>
+                        <Button
+                          size={"icon"}
+                          variant={"outline"}
+                          disabled={true}
+                        >
                           <Settings2 />
                         </Button>
-                      </PopoverTrigger>
+                      </span>
                     </TooltipTrigger>
-                    <TooltipContent>Additional Settings</TooltipContent>
+                    <TooltipContent>No Additional Settings</TooltipContent>
                   </Tooltip>
-                  <PopoverContent
-                    forceMount
-                    align="center"
-                    side="top"
-                    className="space-y-2 w-64"
-                  >
-                    <div className="space-y-4">
-                      <FormLabel className="py-0 text-xs">
-                        Advance Parameters
-                      </FormLabel>
-                      {advancedParams.map((param) => {
-                        return (
-                          <DynamicFormField
-                            key={param.id}
-                            param={param}
-                            form={formInstance}
-                            type="advanced"
-                            rules={selectedImageGenerationModel?.rules}
-                            allModelParameters={[
-                              ...initialParams,
-                              ...advancedParams,
-                            ]}
-                          />
+                )}
+              </div>
+              <div className="flex gap-x-2">
+                <ModelSelector
+                  onModelChange={currentSetter}
+                  selectedModel={currentModel}
+                  typeFilter={
+                    conceptVisualGeneratorMode === "video_generator"
+                      ? "video"
+                      : conceptVisualGeneratorMode === "image_editor"
+                      ? "remix"
+                      : "image"
+                  }
+                />
+                <Button
+                  type="button"
+                  disabled={!formInstance.watch("prompt") || isEnhancingPrompt}
+                  variant={"outline"}
+                  className="border-primary text-primary"
+                  onClick={() => {
+                    if (!formInstance.getValues("prompt")) return;
+                    handleEnhancePrompt(undefined, {
+                      onSuccess: (data) => {
+                        formInstance.setValue("prompt", data.prompt, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        });
+
+                        toast.success("Prompt enhanced successfully!");
+                      },
+                      onError: () => {
+                        toast.error(
+                          "Failed to enhance prompt. Please try again."
                         );
-                      })}
+                      },
+                    });
+                  }}
+                >
+                  <WandSparkles />
+                  {isEnhancingPrompt ? "Enhancing Prompt..." : "Prompt"}
+                </Button>
+                <TokenGenerateButton
+                  onClick={() => formInstance.handleSubmit(onSubmit)()}
+                  tokens={credits}
+                  loading={formInstance.formState.isSubmitting}
+                  disabled={
+                    !formInstance.formState.isValid ||
+                    formInstance.formState.isSubmitting ||
+                    isEnhancingPrompt ||
+                    !currentModel
+                  }
+                  isCalculatingTokens={isCalculatingTokens}
+                />
+              </div>
+            </div>
+
+            {/* Reference Zones - Show when there are references */}
+            {(masterReference.length > 0 || productReference.length > 0) &&
+              !isReferencePopoverOpen && (
+                <div className="w-full px-4">
+                  <div className="flex gap-4 w-full">
+                    {/* MASTER REFERENCE SECTION */}
+                    <div className="flex-1">
+                      <ReferenceZone
+                        type="master"
+                        icon={Paperclip}
+                        title="Master Reference"
+                        description="Drag, drop, or paste images here"
+                        images={masterReference}
+                        isSelected={referencePopoverTab === "master"}
+                        onClick={() => {
+                          setReferencePopoverTab("master");
+                          openReferencePopover("master");
+                        }}
+                        onDrop={(e: DragEvent) => handleZoneDrop(e, "master")}
+                        onDragStart={(e: DragEvent, url: string) => {
+                          e.dataTransfer.setData("assetUrl", url);
+                          e.dataTransfer.setData("source", "master");
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onRemoveImage={(url: string) => {
+                          setMasterReference(
+                            masterReference.filter((u) => u !== url)
+                          );
+                        }}
+                        showAddButton={
+                          masterReference.length === 0 &&
+                          productReference.length > 0
+                        }
+                        onAddClick={() => openReferencePopover("master")}
+                      />
                     </div>
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button size={"icon"} variant={"outline"} disabled={true}>
-                        <Settings2 />
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>No Additional Settings</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-            <div className="flex gap-x-2">
-              <ModelSelector
-                onModelChange={setSelectedImageGenerationModel}
-                selectedModel={selectedImageGenerationModel}
-                typeFilter="image"
-              />
-              <Button
-                type="button"
-                disabled={!formInstance.watch("prompt") || isEnhancingPrompt}
-                variant={"outline"}
-                className="border-primary text-primary"
-                onClick={() => {
-                  if (!formInstance.getValues("prompt")) return;
-                  handleEnhancePrompt(undefined, {
-                    onSuccess: (data) => {
-                      formInstance.setValue("prompt", data.prompt, {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                        shouldTouch: true,
-                      });
 
-                      toast.success("Prompt enhanced successfully!");
-                    },
-                    onError: () => {
-                      toast.error(
-                        "Failed to enhance prompt. Please try again."
-                      );
-                    },
-                  });
-                }}
-              >
-                <WandSparkles />
-                {isEnhancingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
-              </Button>
-              <TokenGenerateButton
-                onClick={() => formInstance.handleSubmit(onSubmit)()}
-                tokens={credits}
-                loading={formInstance.formState.isSubmitting}
-                disabled={
-                  !formInstance.formState.isValid ||
-                  formInstance.formState.isSubmitting ||
-                  isEnhancingPrompt ||
-                  !selectedImageGenerationModel
-                }
-                isCalculatingTokens={isCalculatingTokens}
-              />
-            </div>
-          </div>
-
-          {/* Reference Zones - Show when there are references */}
-          {(masterReference.length > 0 || productReference.length > 0) &&
-            !isReferencePopoverOpen && (
-              <div className="w-full px-4">
-                <div className="flex gap-4 w-full">
-                  {/* MASTER REFERENCE SECTION */}
-                  <div className="flex-1">
-                    <ReferenceZone
-                      type="master"
-                      icon={Paperclip}
-                      title="Master Reference"
-                      description="Drag, drop, or paste images here"
-                      images={masterReference}
-                      isSelected={referencePopoverTab === "master"}
-                      onClick={() => {
-                        setReferencePopoverTab("master");
-                        openReferencePopover("master");
-                      }}
-                      onDrop={(e: DragEvent) => handleZoneDrop(e, "master")}
-                      onDragStart={(e: DragEvent, url: string) => {
-                        e.dataTransfer.setData("assetUrl", url);
-                        e.dataTransfer.setData("source", "master");
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onRemoveImage={(url: string) => {
-                        setMasterReference(
-                          masterReference.filter((u) => u !== url)
-                        );
-                      }}
-                      showAddButton={
-                        masterReference.length === 0 &&
-                        productReference.length > 0
-                      }
-                      onAddClick={() => openReferencePopover("master")}
-                    />
-                  </div>
-
-                  {/* PRODUCT REFERENCE SECTION */}
-                  <div className="flex-1">
-                    <ReferenceZone
-                      type="product"
-                      icon={PanelTop}
-                      title="Product Reference"
-                      description="Drag, drop, or paste images here"
-                      images={productReference}
-                      isSelected={referencePopoverTab === "product"}
-                      onClick={() => {
-                        setReferencePopoverTab("product");
-                        openReferencePopover("product");
-                      }}
-                      onDrop={(e: DragEvent) => handleZoneDrop(e, "product")}
-                      onDragStart={(e: DragEvent, url: string) => {
-                        e.dataTransfer.setData("assetUrl", url);
-                        e.dataTransfer.setData("source", "product");
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onRemoveImage={(url: string) => {
-                        setProductReference(
-                          productReference.filter((u) => u !== url)
-                        );
-                      }}
-                      showAddButton={
-                        productReference.length === 0 &&
-                        masterReference.length > 0
-                      }
-                      onAddClick={() => openReferencePopover("product")}
-                      isMagicEnabled={isMagicEnabled}
-                      onToggleMagic={handleToggleMagic}
-                    />
+                    {/* PRODUCT REFERENCE SECTION */}
+                    <div className="flex-1">
+                      <ReferenceZone
+                        type="product"
+                        icon={PanelTop}
+                        title="Product Reference"
+                        description="Drag, drop, or paste images here"
+                        images={productReference}
+                        isSelected={referencePopoverTab === "product"}
+                        onClick={() => {
+                          setReferencePopoverTab("product");
+                          openReferencePopover("product");
+                        }}
+                        onDrop={(e: DragEvent) => handleZoneDrop(e, "product")}
+                        onDragStart={(e: DragEvent, url: string) => {
+                          e.dataTransfer.setData("assetUrl", url);
+                          e.dataTransfer.setData("source", "product");
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onRemoveImage={(url: string) => {
+                          setProductReference(
+                            productReference.filter((u) => u !== url)
+                          );
+                        }}
+                        showAddButton={
+                          productReference.length === 0 &&
+                          masterReference.length > 0
+                        }
+                        onAddClick={() => openReferencePopover("product")}
+                        isMagicEnabled={isMagicEnabled}
+                        onToggleMagic={handleToggleMagic}
+                      />
+                    </div>
                   </div>
                 </div>
+              )}
+
+            {conceptVisualGeneratorMode === "video_generator" && (
+              <div>
+                <VideoFrameSelector
+                  activeTab={videoFramesPopoverTab}
+                  onTabChange={setVideoFramesPopoverTab}
+                  maxLimit={1}
+                  fileTypes={[
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp",
+                    "video/mp4",
+                  ]}
+                  maxFileSizeLimit={32}
+                  disabled={formInstance.formState.isSubmitting}
+                  // disabled={false}
+                  currentCampaignId={currentCampaign?.id}
+                  isOpen={isVideoFramesPopoverOpen}
+                  onOpenChange={setIsVideoFramesPopoverOpen}
+                  variant="popover"
+                  showPopoverTrigger={showPopoverTrigger}
+                  setShowPopoverTrigger={setShowPopoverTrigger}
+                  popoverSide="top"
+                  isEndFrameAvailable={lastFrameParam !== null}
+                />
               </div>
             )}
-        </div>
-      </Form>
+          </div>
+        </Form>
+      </div>
+      <MediaLibraryDialog
+        open={mediaLibraryOpen}
+        onOpenChange={setMediaLibraryOpen}
+        onMediaItemSelected={(url) => {
+          setBaseImageUrl(url);
+          setMediaLibraryOpen(false);
+        }}
+        filters={{
+          brands: [selectedBrandId!],
+          campaigns: [],
+          product_categories: [],
+          has_product: undefined,
+          has_people: undefined,
+          has_lifestyle_context: undefined,
+          asset_types: ["image"],
+          asset_sources: [],
+          media_format: [],
+          aspect_ratio: [],
+          workflow_status: [],
+          is_favourite: undefined,
+          is_archived: undefined,
+          moodboards: [],
+        }}
+        brandId={selectedBrandId!}
+        campaignId={selectedCampaignId || undefined}
+        isMultiSelect={false}
+        maxSelectionCount={1}
+      />
     </div>
   );
 };

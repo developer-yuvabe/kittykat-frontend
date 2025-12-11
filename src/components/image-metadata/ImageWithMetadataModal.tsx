@@ -46,7 +46,7 @@ import { A2iImageGeneration } from "@/types/types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { Skeleton } from "../ui/skeleton";
-
+import { useA2iStore } from "@/store/a2i.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useUserStore } from "@/store/user.store";
 type ImageWithMetadataModalProps = {
@@ -89,7 +89,12 @@ const ImageWithMetadataModal = ({
   const pathname = usePathname();
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-
+  const {
+    setConceptVisualGeneratorMode,
+    setStartFrame,
+    setEndFrame,
+    setBaseImageUrl,
+  } = useA2iStore();
   const { user } = useUserStore();
 
   //use selected campaign id if available else use latest campaign of selected brand that is not custom
@@ -337,23 +342,7 @@ const ImageWithMetadataModal = ({
         setParameters("remixParameters", convertedRemixParams);
 
         onClose();
-        // asset object with base_image URL
-        const baseImageAsset = {
-          ...galleryItem,
-          asset_url: baseInputImageUrl,
-          preview_url: baseInputImageUrl,
-        };
 
-        // Open concept visual with base image loaded in canvas
-        openConceptVisual({
-          source: "blanket",
-          assetItems: [baseImageAsset],
-          asset: {
-            currentAsset: baseImageAsset,
-            galleryActions: null,
-          },
-          defaultActiveTab: "remix",
-        });
         return;
       } else {
         const model = models.find(
@@ -477,15 +466,8 @@ const ImageWithMetadataModal = ({
       }
 
       setSelectedRemixModel(defualtEditModel);
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [currentDisplayItem],
-        asset: {
-          currentAsset: currentDisplayItem,
-          galleryActions: null,
-        },
-        defaultActiveTab: "remix",
-      });
+      setConceptVisualGeneratorMode("image_editor");
+      setBaseImageUrl(currentDisplayItem.asset_url);
 
       onClose();
     } catch (error) {
@@ -498,6 +480,7 @@ const ImageWithMetadataModal = ({
 
   const handleModifyReference = async () => {
     try {
+      setConceptVisualGeneratorMode("image_generator");
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
 
@@ -563,17 +546,10 @@ const ImageWithMetadataModal = ({
         throw new Error("No default animation model found");
       }
 
+      setConceptVisualGeneratorMode("video_generator");
       setSelectedVideoGenearationModel(defaultAnimationModel);
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [currentDisplayItem],
-        asset: {
-          currentAsset: currentDisplayItem,
-          galleryActions: null,
-        },
-        defaultActiveTab: "video-generation",
-      });
-
+      setStartFrame(currentDisplayItem.asset_url);
+      setEndFrame(null);
       onClose();
     } catch (error) {
       console.log(error);

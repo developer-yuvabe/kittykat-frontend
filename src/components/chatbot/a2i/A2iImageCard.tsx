@@ -34,9 +34,9 @@ import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useModelsStore } from "@/store/models.store";
-import { GalleryItemResponse } from "@/types/gallery.types";
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 import { useGenerationsStore } from "@/store/generations.store";
+import { useA2iStore } from "@/store/a2i.store";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -100,6 +100,13 @@ const A2iImageCard = ({
   const { setParameters } = useMetadataActionsStore();
   const router = useRouter();
   const pathname = usePathname();
+
+  const {
+    setConceptVisualGeneratorMode,
+    setStartFrame,
+    setEndFrame,
+    setBaseImageUrl,
+  } = useA2iStore();
 
   const galleryActions = useGalleryQuery(
     {
@@ -227,13 +234,15 @@ const A2iImageCard = ({
   const handleReUse = async () => {
     try {
       // Video
-      if (video) {
+      const isVideoOutput = type === "video" || type == "video_generation";
+      if (isVideoOutput) {
+        setConceptVisualGeneratorMode("video_generator");
+        console.log("here in video reuse");
         const model = models.find((m) => m.model === parameters.model);
         if (!model) {
           toast.error("No model found for this video.");
           return;
         }
-
         // Convert all parameters based on model parameter definitions
         const videoParams = { ...parameters };
         model.parameters?.forEach((paramDef) => {
@@ -253,24 +262,20 @@ const A2iImageCard = ({
         setSelectedVideoGenearationModel(model);
         setParameters("videoParameters", videoParams);
 
-        // Identify correct preview/start frame
-        const firstFrameParam = model.parameters.find((p) =>
-          ["first_frame", "start_image", "image"].includes(p.id)
+        const firstFrameParam = model.parameters?.find(
+          (param) => param.type === "first_frame"
         );
 
-        if (stableItem && firstFrameParam) {
-          openConceptVisual({
-            source: "blanket",
-            assetItems: [stableItem],
-            asset: {
-              currentAsset: {
-                ...stableItem,
-                asset_url: videoParams[firstFrameParam.id] || null,
-              },
-              galleryActions: null,
-            },
-            defaultActiveTab: "video-generation",
-          });
+        const lastFrameParam = model.parameters?.find(
+          (param) => param.type === "last_frame"
+        );
+
+        if (firstFrameParam?.id) {
+          // console.log("setting start frame", videoParams[firstFrameParam.id]);
+          setStartFrame(videoParams[firstFrameParam.id]);
+        }
+        if (lastFrameParam?.id) {
+          setEndFrame(videoParams[lastFrameParam.id]);
         }
 
         toast.info("Video setup restored in Video Generation tab.");
@@ -281,6 +286,8 @@ const A2iImageCard = ({
       const isEditorOutput = type === "remix";
 
       if (isEditorOutput) {
+        setConceptVisualGeneratorMode("image_editor");
+        console.log("here in remix reuse");
         try {
           const model = models.find(
             (m) => m.model === parameters.model && m.type === "remix"
@@ -318,23 +325,11 @@ const A2iImageCard = ({
           // Close modal if any (same behavior)
           if (showImageModal) setShowImageModal(false);
 
-          // asset object with base_image URL
-          const baseImageAsset: GalleryItemResponse = {
-            ...stableItem!,
-            asset_url: baseInputImageUrl,
-            preview_url: baseInputImageUrl,
-          };
-
-          // Open Concept Visual with base image preloaded
-          openConceptVisual({
-            source: "blanket",
-            assetItems: [baseImageAsset],
-            asset: {
-              currentAsset: baseImageAsset,
-              galleryActions: null,
-            },
-            defaultActiveTab: "remix",
-          });
+          setBaseImageUrl(
+            convertedRemixParams.base_image ||
+              convertedRemixParams.image ||
+              null
+          );
 
           toast.info("Remix model and parameters have been restored.");
           return;
@@ -346,6 +341,8 @@ const A2iImageCard = ({
           return;
         }
       }
+
+      setConceptVisualGeneratorMode("image_generator");
 
       const model = models.find((m) => m.model === parameters.model);
       if (!model) {
