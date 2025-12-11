@@ -139,18 +139,12 @@ const VideoFrameSelector = ({
     handleOpenChange(true);
   }, [onTabChange, handleOpenChange]);
 
-  // Effect 1: Fetch on brand/query change (only primitives)
   useEffect(() => {
     if (selectedBrandId && !isFetching) {
-      setItems(getGalleryItems()); // getGalleryItems() is fine here (no dep needed)
+      setItems(getGalleryItems());
     }
     setIsLoading(isFetching);
-  }, [selectedBrandId, isFetching]); // Only changes that matter
-
-  // // Effect 2: Sync loading (minimal deps)
-  // useEffect(() => {
-  //   setIsLoading(isFetching);
-  // }, [isFetching]); // isFetching is primitive
+  }, [selectedBrandId, isFetching]);
 
   // Helper function to get file size in MB
   const getFileSizeInMB = useCallback(async (file: File): Promise<number> => {
@@ -167,17 +161,6 @@ const VideoFrameSelector = ({
           setEndFrame?.(null);
         }
         return;
-      }
-
-      // Clear from other zone if the same URL is there
-      const otherZone = zone === "start" ? "end" : "start";
-      const otherCurrent = otherZone === "start" ? startFrame : endFrame;
-      if (otherCurrent === url) {
-        if (otherZone === "start") {
-          setStartFrame?.(null);
-        } else {
-          setEndFrame?.(null);
-        }
       }
 
       // Set to this zone
@@ -549,25 +532,7 @@ const VideoFrameSelector = ({
       if (!assetUrl) return;
 
       if (source === "gallery") {
-        const galleryItem = galleryItems.find(
-          (it) => it.asset_url === assetUrl
-        );
         const isVideo = assetType === "video";
-
-        // size check
-        const { isValid, sizeInMB } = await checkFileSizeLimit(
-          assetUrl,
-          galleryItem?.size,
-          maxFileSizeLimit
-        );
-        if (!isValid) {
-          toast.error(
-            `File size (${sizeInMB?.toFixed(
-              1
-            )}MB) exceeds the limit of ${maxFileSizeLimit}MB`
-          );
-          return;
-        }
 
         if (currentInZone === assetUrl) {
           toast.info("Already in this frame");
@@ -771,21 +736,6 @@ const VideoFrameSelector = ({
 
       const item = items[0];
 
-      const { isValid, sizeInMB } = await checkFileSizeLimit(
-        item.asset_url,
-        item.size,
-        maxFileSizeLimit
-      );
-
-      if (!isValid && sizeInMB !== undefined) {
-        toast.error(
-          `${item.asset_title || "Image"} (${sizeInMB.toFixed(
-            1
-          )}MB) exceeds the limit of ${maxFileSizeLimit}MB`
-        );
-        return;
-      }
-
       const zone = activeTab === "start_frame" ? "start" : "end";
       const targetZone = zone === "start" ? "first" : "last";
       const currentInZone = zone === "start" ? startFrame : endFrame;
@@ -795,6 +745,8 @@ const VideoFrameSelector = ({
         setMediaLibraryOpen(false);
         return;
       }
+
+      setMediaLibraryOpen(false);
 
       if (item.asset_type === "video") {
         const { start, end } = await getVideoFrames(item.asset_url);
@@ -890,7 +842,6 @@ const VideoFrameSelector = ({
                   onPaste={handleZonePaste("start")}
                   selectedOtherType={selectedTypeFirst}
                   onSelectType={(type) => setSelectedTypeFirst(type)}
-                  setFrame={setFrame}
                 />
 
                 {isEndFrameAvailable ? (
@@ -912,7 +863,6 @@ const VideoFrameSelector = ({
                     onPaste={handleZonePaste("end")}
                     selectedOtherType={selectedTypeLast}
                     onSelectType={(type) => setSelectedTypeLast(type)}
-                    setFrame={setFrame}
                   />
                 ) : (
                   <div className="flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col items-center justify-center text-muted-foreground leading-snug text-sm text-center">
@@ -966,7 +916,6 @@ const VideoFrameSelector = ({
                       onPaste={handleZonePaste("start")}
                       selectedOtherType={selectedTypeFirst}
                       onSelectType={(type) => setSelectedTypeFirst(type)}
-                      setFrame={setFrame}
                     />
                     {isEndFrameAvailable && (
                       <VideoFrameZone
@@ -987,7 +936,6 @@ const VideoFrameSelector = ({
                         onPaste={handleZonePaste("end")}
                         selectedOtherType={selectedTypeLast}
                         onSelectType={(type) => setSelectedTypeLast(type)}
-                        setFrame={setFrame}
                       />
                     )}
                   </div>

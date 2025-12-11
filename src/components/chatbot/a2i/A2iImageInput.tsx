@@ -171,7 +171,7 @@ const A2iImageInput = ({
         campaigns: [],
         moodboards: [],
         product_categories: [],
-        asset_types: ["image", "video"],
+        asset_types: ["image"],
         asset_sources: ["reference"],
         media_format: [],
         aspect_ratio: [],

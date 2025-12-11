@@ -21,7 +21,6 @@ interface VideoFrameZoneProps {
   onAddClick?: () => void;
   showAddButton?: boolean;
   onPaste?: (e: React.ClipboardEvent) => void;
-  setFrame: (zone: "start" | "end", url: string | null) => void;
 }
 
 export const VideoFrameZone = ({
@@ -40,28 +39,18 @@ export const VideoFrameZone = ({
   onAddClick,
   showAddButton = false,
   onPaste,
-  setFrame,
 }: VideoFrameZoneProps) => {
-  const { otherFrames } = useA2iStore();
+  const { setStartFrame, setEndFrame, otherFrames } = useA2iStore();
 
-  // ---- Extract frames for FIRST zone ----
-  const firstZoneFrames = useMemo(
-    () => otherFrames.filter((f) => f.zone === "first"),
-    [otherFrames]
-  );
-  const firstStartFrame = firstZoneFrames.find((f) => f.type === "start")?.url;
-  const firstEndFrame = firstZoneFrames.find((f) => f.type === "end")?.url;
+  const { startFrame, endFrame } = useMemo(() => {
+    // Filter only once
+    const zoneFrames = otherFrames.filter((f) => f.zone === zone);
 
-  // ---- Extract frames for LAST zone ----
-  const lastZoneFrames = useMemo(
-    () => otherFrames.filter((f) => f.zone === "last"),
-    [otherFrames]
-  );
-  const lastStartFrame = lastZoneFrames.find((f) => f.type === "start")?.url;
-  const lastEndFrame = lastZoneFrames.find((f) => f.type === "end")?.url;
-
-  const startFrame = zone === "first" ? firstStartFrame : lastStartFrame;
-  const endFrame = zone === "first" ? firstEndFrame : lastEndFrame;
+    return {
+      startFrame: zoneFrames.find((f) => f.type === "start")?.url ?? null,
+      endFrame: zoneFrames.find((f) => f.type === "end")?.url ?? null,
+    };
+  }, [otherFrames, zone]);
 
   const hasOtherFrames = !!startFrame || !!endFrame;
 
@@ -109,8 +98,8 @@ export const VideoFrameZone = ({
                 e.stopPropagation();
                 onSelectType?.("start");
                 if (startFrame) {
-                  if (zone === "first") setFrame("start", startFrame);
-                  else setFrame("end", startFrame);
+                  if (zone === "first") setStartFrame(startFrame);
+                  else setEndFrame(startFrame);
                 }
               }}
               className={cn(
@@ -130,8 +119,8 @@ export const VideoFrameZone = ({
                 e.stopPropagation();
                 onSelectType?.("end");
                 if (endFrame) {
-                  if (zone === "first") setFrame("start", endFrame);
-                  else setFrame("end", endFrame);
+                  if (zone === "first") setStartFrame(endFrame);
+                  else setEndFrame(endFrame);
                 }
               }}
               className={cn(

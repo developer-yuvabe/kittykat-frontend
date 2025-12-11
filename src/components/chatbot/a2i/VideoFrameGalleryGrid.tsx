@@ -1,8 +1,6 @@
 import { Trash } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useA2iStore } from "@/store/a2i.store";
 
 interface VideoFrameGalleryGridProps {
   items: GalleryItemResponse[];
@@ -24,7 +22,6 @@ export const VideoFrameGalleryGrid = ({
   onDragStart,
   onDeleteItem,
 }: VideoFrameGalleryGridProps) => {
-  const { startFrame, endFrame } = useA2iStore();
   if (isLoading && items.length === 0) {
     return (
       <div className="grid grid-cols-6 gap-2">
@@ -48,11 +45,7 @@ export const VideoFrameGalleryGrid = ({
   return (
     <div className="grid grid-cols-6 gap-2">
       {items.map((item) => {
-        const isStartFrame = startFrame === item.asset_url;
-        const isEndFrame = endFrame === item.asset_url;
-        const isSelected = isStartFrame || isEndFrame;
         const type = item.asset_type;
-
         return (
           <div
             key={item.id}
@@ -63,12 +56,7 @@ export const VideoFrameGalleryGrid = ({
             onClick={() =>
               onItemClick(item.asset_url, item.id, item.asset_type)
             }
-            className={cn(
-              "relative aspect-square rounded-lg group cursor-pointer border-2 transition-all overflow-hidden",
-              isSelected
-                ? "border-primary ring-2 ring-primary"
-                : "border-transparent hover:border-primary"
-            )}
+            className="relative aspect-square rounded-lg group cursor-pointer border-2 transition-all overflow-hidden border-transparent hover:border-primary"
           >
             {type === "image" ? (
               <img
@@ -86,12 +74,6 @@ export const VideoFrameGalleryGrid = ({
               />
             )}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-
-            {isSelected && (
-              <div className="absolute top-1 right-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
-                {isStartFrame ? "Start" : "End"}
-              </div>
-            )}
 
             {/* Delete button */}
             <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -30,7 +30,6 @@ export const useGalleryQuery = (
   compUsed: string = "unknown",
   polling: boolean = true
 ) => {
-  console.log("polling is", polling);
   const queryClient = useQueryClient();
 
   // Map asset type for filtering
