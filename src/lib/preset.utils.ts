@@ -90,3 +90,39 @@ export const validatePromptGeneration = (
 
   return true;
 };
+// Version Keys
+export const VERSION_KEYS = [
+  "M",
+  "MP",
+  "MC",
+  "MT",
+  "MPC",
+  "MPT",
+  "MCT",
+  "All",
+] as const;
+
+export type VersionKey = (typeof VERSION_KEYS)[number];
+
+// Version Descriptions (UI)
+export const VERSION_DESCRIPTION_MAP: Record<VersionKey, string> = {
+  M: "Moodboard Only",
+  MP: "Moodboard, Product",
+  MC: "Moodboard, Context",
+  MT: "Moodboard, Text",
+  MPC: "Moodboard, Product, Context",
+  MPT: "Moodboard, Product, Text",
+  MCT: "Moodboard, Context, Text",
+  All: "Moodboard, Product, Context, Text",
+};
+
+// Default Version Objects
+export const DEFAULT_EMPTY_VERSION = {
+  version_key: "M" as VersionKey,
+  prompts: { ...DEFAULT_EMPTY_PROMPTS },
+};
+
+export const DEFAULT_EMPTY_VERSIONS = VERSION_KEYS.map((key) => ({
+  version_key: key,
+  prompts: { ...DEFAULT_EMPTY_PROMPTS },
+}));
