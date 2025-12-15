@@ -24,7 +24,7 @@ import {
   MultiSelectList,
   renderMultiSelectOptions,
 } from "@/components/ui/multi-select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { usePresets } from "@/hooks/usePresets";
 import { useBrandStore } from "@/store/brand.store";
@@ -33,10 +33,25 @@ import type {
   PresetDetailResponse,
   PromptFieldType,
   PresetFormData,
+  // PresetVersion type comes from preset.types - ensure it's available there
+  PresetVersion,
 } from "@/types/preset.types";
 import { PresetEditorMode } from "@/types/preset.types";
 import { presetFormSchema } from "@/types/preset.types";
-import { DEFAULT_EMPTY_PROMPTS, PROMPT_FIELDS } from "@/lib/preset.utils";
+import {
+  DEFAULT_EMPTY_PROMPTS,
+  PROMPT_FIELDS,
+  DEFAULT_EMPTY_VERSIONS,
+  VERSION_DESCRIPTION_MAP,
+} from "@/lib/preset.utils";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface PresetEditorProps {
   presetId?: string;
@@ -57,7 +72,10 @@ export function PresetEditor({
     updatePresetMutation,
     patchPresetMutation,
     adjustPromptMutation,
-  } = usePresets({ presetId, enabled: mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW });
+  } = usePresets({
+    presetId,
+    enabled: mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW,
+  });
 
   const form = useForm<PresetFormData>({
     resolver: zodResolver(presetFormSchema),
@@ -66,17 +84,20 @@ export function PresetEditor({
       description: "",
       type: "custom",
       brand_ids: [],
-      prompts: DEFAULT_EMPTY_PROMPTS,
+      // NEW: versions array instead of single prompts
+      versions: DEFAULT_EMPTY_VERSIONS,
     },
     mode: "onChange",
   });
 
   const presetType = form.watch("type");
   const selectedBrands = form.watch("brand_ids");
-  const prompts = form.watch("prompts");
+  // removed old prompts watcher
   const { isDirty } = useFormState({ control: form.control });
 
-  const isLoading = (mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW) && presetQuery.isLoading;
+  const isLoading =
+    (mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW) &&
+    presetQuery.isLoading;
   const isViewOnly = mode === PresetEditorMode.VIEW;
   const isSaving =
     createPresetMutation.isPending ||
@@ -86,16 +107,22 @@ export function PresetEditor({
     new Set()
   );
 
-  // Initialize form with existing preset or master preset
+  // modal state: editing index into versions array
+  const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(
+    null
+  );
+
+  // Initialize form with existing preset or master preset (support NEW, CLONE, EDIT, VIEW)
   useEffect(() => {
     if (mode === PresetEditorMode.NEW && preset) {
-      // New preset - use master preset prompts
+      // New preset - use master preset versions
       form.reset({
         name: "",
         description: "",
         type: "custom",
         brand_ids: [],
-        prompts: preset.prompts || DEFAULT_EMPTY_PROMPTS,
+        versions:
+          (preset as PresetDetailResponse).versions || DEFAULT_EMPTY_VERSIONS,
       });
     } else if (mode === PresetEditorMode.CLONE && preset) {
       form.reset({
@@ -103,34 +130,46 @@ export function PresetEditor({
         description: preset.description || "",
         type: (preset.type as "generic" | "custom") || "custom",
         brand_ids: preset.brand_ids || [],
-        prompts:
-          ("prompts" in preset
-            ? (preset as PresetDetailResponse).prompts
-            : DEFAULT_EMPTY_PROMPTS) || DEFAULT_EMPTY_PROMPTS,
+        versions:
+          ("versions" in preset
+            ? (preset as PresetDetailResponse).versions
+            : DEFAULT_EMPTY_VERSIONS) || DEFAULT_EMPTY_VERSIONS,
       });
-    } else if ((mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW) && presetQuery.data) {
+    } else if (
+      (mode === PresetEditorMode.EDIT || mode === PresetEditorMode.VIEW) &&
+      presetQuery.data
+    ) {
       // Edit or View existing preset
-      const preset = presetQuery.data;
+      const fetched = presetQuery.data;
       form.reset({
-        name: preset.name || "",
-        description: preset.description || "",
-        type: (preset.type as "generic" | "custom") || "custom",
-        brand_ids: preset.brand_ids || [],
-        prompts:
-          ("prompts" in preset
-            ? (preset as PresetDetailResponse).prompts
-            : DEFAULT_EMPTY_PROMPTS) || DEFAULT_EMPTY_PROMPTS,
+        name: fetched.name || "",
+        description: fetched.description || "",
+        type: (fetched.type as "generic" | "custom") || "custom",
+        brand_ids: fetched.brand_ids || [],
+        versions: fetched.versions || DEFAULT_EMPTY_VERSIONS,
       });
     }
   }, [mode, preset, presetQuery.data, form]);
 
+  const brandOptions = brands.map((b) => ({
+    label: b.name,
+    value: b.id,
+  }));
+
+  // Helper: get current versions array
+  const versions: PresetVersion[] =
+    form.watch("versions") || DEFAULT_EMPTY_VERSIONS;
+  const currentEditingVersion =
+    editingVersionIndex !== null ? versions[editingVersionIndex] : null;
+
+  // Save entire preset
   const handleSave = async (data: PresetFormData) => {
     const payload = {
       name: data.name.trim(),
       description: data.description?.trim() || undefined,
       type: data.type,
       brand_ids: data.type === "generic" ? undefined : data.brand_ids,
-      prompts: data.prompts,
+      versions: data.versions,
     };
 
     if (mode === PresetEditorMode.NEW || mode === PresetEditorMode.CLONE) {
@@ -160,16 +199,22 @@ export function PresetEditor({
     }
   };
 
-  const handleAdjust = async (
+  // Adjust prompt by version — wrapper that calls backend with version_key
+  const handleAdjustWithVersion = async (
     presetIdForAdjust: string,
+    versionKey: PresetVersion["version_key"],
     fieldType: PromptFieldType,
     instruction: string
   ): Promise<string> => {
+    // Use composite key so multiple version/field adjustments are tracked separately
+    const compositeKey = `${versionKey}:${fieldType}`;
+    setAdjustingFields((prev) => new Set(prev).add(compositeKey));
+
     return new Promise((resolve, reject) => {
-      setAdjustingFields((prev) => new Set(prev).add(fieldType));
       adjustPromptMutation.mutate(
         {
           preset_id: presetIdForAdjust,
+          version_key: versionKey,
           field_type: fieldType,
           adjustment_instructions: instruction,
         },
@@ -177,7 +222,7 @@ export function PresetEditor({
           onSuccess: (adjustedPrompt) => {
             setAdjustingFields((prev) => {
               const next = new Set(prev);
-              next.delete(fieldType);
+              next.delete(compositeKey);
               return next;
             });
             resolve(adjustedPrompt);
@@ -185,7 +230,7 @@ export function PresetEditor({
           onError: (error) => {
             setAdjustingFields((prev) => {
               const next = new Set(prev);
-              next.delete(fieldType);
+              next.delete(compositeKey);
               return next;
             });
             toast.error("Failed to adjust prompt");
@@ -196,10 +241,20 @@ export function PresetEditor({
     });
   };
 
-  const brandOptions = brands.map((b) => ({
-    label: b.name,
-    value: b.id,
-  }));
+  // When the modal edits a version, update the form's versions array
+  const updateEditingVersion = (updated: PresetVersion) => {
+    if (editingVersionIndex === null) return;
+    const next = [...versions];
+    next[editingVersionIndex] = updated;
+    form.setValue("versions", next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const saveVersionChanges = () => {
+    setEditingVersionIndex(null);
+  };
 
   if (isLoading) {
     return (
@@ -288,7 +343,8 @@ export function PresetEditor({
             </div>
 
             {/* Preset Type Selection - do not show for master presets when editing or for view mode */}
-            {(preset?.is_master && mode === PresetEditorMode.EDIT) || isViewOnly ? null : (
+            {(preset?.is_master && mode === PresetEditorMode.EDIT) ||
+            isViewOnly ? null : (
               <div className="space-y-3">
                 <Label>Preset Type *</Label>
                 <div className="flex gap-4">
@@ -373,43 +429,50 @@ export function PresetEditor({
               </div>
             )}
 
-            {/* Prompt Cards */}
+            {/*  Preset Versions Table */}
             <div className="border-t pt-6 space-y-4">
               <div>
-                <h2 className="text-lg font-semibold">Prompt Configuration</h2>
+                <h2 className="text-lg font-semibold">Preset Versions</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Define the five prompts that power this preset. All fields are
-                  required. *
+                  Manage prompt versions for different input permutations.
                 </p>
               </div>
 
-              {PROMPT_FIELDS.map(({ fieldType, label, description: desc }) => (
-                <div key={fieldType}>
-                  <PresetPromptCard
-                    fieldType={fieldType}
-                    label={label}
-                    description={desc}
-                    value={prompts?.[fieldType] || ""}
-                    onValueChange={(value) => {
-                      // Mark the form as dirty and validate when programmatically changing deep values
-                      form.setValue(`prompts.${fieldType}`, value, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
-                    }}
-                    onAdjust={handleAdjust}
-                    presetId={presetId || preset?.id || ""}
-                    isAdjusting={adjustingFields.has(fieldType)}
-                    isExpanded={false}
-                    isViewOnly={isViewOnly}
-                  />
-                  {form.formState.errors.prompts?.[fieldType] && (
-                    <p className="text-sm text-destructive mt-2">
-                      {form.formState.errors.prompts[fieldType]?.message}
-                    </p>
-                  )}
-                </div>
-              ))}
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="p-3 text-left">Version Key</th>
+                      <th className="p-3 text-left">Description</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {versions.map((version, idx) => (
+                      <tr key={version.version_key} className="border-t">
+                        <td className="p-3 font-medium">
+                          {version.version_key}
+                        </td>
+                        <td className="p-3">
+                          {VERSION_DESCRIPTION_MAP[version.version_key]}
+                        </td>
+                        <td className="p-3 text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingVersionIndex(idx)}
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                            Edit
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Footer Actions */}
@@ -454,6 +517,118 @@ export function PresetEditor({
           </form>
         </CardContent>
       </Card>
+
+      {/*  Version Edit Modal */}
+      {currentEditingVersion && (
+        <Dialog open={true} onOpenChange={() => setEditingVersionIndex(null)}>
+          <DialogContent className="w-[85vw] sm:max-w-[900px] max-w-[95vw] h-[90vh] overflow-y-auto rounded-xl p-6">
+            <DialogHeader>
+              <DialogTitle className="flex flex-col">
+                <span className="text-lg">
+                  Edit Preset Version: {currentEditingVersion.version_key}
+                </span>
+                <span className="text-sm text-muted-foreground mt-1">
+                  {VERSION_DESCRIPTION_MAP[currentEditingVersion.version_key]}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {PROMPT_FIELDS.map(({ fieldType, label, description }) => {
+                // Determine which prompts to show based on version_key
+                const shouldShow = (() => {
+                  const versionKey = currentEditingVersion.version_key;
+
+                  switch (versionKey) {
+                    case "All":
+                      // Show all 5 prompts
+                      return true;
+
+                    case "M":
+                      // Show: moodboard_analysis, analysis_merge, prompt_generation
+                      return (
+                        fieldType === "moodboard_analysis" ||
+                        fieldType === "prompt_generation"
+                      );
+
+                    case "MT":
+                      // Show: only prompt_generation
+                      return fieldType === "prompt_generation";
+
+                    case "MP":
+                    case "MC":
+                    case "MPC":
+                    case "MPT":
+                    case "MCT":
+                      // Show: analysis_merge, prompt_generation
+                      return (
+                        fieldType === "analysis_merge" ||
+                        fieldType === "prompt_generation"
+                      );
+
+                    default:
+                      return false;
+                  }
+                })();
+
+                if (!shouldShow) return null;
+
+                return (
+                  <PresetPromptCard
+                    key={fieldType}
+                    fieldType={fieldType}
+                    label={label}
+                    description={description}
+                    value={currentEditingVersion.prompts[fieldType]}
+                    onValueChange={(v) =>
+                      updateEditingVersion({
+                        ...currentEditingVersion,
+                        prompts: {
+                          ...currentEditingVersion.prompts,
+                          [fieldType]: v,
+                        },
+                      })
+                    }
+                    onAdjust={(presetIdForAdjust, field, instruction) =>
+                      handleAdjustWithVersion(
+                        presetIdForAdjust ||
+                          presetId ||
+                          (preset && (preset as PresetDetailResponse).id) ||
+                          "",
+                        currentEditingVersion.version_key as PresetVersion["version_key"],
+                        field,
+                        instruction
+                      )
+                    }
+                    presetId={
+                      presetId ||
+                      (preset && (preset as PresetDetailResponse).id) ||
+                      ""
+                    }
+                    isAdjusting={adjustingFields.has(
+                      `${currentEditingVersion.version_key}:${fieldType}`
+                    )}
+                    isExpanded={false}
+                    isViewOnly={isViewOnly}
+                  />
+                );
+              })}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEditingVersionIndex(null)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={saveVersionChanges} disabled={isSaving}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
