@@ -236,8 +236,6 @@ const A2iImageCard = ({
       // Video
       const isVideoOutput = type === "video" || type == "video_generation";
       if (isVideoOutput) {
-        setConceptVisualGeneratorMode("video_generator");
-        console.log("here in video reuse");
         const model = models.find((m) => m.model === parameters.model);
         if (!model) {
           toast.error("No model found for this video.");
@@ -271,7 +269,6 @@ const A2iImageCard = ({
         );
 
         if (firstFrameParam?.id) {
-          // console.log("setting start frame", videoParams[firstFrameParam.id]);
           setStartFrame(videoParams[firstFrameParam.id]);
         }
         if (lastFrameParam?.id) {
@@ -286,8 +283,6 @@ const A2iImageCard = ({
       const isEditorOutput = type === "remix";
 
       if (isEditorOutput) {
-        setConceptVisualGeneratorMode("image_editor");
-        console.log("here in remix reuse");
         try {
           const model = models.find(
             (m) => m.model === parameters.model && m.type === "remix"
@@ -304,8 +299,6 @@ const A2iImageCard = ({
             return;
           }
 
-          // Set the remix model
-          setSelectedRemixModel(model);
           //  Convert all remix parameters based on model definitions
           const convertedRemixParams = { ...parameters };
 
@@ -320,9 +313,8 @@ const A2iImageCard = ({
           });
 
           // Store full parameters for remix
+          setSelectedRemixModel(model);
           setParameters("remixParameters", convertedRemixParams);
-
-          // Close modal if any (same behavior)
           if (showImageModal) setShowImageModal(false);
 
           setBaseImageUrl(
@@ -341,8 +333,6 @@ const A2iImageCard = ({
           return;
         }
       }
-
-      setConceptVisualGeneratorMode("image_generator");
 
       const model = models.find((m) => m.model === parameters.model);
       if (!model) {
@@ -442,6 +432,19 @@ const A2iImageCard = ({
           className="relative w-full h-full cursor-pointer"
           onClick={() => setShowVideoModal(true)} // Open modal
           title="Click to view metadata"
+          draggable
+          onDragStart={(e) => {
+            try {
+              e.dataTransfer.setData("assetUrl", video.url);
+              e.dataTransfer.setData("source", "a2i");
+              // image.id is used in many places as gallery item id
+              if (video.id) e.dataTransfer.setData("galleryItemId", video.id);
+              e.dataTransfer.setData("assetType", "video");
+              e.dataTransfer.effectAllowed = "copy";
+            } catch (err) {
+              console.warn("drag start dataTransfer failed", err);
+            }
+          }}
         >
           <video
             ref={videoRef}

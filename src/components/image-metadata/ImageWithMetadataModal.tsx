@@ -342,6 +342,9 @@ const ImageWithMetadataModal = ({
         setParameters("remixParameters", convertedRemixParams);
 
         onClose();
+        if (source === "media-gallery") {
+          router.push("/?scrollTo=a2i-input");
+        }
 
         return;
       } else {
@@ -470,6 +473,9 @@ const ImageWithMetadataModal = ({
       setBaseImageUrl(currentDisplayItem.asset_url);
 
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.log(error);
       toast.error(
@@ -551,6 +557,9 @@ const ImageWithMetadataModal = ({
       setStartFrame(currentDisplayItem.asset_url);
       setEndFrame(null);
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.log(error);
       toast.error(

@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useRouter } from "next/navigation";
 import { useModelsStore } from "@/store/models.store";
-import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { getGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
@@ -198,9 +197,12 @@ const VideoWithMetadataModal = ({
       setParameters("videoParameters", videoParams);
 
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
 
       toast.info(
-        "Preselected Model and its paramters set in Video Generation tab."
+        "Preselected Model and its paramters set in Video Generation Mode."
       );
     } catch (error) {
       console.error(error);
