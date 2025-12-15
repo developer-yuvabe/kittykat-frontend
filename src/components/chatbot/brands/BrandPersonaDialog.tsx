@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import {
   BrandPersona,
   PersonaFormValues,
-  personaSchema,
   PersonaUpdateRequest,
 } from "@/types/persona.types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
@@ -32,6 +31,8 @@ import {
 } from "@/components/ui/select";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getDefaultValues, parseMultilineList } from "@/lib/persona.utils";
+import { personaSchema } from "@/schema/persona.schema";
 
 interface BrandPersonaDialogProps {
   open: boolean;
@@ -41,42 +42,6 @@ interface BrandPersonaDialogProps {
   onSave: (data: PersonaUpdateRequest) => Promise<void>;
   mode: "create" | "edit" | "duplicate";
 }
-
-const listToMultiline = (items?: string[]) =>
-  items && items.length ? items.join("\n") : "";
-
-const parseMultilineList = (value?: string) =>
-  value
-    ?.split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean) ?? [];
-
-const getDefaultValues = (
-  persona?: BrandPersona | null,
-  mode?: "create" | "edit" | "duplicate"
-): PersonaFormValues => ({
-  name:
-    mode === "duplicate" && persona
-      ? `${persona.name} (Copy)`
-      : persona?.name || "",
-  summary: persona?.summary || "",
-  image_url: persona?.image_url || "",
-  age_range: persona?.age_range || "",
-  gender: persona?.gender || "",
-  location_focus: persona?.location_focus || "",
-  target_geography: persona?.target_geography || "",
-  life_stage: persona?.life_stage || "",
-  composition_mode: persona?.composition_mode || "",
-  psychographics: listToMultiline(persona?.psychographics),
-  pain_points: listToMultiline(persona?.pain_points),
-  style_preferences: listToMultiline(persona?.style_preferences),
-  usage_contexts: listToMultiline(persona?.usage_contexts),
-  visual_direction: listToMultiline(persona?.visual_direction),
-  messaging_angles: listToMultiline(persona?.messaging_angles),
-  content_recommendations: listToMultiline(persona?.content_recommendations),
-  do_guidelines: listToMultiline(persona?.do_guidelines),
-  dont_guidelines: listToMultiline(persona?.dont_guidelines),
-});
 
 function BrandPersonaDialog({
   open,
@@ -182,7 +147,7 @@ function BrandPersonaDialog({
       dont_guidelines: parseMultilineList(values.dont_guidelines),
     };
 
-    await toast.promise(onSave(payload), {
+    toast.promise(onSave(payload), {
       loading: "Saving persona...",
       success:
         mode === "create"

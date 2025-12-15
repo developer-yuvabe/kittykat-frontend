@@ -66,14 +66,6 @@ function BrandPersonaEmptyState({
             Generate with AI
           </Button>
         </div>
-
-        {/* Tips */}
-        <div className="pt-6 border-t">
-          <p className="text-xs text-muted-foreground">
-            💡 Tip: AI-generated personas are based on your brand information
-            and market analysis
-          </p>
-        </div>
       </div>
     </div>
   );

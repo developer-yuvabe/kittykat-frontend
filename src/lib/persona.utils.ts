@@ -1,3 +1,4 @@
+import { BrandPersona, PersonaFormValues } from "@/types/persona.types";
 import { Heart, Home, User, Users } from "lucide-react";
 
 export const compositionConfig = {
@@ -30,3 +31,39 @@ export const compositionConfig = {
     iconBg: "bg-green-500/20",
   },
 };
+
+export const listToMultiline = (items?: string[]) =>
+  items && items.length ? items.join("\n") : "";
+
+export const parseMultilineList = (value?: string) =>
+  value
+    ?.split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean) ?? [];
+
+export const getDefaultValues = (
+  persona?: BrandPersona | null,
+  mode?: "create" | "edit" | "duplicate"
+): PersonaFormValues => ({
+  name:
+    mode === "duplicate" && persona
+      ? `${persona.name} (Copy)`
+      : persona?.name || "",
+  summary: persona?.summary || "",
+  image_url: persona?.image_url || "",
+  age_range: persona?.age_range || "",
+  gender: persona?.gender || "",
+  location_focus: persona?.location_focus || "",
+  target_geography: persona?.target_geography || "",
+  life_stage: persona?.life_stage || "",
+  composition_mode: persona?.composition_mode || "",
+  psychographics: listToMultiline(persona?.psychographics),
+  pain_points: listToMultiline(persona?.pain_points),
+  style_preferences: listToMultiline(persona?.style_preferences),
+  usage_contexts: listToMultiline(persona?.usage_contexts),
+  visual_direction: listToMultiline(persona?.visual_direction),
+  messaging_angles: listToMultiline(persona?.messaging_angles),
+  content_recommendations: listToMultiline(persona?.content_recommendations),
+  do_guidelines: listToMultiline(persona?.do_guidelines),
+  dont_guidelines: listToMultiline(persona?.dont_guidelines),
+});
