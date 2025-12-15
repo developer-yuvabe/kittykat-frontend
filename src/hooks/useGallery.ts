@@ -27,7 +27,8 @@ export const useGalleryQuery = (
   filters: GalleryFilters,
   items_per_page: number = ITEMS_PER_PAGE,
   enabled: boolean = true,
-  compUsed: string = "unknown"
+  compUsed: string = "unknown",
+  polling: boolean = true
 ) => {
   const queryClient = useQueryClient();
 
@@ -139,15 +140,15 @@ export const useGalleryQuery = (
       return lastPage.pagination.skip + lastPage.pagination.limit;
     },
     initialPageParam: 0,
-    refetchInterval: (query) => {
-      // Check if any items are processing
-      const hasProcessingItems = query.state.data?.pages
-        ?.flatMap((page) => page.gallery_items)
-        ?.some((item) => item.processing_status === "processing");
+    refetchInterval: polling
+      ? (query) => {
+          const hasProcessingItems = query.state.data?.pages
+            ?.flatMap((page) => page.gallery_items)
+            ?.some((item) => item.processing_status === "processing");
 
-      // Return 3000ms (3 seconds) if there are processing items, otherwise false (no polling)
-      return hasProcessingItems ? 3000 : false;
-    },
+          return hasProcessingItems ? 3000 : false;
+        }
+      : undefined, // ✔ This fully removes polling
   });
 
   // Flatten all pages of gallery items

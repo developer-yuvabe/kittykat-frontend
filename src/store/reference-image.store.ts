@@ -22,8 +22,8 @@ interface ReferenceImagesState {
   reset: () => void;
 }
 
-export const useReferenceImagesStore = create<ReferenceImagesState>(
-  (set, get) => ({
+export const createReferenceImagesStore = () =>
+  create<ReferenceImagesState>((set, get) => ({
     // Initial state
     items: [],
     isLoading: false,
@@ -36,7 +36,8 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
     // Set loading state
     setIsLoading: (isLoading) => {
       set({ isLoading });
-    }, // Add new items optimistically (for uploads and selections)
+    },
+    // Add new items optimistically (for uploads and selections)
     addItems: (newItems) => {
       const { items } = get();
       const now = new Date().toISOString();
@@ -114,8 +115,6 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
       });
     },
 
-    // Fetch reference images
-
     // Reset store
     reset: () => {
       set({
@@ -123,5 +122,7 @@ export const useReferenceImagesStore = create<ReferenceImagesState>(
         isLoading: false,
       });
     },
-  })
-);
+  }));
+
+export const useReferenceImagesStore = createReferenceImagesStore();
+export const useReferenceVideoStore = createReferenceImagesStore();

@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useRouter } from "next/navigation";
 import { useModelsStore } from "@/store/models.store";
-import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { getGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
@@ -73,7 +72,6 @@ const VideoWithMetadataModal = ({
   const { user } = useUserStore();
 
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
-  const { openConceptVisual } = useConceptVisualStore();
   const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
     useCreditsStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -198,27 +196,13 @@ const VideoWithMetadataModal = ({
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
 
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [galleryItem],
-        asset: {
-          currentAsset: {
-            ...galleryItem,
-            asset_url:
-              data.parameters.first_frame ||
-              data.parameters.image ||
-              data.parameters.start_image ||
-              null,
-          },
-          galleryActions: null,
-        },
-        defaultActiveTab: "video-generation",
-      });
-
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
 
       toast.info(
-        "Preselected Model and its paramters set in Video Generation tab."
+        "Preselected Model and its paramters set in Video Generation Mode."
       );
     } catch (error) {
       console.error(error);

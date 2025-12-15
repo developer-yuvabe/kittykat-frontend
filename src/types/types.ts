@@ -1,3 +1,5 @@
+import { BrandPersona } from "./persona.types";
+
 export interface BaseApiResponse<T> {
   status_code: number;
   message: string;
@@ -187,6 +189,7 @@ export interface ThreadDetails {
     [key: string]: string[];
   };
   analysis_logs?: AnalysisLogDetail[];
+  personas?: BrandPersona[];
 }
 
 export interface AnalysisLogDetail {

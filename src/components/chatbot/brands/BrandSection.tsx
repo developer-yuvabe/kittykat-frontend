@@ -28,6 +28,8 @@ import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
 import { useThreadStore } from "@/store/thread.store";
+import BrandPersonas from "./BrandPersonas";
+import { BrandPersona } from "@/types/persona.types";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -36,12 +38,19 @@ export const BrandSection: React.FC<{
     React.SetStateAction<{ [key: string]: boolean }>
   >;
   analysisLogs: AnalysisLogDetail[];
+  brandId?: string;
+  personas?: BrandPersona[];
 }> = ({
   brandingInformation,
   expandedSections,
   setExpandedSections,
   analysisLogs,
+  brandId,
+  personas,
 }) => {
+  const { selectedBrandId } = useBrandStore();
+  const effectiveBrandId = brandId || selectedBrandId;
+
   if (!brandingInformation) {
     return <InitialPlaceHolder />;
   }
@@ -59,7 +68,9 @@ export const BrandSection: React.FC<{
           brandingInformation.static,
           brandingInformation.dynamic,
           brandingInformation.brand_media,
-          analysisLogs
+          analysisLogs,
+          effectiveBrandId ?? undefined,
+          personas
         )}
       </div>
     </div>
@@ -72,7 +83,9 @@ export const renderBrandData = (
   staticData: ThreadBrand["static"],
   dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
-  analysisLogs: AnalysisLogDetail[]
+  analysisLogs: AnalysisLogDetail[],
+  brandId?: string,
+  personas?: BrandPersona[]
 ) => {
   const brandInitial = (staticData?.brand?.name || "No Brand Name")
     .charAt(0)
@@ -433,6 +446,10 @@ export const renderBrandData = (
                 );
               }}
             />
+
+            <div className="pt-2">
+              <BrandPersonas personas={personas} />
+            </div>
 
             {/* Brand Media Upload Section */}
             <BrandAestheticUploader
