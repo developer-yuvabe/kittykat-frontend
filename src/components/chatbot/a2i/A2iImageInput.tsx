@@ -130,6 +130,17 @@ const A2iImageInput = ({
     selectedVideoGenearationModel,
   ]);
 
+  useEffect(() => {
+    if (conceptVisualGeneratorMode !== "video_generator") {
+      setStartFrame(null);
+      setEndFrame(null);
+      clearOtherFrames();
+    }
+    if (conceptVisualGeneratorMode !== "image_editor") {
+      setBaseImageUrl(null);
+    }
+  }, [conceptVisualGeneratorMode]);
+
   // Compute formKey based on mode
   const formKey = useMemo(() => {
     switch (conceptVisualGeneratorMode) {
@@ -247,7 +258,6 @@ const A2iImageInput = ({
     let lastFrameParam = null;
 
     for (const param of currentModel?.parameters ?? []) {
-      // console.log("param", param);
       if (param.type === "file") {
         fileParam = param as FileParam;
       } else if (param.type === "first_frame") {
@@ -272,11 +282,6 @@ const A2iImageInput = ({
       lastFrameParam,
     };
   }, [currentModel]);
-
-  // console.log("referenceImagesModelInfo", referenceImagesModelInfo);
-  // console.log("initialParams", initialParams);
-  // console.log("advancedParams", advancedParams);
-  // console.log("baseImageRemix", baseImageParam);
 
   const [masterReference, setMasterReference] = useState<string[]>([]);
   const [productReference, setProductReference] = useState<string[]>([]);
@@ -460,6 +465,7 @@ const A2iImageInput = ({
       const assetUrl = e.dataTransfer.getData("assetUrl");
       const source = e.dataTransfer.getData("source");
       const galleryItemId = e.dataTransfer.getData("galleryItemId");
+      const assetType = e.dataTransfer.getData("assetType");
 
       const isInternalA2iDrag =
         source === "a2i" ||
@@ -469,6 +475,10 @@ const A2iImageInput = ({
 
       if (isInternalA2iDrag) {
         if (!assetUrl) return;
+        if (assetType == "video") {
+          toast.error("Only Image asset is supported as reference images.");
+          return;
+        }
 
         const result = handleReferenceImageDrop(
           assetUrl,
@@ -620,6 +630,11 @@ const A2iImageInput = ({
       const assetUrl = e.dataTransfer.getData("assetUrl");
       const source = e.dataTransfer.getData("source");
       const galleryItemId = e.dataTransfer.getData("galleryItemId");
+      const assetType = e.dataTransfer.getData("assetType");
+      if (assetType == "video") {
+        toast.error("Only Image asset is supported as reference images.");
+        return;
+      }
 
       // If this is an internal A2I drag or contains an assetUrl but no files,
       // handle it as an internal reference add instead of uploading files.
@@ -1036,7 +1051,6 @@ const A2iImageInput = ({
     if (parameters.remixParameters) {
       setConceptVisualGeneratorMode("image_editor");
       const p = parameters.remixParameters;
-      // console.log("loading remix parameters", p);
       if (!p) return;
 
       // Load prompt
@@ -1055,7 +1069,6 @@ const A2iImageInput = ({
       const refParam = selectedRemixModel?.parameters?.find(
         (param) => param.type === "file"
       );
-      // console.log("remix refParam", refParam);
 
       setBaseImageUrl(p.base_image || p.image || null);
 
@@ -1070,8 +1083,6 @@ const A2iImageInput = ({
         );
 
         const master = masterImages.length > 0 ? [masterImages[0]] : [];
-        // console.log("master images from params", master);
-        // console.log("product images from params", productImages);
         const products = productImages;
 
         setMasterReference(master);
@@ -1100,12 +1111,14 @@ const A2iImageInput = ({
       }
       // Load start and end frames
       if (firstFrameParam?.id) {
-        // console.log("setting start frame", p[firstFrameParam.id]);
         setStartFrame(p[firstFrameParam.id]);
       }
       if (lastFrameParam?.id) {
         setEndFrame(p[lastFrameParam.id]);
       }
+      requestAnimationFrame(() => {
+        setParameters("videoParameters", null);
+      });
     }
 
     if (parameters.referenceImage) {
@@ -1117,30 +1130,6 @@ const A2iImageInput = ({
       });
     }
   }, [parameters]);
-
-  useEffect(() => {
-    if (conceptVisualGeneratorMode === "video_generator") {
-      const p = parameters.videoParameters;
-      if (!p) return;
-
-      if (p.prompt)
-        formInstance.setValue("prompt", p.prompt, { shouldValidate: true });
-      // Load all other parameters
-      for (const param of selectedVideoGenearationModel?.parameters ?? []) {
-        const id = param.id;
-        if (p[id] !== undefined) {
-          formInstance.setValue(id, p[id], { shouldValidate: true });
-        }
-      }
-
-      if (firstFrameParam?.id) {
-        setStartFrame(p[firstFrameParam.id] ?? null);
-      }
-      if (lastFrameParam?.id) {
-        setEndFrame(p[lastFrameParam.id] ?? null);
-      }
-    }
-  }, [conceptVisualGeneratorMode]);
 
   const value = formInstance.watch("max_images");
 
@@ -1157,6 +1146,9 @@ const A2iImageInput = ({
   }, [currentImageCount, value, formInstance]);
 
   const handleBaseImageDrop = async (file: File) => {
+    // Show loading toast
+    const toastId = toast.loading("Uploading base image...");
+
     setIsUploading(true);
     try {
       const uploadedUrl = await uploadFileAndReturnUrl(
@@ -1166,11 +1158,20 @@ const A2iImageInput = ({
         file,
         selectedBrandId
       );
+
       setBaseImageUrl(uploadedUrl);
       toast.success("Base image uploaded successfully");
+
+      // Update the toast to success
+      toast.success("Base image uploaded successfully", { id: toastId });
     } catch (error) {
       console.error("Base image upload failed:", error);
       toast.error("Failed to upload base image. Please try again.");
+
+      // Update the toast to error
+      toast.error("Failed to upload base image. Please try again.", {
+        id: toastId,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -1262,21 +1263,22 @@ const A2iImageInput = ({
                 />
               </div>
 
-              {conceptVisualGeneratorMode === "image_editor" && (
-                <div className="p-4">
-                  <BaseImageUploadArea
-                    fileTypes={["image/jpeg", "image/png", "image/webp"]}
-                    maxFileSizeLimit={10}
-                    isUploading={isUploading}
-                    onDrop={handleBaseImageDrop}
-                    onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
-                    baseImageUrl={baseImageUrl}
-                    setBaseImageUrl={setBaseImageUrl}
-                  />
-                </div>
-              )}
+              {conceptVisualGeneratorMode === "image_editor" &&
+                currentModel && (
+                  <div className="p-4">
+                    <BaseImageUploadArea
+                      fileTypes={["image/jpeg", "image/png", "image/webp"]}
+                      maxFileSizeLimit={10}
+                      isUploading={isUploading}
+                      onDrop={handleBaseImageDrop}
+                      onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
+                      baseImageUrl={baseImageUrl}
+                      setBaseImageUrl={setBaseImageUrl}
+                    />
+                  </div>
+                )}
 
-              <div className="flex-1 w-full p-2">
+              <div className="flex-1 w-full p-2" onDrop={handlePromptDrop}>
                 <FormField
                   control={formInstance.control}
                   name="prompt"
@@ -1305,7 +1307,6 @@ const A2iImageInput = ({
                               e.preventDefault();
                               e.stopPropagation();
                             }}
-                            onDrop={handlePromptDrop}
                             className={cn(
                               "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt- h-auto min-h-20 max-h-[300px] overflow-y-auto align-top"
                             )}
@@ -1432,7 +1433,9 @@ const A2iImageInput = ({
                 {/* Image Count - Always show */}
                 {(() => {
                   const imageCountParam = currentModel?.parameters?.find(
-                    (param) => param.type === "image_count"
+                    (param) =>
+                      param.type === "image_count" &&
+                      param.category === "initial"
                   );
 
                   if (imageCountParam) {
@@ -1540,7 +1543,11 @@ const A2iImageInput = ({
                 />
                 <Button
                   type="button"
-                  disabled={!formInstance.watch("prompt") || isEnhancingPrompt}
+                  disabled={
+                    !formInstance.watch("prompt") ||
+                    isEnhancingPrompt ||
+                    conceptVisualGeneratorMode === "image_editor"
+                  }
                   variant={"outline"}
                   className="border-primary text-primary"
                   onClick={() => {
@@ -1574,7 +1581,9 @@ const A2iImageInput = ({
                     !formInstance.formState.isValid ||
                     formInstance.formState.isSubmitting ||
                     isEnhancingPrompt ||
-                    !currentModel
+                    !currentModel ||
+                    (conceptVisualGeneratorMode === "image_editor" &&
+                      !baseImageUrl)
                   }
                   isCalculatingTokens={isCalculatingTokens}
                 />
@@ -1655,32 +1664,31 @@ const A2iImageInput = ({
                 </div>
               )}
 
-            {conceptVisualGeneratorMode === "video_generator" && (
-              <div>
-                <VideoFrameSelector
-                  activeTab={videoFramesPopoverTab}
-                  onTabChange={setVideoFramesPopoverTab}
-                  maxLimit={1}
-                  fileTypes={[
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp",
-                    "video/mp4",
-                  ]}
-                  maxFileSizeLimit={32}
-                  disabled={formInstance.formState.isSubmitting}
-                  // disabled={false}
-                  currentCampaignId={currentCampaign?.id}
-                  isOpen={isVideoFramesPopoverOpen}
-                  onOpenChange={setIsVideoFramesPopoverOpen}
-                  variant="popover"
-                  showPopoverTrigger={showPopoverTrigger}
-                  setShowPopoverTrigger={setShowPopoverTrigger}
-                  popoverSide="top"
-                  isEndFrameAvailable={lastFrameParam !== null}
-                />
-              </div>
-            )}
+            {conceptVisualGeneratorMode === "video_generator" &&
+              currentModel && (
+                <div>
+                  <VideoFrameSelector
+                    activeTab={videoFramesPopoverTab}
+                    onTabChange={setVideoFramesPopoverTab}
+                    maxLimit={1}
+                    fileTypes={[
+                      "image/jpeg",
+                      "image/png",
+                      "image/webp",
+                      "video/mp4",
+                    ]}
+                    maxFileSizeLimit={32}
+                    disabled={formInstance.formState.isSubmitting}
+                    currentCampaignId={currentCampaign?.id}
+                    isOpen={isVideoFramesPopoverOpen}
+                    onOpenChange={setIsVideoFramesPopoverOpen}
+                    showPopoverTrigger={showPopoverTrigger}
+                    setShowPopoverTrigger={setShowPopoverTrigger}
+                    popoverSide="bottom"
+                    isEndFrameAvailable={lastFrameParam !== null}
+                  />
+                </div>
+              )}
           </div>
         </Form>
       </div>

@@ -4,7 +4,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { SkipBack, SkipForward } from "lucide-react";
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { FileRejection } from "react-dropzone";
 import { toast } from "sonner";
 import { useBrandStore } from "@/store/brand.store";
@@ -12,7 +12,7 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { getExtensionFromUrl } from "@/lib/utils";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { GalleryItem, GalleryItemResponse } from "@/types/gallery.types";
-import { useReferenceImagesStore } from "@/store/reference-image.store";
+import { useReferenceVideoStore } from "@/store/reference-image.store";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import { ReferenceUploadArea } from "./ReferenceUploadArea";
 import { allMediaAssetSources, checkFileSizeLimit } from "@/lib/gallery.utils";
@@ -21,10 +21,8 @@ import { VideoFrameGalleryGrid } from "./VideoFrameGalleryGrid";
 import { useA2iStore } from "@/store/a2i.store";
 
 interface VideoFrameSelectorProps {
-  activeTab?: "start_frame" | "end_frame";
-  onTabChange?: (tab: "start_frame" | "end_frame") => void;
-
-  // Common props
+  activeTab: "start_frame" | "end_frame";
+  onTabChange: (tab: "start_frame" | "end_frame") => void;
   maxLimit: number;
   fileTypes: string[];
   maxFileSizeLimit: number;
@@ -33,42 +31,31 @@ interface VideoFrameSelectorProps {
   currentCampaignId?: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-
-  // UX Mode props
-  variant?: "popover" | "inline" | "hidden"; // Controls the layout/UX
   popoverAlign?: "start" | "center" | "end";
   popoverSide?: "top" | "bottom" | "left" | "right";
-  customTrigger?: React.ReactNode;
   showPopoverTrigger: boolean;
   setShowPopoverTrigger: (show: boolean) => void;
   isEndFrameAvailable?: boolean;
 }
 
 const VideoFrameSelector = ({
-  // Dual-zone props
   activeTab: activeTabProp,
   onTabChange: onTabChangeProp,
-
-  // Common props
-  maxLimit,
   fileTypes,
   maxFileSizeLimit,
   maxTotalSizeMB,
   currentCampaignId,
   isOpen,
   onOpenChange,
-
-  // UX Mode props
   popoverAlign = "start",
   popoverSide = "top",
-  customTrigger,
   showPopoverTrigger = true,
+  setShowPopoverTrigger,
   isEndFrameAvailable = true,
 }: VideoFrameSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
-  const { addOtherFrame, removeOtherFrame, otherFrames } = useA2iStore();
-  // console.log("otherFrames in VideoFrameSelector:", otherFrames);
+  const { addOtherFrame, removeOtherFrame } = useA2iStore();
   const [selectedTypeFirst, setSelectedTypeFirst] = useState<"start" | "end">(
     "start"
   );
@@ -123,18 +110,24 @@ const VideoFrameSelector = ({
     addItems,
     setItems,
     setIsLoading,
-  } = useReferenceImagesStore();
+  } = useReferenceVideoStore();
 
-  const currentImageCount = (startFrame ? 1 : 0) + (endFrame ? 1 : 0);
-  const remainingSlots = maxLimit - currentImageCount;
+  const remainingStartFrameSlots = startFrame ? 0 : 1;
+  const remainingEndFrameSlots = endFrame ? 0 : 1;
+
+  const remainingSlots =
+    activeTab === "start_frame"
+      ? remainingStartFrameSlots
+      : remainingEndFrameSlots;
 
   const openForStart = useCallback(() => {
-    // setShowPopoverTrigger(false);
+    setShowPopoverTrigger(false);
     onTabChange("start_frame");
     handleOpenChange(true);
   }, [onTabChange, handleOpenChange]);
 
   const openForEnd = useCallback(() => {
+    setShowPopoverTrigger(false);
     onTabChange("end_frame");
     handleOpenChange(true);
   }, [onTabChange, handleOpenChange]);
@@ -184,7 +177,6 @@ const VideoFrameSelector = ({
           );
         }
       }
-      console.log("Uploading file to gallery:", file.name, file.type);
 
       const uploadedUrl = await uploadFileAndReturnUrl(
         file.name,
@@ -244,7 +236,7 @@ const VideoFrameSelector = ({
       try {
         const zone = activeTab === "start_frame" ? "start" : "end";
         const targetZone = zone === "start" ? "first" : "last";
-        const zoneLabel = `${activeTab} frame`;
+        const zoneLabel = `${zone} frame`;
 
         // Upload file
         const toastPromise = toast.promise(uploadFileAndAddToGallery(file), {
@@ -401,8 +393,6 @@ const VideoFrameSelector = ({
           zone: targetZone,
         });
 
-        console.log("Adding other frame:", otherFrames);
-
         addOtherFrame({
           type: "end",
           url: end,
@@ -463,9 +453,10 @@ const VideoFrameSelector = ({
       e.preventDefault();
       const assetUrl = e.dataTransfer.getData("assetUrl");
       const source = e.dataTransfer.getData("source") || "gallery";
-      const assetId = e.dataTransfer.getData("assetId");
+      const assetId =
+        e.dataTransfer.getData("assetId") ||
+        e.dataTransfer.getData("galleryItemId");
       const assetType = e.dataTransfer.getData("assetType"); // <-- important
-      console.log("Drop event data:", { assetUrl, source, assetId, assetType });
 
       const targetZone = zone === "start" ? "first" : "last";
       const currentInZone = zone === "start" ? startFrame : endFrame;
@@ -531,7 +522,7 @@ const VideoFrameSelector = ({
 
       if (!assetUrl) return;
 
-      if (source === "gallery") {
+      if (source === "gallery" || source === "a2i") {
         const isVideo = assetType === "video";
 
         if (currentInZone === assetUrl) {
@@ -543,6 +534,8 @@ const VideoFrameSelector = ({
           const { start, end } = await getVideoFrames(assetUrl);
 
           setFrame(zone, start);
+          if (zone === "start") setSelectedTypeFirst("start");
+          else setSelectedTypeLast("start");
 
           addOtherFrame({ type: "start", url: start, zone: targetZone });
           addOtherFrame({ type: "end", url: end, zone: targetZone });
@@ -817,12 +810,18 @@ const VideoFrameSelector = ({
     Boolean
   ) as string[];
 
+  useEffect(() => {
+    if (!isOpen) {
+      setShowPopoverTrigger(true);
+    }
+  }, [isOpen, setShowPopoverTrigger]);
+
   return (
     <>
       <div className="px-2">
         <Popover open={isOpen} onOpenChange={handleOpenChange} modal>
-          <PopoverTrigger asChild hidden={!showPopoverTrigger}>
-            {customTrigger || (
+          <PopoverTrigger asChild>
+            {showPopoverTrigger ? (
               <div className="flex gap-4">
                 <VideoFrameZone
                   zone="first"
@@ -865,11 +864,19 @@ const VideoFrameSelector = ({
                     onSelectType={(type) => setSelectedTypeLast(type)}
                   />
                 ) : (
-                  <div className="flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col items-center justify-center text-muted-foreground leading-snug text-sm text-center">
+                  <div
+                    className="flex-1 border rounded-xl bg-background cursor-pointer transition-all min-w-0 flex flex-col items-center justify-center text-muted-foreground leading-snug text-sm text-center"
+                    aria-disabled="true"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
                     End Frame is not available for this model
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="sr-only" aria-hidden />
             )}
           </PopoverTrigger>
 
@@ -877,7 +884,7 @@ const VideoFrameSelector = ({
             id="reference-zone"
             align={popoverAlign}
             side={popoverSide}
-            className="w-[1000px] p-0 rounded-xl max-h-[500px] shadow-xl border bg-background overflow-y-scroll"
+            className="w-[1040px] p-0 rounded-xl max-h-[500px] shadow-xl border bg-background overflow-y-scroll"
             onCloseAutoFocus={(e) => {
               e.preventDefault();
             }}
