@@ -68,15 +68,12 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const teams = teamsListQuery.data?.teams ?? [];
 
   const { defaultModelIds, groupedModels } = useMemo(() => {
-    const groupConfig: Record<
-      string,
-      { label: string; models: typeof models }
-    > = {
-      image: { label: "Image Generation", models: [] },
-      remix: { label: "Image Editing", models: [] },
-      video: { label: "Video Generation", models: [] },
-      vton: { label: "Virtual Try-On", models: [] },
-      "image-upscale": { label: "Image Upscale", models: [] },
+    const groupedByType: Record<string, typeof models> = {
+      image: [],
+      video: [],
+      remix: [],
+      vton: [],
+      "image-upscale": [],
     };
 
     const defaultModelIds = models.reduce((acc, model) => {
@@ -86,9 +83,8 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
       }
 
       // Group by type
-      const group = groupConfig[model.type];
-      if (group) {
-        group.models.push(model);
+      if (groupedByType[model.type]) {
+        groupedByType[model.type].push(model);
       }
 
       return acc;
@@ -96,9 +92,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
 
     return {
       defaultModelIds,
-      groupedModels: Object.values(groupConfig).filter(
-        (group) => group.models.length > 0
-      ),
+      groupedModels: groupedByType,
     };
   }, [models]);
 
@@ -200,20 +194,40 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     });
   };
 
-  const getModelIcon = (model: any) => {
+  const getModelIconAndLabel = (type: string) => {
     const iconClass = "h-3.5 w-3.5 text-white";
 
-    switch (model.type) {
+    switch (type) {
       case "image":
-        return <ImageGeneratorIcon className={iconClass} />;
+        return {
+          icon: <ImageGeneratorIcon className={iconClass} />,
+          label: "Image Generation",
+        };
       case "video":
-        return <VideoGeneratorIcon className={iconClass} />;
+        return {
+          icon: <VideoGeneratorIcon className={iconClass} />,
+          label: "Video Generation",
+        };
       case "remix":
+        return {
+          icon: <ImageEditorIcon className={iconClass} />,
+          label: "Image Editing",
+        };
       case "image-upscale":
+        return {
+          icon: <ImageEditorIcon className={iconClass} />,
+          label: "Image Upscale",
+        };
       case "vton":
-        return <ImageEditorIcon className={iconClass} />;
+        return {
+          icon: <ImageEditorIcon className={iconClass} />,
+          label: "Virtual Try-On",
+        };
       default:
-        return <ImageGeneratorIcon className={iconClass} />;
+        return {
+          icon: <ImageGeneratorIcon className={iconClass} />,
+          label: "Unknown",
+        };
     }
   };
 
@@ -331,7 +345,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                     selectedRole === UserRoleId.ADMIN ||
                                     selectedRole === UserRoleId.KK_CREATIVE_USER
                                       ? "Has access to all models"
-                                      : groupedModels.length === 0
+                                      : models.length === 0
                                       ? "Loading models..."
                                       : "Select models"
                                   }
@@ -342,12 +356,12 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               search={{
                                 placeholder: "Search models...",
                                 emptyMessage:
-                                  groupedModels.length === 0
+                                  models.length === 0
                                     ? "Loading models..."
                                     : "No models found",
                               }}
                             >
-                              {groupedModels.length > 0 && (
+                              {models.length > 0 && (
                                 <>
                                   {/* Select All Checkbox */}
                                   <div className="px-2 py-2 border-b border-border">
@@ -383,42 +397,49 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                   </div>
 
                                   {/* Grouped Models */}
-                                  {groupedModels.map((group) => (
-                                    <MultiSelectGroup
-                                      key={group.label}
-                                      heading={group.label}
-                                    >
-                                      {group.models.map((model) => {
-                                        return (
-                                          <MultiSelectItem
-                                            key={model.id}
-                                            value={model.id}
-                                            badgeLabel={model.name}
-                                            disabled={
-                                              selectedRole ===
-                                                UserRoleId.ADMIN ||
-                                              selectedRole ===
-                                                UserRoleId.KK_CREATIVE_USER
-                                            }
-                                            className="pl-0"
-                                          >
-                                            <div className="flex items-center gap-2 w-full ml-2">
-                                              {/* Avatar with Icon */}
-                                              <Avatar className="h-6 w-6 mr-2 bg-primary/30">
-                                                <AvatarFallback className="bg-primary/30 flex items-center justify-center">
-                                                  {getModelIcon(model)}
-                                                </AvatarFallback>
-                                              </Avatar>
+                                  {Object.entries(groupedModels).map(
+                                    ([type, modelsList]) => {
+                                      const { label } =
+                                        getModelIconAndLabel(type);
 
-                                              <p className="line-clamp-1 break-words">
-                                                {model.name}
-                                              </p>
-                                            </div>
-                                          </MultiSelectItem>
-                                        );
-                                      })}
-                                    </MultiSelectGroup>
-                                  ))}
+                                      return (
+                                        <MultiSelectGroup
+                                          key={type}
+                                          heading={label}
+                                        >
+                                          {modelsList.map((model) => (
+                                            <MultiSelectItem
+                                              key={model.id}
+                                              value={model.id}
+                                              badgeLabel={model.name}
+                                              disabled={
+                                                selectedRole ===
+                                                  UserRoleId.ADMIN ||
+                                                selectedRole ===
+                                                  UserRoleId.KK_CREATIVE_USER
+                                              }
+                                              className="pl-0"
+                                            >
+                                              <div className="flex items-center gap-2 w-full ml-2">
+                                                <Avatar className="h-6 w-6 mr-2 bg-primary/30">
+                                                  <AvatarFallback className="bg-primary/30 flex items-center justify-center">
+                                                    {
+                                                      getModelIconAndLabel(
+                                                        model.type
+                                                      ).icon
+                                                    }
+                                                  </AvatarFallback>
+                                                </Avatar>
+                                                <p className="line-clamp-1 break-words">
+                                                  {model.name}
+                                                </p>
+                                              </div>
+                                            </MultiSelectItem>
+                                          ))}
+                                        </MultiSelectGroup>
+                                      );
+                                    }
+                                  )}
                                 </>
                               )}
                             </MultiSelectContent>
