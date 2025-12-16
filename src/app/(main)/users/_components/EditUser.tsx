@@ -70,32 +70,28 @@ export function EditUser({
   const queryClient = useQueryClient();
 
   const { defaultModelIds, groupedModels } = useMemo(() => {
-    const groupedByType: Record<string, typeof models> = {
-      image: [],
-      video: [],
-      remix: [],
-      vton: [],
-      "image-upscale": [],
-    };
+    const result = models.reduce(
+      (acc, model) => {
+        // Collect default models
+        if (model.default_model) {
+          acc.defaultModelIds.push(model.id);
+        }
 
-    const defaultModelIds = models.reduce((acc, model) => {
-      // Collect default models
-      if (model.default_model) {
-        acc.push(model.id);
+        // Group by type
+        if (!acc.groupedModels[model.type]) {
+          acc.groupedModels[model.type] = [];
+        }
+        acc.groupedModels[model.type].push(model);
+
+        return acc;
+      },
+      {
+        defaultModelIds: [] as string[],
+        groupedModels: {} as Record<string, typeof models>,
       }
+    );
 
-      // Group by type
-      if (groupedByType[model.type]) {
-        groupedByType[model.type].push(model);
-      }
-
-      return acc;
-    }, [] as string[]);
-
-    return {
-      defaultModelIds,
-      groupedModels: groupedByType,
-    };
+    return result;
   }, [models]);
 
   const form = useForm<EditUserFormData>({
