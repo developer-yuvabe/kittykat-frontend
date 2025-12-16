@@ -70,24 +70,39 @@ export function EditUser({
   const queryClient = useQueryClient();
 
   const { defaultModelIds, groupedModels } = useMemo(() => {
-    const defaultModels = models.filter((m) => m.default_model);
-    const defaultIds = defaultModels.map((m) => m.id);
+    const groupConfig: Record<
+      string,
+      { label: string; models: typeof models }
+    > = {
+      image: { label: "Image Generation", models: [] },
+      remix: { label: "Image Editing", models: [] },
+      video: { label: "Video Generation", models: [] },
+      vton: { label: "Virtual Try-On", models: [] },
+      "image-upscale": { label: "Image Upscale", models: [] },
+    };
 
-    const imageModels = models.filter((m) => m.type === "image");
-    const remixModels = models.filter((m) => m.type === "remix");
-    const videoModels = models.filter((m) => m.type === "video");
-    const vtonModels = models.filter((m) => m.type === "vton");
-    const upscaleModels = models.filter((m) => m.type === "image-upscale");
+    const defaultModelIds: string[] = [];
+
+    models.reduce((_, model) => {
+      // collect default models
+      if (model.default_model) {
+        defaultModelIds.push(model.id);
+      }
+
+      // group by type
+      const group = groupConfig[model.type];
+      if (group) {
+        group.models.push(model);
+      }
+
+      return _;
+    }, null as null);
 
     return {
-      defaultModelIds: defaultIds,
-      groupedModels: [
-        { label: "Image Generation", models: imageModels },
-        { label: "Image Editing", models: remixModels },
-        { label: "Video Generation", models: videoModels },
-        { label: "Virtual Try-On", models: vtonModels },
-        { label: "Image Upscale", models: upscaleModels },
-      ].filter((group) => group.models.length > 0),
+      defaultModelIds,
+      groupedModels: Object.values(groupConfig).filter(
+        (group) => group.models.length > 0
+      ),
     };
   }, [models]);
 

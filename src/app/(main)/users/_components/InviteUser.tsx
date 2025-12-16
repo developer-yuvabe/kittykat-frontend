@@ -68,28 +68,37 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   const teams = teamsListQuery.data?.teams ?? [];
 
   const { defaultModelIds, groupedModels } = useMemo(() => {
-    // Find models with default_model flag
-    const defaultModels = models.filter((model) => model.default_model);
-    const defaultIds = defaultModels.map((model) => model.id);
+    const groupConfig: Record<
+      string,
+      { label: string; models: typeof models }
+    > = {
+      image: { label: "Image Generation", models: [] },
+      remix: { label: "Image Editing", models: [] },
+      video: { label: "Video Generation", models: [] },
+      vton: { label: "Virtual Try-On", models: [] },
+      "image-upscale": { label: "Image Upscale", models: [] },
+    };
 
-    // Group ALL models by type (including fine-tuned)
-    const imageModels = models.filter((model) => model.type === "image");
-    const videoModels = models.filter((model) => model.type === "video");
-    const remixModels = models.filter((model) => model.type === "remix");
-    const upscaleModels = models.filter(
-      (model) => model.type === "image-upscale"
-    );
-    const vtonModels = models.filter((model) => model.type === "vton");
+    const defaultModelIds = models.reduce((acc, model) => {
+      // Collect default models
+      if (model.default_model) {
+        acc.push(model.id);
+      }
+
+      // Group by type
+      const group = groupConfig[model.type];
+      if (group) {
+        group.models.push(model);
+      }
+
+      return acc;
+    }, [] as string[]);
 
     return {
-      defaultModelIds: defaultIds,
-      groupedModels: [
-        { label: "Image Generation", models: imageModels },
-        { label: "Image Editing", models: remixModels },
-        { label: "Video Generation", models: videoModels },
-        { label: "Virtual Try-On", models: vtonModels },
-        { label: "Image Upscale", models: upscaleModels },
-      ].filter((group) => group.models.length > 0),
+      defaultModelIds,
+      groupedModels: Object.values(groupConfig).filter(
+        (group) => group.models.length > 0
+      ),
     };
   }, [models]);
 
