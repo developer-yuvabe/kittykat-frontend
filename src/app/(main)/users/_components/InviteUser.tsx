@@ -49,7 +49,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeams } from "@/hooks/useTeams";
-import { CreditIcon } from "@/components/ui/custom-icon";
+import {
+  CreditIcon,
+  ImageEditorIcon,
+  ImageGeneratorIcon,
+  VideoGeneratorIcon,
+} from "@/components/ui/custom-icon";
 
 type InviteUserFormData = z.infer<typeof invitationSchema>;
 
@@ -62,14 +67,29 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
 
   const teams = teamsListQuery.data?.teams ?? [];
 
-  // Get base models (models without finetune_id) and sort models
-  const { baseModelIds, sortedModels } = useMemo(() => {
-    const baseModels = models.filter((model) => !model.finetune_id);
-    const finetunedModels = models.filter((model) => model.finetune_id);
+  const { defaultModelIds, groupedModels } = useMemo(() => {
+    // Find models with default_model flag
+    const defaultModels = models.filter((model) => model.default_model);
+    const defaultIds = defaultModels.map((model) => model.id);
+
+    // Group ALL models by type (including fine-tuned)
+    const imageModels = models.filter((model) => model.type === "image");
+    const videoModels = models.filter((model) => model.type === "video");
+    const remixModels = models.filter((model) => model.type === "remix");
+    const upscaleModels = models.filter(
+      (model) => model.type === "image-upscale"
+    );
+    const vtonModels = models.filter((model) => model.type === "vton");
 
     return {
-      baseModelIds: baseModels.map((model) => model.id),
-      sortedModels: [...baseModels, ...finetunedModels],
+      defaultModelIds: defaultIds,
+      groupedModels: [
+        { label: "Image Generation", models: imageModels },
+        { label: "Image Editing", models: remixModels },
+        { label: "Video Generation", models: videoModels },
+        { label: "Virtual Try-On", models: vtonModels },
+        { label: "Image Upscale", models: upscaleModels },
+      ].filter((group) => group.models.length > 0),
     };
   }, [models]);
 
@@ -89,13 +109,6 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
   });
 
   const selectedTeamId = form.watch("teamId");
-  const typeLabelMap: Record<string, string> = {
-    vton: "Virtual try-on",
-    image: "Image generation",
-    video: "Video generation",
-    remix: "In painting",
-    "image-upscale": "Image upscale",
-  };
 
   // Reset form when dialog opens
   const handleOpen = () => {
@@ -103,7 +116,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     const defaultValues = {
       email: "",
       role: UserRoleId.USER,
-      modelAccess: baseModelIds, // Pre-select base models by default
+      modelAccess: defaultModelIds, // Pre-select base models by default
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
@@ -169,13 +182,30 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
     form.reset({
       email: "",
       role: UserRoleId.USER,
-      modelAccess: baseModelIds, // Pre-select base models by default
+      modelAccess: defaultModelIds,
       contentFilterDisabled: false,
       credits: AppConfig.DEFAULT_CREDITS,
       tokens: AppConfig.DEFAULT_TOKENS,
       teamId: undefined,
       teamRole: undefined,
     });
+  };
+
+  const getModelIcon = (model: any) => {
+    const iconClass = "h-3.5 w-3.5 text-white";
+
+    switch (model.type) {
+      case "image":
+        return <ImageGeneratorIcon className={iconClass} />;
+      case "video":
+        return <VideoGeneratorIcon className={iconClass} />;
+      case "remix":
+      case "image-upscale":
+      case "vton":
+        return <ImageEditorIcon className={iconClass} />;
+      default:
+        return <ImageGeneratorIcon className={iconClass} />;
+    }
   };
 
   return (
@@ -292,7 +322,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                     selectedRole === UserRoleId.ADMIN ||
                                     selectedRole === UserRoleId.KK_CREATIVE_USER
                                       ? "Has access to all models"
-                                      : sortedModels.length === 0
+                                      : groupedModels.length === 0
                                       ? "Loading models..."
                                       : "Select models"
                                   }
@@ -303,12 +333,12 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               search={{
                                 placeholder: "Search models...",
                                 emptyMessage:
-                                  sortedModels.length === 0
+                                  groupedModels.length === 0
                                     ? "Loading models..."
                                     : "No models found",
                               }}
                             >
-                              {sortedModels.length > 0 && (
+                              {groupedModels.length > 0 && (
                                 <>
                                   {/* Select All Checkbox */}
                                   <div className="px-2 py-2 border-b border-border">
@@ -343,53 +373,45 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                                     </div>
                                   </div>
 
-                                  <MultiSelectGroup>
-                                    {sortedModels.map((model) => {
-                                      const isBaseModel = !model.finetune_id;
-
-                                      return (
-                                        <MultiSelectItem
-                                          key={model.id}
-                                          value={model.id}
-                                          badgeLabel={model.name}
-                                          disabled={
-                                            selectedRole === UserRoleId.ADMIN ||
-                                            selectedRole ===
-                                              UserRoleId.KK_CREATIVE_USER
-                                          }
-                                        >
-                                          <div className="flex items-start justify-between group gap-0 w-full">
-                                            <div className="flex items-start min-w-0 w-full">
-                                              <Avatar className="h-6 w-6 mr-2">
-                                                <AvatarFallback
-                                                  className={cn(
-                                                    "text-white",
-                                                    isBaseModel
-                                                      ? "bg-green-500"
-                                                      : "bg-blue-500"
-                                                  )}
-                                                >
-                                                  {model.name
-                                                    ?.charAt(0)
-                                                    .toUpperCase() || "M"}
+                                  {/* Grouped Models */}
+                                  {groupedModels.map((group) => (
+                                    <MultiSelectGroup
+                                      key={group.label}
+                                      heading={group.label}
+                                    >
+                                      {group.models.map((model) => {
+                                        return (
+                                          <MultiSelectItem
+                                            key={model.id}
+                                            value={model.id}
+                                            badgeLabel={model.name}
+                                            disabled={
+                                              selectedRole ===
+                                                UserRoleId.ADMIN ||
+                                              selectedRole ===
+                                                UserRoleId.KK_CREATIVE_USER
+                                            }
+                                            className="pl-0"
+                                          >
+                                            <div className="flex items-start gap-2 w-full">
+                                              {/* Avatar with Icon inside primary background */}
+                                              <Avatar className="h-6 w-6 mr-2 bg-primary">
+                                                <AvatarFallback className="bg-primary text-white flex items-center justify-center">
+                                                  {getModelIcon(model)}
                                                 </AvatarFallback>
                                               </Avatar>
+
                                               <div className="flex flex-col space-y-1">
-                                                <span className="line-clamp-1 break-words">
+                                                <span className="line-clamp-1 break-words text-base">
                                                   {model.name}
-                                                </span>
-                                                <span className="italic text-xs text-muted-foreground">
-                                                  Use Case:{" "}
-                                                  {typeLabelMap[model.type] ??
-                                                    model.type}
                                                 </span>
                                               </div>
                                             </div>
-                                          </div>
-                                        </MultiSelectItem>
-                                      );
-                                    })}
-                                  </MultiSelectGroup>
+                                          </MultiSelectItem>
+                                        );
+                                      })}
+                                    </MultiSelectGroup>
+                                  ))}
                                 </>
                               )}
                             </MultiSelectContent>

@@ -46,6 +46,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useUserStore } from "@/store/user.store";
+import {
+  ImageEditorIcon,
+  ImageGeneratorIcon,
+  VideoGeneratorIcon,
+} from "@/components/ui/custom-icon";
 
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
@@ -64,12 +69,26 @@ export function EditUser({
   const { models } = useModelsStore();
   const queryClient = useQueryClient();
 
-  // Get base models (models without finetune_id) and sort models
-  const sortedModels = useMemo(() => {
-    const baseModels = models.filter((model) => !model.finetune_id);
-    const finetunedModels = models.filter((model) => model.finetune_id);
+  const { defaultModelIds, groupedModels } = useMemo(() => {
+    const defaultModels = models.filter((m) => m.default_model);
+    const defaultIds = defaultModels.map((m) => m.id);
 
-    return [...baseModels, ...finetunedModels];
+    const imageModels = models.filter((m) => m.type === "image");
+    const remixModels = models.filter((m) => m.type === "remix");
+    const videoModels = models.filter((m) => m.type === "video");
+    const vtonModels = models.filter((m) => m.type === "vton");
+    const upscaleModels = models.filter((m) => m.type === "image-upscale");
+
+    return {
+      defaultModelIds: defaultIds,
+      groupedModels: [
+        { label: "Image Generation", models: imageModels },
+        { label: "Image Editing", models: remixModels },
+        { label: "Video Generation", models: videoModels },
+        { label: "Virtual Try-On", models: vtonModels },
+        { label: "Image Upscale", models: upscaleModels },
+      ].filter((group) => group.models.length > 0),
+    };
   }, [models]);
 
   const form = useForm<EditUserFormData>({
@@ -82,14 +101,23 @@ export function EditUser({
     },
     mode: "onChange",
   });
-  const typeLabelMap: Record<string, string> = {
-    vton: "Virtual try-on",
-    image: "Image generation",
-    video: "Video generation",
-    remix: "In painting",
-    "image-upscale": "Image upscale",
+  const getModelIcon = (model: any) => {
+    const iconClass = "h-3.5 w-3.5 text-white";
+
+    switch (model.type) {
+      case "image":
+        return <ImageGeneratorIcon className={iconClass} />;
+      case "video":
+        return <VideoGeneratorIcon className={iconClass} />;
+      case "remix":
+      case "image-upscale":
+      case "vton":
+        return <ImageEditorIcon className={iconClass} />;
+      default:
+        return <ImageGeneratorIcon className={iconClass} />;
+    }
   };
-  // Reset form values when user prop changes or dialog opens
+
   useEffect(() => {
     if (isOpen && user) {
       const userModelAccess = user.model_access?.map((model) => model.id) || [];
@@ -149,16 +177,13 @@ export function EditUser({
     ) {
       form.setValue("modelAccess", []);
     } else if (selectedRole === UserRoleId.USER) {
-      // When switching to User role, pre-select base models if modelAccess is empty
       const currentModelAccess = form.getValues("modelAccess");
       if (!currentModelAccess || currentModelAccess.length === 0) {
-        const baseModelIds = models
-          .filter((model) => !model.finetune_id)
-          .map((model) => model.id);
-        form.setValue("modelAccess", baseModelIds, { shouldDirty: true });
+        //Use defaultModelIds instead of filtering for base models
+        form.setValue("modelAccess", defaultModelIds, { shouldDirty: true });
       }
     }
-  }, [selectedRole, form, models]);
+  }, [selectedRole, form, defaultModelIds]);
 
   const handleClose = () => {
     form.reset(); // Reset form when closing
@@ -284,7 +309,7 @@ export function EditUser({
                                   selectedRole === UserRoleId.ADMIN ||
                                   selectedRole === UserRoleId.KK_CREATIVE_USER
                                     ? "Has access to all models"
-                                    : sortedModels.length === 0
+                                    : groupedModels.length === 0
                                     ? "Loading models..."
                                     : "Select models"
                                 }
@@ -295,14 +320,14 @@ export function EditUser({
                             search={{
                               placeholder: "Search models...",
                               emptyMessage:
-                                sortedModels.length === 0
+                                groupedModels.length === 0
                                   ? "Loading models..."
                                   : "No models found",
                             }}
                           >
-                            {sortedModels.length > 0 && (
+                            {groupedModels.length > 0 && (
                               <>
-                                {/* Select All Checkbox */}
+                                {/* Select All */}
                                 <div className="px-2 py-2 border-b border-border">
                                   <div className="flex items-center space-x-2">
                                     <Checkbox
@@ -330,18 +355,20 @@ export function EditUser({
                                     />
                                     <label
                                       htmlFor="select-all-models-edit"
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                      className="text-sm font-medium leading-none"
                                     >
                                       Select All
                                     </label>
                                   </div>
                                 </div>
 
-                                <MultiSelectGroup>
-                                  {sortedModels.map((model) => {
-                                    const isBaseModel = !model.finetune_id;
-
-                                    return (
+                                {/* Groups */}
+                                {groupedModels.map((group) => (
+                                  <MultiSelectGroup
+                                    key={group.label}
+                                    heading={group.label}
+                                  >
+                                    {group.models.map((model) => (
                                       <MultiSelectItem
                                         key={model.id}
                                         value={model.id}
@@ -351,39 +378,26 @@ export function EditUser({
                                           selectedRole ===
                                             UserRoleId.KK_CREATIVE_USER
                                         }
+                                        className="pl-0"
                                       >
-                                        <div className="flex items-start justify-between group gap-0 w-full">
-                                          <div className="flex items-start min-w-0 w-full">
-                                            <Avatar className="h-6 w-6 mr-2">
-                                              <AvatarFallback
-                                                className={cn(
-                                                  "text-white",
-                                                  isBaseModel
-                                                    ? "bg-green-500"
-                                                    : "bg-blue-500"
-                                                )}
-                                              >
-                                                {model.name
-                                                  ?.charAt(0)
-                                                  .toUpperCase() || "M"}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex flex-col space-y-1">
-                                              <span className="line-clamp-1 break-words">
-                                                {model.name}
-                                              </span>
-                                              <span className="italic text-xs text-muted-foreground">
-                                                Use Case:{" "}
-                                                {typeLabelMap[model.type] ??
-                                                  model.type}
-                                              </span>
-                                            </div>
+                                        <div className="flex items-start gap-2 w-full">
+                                          {/* Avatar with Icon */}
+                                          <Avatar className="h-6 w-6 mr-2 bg-primary">
+                                            <AvatarFallback className="bg-primary text-white flex items-center justify-center">
+                                              {getModelIcon(model)}
+                                            </AvatarFallback>
+                                          </Avatar>
+
+                                          <div className="flex flex-col space-y-1">
+                                            <span className="line-clamp-1 break-words text-base">
+                                              {model.name}
+                                            </span>
                                           </div>
                                         </div>
                                       </MultiSelectItem>
-                                    );
-                                  })}
-                                </MultiSelectGroup>
+                                    ))}
+                                  </MultiSelectGroup>
+                                ))}
                               </>
                             )}
                           </MultiSelectContent>
