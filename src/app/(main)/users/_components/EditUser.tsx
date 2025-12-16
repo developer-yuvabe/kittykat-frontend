@@ -380,19 +380,17 @@ export function EditUser({
                                         }
                                         className="pl-0"
                                       >
-                                        <div className="flex items-start gap-2 w-full">
+                                        <div className="flex items-center gap-2 w-full ml-2">
                                           {/* Avatar with Icon */}
-                                          <Avatar className="h-6 w-6 mr-2 bg-primary">
-                                            <AvatarFallback className="bg-primary text-white flex items-center justify-center">
+                                          <Avatar className="h-6 w-6 mr-2 bg-primary/30">
+                                            <AvatarFallback className="bg-primary/30 flex items-center justify-center">
                                               {getModelIcon(model)}
                                             </AvatarFallback>
                                           </Avatar>
 
-                                          <div className="flex flex-col space-y-1">
-                                            <span className="line-clamp-1 break-words text-base">
-                                              {model.name}
-                                            </span>
-                                          </div>
+                                          <p className="line-clamp-1 break-words">
+                                            {model.name}
+                                          </p>
                                         </div>
                                       </MultiSelectItem>
                                     ))}
