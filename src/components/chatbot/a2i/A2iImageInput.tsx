@@ -967,8 +967,8 @@ const A2iImageInput = ({
               </FormItem>
             )}
           />
-          <div className="flex gap-2 justify-between items-center px-4">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-4">
+            <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
               {referenceImagesModelInfo ? (
                 <ReferenceImageSelector
                   masterReference={masterReference}
@@ -1158,52 +1158,68 @@ const A2iImageInput = ({
                 </Tooltip>
               )}
             </div>
-            <div className="flex gap-x-2">
+            <div className="flex items-center gap-2 min-w-0">
               <ModelSelector
                 onModelChange={setSelectedImageGenerationModel}
                 selectedModel={selectedImageGenerationModel}
                 typeFilter="image"
               />
-              <Button
-                type="button"
-                disabled={!formInstance.watch("prompt") || isEnhancingPrompt}
-                variant={"outline"}
-                className="border-primary text-primary"
-                onClick={() => {
-                  if (!formInstance.getValues("prompt")) return;
-                  handleEnhancePrompt(undefined, {
-                    onSuccess: (data) => {
-                      formInstance.setValue("prompt", data.prompt, {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                        shouldTouch: true,
-                      });
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    disabled={
+                      !formInstance.watch("prompt") || isEnhancingPrompt
+                    }
+                    variant={"outline"}
+                    className="border-primary text-primary whitespace-nowrap shrink-0"
+                    size="icon"
+                    onClick={() => {
+                      if (!formInstance.getValues("prompt")) return;
+                      handleEnhancePrompt(undefined, {
+                        onSuccess: (data) => {
+                          formInstance.setValue("prompt", data.prompt, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
 
-                      toast.success("Prompt enhanced successfully!");
-                    },
-                    onError: () => {
-                      toast.error(
-                        "Failed to enhance prompt. Please try again."
-                      );
-                    },
-                  });
-                }}
-              >
-                <WandSparkles />
-                {isEnhancingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
-              </Button>
-              <TokenGenerateButton
-                onClick={() => formInstance.handleSubmit(onSubmit)()}
-                tokens={credits}
-                loading={formInstance.formState.isSubmitting}
-                disabled={
-                  !formInstance.formState.isValid ||
-                  formInstance.formState.isSubmitting ||
-                  isEnhancingPrompt ||
-                  !selectedImageGenerationModel
-                }
-                isCalculatingTokens={isCalculatingTokens}
-              />
+                          toast.success("Prompt enhanced successfully!");
+                        },
+                        onError: () => {
+                          toast.error(
+                            "Failed to enhance prompt. Please try again."
+                          );
+                        },
+                      });
+                    }}
+                  >
+                    <WandSparkles className="shrink-0" />
+                    <span className="sr-only">
+                      {isEnhancingPrompt
+                        ? "Enhancing Prompt..."
+                        : "Enhance Prompt"}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isEnhancingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
+                </TooltipContent>
+              </Tooltip>
+              <div className="shrink-0">
+                <TokenGenerateButton
+                  onClick={() => formInstance.handleSubmit(onSubmit)()}
+                  tokens={credits}
+                  loading={formInstance.formState.isSubmitting}
+                  disabled={
+                    !formInstance.formState.isValid ||
+                    formInstance.formState.isSubmitting ||
+                    isEnhancingPrompt ||
+                    !selectedImageGenerationModel
+                  }
+                  isCalculatingTokens={isCalculatingTokens}
+                />
+              </div>
             </div>
           </div>
 
