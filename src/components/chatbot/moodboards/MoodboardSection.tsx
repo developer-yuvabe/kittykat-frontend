@@ -271,13 +271,13 @@ export const MoodboardSection: React.FC<{
 
   // Reset whenever moodboard changes
   useEffect(() => {
-    setNoOfImagesForMoodboard(16);
+    setNoOfImagesForMoodboard(10);
   }, [currentMoodboard?.id]);
 
   // Set count when data is available
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
-    const fallbackImageCount = 16;
+    const fallbackImageCount = 10;
 
     updateImageCountFromMoodboard(assetCount, fallbackImageCount);
   }, [
