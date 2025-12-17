@@ -120,6 +120,7 @@ export interface ThreadCampaign {
   is_archived?: boolean;
   position?: number;
   is_curated_for_brand?: boolean;
+  created_by?: string;
 }
 
 export type ThreadCampaignUpdate = Partial<Omit<ThreadCampaign, "id">>;
@@ -337,6 +338,7 @@ export interface MoodboardInformation {
   prompt_generation_inputs?: PromptGenerationInputs;
   is_prompt_generation_in_progress?: boolean;
   prompt_generation_conflict_notes?: string;
+  created_by?: string;
 }
 
 export interface VisualImage {
