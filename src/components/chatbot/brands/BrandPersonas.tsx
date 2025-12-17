@@ -232,6 +232,9 @@ function BrandPersonas({ personas = [] }: BrandPersonasProps) {
             brandId={brandId!}
             onEdit={handleEdit}
             onDuplicate={handleDuplicate}
+            onDelete={() => {
+              // SSE will handle the update
+            }}
           />
 
           {/* Generate Dialog */}

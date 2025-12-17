@@ -187,3 +187,31 @@ export async function addDeprioritizedIds(
 export async function deleteBrand(brandId: string): Promise<void> {
   return handleApiRequest<void>(axiosInstance.delete(`/brands/${brandId}`));
 }
+
+/**
+ * Trigger Brand Brain Analysis for a campaign or brand
+ */
+export interface BrandBrainAnalysisRequest {
+  brand_id?: string;
+  campaign_id?: string;
+  batch_size?: number;
+  curated_only?: boolean;
+}
+
+export interface BrandBrainAnalysisResponse {
+  job_execution_id: string;
+  mode: string;
+  brand_id?: string;
+  campaign_id?: string;
+  batch_size: number;
+  curated_only: boolean;
+  status: string;
+}
+
+export async function triggerBrandBrainAnalysis(
+  params: BrandBrainAnalysisRequest
+): Promise<BrandBrainAnalysisResponse> {
+  return handleApiRequest<BrandBrainAnalysisResponse>(
+    axiosInstance.post(`/brands/brain-analysis/trigger`, params)
+  );
+}

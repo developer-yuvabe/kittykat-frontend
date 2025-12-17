@@ -1,5 +1,5 @@
 import { BrandPersona } from "@/types/persona.types";
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pin } from "lucide-react";
@@ -18,11 +18,14 @@ import { BrandPersonaActions } from "./BrandPersonaActions";
 import { BrandPersonaHeader } from "./BrandPersonaHeader";
 import { BrandPersonaIdentity } from "./BrandPersonaIdentity";
 import { BrandPersonaDetails } from "./BrandPersonaDetails";
+import { useDeletePersona } from "@/hooks/usePersona";
+import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 
 interface BrandPersonaCardProps {
   persona: BrandPersona;
   onEdit?: (persona: BrandPersona) => void;
   onDuplicate?: (persona: BrandPersona) => void;
+  onDelete?: (personaId: string) => void;
   brandId: string;
 }
 
@@ -30,8 +33,10 @@ function BrandPersonaCard({
   persona,
   onEdit,
   onDuplicate,
+  onDelete,
   brandId,
 }: BrandPersonaCardProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { pinnedItem, addPinnedItem, removePinnedItem } =
     usePinnedContextStore();
   const { viewMore, setViewMore } = useViewMore();
@@ -41,6 +46,7 @@ function BrandPersonaCard({
     useModelsStore();
   const { chatOnlyMode } = useThreadStore();
   const stream = useStreamContext();
+  const { mutate: deletePersona, isPending: isDeleting } = useDeletePersona();
 
   const hasAdditionalDetails = Boolean(
     (persona.psychographics && persona.psychographics.length > 0) ||
@@ -150,6 +156,29 @@ ${formatList(persona.dont_guidelines)}`.trim();
     }
   };
 
+  const handleDeleteConfirm = () => {
+    deletePersona(
+      {
+        brandId,
+        personaId: persona.id,
+      },
+      {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          onDelete?.(persona.id);
+          toast.success(`${persona.name} deleted successfully`);
+        },
+        onError: (error) => {
+          toast.error(
+            `Failed to delete persona: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        },
+      }
+    );
+  };
+
   return (
     <Card className="relative overflow-hidden w-full h-[870px] flex flex-col">
       {/* Image Section */}
@@ -176,8 +205,22 @@ ${formatList(persona.dont_guidelines)}`.trim();
           onEdit={() => onEdit?.(persona)}
           onDuplicate={() => onDuplicate?.(persona)}
           onCopyContext={handleCopyContext}
+          onDelete={() => setDeleteDialogOpen(true)}
         />
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ReusableAlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Persona"
+        description={`Are you sure you want to delete "${persona.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+        danger
+      />
 
       {/* Header */}
       <BrandPersonaHeader name={persona.name} summary={persona.summary} />

@@ -21,7 +21,7 @@ export function BrandPersonaImage({
     <div className="relative w-full h-64 rounded-md overflow-hidden bg-muted flex items-center justify-center">
       {/* 🔄 Center Loader on Grey Background */}
       {isGenerating && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
+        <div className="absolute inset-0 flex items-center justify-center bg-muted pointer-events-none">
           <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
         </div>
       )}
