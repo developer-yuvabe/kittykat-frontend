@@ -8,6 +8,7 @@ import {
   Archive,
   Trash,
   Brain,
+  ChartNetwork,
 } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -271,8 +272,12 @@ export function CampaignSidebarRow({
             onClick={() => onAnalyze(campaign.id, campaign.title)}
             disabled={campaign.is_analyzing}
           >
-            <Brain className="w-4 h-4 mr-2 text-gray-600" />
-            {`${campaign.is_analyzing ? "Analyzing..." : "Analyze"}`}
+            <ChartNetwork className="w-4 h-4 mr-2 text-gray-600" />
+            {campaign.is_analyzing
+              ? "Analyzing..."
+              : campaign.is_curated_for_brand
+              ? "Reanalyze"
+              : "Analyze"}
           </DropdownMenuItem>
 
           <DropdownMenuItem
