@@ -88,7 +88,7 @@ function BrandBrainAnalysisResults({
   };
 
   return (
-    <Card className="border border-gray-200 shadow-sm">
+    <Card className="border border-gray-400 ">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
