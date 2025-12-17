@@ -1855,7 +1855,7 @@ export const LockOpenIcon: React.FC<CustomIconProps> = ({
 
 export const ImageGeneratorIcon: React.FC<CustomIconProps> = ({
   size = 24,
-  color = "#171A1F",
+  color = "currentColor",
   ...props
 }) => (
   <svg
@@ -1891,7 +1891,7 @@ export const ImageGeneratorIcon: React.FC<CustomIconProps> = ({
 
 export const ImageEditorIcon: React.FC<CustomIconProps> = ({
   size = 24,
-  color = "#171A1F",
+  color = "currentColor",
   ...props
 }) => (
   <svg
@@ -1918,7 +1918,7 @@ export const ImageEditorIcon: React.FC<CustomIconProps> = ({
 
 export const VideoGeneratorIcon: React.FC<CustomIconProps> = ({
   size = 24,
-  color = "#171A1F",
+  color = "currentColor",
   ...props
 }) => (
   <svg

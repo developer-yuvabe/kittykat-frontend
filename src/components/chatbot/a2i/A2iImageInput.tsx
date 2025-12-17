@@ -1219,9 +1219,9 @@ const A2iImageInput = ({
                   tooltip="Image Generator"
                   icon={
                     conceptVisualGeneratorMode === "image_generator" ? (
-                      <ImageGeneratorIcon color="#7F55E0" size={30} />
+                      <ImageGeneratorIcon size={30} className="text-primary" />
                     ) : (
-                      <ImageGeneratorIcon size={30} />
+                      <ImageGeneratorIcon size={30} className="text-black" />
                     )
                   }
                   size="md"
@@ -1235,9 +1235,9 @@ const A2iImageInput = ({
                   tooltip="Image Editor"
                   icon={
                     conceptVisualGeneratorMode === "image_editor" ? (
-                      <ImageEditorIcon color="#7F55E0" size={30} />
+                      <ImageEditorIcon size={30} className="text-primary" />
                     ) : (
-                      <ImageEditorIcon size={30} />
+                      <ImageEditorIcon size={30} className="text-black" />
                     )
                   }
                   size="md"
@@ -1249,9 +1249,9 @@ const A2iImageInput = ({
                   tooltip="Video Generator"
                   icon={
                     conceptVisualGeneratorMode === "video_generator" ? (
-                      <VideoGeneratorIcon color="#7F55E0" size={30} />
+                      <VideoGeneratorIcon size={30} className="text-primary" />
                     ) : (
-                      <VideoGeneratorIcon size={30} />
+                      <VideoGeneratorIcon size={30} className="text-black" />
                     )
                   }
                   size="md"
