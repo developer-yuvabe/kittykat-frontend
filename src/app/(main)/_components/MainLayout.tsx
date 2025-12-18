@@ -13,6 +13,7 @@ import { User as FirebaeUser, signOut } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { useBrandUpdates } from "@/hooks/sse/useBrandUpdates";
+import { ProductBatchNotificationList } from "@/components/notifications/ProductBatchNotificationList";
 
 const MainLayout = ({
   user: userProfile,
@@ -69,6 +70,9 @@ const MainLayout = ({
       <main>
         <TopNavigation />
         {children}
+
+        {/* Product Batch Notifications */}
+        <ProductBatchNotificationList />
 
         {/* Verify Email Modal */}
         {/* {!firebaseUser.emailVerified && (

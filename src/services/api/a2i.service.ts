@@ -97,3 +97,71 @@ export const updateA2iRefernceMoodboard = async (
     throw error;
   }
 };
+
+// Product Extraction Types
+export interface ProductExtractionRequest {
+  image_ids: string[];
+  products: string[];
+}
+
+export interface ProductAttributes {
+  product_type: string;
+  product_name_candidate: string;
+  color: string;
+  material: string;
+  pattern: string | null;
+  view_angle: string;
+  variant_notes: string;
+}
+
+export interface DetectionInfo {
+  description: string;
+  position: string;
+}
+
+export interface ExtractedProduct {
+  attributes: ProductAttributes;
+  generated_name: string;
+  detection_info: DetectionInfo | null;
+  extracted_image_url: string;
+}
+
+export interface ImageResult {
+  source_image_url: string;
+  success: boolean;
+  detection_result: {
+    has_product: boolean;
+    product_count: number;
+    is_multi_product: boolean;
+    products: Array<{
+      description: string;
+      position: string;
+    }>;
+    confidence: string;
+    reason: string;
+  };
+  extracted_products: ExtractedProduct[];
+}
+
+export interface ProductExtractionResponse {
+  success: boolean;
+  batch_id?: string;
+  total_images_processed: number;
+  total_products_extracted: number;
+  image_results: ImageResult[];
+}
+
+export const extractProducts = async (
+  brandId: string,
+  data: ProductExtractionRequest
+): Promise<ProductExtractionResponse> => {
+  try {
+    const response = await handleApiRequest<ProductExtractionResponse>(
+      axiosInstance.post(`/brands/${brandId}/a2i/product-extraction`, data)
+    );
+    return response;
+  } catch (error) {
+    console.error("Error extracting products:", error);
+    throw error;
+  }
+};

@@ -9,6 +9,7 @@ import {
   FileText,
   Image,
   File,
+  PackageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,11 +51,14 @@ import { toast } from "sonner";
 import JSZip from "jszip";
 // Bulk dialog component for Ask KittyKat
 import { MediaBulkAskKittyKatDialog } from "./MediaBulkAskKittyKatDialog";
+import { extractProducts } from "@/services/api/a2i.service";
 import { useBrandStore } from "@/store/brand.store";
+import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 import {
   useMoveGalleryItems,
   type BrandWithCampaigns,
 } from "@/hooks/useMoveGalleryItems";
+import { useProductBatchStore } from "@/store/product-batch.store";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
@@ -74,6 +78,8 @@ export function MediaBulkActions({
   onSelectAll,
 }: MediaBulkActionsProps) {
   const { brands } = useBrandStore();
+  const { data: brandData } = useBrandUpdatesStore();
+  const { addBatch } = useProductBatchStore();
 
   // Use shared move hook
   const { moveItems, isMoving } = useMoveGalleryItems(
@@ -87,6 +93,7 @@ export function MediaBulkActions({
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [isBulkAskKittyKatOpen, setIsBulkAskKittyKatOpen] = useState(false);
+  const [isExtractingProducts, setIsExtractingProducts] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<WorkflowStatus | null>(
     null
   );
@@ -152,6 +159,167 @@ export function MediaBulkActions({
     } finally {
       setIsDeleting(false);
       setIsDialogOpen(false);
+    }
+  };
+
+  const handleProductExtraction = async () => {
+    const imageItems = selectedItems.filter(
+      (item) => item.asset_type === "image"
+    );
+
+    if (imageItems.length === 0) {
+      toast.error("No images selected");
+      return;
+    }
+
+    const brandId = imageItems[0]?.brand_id;
+    if (!brandId) {
+      toast.error("No brand found for selected images");
+      return;
+    }
+
+    const imageIds = imageItems.map((item) => item.id);
+    
+    // Get products from brand information
+    const brandProducts = brandData?.brand_information?.static?.products || [];
+
+    setIsExtractingProducts(true);
+    const toastId = toast.loading(
+      `Extracting products from ${imageItems.length} image(s)...`
+    );
+
+    try {
+      console.log("Product extraction payload:", {
+        image_ids: imageIds,
+        products: brandProducts,
+      });
+
+      const response = await extractProducts(
+        brandId,
+        {
+          image_ids: imageIds,
+          products: brandProducts,
+        }
+      );
+
+      console.log("✅ Product extraction response:", {
+        success: response.success,
+        batch_id: response.batch_id,
+        total_products: response.total_products_extracted,
+        image_results: response.image_results?.length,
+        response,
+      });
+
+      if (response.success && response.batch_id) {
+        // Add batch to notification system for live progress tracking
+        addBatch({
+          batchId: response.batch_id,
+          brandId: brandId,
+          brandName: brandName,
+          startedAt: new Date().toISOString(),
+        });
+
+        toast.success(
+          `Product extraction started! Track progress in the notification panel.`,
+          { id: toastId }
+        );
+        onUnselectAll();
+      } else if (response.success) {
+        // Old sync flow - Check if any products were actually extracted
+        if (response.total_products_extracted === 0) {
+          toast.warning(
+            `No products found in the selected ${imageItems.length} image(s). Please try with different images.`,
+            { id: toastId }
+          );
+          onUnselectAll();
+        } else {
+          toast.success(
+            `Successfully extracted ${response.total_products_extracted} product(s)`,
+            { id: toastId }
+          );
+
+          // Create individual gallery items for each extracted product
+          toast.loading("Creating gallery items...", { id: toastId });
+          
+          try {
+            // Get file extension from URL
+            const getExtension = (url: string) => {
+              const match = url.match(/\.([^./?#]+)(?:[?#]|$)/);
+              return match ? match[1].toLowerCase() : 'jpg';
+            };
+
+            // Flatten all extracted products from all images into individual gallery items
+            const galleryItemPromises: Promise<any>[] = [];
+            
+            response.image_results.forEach((imageResult) => {
+              // Find the original gallery item to get metadata
+              const sourceItem = imageItems.find(item => item.asset_url === imageResult.source_image_url);
+              
+              // Create one gallery item per extracted product
+              imageResult.extracted_products.forEach((product, index) => {
+                galleryItemPromises.push(
+                  galleryActions.addToGallery({
+                    asset_type: "image",
+                    asset_source: "products",
+                    asset_title: product.generated_name || `${sourceItem?.asset_title} - Product ${index + 1}`,
+                    asset_url: product.extracted_image_url, // Use extracted product image directly
+                    brand_id: brandId,
+                    campaign_id: sourceItem?.campaign_id || undefined,
+                    processing_status: "ready",
+                    is_favourite: false,
+                    is_archived: false,
+                    is_master: true,
+                    related_asset_ids: [],
+                    prompt_modifiers: [],
+                    ai_tags: [],
+                    visual_style_tags: {},
+                    detected_objects: [],
+                    detected_emotions: [],
+                    detected_colors: [],
+                    search_keywords: [],
+                    custom_tags: [],
+                    media_format: getExtension(product.extracted_image_url),
+                    size: "",
+                    metadata_raw: {
+                      source_image_url: imageResult.source_image_url, // Store source for reference
+                      product_attributes: product.attributes,
+                      detection_info: product.detection_info,
+                    },
+                  })
+                );
+              });
+            });
+
+            await Promise.all(galleryItemPromises);
+            console.log(`✅ Created ${response.image_results.length} gallery items with extracted products`);
+
+            // Refetch gallery to show new items
+            console.log("🔄 Refetching gallery to load extracted products...");
+            const refetchResult = await galleryActions.refetchGalleryItems();
+            console.log("📊 Gallery refetch complete:", {
+              isSuccess: refetchResult?.isSuccess,
+              dataLength: refetchResult?.data?.pages?.[0]?.gallery_items?.length,
+            });
+            
+            onUnselectAll();
+            toast.success(`Products extracted and ready! Check the Products tab.`, { id: toastId });
+          } catch (createError) {
+            console.error("Error creating gallery items:", createError);
+            toast.error("Failed to create gallery items for extracted products", { id: toastId });
+          }
+        }
+      } else {
+        toast.error("Product extraction failed", { id: toastId });
+      }
+    } catch (error: any) {
+      console.error("Product extraction error:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to extract products";
+      toast.error(errorMessage, { id: toastId });
+    } finally {
+      setIsExtractingProducts(false);
     }
   };
 
@@ -703,6 +871,26 @@ export function MediaBulkActions({
           >
             <Download className="h-4 w-4" />
           </Button>
+
+          {/* Product Extraction - Only for images */}
+          {selectedItems.every((item) => item.asset_type === "image") &&
+            selectedItems.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleProductExtraction}
+                    disabled={isExtractingProducts}
+                  >
+                    <PackageIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Extract Products</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
           {/* Move Asset Dropdown */}
           <Popover>
