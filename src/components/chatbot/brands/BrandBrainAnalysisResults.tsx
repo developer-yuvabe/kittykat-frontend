@@ -32,9 +32,50 @@ function BrandBrainAnalysisResults({
     });
   };
 
-  // Don't render if no analysis data
+  // Show empty state when no analysis data
   if (!analysis) {
-    return null;
+    return (
+      <Card className="border border-gray-400">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-gray-400" />
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                Visual Style
+              </h3>
+              <p className="text-sm text-gray-600 mt-0.5">
+                No analysis available yet
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 px-4 text-center space-y-4">
+            <div className="rounded-full bg-gray-100 p-3">
+              <Sparkles className="h-8 w-8 text-gray-400" />
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-gray-900">
+                No Visual Style Analysis Yet
+              </h4>
+              <p className="text-sm text-gray-600 max-w-md">
+                To generate a visual style analysis, please curate at least one
+                campaign with images for this brand. Once curated, the system
+                will automatically analyze the visual patterns and styles.
+              </p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
+              <p className="text-xs text-blue-800">
+                <strong>How to curate:</strong> Navigate to the Gallery Folder
+                View , select campaigns that represent your brand&apos;s visual
+                style, and mark them as curated. The analysis will be generated
+                automatically.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const {
