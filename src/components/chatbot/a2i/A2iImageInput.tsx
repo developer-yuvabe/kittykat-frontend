@@ -295,13 +295,13 @@ const A2iImageInput = ({
     "start_frame" | "end_frame"
   >("start_frame");
   const [showPopoverTrigger, setShowPopoverTrigger] = useState(true);
-  
+
   // Resize observer to track container width for responsive layout
   const controlsContainerRef = useRef<HTMLDivElement | null>(null);
   const { width: containerWidth } = useResizeObserver({
     ref: controlsContainerRef as React.RefObject<HTMLElement>,
   });
-  
+
   // Determine if we should show compact UI based on available width
   const isCompactMode = (containerWidth ?? 0) < 800;
 
@@ -1341,7 +1341,7 @@ const A2iImageInput = ({
                 />
               </div>
             </div>
-            <div 
+            <div
               ref={controlsContainerRef}
               className="flex gap-2 justify-between items-center px-2 min-w-0"
             >
@@ -1592,7 +1592,9 @@ const A2iImageInput = ({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {isEnhancingPrompt ? "Enhancing Prompt..." : "Enhance Prompt"}
+                      {isEnhancingPrompt
+                        ? "Enhancing Prompt..."
+                        : "Enhance Prompt"}
                     </TooltipContent>
                   </Tooltip>
                 ) : (

@@ -38,7 +38,7 @@ export default function ModelSelector({
   const filteredModels = typeFilter
     ? models.filter((m) => m.type === typeFilter)
     : models;
-    
+
   // Calculate max width based on compact mode
   const maxWidth = isCompactMode ? "max-w-[180px]" : "max-w-[280px]";
 
