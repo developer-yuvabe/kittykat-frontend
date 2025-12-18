@@ -43,6 +43,7 @@ import {
   PROMPT_FIELDS,
   DEFAULT_EMPTY_VERSIONS,
   VERSION_DESCRIPTION_MAP,
+  VERSION_KEY_DISPLAY_MAP,
 } from "@/lib/preset.utils";
 
 import {
@@ -452,7 +453,8 @@ export function PresetEditor({
                     {versions.map((version, idx) => (
                       <tr key={version.version_key} className="border-t">
                         <td className="p-3 font-medium">
-                          {version.version_key}
+                          {VERSION_KEY_DISPLAY_MAP[version.version_key] ||
+                            version.version_key}{" "}
                         </td>
                         <td className="p-3">
                           {VERSION_DESCRIPTION_MAP[version.version_key]}
