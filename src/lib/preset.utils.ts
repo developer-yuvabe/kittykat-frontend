@@ -104,16 +104,27 @@ export const VERSION_KEYS = [
 
 export type VersionKey = (typeof VERSION_KEYS)[number];
 
+export const VERSION_KEY_DISPLAY_MAP: Record<string, string> = {
+  M: "M",
+  MP: "MP",
+  MC: "MM",
+  MT: "MT",
+  MPC: "MPM",
+  MPT: "MPT",
+  MCT: "MMT",
+  All: "All",
+};
+
 // Version Descriptions (UI)
 export const VERSION_DESCRIPTION_MAP: Record<VersionKey, string> = {
   M: "Moodboard Only",
   MP: "Moodboard, Product",
-  MC: "Moodboard, Context",
+  MC: "Moodboard, Master",
   MT: "Moodboard, Text",
-  MPC: "Moodboard, Product, Context",
+  MPC: "Moodboard, Product, Master",
   MPT: "Moodboard, Product, Text",
-  MCT: "Moodboard, Context, Text",
-  All: "Moodboard, Product, Context, Text",
+  MCT: "Moodboard, Master, Text",
+  All: "Moodboard, Product, Master, Text",
 };
 
 // Default Version Objects
