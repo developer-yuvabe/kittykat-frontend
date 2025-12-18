@@ -140,6 +140,7 @@ const A2iImageInput = ({
     if (conceptVisualGeneratorMode !== "image_editor") {
       setBaseImageUrl(null);
     }
+    formInstance.setValue("prompt", "", { shouldValidate: true });
   }, [conceptVisualGeneratorMode]);
 
   // Compute formKey based on mode
