@@ -13,6 +13,7 @@ import {
   Pin,
   PinOff,
   WandSparkles,
+  Trash2,
 } from "lucide-react";
 
 interface BrandPersonaActionsProps {
@@ -22,6 +23,7 @@ interface BrandPersonaActionsProps {
   onEdit: () => void;
   onDuplicate: () => void;
   onCopyContext: () => void;
+  onDelete: () => void;
 }
 
 export function BrandPersonaActions({
@@ -31,6 +33,7 @@ export function BrandPersonaActions({
   onEdit,
   onDuplicate,
   onCopyContext,
+  onDelete,
 }: BrandPersonaActionsProps) {
   return (
     <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -78,6 +81,13 @@ export function BrandPersonaActions({
           <DropdownMenuItem onClick={onCopyContext}>
             <Copy className="w-4 h-4 mr-2" />
             Copy
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={onDelete}
+            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

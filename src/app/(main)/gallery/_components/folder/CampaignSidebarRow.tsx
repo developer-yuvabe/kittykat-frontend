@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { Folder, MoreVertical, Pencil, Archive, Trash } from "lucide-react";
+import {
+  Folder,
+  MoreVertical,
+  Pencil,
+  Archive,
+  Trash,
+  Brain,
+  ChartNetwork,
+} from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -11,12 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CampaignSidebarTruncatedText } from "./CampaignSidebarTruncatedText";
-
-interface Campaign {
-  id: string;
-  title: string;
-  is_archived?: boolean;
-}
+import { Campaign } from "@/types/user.types";
 
 interface CampaignSidebarRowProps {
   campaign: Campaign;
@@ -31,7 +34,13 @@ interface CampaignSidebarRowProps {
     title: string,
     isArchived: boolean
   ) => void;
+  onCuratedToggle: (
+    campaignId: string,
+    title: string,
+    isCurated: boolean
+  ) => void;
   onDelete: (campaignId: string, title: string) => void;
+  onAnalyze: (campaignId: string, title: string) => void;
   onAssetDragOver?: (e: React.DragEvent, campaignId: string) => void;
   onDragLeave?: (e: React.DragEvent) => void;
   onAssetDrop?: (e: React.DragEvent, campaignId: string) => void;
@@ -67,7 +76,9 @@ export function CampaignSidebarRow({
   isCountLoading,
   onRename,
   onArchiveToggle,
+  onCuratedToggle,
   onDelete,
+  onAnalyze,
   onAssetDragOver,
   onDragLeave,
   onAssetDrop,
@@ -241,6 +252,32 @@ export function CampaignSidebarRow({
           >
             <Archive className="w-4 h-4 mr-2 text-gray-600" />
             {campaign.is_archived ? "Unarchive" : "Move to Archive"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              onCuratedToggle(
+                campaign.id,
+                campaign.title,
+                campaign.is_curated_for_brand || false
+              )
+            }
+          >
+            <Brain className="w-4 h-4 mr-2 text-gray-600" />
+            {campaign.is_curated_for_brand
+              ? "Unmark as Curated Campaign"
+              : "Mark as Curated Campaign"}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => onAnalyze(campaign.id, campaign.title)}
+            disabled={campaign.is_analyzing}
+          >
+            <ChartNetwork className="w-4 h-4 mr-2 text-gray-600" />
+            {campaign.is_analyzing
+              ? "Analyzing..."
+              : campaign.is_curated_for_brand
+              ? "Reanalyze"
+              : "Analyze"}
           </DropdownMenuItem>
 
           <DropdownMenuItem

@@ -62,16 +62,20 @@ export enum UserStatus {
   INVITED = "invited",
 }
 
+export type Campaign = {
+  id: string;
+  title: string;
+  is_archived?: boolean;
+  position?: number;
+  is_custom?: boolean;
+  is_analyzing?: boolean;
+  is_curated_for_brand?: boolean;
+};
+
 export type UserBrand = {
   id: string;
   name: string;
-  campaigns: {
-    id: string;
-    title: string;
-    is_archived?: boolean;
-    position?: number;
-    is_custom?: boolean;
-  }[];
+  campaigns: Campaign[];
   created_by: {
     id: string;
     name: string;
