@@ -117,6 +117,7 @@ export type Model = {
   default_edit_model?: boolean;
   default_animation_model?: boolean;
   default_image_reference_model?: boolean;
+  default_model: boolean;
 };
 
 export type Rule = {

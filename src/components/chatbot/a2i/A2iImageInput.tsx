@@ -22,7 +22,7 @@ import {
   Paperclip,
   PanelTop,
 } from "lucide-react";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { DragEvent } from "react";
 import { z, ZodTypeAny } from "zod";
 import { DynamicFormField } from "./DynamicFormField";
@@ -76,6 +76,7 @@ import { BaseImageUploadArea } from "./BaseImageUploadArea";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import VideoFrameSelector from "./VideoFrameSelector";
 import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
+import { useResizeObserver } from "@/hooks/useResizeObserver";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -294,6 +295,15 @@ const A2iImageInput = ({
     "start_frame" | "end_frame"
   >("start_frame");
   const [showPopoverTrigger, setShowPopoverTrigger] = useState(true);
+
+  // Resize observer to track container width for responsive layout
+  const controlsContainerRef = useRef<HTMLDivElement | null>(null);
+  const { width: containerWidth } = useResizeObserver({
+    ref: controlsContainerRef as React.RefObject<HTMLElement>,
+  });
+
+  // Determine if we should show compact UI based on available width
+  const isCompactMode = (containerWidth ?? 0) < 800;
 
   const currentImageCount = masterReference.length + productReference.length;
 
@@ -1219,9 +1229,9 @@ const A2iImageInput = ({
                   tooltip="Image Generator"
                   icon={
                     conceptVisualGeneratorMode === "image_generator" ? (
-                      <ImageGeneratorIcon color="#7F55E0" size={30} />
+                      <ImageGeneratorIcon size={30} className="text-primary" />
                     ) : (
-                      <ImageGeneratorIcon size={30} />
+                      <ImageGeneratorIcon size={30} className="text-black" />
                     )
                   }
                   size="md"
@@ -1235,9 +1245,9 @@ const A2iImageInput = ({
                   tooltip="Image Editor"
                   icon={
                     conceptVisualGeneratorMode === "image_editor" ? (
-                      <ImageEditorIcon color="#7F55E0" size={30} />
+                      <ImageEditorIcon size={30} className="text-primary" />
                     ) : (
-                      <ImageEditorIcon size={30} />
+                      <ImageEditorIcon size={30} className="text-black" />
                     )
                   }
                   size="md"
@@ -1249,9 +1259,9 @@ const A2iImageInput = ({
                   tooltip="Video Generator"
                   icon={
                     conceptVisualGeneratorMode === "video_generator" ? (
-                      <VideoGeneratorIcon color="#7F55E0" size={30} />
+                      <VideoGeneratorIcon size={30} className="text-primary" />
                     ) : (
-                      <VideoGeneratorIcon size={30} />
+                      <VideoGeneratorIcon size={30} className="text-black" />
                     )
                   }
                   size="md"
@@ -1331,8 +1341,11 @@ const A2iImageInput = ({
                 />
               </div>
             </div>
-            <div className="flex gap-2 justify-between items-center px-2">
-              <div className="flex items-center gap-2">
+            <div
+              ref={controlsContainerRef}
+              className="flex gap-2 justify-between items-center px-2 min-w-0"
+            >
+              <div className="flex items-center gap-2 flex-shrink min-w-0">
                 {referenceImagesModelInfo ? (
                   <ReferenceImageSelector
                     masterReference={masterReference}
@@ -1529,7 +1542,7 @@ const A2iImageInput = ({
                   </Tooltip>
                 )}
               </div>
-              <div className="flex gap-x-2">
+              <div className="flex gap-x-2 items-center flex-shrink-0">
                 <ModelSelector
                   onModelChange={currentSetter}
                   selectedModel={currentModel}
@@ -1540,39 +1553,84 @@ const A2iImageInput = ({
                       ? "remix"
                       : "image"
                   }
+                  isCompactMode={isCompactMode}
                 />
-                <Button
-                  type="button"
-                  disabled={
-                    !formInstance.watch("prompt") ||
-                    isEnhancingPrompt ||
-                    conceptVisualGeneratorMode === "image_editor"
-                  }
-                  variant={"outline"}
-                  className="border-primary text-primary"
-                  onClick={() => {
-                    if (!formInstance.getValues("prompt")) return;
-                    handleEnhancePrompt(undefined, {
-                      onSuccess: (data) => {
-                        formInstance.setValue("prompt", data.prompt, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
+                {isCompactMode ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        disabled={
+                          !formInstance.watch("prompt") ||
+                          isEnhancingPrompt ||
+                          conceptVisualGeneratorMode === "image_editor"
+                        }
+                        variant={"outline"}
+                        className="border-primary text-primary flex-shrink-0"
+                        onClick={() => {
+                          if (!formInstance.getValues("prompt")) return;
+                          handleEnhancePrompt(undefined, {
+                            onSuccess: (data) => {
+                              formInstance.setValue("prompt", data.prompt, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              });
 
-                        toast.success("Prompt enhanced successfully!");
-                      },
-                      onError: () => {
-                        toast.error(
-                          "Failed to enhance prompt. Please try again."
-                        );
-                      },
-                    });
-                  }}
-                >
-                  <WandSparkles />
-                  {isEnhancingPrompt ? "Enhancing Prompt..." : "Prompt"}
-                </Button>
+                              toast.success("Prompt enhanced successfully!");
+                            },
+                            onError: () => {
+                              toast.error(
+                                "Failed to enhance prompt. Please try again."
+                              );
+                            },
+                          });
+                        }}
+                      >
+                        <WandSparkles className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isEnhancingPrompt
+                        ? "Enhancing Prompt..."
+                        : "Enhance Prompt"}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={
+                      !formInstance.watch("prompt") ||
+                      isEnhancingPrompt ||
+                      conceptVisualGeneratorMode === "image_editor"
+                    }
+                    variant={"outline"}
+                    className="border-primary text-primary flex-shrink-0 whitespace-nowrap"
+                    onClick={() => {
+                      if (!formInstance.getValues("prompt")) return;
+                      handleEnhancePrompt(undefined, {
+                        onSuccess: (data) => {
+                          formInstance.setValue("prompt", data.prompt, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
+
+                          toast.success("Prompt enhanced successfully!");
+                        },
+                        onError: () => {
+                          toast.error(
+                            "Failed to enhance prompt. Please try again."
+                          );
+                        },
+                      });
+                    }}
+                  >
+                    <WandSparkles className="mr-2 h-4 w-4" />
+                    {isEnhancingPrompt ? "Enhancing..." : "Enhance"}
+                  </Button>
+                )}
                 <TokenGenerateButton
                   onClick={() => formInstance.handleSubmit(onSubmit)()}
                   tokens={credits}

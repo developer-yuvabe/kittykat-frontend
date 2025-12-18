@@ -119,6 +119,8 @@ export interface ThreadCampaign {
   is_custom?: boolean;
   is_archived?: boolean;
   position?: number;
+  created_by?: string;
+  is_curated_for_brand?: boolean;
 }
 
 export type ThreadCampaignUpdate = Partial<Omit<ThreadCampaign, "id">>;
@@ -180,6 +182,41 @@ export type ThreadA2iImage = {
   prompts?: string[];
 };
 
+export interface TagWeight {
+  name: string;
+  weight: number; // 0.0 - 1.0
+}
+
+export interface PaletteEntry {
+  hex: string;
+  name: string;
+  weight: number; // 0.0 - 1.0
+}
+
+export interface AggregatedColorPalette {
+  dominant: PaletteEntry[];
+  secondary: PaletteEntry[];
+  accent: PaletteEntry[];
+  background: PaletteEntry[];
+}
+
+export interface BrandBrainAggregatedAnalysis {
+  no_images_analyzed: number;
+  analyzed_at: string;
+  is_analyzing: boolean;
+  aggregated_tags: {
+    composition_tags: TagWeight[];
+    lighting_tags: TagWeight[];
+    setting_tags: TagWeight[];
+    people_tags: TagWeight[];
+    styling_tags: TagWeight[];
+    camera_tags: TagWeight[];
+    texture_tags: TagWeight[];
+    negative_tags: TagWeight[];
+    colors: AggregatedColorPalette;
+  };
+}
+
 export interface ThreadDetails {
   brand_information?: ThreadBrand;
   campaign_information?: ThreadCampaign[];
@@ -190,6 +227,7 @@ export interface ThreadDetails {
   };
   analysis_logs?: AnalysisLogDetail[];
   personas?: BrandPersona[];
+  brand_brain_analysis?: BrandBrainAggregatedAnalysis;
 }
 
 export interface AnalysisLogDetail {
@@ -300,6 +338,7 @@ export interface MoodboardInformation {
   prompt_generation_inputs?: PromptGenerationInputs;
   is_prompt_generation_in_progress?: boolean;
   prompt_generation_conflict_notes?: string;
+  created_by?: string;
 }
 
 export interface VisualImage {

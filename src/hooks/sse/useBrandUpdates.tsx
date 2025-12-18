@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { useGenerationsStore } from "@/store/generations.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
+import { useUserStore } from "@/store/user.store";
 
 export function useBrandUpdates() {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export function useBrandUpdates() {
   const { setIsCampaignCreating, selectedBrandId, setSelectedCampaignId } =
     useBrandStore();
   const { setIsFetchingBrandInfo, setData } = useBrandUpdatesStore();
+  const { user } = useUserStore();
 
   useEffect(() => {
     setIsFetchingBrandInfo(true);
@@ -40,8 +42,15 @@ export function useBrandUpdates() {
 
         const latestCreatedCampaign = parsed.campaign_information?.at(-1);
 
-        // Allow auto-select only on the main dashboard page for realtime updates
-        if (latestCreatedCampaign && window.location.pathname === "/") {
+        // Only auto-select campaign if:
+        // 1. On the main dashboard page
+        // 2. Campaign was created by the currently logged-in user
+        if (
+          latestCreatedCampaign &&
+          window.location.pathname === "/" &&
+          user &&
+          latestCreatedCampaign.created_by === user.id
+        ) {
           setSelectedCampaignId(latestCreatedCampaign.id);
         }
       }

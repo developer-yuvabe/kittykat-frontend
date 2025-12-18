@@ -21,6 +21,7 @@ interface BrandPersonaCarouselProps {
   brandId: string;
   onEdit?: (persona: BrandPersona) => void;
   onDuplicate?: (persona: BrandPersona) => void;
+  onDelete?: (personaId: string) => void;
 }
 
 // Create context for view more/less state across all cards
@@ -39,6 +40,7 @@ function BrandPersonaCarousel({
   brandId,
   onEdit,
   onDuplicate,
+  onDelete,
 }: BrandPersonaCarouselProps) {
   const [viewMore, setViewMore] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
@@ -79,6 +81,7 @@ function BrandPersonaCarousel({
                 brandId={brandId}
                 onEdit={onEdit}
                 onDuplicate={onDuplicate}
+                onDelete={onDelete}
               />
             </CarouselItem>
           ))}

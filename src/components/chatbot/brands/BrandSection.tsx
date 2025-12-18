@@ -30,6 +30,8 @@ import { useModelsStore } from "@/store/models.store";
 import { useThreadStore } from "@/store/thread.store";
 import BrandPersonas from "./BrandPersonas";
 import { BrandPersona } from "@/types/persona.types";
+import BrandBrainAnalysisResults from "./BrandBrainAnalysisResults";
+import { BrandBrainAggregatedAnalysis } from "@/types/types";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -40,6 +42,7 @@ export const BrandSection: React.FC<{
   analysisLogs: AnalysisLogDetail[];
   brandId?: string;
   personas?: BrandPersona[];
+  brandBrainAnalysis?: BrandBrainAggregatedAnalysis;
 }> = ({
   brandingInformation,
   expandedSections,
@@ -47,6 +50,7 @@ export const BrandSection: React.FC<{
   analysisLogs,
   brandId,
   personas,
+  brandBrainAnalysis,
 }) => {
   const { selectedBrandId } = useBrandStore();
   const effectiveBrandId = brandId || selectedBrandId;
@@ -70,7 +74,8 @@ export const BrandSection: React.FC<{
           brandingInformation.brand_media,
           analysisLogs,
           effectiveBrandId ?? undefined,
-          personas
+          personas,
+          brandBrainAnalysis
         )}
       </div>
     </div>
@@ -85,7 +90,8 @@ export const renderBrandData = (
   brandMedia: any,
   analysisLogs: AnalysisLogDetail[],
   brandId?: string,
-  personas?: BrandPersona[]
+  personas?: BrandPersona[],
+  brandBrainAnalysis?: BrandBrainAggregatedAnalysis
 ) => {
   const brandInitial = (staticData?.brand?.name || "No Brand Name")
     .charAt(0)
@@ -446,6 +452,9 @@ export const renderBrandData = (
                 );
               }}
             />
+            <div className="pt-2">
+              <BrandBrainAnalysisResults analysis={brandBrainAnalysis} />
+            </div>
 
             <div className="pt-2">
               <BrandPersonas personas={personas} />
