@@ -32,8 +32,8 @@ function BrandBrainAnalysisResults({
     });
   };
 
-  // Show empty state when no analysis data
-  if (!analysis) {
+  // Show empty state when no analysis data or when aggregated tags are missing
+  if (!analysis || !analysis.aggregated_tags) {
     return (
       <Card className="border border-gray-400">
         <CardHeader className="pb-3">
@@ -78,15 +78,16 @@ function BrandBrainAnalysisResults({
     );
   }
 
+  // Provide safe defaults so destructuring doesn't throw when keys are empty
   const {
-    composition_tags,
-    lighting_tags,
-    setting_tags,
-    people_tags,
-    styling_tags,
-    camera_tags,
-    texture_tags,
-  } = analysis.aggregated_tags;
+    composition_tags = [],
+    lighting_tags = [],
+    setting_tags = [],
+    people_tags = [],
+    styling_tags = [],
+    camera_tags = [],
+    texture_tags = [],
+  } = analysis.aggregated_tags || {};
 
   const formatDate = (dateString: string) => {
     try {
@@ -139,12 +140,14 @@ function BrandBrainAnalysisResults({
                 Visual Style
               </h3>
               <p className="text-sm text-gray-600 mt-0.5">
-                Visual Style learned from {analysis.no_images_analyzed} curated
-                images
+                Visual Style learned from {analysis.no_images_analyzed ?? 0}{" "}
+                curated images
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Last updated: {formatDate(analysis.analyzed_at)}
-              </p>
+              {analysis.analyzed_at && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Last updated: {formatDate(analysis.analyzed_at)}
+                </p>
+              )}
             </div>
           </div>
           <Button

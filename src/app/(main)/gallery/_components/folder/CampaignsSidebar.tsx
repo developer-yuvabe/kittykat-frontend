@@ -8,6 +8,7 @@ import {
   deleteCampaign,
   patchCampaign,
   updateCampaign,
+  setCampaignCuration,
 } from "@/services/api/brand.service";
 import { toast } from "sonner";
 import {
@@ -353,9 +354,11 @@ export function CampaignsSidebar({
           shouldBeCurated ? "Marking" : "Unmarking"
         } "${title}" as curated campaign...`,
         action: async () => {
-          await updateCampaign(selectedBrandId, campaignId, {
-            is_curated_for_brand: shouldBeCurated,
-          });
+          await setCampaignCuration(
+            selectedBrandId,
+            campaignId,
+            shouldBeCurated
+          );
           // Invalidate brands query to refresh the UI
           await queryClient.invalidateQueries({ queryKey: ["brands"] });
 
@@ -1161,9 +1164,7 @@ export function CampaignsSidebar({
           })
         }
         title={
-          analyzeDialog.isReanalysis
-            ? "Reanalyze Campaign"
-            : "Analyze Campaign"
+          analyzeDialog.isReanalysis ? "Reanalyze Campaign" : "Analyze Campaign"
         }
         description={
           <div className="space-y-3">
