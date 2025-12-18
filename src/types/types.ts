@@ -119,8 +119,8 @@ export interface ThreadCampaign {
   is_custom?: boolean;
   is_archived?: boolean;
   position?: number;
-  is_curated_for_brand?: boolean;
   created_by?: string;
+  is_curated_for_brand?: boolean;
 }
 
 export type ThreadCampaignUpdate = Partial<Omit<ThreadCampaign, "id">>;
