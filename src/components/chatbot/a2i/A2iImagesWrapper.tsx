@@ -286,7 +286,7 @@ export const A2iImagesWrapper = ({
       content={
         <div className="flex flex-col gap-4 h-full">
           {/* Form Section - Above */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0" ref={inputContainerRef}>
             {!isModelsFetched ? (
               <A2iImageInputLoader />
             ) : (
@@ -382,7 +382,6 @@ export const A2iImagesWrapper = ({
               </SortableContext>
             </DndContext>
           </div>
-          <div ref={inputContainerRef}></div>
         </div>
       }
     />
