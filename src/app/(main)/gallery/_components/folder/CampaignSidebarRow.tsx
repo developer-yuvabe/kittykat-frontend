@@ -261,6 +261,7 @@ export function CampaignSidebarRow({
                 campaign.is_curated_for_brand || false
               )
             }
+            disabled={campaign.is_analyzing}
           >
             <Brain className="w-4 h-4 mr-2 text-gray-600" />
             {campaign.is_curated_for_brand
