@@ -17,6 +17,7 @@ export const remixImageService = async (
       product_reference_images: product_reference_images || [],
       enhance_prompt_for_product: enhance_prompt_for_products || false,
       team_id: team_id || undefined,
+      mask_image: maskImageUrl,
     };
 
     if (maskImageUrl) {
