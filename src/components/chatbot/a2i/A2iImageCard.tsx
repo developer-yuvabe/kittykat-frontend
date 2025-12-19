@@ -101,12 +101,7 @@ const A2iImageCard = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const {
-    setConceptVisualGeneratorMode,
-    setStartFrame,
-    setEndFrame,
-    setBaseImageUrl,
-  } = useA2iStore();
+  const { setStartFrame, setEndFrame, setBaseImageUrl } = useA2iStore();
 
   const galleryActions = useGalleryQuery(
     {

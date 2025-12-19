@@ -162,11 +162,57 @@ const A2iImageInput = ({
     selectedModel: currentModel,
   });
 
+  const {
+    referenceImagesModelInfo,
+    initialParams,
+    advancedParams,
+    baseImageParam,
+    firstFrameParam,
+    lastFrameParam,
+  } = useMemo(() => {
+    let fileParam: FileParam | null = null;
+    const initialParams: ModelParameter[] = [];
+    const advancedParams: ModelParameter[] = [];
+    let baseImageParam = null;
+    let firstFrameParam = null;
+    let lastFrameParam = null;
+
+    for (const param of currentModel?.parameters ?? []) {
+      if (param.type === "file") {
+        fileParam = param as FileParam;
+      } else if (param.type === "first_frame") {
+        firstFrameParam = param;
+      } else if (param.type === "last_frame") {
+        lastFrameParam = param;
+      } else if (["base_image", "image"].includes(param.id)) {
+        baseImageParam = param;
+      } else if (param.category === "initial" && param.id !== "prompt") {
+        initialParams.push(param);
+      } else if (param.category === "advanced") {
+        advancedParams.push(param);
+      }
+    }
+
+    return {
+      referenceImagesModelInfo: fileParam,
+      initialParams,
+      advancedParams,
+      baseImageParam,
+      firstFrameParam,
+      lastFrameParam,
+    };
+  }, [currentModel]);
+
   const { setShowInsufficientCreditsModal } = useCreditsStore();
   const { credits, isCalculatingCredits: isCalculatingTokens } =
     useModelPricing({
       form: formInstance,
       model: currentModel,
+      enabled: firstFrameParam?.required
+        ? !!formInstance.getValues(firstFrameParam?.id ?? "")
+        : baseImageParam
+        ? !!formInstance.getValues(baseImageParam.id)
+        : true,
     });
   const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
@@ -243,47 +289,6 @@ const A2iImageInput = ({
       toast.error("Failed to update magic preference");
     }
   };
-
-  const {
-    referenceImagesModelInfo,
-    initialParams,
-    advancedParams,
-    baseImageParam,
-    firstFrameParam,
-    lastFrameParam,
-  } = useMemo(() => {
-    let fileParam: FileParam | null = null;
-    const initialParams: ModelParameter[] = [];
-    const advancedParams: ModelParameter[] = [];
-    let baseImageParam = null;
-    let firstFrameParam = null;
-    let lastFrameParam = null;
-
-    for (const param of currentModel?.parameters ?? []) {
-      if (param.type === "file") {
-        fileParam = param as FileParam;
-      } else if (param.type === "first_frame") {
-        firstFrameParam = param;
-      } else if (param.type === "last_frame") {
-        lastFrameParam = param;
-      } else if (["base_image", "image"].includes(param.id)) {
-        baseImageParam = param;
-      } else if (param.category === "initial" && param.id !== "prompt") {
-        initialParams.push(param);
-      } else if (param.category === "advanced") {
-        advancedParams.push(param);
-      }
-    }
-
-    return {
-      referenceImagesModelInfo: fileParam,
-      initialParams,
-      advancedParams,
-      baseImageParam,
-      firstFrameParam,
-      lastFrameParam,
-    };
-  }, [currentModel]);
 
   const [masterReference, setMasterReference] = useState<string[]>([]);
   const [productReference, setProductReference] = useState<string[]>([]);
@@ -796,18 +801,6 @@ const A2iImageInput = ({
             : referenceImages[0];
       }
 
-      if (baseImageParam) {
-        data[baseImageParam.id] = baseImageUrl;
-      }
-
-      if (firstFrameParam) {
-        data[firstFrameParam.id] = startFrame;
-      }
-
-      if (lastFrameParam) {
-        data[lastFrameParam.id] = endFrame;
-      }
-
       if (currentModel?.prefix) {
         data.prompt = `${currentModel.prefix} ${data.prompt}`;
       }
@@ -1141,6 +1134,26 @@ const A2iImageInput = ({
       });
     }
   }, [parameters]);
+
+  useEffect(() => {
+    if (firstFrameParam) {
+      formInstance.setValue(firstFrameParam.id, startFrame, {
+        shouldValidate: true,
+      });
+    }
+
+    if (lastFrameParam) {
+      formInstance.setValue(lastFrameParam.id, endFrame, {
+        shouldValidate: true,
+      });
+    }
+
+    if (baseImageParam) {
+      formInstance.setValue(baseImageParam.id, baseImageUrl, {
+        shouldValidate: true,
+      });
+    }
+  }, [startFrame, endFrame, baseImageParam, currentModel]);
 
   const value = formInstance.watch("max_images");
 
@@ -1640,9 +1653,7 @@ const A2iImageInput = ({
                     !formInstance.formState.isValid ||
                     formInstance.formState.isSubmitting ||
                     isEnhancingPrompt ||
-                    !currentModel ||
-                    (conceptVisualGeneratorMode === "image_editor" &&
-                      !baseImageUrl)
+                    !currentModel
                   }
                   isCalculatingTokens={isCalculatingTokens}
                 />
