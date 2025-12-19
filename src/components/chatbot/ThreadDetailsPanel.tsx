@@ -26,6 +26,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     isCreatingBrand,
     selectedCampaignId: globalSelectedCamapaignId,
     setSelectedCampaignId,
+    selectedBrandId,
   } = useBrandStore();
   const { isSwitchingTeam } = useUserStore();
   const { isFetchingBrandInfo, data } = useBrandUpdatesStore();
@@ -78,6 +79,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
       {isFetchingBrandInfo ||
       isCreatingBrand ||
       isSwitchingTeam ||
+      !selectedBrandId ||
       !isBrandsFetched ? (
         <InitialPlaceHolder
           isLoading={isFetchingBrandInfo || !isBrandsFetched || isSwitchingTeam}
