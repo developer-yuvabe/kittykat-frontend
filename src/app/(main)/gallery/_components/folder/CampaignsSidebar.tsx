@@ -242,7 +242,6 @@ export function CampaignsSidebar({
       };
     });
   };
-  console.log("capaugsn", campaigns);
 
   // Handlers
   const handleDelete = async () => {
