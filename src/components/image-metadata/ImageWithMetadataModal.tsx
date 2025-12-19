@@ -586,7 +586,7 @@ const ImageWithMetadataModal = ({
       await videoGenerationService(selectedBrandId!, {
         ...defaultValues,
         first_frame: currentDisplayItem.asset_url,
-        prompt: data?.parameters?.prompt,
+        prompt: data?.parameters?.prompt || "",
         model: defaultAnimationModel.model,
         source_asset_id: currentDisplayItem.id,
         campaign_id: campaignId,
