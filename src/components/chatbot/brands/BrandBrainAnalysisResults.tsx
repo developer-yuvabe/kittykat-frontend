@@ -78,7 +78,6 @@ function BrandBrainAnalysisResults({
     );
   }
 
-  // Provide safe defaults so destructuring doesn't throw when keys are empty
   const {
     composition_tags = [],
     lighting_tags = [],
@@ -87,6 +86,7 @@ function BrandBrainAnalysisResults({
     styling_tags = [],
     camera_tags = [],
     texture_tags = [],
+    negative_tags = [],
   } = analysis.aggregated_tags || {};
 
   const formatDate = (dateString: string) => {
@@ -175,6 +175,7 @@ function BrandBrainAnalysisResults({
         {renderTagCategory("Styling", styling_tags)}
         {renderTagCategory("Camera", camera_tags)}
         {renderTagCategory("Texture", texture_tags)}
+        {renderTagCategory("Negative", negative_tags)}
 
         {analysis.is_analyzing && (
           <div className="flex items-center justify-center py-4">
