@@ -985,7 +985,7 @@ const VideoFrameSelector = ({
             has_product: undefined,
             has_people: undefined,
             has_lifestyle_context: undefined,
-            asset_types: [],
+            asset_types: ["image", "video"],
             asset_sources: [],
             media_format: [],
             aspect_ratio: [],

@@ -35,14 +35,21 @@ export const BaseImageUploadArea = ({
   });
 
   return (
-    <div className="w-[320px] h-[300px] bg-muted/5 flex flex-col justify-center">
+    <div
+      {...getRootProps()}
+      className="w-[320px] h-[300px] bg-muted/5 flex flex-col justify-center"
+    >
+      <input {...getInputProps()} />
       {/* 👉 IF IMAGE EXISTS SHOW PREVIEW */}
       {baseImageUrl ? (
-        <div className="relative rounded-xl overflow-hidden bg-background p-2">
+        <div className="relative overflow-hidden bg-background p-2">
           {/* Close Button */}
           <button
             className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full"
-            onClick={() => setBaseImageUrl(null)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setBaseImageUrl(null);
+            }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -51,20 +58,17 @@ export const BaseImageUploadArea = ({
           <img
             src={baseImageUrl}
             alt="Base"
-            className="w-full h-full object-contain rounded-lg"
+            className="w-full h-full object-contain"
           />
         </div>
       ) : (
         /* 👉 ELSE SHOW DROPZONE UI */
         <div
-          {...getRootProps()}
           className={cn(
             "border-2 border-dashed rounded-xl cursor-pointer transition-all bg-background hover:bg-muted/20 p-8 min-h-[300px] flex flex-col items-center justify-center text-center",
             isUploading && "opacity-50 pointer-events-none"
           )}
         >
-          <input {...getInputProps()} />
-
           <Upload className="h-12 w-12 text-muted-foreground" />
 
           <div className="space-y-2 mt-4">
