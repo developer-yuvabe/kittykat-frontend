@@ -137,3 +137,30 @@ export const DEFAULT_EMPTY_VERSIONS = VERSION_KEYS.map((key) => ({
   version_key: key,
   prompts: { ...DEFAULT_EMPTY_PROMPTS },
 }));
+
+export const REQUIRED_PROMPTS_BY_VERSION: Record<
+  VersionKey,
+  PromptFieldType[]
+> = {
+  // All prompts required
+  All: [
+    "moodboard_analysis",
+    "product_analysis",
+    "context_analysis",
+    "analysis_merge",
+    "prompt_generation",
+  ],
+
+  // Moodboard only
+  M: ["moodboard_analysis", "prompt_generation"],
+
+  // Moodboard + Text
+  MT: ["prompt_generation"],
+
+  // Versions has merge + generation
+  MP: ["analysis_merge", "prompt_generation"],
+  MC: ["analysis_merge", "prompt_generation"],
+  MPC: ["analysis_merge", "prompt_generation"],
+  MPT: ["analysis_merge", "prompt_generation"],
+  MCT: ["analysis_merge", "prompt_generation"],
+};
