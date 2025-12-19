@@ -110,12 +110,6 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
 
       // Arrays
       if (Array.isArray(value)) {
-        if (value.length === 0) {
-          return withWrap(
-            <div className={`text-sm italic text-gray-400`}>Empty list</div>
-          );
-        }
-
         const isPrimitiveArray = value.every(
           (v) => v == null || ["string", "number", "boolean"].includes(typeof v)
         );
