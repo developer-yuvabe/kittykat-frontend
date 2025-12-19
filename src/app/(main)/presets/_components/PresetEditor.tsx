@@ -44,6 +44,7 @@ import {
   DEFAULT_EMPTY_VERSIONS,
   VERSION_DESCRIPTION_MAP,
   VERSION_KEY_DISPLAY_MAP,
+  REQUIRED_PROMPTS_BY_VERSION,
 } from "@/lib/preset.utils";
 
 import {
@@ -159,9 +160,16 @@ export function PresetEditor({
 
   const hasEmptyPrompt = () => {
     const versions = form.getValues("versions");
-    return versions.some((v) =>
-      Object.values(v.prompts).some((value) => !value || !value.trim())
-    );
+
+    return versions.some((version) => {
+      const requiredFields =
+        REQUIRED_PROMPTS_BY_VERSION[version.version_key] || [];
+
+      return requiredFields.some((field) => {
+        const value = version.prompts[field];
+        return !value || !value.trim();
+      });
+    });
   };
 
   // Helper: get current versions array
@@ -540,7 +548,8 @@ export function PresetEditor({
             <DialogHeader>
               <DialogTitle className="flex flex-col">
                 <span className="text-lg">
-                  Edit Preset Version: {currentEditingVersion.version_key}
+                  Edit Preset Version:{" "}
+                  {VERSION_KEY_DISPLAY_MAP[currentEditingVersion.version_key]}
                 </span>
                 <span className="text-sm text-muted-foreground mt-1">
                   {VERSION_DESCRIPTION_MAP[currentEditingVersion.version_key]}
