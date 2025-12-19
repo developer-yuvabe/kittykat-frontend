@@ -18,7 +18,7 @@ export function useCampaignAnalyzingStatus() {
 
       if (brand_id !== selectedBrandId) return;
 
-      // Update the brands store with the new analyzing status
+      // Update the brands store with the new analyzing status and curated status
       const updatedBrands = brands.map((brand) => {
         if (brand.id !== brand_id) return brand;
 
@@ -26,13 +26,16 @@ export function useCampaignAnalyzingStatus() {
           ...brand,
           campaigns: brand.campaigns.map((campaign) => {
             const statusUpdate = campaigns.find(
-              (c: any) => c.id === campaign.id
+              (c: { id: string; is_analyzing: boolean; is_curated_for_brand: boolean }) => 
+                c.id === campaign.id
             );
             if (!statusUpdate) return campaign;
 
+            // Directly use is_analyzing and is_curated_for_brand from SSE
             return {
               ...campaign,
               is_analyzing: statusUpdate.is_analyzing,
+              is_curated_for_brand: statusUpdate.is_curated_for_brand,
             };
           }),
         };
