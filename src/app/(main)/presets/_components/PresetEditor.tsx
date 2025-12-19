@@ -157,6 +157,13 @@ export function PresetEditor({
     value: b.id,
   }));
 
+  const hasEmptyPrompt = () => {
+    const versions = form.getValues("versions");
+    return versions.some((v) =>
+      Object.values(v.prompts).some((value) => !value || !value.trim())
+    );
+  };
+
   // Helper: get current versions array
   const versions: PresetVersion[] =
     form.watch("versions") || DEFAULT_EMPTY_VERSIONS;
@@ -489,12 +496,18 @@ export function PresetEditor({
               </Button>
               {!isViewOnly && (
                 <Button
-                  type="submit"
-                  disabled={
-                    // In edit mode require changes to be made before enabling save
-                    // Do not block save strictly on `isValid` here — handleSubmit will run validation and show errors.
-                    (mode === PresetEditorMode.EDIT && !isDirty) || isSaving
-                  }
+                  type="button"
+                  onClick={() => {
+                    if (hasEmptyPrompt()) {
+                      toast.error(
+                        "Please fill all prompt fields in all preset versions."
+                      );
+                      return;
+                    }
+
+                    form.handleSubmit(handleSave)();
+                  }}
+                  disabled={isSaving}
                   className="gap-2"
                 >
                   {isSaving ? (

@@ -180,6 +180,17 @@ export async function addDeprioritizedIds(
     )
   );
 }
+export async function setCampaignCuration(
+  brandId: string,
+  campaignId: string,
+  isCuratedForBrand: boolean
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.post(`/brands/${brandId}/campaign/${campaignId}/curation`, {
+      is_curated_for_brand: isCuratedForBrand,
+    })
+  );
+}
 /**
  * Delete a brand permanently (Admin only).
  * Cascade deletes all campaigns and moodboards.

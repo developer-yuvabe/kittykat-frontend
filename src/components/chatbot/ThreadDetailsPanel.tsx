@@ -26,6 +26,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     isCreatingBrand,
     selectedCampaignId: globalSelectedCamapaignId,
     setSelectedCampaignId,
+    selectedBrandId,
   } = useBrandStore();
   const { isSwitchingTeam } = useUserStore();
   const { isFetchingBrandInfo, data } = useBrandUpdatesStore();
@@ -67,8 +68,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     }
   }, [currentCampaign]);
 
-  console.log("brand analysis data:", data?.brand_brain_analysis);
-
   return (
     <div
       className={`relative rounded-2xl px-8 pt-8  flex flex-col overflow-auto scrollbar ${
@@ -78,6 +77,7 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
       {isFetchingBrandInfo ||
       isCreatingBrand ||
       isSwitchingTeam ||
+      !selectedBrandId ||
       !isBrandsFetched ? (
         <InitialPlaceHolder
           isLoading={isFetchingBrandInfo || !isBrandsFetched || isSwitchingTeam}
