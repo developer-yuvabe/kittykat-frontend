@@ -67,8 +67,6 @@ const ThreadDetailsPanel: React.FC<ThreadDetailsPanelProps> = ({
     }
   }, [currentCampaign]);
 
-  console.log("brand analysis data:", data?.brand_brain_analysis);
-
   return (
     <div
       className={`relative rounded-2xl px-8 pt-8  flex flex-col overflow-auto scrollbar ${

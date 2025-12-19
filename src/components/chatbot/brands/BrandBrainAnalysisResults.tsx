@@ -32,20 +32,62 @@ function BrandBrainAnalysisResults({
     });
   };
 
-  // Don't render if no analysis data
-  if (!analysis) {
-    return null;
+  // Show empty state when no analysis data or when aggregated tags are missing
+  if (!analysis || !analysis.aggregated_tags) {
+    return (
+      <Card className="border border-gray-400">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-gray-400" />
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                Visual Style
+              </h3>
+              <p className="text-sm text-gray-600 mt-0.5">
+                No analysis available yet
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 px-4 text-center space-y-4">
+            <div className="rounded-full bg-gray-100 p-3">
+              <Sparkles className="h-8 w-8 text-gray-400" />
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-gray-900">
+                No Visual Style Analysis Yet
+              </h4>
+              <p className="text-sm text-gray-600 max-w-md">
+                To generate a visual style analysis, please curate at least one
+                campaign with images for this brand. Once curated, the system
+                will automatically analyze the visual patterns and styles.
+              </p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
+              <p className="text-xs text-blue-800">
+                <strong>How to curate:</strong> Navigate to the Gallery Folder
+                View , select campaigns that represent your brand&apos;s visual
+                style, and mark them as curated. The analysis will be generated
+                automatically.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const {
-    composition_tags,
-    lighting_tags,
-    setting_tags,
-    people_tags,
-    styling_tags,
-    camera_tags,
-    texture_tags,
-  } = analysis.aggregated_tags;
+    composition_tags = [],
+    lighting_tags = [],
+    setting_tags = [],
+    people_tags = [],
+    styling_tags = [],
+    camera_tags = [],
+    texture_tags = [],
+    negative_tags = [],
+  } = analysis.aggregated_tags || {};
 
   const formatDate = (dateString: string) => {
     try {
@@ -98,12 +140,14 @@ function BrandBrainAnalysisResults({
                 Visual Style
               </h3>
               <p className="text-sm text-gray-600 mt-0.5">
-                Visual Style learned from {analysis.no_images_analyzed} curated
-                images
+                Visual Style learned from {analysis.no_images_analyzed ?? 0}{" "}
+                curated images
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Last updated: {formatDate(analysis.analyzed_at)}
-              </p>
+              {analysis.analyzed_at && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Last updated: {formatDate(analysis.analyzed_at)}
+                </p>
+              )}
             </div>
           </div>
           <Button
@@ -131,6 +175,7 @@ function BrandBrainAnalysisResults({
         {renderTagCategory("Styling", styling_tags)}
         {renderTagCategory("Camera", camera_tags)}
         {renderTagCategory("Texture", texture_tags)}
+        {renderTagCategory("Negative", negative_tags)}
 
         {analysis.is_analyzing && (
           <div className="flex items-center justify-center py-4">
