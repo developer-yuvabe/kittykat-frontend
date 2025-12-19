@@ -17,6 +17,8 @@ export function useDynamicModelSchema(
 
     switch (param.type) {
       case "string":
+      case "first_frame":
+      case "last_frame":
         schema = z.string();
         break;
       case "slider":
