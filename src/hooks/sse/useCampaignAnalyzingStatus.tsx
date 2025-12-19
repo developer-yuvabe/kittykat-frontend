@@ -2,8 +2,20 @@ import { getSSEBaseUrl } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { useEffect } from "react";
 
+interface CampaignStatusUpdate {
+  id: string;
+  title: string;
+  is_analyzing: boolean;
+}
+
+interface SSECampaignStatusEvent {
+  brand_id: string;
+  brand_is_analyzing: boolean;
+  campaigns: CampaignStatusUpdate[];
+}
+
 export function useCampaignAnalyzingStatus() {
-  const { selectedBrandId, brands, setBrands } = useBrandStore();
+  const selectedBrandId = useBrandStore((state) => state.selectedBrandId);
 
   useEffect(() => {
     if (!selectedBrandId) return;
@@ -13,29 +25,29 @@ export function useCampaignAnalyzingStatus() {
     );
 
     eventSource.addEventListener("campaign_analyzing_status", (event) => {
-      const parsed = JSON.parse(event.data);
-      const { brand_id, campaigns } = parsed;
+      const parsed: SSECampaignStatusEvent = JSON.parse(event.data);
+      const { brand_id, campaigns: campaignUpdates } = parsed;
 
       if (brand_id !== selectedBrandId) return;
 
-      // Update the brands store with the new analyzing status and curated status
+      // Get fresh state to avoid stale closure issues
+      const { brands, setBrands } = useBrandStore.getState();
+
       const updatedBrands = brands.map((brand) => {
         if (brand.id !== brand_id) return brand;
 
         return {
           ...brand,
           campaigns: brand.campaigns.map((campaign) => {
-            const statusUpdate = campaigns.find(
-              (c: { id: string; is_analyzing: boolean; is_curated_for_brand: boolean }) => 
-                c.id === campaign.id
+            const statusUpdate = campaignUpdates.find(
+              (c) => c.id === campaign.id
             );
             if (!statusUpdate) return campaign;
 
-            // Directly use is_analyzing and is_curated_for_brand from SSE
+            // Only update is_analyzing from SSE
             return {
               ...campaign,
               is_analyzing: statusUpdate.is_analyzing,
-              is_curated_for_brand: statusUpdate.is_curated_for_brand,
             };
           }),
         };
@@ -61,3 +73,4 @@ export function useCampaignAnalyzingStatus() {
     };
   }, [selectedBrandId]);
 }
+

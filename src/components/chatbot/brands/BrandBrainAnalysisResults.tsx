@@ -29,6 +29,7 @@ function BrandBrainAnalysisResults({
 
     triggerAnalysis({
       brand_id: selectedBrandId,
+      batch_size: 10,
     });
   };
 
