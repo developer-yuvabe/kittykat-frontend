@@ -360,13 +360,6 @@ export function CampaignsSidebar({
           );
           // Invalidate brands query to refresh the UI
           await queryClient.invalidateQueries({ queryKey: ["brands"] });
-
-          // If unmarking as curated, trigger brand-level analysis
-          if (!shouldBeCurated) {
-            triggerAnalysis({
-              brand_id: selectedBrandId,
-            });
-          }
         },
         successMessage: `"${title}" ${
           shouldBeCurated ? "marked" : "unmarked"
