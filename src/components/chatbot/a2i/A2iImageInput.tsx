@@ -210,8 +210,6 @@ const A2iImageInput = ({
       model: currentModel,
       enabled: firstFrameParam?.required
         ? !!formInstance.getValues(firstFrameParam?.id ?? "")
-        : baseImageParam
-        ? !!formInstance.getValues(baseImageParam.id)
         : true,
     });
   const { selectedBrandId } = useBrandStore();
@@ -809,6 +807,10 @@ const A2iImageInput = ({
         data.finetune_id = currentModel.finetune_id;
       }
 
+      if (baseImageParam) {
+        data[baseImageParam.id] = baseImageUrl;
+      }
+
       if (conceptVisualGeneratorMode === "image_generator") {
         await generateImage(selectedBrandId!, {
           ...data,
@@ -1147,13 +1149,7 @@ const A2iImageInput = ({
         shouldValidate: true,
       });
     }
-
-    if (baseImageParam) {
-      formInstance.setValue(baseImageParam.id, baseImageUrl, {
-        shouldValidate: true,
-      });
-    }
-  }, [startFrame, endFrame, baseImageParam, currentModel]);
+  }, [startFrame, endFrame, currentModel]);
 
   const value = formInstance.watch("max_images");
 
@@ -1653,7 +1649,9 @@ const A2iImageInput = ({
                     !formInstance.formState.isValid ||
                     formInstance.formState.isSubmitting ||
                     isEnhancingPrompt ||
-                    !currentModel
+                    !currentModel ||
+                    (conceptVisualGeneratorMode === "image_editor" &&
+                      !baseImageUrl)
                   }
                   isCalculatingTokens={isCalculatingTokens}
                 />
