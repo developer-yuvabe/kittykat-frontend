@@ -520,15 +520,22 @@ const A2iImageCard = ({
                 />
               </div>
             )}
-            {(video || parameters.start_image || parameters.first_frame) && (
+            {(video ||
+              parameters.start_image ||
+              parameters.first_frame ||
+              parameters.image) && (
               <div className="flex gap-4">
                 <img
-                  src={parameters.start_image || parameters.first_frame}
+                  src={
+                    parameters.start_image ||
+                    parameters.first_frame ||
+                    parameters.image
+                  }
                   className="w-16 h-16 object-cover rounded-md"
                 />
-                {parameters.last_frame && (
+                {(parameters.last_frame || parameters.end_image) && (
                   <img
-                    src={parameters.last_frame}
+                    src={parameters.last_frame || parameters.end_image}
                     className="w-16 h-16 object-cover rounded-md"
                   />
                 )}
