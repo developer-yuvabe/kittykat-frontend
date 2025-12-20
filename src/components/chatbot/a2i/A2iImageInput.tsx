@@ -879,8 +879,10 @@ const A2iImageInput = ({
 
   useEffect(() => {
     if (shoudlClearPromptOnMetdaDataActions) {
-      formInstance.setValue("prompt", "", { shouldValidate: true });
-      setShouldClearPromptOnMetadataActions(false);
+      requestAnimationFrame(() => {
+        formInstance.setValue("prompt", "", { shouldValidate: true });
+        setShouldClearPromptOnMetadataActions(false);
+      });
     }
   }, [shoudlClearPromptOnMetdaDataActions]);
 
