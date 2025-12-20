@@ -34,6 +34,7 @@ import ZoomableImage from "../ui/zoomable-image";
 import { isFrameParam } from "@/types/a2i-media.types";
 import { useCreditsStore } from "@/store/credits.store";
 import { useUserStore } from "@/store/user.store";
+import { useA2iStore } from "@/store/a2i.store";
 
 type VideoWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -67,7 +68,7 @@ const VideoWithMetadataModal = ({
   const [copied, setCopied] = useState(false);
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-
+  const { setStartFrame, setEndFrame } = useA2iStore();
   const campaignId = selectedCampaignId || defaultCampaignId;
   const { user } = useUserStore();
 
@@ -195,6 +196,21 @@ const VideoWithMetadataModal = ({
       //  Set model + parameters
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
+
+      const firstFrameParam = model.parameters?.find(
+        (param) => param.type === "first_frame"
+      );
+
+      const lastFrameParam = model.parameters?.find(
+        (param) => param.type === "last_frame"
+      );
+
+      if (firstFrameParam?.id) {
+        setStartFrame(videoParams[firstFrameParam.id]);
+      }
+      if (lastFrameParam?.id) {
+        setEndFrame(videoParams[lastFrameParam.id]);
+      }
 
       onClose();
       if (source === "media-gallery") {
