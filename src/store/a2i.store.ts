@@ -24,6 +24,9 @@ type Store = {
   setStartFrame: (value: string | null) => void;
   setEndFrame: (value: string | null) => void;
 
+  shoudlClearPromptOnMetdaDataActions: boolean;
+  setShouldClearPromptOnMetadataActions: (value: boolean) => void;
+
   otherFrames: OtherFrames[];
   addOtherFrame: (frame: OtherFrames) => void;
   removeOtherFrame: (zone: "first" | "last") => void;
@@ -68,5 +71,9 @@ export const useA2iStore = create<Store>()((set) => {
         otherFrames: state.otherFrames.filter((f) => f.zone !== zone),
       })),
     clearOtherFrames: () => set({ otherFrames: [] }),
+
+    shoudlClearPromptOnMetdaDataActions: false,
+    setShouldClearPromptOnMetadataActions: (value) =>
+      set({ shoudlClearPromptOnMetdaDataActions: value }),
   };
 });

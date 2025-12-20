@@ -94,6 +94,7 @@ const ImageWithMetadataModal = ({
     setStartFrame,
     setEndFrame,
     setBaseImageUrl,
+    setShouldClearPromptOnMetadataActions,
   } = useA2iStore();
   const { user } = useUserStore();
 
@@ -356,6 +357,9 @@ const ImageWithMetadataModal = ({
           toast.error("No model found for this image.");
           return;
         }
+
+        setShouldClearPromptOnMetadataActions(true);
+
         // Regular image generation workflow
         setSelectedImageGenerationModel(model);
 
@@ -469,6 +473,8 @@ const ImageWithMetadataModal = ({
       }
 
       setSelectedRemixModel(defualtEditModel);
+      setShouldClearPromptOnMetadataActions(true);
+
       setConceptVisualGeneratorMode("image_editor");
       setBaseImageUrl(currentDisplayItem.asset_url);
 
@@ -509,6 +515,8 @@ const ImageWithMetadataModal = ({
       if (!imageReferenceModelId) {
         throw new Error("No model found that supports reference images");
       }
+
+      setShouldClearPromptOnMetadataActions(true);
 
       setSelectedImageGenerationModelByModelId(imageReferenceModelId);
 
@@ -551,6 +559,8 @@ const ImageWithMetadataModal = ({
       if (!defaultAnimationModel) {
         throw new Error("No default animation model found");
       }
+
+      setShouldClearPromptOnMetadataActions(true);
 
       setConceptVisualGeneratorMode("video_generator");
       setSelectedVideoGenearationModel(defaultAnimationModel);

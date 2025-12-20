@@ -101,6 +101,8 @@ const A2iImageInput = ({
     setConceptVisualGeneratorMode,
     baseImageUrl,
     setBaseImageUrl,
+    shoudlClearPromptOnMetdaDataActions,
+    setShouldClearPromptOnMetadataActions,
   } = useA2iStore();
 
   const {
@@ -140,7 +142,6 @@ const A2iImageInput = ({
     if (conceptVisualGeneratorMode !== "image_editor") {
       setBaseImageUrl(null);
     }
-    formInstance.setValue("prompt", "", { shouldValidate: true });
   }, [conceptVisualGeneratorMode]);
 
   // Compute formKey based on mode
@@ -210,8 +211,6 @@ const A2iImageInput = ({
       model: currentModel,
       enabled: firstFrameParam?.required
         ? !!formInstance.getValues(firstFrameParam?.id ?? "")
-        : baseImageParam
-        ? !!formInstance.getValues(baseImageParam.id)
         : true,
     });
   const { selectedBrandId } = useBrandStore();
@@ -809,6 +808,10 @@ const A2iImageInput = ({
         data.finetune_id = currentModel.finetune_id;
       }
 
+      if (baseImageParam) {
+        data[baseImageParam.id] = baseImageUrl;
+      }
+
       if (conceptVisualGeneratorMode === "image_generator") {
         await generateImage(selectedBrandId!, {
           ...data,
@@ -873,6 +876,13 @@ const A2iImageInput = ({
       });
     }
   }, [referencePrompt, formInstance, referencePromptSignal]);
+
+  useEffect(() => {
+    if (shoudlClearPromptOnMetdaDataActions) {
+      formInstance.setValue("prompt", "", { shouldValidate: true });
+      setShouldClearPromptOnMetadataActions(false);
+    }
+  }, [shoudlClearPromptOnMetdaDataActions]);
 
   useEffect(() => {
     if (!referenceImagesModelInfo) {
@@ -1147,13 +1157,7 @@ const A2iImageInput = ({
         shouldValidate: true,
       });
     }
-
-    if (baseImageParam) {
-      formInstance.setValue(baseImageParam.id, baseImageUrl, {
-        shouldValidate: true,
-      });
-    }
-  }, [startFrame, endFrame, baseImageParam, currentModel]);
+  }, [startFrame, endFrame, currentModel]);
 
   const value = formInstance.watch("max_images");
 
@@ -1653,7 +1657,9 @@ const A2iImageInput = ({
                     !formInstance.formState.isValid ||
                     formInstance.formState.isSubmitting ||
                     isEnhancingPrompt ||
-                    !currentModel
+                    !currentModel ||
+                    (conceptVisualGeneratorMode === "image_editor" &&
+                      !baseImageUrl)
                   }
                   isCalculatingTokens={isCalculatingTokens}
                 />

@@ -544,7 +544,7 @@ export function PresetEditor({
       {/*  Version Edit Modal */}
       {currentEditingVersion && (
         <Dialog open={true} onOpenChange={() => setEditingVersionIndex(null)}>
-          <DialogContent className="w-[85vw] sm:max-w-[900px] max-w-[95vw] h-[90vh] overflow-y-auto rounded-xl p-6">
+          <DialogContent className="w-[85vw] sm:max-w-[900px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl px-6">
             <DialogHeader>
               <DialogTitle className="flex flex-col">
                 <span className="text-lg">
