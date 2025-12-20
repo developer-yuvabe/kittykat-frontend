@@ -101,6 +101,8 @@ const A2iImageInput = ({
     setConceptVisualGeneratorMode,
     baseImageUrl,
     setBaseImageUrl,
+    shoudlClearPromptOnMetdaDataActions,
+    setShouldClearPromptOnMetadataActions,
   } = useA2iStore();
 
   const {
@@ -140,7 +142,6 @@ const A2iImageInput = ({
     if (conceptVisualGeneratorMode !== "image_editor") {
       setBaseImageUrl(null);
     }
-    formInstance.setValue("prompt", "", { shouldValidate: true });
   }, [conceptVisualGeneratorMode]);
 
   // Compute formKey based on mode
@@ -875,6 +876,13 @@ const A2iImageInput = ({
       });
     }
   }, [referencePrompt, formInstance, referencePromptSignal]);
+
+  useEffect(() => {
+    if (shoudlClearPromptOnMetdaDataActions) {
+      formInstance.setValue("prompt", "", { shouldValidate: true });
+      setShouldClearPromptOnMetadataActions(false);
+    }
+  }, [shoudlClearPromptOnMetdaDataActions]);
 
   useEffect(() => {
     if (!referenceImagesModelInfo) {
