@@ -77,6 +77,11 @@ export function InlineEditableBadges({
       )}
 
       <div className="flex flex-wrap gap-2 items-center group">
+        {/* Show empty state when no values and not editing */}
+        {currentValues.length === 0 && !isEditing && (
+          <span className="text-sm italic text-gray-400">Empty list</span>
+        )}
+        
         {/* Existing badges */}
         {currentValues.map((val, i) => (
           <div key={i} className="relative group/badge">

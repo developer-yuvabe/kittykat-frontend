@@ -24,18 +24,23 @@ type ModelSelectorProps = {
   onModelChange: (model: Model) => void;
   selectedModel: Model | null;
   typeFilter?: Model["type"];
+  isCompactMode?: boolean;
 };
 
 export default function ModelSelector({
   onModelChange,
   selectedModel,
   typeFilter,
+  isCompactMode = false,
 }: ModelSelectorProps) {
   const { models, isModelsFetched } = useModelsStore();
 
   const filteredModels = typeFilter
     ? models.filter((m) => m.type === typeFilter)
     : models;
+
+  // Calculate max width based on compact mode
+  const maxWidth = isCompactMode ? "max-w-[180px]" : "max-w-[280px]";
 
   if (!isModelsFetched) {
     return (
@@ -84,17 +89,21 @@ export default function ModelSelector({
         }}
       >
         <SelectTrigger
-          className={cn("w-full", {
+          className={cn("min-w-0 flex-shrink", maxWidth, {
             "min-w-32": !selectedModel?.id,
           })}
         >
           {selectedModel ? (
-            <div className="flex items-center gap-2">
-              {(() => {
-                const Icon = getProviderIcon(selectedModel.provider);
-                return <Icon />;
-              })()}
-              <span>{selectedModel.name}</span>
+            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+              <div className="flex-shrink-0">
+                {(() => {
+                  const Icon = getProviderIcon(selectedModel.provider);
+                  return <Icon />;
+                })()}
+              </div>
+              <span className="truncate" title={selectedModel.name}>
+                {selectedModel.name}
+              </span>
             </div>
           ) : (
             <SelectValue placeholder="Select a model" />

@@ -28,6 +28,10 @@ import { InitialPlaceHolder } from "./InitialPlaceHolder";
 import { auth } from "@/config/firebase.config";
 import { useModelsStore } from "@/store/models.store";
 import { useThreadStore } from "@/store/thread.store";
+import BrandPersonas from "./BrandPersonas";
+import { BrandPersona } from "@/types/persona.types";
+import BrandBrainAnalysisResults from "./BrandBrainAnalysisResults";
+import { BrandBrainAggregatedAnalysis } from "@/types/types";
 
 export const BrandSection: React.FC<{
   brandingInformation: any;
@@ -36,12 +40,21 @@ export const BrandSection: React.FC<{
     React.SetStateAction<{ [key: string]: boolean }>
   >;
   analysisLogs: AnalysisLogDetail[];
+  brandId?: string;
+  personas?: BrandPersona[];
+  brandBrainAnalysis?: BrandBrainAggregatedAnalysis;
 }> = ({
   brandingInformation,
   expandedSections,
   setExpandedSections,
   analysisLogs,
+  brandId,
+  personas,
+  brandBrainAnalysis,
 }) => {
+  const { selectedBrandId } = useBrandStore();
+  const effectiveBrandId = brandId || selectedBrandId;
+
   if (!brandingInformation) {
     return <InitialPlaceHolder />;
   }
@@ -59,7 +72,10 @@ export const BrandSection: React.FC<{
           brandingInformation.static,
           brandingInformation.dynamic,
           brandingInformation.brand_media,
-          analysisLogs
+          analysisLogs,
+          effectiveBrandId ?? undefined,
+          personas,
+          brandBrainAnalysis
         )}
       </div>
     </div>
@@ -72,7 +88,10 @@ export const renderBrandData = (
   staticData: ThreadBrand["static"],
   dynamicData: ThreadBrand["dynamic"],
   brandMedia: any,
-  analysisLogs: AnalysisLogDetail[]
+  analysisLogs: AnalysisLogDetail[],
+  brandId?: string,
+  personas?: BrandPersona[],
+  brandBrainAnalysis?: BrandBrainAggregatedAnalysis
 ) => {
   const brandInitial = (staticData?.brand?.name || "No Brand Name")
     .charAt(0)
@@ -433,6 +452,13 @@ export const renderBrandData = (
                 );
               }}
             />
+            <div className="pt-2">
+              <BrandBrainAnalysisResults analysis={brandBrainAnalysis} />
+            </div>
+
+            <div className="pt-2">
+              <BrandPersonas personas={personas} />
+            </div>
 
             {/* Brand Media Upload Section */}
             <BrandAestheticUploader

@@ -46,6 +46,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useUserStore } from "@/store/user.store";
+import {
+  ImageEditorIcon,
+  ImageGeneratorIcon,
+  VideoGeneratorIcon,
+} from "@/components/ui/custom-icon";
 
 type EditUserFormData = z.infer<typeof updateInvitedUserSchema>;
 
@@ -64,12 +69,29 @@ export function EditUser({
   const { models } = useModelsStore();
   const queryClient = useQueryClient();
 
-  // Get base models (models without finetune_id) and sort models
-  const sortedModels = useMemo(() => {
-    const baseModels = models.filter((model) => !model.finetune_id);
-    const finetunedModels = models.filter((model) => model.finetune_id);
+  const { defaultModelIds, groupedModels } = useMemo(() => {
+    const result = models.reduce(
+      (acc, model) => {
+        // Collect default models
+        if (model.default_model) {
+          acc.defaultModelIds.push(model.id);
+        }
 
-    return [...baseModels, ...finetunedModels];
+        // Group by type
+        if (!acc.groupedModels[model.type]) {
+          acc.groupedModels[model.type] = [];
+        }
+        acc.groupedModels[model.type].push(model);
+
+        return acc;
+      },
+      {
+        defaultModelIds: [] as string[],
+        groupedModels: {} as Record<string, typeof models>,
+      }
+    );
+
+    return result;
   }, [models]);
 
   const form = useForm<EditUserFormData>({
@@ -82,14 +104,43 @@ export function EditUser({
     },
     mode: "onChange",
   });
-  const typeLabelMap: Record<string, string> = {
-    vton: "Virtual try-on",
-    image: "Image generation",
-    video: "Video generation",
-    remix: "In painting",
-    "image-upscale": "Image upscale",
+  const getModelIconAndLabel = (type: string) => {
+    const iconClass = "h-3.5 w-3.5 text-white";
+
+    switch (type) {
+      case "image":
+        return {
+          icon: <ImageGeneratorIcon className={iconClass} />,
+          label: "Image Generation",
+        };
+      case "video":
+        return {
+          icon: <VideoGeneratorIcon className={iconClass} />,
+          label: "Video Generation",
+        };
+      case "remix":
+        return {
+          icon: <ImageEditorIcon className={iconClass} />,
+          label: "Image Editing",
+        };
+      case "image-upscale":
+        return {
+          icon: <ImageEditorIcon className={iconClass} />,
+          label: "Image Upscale",
+        };
+      case "vton":
+        return {
+          icon: <ImageEditorIcon className={iconClass} />,
+          label: "Virtual Try-On",
+        };
+      default:
+        return {
+          icon: <ImageGeneratorIcon className={iconClass} />,
+          label: "Unknown",
+        };
+    }
   };
-  // Reset form values when user prop changes or dialog opens
+
   useEffect(() => {
     if (isOpen && user) {
       const userModelAccess = user.model_access?.map((model) => model.id) || [];
@@ -149,16 +200,13 @@ export function EditUser({
     ) {
       form.setValue("modelAccess", []);
     } else if (selectedRole === UserRoleId.USER) {
-      // When switching to User role, pre-select base models if modelAccess is empty
       const currentModelAccess = form.getValues("modelAccess");
       if (!currentModelAccess || currentModelAccess.length === 0) {
-        const baseModelIds = models
-          .filter((model) => !model.finetune_id)
-          .map((model) => model.id);
-        form.setValue("modelAccess", baseModelIds, { shouldDirty: true });
+        //Use defaultModelIds instead of filtering for base models
+        form.setValue("modelAccess", defaultModelIds, { shouldDirty: true });
       }
     }
-  }, [selectedRole, form, models]);
+  }, [selectedRole, form, defaultModelIds]);
 
   const handleClose = () => {
     form.reset(); // Reset form when closing
@@ -284,7 +332,7 @@ export function EditUser({
                                   selectedRole === UserRoleId.ADMIN ||
                                   selectedRole === UserRoleId.KK_CREATIVE_USER
                                     ? "Has access to all models"
-                                    : sortedModels.length === 0
+                                    : models.length === 0
                                     ? "Loading models..."
                                     : "Select models"
                                 }
@@ -295,14 +343,14 @@ export function EditUser({
                             search={{
                               placeholder: "Search models...",
                               emptyMessage:
-                                sortedModels.length === 0
+                                models.length === 0
                                   ? "Loading models..."
                                   : "No models found",
                             }}
                           >
-                            {sortedModels.length > 0 && (
+                            {models.length > 0 && (
                               <>
-                                {/* Select All Checkbox */}
+                                {/* Select All */}
                                 <div className="px-2 py-2 border-b border-border">
                                   <div className="flex items-center space-x-2">
                                     <Checkbox
@@ -330,60 +378,59 @@ export function EditUser({
                                     />
                                     <label
                                       htmlFor="select-all-models-edit"
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                      className="text-sm font-medium leading-none"
                                     >
                                       Select All
                                     </label>
                                   </div>
                                 </div>
 
-                                <MultiSelectGroup>
-                                  {sortedModels.map((model) => {
-                                    const isBaseModel = !model.finetune_id;
+                                {/* Grouped Models */}
+                                {Object.entries(groupedModels).map(
+                                  ([type, modelsList]) => {
+                                    const { label } =
+                                      getModelIconAndLabel(type);
 
                                     return (
-                                      <MultiSelectItem
-                                        key={model.id}
-                                        value={model.id}
-                                        badgeLabel={model.name}
-                                        disabled={
-                                          selectedRole === UserRoleId.ADMIN ||
-                                          selectedRole ===
-                                            UserRoleId.KK_CREATIVE_USER
-                                        }
+                                      <MultiSelectGroup
+                                        key={type}
+                                        heading={label}
                                       >
-                                        <div className="flex items-start justify-between group gap-0 w-full">
-                                          <div className="flex items-start min-w-0 w-full">
-                                            <Avatar className="h-6 w-6 mr-2">
-                                              <AvatarFallback
-                                                className={cn(
-                                                  "text-white",
-                                                  isBaseModel
-                                                    ? "bg-green-500"
-                                                    : "bg-blue-500"
-                                                )}
-                                              >
-                                                {model.name
-                                                  ?.charAt(0)
-                                                  .toUpperCase() || "M"}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex flex-col space-y-1">
-                                              <span className="line-clamp-1 break-words">
+                                        {modelsList.map((model) => (
+                                          <MultiSelectItem
+                                            key={model.id}
+                                            value={model.id}
+                                            badgeLabel={model.name}
+                                            disabled={
+                                              selectedRole ===
+                                                UserRoleId.ADMIN ||
+                                              selectedRole ===
+                                                UserRoleId.KK_CREATIVE_USER
+                                            }
+                                            className="pl-0"
+                                          >
+                                            <div className="flex items-center gap-2 w-full ml-2">
+                                              {/* Avatar with Icon */}
+                                              <Avatar className="h-6 w-6 mr-2 bg-primary/30">
+                                                <AvatarFallback className="bg-primary/30 flex items-center justify-center">
+                                                  {
+                                                    getModelIconAndLabel(
+                                                      model.type
+                                                    ).icon
+                                                  }
+                                                </AvatarFallback>
+                                              </Avatar>
+
+                                              <p className="line-clamp-1 break-words">
                                                 {model.name}
-                                              </span>
-                                              <span className="italic text-xs text-muted-foreground">
-                                                Use Case:{" "}
-                                                {typeLabelMap[model.type] ??
-                                                  model.type}
-                                              </span>
+                                              </p>
                                             </div>
-                                          </div>
-                                        </div>
-                                      </MultiSelectItem>
+                                          </MultiSelectItem>
+                                        ))}
+                                      </MultiSelectGroup>
                                     );
-                                  })}
-                                </MultiSelectGroup>
+                                  }
+                                )}
                               </>
                             )}
                           </MultiSelectContent>

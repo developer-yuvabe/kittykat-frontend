@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { useMetadataActionsStore } from "@/store/metadata-actions.store";
 import { useRouter } from "next/navigation";
 import { useModelsStore } from "@/store/models.store";
-import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { videoGenerationService } from "@/services/api/video-gen.service";
 import { getGalleryImageParameters } from "@/services/api/gallery.service";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +34,7 @@ import ZoomableImage from "../ui/zoomable-image";
 import { isFrameParam } from "@/types/a2i-media.types";
 import { useCreditsStore } from "@/store/credits.store";
 import { useUserStore } from "@/store/user.store";
+import { useA2iStore } from "@/store/a2i.store";
 
 type VideoWithMetadataModalProps = {
   galleryItem: GalleryItemResponse;
@@ -68,12 +68,11 @@ const VideoWithMetadataModal = ({
   const [copied, setCopied] = useState(false);
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-
+  const { setStartFrame, setEndFrame } = useA2iStore();
   const campaignId = selectedCampaignId || defaultCampaignId;
   const { user } = useUserStore();
 
   const { setSelectedVideoGenearationModel, models } = useModelsStore();
-  const { openConceptVisual } = useConceptVisualStore();
   const { showInsufficientCreditsModal, setShowInsufficientCreditsModal } =
     useCreditsStore();
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -198,27 +197,28 @@ const VideoWithMetadataModal = ({
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
 
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [galleryItem],
-        asset: {
-          currentAsset: {
-            ...galleryItem,
-            asset_url:
-              data.parameters.first_frame ||
-              data.parameters.image ||
-              data.parameters.start_image ||
-              null,
-          },
-          galleryActions: null,
-        },
-        defaultActiveTab: "video-generation",
-      });
+      const firstFrameParam = model.parameters?.find(
+        (param) => param.type === "first_frame"
+      );
+
+      const lastFrameParam = model.parameters?.find(
+        (param) => param.type === "last_frame"
+      );
+
+      if (firstFrameParam?.id) {
+        setStartFrame(videoParams[firstFrameParam.id]);
+      }
+      if (lastFrameParam?.id) {
+        setEndFrame(videoParams[lastFrameParam.id]);
+      }
 
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
 
       toast.info(
-        "Preselected Model and its paramters set in Video Generation tab."
+        "Preselected Model and its paramters set in Video Generation Mode."
       );
     } catch (error) {
       console.error(error);

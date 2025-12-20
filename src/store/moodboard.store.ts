@@ -46,7 +46,7 @@ type MoodboardStore = {
 
 export const useMoodboardStore = create<MoodboardStore>((set) => ({
   // UI State
-  noOfImagesForMoodboard: 16,
+  noOfImagesForMoodboard: 10,
   setNoOfImagesForMoodboard: (count: number | SetStateAction<number>) => {
     set((state) => ({
       noOfImagesForMoodboard:
@@ -80,7 +80,7 @@ export const useMoodboardStore = create<MoodboardStore>((set) => ({
   // Actions
   resetMoodboardSettings: () =>
     set({
-      noOfImagesForMoodboard: 16,
+      noOfImagesForMoodboard: 10,
       showAdvancedSettings: false,
     }),
 

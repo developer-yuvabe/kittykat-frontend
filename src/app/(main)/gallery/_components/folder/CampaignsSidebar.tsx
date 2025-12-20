@@ -8,6 +8,7 @@ import {
   deleteCampaign,
   patchCampaign,
   updateCampaign,
+  setCampaignCuration,
 } from "@/services/api/brand.service";
 import { toast } from "sonner";
 import {
@@ -19,6 +20,8 @@ import {
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { useCampaignCounts } from "@/hooks/useCampaignCounts";
 import { GalleryActions } from "@/hooks/useGallery";
+import { useBrandBrainAnalysis } from "@/hooks/useBrandBrainAnalysis";
+import { useCampaignAnalyzingStatus } from "@/hooks/sse/useCampaignAnalyzingStatus";
 import { CampaignSidebarHeader } from "./CampaignSidebarHeader";
 import { CampaignSidebarRow } from "./CampaignSidebarRow";
 import { CampaignSidebarRenameDialog } from "./CampaignSidebarRenameDialog";
@@ -77,6 +80,9 @@ export function CampaignsSidebar({
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
 
+  // Subscribe to real-time campaign analyzing status updates via SSE
+  useCampaignAnalyzingStatus();
+
   // Dialog states - simplified
   const [renameDialog, setRenameDialog] = useState<{
     open: boolean;
@@ -104,6 +110,40 @@ export function CampaignsSidebar({
     isArchived: false,
     isProcessing: false,
   });
+
+  const [analyzeDialog, setAnalyzeDialog] = useState<{
+    open: boolean;
+    campaignId: string;
+    campaignTitle: string;
+    isReanalysis: boolean;
+  }>({ open: false, campaignId: "", campaignTitle: "", isReanalysis: false });
+
+  const [curatedDialog, setCuratedDialog] = useState<{
+    open: boolean;
+    campaignId: string;
+    campaignTitle: string;
+    isCurated: boolean;
+    isProcessing: boolean;
+  }>({
+    open: false,
+    campaignId: "",
+    campaignTitle: "",
+    isCurated: false,
+    isProcessing: false,
+  });
+
+  // Brand Brain Analysis mutation
+  const { mutate: triggerAnalysis, isPending: isAnalyzing } =
+    useBrandBrainAnalysis({
+      onSuccess: () => {
+        setAnalyzeDialog({
+          open: false,
+          campaignId: "",
+          campaignTitle: "",
+          isReanalysis: false,
+        });
+      },
+    });
 
   // Drag-and-drop state
   const [dragOverCampaignId, setDragOverCampaignId] = useState<string | null>(
@@ -276,6 +316,60 @@ export function CampaignsSidebar({
       });
     } catch {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (!selectedBrandId || !analyzeDialog.campaignId) return;
+
+    triggerAnalysis({
+      brand_id: selectedBrandId,
+      campaign_id: analyzeDialog.campaignId,
+      batch_size: 10,
+    });
+  };
+
+  const handleCuratedToggle = async () => {
+    if (!selectedBrandId) return;
+    setCuratedDialog((prev) => ({ ...prev, isProcessing: true }));
+
+    const shouldBeCurated = !curatedDialog.isCurated;
+    const title = curatedDialog.campaignTitle;
+    const campaignId = curatedDialog.campaignId;
+
+    setCuratedDialog({
+      open: false,
+      campaignId: "",
+      campaignTitle: "",
+      isCurated: false,
+      isProcessing: false,
+    });
+
+    try {
+      await execute({
+        title,
+        undoSeconds: 3,
+        loadingMessage: `${
+          shouldBeCurated ? "Marking" : "Unmarking"
+        } "${title}" as curated campaign...`,
+        action: async () => {
+          await setCampaignCuration(
+            selectedBrandId,
+            campaignId,
+            shouldBeCurated
+          );
+          // Invalidate brands query to refresh the UI
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
+        successMessage: `"${title}" ${
+          shouldBeCurated ? "marked" : "unmarked"
+        } as curated campaign successfully.`,
+        errorMessage: `Failed to ${
+          shouldBeCurated ? "mark" : "unmark"
+        } "${title}" as curated campaign.`,
+      });
+    } catch {
+      setCuratedDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   };
 
@@ -807,6 +901,15 @@ export function CampaignsSidebar({
                         isProcessing: false,
                       })
                     }
+                    onCuratedToggle={(id, title, isCurated) =>
+                      setCuratedDialog({
+                        open: true,
+                        campaignId: id,
+                        campaignTitle: title,
+                        isCurated,
+                        isProcessing: false,
+                      })
+                    }
                     onDelete={(id, title) =>
                       setDeleteDialog({
                         open: true,
@@ -815,6 +918,15 @@ export function CampaignsSidebar({
                         isDeleting: false,
                       })
                     }
+                    onAnalyze={(id, title) => {
+                      const campaign = campaigns.find((c) => c.id === id);
+                      setAnalyzeDialog({
+                        open: true,
+                        campaignId: id,
+                        campaignTitle: title,
+                        isReanalysis: campaign?.is_curated_for_brand || false,
+                      });
+                    }}
                     onAssetDragOver={handleAssetDragOver}
                     onDragLeave={handleDragLeave}
                     onAssetDrop={handleAssetDropOnCampaign}
@@ -911,6 +1023,15 @@ export function CampaignsSidebar({
                         isProcessing: false,
                       })
                     }
+                    onCuratedToggle={(id, title, isCurated) =>
+                      setCuratedDialog({
+                        open: true,
+                        campaignId: id,
+                        campaignTitle: title,
+                        isCurated,
+                        isProcessing: false,
+                      })
+                    }
                     onDelete={(id, title) =>
                       setDeleteDialog({
                         open: true,
@@ -919,6 +1040,15 @@ export function CampaignsSidebar({
                         isDeleting: false,
                       })
                     }
+                    onAnalyze={(id, title) => {
+                      const campaign = campaigns.find((c) => c.id === id);
+                      setAnalyzeDialog({
+                        open: true,
+                        campaignId: id,
+                        campaignTitle: title,
+                        isReanalysis: campaign?.is_curated_for_brand || false,
+                      });
+                    }}
                     onAssetDragOver={handleAssetDragOver}
                     onDragLeave={handleDragLeave}
                     onAssetDrop={handleAssetDropOnCampaign}
@@ -1013,6 +1143,93 @@ export function CampaignsSidebar({
         onConfirm={handleDelete}
         isLoading={deleteDialog.isDeleting}
         danger
+      />
+
+      <ReusableAlertDialog
+        open={analyzeDialog.open}
+        onOpenChange={(open) =>
+          setAnalyzeDialog({
+            open,
+            campaignId: "",
+            campaignTitle: "",
+            isReanalysis: false,
+          })
+        }
+        title={
+          analyzeDialog.isReanalysis ? "Reanalyze Campaign" : "Analyze Campaign"
+        }
+        description={
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700">
+              {analyzeDialog.isReanalysis ? (
+                <>
+                  Reanalyze visual style patterns for{" "}
+                  <span className="font-semibold text-gray-900">
+                    &quot;{analyzeDialog.campaignTitle}&quot;
+                  </span>
+                  ?
+                </>
+              ) : (
+                <>
+                  Trigger Brand Brain analysis for{" "}
+                  <span className="font-semibold text-gray-900">
+                    &quot;{analyzeDialog.campaignTitle}&quot;
+                  </span>
+                  ?
+                </>
+              )}
+            </p>
+            <p className="text-sm text-gray-600">
+              {analyzeDialog.isReanalysis
+                ? "This will refresh the visual style analysis from all curated gallery images in this campaign."
+                : "This will analyze visual style patterns from the curated gallery images and mark this campaign for Brand Brain analysis."}
+            </p>
+            {!analyzeDialog.isReanalysis && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <p className="text-xs text-purple-800">
+                  <span className="font-semibold">Note:</span> Scheduled
+                  analysis will run daily for any newly added images.
+                </p>
+              </div>
+            )}
+          </div>
+        }
+        confirmLabel={analyzeDialog.isReanalysis ? "Reanalyze" : "Analyze"}
+        onConfirm={handleAnalyze}
+        isLoading={isAnalyzing}
+      />
+
+      <ReusableAlertDialog
+        open={curatedDialog.open}
+        onOpenChange={(open) =>
+          setCuratedDialog({
+            open,
+            campaignId: "",
+            campaignTitle: "",
+            isCurated: false,
+            isProcessing: false,
+          })
+        }
+        title={
+          curatedDialog.isCurated
+            ? "Unmark Curated Campaign"
+            : "Mark as Curated Campaign"
+        }
+        description={
+          <>
+            Are you sure you want to{" "}
+            {curatedDialog.isCurated ? "unmark" : "mark"}{" "}
+            <span className="font-semibold text-gray-900">
+              &quot;{curatedDialog.campaignTitle}&quot;
+            </span>{" "}
+            {curatedDialog.isCurated
+              ? "as a regular campaign?"
+              : "as a curated campaign for brand analysis?"}
+          </>
+        }
+        confirmLabel={curatedDialog.isCurated ? "Unmark" : "Mark as Curated"}
+        onConfirm={handleCuratedToggle}
+        isLoading={curatedDialog.isProcessing}
       />
     </div>
   );
