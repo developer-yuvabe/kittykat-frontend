@@ -90,3 +90,77 @@ export const validatePromptGeneration = (
 
   return true;
 };
+// Version Keys
+export const VERSION_KEYS = [
+  "M",
+  "MP",
+  "MC",
+  "MT",
+  "MPC",
+  "MPT",
+  "MCT",
+  "All",
+] as const;
+
+export type VersionKey = (typeof VERSION_KEYS)[number];
+
+export const VERSION_KEY_DISPLAY_MAP: Record<string, string> = {
+  M: "M",
+  MP: "MP",
+  MC: "MM",
+  MT: "MT",
+  MPC: "MPM",
+  MPT: "MPT",
+  MCT: "MMT",
+  All: "All",
+};
+
+// Version Descriptions (UI)
+export const VERSION_DESCRIPTION_MAP: Record<VersionKey, string> = {
+  M: "Moodboard Only",
+  MP: "Moodboard, Product",
+  MC: "Moodboard, Master",
+  MT: "Moodboard, Text",
+  MPC: "Moodboard, Product, Master",
+  MPT: "Moodboard, Product, Text",
+  MCT: "Moodboard, Master, Text",
+  All: "Moodboard, Product, Master, Text",
+};
+
+// Default Version Objects
+export const DEFAULT_EMPTY_VERSION = {
+  version_key: "M" as VersionKey,
+  prompts: { ...DEFAULT_EMPTY_PROMPTS },
+};
+
+export const DEFAULT_EMPTY_VERSIONS = VERSION_KEYS.map((key) => ({
+  version_key: key,
+  prompts: { ...DEFAULT_EMPTY_PROMPTS },
+}));
+
+export const REQUIRED_PROMPTS_BY_VERSION: Record<
+  VersionKey,
+  PromptFieldType[]
+> = {
+  // All prompts required
+  All: [
+    "moodboard_analysis",
+    "product_analysis",
+    "context_analysis",
+    "analysis_merge",
+    "prompt_generation",
+  ],
+
+  // Moodboard only
+  M: ["moodboard_analysis", "prompt_generation"],
+
+  // Moodboard + Text
+  MT: ["prompt_generation"],
+
+  // Versions has merge + generation
+  MP: ["analysis_merge", "prompt_generation"],
+  MC: ["analysis_merge", "prompt_generation"],
+  MPC: ["analysis_merge", "prompt_generation"],
+  MPT: ["analysis_merge", "prompt_generation"],
+  MCT: ["analysis_merge", "prompt_generation"],
+};

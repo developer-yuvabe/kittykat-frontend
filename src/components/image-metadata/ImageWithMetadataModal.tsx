@@ -46,7 +46,7 @@ import { A2iImageGeneration } from "@/types/types";
 import { uploadFileAndReturnUrl } from "@/services/api/gcs.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { Skeleton } from "../ui/skeleton";
-
+import { useA2iStore } from "@/store/a2i.store";
 import { useCreditsStore } from "@/store/credits.store";
 import { useUserStore } from "@/store/user.store";
 type ImageWithMetadataModalProps = {
@@ -89,7 +89,13 @@ const ImageWithMetadataModal = ({
   const pathname = usePathname();
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-
+  const {
+    setConceptVisualGeneratorMode,
+    setStartFrame,
+    setEndFrame,
+    setBaseImageUrl,
+    setShouldClearPromptOnMetadataActions,
+  } = useA2iStore();
   const { user } = useUserStore();
 
   //use selected campaign id if available else use latest campaign of selected brand that is not custom
@@ -337,23 +343,10 @@ const ImageWithMetadataModal = ({
         setParameters("remixParameters", convertedRemixParams);
 
         onClose();
-        // asset object with base_image URL
-        const baseImageAsset = {
-          ...galleryItem,
-          asset_url: baseInputImageUrl,
-          preview_url: baseInputImageUrl,
-        };
+        if (source === "media-gallery") {
+          router.push("/?scrollTo=a2i-input");
+        }
 
-        // Open concept visual with base image loaded in canvas
-        openConceptVisual({
-          source: "blanket",
-          assetItems: [baseImageAsset],
-          asset: {
-            currentAsset: baseImageAsset,
-            galleryActions: null,
-          },
-          defaultActiveTab: "remix",
-        });
         return;
       } else {
         const model = models.find(
@@ -364,6 +357,9 @@ const ImageWithMetadataModal = ({
           toast.error("No model found for this image.");
           return;
         }
+
+        setShouldClearPromptOnMetadataActions(true);
+
         // Regular image generation workflow
         setSelectedImageGenerationModel(model);
 
@@ -477,17 +473,15 @@ const ImageWithMetadataModal = ({
       }
 
       setSelectedRemixModel(defualtEditModel);
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [currentDisplayItem],
-        asset: {
-          currentAsset: currentDisplayItem,
-          galleryActions: null,
-        },
-        defaultActiveTab: "remix",
-      });
+      setShouldClearPromptOnMetadataActions(true);
+
+      setConceptVisualGeneratorMode("image_editor");
+      setBaseImageUrl(currentDisplayItem.asset_url);
 
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.log(error);
       toast.error(
@@ -498,6 +492,7 @@ const ImageWithMetadataModal = ({
 
   const handleModifyReference = async () => {
     try {
+      setConceptVisualGeneratorMode("image_generator");
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
 
@@ -520,6 +515,8 @@ const ImageWithMetadataModal = ({
       if (!imageReferenceModelId) {
         throw new Error("No model found that supports reference images");
       }
+
+      setShouldClearPromptOnMetadataActions(true);
 
       setSelectedImageGenerationModelByModelId(imageReferenceModelId);
 
@@ -563,18 +560,16 @@ const ImageWithMetadataModal = ({
         throw new Error("No default animation model found");
       }
 
-      setSelectedVideoGenearationModel(defaultAnimationModel);
-      openConceptVisual({
-        source: "blanket",
-        assetItems: [currentDisplayItem],
-        asset: {
-          currentAsset: currentDisplayItem,
-          galleryActions: null,
-        },
-        defaultActiveTab: "video-generation",
-      });
+      setShouldClearPromptOnMetadataActions(true);
 
+      setConceptVisualGeneratorMode("video_generator");
+      setSelectedVideoGenearationModel(defaultAnimationModel);
+      setStartFrame(currentDisplayItem.asset_url);
+      setEndFrame(null);
       onClose();
+      if (source === "media-gallery") {
+        router.push("/?scrollTo=a2i-input");
+      }
     } catch (error) {
       console.log(error);
       toast.error(
@@ -601,7 +596,7 @@ const ImageWithMetadataModal = ({
       await videoGenerationService(selectedBrandId!, {
         ...defaultValues,
         first_frame: currentDisplayItem.asset_url,
-        prompt: data?.parameters?.prompt,
+        prompt: data?.parameters?.prompt || "",
         model: defaultAnimationModel.model,
         source_asset_id: currentDisplayItem.id,
         campaign_id: campaignId,

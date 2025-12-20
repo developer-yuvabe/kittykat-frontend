@@ -133,7 +133,9 @@ export function DynamicFormField<T extends FieldValues>({
   };
 
   if (
-    watchedValues?.["model"] === "seedream-4-0-250828" &&
+    ["seedream-4-0-250828", "seedream-4-5-251128"].includes(
+      watchedValues?.["model"]
+    ) &&
     param.id === "max_images"
   ) {
     return watchedValues?.["sequential_image_generation"] === true ? (

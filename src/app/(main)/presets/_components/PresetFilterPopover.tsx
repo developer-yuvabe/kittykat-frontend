@@ -65,7 +65,7 @@ export function PresetFilterPopover({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[360px]">
+      <PopoverContent className="w-[360px] overflow-visible">
         <div className="space-y-3">
           {/* Brands */}
           <div className="pb-2">
@@ -79,7 +79,8 @@ export function PresetFilterPopover({
               </MultiSelectTrigger>
               <MultiSelectContent>
                 <MultiSelectSearch placeholder="Search brands..." />
-                <MultiSelectGroup>
+
+                <MultiSelectGroup className="overflow-y-auto">
                   {brands.map((brand) => (
                     <MultiSelectItem
                       key={brand.id}

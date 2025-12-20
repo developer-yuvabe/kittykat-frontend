@@ -180,10 +180,49 @@ export async function addDeprioritizedIds(
     )
   );
 }
+export async function setCampaignCuration(
+  brandId: string,
+  campaignId: string,
+  isCuratedForBrand: boolean
+): Promise<ThreadCampaign> {
+  return handleApiRequest<ThreadCampaign>(
+    axiosInstance.post(`/brands/${brandId}/campaign/${campaignId}/curation`, {
+      is_curated_for_brand: isCuratedForBrand,
+    })
+  );
+}
 /**
  * Delete a brand permanently (Admin only).
  * Cascade deletes all campaigns and moodboards.
  */
 export async function deleteBrand(brandId: string): Promise<void> {
   return handleApiRequest<void>(axiosInstance.delete(`/brands/${brandId}`));
+}
+
+/**
+ * Trigger Brand Brain Analysis for a campaign or brand
+ */
+export interface BrandBrainAnalysisRequest {
+  brand_id?: string;
+  campaign_id?: string;
+  batch_size?: number;
+  curated_only?: boolean;
+}
+
+export interface BrandBrainAnalysisResponse {
+  job_execution_id: string;
+  mode: string;
+  brand_id?: string;
+  campaign_id?: string;
+  batch_size: number;
+  curated_only: boolean;
+  status: string;
+}
+
+export async function triggerBrandBrainAnalysis(
+  params: BrandBrainAnalysisRequest
+): Promise<BrandBrainAnalysisResponse> {
+  return handleApiRequest<BrandBrainAnalysisResponse>(
+    axiosInstance.post(`/brands/brain-analysis/trigger`, params)
+  );
 }

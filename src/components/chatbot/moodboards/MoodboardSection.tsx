@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useBrandStore } from "@/store/brand.store";
 import { useMoodboardStore } from "@/store/moodboard.store";
+import { useUserStore } from "@/store/user.store";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SearchIcon } from "@/components/ui/custom-icon";
@@ -65,6 +66,7 @@ export const MoodboardSection: React.FC<{
     isCreatingBrand,
     isCampaignCreating,
   } = useBrandStore();
+  const { user } = useUserStore();
 
   // Get state from Zustand store instead of local state
   const {
@@ -169,10 +171,13 @@ export const MoodboardSection: React.FC<{
       return;
     }
 
-    // If moodboard count increased, a new one was created - select the latest immediately
+    // If moodboard count increased, a new one was created - select the latest only if created by current user
     if (currentCount > lastMoodboardCount && currentCount > 0) {
       const latestMoodboard = currentCampaignMoodboards[currentCount - 1];
-      setSelectedMoodboardId(latestMoodboard.id);
+      // Only auto-select if the moodboard was created by the currently logged-in user
+      if (user && latestMoodboard.created_by === user.id) {
+        setSelectedMoodboardId(latestMoodboard.id);
+      }
       setLastMoodboardCount(currentCount);
       return;
     }
@@ -271,13 +276,13 @@ export const MoodboardSection: React.FC<{
 
   // Reset whenever moodboard changes
   useEffect(() => {
-    setNoOfImagesForMoodboard(16);
+    setNoOfImagesForMoodboard(10);
   }, [currentMoodboard?.id]);
 
   // Set count when data is available
   useEffect(() => {
     const assetCount = currentMoodboard?.moodboard_assets?.length ?? 0;
-    const fallbackImageCount = 16;
+    const fallbackImageCount = 10;
 
     updateImageCountFromMoodboard(assetCount, fallbackImageCount);
   }, [

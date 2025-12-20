@@ -139,7 +139,7 @@ const ReferenceImageSelector = ({
           campaigns: [],
           moodboards: [],
           product_categories: [],
-          asset_types: [],
+          asset_types: ["image"],
           asset_sources: [...allMediaAssetSources, "reference"],
           media_format: [],
           aspect_ratio: [],
@@ -149,7 +149,9 @@ const ReferenceImageSelector = ({
         assetType: "reference",
       },
       40,
-      true
+      true,
+      undefined,
+      false
     );
 
   const {
