@@ -679,6 +679,7 @@ export function MediaLibrary({
                                 galleryActions={galleryActions}
                                 selectedItems={currentlySelectedItems}
                                 onSelect={handleSelect}
+                                onClearSelection={handleUnselectAll}
                                 isMediaSelectDialog={isMediaSelectDialog}
                                 isMultiSelect={isMultiSelect}
                                 inSelectionGalleryIds={inSelectionGalleryIds}

@@ -95,14 +95,15 @@ export function SortableMediaItem({
     if (!enableDragToMove && !isDraggable) return;
 
     // Determine which items to include in the drag payload
+    // If the dragged item is selected and there are multiple selections,
+    // include all selected items to enable multi-select reordering/moving
     let itemsToDrag: string[];
-    if (isDraggable) {
-      // For reordering, always drag single item
-      itemsToDrag = [item.id];
+    if (isSelected && selectedItems.length > 1) {
+      // Multi-select: drag all selected items together
+      itemsToDrag = selectedItems;
     } else {
-      // For moving, drag selected items if this item is selected
-      itemsToDrag =
-        isSelected && selectedItems.length > 0 ? selectedItems : [item.id];
+      // Single item drag
+      itemsToDrag = [item.id];
     }
 
     const payload: GalleryDragPayload = {
@@ -200,7 +201,9 @@ export function SortableMediaItem({
         `mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
           isMediaSelectDialog || isEasySelectionMode ? "cursor-pointer" : ""
         }`,
-        isReorderTarget && "ring-2 ring-purple-500"
+        // Left/right border indicators for drop position
+        isReorderTarget && dropPosition === "before" && "border-l-4 border-l-purple-500",
+        isReorderTarget && dropPosition === "after" && "border-r-4 border-r-purple-500"
       )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

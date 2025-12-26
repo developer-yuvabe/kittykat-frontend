@@ -14,11 +14,11 @@ import { useCallback, useMemo, useState } from "react";
 import Masonry from "react-masonry-css";
 import { SortableMediaItem } from "./SortableMediaItem";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
-import { toast } from "sonner";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
   onSelect: (id: string, selected: boolean, shiftKey?: boolean) => void;
+  onClearSelection?: () => void;
   isMediaSelectDialog?: boolean;
   isMultiSelect?: boolean;
   inSelectionGalleryIds?: string[];
@@ -31,6 +31,7 @@ interface SortableMediaGridProps {
 export function SortableMediaGrid({
   selectedItems,
   onSelect,
+  onClearSelection,
   isMediaSelectDialog = false,
   isMultiSelect,
   inSelectionGalleryIds,
@@ -126,9 +127,11 @@ export function SortableMediaGrid({
       const hasData = e.dataTransfer.types.includes("application/gallery-drag");
       if (!hasData) return;
 
+      // Use horizontal position for grid layout (left-to-right ordering)
       const rect = e.currentTarget.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      const pos = e.clientY < midpoint ? "before" : "after";
+      const relativeX = e.clientX - rect.left;
+      const midpointX = rect.width / 2;
+      const pos = relativeX < midpointX ? "before" : "after";
 
       setDropPosition(pos);
       setReorderTargetId(targetId);
@@ -137,13 +140,20 @@ export function SortableMediaGrid({
   );
 
   const handleItemReorderDrop = useCallback(
-    async (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
+    (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
       if (!isDraggable) return;
 
       e.preventDefault();
       e.stopPropagation();
 
+      // Clear visual indicators immediately
+      setReorderTargetId(null);
+      setDropPosition(null);
+
+      // Parse drag payload
       const data = e.dataTransfer.getData("application/gallery-drag");
+      if (!data) return;
+
       let payload: GalleryDragPayload;
       try {
         payload = JSON.parse(data);
@@ -151,34 +161,57 @@ export function SortableMediaGrid({
         return;
       }
 
-      const draggedId = payload.itemIds?.[0];
-      if (!draggedId || draggedId === targetId) {
-        setReorderTargetId(null);
-        setDropPosition(null);
+      const draggedIds = payload.itemIds || [];
+      if (draggedIds.length === 0 || draggedIds.includes(targetId)) {
         return;
       }
 
-      const position = dropPosition;
-      if (!position) {
-        setReorderTargetId(null);
-        setDropPosition(null);
-        return;
+      // Calculate drop position directly from mouse position
+      const rect = e.currentTarget.getBoundingClientRect();
+      const relativeX = e.clientX - rect.left;
+      const midpointX = rect.width / 2;
+      const position = relativeX < midpointX ? "before" : "after";
+
+      const currentItems = galleryActions.getGalleryItems();
+
+      const targetIndex = currentItems.findIndex((i) => i.id === targetId);
+      if (targetIndex === -1) return;
+
+      // Create a set of dragged IDs for quick lookup
+      const draggedIdSet = new Set(draggedIds);
+
+      // Get dragged items in their original relative order
+      const draggedItems = currentItems.filter((item) =>
+        draggedIdSet.has(item.id)
+      );
+
+      // Get remaining items (not being dragged)
+      const remainingItems = currentItems.filter(
+        (item) => !draggedIdSet.has(item.id)
+      );
+
+      // Find the target's index in the remaining items array
+      const targetInRemaining = remainingItems.findIndex(
+        (i) => i.id === targetId
+      );
+
+      // Calculate insert position
+      let insertIndex: number;
+      if (targetInRemaining === -1) {
+        // Target was one of the dragged items, use original position
+        insertIndex = position === "before" ? targetIndex : targetIndex + 1;
+        insertIndex = Math.min(insertIndex, remainingItems.length);
+      } else {
+        insertIndex =
+          position === "before" ? targetInRemaining : targetInRemaining + 1;
       }
 
-      const draggedIndex = galleryItems.findIndex((i) => i.id === draggedId);
-      const targetIndex = galleryItems.findIndex((i) => i.id === targetId);
-
-      if (draggedIndex === -1 || targetIndex === -1) {
-        setReorderTargetId(null);
-        setDropPosition(null);
-        return;
-      }
-
-      const insertIndex = targetIndex;
-
-      const reordered = [...galleryItems];
-      const [removed] = reordered.splice(draggedIndex, 1);
-      reordered.splice(insertIndex, 0, removed);
+      // Build the reordered array
+      const reordered = [
+        ...remainingItems.slice(0, insertIndex),
+        ...draggedItems,
+        ...remainingItems.slice(insertIndex),
+      ];
 
       // Create reorder data with new sort orders
       const reorderData = reordered.map((item, index) => ({
@@ -186,14 +219,13 @@ export function SortableMediaGrid({
         brand_sort_order: index,
       }));
 
-      // Call the reorder mutation
-      await galleryActions.reorderItems(reorderData);
-      toast.success("Item order updated");
+      // Call reorder (cache updates immediately, API syncs with debounce)
+      galleryActions.reorderItems(reorderData);
 
-      setReorderTargetId(null);
-      setDropPosition(null);
+      // Clear selection after reorder
+      onClearSelection?.();
     },
-    [galleryItems, galleryActions, dropPosition, isDraggable]
+    [galleryActions, isDraggable, onClearSelection]
   );
 
   const handleDragEnd = useCallback(() => {
