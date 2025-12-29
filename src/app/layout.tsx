@@ -37,7 +37,7 @@ export default function RootLayout({
           <ReactQueryProvider>{children}</ReactQueryProvider>
         </NuqsAdapter>
         <NextTopLoader color="#7C3AED" showSpinner={false} />
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-right" closeButton />
         <DeployFlag />
       </body>
     </html>
