@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import React from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 import { AppConfig } from "@/config/app.config";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import ReactQueryProvider from "@/providers/react-query-provider";
@@ -37,7 +37,7 @@ export default function RootLayout({
           <ReactQueryProvider>{children}</ReactQueryProvider>
         </NuqsAdapter>
         <NextTopLoader color="#7C3AED" showSpinner={false} />
-        <Toaster richColors />
+        <Toaster richColors position="top-right" />
         <DeployFlag />
       </body>
     </html>
