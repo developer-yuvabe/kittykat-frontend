@@ -3,10 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type {
-  GalleryItemResponse,
-  GalleryDragPayload,
-} from "@/types/gallery.types";
+import type { GalleryItemResponse } from "@/types/gallery.types";
 import { MediaOverlay } from "./MediaOverlay";
 import { MediaImage } from "./MediaImage";
 import { GalleryActions } from "@/hooks/useGallery";
@@ -15,6 +12,8 @@ import { handleDownloadImage } from "@/lib/utils";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Types
 interface SortableMediaItemProps {
@@ -39,12 +38,6 @@ interface SortableMediaItemProps {
   selectedItems?: string[]; // IDs of selected items
   enableDragToMove?: boolean; // Enable drag-to-move (vs drag-to-reorder)
   activeTab?: string;
-  // New props for native reordering
-  onReorderDragOver?: React.DragEventHandler<HTMLDivElement>;
-  onReorderDrop?: React.DragEventHandler<HTMLDivElement>;
-  onDragEnd?: React.DragEventHandler<HTMLDivElement>;
-  isReorderTarget?: boolean;
-  dropPosition?: "before" | "after" | null;
 }
 
 // Main SortableMediaItem Component
@@ -69,11 +62,6 @@ export function SortableMediaItem({
   selectedItems = [],
   enableDragToMove = false,
   activeTab,
-  onReorderDragOver,
-  onReorderDrop,
-  onDragEnd,
-  isReorderTarget = false,
-  dropPosition = null,
 }: SortableMediaItemProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
@@ -90,46 +78,34 @@ export function SortableMediaItem({
   // Can't select new items if max reached, but can always deselect
   const canSelect = !hasReachedMax || isSelected || isAlreadySelected;
 
-  // Handle HTML5 drag start for drag-to-move and reordering functionality
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!enableDragToMove && !isDraggable) return;
+  // Determine if this item should be draggable
+  const canDrag = (enableDragToMove || isDraggable) && !isMediaSelectDialog;
 
-    // Determine which items to include in the drag payload
-    // If the dragged item is selected and there are multiple selections,
-    // include all selected items to enable multi-select reordering/moving
-    let itemsToDrag: string[];
-    if (isSelected && selectedItems.length > 1) {
-      // Multi-select: drag all selected items together
-      itemsToDrag = selectedItems;
-    } else {
-      // Single item drag
-      itemsToDrag = [item.id];
-    }
-
-    const payload: GalleryDragPayload = {
-      itemIds: itemsToDrag,
-      sourceBrandId: item.brand_id,
+  // Use @dnd-kit/sortable hook
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: item.id,
+    disabled: !canDrag,
+    data: {
+      type: isSelected && selectedItems.length > 1 ? "MEDIA_ITEMS_MULTI" : "MEDIA_ITEM",
+      itemIds: isSelected && selectedItems.length > 1 ? selectedItems : [item.id],
+      sourceTab: activeTab,
       sourceCampaignId: item.campaign_id || null,
-      isArchived: item.is_archived || false,
-      activeTab: activeTab,
-    };
+    },
+  });
 
-    // Set the drag data using a custom MIME type
-    e.dataTransfer.setData("application/gallery-drag", JSON.stringify(payload));
-    e.dataTransfer.effectAllowed = "move";
-
-    // Optional: Set drag image to show count if multiple items
-    if (itemsToDrag.length > 1) {
-      const dragImage = document.createElement("div");
-      dragImage.className =
-        "bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg font-medium";
-      dragImage.textContent = `Moving ${itemsToDrag.length} items`;
-      dragImage.style.position = "absolute";
-      dragImage.style.top = "-1000px";
-      document.body.appendChild(dragImage);
-      e.dataTransfer.setDragImage(dragImage, 0, 0);
-      setTimeout(() => document.body.removeChild(dragImage), 0);
-    }
+  // Style for drag transform
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : undefined,
   };
 
   const handleImageLoad = (event: any) => {
@@ -197,28 +173,22 @@ export function SortableMediaItem({
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={cn(
         `mb-4 relative group overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${
           isMediaSelectDialog || isEasySelectionMode ? "cursor-pointer" : ""
         }`,
-        // Left/right border indicators for drop position
-        isReorderTarget && dropPosition === "before" && "border-l-4 border-l-purple-500",
-        isReorderTarget && dropPosition === "after" && "border-r-4 border-r-purple-500"
+        isDragging && "ring-2 ring-purple-500 shadow-lg"
       )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      draggable={(enableDragToMove || isDraggable) && !isMediaSelectDialog}
-      onDragStart={
-        enableDragToMove || isDraggable ? handleDragStart : undefined
-      }
-      onDragOver={onReorderDragOver}
-      onDrop={onReorderDrop}
-      onDragEnd={onDragEnd}
       onClick={(e) =>
         isMediaSelectDialog || isEasySelectionMode
           ? handleImageClick(e)
           : undefined
       }
+      {...(canDrag ? { ...attributes, ...listeners } : {})}
     >
       {!isLoaded && (
         <div className="w-full">

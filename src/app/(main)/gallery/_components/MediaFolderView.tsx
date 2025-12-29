@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
@@ -16,6 +16,11 @@ import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import TopicsGrid from "./PexelsTopicGrid";
+import { GalleryDndProvider } from "./GalleryDndContext";
+import { toast } from "sonner";
+import { patchCampaign, updateCampaign } from "@/services/api/brand.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -35,8 +40,6 @@ interface MediaFolderViewProps {
   >;
   // Add tab change prop
   onTabChange: (value: string) => void;
-  // setSelectedCampaignInUrl?: (value: string | null) => void;
-  // setInitialBrandId?: (value: string | undefined) => void;
   // ✅ Correct Query State Props
   setInitialBrandId: (
     value: string | null | ((old: string | null) => string | null)
@@ -72,11 +75,13 @@ export function MediaFolderView({
   showFilters,
   setActiveTab,
 }: MediaFolderViewProps) {
-  const { selectedBrandId, isBrandsFetched } = useBrandStore();
+  const { selectedBrandId, isBrandsFetched, brands } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
-  const { favorites } = useGalleryFilterStore();
+  const { favorites, orderBy } = useGalleryFilterStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+  const { execute } = useUndoableAction();
 
   // Create shared gallery actions for sidebar drag-drop operations
   const galleryActions = useGalleryQuery(
@@ -113,195 +118,402 @@ export function MediaFolderView({
     "MediaFolderView-Shared"
   );
 
-  const [isCollapsed, setIsCollapsed] = useState(false); // New state for sidebar collapse
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
 
-  // Show campaign view with sidebar
-  if (selectedBrandId && selectedCampaignId) {
-    return (
-      <div className="flex gap-0 h-[calc(100vh-165px)] py-auto px-auto">
-        <CampaignsSidebar
-          selectedBrandId={selectedBrandId}
-          selectedCampaignId={selectedCampaignId}
-          onCampaignSelect={handleCampaignSelect}
-          galleryActions={galleryActions}
-          setInitialBrandId={setInitialBrandId}
-          setSelectedCampaignInUrl={setSelectedCampaignInUrl}
-          setSelectedFilters={setSelectedFilters}
-          hasNoBrands={hasNoBrands}
-          galleryView={galleryView}
-          setSelectedItems={setSelectedItems}
-          isCollapsed={isCollapsed}
-          onToggleCollapsed={toggleCollapsed}
-        />
+  // Get campaigns for drag overlay
+  const campaigns = brands.find((b) => b.id === selectedBrandId)?.campaigns || [];
 
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <div className="flex-1 overflow-hidden">
-            {/* <MediaSearchFilters {...filterProps} /> */}
-            <CampaignView
-              selectedBrandId={selectedBrandId}
-              brandName={brandName}
-              campaignId={selectedCampaignId}
-              activeTab={activeTab}
-              onBackToCampaigns={handleBackToCampaigns}
-              onUploadComplete={onUploadComplete}
-              addToGallery={addToGallery}
-              selectedMoodboardId={selecteMoodboardId}
-              searchQuery={searchQuery}
-              favorites={favorites}
-              selectedFilters={selectedFilters}
-              onTabChange={onTabChange}
-              showHeader={false}
-              handleSearchChange={handleSearchChange}
-              showFilters={showFilters}
-              setSelectedFilters={setSelectedFilters}
-              galleryView={galleryView}
-              setGalleryView={setGalleryView}
-              setActiveTab={setActiveTab}
-              // galleryActions={galleryActions}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // DnD Callbacks
+  const handleMoveMediaToCampaign = useCallback(
+    async (itemIds: string[], campaignId: string) => {
+      if (!selectedBrandId || !galleryActions) return;
 
-  // Show folder gallery with sidebar (brand selected, no campaign)
+      const campaign = campaigns.find((c) => c.id === campaignId);
+      const items = galleryActions
+        .getGalleryItems()
+        .filter((item) => itemIds.includes(item.id));
 
-  if (selectedBrandId && isBrandsFetched) {
-    return (
-      <div className="w-full h-[calc(100vh-165px)] flex overflow-hidden">
-        <CampaignsSidebar
-          selectedBrandId={selectedBrandId}
-          selectedCampaignId={null}
-          onCampaignSelect={handleCampaignSelect}
-          galleryActions={galleryActions}
-          setInitialBrandId={setInitialBrandId}
-          setSelectedCampaignInUrl={setSelectedCampaignInUrl}
-          setSelectedFilters={setSelectedFilters}
-          hasNoBrands={hasNoBrands}
-          galleryView={galleryView}
-          setSelectedItems={setSelectedItems}
-          isCollapsed={isCollapsed}
-          onToggleCollapsed={toggleCollapsed}
-        />
+      if (items.length === 0) {
+        toast.error("No items found to move");
+        return;
+      }
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center mt-1 mb-2">
-            <div className="relative w-fit mx-4 mb-2">
-              <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search media..."
-                className={`pl-9 transition-all duration-200 ${
-                  showFilters ? "w-[400px]" : "w-[300px]"
-                }`}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
-            </div>
+      try {
+        toast.loading("Moving items...", { id: "move-items" });
 
-            <div className="flex justify-end">
-              <MediaFilterDropdown
+        await Promise.all(
+          items.map((item) =>
+            galleryActions.patchItem?.({
+              itemId: item.id,
+              data: {
+                campaign_id: campaignId,
+                brand_id: selectedBrandId,
+              },
+              revalidateAutofillSuggestions: false,
+            })
+          )
+        );
+
+        toast.success(
+          `Successfully moved ${items.length} item(s) to campaign "${campaign?.title}"`,
+          { id: "move-items" }
+        );
+        setSelectedItems([]);
+      } catch (error) {
+        console.error("Move error:", error);
+        toast.error("Failed to move assets. Please try again.", {
+          id: "move-items",
+        });
+      }
+    },
+    [selectedBrandId, galleryActions, campaigns]
+  );
+
+  const handleMoveMediaToTab = useCallback(
+    async (itemIds: string[], tabValue: string, sourceTab?: string) => {
+      if (!galleryActions) return;
+
+      // Validation
+      if (sourceTab === "all-media") {
+        toast.error("Items from 'All Media' cannot be moved.");
+        return;
+      }
+
+      if (tabValue === "all-media") {
+        toast.error("Items cannot be moved into 'All Media'.");
+        return;
+      }
+
+      if (tabValue === sourceTab) {
+        toast.info("Items are already in this tab.");
+        return;
+      }
+
+      if (tabValue === "pexels") {
+        toast.error("Items cannot be moved into 'Pexels' Tab.");
+        return;
+      }
+
+      try {
+        toast.loading("Moving items...", { id: "move-items" });
+
+        await Promise.all(
+          itemIds.map((itemId) =>
+            galleryActions.patchItem?.({
+              itemId,
+              data: { asset_source: tabValue },
+              revalidateAutofillSuggestions: false,
+            })
+          )
+        );
+
+        toast.success(`Moved ${itemIds.length} item(s) to ${tabValue}.`, {
+          id: "move-items",
+        });
+        setSelectedItems([]);
+      } catch (error) {
+        console.error("Move failed:", error);
+        toast.error("Failed to move items.", { id: "move-items" });
+      }
+    },
+    [galleryActions]
+  );
+
+  const handleReorderMedia = useCallback(
+    (reorderData: { id: string; brand_sort_order: number }[]) => {
+      galleryActions.reorderItems?.(reorderData);
+    },
+    [galleryActions]
+  );
+
+  const handleReorderCampaigns = useCallback(
+    async (
+      campaignId: string,
+      targetId: string,
+      position: "before" | "after",
+      section: "active" | "archived"
+    ) => {
+      if (!selectedBrandId) return;
+
+      const campaignList =
+        section === "active"
+          ? campaigns.filter((c) => !c.is_archived)
+          : campaigns.filter((c) => c.is_archived);
+
+      const draggedCampaign = campaigns.find((c) => c.id === campaignId);
+      if (!draggedCampaign) return;
+
+      const draggedIndex = campaignList.findIndex((c) => c.id === campaignId);
+      const targetIndex = campaignList.findIndex((c) => c.id === targetId);
+
+      if (draggedIndex === -1 || targetIndex === -1) return;
+      if (draggedIndex === targetIndex) return;
+
+      // Create new order
+      const reordered = [...campaignList];
+      const [removed] = reordered.splice(draggedIndex, 1);
+
+      let insertIndex = targetIndex;
+      if (position === "after") {
+        insertIndex =
+          draggedIndex < targetIndex ? targetIndex : targetIndex + 1;
+      } else {
+        insertIndex =
+          draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      }
+
+      reordered.splice(insertIndex, 0, removed);
+
+      // Use undoable action with cancelable toast
+      await execute({
+        title: draggedCampaign.title,
+        undoSeconds: 3,
+        loadingMessage: "Reordering campaigns...",
+        action: async () => {
+          // Update positions for all campaigns in this section
+          const updatePromises = reordered.map((campaign, index) =>
+            patchCampaign(selectedBrandId, campaign.id, { position: index })
+          );
+
+          await Promise.all(updatePromises);
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
+        successMessage: "Campaign order updated",
+        errorMessage: "Failed to reorder campaigns",
+      });
+    },
+    [selectedBrandId, campaigns, execute, queryClient]
+  );
+
+  const handleArchiveCampaign = useCallback(
+    async (campaignId: string, shouldArchive: boolean) => {
+      if (!selectedBrandId) return;
+
+      const campaign = campaigns.find((c) => c.id === campaignId);
+      if (!campaign) return;
+
+      await execute({
+        title: campaign.title,
+        undoSeconds: 3,
+        loadingMessage: `${shouldArchive ? "Archiving" : "Unarchiving"} "${campaign.title}"...`,
+        action: async () => {
+          await updateCampaign(selectedBrandId, campaignId, {
+            is_archived: shouldArchive,
+          });
+          await queryClient.invalidateQueries({ queryKey: ["brands"] });
+        },
+        successMessage: `"${campaign.title}" ${
+          shouldArchive ? "archived" : "unarchived"
+        } successfully.`,
+        errorMessage: `Failed to ${
+          shouldArchive ? "archive" : "unarchive"
+        } "${campaign.title}".`,
+      });
+    },
+    [selectedBrandId, campaigns, execute, queryClient]
+  );
+
+  // Render content wrapped in DnD provider
+  const renderContent = () => {
+    // Show campaign view with sidebar
+    if (selectedBrandId && selectedCampaignId) {
+      return (
+        <div className="flex gap-0 h-[calc(100vh-165px)] py-auto px-auto">
+          <CampaignsSidebar
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={selectedCampaignId}
+            onCampaignSelect={handleCampaignSelect}
+            galleryActions={galleryActions}
+            setInitialBrandId={setInitialBrandId}
+            setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+            setSelectedFilters={setSelectedFilters}
+            hasNoBrands={hasNoBrands}
+            galleryView={galleryView}
+            setSelectedItems={setSelectedItems}
+            isCollapsed={isCollapsed}
+            onToggleCollapsed={toggleCollapsed}
+          />
+
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <div className="flex-1 overflow-hidden">
+              <CampaignView
+                selectedBrandId={selectedBrandId}
+                brandName={brandName}
+                campaignId={selectedCampaignId}
+                activeTab={activeTab}
+                onBackToCampaigns={handleBackToCampaigns}
+                onUploadComplete={onUploadComplete}
+                addToGallery={addToGallery}
+                selectedMoodboardId={selecteMoodboardId}
+                searchQuery={searchQuery}
+                favorites={favorites}
                 selectedFilters={selectedFilters}
+                onTabChange={onTabChange}
+                showHeader={false}
+                handleSearchChange={handleSearchChange}
+                showFilters={showFilters}
                 setSelectedFilters={setSelectedFilters}
-              />
-
-              <MediaViewsDropdown
                 galleryView={galleryView}
                 setGalleryView={setGalleryView}
-                selectedCampaignId={selectedCampaignId}
-              />
-            </div>
-          </div>
-
-          {/* Top Section (Static) */}
-          <div className="pl-4 pb-4 flex-shrink-0">
-            <FolderTabs
-              activeTab={activeTab}
-              onTabChange={onTabChange}
-              title="Subfolders"
-              galleryActions={galleryActions}
-              setSelectedItems={setSelectedItems}
-            />
-          </div>
-
-          {activeTab === "pexels" ? (
-            <div className="overflow-y-auto">
-              <TopicsGrid
-                selectedBrandId={selectedBrandId}
                 setActiveTab={setActiveTab}
               />
             </div>
-          ) : (
-            <div className="overflow-y-auto scrollbar">
-              <div className="pl-4 flex-shrink-0">
-                <FolderUploadDropzone
-                  activeTab={activeTab}
-                  onUploadComplete={onUploadComplete}
-                  addToGallery={addToGallery}
-                  selectedBrandId={selectedBrandId}
-                  selectedCampaignId={undefined}
-                  selectedMoodboardId={selecteMoodboardId}
+          </div>
+        </div>
+      );
+    }
+
+    // Show folder gallery with sidebar (brand selected, no campaign)
+    if (selectedBrandId && isBrandsFetched) {
+      return (
+        <div className="w-full h-[calc(100vh-165px)] flex overflow-hidden">
+          <CampaignsSidebar
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={null}
+            onCampaignSelect={handleCampaignSelect}
+            galleryActions={galleryActions}
+            setInitialBrandId={setInitialBrandId}
+            setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+            setSelectedFilters={setSelectedFilters}
+            hasNoBrands={hasNoBrands}
+            galleryView={galleryView}
+            setSelectedItems={setSelectedItems}
+            isCollapsed={isCollapsed}
+            onToggleCollapsed={toggleCollapsed}
+          />
+
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mt-1 mb-2">
+              <div className="relative w-fit mx-4 mb-2">
+                <Search className="absolute left-3 top-4 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search media..."
+                  className={`pl-9 transition-all duration-200 ${
+                    showFilters ? "w-[400px]" : "w-[300px]"
+                  }`}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                 />
               </div>
 
-              {/* <MediaSearchFilters {...filterProps} /> */}
-
-              {/* 🎞️ Scrollable Gallery */}
-              <div className="flex-1 pl-4 pb-4">
-                <FolderGalleryView
-                  selectedBrandId={selectedBrandId}
-                  selectedCampaignId={undefined}
-                  searchQuery={searchQuery}
-                  favorites={favorites}
+              <div className="flex justify-end">
+                <MediaFilterDropdown
                   selectedFilters={selectedFilters}
-                  activeTab={activeTab}
-                  setSelectedItems={setSelectedItems}
-                  selectedItems={selectedItems}
+                  setSelectedFilters={setSelectedFilters}
+                />
+
+                <MediaViewsDropdown
+                  galleryView={galleryView}
+                  setGalleryView={setGalleryView}
+                  selectedCampaignId={selectedCampaignId}
                 />
               </div>
             </div>
-          )}
+
+            {/* Top Section (Static) */}
+            <div className="pl-4 pb-4 flex-shrink-0">
+              <FolderTabs
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+                title="Subfolders"
+                galleryActions={galleryActions}
+                setSelectedItems={setSelectedItems}
+              />
+            </div>
+
+            {activeTab === "pexels" ? (
+              <div className="overflow-y-auto">
+                <TopicsGrid
+                  selectedBrandId={selectedBrandId}
+                  setActiveTab={setActiveTab}
+                />
+              </div>
+            ) : (
+              <div className="overflow-y-auto scrollbar">
+                <div className="pl-4 flex-shrink-0">
+                  <FolderUploadDropzone
+                    activeTab={activeTab}
+                    onUploadComplete={onUploadComplete}
+                    addToGallery={addToGallery}
+                    selectedBrandId={selectedBrandId}
+                    selectedCampaignId={undefined}
+                    selectedMoodboardId={selecteMoodboardId}
+                  />
+                </div>
+
+                {/* 🎞️ Scrollable Gallery */}
+                <div className="flex-1 pl-4 pb-4">
+                  <FolderGalleryView
+                    selectedBrandId={selectedBrandId}
+                    selectedCampaignId={undefined}
+                    searchQuery={searchQuery}
+                    favorites={favorites}
+                    selectedFilters={selectedFilters}
+                    activeTab={activeTab}
+                    setSelectedItems={setSelectedItems}
+                    selectedItems={selectedItems}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (isBrandsFetched) {
-    return (
-      <div className="w-full max-w-full overflow-hidden">
-        <FolderUploadDropzone
-          activeTab={activeTab}
-          onUploadComplete={onUploadComplete}
-          addToGallery={addToGallery}
-          selectedBrandId={selectedBrandId}
-          selectedCampaignId={undefined}
-          selectedMoodboardId={selecteMoodboardId}
-        />
+    if (isBrandsFetched) {
+      return (
+        <div className="w-full max-w-full overflow-hidden">
+          <FolderUploadDropzone
+            activeTab={activeTab}
+            onUploadComplete={onUploadComplete}
+            addToGallery={addToGallery}
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={undefined}
+            selectedMoodboardId={selecteMoodboardId}
+          />
 
-        {/* <MediaSearchFilters {...filterProps} /> */}
+          <FolderTabs
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+            title="Subfolders"
+            galleryActions={galleryActions}
+            setSelectedItems={setSelectedItems}
+          />
 
-        <FolderTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          title="Subfolders"
-          galleryActions={galleryActions}
-          setSelectedItems={setSelectedItems}
-        />
+          <FolderGalleryView
+            selectedBrandId={selectedBrandId}
+            selectedCampaignId={undefined}
+            searchQuery={searchQuery}
+            favorites={favorites}
+            selectedFilters={selectedFilters}
+            activeTab={activeTab}
+            setSelectedItems={setSelectedItems}
+            selectedItems={selectedItems}
+          />
+        </div>
+      );
+    }
 
-        <FolderGalleryView
-          selectedBrandId={selectedBrandId}
-          selectedCampaignId={undefined}
-          searchQuery={searchQuery}
-          favorites={favorites}
-          selectedFilters={selectedFilters}
-          activeTab={activeTab}
-          setSelectedItems={setSelectedItems}
-          selectedItems={selectedItems}
-        />
-      </div>
-    );
-  }
+    return null;
+  };
 
-  return null;
+  return (
+    <GalleryDndProvider
+      galleryActions={galleryActions}
+      selectedItems={selectedItems}
+      setSelectedItems={setSelectedItems}
+      activeTab={activeTab}
+      orderBy={orderBy}
+      onMoveMediaToCampaign={handleMoveMediaToCampaign}
+      onMoveMediaToTab={handleMoveMediaToTab}
+      onReorderMedia={handleReorderMedia}
+      onReorderCampaigns={handleReorderCampaigns}
+      onArchiveCampaign={handleArchiveCampaign}
+      campaigns={campaigns}
+    >
+      {renderContent()}
+    </GalleryDndProvider>
+  );
 }

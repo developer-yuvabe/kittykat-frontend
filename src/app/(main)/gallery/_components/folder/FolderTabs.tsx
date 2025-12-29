@@ -4,6 +4,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { GalleryActions } from "@/hooks/useGallery";
+import { useDroppable } from "@dnd-kit/core";
+import { useGalleryDnd, type MediaDragData } from "../GalleryDndContext";
 
 interface Tab {
   value: string;
@@ -14,7 +16,7 @@ interface FolderTabsProps {
   activeTab: string;
   onTabChange: (value: string) => void;
   title?: string;
-  galleryActions: GalleryActions; // you’ll use this for patchItem
+  galleryActions: GalleryActions; // you'll use this for patchItem
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
@@ -28,39 +30,83 @@ const tabs: Tab[] = [
   { value: "pexels", label: "Pexels" },
 ];
 
+// Individual droppable tab button
+function DroppableTabButton({
+  tab,
+  isActive,
+  onTabChange,
+  onDrop,
+}: {
+  tab: Tab;
+  isActive: boolean;
+  onTabChange: (value: string) => void;
+  onDrop: (tabValue: string) => void;
+}) {
+  const { setNodeRef, isOver, active } = useDroppable({
+    id: `tab-${tab.value}`,
+    data: {
+      type: "TAB",
+      id: tab.value,
+      accepts: ["MEDIA_ITEM", "MEDIA_ITEMS_MULTI"],
+    },
+  });
+
+  // Check if we should show drop indicator
+  const showDropIndicator = isOver && active?.data.current?.type !== "CAMPAIGN";
+
+  return (
+    <button
+      ref={setNodeRef}
+      onClick={() => onTabChange(tab.value)}
+      className={cn(
+        "text-sm font-medium text-gray-600 hover:text-gray-900 py-3 px-4 transition-all border-b-2 border-transparent",
+        isActive && "border-[#636AE8] text-[#636AE8] bg-[#F3F4F6]",
+        showDropIndicator && "ring-2 ring-purple-500 bg-purple-50 border-purple-500"
+      )}
+    >
+      {tab.label}
+    </button>
+  );
+}
+
 export function FolderTabs({
   activeTab,
   onTabChange,
   galleryActions,
   setSelectedItems,
 }: FolderTabsProps) {
-  // ---- Handle drop ----
-  const handleDrop = async (
-    e: React.DragEvent<HTMLButtonElement>,
-    targetTab: string
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Try to get DnD context, but don't fail if not available
+  let dndContext: ReturnType<typeof useGalleryDnd> | null = null;
+  try {
+    dndContext = useGalleryDnd();
+  } catch {
+    // Not wrapped in DnD context, that's okay for some views
+  }
 
-    const data = e.dataTransfer.getData("application/gallery-drag");
-    if (!data) return;
+  // Handle drop on tab - this is called from the context
+  const handleDrop = async (targetTab: string) => {
+    if (!dndContext?.activeDragData) return;
+    
+    const dragData = dndContext.activeDragData as MediaDragData;
+    if (dragData.type !== "MEDIA_ITEM" && dragData.type !== "MEDIA_ITEMS_MULTI") {
+      return;
+    }
 
-    const payload = JSON.parse(data);
-    const { itemIds, activeTab: sourceTab } = payload;
+    const { itemIds, sourceTab } = dragData;
 
-    // 1. Block dropping from "all-media" to anywhere
+    // Block dropping from "all-media" to anywhere
     if (sourceTab === "all-media") {
       toast.error("Items from 'All Media' cannot be moved.");
       return;
     }
 
-    // 2. Block dropping to "all-media"
+    // Block dropping to "all-media"
     if (targetTab === "all-media") {
       toast.error("Items cannot be moved into 'All Media'.");
       return;
     }
 
-    // 3. If dropped on same tab → ignore
+    // If dropped on same tab → ignore
     if (targetTab === sourceTab) {
       toast.info("Items are already in this tab.");
       return;
@@ -94,30 +140,17 @@ export function FolderTabs({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
-    // Allow drop
-    if (e.dataTransfer.types.includes("application/gallery-drag")) {
-      e.preventDefault();
-    }
-  };
-
   return (
     <div className="w-full border-b bg-[#F9FAFB]">
       <div className="grid grid-cols-7 w-full">
         {tabs.map((tab) => (
-          <button
+          <DroppableTabButton
             key={tab.value}
-            onClick={() => onTabChange(tab.value)}
-            onDrop={(e) => handleDrop(e, tab.value)}
-            onDragOver={handleDragOver}
-            className={cn(
-              "text-sm font-medium text-gray-600 hover:text-gray-900 py-3 px-4 transition-all border-b-2 border-transparent",
-              activeTab === tab.value &&
-                "border-[#636AE8] text-[#636AE8] bg-[#F3F4F6]"
-            )}
-          >
-            {tab.label}
-          </button>
+            tab={tab}
+            isActive={activeTab === tab.value}
+            onTabChange={onTabChange}
+            onDrop={handleDrop}
+          />
         ))}
       </div>
     </div>

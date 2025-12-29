@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore } from "@/store/brand.store";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 
 interface CampaignsSidebarProps {
   selectedBrandId: string | null;
@@ -57,6 +63,41 @@ interface CampaignsSidebarProps {
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
+}
+
+// Droppable section header component
+function DroppableSectionHeader({
+  section,
+  label,
+  count,
+  className,
+}: {
+  section: "active" | "archived";
+  label: string;
+  count: number;
+  className?: string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `section-${section}`,
+    data: {
+      type: "SECTION",
+      id: section,
+      accepts: ["CAMPAIGN"],
+    },
+  });
+
+  return (
+    <span
+      ref={setNodeRef}
+      className={cn(
+        "flex-1",
+        isOver && "text-purple-600 font-bold",
+        className
+      )}
+    >
+      {label} ({count})
+    </span>
+  );
 }
 
 export function CampaignsSidebar({
@@ -145,21 +186,6 @@ export function CampaignsSidebar({
       },
     });
 
-  // Drag-and-drop state
-  const [dragOverCampaignId, setDragOverCampaignId] = useState<string | null>(
-    null
-  );
-  const [dragOverSection, setDragOverSection] = useState<
-    "active" | "archived" | null
-  >(null);
-  const [draggedCampaignId, setDraggedCampaignId] = useState<string | null>(
-    null
-  );
-  const [dropPosition, setDropPosition] = useState<"before" | "after" | null>(
-    null
-  );
-  const [reorderTargetId, setReorderTargetId] = useState<string | null>(null);
-
   // Fetch campaign counts
   const { data: countData, isLoading: isCountLoading } =
     useCampaignCounts(selectedBrandId);
@@ -202,6 +228,17 @@ export function CampaignsSidebar({
   const archivedCampaigns = sortByPosition(
     filteredCampaigns.filter((c) => c.is_archived)
   );
+
+  // Get IDs for SortableContext
+  const activeCampaignIds = useMemo(
+    () => activeCampaigns.map((c) => c.id),
+    [activeCampaigns]
+  );
+  const archivedCampaignIds = useMemo(
+    () => archivedCampaigns.map((c) => c.id),
+    [archivedCampaigns]
+  );
+
   // Instantly update gallery when a campaign is archived/unarchived
   const updateGalleryForCampaignArchive = (
     campaignId: string,
@@ -373,360 +410,6 @@ export function CampaignsSidebar({
     }
   };
 
-  // Drag handlers
-  const handleCampaignDragStart = (
-    e: React.DragEvent,
-    campaignId: string,
-    isArchived: boolean
-  ) => {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData(
-      "application/campaign-drag",
-      JSON.stringify({ campaignId, isArchived })
-    );
-    setDraggedCampaignId(campaignId);
-  };
-
-  const handleCampaignReorderDragOver = (
-    e: React.DragEvent,
-    targetCampaignId: string
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const hasCampaignData = e.dataTransfer.types.includes(
-      "application/campaign-drag"
-    );
-    if (!hasCampaignData) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    const position = e.clientY < midpoint ? "before" : "after";
-
-    setReorderTargetId(targetCampaignId);
-    setDropPosition(position);
-  };
-
-  const handleAssetDragOver = (e: React.DragEvent, campaignId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const hasAssetData = e.dataTransfer.types.includes(
-      "application/gallery-drag"
-    );
-    if (hasAssetData) {
-      setDragOverCampaignId(campaignId);
-    }
-  };
-
-  const handleSectionDragOver = (
-    e: React.DragEvent,
-    section: "active" | "archived"
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const hasCampaignData = e.dataTransfer.types.includes(
-      "application/campaign-drag"
-    );
-    if (hasCampaignData) {
-      setDragOverSection(section);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX;
-    const y = e.clientY;
-
-    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
-      setDragOverCampaignId(null);
-      setDragOverSection(null);
-    }
-  };
-
-  const handleDragEnd = () => {
-    setDraggedCampaignId(null);
-    setDragOverCampaignId(null);
-    setDragOverSection(null);
-    setReorderTargetId(null);
-    setDropPosition(null);
-  };
-
-  const handleCampaignReorderDrop = async (
-    e: React.DragEvent,
-    targetCampaignId: string,
-    section: "active" | "archived"
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!selectedBrandId) {
-      setReorderTargetId(null);
-      setDropPosition(null);
-      return;
-    }
-
-    try {
-      const data = e.dataTransfer.getData("application/campaign-drag");
-      if (!data) {
-        setReorderTargetId(null);
-        setDropPosition(null);
-        return;
-      }
-
-      const { campaignId: draggedId, isArchived } = JSON.parse(data);
-
-      // Don't reorder if dropped on itself
-      if (draggedId === targetCampaignId) {
-        setReorderTargetId(null);
-        setDropPosition(null);
-        return;
-      }
-
-      const targetIsArchived = section === "archived";
-      const campaignList =
-        section === "active" ? activeCampaigns : archivedCampaigns;
-
-      // Calculate drop position
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      const position = e.clientY < midpoint ? "before" : "after";
-
-      // Handle cross-section move (archive/unarchive with position)
-      if (isArchived !== targetIsArchived) {
-        const targetIndex = campaignList.findIndex(
-          (c) => c.id === targetCampaignId
-        );
-
-        if (targetIndex === -1) {
-          setReorderTargetId(null);
-          setDropPosition(null);
-          return;
-        }
-
-        // Calculate insert position for the new section
-        let insertPosition = targetIndex;
-        if (position === "after") {
-          insertPosition = targetIndex + 1;
-        }
-
-        // Create new order for target section (inserting the dragged campaign)
-        const reordered = [...campaignList];
-        // Insert placeholder at the calculated position
-        reordered.splice(insertPosition, 0, { id: draggedId } as any);
-
-        // Update the dragged campaign's archive status and position
-        await patchCampaign(selectedBrandId, draggedId, {
-          is_archived: targetIsArchived,
-          position: insertPosition,
-        });
-
-        // Update positions for all other campaigns in the target section
-        const updatePromises = reordered
-          .filter((c) => c.id !== draggedId)
-          .map((campaign, index) => {
-            const actualIndex = index >= insertPosition ? index + 1 : index;
-            return patchCampaign(selectedBrandId, campaign.id, {
-              position: actualIndex,
-            });
-          });
-
-        await Promise.all(updatePromises);
-        await queryClient.invalidateQueries({ queryKey: ["brands"] });
-
-        toast.success(
-          `Campaign moved to ${
-            section === "active" ? "active" : "archived"
-          } campaigns`
-        );
-
-        setReorderTargetId(null);
-        setDropPosition(null);
-        return;
-      }
-
-      // Handle same-section reordering
-      const draggedIndex = campaignList.findIndex((c) => c.id === draggedId);
-      const targetIndex = campaignList.findIndex(
-        (c) => c.id === targetCampaignId
-      );
-
-      if (draggedIndex === -1 || targetIndex === -1) {
-        setReorderTargetId(null);
-        setDropPosition(null);
-        return;
-      }
-
-      // Create new order
-      const reordered = [...campaignList];
-      const [removed] = reordered.splice(draggedIndex, 1);
-
-      let insertIndex = targetIndex;
-      if (position === "after") {
-        insertIndex =
-          draggedIndex < targetIndex ? targetIndex : targetIndex + 1;
-      } else {
-        insertIndex =
-          draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
-      }
-
-      reordered.splice(insertIndex, 0, removed);
-
-      // Update positions for all campaigns in this section
-      const updatePromises = reordered.map((campaign, index) =>
-        patchCampaign(selectedBrandId, campaign.id, { position: index })
-      );
-
-      await Promise.all(updatePromises);
-      await queryClient.invalidateQueries({ queryKey: ["brands"] });
-
-      toast.success("Campaign order updated");
-    } catch (error) {
-      console.error("Reorder error:", error);
-      toast.error("Failed to reorder campaigns");
-    }
-
-    setReorderTargetId(null);
-    setDropPosition(null);
-  };
-
-  const handleAssetDropOnCampaign = async (
-    e: React.DragEvent,
-    campaignId: string
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!selectedBrandId) {
-      setDragOverCampaignId(null);
-      return;
-    }
-
-    try {
-      const data = e.dataTransfer.getData("application/gallery-drag");
-      if (!data || !galleryActions) {
-        setDragOverCampaignId(null);
-        return;
-      }
-
-      const payload = JSON.parse(data);
-      if (!payload.itemIds || payload.itemIds.length === 0) {
-        setDragOverCampaignId(null);
-        return;
-      }
-
-      const items = galleryActions
-        .getGalleryItems()
-        .filter((item: any) => payload.itemIds.includes(item.id));
-
-      if (items.length === 0) {
-        toast.error("No items found to move");
-        setDragOverCampaignId(null);
-        return;
-      }
-
-      await Promise.all(
-        items.map((item: any) =>
-          galleryActions.patchItem?.({
-            itemId: item.id,
-            data: {
-              campaign_id: campaignId,
-              brand_id: selectedBrandId,
-            },
-            revalidateAutofillSuggestions: false,
-          })
-        )
-      );
-      setSelectedItems([]);
-
-      const targetCampaign = campaigns.find((c) => c.id === campaignId);
-      toast.success(
-        `Successfully moved ${items.length} item(s) to campaign "${targetCampaign?.title}"`
-      );
-    } catch (error) {
-      console.error("Move error:", error);
-      toast.error("Failed to move assets. Please try again.");
-    }
-
-    setDragOverCampaignId(null);
-  };
-
-  const handleCampaignDropOnSection = async (
-    e: React.DragEvent,
-    section: "active" | "archived"
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!selectedBrandId) {
-      setDragOverSection(null);
-      setDraggedCampaignId(null);
-      return;
-    }
-
-    try {
-      const data = e.dataTransfer.getData("application/campaign-drag");
-      if (!data) {
-        setDragOverSection(null);
-        setDraggedCampaignId(null);
-        return;
-      }
-
-      const { campaignId, isArchived: currentlyArchived } = JSON.parse(data);
-      const shouldBeArchived = section === "archived";
-
-      if (currentlyArchived === shouldBeArchived) {
-        setDragOverSection(null);
-        setDraggedCampaignId(null);
-        return;
-      }
-
-      const campaign = campaigns.find((c) => c.id === campaignId);
-      if (!campaign) {
-        toast.error("Campaign not found");
-        setDragOverSection(null);
-        setDraggedCampaignId(null);
-        return;
-      }
-
-      const title = campaign.title;
-
-      try {
-        await execute({
-          title,
-          undoSeconds: 3,
-          loadingMessage: `${
-            shouldBeArchived ? "Archiving" : "Unarchiving"
-          } "${title}"...`,
-          action: async () => {
-            await updateCampaign(selectedBrandId, campaignId, {
-              is_archived: shouldBeArchived,
-            });
-            // Invalidate brands query to refresh the UI
-            await queryClient.invalidateQueries({ queryKey: ["brands"] });
-          },
-          successMessage: `"${title}" ${
-            shouldBeArchived ? "archived" : "unarchived"
-          } successfully.`,
-          errorMessage: `Failed to ${
-            shouldBeArchived ? "archive" : "unarchive"
-          } "${title}".`,
-        });
-      } catch {
-        // Error already handled by useUndoableAction
-      }
-    } catch (error) {
-      console.error("Archive error:", error);
-    }
-
-    setDragOverSection(null);
-    setDraggedCampaignId(null);
-  };
-
   if (!selectedBrandId) {
     return null;
   }
@@ -747,7 +430,7 @@ export function CampaignsSidebar({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>Open Camapign Sidebar</p>
+              <p>Open Campaign Sidebar</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -773,7 +456,7 @@ export function CampaignsSidebar({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p>Close Camapign Sidebar</p>
+                <p>Close Campaign Sidebar</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -828,122 +511,77 @@ export function CampaignsSidebar({
       />
 
       {/* Campaigns List */}
-      {/* Campaigns List */}
       <div className="flex-1 overflow-y-auto">
         <Accordion type="multiple" defaultValue={["active"]}>
           {/* Active Campaigns */}
-          <AccordionItem
-            value="active"
-            className={cn(
-              "transition-colors",
-              dragOverSection === "active" && "bg-purple-50"
-            )}
-            onDragOver={(e) => handleSectionDragOver(e, "active")}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleCampaignDropOnSection(e, "active")}
-          >
-            <AccordionTrigger
-              className={cn(
-                "text-lg p-4 hover:no-underline font-medium text-gray-800",
-                draggedCampaignId && "pointer-events-none"
-              )}
-              onDragOver={(e) => handleSectionDragOver(e, "active")}
-              onDrop={(e) => handleCampaignDropOnSection(e, "active")}
-            >
-              <span className={cn(draggedCampaignId && "pointer-events-auto")}>
-                Active Campaigns ({activeCampaigns.length})
-              </span>
+          <AccordionItem value="active">
+            <AccordionTrigger className="text-lg p-4 hover:no-underline font-medium text-gray-800">
+              <DroppableSectionHeader
+                section="active"
+                label="Active Campaigns"
+                count={activeCampaigns.length}
+              />
             </AccordionTrigger>
             <AccordionContent>
-              <div
-                className="space-y-1 p-2"
-                onDragOver={(e) => {
-                  // Allow section drop when dragging campaigns
-                  const hasCampaignData = e.dataTransfer.types.includes(
-                    "application/campaign-drag"
-                  );
-                  if (hasCampaignData) {
-                    handleSectionDragOver(e, "active");
-                  }
-                }}
-                onDrop={(e) => {
-                  // Allow section drop when dragging campaigns
-                  const hasCampaignData = e.dataTransfer.types.includes(
-                    "application/campaign-drag"
-                  );
-                  if (hasCampaignData) {
-                    handleCampaignDropOnSection(e, "active");
-                  }
-                }}
-              >
-                {activeCampaigns.map((campaign) => (
-                  <CampaignSidebarRow
-                    key={`${selectedBrandId}-${campaign.id}`}
-                    campaign={campaign}
-                    selectedBrandId={selectedBrandId}
-                    selectedCampaignId={selectedCampaignId}
-                    onCampaignSelect={onCampaignSelect}
-                    count={countData?.count_by_campaign?.[campaign.id]}
-                    isCountLoading={isCountLoading}
-                    onRename={(id, title) =>
-                      setRenameDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                      })
-                    }
-                    onArchiveToggle={(id, title, isArchived) =>
-                      setArchiveDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isArchived,
-                        isProcessing: false,
-                      })
-                    }
-                    onCuratedToggle={(id, title, isCurated) =>
-                      setCuratedDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isCurated,
-                        isProcessing: false,
-                      })
-                    }
-                    onDelete={(id, title) =>
-                      setDeleteDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isDeleting: false,
-                      })
-                    }
-                    onAnalyze={(id, title) => {
-                      const campaign = campaigns.find((c) => c.id === id);
-                      setAnalyzeDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isReanalysis: campaign?.is_curated_for_brand || false,
-                      });
-                    }}
-                    onAssetDragOver={handleAssetDragOver}
-                    onDragLeave={handleDragLeave}
-                    onAssetDrop={handleAssetDropOnCampaign}
-                    isDraggedOver={dragOverCampaignId === campaign.id}
-                    onCampaignDragStart={handleCampaignDragStart}
-                    onDragEnd={handleDragEnd}
-                    isDragging={draggedCampaignId === campaign.id}
-                    onSectionDragOver={handleSectionDragOver}
-                    onSectionDrop={handleCampaignDropOnSection}
-                    onReorderDragOver={handleCampaignReorderDragOver}
-                    onReorderDrop={handleCampaignReorderDrop}
-                    isReorderTarget={reorderTargetId === campaign.id}
-                    dropPosition={
-                      reorderTargetId === campaign.id ? dropPosition : null
-                    }
-                  />
-                ))}
+              <div className="space-y-1 p-2">
+                <SortableContext
+                  items={activeCampaignIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {activeCampaigns.map((campaign) => (
+                    <CampaignSidebarRow
+                      key={`${selectedBrandId}-${campaign.id}`}
+                      campaign={campaign}
+                      selectedBrandId={selectedBrandId}
+                      selectedCampaignId={selectedCampaignId}
+                      onCampaignSelect={onCampaignSelect}
+                      count={countData?.count_by_campaign?.[campaign.id]}
+                      isCountLoading={isCountLoading}
+                      onRename={(id, title) =>
+                        setRenameDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                        })
+                      }
+                      onArchiveToggle={(id, title, isArchived) =>
+                        setArchiveDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isArchived,
+                          isProcessing: false,
+                        })
+                      }
+                      onCuratedToggle={(id, title, isCurated) =>
+                        setCuratedDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isCurated,
+                          isProcessing: false,
+                        })
+                      }
+                      onDelete={(id, title) =>
+                        setDeleteDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isDeleting: false,
+                        })
+                      }
+                      onAnalyze={(id, title) => {
+                        const campaign = campaigns.find((c) => c.id === id);
+                        setAnalyzeDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isReanalysis: campaign?.is_curated_for_brand || false,
+                        });
+                      }}
+                    />
+                  ))}
+                </SortableContext>
                 {activeCampaigns.length === 0 && (
                   <p className="text-sm text-gray-500 px-3 py-2">
                     No active campaigns.
@@ -954,118 +592,74 @@ export function CampaignsSidebar({
           </AccordionItem>
 
           {/* Archived Campaigns */}
-          <AccordionItem
-            value="archived"
-            className={cn(
-              "transition-colors",
-              dragOverSection === "archived" && "bg-gray-100"
-            )}
-            onDragOver={(e) => handleSectionDragOver(e, "archived")}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleCampaignDropOnSection(e, "archived")}
-          >
-            <AccordionTrigger
-              className={cn(
-                "text-lg p-4 hover:no-underline font-medium text-gray-800",
-                draggedCampaignId && "pointer-events-none"
-              )}
-              onDragOver={(e) => handleSectionDragOver(e, "archived")}
-              onDrop={(e) => handleCampaignDropOnSection(e, "archived")}
-            >
-              <span className={cn(draggedCampaignId && "pointer-events-auto")}>
-                Archived Campaigns ({archivedCampaigns.length})
-              </span>
+          <AccordionItem value="archived">
+            <AccordionTrigger className="text-lg p-4 hover:no-underline font-medium text-gray-800">
+              <DroppableSectionHeader
+                section="archived"
+                label="Archived Campaigns"
+                count={archivedCampaigns.length}
+              />
             </AccordionTrigger>
             <AccordionContent>
-              <div
-                className="space-y-1 p-2"
-                onDragOver={(e) => {
-                  // Allow section drop when dragging campaigns
-                  const hasCampaignData = e.dataTransfer.types.includes(
-                    "application/campaign-drag"
-                  );
-                  if (hasCampaignData) {
-                    handleSectionDragOver(e, "archived");
-                  }
-                }}
-                onDrop={(e) => {
-                  // Allow section drop when dragging campaigns
-                  const hasCampaignData = e.dataTransfer.types.includes(
-                    "application/campaign-drag"
-                  );
-                  if (hasCampaignData) {
-                    handleCampaignDropOnSection(e, "archived");
-                  }
-                }}
-              >
-                {archivedCampaigns.map((campaign) => (
-                  <CampaignSidebarRow
-                    key={`${selectedBrandId}-${campaign.id}`}
-                    campaign={campaign}
-                    selectedBrandId={selectedBrandId}
-                    selectedCampaignId={selectedCampaignId}
-                    onCampaignSelect={onCampaignSelect}
-                    count={countData?.count_by_campaign?.[campaign.id]}
-                    isCountLoading={isCountLoading}
-                    onRename={(id, title) =>
-                      setRenameDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                      })
-                    }
-                    onArchiveToggle={(id, title, isArchived) =>
-                      setArchiveDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isArchived,
-                        isProcessing: false,
-                      })
-                    }
-                    onCuratedToggle={(id, title, isCurated) =>
-                      setCuratedDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isCurated,
-                        isProcessing: false,
-                      })
-                    }
-                    onDelete={(id, title) =>
-                      setDeleteDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isDeleting: false,
-                      })
-                    }
-                    onAnalyze={(id, title) => {
-                      const campaign = campaigns.find((c) => c.id === id);
-                      setAnalyzeDialog({
-                        open: true,
-                        campaignId: id,
-                        campaignTitle: title,
-                        isReanalysis: campaign?.is_curated_for_brand || false,
-                      });
-                    }}
-                    onAssetDragOver={handleAssetDragOver}
-                    onDragLeave={handleDragLeave}
-                    onAssetDrop={handleAssetDropOnCampaign}
-                    isDraggedOver={dragOverCampaignId === campaign.id}
-                    onCampaignDragStart={handleCampaignDragStart}
-                    onDragEnd={handleDragEnd}
-                    isDragging={draggedCampaignId === campaign.id}
-                    onSectionDragOver={handleSectionDragOver}
-                    onSectionDrop={handleCampaignDropOnSection}
-                    onReorderDragOver={handleCampaignReorderDragOver}
-                    onReorderDrop={handleCampaignReorderDrop}
-                    isReorderTarget={reorderTargetId === campaign.id}
-                    dropPosition={
-                      reorderTargetId === campaign.id ? dropPosition : null
-                    }
-                  />
-                ))}
+              <div className="space-y-1 p-2">
+                <SortableContext
+                  items={archivedCampaignIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {archivedCampaigns.map((campaign) => (
+                    <CampaignSidebarRow
+                      key={`${selectedBrandId}-${campaign.id}`}
+                      campaign={campaign}
+                      selectedBrandId={selectedBrandId}
+                      selectedCampaignId={selectedCampaignId}
+                      onCampaignSelect={onCampaignSelect}
+                      count={countData?.count_by_campaign?.[campaign.id]}
+                      isCountLoading={isCountLoading}
+                      onRename={(id, title) =>
+                        setRenameDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                        })
+                      }
+                      onArchiveToggle={(id, title, isArchived) =>
+                        setArchiveDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isArchived,
+                          isProcessing: false,
+                        })
+                      }
+                      onCuratedToggle={(id, title, isCurated) =>
+                        setCuratedDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isCurated,
+                          isProcessing: false,
+                        })
+                      }
+                      onDelete={(id, title) =>
+                        setDeleteDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isDeleting: false,
+                        })
+                      }
+                      onAnalyze={(id, title) => {
+                        const campaign = campaigns.find((c) => c.id === id);
+                        setAnalyzeDialog({
+                          open: true,
+                          campaignId: id,
+                          campaignTitle: title,
+                          isReanalysis: campaign?.is_curated_for_brand || false,
+                        });
+                      }}
+                    />
+                  ))}
+                </SortableContext>
                 {archivedCampaigns.length === 0 && (
                   <p className="text-sm text-gray-500 px-3 py-2">
                     No archived campaigns.
