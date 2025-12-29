@@ -78,7 +78,7 @@ export function SortableMediaItem({
   // Can't select new items if max reached, but can always deselect
   const canSelect = !hasReachedMax || isSelected || isAlreadySelected;
 
-  // Determine if this item should be draggable
+  // Determine if this item should be draggable (for any purpose - reorder or move)
   const canDrag = (enableDragToMove || isDraggable) && !isMediaSelectDialog;
 
   // Use @dnd-kit/sortable hook
@@ -101,9 +101,14 @@ export function SortableMediaItem({
   });
 
   // Style for drag transform
+  // When isDraggable is false, don't apply the sortable transform (no reorder visual feedback)
+  // This allows drag-to-move (campaigns/tabs) to work while preventing reorder UI effects
+  const shouldApplySortableTransform = isDraggable;
+  
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    // Only apply transform when reordering is enabled, otherwise items won't shift during drag
+    transform: shouldApplySortableTransform ? CSS.Transform.toString(transform) : undefined,
+    transition: shouldApplySortableTransform ? transition : undefined,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1000 : undefined,
   };

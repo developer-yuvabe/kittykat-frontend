@@ -16,6 +16,7 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  
   pointerWithin,
   rectIntersection,
   type DragStartEvent,
@@ -24,12 +25,15 @@ import {
   type CollisionDetection,
   type UniqueIdentifier,
 } from "@dnd-kit/core";
+import { closestCorners } from "@dnd-kit/core";
+
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { toast } from "sonner";
 import type { GalleryActions } from "@/hooks/useGallery";
 import type { GalleryItemResponse } from "@/types/gallery.types";
@@ -99,13 +103,51 @@ export function useGalleryDnd() {
 
 interface MediaDragOverlayProps {
   itemCount: number;
-  previewItem?: GalleryItemResponse;
+  previewItems?: GalleryItemResponse[];
 }
 
-function MediaDragOverlay({ itemCount, previewItem }: MediaDragOverlayProps) {
+function MediaDragOverlay({ itemCount, previewItems = [] }: MediaDragOverlayProps) {
+  // For multi-select, show stacked image preview with up to 3 images
+  if (itemCount > 1) {
+    const displayItems = previewItems.slice(0, 3);
+    
+    return (
+      <div className="relative">
+        {/* Stacked images */}
+        <div className="relative" style={{ width: '128px', height: '128px' }}>
+          {displayItems.map((item, index) => (
+            <div
+              key={item.id}
+              className="absolute rounded-lg overflow-hidden shadow-2xl border-2 border-purple-500 bg-white"
+              style={{
+                width: '120px',
+                height: '120px',
+                top: `${index * 8}px`,
+                left: `${index * 8}px`,
+                zIndex: displayItems.length - index,
+              }}
+            >
+              <img
+                src={item.preview_url || item.asset_url}
+                alt={`Item ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+        
+        {/* Count badge */}
+        <div className="absolute -top-2 -right-2 z-50 bg-purple-600 text-white px-3 py-1 rounded-full shadow-lg font-semibold text-sm border-2 border-white">
+          {itemCount}
+        </div>
+      </div>
+    );
+  }
+
+  // For single item, show the original large image preview
+  const previewItem = previewItems[0];
   return (
     <div className="relative">
-      {/* Preview image */}
       {previewItem && (
         <div className="w-32 h-32 rounded-lg overflow-hidden shadow-2xl border-2 border-purple-500 bg-white">
           <img
@@ -113,13 +155,6 @@ function MediaDragOverlay({ itemCount, previewItem }: MediaDragOverlayProps) {
             alt="Dragging"
             className="w-full h-full object-cover"
           />
-        </div>
-      )}
-      
-      {/* Count badge */}
-      {itemCount > 1 && (
-        <div className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-          {itemCount}
         </div>
       )}
     </div>
@@ -209,24 +244,43 @@ export function GalleryDndProvider({
   );
 
   // Custom collision detection that prioritizes sidebar/tab targets
-  const collisionDetection: CollisionDetection = useCallback((args) => {
-    // First check if we're over a droppable (campaign, tab, section)
-    const pointerCollisions = pointerWithin(args);
-    if (pointerCollisions.length > 0) {
-      // Prioritize campaigns and tabs over media grid
-      const priorityTargets = pointerCollisions.filter((c) => {
-        const data = c.data?.droppableContainer?.data?.current;
-        return data?.type === "CAMPAIGN" || data?.type === "TAB" || data?.type === "SECTION";
-      });
-      if (priorityTargets.length > 0) {
-        return priorityTargets;
-      }
-      return pointerCollisions;
+const collisionDetection: CollisionDetection = useCallback((args) => {
+  const { active, droppableContainers } = args;
+
+  // Identify if we're dragging a media item
+  const isMediaDrag =
+    active.data.current?.type === "MEDIA_ITEM" ||
+    active.data.current?.type === "MEDIA_ITEMS_MULTI";
+
+  // 1️⃣ Check for non-grid drops first (campaigns, tabs, sections)
+  const pointerCollisions = pointerWithin(args);
+
+  if (pointerCollisions.length > 0) {
+    const priorityTargets = pointerCollisions.filter((c) => {
+      const data = c.data?.droppableContainer?.data?.current;
+      return (
+        data?.type === "CAMPAIGN" ||
+        data?.type === "TAB" ||
+        data?.type === "SECTION"
+      );
+    });
+
+    // If we found priority targets (sidebar elements), use them
+    if (priorityTargets.length > 0) {
+      return priorityTargets;
     }
-    
-    // Fall back to rect intersection for grid reordering
-    return rectIntersection(args);
-  }, []);
+  }
+
+  // 2️⃣ Media grid sorting → use closestCenter for better grid support
+  // closestCenter works better for grid layouts with horizontal movement
+  if (isMediaDrag) {
+    return closestCenter(args);
+  }
+
+  // 3️⃣ Safe fallback
+  return rectIntersection(args);
+}, []);
+
 
   // Handle drag start
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -260,21 +314,49 @@ export function GalleryDndProvider({
     setActiveDragData(null);
     setOverId(null);
     
-    if (!over || !activeDragData) return;
+    if (!over) {
+      return;
+    }
+    
+    // Read drag data directly from event to avoid stale closure issues
+    let dragData = active.data.current as DragData | undefined;
+    
+    // If dragging a selected item, include all selected items
+    if (dragData?.type === "MEDIA_ITEM" && selectedItems.includes(String(active.id))) {
+      dragData = {
+        ...dragData,
+        type: selectedItems.length > 1 ? "MEDIA_ITEMS_MULTI" : "MEDIA_ITEM",
+        itemIds: selectedItems,
+      };
+    }
+    
+    if (!dragData) {
+      return;
+    }
     
     const overData = over.data.current as DropTargetData | DragData | undefined;
     
     // ========================================================================
     // Media Item Drop Handling
     // ========================================================================
-    if (activeDragData.type === "MEDIA_ITEM" || activeDragData.type === "MEDIA_ITEMS_MULTI") {
-      const mediaData = activeDragData as MediaDragData;
+    if (dragData.type === "MEDIA_ITEM" || dragData.type === "MEDIA_ITEMS_MULTI") {
+      const mediaData = dragData as MediaDragData;
       const itemIds = mediaData.itemIds;
       const overId = String(over.id);
       
-      // Drop on Campaign (check by ID prefix since campaigns use "campaign-{id}" format)
-      if (overId.startsWith("campaign-")) {
-        const campaignId = overId.replace("campaign-", "");
+      // Drop on Campaign - check both the data type AND ID prefix (for droppable fallback)
+      // The sortable returns type: "CAMPAIGN" with campaignId, the droppable uses "campaign-{id}" prefix
+      const isCampaignDrop = 
+        (overData && "type" in overData && overData.type === "CAMPAIGN" && "campaignId" in overData) ||
+        overId.startsWith("campaign-");
+      
+      if (isCampaignDrop) {
+        // Extract campaignId from either the data object or the ID
+        const campaignId = 
+          (overData && "campaignId" in overData && overData.campaignId) 
+            ? (overData as CampaignDragData).campaignId 
+            : overId.replace("campaign-", "");
+        
         if (onMoveMediaToCampaign) {
           try {
             await onMoveMediaToCampaign(itemIds, campaignId);
@@ -341,8 +423,8 @@ export function GalleryDndProvider({
     // ========================================================================
     // Campaign Drop Handling
     // ========================================================================
-    if (activeDragData.type === "CAMPAIGN") {
-      const campaignData = activeDragData as CampaignDragData;
+    if (dragData.type === "CAMPAIGN") {
+      const campaignData = dragData as CampaignDragData;
       
       // Drop on Section (archive/unarchive)
       if (overData && "type" in overData && overData.type === "SECTION") {
@@ -379,7 +461,7 @@ export function GalleryDndProvider({
       }
     }
   }, [
-    activeDragData,
+    selectedItems,
     galleryActions,
     orderBy,
     onMoveMediaToCampaign,
@@ -397,12 +479,14 @@ export function GalleryDndProvider({
     if (activeDragData.type === "MEDIA_ITEM" || activeDragData.type === "MEDIA_ITEMS_MULTI") {
       const mediaData = activeDragData as MediaDragData;
       const items = galleryActions?.getGalleryItems() || [];
-      const previewItem = items.find((i) => i.id === activeId);
+      
+      // Get preview items for all selected items
+      const previewItems = items.filter((item) => mediaData.itemIds.includes(item.id));
       
       return (
         <MediaDragOverlay
           itemCount={mediaData.itemIds.length}
-          previewItem={previewItem}
+          previewItems={previewItems}
         />
       );
     }
@@ -444,7 +528,7 @@ export function GalleryDndProvider({
         onDragEnd={handleDragEnd}
       >
         {children}
-        <DragOverlay dropAnimation={null}>
+        <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
           {dragOverlayContent}
         </DragOverlay>
       </DndContext>

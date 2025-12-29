@@ -12,6 +12,7 @@ import Masonry from "react-masonry-css";
 import { SortableMediaItem } from "./SortableMediaItem";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
+import { useGalleryDnd } from "./GalleryDndContext";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
@@ -55,8 +56,30 @@ export function SortableMediaGrid({
   // Enable drag-to-reorder when orderBy is manual (brand_sort_order)
   const isDraggable = orderBy === "brand_sort_order";
 
-  // Get item IDs for SortableContext
-  const itemIds = useMemo(() => galleryItems.map((item) => item.id), [galleryItems]);
+  // Get drag state for multi-select visualization
+  const { activeId, activeDragData } = useGalleryDnd();
+
+  // Filter items for multi-select drag:
+  // When reordering multiple items, we hide all selected items EXCEPT the one being dragged.
+  // This causes the grid to reflow, allowing the user to place the entire group as a single unit.
+  const visibleItems = useMemo(() => {
+    if (
+      isDraggable && 
+      activeId && 
+      activeDragData?.type === "MEDIA_ITEMS_MULTI"
+    ) {
+      return galleryItems.filter((item) => {
+        // Keep the item if it's NOT selected
+        if (!selectedItems.includes(item.id)) return true;
+        // Or if it IS the active item being dragged
+        return item.id === activeId;
+      });
+    }
+    return galleryItems;
+  }, [galleryItems, activeId, activeDragData, isDraggable, selectedItems]);
+
+  // Get item IDs for SortableContext from visible items
+  const itemIds = useMemo(() => visibleItems.map((item) => item.id), [visibleItems]);
 
   const breakpointColumnsObj = {
     default:
@@ -166,7 +189,7 @@ export function SortableMediaGrid({
           className="flex w-auto -ml-4"
           columnClassName="pl-4 bg-clip-padding"
         >
-          {galleryItems.map((item) => (
+          {visibleItems.map((item) => (
             <SortableMediaItem
               key={item.id}
               item={item}

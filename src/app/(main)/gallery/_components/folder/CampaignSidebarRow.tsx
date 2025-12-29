@@ -23,6 +23,7 @@ import { Campaign } from "@/types/user.types";
 import { useSortable } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { useGalleryDnd } from "../GalleryDndContext";
 
 interface CampaignSidebarRowProps {
   campaign: Campaign;
@@ -62,6 +63,9 @@ export function CampaignSidebarRow({
   onAnalyze,
   isDragDisabled = false,
 }: CampaignSidebarRowProps) {
+  // Get overId from context to detect when media is being dragged over this campaign
+  const { overId, activeDragData } = useGalleryDnd();
+  
   // Use sortable for campaign reordering
   const {
     attributes,
@@ -81,7 +85,7 @@ export function CampaignSidebarRow({
   });
 
   // Use droppable for receiving media items
-  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+  const { setNodeRef: setDroppableRef, isOver: isDroppableOver } = useDroppable({
     id: `campaign-${campaign.id}`,
     data: {
       type: "CAMPAIGN",
@@ -95,6 +99,11 @@ export function CampaignSidebarRow({
     setSortableRef(node);
     setDroppableRef(node);
   };
+
+  // Check if this campaign is the drop target (either via sortable or droppable ID)
+  const isMediaDrag = activeDragData?.type === "MEDIA_ITEM" || activeDragData?.type === "MEDIA_ITEMS_MULTI";
+  const isDropTarget = isDroppableOver || 
+    (isMediaDrag && (overId === campaign.id || overId === `campaign-${campaign.id}`));
 
   // Style for drag transform
   const style = {
@@ -110,9 +119,9 @@ export function CampaignSidebarRow({
       style={style}
       key={`${selectedBrandId}-${campaign.id}`}
       className={cn(
-        "relative group",
-        isDragging && "ring-2 ring-purple-500 shadow-lg rounded-lg",
-        isOver && "ring-2 ring-purple-500 bg-purple-50"
+        "relative group rounded-lg transition-all duration-150",
+        isDragging && "ring-2 ring-purple-500 shadow-lg",
+        isDropTarget && "ring-2 ring-purple-500 bg-purple-50 shadow-md"
       )}
       {...attributes}
       {...listeners}
