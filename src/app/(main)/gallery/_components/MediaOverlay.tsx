@@ -288,7 +288,14 @@ export function MediaOverlay({
                     : "No comments"
                 }
                 icon={
-                  <div className="relative">
+                  <div
+                    className="relative"
+                    onClick={() => {
+                      if (onEditClick) {
+                        onEditClick(item);
+                      }
+                    }}
+                  >
                     <MessageCircle
                       className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} text-white`}
                     />
