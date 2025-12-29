@@ -252,7 +252,7 @@ export function SortableMediaItem({
         <MediaOverlay
           item={item}
           isSelected={isSelected}
-          isHovered={isHovered}
+          isHovered={true}
           isMediaSelectDialog={isMediaSelectDialog}
           onSelect={onSelect}
           isAlreadySelected={isAlreadySelected}
