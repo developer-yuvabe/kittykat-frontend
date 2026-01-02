@@ -59,8 +59,7 @@ export function SortableMediaGrid({
   const { activeId, activeDragData } = useGalleryDnd();
 
   // Filter items for multi-select drag:
-  // When reordering multiple items, we hide all selected items EXCEPT the one being dragged.
-  // This causes the grid to reflow, allowing the user to place the entire group as a single unit.
+
   const visibleItems = useMemo(() => {
     if (
       isDraggable &&

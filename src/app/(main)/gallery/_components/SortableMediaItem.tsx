@@ -82,7 +82,6 @@ export function SortableMediaItem({
   // Determine if this item should be draggable (for any purpose - reorder or move)
   const canDrag = (enableDragToMove || isDraggable) && !isMediaSelectDialog;
 
-  // Use @dnd-kit/sortable hook
   const {
     attributes,
     listeners,

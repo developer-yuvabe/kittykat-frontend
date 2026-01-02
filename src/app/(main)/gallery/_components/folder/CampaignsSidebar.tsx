@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore } from "@/store/brand.store";
-import { cn } from "@/lib/utils";
 import {
   deleteCampaign,
   updateCampaign,
@@ -39,7 +38,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
+import { DroppableSectionHeader } from "./CampaignDroppableSectionHeader";
 
 interface CampaignsSidebarProps {
   selectedBrandId: string | null;
@@ -60,37 +59,6 @@ interface CampaignsSidebarProps {
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
-}
-
-// Droppable section header component
-function DroppableSectionHeader({
-  section,
-  label,
-  count,
-  className,
-}: {
-  section: "active" | "archived";
-  label: string;
-  count: number;
-  className?: string;
-}) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `section-${section}`,
-    data: {
-      type: "SECTION",
-      id: section,
-      accepts: ["CAMPAIGN"],
-    },
-  });
-
-  return (
-    <span
-      ref={setNodeRef}
-      className={cn("flex-1", isOver && "text-purple-600 font-bold", className)}
-    >
-      {label} ({count})
-    </span>
-  );
 }
 
 export function CampaignsSidebar({
