@@ -7,17 +7,17 @@ import { useConceptVisualStore } from "@/store/concept-visual.store";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Masonry from "react-masonry-css";
 import { SortableMediaItem } from "./SortableMediaItem";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
-import { useGalleryDnd } from "./GalleryDndContext";
+import { useGalleryDnd } from "@/contexts/GalleryDndContext";
+import { DragItemEnum } from "@/types/gallery-dnd.types";
 
 interface SortableMediaGridProps {
   selectedItems: string[];
   onSelect: (id: string, selected: boolean, shiftKey?: boolean) => void;
-  onClearSelection?: () => void;
   isMediaSelectDialog?: boolean;
   isMultiSelect?: boolean;
   inSelectionGalleryIds?: string[];
@@ -30,7 +30,6 @@ interface SortableMediaGridProps {
 export function SortableMediaGrid({
   selectedItems,
   onSelect,
-  onClearSelection,
   isMediaSelectDialog = false,
   isMultiSelect,
   inSelectionGalleryIds,
@@ -64,9 +63,9 @@ export function SortableMediaGrid({
   // This causes the grid to reflow, allowing the user to place the entire group as a single unit.
   const visibleItems = useMemo(() => {
     if (
-      isDraggable && 
-      activeId && 
-      activeDragData?.type === "MEDIA_ITEMS_MULTI"
+      isDraggable &&
+      activeId &&
+      activeDragData?.type === DragItemEnum.MediaItemsMulti
     ) {
       return galleryItems.filter((item) => {
         // Keep the item if it's NOT selected
@@ -79,7 +78,10 @@ export function SortableMediaGrid({
   }, [galleryItems, activeId, activeDragData, isDraggable, selectedItems]);
 
   // Get item IDs for SortableContext from visible items
-  const itemIds = useMemo(() => visibleItems.map((item) => item.id), [visibleItems]);
+  const itemIds = useMemo(
+    () => visibleItems.map((item) => item.id),
+    [visibleItems]
+  );
 
   const breakpointColumnsObj = {
     default:

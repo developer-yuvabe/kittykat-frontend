@@ -23,7 +23,13 @@ import { Campaign } from "@/types/user.types";
 import { useSortable } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useGalleryDnd } from "../GalleryDndContext";
+import { useGalleryDnd } from "@/contexts/GalleryDndContext";
+import {
+  useCampaignDroppable,
+  createCampaignSortableData,
+  isCampaignDropTarget,
+  combineRefs,
+} from "@/lib/gallery-dnd.utils";
 
 interface CampaignSidebarRowProps {
   campaign: Campaign;
@@ -65,7 +71,7 @@ export function CampaignSidebarRow({
 }: CampaignSidebarRowProps) {
   // Get overId from context to detect when media is being dragged over this campaign
   const { overId, activeDragData } = useGalleryDnd();
-  
+
   // Use sortable for campaign reordering
   const {
     attributes,
@@ -77,33 +83,25 @@ export function CampaignSidebarRow({
   } = useSortable({
     id: campaign.id,
     disabled: isDragDisabled,
-    data: {
-      type: "CAMPAIGN",
-      campaignId: campaign.id,
-      isArchived: campaign.is_archived || false,
-    },
+    data: createCampaignSortableData(
+      campaign.id,
+      campaign.is_archived || false
+    ),
   });
+
+  const droppableConfig = useCampaignDroppable(campaign.id);
 
   // Use droppable for receiving media items
-  const { setNodeRef: setDroppableRef, isOver: isDroppableOver } = useDroppable({
-    id: `campaign-${campaign.id}`,
-    data: {
-      type: "CAMPAIGN",
-      id: campaign.id,
-      accepts: ["MEDIA_ITEM", "MEDIA_ITEMS_MULTI"],
-    },
-  });
+  const { setNodeRef: setDroppableRef, isOver: isDroppableOver } =
+    useDroppable(droppableConfig);
 
-  // Combine refs
-  const combinedRef = (node: HTMLDivElement | null) => {
-    setSortableRef(node);
-    setDroppableRef(node);
-  };
-
-  // Check if this campaign is the drop target (either via sortable or droppable ID)
-  const isMediaDrag = activeDragData?.type === "MEDIA_ITEM" || activeDragData?.type === "MEDIA_ITEMS_MULTI";
-  const isDropTarget = isDroppableOver || 
-    (isMediaDrag && (overId === campaign.id || overId === `campaign-${campaign.id}`));
+  // Check if this campaign is the drop target
+  const isDropTarget = isCampaignDropTarget(
+    campaign.id,
+    overId,
+    activeDragData,
+    isDroppableOver
+  );
 
   // Style for drag transform
   const style = {
@@ -115,7 +113,7 @@ export function CampaignSidebarRow({
 
   return (
     <div
-      ref={combinedRef}
+      ref={combineRefs(setSortableRef, setDroppableRef)}
       style={style}
       key={`${selectedBrandId}-${campaign.id}`}
       className={cn(

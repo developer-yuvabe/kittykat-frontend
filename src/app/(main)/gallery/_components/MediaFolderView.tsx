@@ -16,7 +16,7 @@ import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import TopicsGrid from "./PexelsTopicGrid";
-import { GalleryDndProvider } from "./GalleryDndContext";
+import { GalleryDndProvider } from "@/contexts/GalleryDndContext";
 import { toast } from "sonner";
 import { patchCampaign, updateCampaign } from "@/services/api/brand.service";
 import { useQueryClient } from "@tanstack/react-query";
@@ -123,7 +123,8 @@ export function MediaFolderView({
   const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
 
   // Get campaigns for drag overlay
-  const campaigns = brands.find((b) => b.id === selectedBrandId)?.campaigns || [];
+  const campaigns =
+    brands.find((b) => b.id === selectedBrandId)?.campaigns || [];
 
   // DnD Callbacks
   const handleMoveMediaToCampaign = useCallback(
@@ -297,7 +298,9 @@ export function MediaFolderView({
       await execute({
         title: campaign.title,
         undoSeconds: 3,
-        loadingMessage: `${shouldArchive ? "Archiving" : "Unarchiving"} "${campaign.title}"...`,
+        loadingMessage: `${shouldArchive ? "Archiving" : "Unarchiving"} "${
+          campaign.title
+        }"...`,
         action: async () => {
           await updateCampaign(selectedBrandId, campaignId, {
             is_archived: shouldArchive,
@@ -307,9 +310,9 @@ export function MediaFolderView({
         successMessage: `"${campaign.title}" ${
           shouldArchive ? "archived" : "unarchived"
         } successfully.`,
-        errorMessage: `Failed to ${
-          shouldArchive ? "archive" : "unarchive"
-        } "${campaign.title}".`,
+        errorMessage: `Failed to ${shouldArchive ? "archive" : "unarchive"} "${
+          campaign.title
+        }".`,
       });
     },
     [selectedBrandId, campaigns, execute, queryClient]
@@ -504,7 +507,6 @@ export function MediaFolderView({
       galleryActions={galleryActions}
       selectedItems={selectedItems}
       setSelectedItems={setSelectedItems}
-      activeTab={activeTab}
       orderBy={orderBy}
       onMoveMediaToCampaign={handleMoveMediaToCampaign}
       onMoveMediaToTab={handleMoveMediaToTab}

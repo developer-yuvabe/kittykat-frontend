@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { DragItemEnum } from "@/types/gallery-dnd.types";
 
 // Types
 interface SortableMediaItemProps {
@@ -93,8 +94,12 @@ export function SortableMediaItem({
     id: item.id,
     disabled: !canDrag,
     data: {
-      type: isSelected && selectedItems.length > 1 ? "MEDIA_ITEMS_MULTI" : "MEDIA_ITEM",
-      itemIds: isSelected && selectedItems.length > 1 ? selectedItems : [item.id],
+      type:
+        isSelected && selectedItems.length > 1
+          ? DragItemEnum.MediaItemsMulti
+          : DragItemEnum.MediaItem,
+      itemIds:
+        isSelected && selectedItems.length > 1 ? selectedItems : [item.id],
       sourceTab: activeTab,
       sourceCampaignId: item.campaign_id || null,
     },
@@ -104,10 +109,12 @@ export function SortableMediaItem({
   // When isDraggable is false, don't apply the sortable transform (no reorder visual feedback)
   // This allows drag-to-move (campaigns/tabs) to work while preventing reorder UI effects
   const shouldApplySortableTransform = isDraggable;
-  
+
   const style = {
     // Only apply transform when reordering is enabled, otherwise items won't shift during drag
-    transform: shouldApplySortableTransform ? CSS.Transform.toString(transform) : undefined,
+    transform: shouldApplySortableTransform
+      ? CSS.Transform.toString(transform)
+      : undefined,
     transition: shouldApplySortableTransform ? transition : undefined,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1000 : undefined,

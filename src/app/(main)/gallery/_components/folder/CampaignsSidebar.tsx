@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore } from "@/store/brand.store";
 import { cn } from "@/lib/utils";
 import {
   deleteCampaign,
-  patchCampaign,
   updateCampaign,
   setCampaignCuration,
 } from "@/services/api/brand.service";
-import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
@@ -40,7 +38,6 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 
@@ -89,11 +86,7 @@ function DroppableSectionHeader({
   return (
     <span
       ref={setNodeRef}
-      className={cn(
-        "flex-1",
-        isOver && "text-purple-600 font-bold",
-        className
-      )}
+      className={cn("flex-1", isOver && "text-purple-600 font-bold", className)}
     >
       {label} ({count})
     </span>
@@ -104,13 +97,11 @@ export function CampaignsSidebar({
   selectedBrandId,
   selectedCampaignId,
   onCampaignSelect,
-  galleryActions,
   setInitialBrandId,
   setSelectedCampaignInUrl,
   setSelectedFilters,
   hasNoBrands,
   galleryView,
-  setSelectedItems,
   isCollapsed,
   onToggleCollapsed,
 }: CampaignsSidebarProps) {
