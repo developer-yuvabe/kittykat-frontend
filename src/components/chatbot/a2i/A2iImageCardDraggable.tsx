@@ -8,11 +8,17 @@ import { type CSSProperties, memo } from "react";
 interface A2iImageCardDraggableProps {
   imageData: A2iImageCardProps;
   disableDrag?: boolean;
+  isSelected?: boolean;
+  onSelect?: (selected: boolean) => void;
+  selectionMode?: boolean;
 }
 
 const A2iImageCardDraggable = memo(function A2iImageCardDraggable({
   imageData,
   disableDrag = false,
+  isSelected,
+  onSelect,
+  selectionMode,
 }: A2iImageCardDraggableProps) {
   // Get existing ID only - no fallback generation
   const existingId = imageData.image?.id || imageData.video?.id;
@@ -53,6 +59,9 @@ const A2iImageCardDraggable = memo(function A2iImageCardDraggable({
         dragAttributes={shouldUseSortable ? attributes : undefined}
         isDragging={isDragging}
         disableDrag={!shouldUseSortable}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        selectionMode={selectionMode}
       />
     </div>
   );
