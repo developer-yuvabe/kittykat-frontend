@@ -75,7 +75,13 @@ export function MediaFolderView({
   showFilters,
   setActiveTab,
 }: MediaFolderViewProps) {
-  const { selectedBrandId, isBrandsFetched, brands } = useBrandStore();
+  const {
+    selectedBrandId,
+    isBrandsFetched,
+    brands,
+    reorderCampaigns,
+    archiveCampaign,
+  } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
   const { favorites, orderBy } = useGalleryFilterStore();
@@ -238,13 +244,16 @@ export function MediaFolderView({
     ) => {
       if (!selectedBrandId) return;
 
+      const draggedCampaign = campaigns.find((c) => c.id === campaignId);
+      if (!draggedCampaign) return;
+
+      // Optimistically update the store immediately
+      reorderCampaigns(selectedBrandId, campaignId, targetId, position);
+
       const campaignList =
         section === "active"
           ? campaigns.filter((c) => !c.is_archived)
           : campaigns.filter((c) => c.is_archived);
-
-      const draggedCampaign = campaigns.find((c) => c.id === campaignId);
-      if (!draggedCampaign) return;
 
       const draggedIndex = campaignList.findIndex((c) => c.id === campaignId);
       const targetIndex = campaignList.findIndex((c) => c.id === targetId);
@@ -285,7 +294,7 @@ export function MediaFolderView({
         errorMessage: "Failed to reorder campaigns",
       });
     },
-    [selectedBrandId, campaigns, execute, queryClient]
+    [selectedBrandId, campaigns, execute, queryClient, reorderCampaigns]
   );
 
   const handleArchiveCampaign = useCallback(
@@ -294,6 +303,9 @@ export function MediaFolderView({
 
       const campaign = campaigns.find((c) => c.id === campaignId);
       if (!campaign) return;
+
+      // Optimistically update the store immediately
+      archiveCampaign(selectedBrandId, campaignId, shouldArchive);
 
       await execute({
         title: campaign.title,
@@ -315,7 +327,7 @@ export function MediaFolderView({
         }".`,
       });
     },
-    [selectedBrandId, campaigns, execute, queryClient]
+    [selectedBrandId, campaigns, execute, queryClient, archiveCampaign]
   );
 
   // Render content wrapped in DnD provider

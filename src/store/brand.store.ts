@@ -63,6 +63,19 @@ type Store = {
   defaultCampaignId: string | null;
   setDefaultCampaignId: (campaignId: string | null) => void;
   getDefaultCampaignId: () => string | null;
+  // Optimistically reorder campaigns
+  reorderCampaigns: (
+    brandId: string,
+    campaignId: string,
+    targetId: string,
+    position: "before" | "after"
+  ) => void;
+  // Optimistically archive/unarchive campaign
+  archiveCampaign: (
+    brandId: string,
+    campaignId: string,
+    shouldArchive: boolean
+  ) => void;
 };
 
 export const useBrandStore = create<Store>((set, get) => ({
@@ -331,5 +344,72 @@ export const useBrandStore = create<Store>((set, get) => ({
   getDefaultCampaignId: () => {
     const state = get();
     return state.defaultCampaignId ?? null;
+  },
+
+  reorderCampaigns: (
+    brandId: string,
+    campaignId: string,
+    targetId: string,
+    position: "before" | "after"
+  ) => {
+    set((state) => {
+      const updatedBrands = state.brands.map((brand) => {
+        if (brand.id !== brandId) return brand;
+
+        const campaigns = [...brand.campaigns];
+        const dragIndex = campaigns.findIndex((c) => c.id === campaignId);
+        const targetIndex = campaigns.findIndex((c) => c.id === targetId);
+
+        if (dragIndex === -1 || targetIndex === -1) return brand;
+
+        // Remove the dragged campaign
+        const [draggedCampaign] = campaigns.splice(dragIndex, 1);
+
+        // Calculate new insert position
+        let insertIndex = targetIndex;
+        if (dragIndex < targetIndex) {
+          // If dragging down, adjust for the removed item
+          insertIndex = position === "before" ? targetIndex - 1 : targetIndex;
+        } else {
+          // If dragging up
+          insertIndex = position === "before" ? targetIndex : targetIndex + 1;
+        }
+
+        // Insert at new position
+        campaigns.splice(insertIndex, 0, draggedCampaign);
+
+        // Update positions
+        const updatedCampaigns = campaigns.map((campaign, index) => ({
+          ...campaign,
+          position: index,
+        }));
+
+        return { ...brand, campaigns: updatedCampaigns };
+      });
+
+      return { brands: updatedBrands };
+    });
+  },
+
+  archiveCampaign: (
+    brandId: string,
+    campaignId: string,
+    shouldArchive: boolean
+  ) => {
+    set((state) => {
+      const updatedBrands = state.brands.map((brand) => {
+        if (brand.id !== brandId) return brand;
+
+        const updatedCampaigns = brand.campaigns.map((campaign) =>
+          campaign.id === campaignId
+            ? { ...campaign, is_archived: shouldArchive }
+            : campaign
+        );
+
+        return { ...brand, campaigns: updatedCampaigns };
+      });
+
+      return { brands: updatedBrands };
+    });
   },
 }));

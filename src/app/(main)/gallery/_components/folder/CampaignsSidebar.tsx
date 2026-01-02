@@ -74,7 +74,7 @@ export function CampaignsSidebar({
   onToggleCollapsed,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { brands } = useBrandStore();
+  const { brands, archiveCampaign } = useBrandStore();
   const { setSelectedCampaignId } = useBrandStore();
   const { orderBy, setOrderBy } = useGalleryFilterStore();
   const queryClient = useQueryClient();
@@ -287,6 +287,9 @@ export function CampaignsSidebar({
       isArchived: false,
       isProcessing: false,
     });
+
+    // Optimistically update the store immediately
+    archiveCampaign(selectedBrandId, campaignId, shouldBeArchived);
 
     try {
       await execute({

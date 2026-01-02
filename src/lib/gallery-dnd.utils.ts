@@ -197,6 +197,43 @@ export function combineRefs<T>(
   };
 }
 
+/**
+ * Create campaign reorder handler with optimistic updates
+ */
+export function createCampaignReorderHandler(
+  brandId: string,
+  optimisticUpdate: (
+    campaignId: string,
+    targetId: string,
+    position: "before" | "after"
+  ) => void,
+  apiUpdate: (
+    campaignId: string,
+    targetId: string,
+    position: "before" | "after",
+    section: "active" | "archived"
+  ) => Promise<void>
+) {
+  return async (
+    campaignId: string,
+    targetId: string,
+    position: "before" | "after",
+    section: "active" | "archived"
+  ) => {
+    // Optimistically update the store first
+    optimisticUpdate(campaignId, targetId, position);
+
+    // Then persist to API
+    try {
+      await apiUpdate(campaignId, targetId, position, section);
+    } catch (error) {
+      // On error, the query will be invalidated and refetched
+      console.error("Failed to reorder campaigns:", error);
+      throw error;
+    }
+  };
+}
+
 // ============================================================================
 // Droppable Configuration Hooks
 // ============================================================================
