@@ -22,7 +22,7 @@ export function MediaDragOverlay({
             <div
               key={item.id}
               className={`
-                absolute rounded-lg overflow-hidden
+                absolute rounded-lg 
                 border-2 border-purple-500 bg-white shadow-2xl
                 w-[120px] h-[120px]
                 ${index === 0 ? "top-0 left-0 z-30" : ""}
