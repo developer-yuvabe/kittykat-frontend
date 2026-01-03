@@ -69,40 +69,31 @@ export function A2iBulkActionBar({
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      const deletePromises = selectedItems.map(async (item) => {
-        // Delete the A2I generation first
-        if (item.video) {
-          await deleteA2iVideo(selectedBrandId!, item.generationId);
-        } else {
-          await deleteA2iImage(
-            selectedBrandId!,
-            item.generationId,
-            item.image?.id ?? null
-          );
-        }
+      await Promise.all(
+        selectedItems.map((item) =>
+          item.video
+            ? deleteA2iVideo(selectedBrandId!, item.generationId)
+            : deleteA2iImage(
+                selectedBrandId!,
+                item.generationId,
+                item.image?.id ?? null
+              )
+        )
+      );
 
-        // If there's a corresponding gallery item, delete it as well
-        const itemId = item.video?.id ?? item.image?.id;
-        if (itemId) {
-          try {
-            galleryActions.deleteItem(itemId);
-          } catch (galleryError) {
-            console.warn(
-              "Failed to delete gallery item, but A2I generation was deleted:",
-              galleryError
-            );
-          }
-        }
-      });
+      const galleryItemIds = selectedItems
+        .map((item) => item.video?.id ?? item.image?.id)
+        .filter(Boolean) as string[];
 
-      await Promise.all(deletePromises);
+      if (galleryItemIds.length) {
+        await galleryActions.bulkDelete(galleryItemIds);
+      }
 
-      toast.success(`${selectedCount} item(s) deleted successfully!`);
-      onDeleteSuccess();
       onUnselectAll();
-    } catch (error) {
-      console.error("Bulk delete error:", error);
-      toast.error("Failed to delete some items. Please try again.");
+      onDeleteSuccess();
+    } catch (err) {
+      console.error("Bulk delete failed", err);
+      toast.error("Failed to delete some items");
     } finally {
       setIsDeleting(false);
       setIsDialogOpen(false);
