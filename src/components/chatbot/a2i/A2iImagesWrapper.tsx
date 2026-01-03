@@ -282,7 +282,12 @@ export const A2iImagesWrapper = ({
   }, [scrollTo]);
   const handleSelect = useCallback(
     (item: A2iImageCardProps, selected: boolean) => {
-      const itemId = item.video?.id ?? item.image?.id;
+      // For failed generation use generationId
+      const itemId =
+        item.status === "failed"
+          ? item.generationId
+          : item.video?.id ?? item.image?.id;
+
       if (!itemId) return;
 
       setSelectedItems((prev) => {
@@ -300,11 +305,13 @@ export const A2iImagesWrapper = ({
 
   const handleSelectAll = useCallback(() => {
     const allIds = displayedItems
-      .filter(
-        (item) =>
-          item.status === "completed" && (item.image?.id || item.video?.id)
-      )
-      .map((item) => item.video?.id ?? item.image?.id)
+      .filter((item) => item.status === "completed" || item.status === "failed")
+      .map((item) => {
+        // Use generationId for failed
+        return item.status === "failed"
+          ? item.generationId
+          : item.video?.id ?? item.image?.id;
+      })
       .filter((id): id is string => id !== undefined && id !== null);
     setSelectedItems(new Set(allIds));
   }, [displayedItems]);
@@ -327,7 +334,10 @@ export const A2iImagesWrapper = ({
   // Get selected items data
   const selectedItemsData = useMemo(() => {
     return displayedItems.filter((item) => {
-      const itemId = item.video?.id ?? item.image?.id;
+      const itemId =
+        item.status === "failed"
+          ? item.generationId
+          : item.video?.id ?? item.image?.id;
       return itemId && selectedItems.has(itemId);
     });
   }, [displayedItems, selectedItems]);
@@ -340,21 +350,25 @@ export const A2iImagesWrapper = ({
       context={contextValue}
       ref={formRef}
       content={
-        <div className="flex flex-col gap-4 h-full">
-          {/* Form Section - Above */}
-          <div className="flex-shrink-0" ref={inputContainerRef}>
-            {!isModelsFetched ? (
-              <A2iImageInputLoader />
-            ) : (
-              <A2iImageInput
-                referenceMoodboardId={referenceMoodboardId}
-                currentCampaign={currentCampaign}
-              />
-            )}
-          </div>
-          {/* Bulk Action Bar - Appears when items selected */}
-          {selectionMode && (
-            <div className="flex-shrink-0">
+        <div className="flex flex-col h-full">
+          <div className="flex-shrink-0">
+            {/* Form Section */}
+            <div
+              ref={inputContainerRef}
+              className={selectionMode ? "" : "mb-4"}
+            >
+              {!isModelsFetched ? (
+                <A2iImageInputLoader />
+              ) : (
+                <A2iImageInput
+                  referenceMoodboardId={referenceMoodboardId}
+                  currentCampaign={currentCampaign}
+                  selectionMode={selectionMode}
+                />
+              )}
+            </div>
+            {/* Bulk Action Bar - Appears when items selected */}
+            {selectionMode && (
               <A2iBulkActions
                 selectedItems={selectedItemsData}
                 onUnselectAll={handleUnselectAll}
@@ -365,8 +379,8 @@ export const A2iImagesWrapper = ({
                 }}
                 brandName={brandName}
               />
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Images Grid Section - Below */}
           <div className="flex-1 bg-muted rounded-md max-h-[520px] overflow-y-scroll">
@@ -394,7 +408,10 @@ export const A2iImagesWrapper = ({
                     .map((image) => {
                       const existingId = getExistingId(image);
                       const trackingId = getItemTrackingId(image);
-                      const itemId = image.video?.id ?? image.image?.id;
+                      const itemId =
+                        image.status === "failed"
+                          ? image.generationId
+                          : image.video?.id ?? image.image?.id;
                       const isSelected = itemId
                         ? selectedItems.has(itemId)
                         : false;

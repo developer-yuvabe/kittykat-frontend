@@ -11,6 +11,7 @@ import { deleteA2iImage } from "@/services/api/a2i.service";
 import { deleteA2iVideo } from "@/services/api/video-gen.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useGalleryQuery, ITEMS_PER_PAGE } from "@/hooks/useGallery";
+import { cn } from "@/lib/utils";
 
 interface A2iBulkActionBarProps {
   selectedItems: A2iImageCardProps[];
@@ -52,6 +53,12 @@ export function A2iBulkActionBar({
   );
 
   const selectedCount = selectedItems.length;
+
+  // Check if there are any downloadable items (completed with image/video)
+  const hasDownloadableItems = selectedItems.some(
+    (item) =>
+      item.status === "completed" && (item.image?.url || item.video?.url)
+  );
 
   const handleBulkDeleteClick = () => {
     if (selectedItems.length > 0) {
@@ -230,7 +237,10 @@ export function A2iBulkActionBar({
               variant="ghost"
               size="icon"
               onClick={handleBulkDownload}
-              disabled={isDownloading}
+              disabled={isDownloading || !hasDownloadableItems}
+              className={cn(
+                !hasDownloadableItems && "opacity-50 cursor-not-allowed"
+              )}
             >
               <Download className="h-4 w-4" />
             </Button>

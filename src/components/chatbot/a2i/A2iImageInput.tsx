@@ -81,9 +81,11 @@ import { useResizeObserver } from "@/hooks/useResizeObserver";
 const A2iImageInput = ({
   referenceMoodboardId,
   currentCampaign,
+  selectionMode = false,
 }: {
   referenceMoodboardId: ThreadA2iImage["reference_moodboard_id"];
   currentCampaign: ThreadCampaign | null;
+  selectionMode?: boolean;
 }) => {
   const { parameters, setParameters } = useMetadataActionsStore();
   const { selectedCampaignId, defaultCampaignId } = useBrandStore();
@@ -1209,7 +1211,10 @@ const A2iImageInput = ({
 
   return (
     <div
-      className="flex flex-col w-full border resize-none rounded-2xl bottom-8 h-max scrollbar overflow-hidden pb-4 bg-"
+      className={cn(
+        "flex flex-col w-full border resize-none bottom-8 h-max scrollbar overflow-hidden pb-4",
+        selectionMode ? "rounded-t-2xl" : "rounded-2xl"
+      )}
       id="concept-visual-playground"
     >
       <div className="flex flex-row w-full p- relative">

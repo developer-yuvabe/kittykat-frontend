@@ -420,7 +420,8 @@ const A2iImageCard = ({
     >
       {/* Selection Checkbox - Top Left */}
 
-      {status === "completed" && (image || video) && (
+      {((status === "completed" && (image || video)) ||
+        status === "failed") && (
         <div
           className={cn(
             "absolute top-2 left-2 z-40 transition-opacity",
@@ -616,6 +617,12 @@ const A2iImageCard = ({
               <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground absolute bottom-4">
                 NSFW detected
               </Badge>
+            )}
+            {status === "failed" && selectionMode && (
+              <div
+                className="absolute inset-0 cursor-pointer z-10"
+                onClick={handleCardClick}
+              />
             )}
           </div>
         </>
