@@ -1,3 +1,4 @@
+import { PromptMode, VideoPreset } from "@/types/a2i-video.types";
 import { create } from "zustand";
 
 type ConceptMode = "image_generator" | "image_editor" | "video_generator";
@@ -31,6 +32,15 @@ type Store = {
   addOtherFrame: (frame: OtherFrames) => void;
   removeOtherFrame: (zone: "first" | "last") => void;
   clearOtherFrames: () => void;
+
+  preset: VideoPreset | null;
+  setPreset: (preset: VideoPreset | null) => void;
+
+  promptMode: PromptMode;
+  setPromptMode: (mode: PromptMode) => void;
+
+  needsRebuild: boolean;
+  setNeedsRebuild: (value: boolean) => void;
 };
 
 export const useA2iStore = create<Store>()((set) => {
@@ -52,8 +62,8 @@ export const useA2iStore = create<Store>()((set) => {
     startFrame: null,
     endFrame: null,
 
-    setStartFrame: (value) => set({ startFrame: value }),
-    setEndFrame: (value) => set({ endFrame: value }),
+    setStartFrame: (value) => set({ startFrame: value, needsRebuild: true }),
+    setEndFrame: (value) => set({ endFrame: value, needsRebuild: true }),
 
     otherFrames: [],
     addOtherFrame: (frame) =>
@@ -75,5 +85,21 @@ export const useA2iStore = create<Store>()((set) => {
     shoudlClearPromptOnMetdaDataActions: false,
     setShouldClearPromptOnMetadataActions: (value) =>
       set({ shoudlClearPromptOnMetdaDataActions: value }),
+
+    preset: null,
+    setPreset: (preset) =>
+      set({
+        preset,
+        needsRebuild: true,
+      }),
+
+    promptMode: "manual",
+    setPromptMode: (mode) =>
+      set({
+        promptMode: mode,
+      }),
+
+    needsRebuild: false,
+    setNeedsRebuild: (value) => set({ needsRebuild: value }),
   };
 });
