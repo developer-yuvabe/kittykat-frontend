@@ -1236,7 +1236,7 @@ const A2iImageInput = ({
       toast.info("Video prompt is already enhanced.");
       return;
     }
-    const values = formInstance.getValues();
+    const prompt = formInstance.getValues("prompt");
 
     const payload = {
       first_frame: startFrame,
@@ -1250,7 +1250,7 @@ const A2iImageInput = ({
           }
         : null,
       prompt_mode: "enhanced",
-      prompt: values.prompt ?? null,
+      prompt: prompt ?? null,
     };
 
     const toastId = toast.loading("Enhancing video prompt...");

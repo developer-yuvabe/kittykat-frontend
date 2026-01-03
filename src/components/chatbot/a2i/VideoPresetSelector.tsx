@@ -8,9 +8,10 @@ import {
   SelectContent,
   SelectValue,
 } from "@/components/ui/select";
-import { VideoPreset, VIDEO_PRESETS } from "@/types/a2i-video.types";
+import { VideoPreset } from "@/types/a2i-video.types";
 import { VideoPresetIcon } from "@/components/ui/custom-icon";
 import { useState } from "react";
+import { VIDEO_PRESETS } from "@/lib/constants";
 
 interface VideoPresetSelectorProps {
   value?: VideoPreset | null;
