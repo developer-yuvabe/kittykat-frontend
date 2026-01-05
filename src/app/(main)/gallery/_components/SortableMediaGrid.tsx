@@ -25,6 +25,7 @@ interface SortableMediaGridProps {
   galleryActions: GalleryActions;
   enableDragToMove?: boolean; // Enable drag-to-move functionality
   activeTab?: string;
+  onClearSelection?: () => void;
 }
 
 export function SortableMediaGrid({
