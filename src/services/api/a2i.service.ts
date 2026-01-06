@@ -101,7 +101,6 @@ export const updateA2iRefernceMoodboard = async (
 // Product Extraction Types
 export interface ProductExtractionRequest {
   image_ids: string[];
-  products: string[];
 }
 
 export interface ProductAttributes {
