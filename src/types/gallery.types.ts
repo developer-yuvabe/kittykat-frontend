@@ -105,6 +105,7 @@ export type GalleryItem = {
 
   // 📣 Campaign & Brand Info
   campaign_id?: string;
+  sub_folder_id?: string;
   campaign_phase?: string;
   usage_context?: string;
   last_used_in_campaign?: string;

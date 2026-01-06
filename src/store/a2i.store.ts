@@ -31,6 +31,10 @@ type Store = {
   addOtherFrame: (frame: OtherFrames) => void;
   removeOtherFrame: (zone: "first" | "last") => void;
   clearOtherFrames: () => void;
+
+  // Folder selection for CVG save destination and asset filtering
+  selectedFolderId: string | null;
+  setSelectedFolderId: (folderId: string | null) => void;
 };
 
 export const useA2iStore = create<Store>()((set) => {
@@ -75,5 +79,9 @@ export const useA2iStore = create<Store>()((set) => {
     shoudlClearPromptOnMetdaDataActions: false,
     setShouldClearPromptOnMetadataActions: (value) =>
       set({ shoudlClearPromptOnMetdaDataActions: value }),
+
+    // Folder selection defaults to null (will be set to campaign folder on first render)
+    selectedFolderId: null,
+    setSelectedFolderId: (folderId) => set({ selectedFolderId: folderId }),
   };
 });

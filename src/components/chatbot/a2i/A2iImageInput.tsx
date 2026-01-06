@@ -77,6 +77,7 @@ import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import VideoFrameSelector from "./VideoFrameSelector";
 import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
+import FolderSelector from "./FolderSelector";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -88,7 +89,8 @@ const A2iImageInput = ({
   selectionMode?: boolean;
 }) => {
   const { parameters, setParameters } = useMetadataActionsStore();
-  const { selectedCampaignId, defaultCampaignId } = useBrandStore();
+  const { selectedCampaignId, defaultCampaignId, selectedBrandId } =
+    useBrandStore();
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
   const [isVideoFramesPopoverOpen, setIsVideoFramesPopoverOpen] =
@@ -105,7 +107,16 @@ const A2iImageInput = ({
     setBaseImageUrl,
     shoudlClearPromptOnMetdaDataActions,
     setShouldClearPromptOnMetadataActions,
+    selectedFolderId,
+    setSelectedFolderId,
   } = useA2iStore();
+
+  // Initialize folder selection to campaign folder if not set
+  useEffect(() => {
+    if (!selectedFolderId && selectedCampaignId) {
+      setSelectedFolderId(selectedCampaignId);
+    }
+  }, [selectedFolderId, selectedCampaignId, setSelectedFolderId]);
 
   const {
     selectedImageGenerationModel,
@@ -215,7 +226,6 @@ const A2iImageInput = ({
         ? !!formInstance.getValues(firstFrameParam?.id ?? "")
         : true,
     });
-  const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
     useA2iStore();
   const { user, setUser } = useUserStore();
@@ -817,7 +827,7 @@ const A2iImageInput = ({
       if (conceptVisualGeneratorMode === "image_generator") {
         await generateImage(selectedBrandId!, {
           ...data,
-          campaign_id: currentCampaign?.id || null,
+          campaign_id: selectedFolderId || currentCampaign?.id || null,
           enhance_prompt_for_product:
             isMagicEnabled && productReference.length > 0,
           product_reference_images: productReference,
@@ -826,7 +836,7 @@ const A2iImageInput = ({
       } else if (conceptVisualGeneratorMode === "image_editor") {
         await remixImageService(
           selectedBrandId!,
-          selectedCampaignId || defaultCampaignId,
+          selectedFolderId || selectedCampaignId || defaultCampaignId,
           data,
           null,
           productReference,
@@ -836,7 +846,7 @@ const A2iImageInput = ({
       } else if (conceptVisualGeneratorMode === "video_generator") {
         await videoGenerationService(selectedBrandId!, {
           ...data,
-          campaign_id: currentCampaign?.id || null,
+          campaign_id: selectedFolderId || currentCampaign?.id || null,
           team_id: user?.active_team_id,
         });
       }
@@ -1226,7 +1236,16 @@ const A2iImageInput = ({
               formInstance.handleSubmit(onSubmit)();
             }}
           >
-            <div className="absolute top- right-3 flex gap-1">
+            <div className="absolute top- right-3 flex gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-[#6e7787] whitespace-nowrap">
+                  Save to:
+                </span>
+                <FolderSelector
+                  selectedFolderId={selectedFolderId}
+                  onFolderSelect={setSelectedFolderId}
+                />
+              </div>
               <TooltipButton
                 tooltip="Keep prompt and reference images"
                 icon={
