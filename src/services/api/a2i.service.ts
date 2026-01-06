@@ -144,11 +144,11 @@ export interface ImageResult {
 }
 
 export interface ProductExtractionResponse {
-  success: boolean;
-  batch_id?: string;
-  total_images_processed: number;
-  total_products_extracted: number;
-  image_results: ImageResult[];
+  message: string;
+  queue_item_id: string;
+  message_ids: string[];
+  total_images: number;
+  brand_id: string;
 }
 
 export const extractProducts = async (

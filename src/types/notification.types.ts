@@ -15,9 +15,3 @@ export interface BrandNotificationGroup {
   assets: AssetNotificationItem[];
 }
 
-export interface ProductBatchNotificationItem {
-  batch_id: string;
-  brand_id: string;
-  brand_name: string;
-  created_at: string;
-}
