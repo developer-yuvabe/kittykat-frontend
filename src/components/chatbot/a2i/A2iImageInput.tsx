@@ -70,7 +70,10 @@ import { useGalleryQuery } from "@/hooks/useGallery";
 import { useReferenceImagesStore } from "@/store/reference-image.store";
 import { GalleryItem } from "@/types/gallery.types";
 import { Select, SelectTrigger } from "@/components/ui/select";
-import { videoGenerationService } from "@/services/api/video-gen.service";
+import {
+  enhanceVideoPrompt,
+  videoGenerationService,
+} from "@/services/api/video-gen.service";
 import { remixImageService } from "@/services/api/remix.service";
 import { BaseImageUploadArea } from "./BaseImageUploadArea";
 import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
@@ -78,6 +81,7 @@ import VideoFrameSelector from "./VideoFrameSelector";
 import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import FolderSelector from "./FolderSelector";
+import { VideoPresetSelector } from "./VideoPresetSelector";
 
 const A2iImageInput = ({
   referenceMoodboardId,
@@ -109,6 +113,12 @@ const A2iImageInput = ({
     setShouldClearPromptOnMetadataActions,
     selectedFolderId,
     setSelectedFolderId,
+    preset,
+    setPreset,
+    promptMode,
+    setPromptMode,
+    needsRebuild,
+    setNeedsRebuild,
   } = useA2iStore();
 
   // Initialize folder selection to campaign folder if not set
@@ -175,6 +185,8 @@ const A2iImageInput = ({
     formKey,
     selectedModel: currentModel,
   });
+
+  const [isPresetPromptEnhancing, setIsPresetPromptEnhancing] = useState(false);
 
   const {
     referenceImagesModelInfo,
@@ -328,6 +340,10 @@ const A2iImageInput = ({
     setReferencePopoverTab(tab);
     setIsReferencePopoverOpen(true);
   };
+
+  useEffect(() => {
+    setNeedsRebuild(true);
+  }, [selectedBrandId, selectedCampaignId]);
 
   function clearPromptAndReferences() {
     formInstance.setValue("prompt", "", { shouldValidate: true });
@@ -848,6 +864,14 @@ const A2iImageInput = ({
           ...data,
           campaign_id: selectedFolderId || currentCampaign?.id || null,
           team_id: user?.active_team_id,
+          prompt_mode: promptMode,
+          preset_config: preset
+            ? {
+                id: preset.id,
+                technique: preset.technique,
+                shot_count: preset.shotCount ?? 1,
+              }
+            : null,
         });
       }
 
@@ -1219,6 +1243,59 @@ const A2iImageInput = ({
     }
   };
 
+  const handleVideoEnhancePrompt = async () => {
+    if (promptMode === "enhanced" && !needsRebuild) {
+      toast.info("Video prompt is already enhanced.");
+      return;
+    }
+    const prompt = formInstance.getValues("prompt");
+
+    const payload = {
+      first_frame: startFrame,
+      last_frame: endFrame,
+      campaign_id: selectedCampaignId,
+      preset_config: preset
+        ? {
+            id: preset.id,
+            technique: preset.technique,
+            shot_count: preset.shotCount ?? 1,
+          }
+        : null,
+      prompt_mode: "enhanced",
+      prompt: prompt ?? null,
+    };
+
+    const toastId = toast.loading("Enhancing video prompt...");
+
+    try {
+      setIsPresetPromptEnhancing(true);
+
+      const response = await enhanceVideoPrompt(selectedBrandId!, payload);
+
+      setPromptMode("enhanced");
+
+      if (needsRebuild) setNeedsRebuild(false);
+
+      formInstance.setValue("prompt", response, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+
+      toast.success("Prompt enhanced successfully!", {
+        id: toastId,
+      });
+    } catch (error) {
+      console.error("Error enhancing video prompt:", error);
+
+      toast.error("Failed to enhance prompt. Please try again.", {
+        id: toastId,
+      });
+    } finally {
+      setIsPresetPromptEnhancing(false);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -1349,6 +1426,12 @@ const A2iImageInput = ({
                               }
                             }}
                             onKeyDown={(e) => {
+                              if (promptMode !== "manual") {
+                                setPromptMode("manual");
+                              }
+                              if (!needsRebuild) {
+                                setNeedsRebuild(true);
+                              }
                               if (e.key === "Enter" && e.shiftKey) {
                                 return;
                               }
@@ -1599,6 +1682,9 @@ const A2iImageInput = ({
                   }
                   isCompactMode={isCompactMode}
                 />
+                {conceptVisualGeneratorMode === "video_generator" && (
+                  <VideoPresetSelector value={preset} onChange={setPreset} />
+                )}
                 {isCompactMode ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1608,37 +1694,42 @@ const A2iImageInput = ({
                         disabled={
                           !formInstance.watch("prompt") ||
                           isEnhancingPrompt ||
+                          isPresetPromptEnhancing ||
                           conceptVisualGeneratorMode === "image_editor"
                         }
                         variant={"outline"}
                         className="border-primary text-primary flex-shrink-0"
                         onClick={() => {
                           if (!formInstance.getValues("prompt")) return;
-                          handleEnhancePrompt(undefined, {
-                            onSuccess: (data) => {
-                              formInstance.setValue("prompt", data.prompt, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                                shouldTouch: true,
-                              });
+                          if (
+                            conceptVisualGeneratorMode === "video_generator"
+                          ) {
+                            handleVideoEnhancePrompt();
+                          } else {
+                            handleEnhancePrompt(undefined, {
+                              onSuccess: (data) => {
+                                formInstance.setValue("prompt", data.prompt, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                });
 
-                              toast.success("Prompt enhanced successfully!");
-                            },
-                            onError: () => {
-                              toast.error(
-                                "Failed to enhance prompt. Please try again."
-                              );
-                            },
-                          });
+                                toast.success("Prompt enhanced successfully!");
+                              },
+                              onError: () => {
+                                toast.error(
+                                  "Failed to enhance prompt. Please try again."
+                                );
+                              },
+                            });
+                          }
                         }}
                       >
                         <WandSparkles className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {isEnhancingPrompt
-                        ? "Enhancing Prompt..."
-                        : "Enhance Prompt"}
+                      {isEnhancingPrompt ? "Enhancing Prompt..." : "Prompt"}
                     </TooltipContent>
                   </Tooltip>
                 ) : (
@@ -1647,32 +1738,37 @@ const A2iImageInput = ({
                     disabled={
                       !formInstance.watch("prompt") ||
                       isEnhancingPrompt ||
+                      isPresetPromptEnhancing ||
                       conceptVisualGeneratorMode === "image_editor"
                     }
                     variant={"outline"}
                     className="border-primary text-primary flex-shrink-0 whitespace-nowrap"
                     onClick={() => {
                       if (!formInstance.getValues("prompt")) return;
-                      handleEnhancePrompt(undefined, {
-                        onSuccess: (data) => {
-                          formInstance.setValue("prompt", data.prompt, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
+                      if (conceptVisualGeneratorMode === "video_generator") {
+                        handleVideoEnhancePrompt();
+                      } else {
+                        handleEnhancePrompt(undefined, {
+                          onSuccess: (data) => {
+                            formInstance.setValue("prompt", data.prompt, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
 
-                          toast.success("Prompt enhanced successfully!");
-                        },
-                        onError: () => {
-                          toast.error(
-                            "Failed to enhance prompt. Please try again."
-                          );
-                        },
-                      });
+                            toast.success("Prompt enhanced successfully!");
+                          },
+                          onError: () => {
+                            toast.error(
+                              "Failed to enhance prompt. Please try again."
+                            );
+                          },
+                        });
+                      }
                     }}
                   >
-                    <WandSparkles className="mr-2 h-4 w-4" />
-                    {isEnhancingPrompt ? "Enhancing..." : "Enhance"}
+                    <WandSparkles className="h-4 w-4" />
+                    {isEnhancingPrompt ? "Enhancing..." : "Prompt"}
                   </Button>
                 )}
                 <TokenGenerateButton
@@ -1683,6 +1779,7 @@ const A2iImageInput = ({
                     !formInstance.formState.isValid ||
                     formInstance.formState.isSubmitting ||
                     isEnhancingPrompt ||
+                    isPresetPromptEnhancing ||
                     !currentModel ||
                     (conceptVisualGeneratorMode === "image_editor" &&
                       !baseImageUrl)

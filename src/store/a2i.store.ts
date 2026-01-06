@@ -1,3 +1,4 @@
+import { PromptMode, VideoPreset } from "@/types/a2i-video.types";
 import { create } from "zustand";
 
 type ConceptMode = "image_generator" | "image_editor" | "video_generator";
@@ -35,6 +36,15 @@ type Store = {
   // Folder selection for CVG save destination and asset filtering
   selectedFolderId: string | null;
   setSelectedFolderId: (folderId: string | null) => void;
+
+  preset: VideoPreset | null;
+  setPreset: (preset: VideoPreset | null) => void;
+
+  promptMode: PromptMode;
+  setPromptMode: (mode: PromptMode) => void;
+
+  needsRebuild: boolean;
+  setNeedsRebuild: (value: boolean) => void;
 };
 
 export const useA2iStore = create<Store>()((set) => {
@@ -56,8 +66,8 @@ export const useA2iStore = create<Store>()((set) => {
     startFrame: null,
     endFrame: null,
 
-    setStartFrame: (value) => set({ startFrame: value }),
-    setEndFrame: (value) => set({ endFrame: value }),
+    setStartFrame: (value) => set({ startFrame: value, needsRebuild: true }),
+    setEndFrame: (value) => set({ endFrame: value, needsRebuild: true }),
 
     otherFrames: [],
     addOtherFrame: (frame) =>
@@ -83,5 +93,21 @@ export const useA2iStore = create<Store>()((set) => {
     // Folder selection defaults to null (will be set to campaign folder on first render)
     selectedFolderId: null,
     setSelectedFolderId: (folderId) => set({ selectedFolderId: folderId }),
+
+    preset: null,
+    setPreset: (preset) =>
+      set({
+        preset,
+        needsRebuild: true,
+      }),
+
+    promptMode: "manual",
+    setPromptMode: (mode) =>
+      set({
+        promptMode: mode,
+      }),
+
+    needsRebuild: false,
+    setNeedsRebuild: (value) => set({ needsRebuild: value }),
   };
 });
