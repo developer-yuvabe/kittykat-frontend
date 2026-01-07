@@ -471,7 +471,7 @@ export function CampaignsSidebar({
       />
 
       {/* Campaigns List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         <Accordion type="multiple" defaultValue={["active"]}>
           {/* Active Campaigns */}
           <AccordionItem value="active">

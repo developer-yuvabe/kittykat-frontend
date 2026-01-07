@@ -73,8 +73,6 @@ interface GallerySidebarProps {
 const systemFolders = [
   { id: "brand-uploads", label: "Brand Uploads", icon: Upload },
   { id: "moodboard", label: "Moodboards", icon: Palette },
-  { id: "showboard-media", label: "Concept Visuals", icon: Image },
-  { id: "a2i-media", label: "A2i Media", icon: Image },
   { id: "products", label: "Products", icon: Package },
   { id: "pexels", label: "Pexels", icon: Image },
 ];
@@ -402,7 +400,7 @@ export function GallerySidebar({
   }
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-[100%] min-w-[240px] max-w-[320px] w-[18vw] lg:w-[16vw] xl:w-[15vw] rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-full min-h-0 min-w-[240px] max-w-[380px] w-[18vw] lg:w-[16vw] xl:w-[18vw] rounded-sm">
       {/* Header */}
       <div className="flex flex-col px-4 gap-y-3 mt-2">
         <div className="flex justify-between items-center">
@@ -448,7 +446,7 @@ export function GallerySidebar({
       </div>
 
       {/* Main Content */}
-      <ScrollArea className="flex-1 mt-4">
+      <ScrollArea className="flex-1 min-h-0 mt-4">
         <div className="px-4 space-y-6">
           {/* System Folders Section */}
           <div>
@@ -458,6 +456,14 @@ export function GallerySidebar({
                 key="all-media"
                 onClick={() => {
                   onTabChange("all-media");
+                  onCampaignSelect("");
+                  setSelectedCampaignId(null);
+                  setSelectedSubFolderId(null);
+                  setSelectedFilters((prev) => ({
+                    ...prev,
+                    campaigns: [],
+                    sub_folders: [],
+                  }));
                 }}
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs transition-colors",
@@ -483,6 +489,14 @@ export function GallerySidebar({
                     key={folder.id}
                     onClick={() => {
                       onTabChange(folder.id);
+                      onCampaignSelect("");
+                      setSelectedCampaignId(null);
+                      setSelectedSubFolderId(null);
+                      setSelectedFilters((prev) => ({
+                        ...prev,
+                        campaigns: [],
+                        sub_folders: [],
+                      }));
                     }}
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs transition-colors",
@@ -548,12 +562,14 @@ export function GallerySidebar({
                             selectedSubFolderId={selectedSubFolderId}
                             onCampaignSelect={(campaignId, subFolderId) => {
                               onCampaignSelect(campaignId);
+                              setSelectedCampaignId(campaignId);
                               setSelectedSubFolderId(subFolderId || null);
                               setSelectedFilters((prev) => ({
                                 ...prev,
                                 campaigns: [campaignId],
                                 sub_folders: subFolderId ? [subFolderId] : [],
                               }));
+                              onTabChange("");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
                             isCountLoading={isCountLoading}
@@ -638,12 +654,14 @@ export function GallerySidebar({
                             selectedCampaignId={selectedCampaignId}
                             onCampaignSelect={(campaignId, subFolderId) => {
                               onCampaignSelect(campaignId);
+                              setSelectedCampaignId(campaignId);
                               setSelectedSubFolderId(subFolderId || null);
                               setSelectedFilters((prev) => ({
                                 ...prev,
                                 campaigns: [campaignId],
                                 sub_folders: subFolderId ? [subFolderId] : [],
                               }));
+                              onTabChange("");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
                             isCountLoading={isCountLoading}
