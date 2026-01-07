@@ -272,6 +272,7 @@ export interface BulkGalleryUploadRequest {
   brand_id: string;
   campaign_id?: string;
   moodboard_id?: string;
+  sub_folder_id?: string;
 }
 
 export interface BulkScrapeRequest {
@@ -357,8 +358,9 @@ export interface AssetCountRequest {
   // Required
   brand_id: string;
 
-  // Optional Campaign filter
+  // Optional Campaign and Subfolder filters
   campaign_id?: string;
+  sub_folder_id?: string;
 
   // Breakdown flags - control what breakdowns to include in response
   count_by_workflow_status?: boolean;
@@ -366,6 +368,7 @@ export interface AssetCountRequest {
   count_by_media_format?: boolean;
   count_by_aspect_ratio?: boolean;
   count_by_campaign?: boolean;
+  count_by_sub_folder?: boolean;
   count_with_comments?: boolean;
   count_favourites?: boolean;
 }
@@ -377,6 +380,7 @@ export interface AssetCountResponse {
   // Context
   brand_id: string;
   campaign_id?: string;
+  sub_folder_id?: string;
 
   // Total count
   total_count: number;
@@ -387,6 +391,7 @@ export interface AssetCountResponse {
   count_by_media_format?: Record<string, number>;
   count_by_aspect_ratio?: Record<string, number>;
   count_by_campaign?: Record<string, number>;
+  count_by_sub_folder?: Record<string, number>;
   count_with_comments?: number;
   count_favourites?: number;
 }

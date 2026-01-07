@@ -500,6 +500,7 @@ export function CampaignsSidebar({
                         setSelectedSubFolderId(subFolderId || null);
                       }}
                       count={countData?.count_by_campaign?.[campaign.id]}
+                      subfolderCounts={countData?.count_by_sub_folder}
                       isCountLoading={isCountLoading}
                       onRename={(id, title) =>
                         setRenameDialog({
@@ -582,6 +583,7 @@ export function CampaignsSidebar({
                         setSelectedSubFolderId(subFolderId || null);
                       }}
                       count={countData?.count_by_campaign?.[campaign.id]}
+                      subfolderCounts={countData?.count_by_sub_folder}
                       isCountLoading={isCountLoading}
                       onRename={(id, title) =>
                         setRenameDialog({

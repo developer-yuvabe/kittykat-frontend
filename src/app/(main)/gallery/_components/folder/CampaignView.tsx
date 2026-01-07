@@ -25,6 +25,7 @@ interface CampaignViewProps {
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
   selectedMoodboardId?: string;
+  selectedSubFolderId?: string | null;
   searchQuery?: string;
   favorites?: boolean;
   selectedFilters: EnhancedSelectedFilters;
@@ -49,6 +50,7 @@ export function CampaignView({
   onUploadComplete,
   addToGallery = true,
   selectedMoodboardId,
+  selectedSubFolderId,
   searchQuery = "",
   favorites = false,
   selectedFilters,
@@ -320,6 +322,7 @@ export function CampaignView({
                 }}
                 selectedBrandId={selectedBrandId}
                 selectedCampaignId={campaignId}
+                selectedSubFolderId={selectedSubFolderId}
                 selectedMoodboardId={selectedMoodboardId}
               />
             </div>

@@ -363,6 +363,7 @@ export function MediaFolderView({
                 onUploadComplete={onUploadComplete}
                 addToGallery={addToGallery}
                 selectedMoodboardId={selecteMoodboardId}
+                selectedSubFolderId={selectedSubFolderId}
                 searchQuery={searchQuery}
                 favorites={favorites}
                 selectedFilters={selectedFilters}

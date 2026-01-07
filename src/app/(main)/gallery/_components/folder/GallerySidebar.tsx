@@ -569,7 +569,7 @@ export function GallerySidebar({
                                 campaigns: [campaignId],
                                 sub_folders: subFolderId ? [subFolderId] : [],
                               }));
-                              onTabChange("");
+                              onTabChange("all-media");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
                             isCountLoading={isCountLoading}
@@ -661,7 +661,7 @@ export function GallerySidebar({
                                 campaigns: [campaignId],
                                 sub_folders: subFolderId ? [subFolderId] : [],
                               }));
-                              onTabChange("");
+                              onTabChange("all-media");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
                             isCountLoading={isCountLoading}

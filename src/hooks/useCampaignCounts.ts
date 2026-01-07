@@ -9,6 +9,7 @@ export function useCampaignCounts(brandId: string | null) {
       galleryService.getAssetCount({
         brand_id: brandId!,
         count_by_campaign: true,
+        count_by_sub_folder: true,
       }),
     enabled: !!brandId,
     staleTime: 1000 * 60 * 5, // 5 minutes
