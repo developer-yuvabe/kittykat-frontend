@@ -12,6 +12,7 @@ interface DisplayFieldProps<T extends Record<string, any>> {
   json: T;
   onValueChange: (key: keyof T, oldValue: any, value: any) => void;
   showKeyAsLabel?: boolean;
+  specialInstruction?: string;
 }
 
 export const DisplayFieldComponent = <T extends Record<string, any>>({
@@ -20,6 +21,7 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
   json,
   onValueChange,
   showKeyAsLabel = false,
+  specialInstruction,
 }: DisplayFieldProps<T>) => {
   const [title, setTitle] = React.useState<string | undefined>(initialTitle);
   const [data, setData] = React.useState<T>(json);
@@ -83,7 +85,9 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
             key={String(value)}
             label={key}
             value="None"
-            onSave={async (newVal) => handleSave(key, newVal === "None" ? null : newVal)}
+            onSave={async (newVal) =>
+              handleSave(key, newVal === "None" ? null : newVal)
+            }
             textClassName={cn("text-sm italic text-gray-400", textClassName)}
             showLabel={!title}
             isTextarea={false}
@@ -201,6 +205,7 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
       context={{
         agentId,
         data,
+        specialInstruction,
       }}
     />
   );

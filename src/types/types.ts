@@ -288,6 +288,7 @@ export interface QueueItem {
 export type Context = {
   agentId?: Agents;
   data: Record<string, any> | string;
+  specialInstruction?: string;
 };
 
 export type PaginationMeta = {

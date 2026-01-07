@@ -3,7 +3,9 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
+  InfiniteData,
 } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { galleryService } from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
@@ -13,6 +15,7 @@ import type {
   GalleryFilters,
   GalleryItem,
   GalleryItemResponse,
+  GalleryItemsListResponse,
 } from "@/types/gallery.types";
 import { toast } from "sonner";
 import { handleDownloadImage, handleDownloadVideo } from "@/lib/utils";
@@ -20,6 +23,7 @@ import { allMediaAssetSources } from "@/lib/gallery.utils";
 import { AutoFillSuggestedImage } from "@/types/moodboard.types";
 import { useMoodboardQuery } from "./useMoodboardQuery";
 import { useBrandStore } from "@/store/brand.store";
+import { useDebouncedReorder } from "./useDebouncedReorder";
 
 export const ITEMS_PER_PAGE = 20;
 
@@ -973,62 +977,69 @@ export const useGalleryQuery = (
     },
   });
 
-  // Reorder gallery items mutation with optimistic updates
-  const reorderItemsMutation = useMutation({
-    mutationFn: (reorderData: { id: string; brand_sort_order: number }[]) =>
-      galleryService.reorderGalleryItems(reorderData),
-
-    onMutate: async (reorderData) => {
+  // Function to update cache immediately (optimistic update)
+  const updateReorderCache = useCallback(
+    (reorderData: { id: string; brand_sort_order: number }[]) => {
       const queryKey = getGalleryQueryKey();
+      queryClient.cancelQueries({ queryKey });
 
-      await queryClient.cancelQueries({ queryKey });
-
-      // Optimistically update gallery items list
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData<InfiniteData<GalleryItemsListResponse>>(queryKey, (old) => {
         if (!old) return old;
 
-        const updated = {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            gallery_items: page.gallery_items
-              .map((item: GalleryItemResponse) => {
-                const reorderItem = reorderData.find((r) => r.id === item.id);
-                if (reorderItem) {
-                  return {
-                    ...item,
-                    brand_sort_order: reorderItem.brand_sort_order,
-                  };
-                }
-                return item;
-              })
-              // Sort by brand_sort_order after update
-              .sort(
-                (a: GalleryItemResponse, b: GalleryItemResponse) =>
-                  (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
-              ),
-          })),
-        };
+        // Flatten all pages into a single array
+        const allItems: GalleryItemResponse[] = old.pages.flatMap(
+          (page) => page.gallery_items
+        );
 
-        return updated;
+        // Apply new sort orders to all items
+        const updatedItems = allItems.map((item) => {
+          const reorderItem = reorderData.find((r) => r.id === item.id);
+          if (reorderItem) {
+            return { ...item, brand_sort_order: reorderItem.brand_sort_order };
+          }
+          return item;
+        });
+
+        // Sort all items by brand_sort_order
+        updatedItems.sort(
+          (a, b) => (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
+        );
+
+        // Re-paginate: distribute sorted items back into pages
+        const pageSizes = old.pages.map((page) => page.gallery_items.length);
+        const newPages: GalleryItemsListResponse[] = [];
+        let itemIndex = 0;
+
+        for (let i = 0; i < old.pages.length; i++) {
+          const pageSize = pageSizes[i];
+          const pageItems = updatedItems.slice(itemIndex, itemIndex + pageSize);
+          itemIndex += pageSize;
+          newPages.push({ ...old.pages[i], gallery_items: pageItems });
+        }
+
+        return { ...old, pages: newPages };
       });
-
-      return { queryKey, reorderData };
     },
+    [filters]
+  );
 
-    onError: (error, variables, context) => {
-      // Rollback on error
-      if (context?.queryKey) {
-        queryClient.invalidateQueries({ queryKey: context.queryKey });
-      }
-      toast.error("Failed to reorder items");
-    },
-
-    onSuccess: () => {
-      // Refetch to ensure consistency
+  // Debounced reorder: instant cache updates + debounced API sync
+  const {
+    reorder: reorderItems,
+    isPending: isReorderPending,
+    isSyncing: isReorderSyncing,
+  } = useDebouncedReorder({
+    updateCache: updateReorderCache,
+    syncToApi: galleryService.reorderGalleryItems,
+    delay: 3000,
+    onError: () => {
+      // Rollback on error by refetching
       queryClient.invalidateQueries({ queryKey: getGalleryQueryKey() });
+      toast.error("Failed to save order. Please try again.");
     },
   });
+
+  const isReorderingItems = isReorderPending || isReorderSyncing;
 
   const refetchAllGalleryQueries = async () => {
     const matchingQueries = queryClient.getQueriesData<GalleryItemResponse[]>({
@@ -1105,9 +1116,9 @@ export const useGalleryQuery = (
     patchReply: patchReplyMutation.mutate,
     isPatchingReply: patchReplyMutation.isPending,
 
-    // Reorder items
-    reorderItems: reorderItemsMutation.mutate,
-    isReorderingItems: reorderItemsMutation.isPending,
+    // Reorder items (debounced API sync)
+    reorderItems,
+    isReorderingItems,
 
     // Download helpers
     downloadItem,

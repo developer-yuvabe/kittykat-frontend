@@ -20,6 +20,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CampaignSidebarTruncatedText } from "./CampaignSidebarTruncatedText";
 import { Campaign } from "@/types/user.types";
+import { useSortable } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { useGalleryDnd } from "@/contexts/GalleryDndContext";
+import {
+  useCampaignDroppable,
+  createCampaignSortableData,
+  isCampaignDropTarget,
+  combineRefs,
+} from "@/lib/gallery-dnd.utils";
 
 interface CampaignSidebarRowProps {
   campaign: Campaign;
@@ -41,30 +51,8 @@ interface CampaignSidebarRowProps {
   ) => void;
   onDelete: (campaignId: string, title: string) => void;
   onAnalyze: (campaignId: string, title: string) => void;
-  onAssetDragOver?: (e: React.DragEvent, campaignId: string) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onAssetDrop?: (e: React.DragEvent, campaignId: string) => void;
-  isDraggedOver?: boolean;
-  onCampaignDragStart?: (
-    e: React.DragEvent,
-    campaignId: string,
-    isArchived: boolean
-  ) => void;
-  onDragEnd?: () => void;
-  isDragging?: boolean;
-  onSectionDragOver?: (
-    e: React.DragEvent,
-    section: "active" | "archived"
-  ) => void;
-  onSectionDrop?: (e: React.DragEvent, section: "active" | "archived") => void;
-  onReorderDragOver?: (e: React.DragEvent, campaignId: string) => void;
-  onReorderDrop?: (
-    e: React.DragEvent,
-    campaignId: string,
-    section: "active" | "archived"
-  ) => void;
-  dropPosition?: "before" | "after" | null;
-  isReorderTarget?: boolean;
+  // DnD props
+  isDragDisabled?: boolean;
 }
 
 export function CampaignSidebarRow({
@@ -79,98 +67,70 @@ export function CampaignSidebarRow({
   onCuratedToggle,
   onDelete,
   onAnalyze,
-  onAssetDragOver,
-  onDragLeave,
-  onAssetDrop,
-  isDraggedOver,
-  onCampaignDragStart,
-  onDragEnd,
-  isDragging,
-  onSectionDragOver,
-  onSectionDrop,
-  onReorderDragOver,
-  onReorderDrop,
-  dropPosition,
-  isReorderTarget,
+  isDragDisabled = false,
 }: CampaignSidebarRowProps) {
-  const handleDragOver = (e: React.DragEvent) => {
-    // Check if dragging a campaign
-    const hasCampaignData = e.dataTransfer.types.includes(
-      "application/campaign-drag"
-    );
+  // Get overId from context to detect when media is being dragged over this campaign
+  const { overId, activeDragData } = useGalleryDnd();
 
-    if (hasCampaignData) {
-      // Check if it's for reordering (same section) or archiving (different section)
-      const section = campaign.is_archived ? "archived" : "active";
+  // Use sortable for campaign reordering
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: campaign.id,
+    disabled: isDragDisabled,
+    data: createCampaignSortableData(
+      campaign.id,
+      campaign.is_archived || false
+    ),
+  });
 
-      // For reordering within same section
-      if (onReorderDragOver) {
-        onReorderDragOver(e, campaign.id);
-      }
+  const droppableConfig = useCampaignDroppable(campaign.id);
 
-      // Still allow section drop for archive/unarchive
-      if (onSectionDragOver) {
-        onSectionDragOver(e, section);
-      }
-    } else if (onAssetDragOver) {
-      // Handle asset drag (moving assets to campaign)
-      onAssetDragOver(e, campaign.id);
-    }
-  };
+  // Use droppable for receiving media items
+  const { setNodeRef: setDroppableRef, isOver: isDroppableOver } =
+    useDroppable(droppableConfig);
 
-  const handleDrop = (e: React.DragEvent) => {
-    // Check if dragging a campaign
-    const hasCampaignData = e.dataTransfer.types.includes(
-      "application/campaign-drag"
-    );
+  // Check if this campaign is the drop target
+  const isDropTarget = isCampaignDropTarget(
+    campaign.id,
+    overId,
+    activeDragData,
+    isDroppableOver
+  );
 
-    if (hasCampaignData) {
-      const section = campaign.is_archived ? "archived" : "active";
-
-      // Try reorder drop first
-      if (onReorderDrop) {
-        onReorderDrop(e, campaign.id, section);
-      }
-
-      // Also allow section drop for archive/unarchive fallback
-      if (onSectionDrop) {
-        onSectionDrop(e, section);
-      }
-    } else if (onAssetDrop) {
-      // Handle asset drop (moving assets to campaign)
-      onAssetDrop(e, campaign.id);
-    }
+  // Style for drag transform
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : undefined,
   };
 
   return (
     <div
+      ref={combineRefs(setSortableRef, setDroppableRef)}
+      style={style}
       key={`${selectedBrandId}-${campaign.id}`}
-      className={cn("relative group", isDragging && "opacity-40")}
-      draggable={true}
-      onDragStart={
-        onCampaignDragStart
-          ? (e) =>
-              onCampaignDragStart(e, campaign.id, campaign.is_archived || false)
-          : undefined
-      }
-      onDragEnd={onDragEnd}
-      onDragOver={handleDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Drop indicator line */}
-      {isReorderTarget && dropPosition === "before" && (
-        <div className="absolute -top-0.5 left-0 right-0 h-0.5 bg-purple-500 z-10" />
+      className={cn(
+        "relative group rounded-lg transition-all duration-150",
+        isDragging && "ring-2 ring-purple-500 shadow-lg",
+        isDropTarget && "ring-2 ring-purple-500 bg-purple-50 shadow-md"
       )}
-
+      {...attributes}
+      {...listeners}
+    >
       <button
         onClick={() => onCampaignSelect(campaign.id)}
         className={cn(
           "w-full text-left px-3 py-2.5 pr-10 rounded-lg transition-colors hover:bg-gray-50",
           selectedCampaignId === campaign.id
             ? "bg-purple-50 hover:bg-purple-100"
-            : "bg-white",
-          isDraggedOver && "ring-2 ring-purple-500 bg-purple-50"
+            : "bg-white"
         )}
       >
         <div className="flex items-start gap-3">
@@ -229,6 +189,7 @@ export function CampaignSidebarRow({
           <button
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-200"
             title="More options"
+            onClick={(e) => e.stopPropagation()}
           >
             <MoreVertical className="w-4 h-4 text-gray-600" />
           </button>
@@ -289,11 +250,6 @@ export function CampaignSidebarRow({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Drop indicator line - after */}
-      {isReorderTarget && dropPosition === "after" && (
-        <div className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-purple-500 z-10" />
-      )}
     </div>
   );
 }
