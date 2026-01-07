@@ -234,6 +234,12 @@ export interface TechnicalDetails {
   };
 }
 
+export interface ProductExtractionMetadata {
+  total_images: number;
+  processed_images: number;
+  total_products_extracted: number;
+}
+
 export interface QueueItem {
   title: string;
   description: string;
@@ -241,7 +247,7 @@ export interface QueueItem {
   id: string;
   type: "image" | "video" | "product_extract";
   created_at: string;
-  metadata?: Record<string, any>;
+  metadata?: ProductExtractionMetadata | Record<string, any>;
 }
 
 export type Context = {

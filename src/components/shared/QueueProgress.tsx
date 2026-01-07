@@ -31,19 +31,12 @@ const QueueProgress = () => {
         const threshold = subHours(new Date(), 24);
 
         for (const item of data) {
-          const createdAt = new Date(item.created_at);
-          const isOlderThan24Hours = isBefore(createdAt, threshold);
-
           if (item.status === "processing") {
-            // Remove processing items stuck for more than 24 hours
-            if (isOlderThan24Hours) {
-              older.push(item);
-            } else {
-              running.push(item);
-            }
+            running.push(item);
           } else {
-            // Completed/failed items older than 24 hours should be removed
-            if (isOlderThan24Hours) {
+            const createdAt = new Date(item.created_at);
+
+            if (isBefore(createdAt, threshold)) {
               older.push(item);
             } else {
               others.push(item);

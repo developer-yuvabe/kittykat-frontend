@@ -28,7 +28,6 @@ import { AdminProtectedComponent } from "@/components/shared/AdminProtectedCompo
 import { toast } from "sonner";
 import { deleteBrand } from "@/services/api/brand.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React from "react";
 
 type BrandSelectorProps = {
   /* Whether or not to show campaigns */

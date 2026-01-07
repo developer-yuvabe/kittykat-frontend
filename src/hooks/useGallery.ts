@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { galleryService } from "@/services/api/gallery.service";
-import { extractProducts, type ProductExtractionRequest } from "@/services/api/a2i.service";
+import { extractProducts, type ProductExtractionRequest } from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
   BulkScrapeRequest,
@@ -360,7 +360,7 @@ export const useGalleryQuery = (
       );
       return { toastId };
     },
-    onSuccess: (response, _variables, context) => {
+    onSuccess: (response: { total_images: number }, _variables, context) => {
       queryClient.invalidateQueries({
         queryKey: ["gallery-items"],
       });
