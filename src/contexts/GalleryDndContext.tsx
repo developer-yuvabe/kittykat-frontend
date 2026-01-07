@@ -63,7 +63,15 @@ const GalleryDndContext = createContext<GalleryDndContextValue | null>(null);
 export function useGalleryDnd() {
   const context = useContext(GalleryDndContext);
   if (!context) {
-    throw new Error("useGalleryDnd must be used within GalleryDndProvider");
+    // Return safe defaults when not within provider
+    return {
+      activeId: null,
+      activeDragData: null,
+      overId: null,
+      selectedItems: [],
+      setSelectedItems: () => {},
+      dragOverlayContent: null,
+    };
   }
   return context;
 }
