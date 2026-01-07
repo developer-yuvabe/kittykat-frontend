@@ -21,8 +21,7 @@ import { useBrandBrainAnalysis } from "@/hooks/useBrandBrainAnalysis";
 import { useCampaignAnalyzingStatus } from "@/hooks/sse/useCampaignAnalyzingStatus";
 import { CampaignSidebarHeader } from "./CampaignSidebarHeader";
 import { CampaignSidebarRow } from "./CampaignSidebarRow";
-import { CampaignSidebarRenameDialog } from "./CampaignSidebarRenameDialog";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
+import { CampaignDialogs } from "./CampaignDialogs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
@@ -634,158 +633,23 @@ export function CampaignsSidebar({
       </div>
 
       {/* Dialogs */}
-      <CampaignSidebarRenameDialog
-        open={renameDialog.open}
-        onOpenChange={(open) =>
-          setRenameDialog({ open, campaignId: "", campaignTitle: "" })
-        }
-        brandId={selectedBrandId}
-        campaignId={renameDialog.campaignId}
-        campaignTitle={renameDialog.campaignTitle}
-      />
-
-      <ReusableAlertDialog
-        open={archiveDialog.open}
-        onOpenChange={(open) =>
-          setArchiveDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isArchived: false,
-            isProcessing: false,
-          })
-        }
-        title={
-          archiveDialog.isArchived ? "Unarchive Campaign" : "Archive Campaign"
-        }
-        description={
-          <>
-            Are you sure you want to{" "}
-            {archiveDialog.isArchived ? "unarchive" : "move"}{" "}
-            <span className="font-semibold text-gray-900">
-              &quot;{archiveDialog.campaignTitle}&quot;
-            </span>{" "}
-            {archiveDialog.isArchived
-              ? "back to active campaigns?"
-              : "to the archive?"}
-          </>
-        }
-        confirmLabel={archiveDialog.isArchived ? "Unarchive" : "Archive"}
-        onConfirm={handleArchive}
-        isLoading={archiveDialog.isProcessing}
-      />
-
-      <ReusableAlertDialog
-        open={deleteDialog.open}
-        onOpenChange={(open) =>
-          setDeleteDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isDeleting: false,
-          })
-        }
-        title="Delete Campaign"
-        description={
-          <>
-            Are you sure you want to permanently delete{" "}
-            <span className="font-semibold text-gray-900">
-              &quot;{deleteDialog.campaignTitle}&quot;
-            </span>
-            ? This action cannot be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        onConfirm={handleDelete}
-        isLoading={deleteDialog.isDeleting}
-        danger
-      />
-
-      <ReusableAlertDialog
-        open={analyzeDialog.open}
-        onOpenChange={(open) =>
-          setAnalyzeDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isReanalysis: false,
-          })
-        }
-        title={
-          analyzeDialog.isReanalysis ? "Reanalyze Campaign" : "Analyze Campaign"
-        }
-        description={
-          <div className="space-y-3">
-            <p className="text-sm text-gray-700">
-              {analyzeDialog.isReanalysis ? (
-                <>
-                  Reanalyze visual style patterns for{" "}
-                  <span className="font-semibold text-gray-900">
-                    &quot;{analyzeDialog.campaignTitle}&quot;
-                  </span>
-                  ?
-                </>
-              ) : (
-                <>
-                  Trigger Brand Brain analysis for{" "}
-                  <span className="font-semibold text-gray-900">
-                    &quot;{analyzeDialog.campaignTitle}&quot;
-                  </span>
-                  ?
-                </>
-              )}
-            </p>
-            <p className="text-sm text-gray-600">
-              {analyzeDialog.isReanalysis
-                ? "This will refresh the visual style analysis from all curated gallery images in this campaign."
-                : "This will analyze visual style patterns from the curated gallery images and mark this campaign for Brand Brain analysis."}
-            </p>
-            {!analyzeDialog.isReanalysis && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                <p className="text-xs text-purple-800">
-                  <span className="font-semibold">Note:</span> Scheduled
-                  analysis will run daily for any newly added images.
-                </p>
-              </div>
-            )}
-          </div>
-        }
-        confirmLabel={analyzeDialog.isReanalysis ? "Reanalyze" : "Analyze"}
-        onConfirm={handleAnalyze}
-        isLoading={isAnalyzing}
-      />
-
-      <ReusableAlertDialog
-        open={curatedDialog.open}
-        onOpenChange={(open) =>
-          setCuratedDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isCurated: false,
-            isProcessing: false,
-          })
-        }
-        title={
-          curatedDialog.isCurated
-            ? "Unmark Curated Campaign"
-            : "Mark as Curated Campaign"
-        }
-        description={
-          <>
-            Are you sure you want to{" "}
-            {curatedDialog.isCurated ? "unmark" : "mark"}{" "}
-            <span className="font-semibold text-gray-900">
-              &quot;{curatedDialog.campaignTitle}&quot;
-            </span>{" "}
-            {curatedDialog.isCurated
-              ? "as a regular campaign?"
-              : "as a curated campaign for brand analysis?"}
-          </>
-        }
-        confirmLabel={curatedDialog.isCurated ? "Unmark" : "Mark as Curated"}
-        onConfirm={handleCuratedToggle}
-        isLoading={curatedDialog.isProcessing}
+      <CampaignDialogs
+        selectedBrandId={selectedBrandId}
+        renameDialog={renameDialog}
+        setRenameDialog={setRenameDialog}
+        archiveDialog={archiveDialog}
+        setArchiveDialog={setArchiveDialog}
+        deleteDialog={deleteDialog}
+        setDeleteDialog={setDeleteDialog}
+        analyzeDialog={analyzeDialog}
+        setAnalyzeDialog={setAnalyzeDialog}
+        curatedDialog={curatedDialog}
+        setCuratedDialog={setCuratedDialog}
+        isAnalyzing={isAnalyzing}
+        onArchive={handleArchive}
+        onDelete={handleDelete}
+        onAnalyze={handleAnalyze}
+        onCuratedToggle={handleCuratedToggle}
       />
     </div>
   );
