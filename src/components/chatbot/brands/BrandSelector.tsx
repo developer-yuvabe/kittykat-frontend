@@ -243,7 +243,7 @@ export default function BrandSelector({
                     ) : (
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                     )}
-                    <label className="absolute left-3 transition-all duration-200 text-muted-foreground pointer-events-none top-0 text-xs font-medium translate-y-[-50%] px-1 z-10 bg-inherit">
+                    <label className="absolute left-3 transition-all duration-200 text-muted-foreground pointer-events-none top-0 text-xs font-medium translate-y-[-50%] px-1 z-10 bg-inherit rounded-t-sm">
                       Brand
                     </label>
                   </div>

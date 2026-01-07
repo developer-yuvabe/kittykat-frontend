@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { useCampaignCounts } from "@/hooks/useCampaignCounts";
 import { useCampaignAnalyzingStatus } from "@/hooks/sse/useCampaignAnalyzingStatus";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 import { CampaignSidebarHeader } from "./CampaignSidebarHeader";
 import { CampaignSidebarRow } from "./CampaignSidebarRow";
@@ -93,6 +94,8 @@ export function GallerySidebar({
 }: GallerySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { brands, archiveCampaign, setSelectedCampaignId } = useBrandStore();
+  const { selectedSubFolderId, setSelectedSubFolderId } =
+    useGalleryFilterStore();
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
 
@@ -542,7 +545,16 @@ export function GallerySidebar({
                             campaign={campaign}
                             selectedBrandId={selectedBrandId}
                             selectedCampaignId={selectedCampaignId}
-                            onCampaignSelect={onCampaignSelect}
+                            selectedSubFolderId={selectedSubFolderId}
+                            onCampaignSelect={(campaignId, subFolderId) => {
+                              onCampaignSelect(campaignId);
+                              setSelectedSubFolderId(subFolderId || null);
+                              setSelectedFilters((prev) => ({
+                                ...prev,
+                                campaigns: [campaignId],
+                                sub_folders: subFolderId ? [subFolderId] : [],
+                              }));
+                            }}
                             count={countData?.count_by_campaign?.[campaign.id]}
                             isCountLoading={isCountLoading}
                             onRename={(id, title) =>
@@ -619,11 +631,20 @@ export function GallerySidebar({
                       >
                         {archivedCampaigns.map((campaign) => (
                           <CampaignSidebarRow
+                            selectedSubFolderId={selectedSubFolderId}
                             key={`${selectedBrandId}-${campaign.id}`}
                             campaign={campaign}
                             selectedBrandId={selectedBrandId}
                             selectedCampaignId={selectedCampaignId}
-                            onCampaignSelect={onCampaignSelect}
+                            onCampaignSelect={(campaignId, subFolderId) => {
+                              onCampaignSelect(campaignId);
+                              setSelectedSubFolderId(subFolderId || null);
+                              setSelectedFilters((prev) => ({
+                                ...prev,
+                                campaigns: [campaignId],
+                                sub_folders: subFolderId ? [subFolderId] : [],
+                              }));
+                            }}
                             count={countData?.count_by_campaign?.[campaign.id]}
                             isCountLoading={isCountLoading}
                             onRename={(id, title) =>

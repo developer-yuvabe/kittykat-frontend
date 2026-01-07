@@ -85,6 +85,7 @@ class GalleryService {
     asset_sources?: string[];
     is_favourite?: boolean;
     campaign_ids?: (string | null)[];
+    sub_folder_ids?: string[];
     brand_ids?: string[];
     skip?: number;
     limit?: number;

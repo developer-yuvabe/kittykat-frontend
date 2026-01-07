@@ -108,6 +108,7 @@ export function CampaignView({
         // Force the brand and campaign filters to match the current selection
         brands: [selectedBrandId],
         campaigns: [campaignId],
+        sub_folders: selectedFilters?.sub_folders || [],
       },
     },
     ITEMS_PER_PAGE,
@@ -314,6 +315,7 @@ export function CampaignView({
                     media_format: [],
                     aspect_ratio: [],
                     workflow_status: [],
+                    sub_folders: [],
                   },
                 }}
                 selectedBrandId={selectedBrandId}

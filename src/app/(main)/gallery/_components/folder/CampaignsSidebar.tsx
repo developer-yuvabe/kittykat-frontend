@@ -75,7 +75,8 @@ export function CampaignsSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const { brands, archiveCampaign } = useBrandStore();
   const { setSelectedCampaignId } = useBrandStore();
-  const { orderBy, setOrderBy } = useGalleryFilterStore();
+  const { orderBy, setOrderBy, selectedSubFolderId, setSelectedSubFolderId } =
+    useGalleryFilterStore();
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
 
@@ -449,6 +450,7 @@ export function CampaignsSidebar({
             onClick={() => {
               onCampaignSelect("");
               setSelectedCampaignId(null);
+              setSelectedSubFolderId(null);
               if (orderBy === "brand_sort_order") {
                 setOrderBy("created_at_descending");
               }
@@ -492,7 +494,11 @@ export function CampaignsSidebar({
                       campaign={campaign}
                       selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId}
-                      onCampaignSelect={onCampaignSelect}
+                      selectedSubFolderId={selectedSubFolderId}
+                      onCampaignSelect={(campaignId, subFolderId) => {
+                        onCampaignSelect(campaignId);
+                        setSelectedSubFolderId(subFolderId || null);
+                      }}
                       count={countData?.count_by_campaign?.[campaign.id]}
                       isCountLoading={isCountLoading}
                       onRename={(id, title) =>
@@ -570,7 +576,11 @@ export function CampaignsSidebar({
                       campaign={campaign}
                       selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId}
-                      onCampaignSelect={onCampaignSelect}
+                      selectedSubFolderId={selectedSubFolderId}
+                      onCampaignSelect={(campaignId, subFolderId) => {
+                        onCampaignSelect(campaignId);
+                        setSelectedSubFolderId(subFolderId || null);
+                      }}
                       count={countData?.count_by_campaign?.[campaign.id]}
                       isCountLoading={isCountLoading}
                       onRename={(id, title) =>

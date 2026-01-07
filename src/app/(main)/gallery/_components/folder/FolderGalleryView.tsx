@@ -51,6 +51,7 @@ export function FolderGalleryView({
         media_format: [],
         aspect_ratio: [],
         workflow_status: [],
+        sub_folders: [],
         has_product: undefined,
         has_people: undefined,
         has_lifestyle_context: undefined,

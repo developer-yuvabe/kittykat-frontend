@@ -83,7 +83,7 @@ export function MediaFolderView({
   } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
-  const { favorites, orderBy } = useGalleryFilterStore();
+  const { favorites, orderBy, selectedSubFolderId } = useGalleryFilterStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
@@ -116,6 +116,9 @@ export function MediaFolderView({
         campaigns: selectedCampaignId
           ? [selectedCampaignId]
           : selectedFilters?.campaigns || [],
+        sub_folders: selectedSubFolderId
+          ? [selectedSubFolderId]
+          : selectedFilters?.sub_folders || [],
       },
     },
     ITEMS_PER_PAGE,

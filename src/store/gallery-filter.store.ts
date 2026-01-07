@@ -9,6 +9,9 @@ interface GalleryFilterState {
   orderBy: OrderBy;
   isDraggable: boolean;
 
+  // Selection state
+  selectedSubFolderId: string | null;
+
   // Filter settings
   favorites: boolean;
   hasComments: boolean;
@@ -23,6 +26,9 @@ interface GalleryFilterState {
   setIsAutoPlay: (autoplay: boolean) => void;
   setOrderBy: (orderBy: OrderBy) => void;
   setIsDraggable: (isDraggable: boolean) => void;
+
+  // Selection setters
+  setSelectedSubFolderId: (subFolderId: string | null) => void;
 
   // Filter setters
   setFavorites: (favorites: boolean) => void;
@@ -57,6 +63,9 @@ export const useGalleryFilterStore = create<GalleryFilterState>()((set) => ({
   // View settings
   ...initialViewState,
 
+  // Selection state
+  selectedSubFolderId: null,
+
   // Filter settings
   ...initialFilterState,
 
@@ -66,6 +75,9 @@ export const useGalleryFilterStore = create<GalleryFilterState>()((set) => ({
   setIsAutoPlay: (isAutoPlay) => set({ isAutoPlay }),
   setOrderBy: (orderBy) => set({ orderBy }),
   setIsDraggable: (isDraggable) => set({ isDraggable }),
+
+  // Selection setters
+  setSelectedSubFolderId: (selectedSubFolderId) => set({ selectedSubFolderId }),
 
   // Filter setters
   setFavorites: (favorites) => set({ favorites }),

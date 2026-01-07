@@ -145,6 +145,7 @@ export function MediaLibrary({
       filters ?? {
         brands: [],
         campaigns: [],
+        sub_folders: [],
         product_categories: [],
         asset_types: [],
         asset_sources: [],
@@ -289,6 +290,7 @@ export function MediaLibrary({
       // Preserve brand-related filters
       brands: currentFilters.brands,
       campaigns: currentFilters.campaigns,
+      sub_folders: currentFilters.sub_folders,
       // Also preserve workflow_status if it came from URL params
       //(If needed)
 
