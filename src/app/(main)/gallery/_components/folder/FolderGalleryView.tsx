@@ -159,6 +159,7 @@ export function FolderGalleryView({
       <MediaGalleryStatusDisplay
         galleryStatus={galleryActions.galleryStatus}
         galleryItemsLength={galleryActions.getGalleryItems().length}
+        isFetchingNextPage={galleryActions.isFetchingNextPage}
       />
 
       {/* Gallery content area with minimum height to prevent layout shift */}

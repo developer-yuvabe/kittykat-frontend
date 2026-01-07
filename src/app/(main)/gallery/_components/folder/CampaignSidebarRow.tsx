@@ -9,8 +9,8 @@ import {
   Trash,
   Brain,
   ChartNetwork,
+  Loader2,
 } from "lucide-react";
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -51,7 +51,6 @@ interface CampaignSidebarRowProps {
   ) => void;
   onDelete: (campaignId: string, title: string) => void;
   onAnalyze: (campaignId: string, title: string) => void;
-  // DnD props
   isDragDisabled?: boolean;
 }
 
@@ -69,10 +68,8 @@ export function CampaignSidebarRow({
   onAnalyze,
   isDragDisabled = false,
 }: CampaignSidebarRowProps) {
-  // Get overId from context to detect when media is being dragged over this campaign
   const { overId, activeDragData } = useGalleryDnd();
 
-  // Use sortable for campaign reordering
   const {
     attributes,
     listeners,
@@ -90,12 +87,9 @@ export function CampaignSidebarRow({
   });
 
   const droppableConfig = useCampaignDroppable(campaign.id);
-
-  // Use droppable for receiving media items
   const { setNodeRef: setDroppableRef, isOver: isDroppableOver } =
     useDroppable(droppableConfig);
 
-  // Check if this campaign is the drop target
   const isDropTarget = isCampaignDropTarget(
     campaign.id,
     overId,
@@ -103,13 +97,14 @@ export function CampaignSidebarRow({
     isDroppableOver
   );
 
-  // Style for drag transform
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1000 : undefined,
   };
+
+  const isActive = selectedCampaignId === campaign.id;
 
   return (
     <div
@@ -118,64 +113,57 @@ export function CampaignSidebarRow({
       key={`${selectedBrandId}-${campaign.id}`}
       className={cn(
         "relative group rounded-lg transition-all duration-150",
+        isActive
+          ? "bg-purple-50 hover:bg-purple-100"
+          : "bg-white hover:bg-gray-50",
         isDragging && "ring-2 ring-purple-500 shadow-lg",
         isDropTarget && "ring-2 ring-purple-500 bg-purple-50 shadow-md"
       )}
       {...attributes}
       {...listeners}
     >
+      {/* Row content */}
       <button
         onClick={() => onCampaignSelect(campaign.id)}
-        className={cn(
-          "max-w-64 text-left px-3 py-1.5 pr-10 rounded-lg transition-colors hover:bg-gray-50",
-          selectedCampaignId === campaign.id
-            ? "bg-purple-50 hover:bg-purple-100"
-            : "bg-white"
-        )}
+        className="max-w-64 text-left px-3 py-1.5 pr-10 rounded-lg"
       >
         <div className="flex items-start gap-3">
-          <div
-            className={cn("w-4 h-4  flex items-center justify-center shrink-0")}
-          >
+          <div className="w-4 h-4 flex items-center justify-center shrink-0">
             <Folder
               className={cn(
                 "w-4 h-4",
-                selectedCampaignId === campaign.id
-                  ? "text-purple-600"
-                  : "text-gray-600"
+                isActive ? "text-purple-600" : "text-gray-600"
               )}
             />
           </div>
+
           <div className="flex-1 min-w-0">
             <CampaignSidebarTruncatedText
               text={campaign.title}
               className={cn(
                 "text-xs font-medium truncate",
-                selectedCampaignId === campaign.id
-                  ? "text-purple-900"
-                  : "text-gray-900"
+                isActive ? "text-purple-900" : "text-gray-900"
               )}
             />
           </div>
 
-          {/* Count badge */}
+          {/* Count */}
           <div className="flex items-center gap-2 mr-1">
             {isCountLoading ? (
               <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />
             ) : (
-              <span className={cn("text-[10px]  px-2 py-0.5 ")}>
-                {count ?? 0}
-              </span>
+              <span className="text-[10px] px-2 py-0.5">{count ?? 0}</span>
             )}
           </div>
         </div>
       </button>
 
-      {/* Three-dot dropdown menu */}
+      {/* Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all "
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md
+                       opacity-0 group-hover:opacity-100 transition-all z-10"
             title="More options"
             onClick={(e) => e.stopPropagation()}
           >
@@ -187,7 +175,8 @@ export function CampaignSidebarRow({
           <DropdownMenuItem
             onClick={() => onRename(campaign.id, campaign.title)}
           >
-            <Pencil className="w-4 h-4 mr-2 text-gray-600" /> Rename
+            <Pencil className="w-4 h-4 mr-2 text-gray-600" />
+            Rename
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -202,6 +191,7 @@ export function CampaignSidebarRow({
             <Archive className="w-4 h-4 mr-2 text-gray-600" />
             {campaign.is_archived ? "Unarchive" : "Move to Archive"}
           </DropdownMenuItem>
+
           <DropdownMenuItem
             onClick={() =>
               onCuratedToggle(
@@ -234,7 +224,8 @@ export function CampaignSidebarRow({
             onClick={() => onDelete(campaign.id, campaign.title)}
             className="text-red-600 focus:text-red-600"
           >
-            <Trash className="w-4 h-4 mr-2" /> Delete
+            <Trash className="w-4 h-4 mr-2" />
+            Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

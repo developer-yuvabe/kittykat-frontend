@@ -331,6 +331,7 @@ export function CampaignView({
           <MediaGalleryStatusDisplay
             galleryStatus={galleryActions.galleryStatus}
             galleryItemsLength={galleryActions.getGalleryItems().length}
+            isFetchingNextPage={galleryActions.isFetchingNextPage}
           />
 
           {/* Gallery Items with minimum height to prevent layout shift */}
@@ -362,13 +363,6 @@ export function CampaignView({
                   )}
                 </div>
               )}
-
-            {/* Loading state - maintains space */}
-            {galleryActions.galleryStatus === "pending" && (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              </div>
-            )}
           </div>
         </div>
       )}

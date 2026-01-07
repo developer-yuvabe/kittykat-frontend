@@ -680,6 +680,7 @@ export function MediaLibrary({
                         <MediaGalleryStatusDisplay
                           galleryStatus={galleryActions.galleryStatus}
                           galleryItemsLength={galleryItems.length}
+                          isFetchingNextPage={galleryActions.isFetchingNextPage}
                         />
 
                         {galleryActions.galleryStatus === "success" &&
