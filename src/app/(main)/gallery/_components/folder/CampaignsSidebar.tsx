@@ -148,7 +148,7 @@ export function CampaignsSidebar({
   const { data: countData, isLoading: isCountLoading } =
     useCampaignCounts(selectedBrandId);
 
-  const { campaigns, brandName } = useMemo(() => {
+  const { campaigns } = useMemo(() => {
     const brand = brands.find((b) => b.id === selectedBrandId);
     return {
       campaigns: brand ? brand.campaigns : [],
@@ -399,7 +399,7 @@ export function CampaignsSidebar({
     );
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-[100%] w-[30%] rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-[100%] min-w-[320px] max-w-[450px] w-[28vw] lg:w-[26vw] xl:w-[24vw] rounded-sm">
       {/* Brand Selector and Title */}
       <div className="flex flex-col px-4 gap-y-3 mt-2">
         <div className="flex justify-between">
@@ -466,9 +466,6 @@ export function CampaignsSidebar({
       <CampaignSidebarHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        brandId={selectedBrandId || ""}
-        brandName={brandName}
-        onCampaignCreated={onCampaignSelect}
       />
 
       {/* Campaigns List */}

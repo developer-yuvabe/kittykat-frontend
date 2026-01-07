@@ -6,8 +6,7 @@ import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
 import { CampaignView } from "./folder/CampaignView";
 import { FolderGalleryView } from "./folder/FolderGalleryView";
-import { FolderTabs } from "./folder/FolderTabs";
-import { CampaignsSidebar } from "./folder/CampaignsSidebar";
+import { GallerySidebar } from "./folder/GallerySidebar";
 import { useBrandStore } from "@/store/brand.store";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
@@ -336,17 +335,16 @@ export function MediaFolderView({
     if (selectedBrandId && selectedCampaignId) {
       return (
         <div className="flex gap-0 h-[calc(100vh-165px)] py-auto px-auto">
-          <CampaignsSidebar
+          <GallerySidebar
             selectedBrandId={selectedBrandId}
             selectedCampaignId={selectedCampaignId}
+            activeTab={activeTab}
             onCampaignSelect={handleCampaignSelect}
-            galleryActions={galleryActions}
+            onTabChange={onTabChange}
             setInitialBrandId={setInitialBrandId}
             setSelectedCampaignInUrl={setSelectedCampaignInUrl}
             setSelectedFilters={setSelectedFilters}
             hasNoBrands={hasNoBrands}
-            galleryView={galleryView}
-            setSelectedItems={setSelectedItems}
             isCollapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
           />
@@ -384,17 +382,16 @@ export function MediaFolderView({
     if (selectedBrandId && isBrandsFetched) {
       return (
         <div className="w-full h-[calc(100vh-165px)] flex overflow-hidden">
-          <CampaignsSidebar
+          <GallerySidebar
             selectedBrandId={selectedBrandId}
             selectedCampaignId={null}
+            activeTab={activeTab}
             onCampaignSelect={handleCampaignSelect}
-            galleryActions={galleryActions}
+            onTabChange={onTabChange}
             setInitialBrandId={setInitialBrandId}
             setSelectedCampaignInUrl={setSelectedCampaignInUrl}
             setSelectedFilters={setSelectedFilters}
             hasNoBrands={hasNoBrands}
-            galleryView={galleryView}
-            setSelectedItems={setSelectedItems}
             isCollapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
           />
@@ -426,16 +423,7 @@ export function MediaFolderView({
               </div>
             </div>
 
-            {/* Top Section (Static) */}
-            <div className="pl-4 pb-4 flex-shrink-0">
-              <FolderTabs
-                activeTab={activeTab}
-                onTabChange={onTabChange}
-                title="Subfolders"
-                galleryActions={galleryActions}
-                setSelectedItems={setSelectedItems}
-              />
-            </div>
+            {/* Tabs removed - navigation now in sidebar */}
 
             {activeTab === "pexels" ? (
               <div className="overflow-y-auto">
@@ -489,13 +477,7 @@ export function MediaFolderView({
             selectedMoodboardId={selecteMoodboardId}
           />
 
-          <FolderTabs
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            title="Subfolders"
-            galleryActions={galleryActions}
-            setSelectedItems={setSelectedItems}
-          />
+          {/* Tabs removed - navigation now in sidebar */}
 
           <FolderGalleryView
             selectedBrandId={selectedBrandId}

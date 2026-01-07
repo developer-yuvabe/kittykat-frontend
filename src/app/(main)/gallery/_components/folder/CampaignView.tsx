@@ -10,7 +10,6 @@ import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import { FolderUploadDropzone } from "./FolderUploadDropzone";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
-import { FolderTabs } from "./FolderTabs";
 import { useBrandStore } from "@/store/brand.store";
 import { Input } from "@/components/ui/input";
 import { MediaFilterDropdown } from "../MediaFilterDropdown";
@@ -53,7 +52,6 @@ export function CampaignView({
   searchQuery = "",
   favorites = false,
   selectedFilters,
-  onTabChange,
   showHeader = false,
   handleSearchChange,
   showFilters,
@@ -287,19 +285,7 @@ export function CampaignView({
         </div>
       )}
 
-      {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
-
-      {!showHeader && (
-        <div className="pl-4 pb-4">
-          <FolderTabs
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            title="Subfolders"
-            galleryActions={galleryActions}
-            setSelectedItems={setSelectedItems}
-          />
-        </div>
-      )}
+      {/* Tabs removed - navigation now handled by unified GallerySidebar */}
 
       {activeTab === "pexels" ? (
         <div className="overflow-y-auto">
