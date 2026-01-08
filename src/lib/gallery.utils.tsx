@@ -517,6 +517,7 @@ export const allMediaAssetSources = [
   "showboard-media",
   "a2i-media",
   "all-media",
+  "products",
 ];
 
 /**

@@ -1,10 +1,13 @@
 import { QueueItem } from "@/types/types";
 import React from "react";
-import { Image, LoaderCircle } from "lucide-react";
+import { Image, LoaderCircle, PackageIcon } from "lucide-react";
 import { cn, formatToLocalTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import ProductExtractionProgress from "./ProductExtractionProgress";
 
 const QueueItemView = ({ item }: { item: QueueItem }) => {
+  const isProductExtraction = item.type === "product_extract";
+
   return (
     <div
       className={cn(
@@ -18,12 +21,17 @@ const QueueItemView = ({ item }: { item: QueueItem }) => {
       <div className="flex shrink-0 overflow-hidden item-center justify-center">
         {item.status === "processing" ? (
           <LoaderCircle className="text-muted-foreground animate-spin" />
+        ) : isProductExtraction ? (
+          <PackageIcon className="text-muted-foreground" />
         ) : (
           <Image className="text-muted-foreground" />
         )}
       </div>
-      <div>
+      <div className="flex-1">
         <p className="text-sm font-medium leading-none">{item.title}</p>
+        
+        {isProductExtraction && <ProductExtractionProgress item={item} />}
+        
         {item.metadata?.images && (
           <div className="flex gap-2 mt-2">
             {item.metadata.images.map((url: string) => (

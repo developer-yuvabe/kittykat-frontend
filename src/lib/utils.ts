@@ -99,9 +99,18 @@ export async function handleApiRequest<T>(
   } catch (error: any) {
     console.error("API Request Error:", error);
 
-    // Prefer the message from the API response if present
-    const message =
-      error.response?.data?.message || error.message || "API request failed";
+    // Extract the error message
+    let message = error.response?.data?.message || error.message || "API request failed";
+    
+    // Handle backend Pydantic validation errors
+    if (typeof message === 'string' && message.includes('validation error for')) {
+      console.error("Backend validation error detected:", message);
+      
+      // Extract a cleaner error message for common patterns
+      if (message.includes('BaseApiResponse') || message.includes('ServiceResponse')) {
+        message = "The service encountered an internal error. Please try again or contact support if the issue persists.";
+      }
+    }
 
     if (error instanceof PlatformApiError) {
       throw error;
