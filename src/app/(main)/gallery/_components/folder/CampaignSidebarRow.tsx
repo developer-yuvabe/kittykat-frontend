@@ -17,6 +17,8 @@ import {
   Star,
   EyeOff,
   Eye,
+  Check,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -39,6 +41,7 @@ import {
 } from "@/lib/gallery-dnd.utils";
 import { useCampaignFolderDialogs } from "./CampaignFolderDialogs";
 import { SubfolderRow } from "./SubfolderRow";
+import { useSubfolderMutations } from "@/hooks/useSubfolderMutations";
 
 interface CampaignSidebarRowProps {
   campaign: Campaign;
@@ -104,11 +107,17 @@ export function CampaignSidebarRow({
 }: CampaignSidebarRowProps) {
   const { overId, activeDragData } = useGalleryDnd();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(campaign.title);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const { openCreate, openRename, openDelete, Dialogs } =
-    useCampaignFolderDialogs(selectedBrandId, campaign.id, () =>
-      setIsExpanded(true)
-    );
+  const { openCreate, openDelete, dialogs } = useCampaignFolderDialogs(
+    selectedBrandId,
+    campaign.id,
+    () => setIsExpanded(true)
+  );
+
+  const { updateSubfolder } = useSubfolderMutations();
 
   const {
     attributes,
@@ -156,6 +165,94 @@ export function CampaignSidebarRow({
     onCampaignSelect(campaign.id, subFolderId);
   };
 
+  const handleRenameStart = () => {
+    setIsRenaming(true);
+    setRenameValue(campaign.title);
+  };
+
+  const handleRenameConfirm = () => {
+    if (renameValue.trim() && renameValue !== campaign.title) {
+      onRename(campaign.id, renameValue.trim());
+    }
+    setIsRenaming(false);
+  };
+
+  const handleRenameCancel = () => {
+    setRenameValue(campaign.title);
+    setIsRenaming(false);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleRenameConfirm();
+    } else if (e.key === "Escape") {
+      handleRenameCancel();
+    }
+  };
+
+  const handleSubfolderRename = async (subFolderId: string, name: string) => {
+    if (!selectedBrandId) return;
+    await updateSubfolder({
+      brandId: selectedBrandId,
+      campaignId: campaign.id,
+      subFolderId,
+      payload: { name },
+    });
+  };
+
+  const handleSubfolderKKFolderToggle = async (
+    subFolderId: string,
+    name: string,
+    isKKFolder: boolean
+  ) => {
+    if (!selectedBrandId) return;
+    await updateSubfolder({
+      brandId: selectedBrandId,
+      campaignId: campaign.id,
+      subFolderId,
+      payload: { is_kk_folder: !isKKFolder },
+      title: name,
+      undoSeconds: 3,
+    });
+  };
+
+  const handleSubfolderKKSelectedToggle = async (
+    subFolderId: string,
+    name: string,
+    isKKSelected: boolean
+  ) => {
+    if (!selectedBrandId) return;
+    await updateSubfolder({
+      brandId: selectedBrandId,
+      campaignId: campaign.id,
+      subFolderId,
+      payload: { is_kk_selected: !isKKSelected },
+      title: name,
+      undoSeconds: 3,
+    });
+  };
+
+  const handleSubfolderAdminOnlyToggle = async (
+    subFolderId: string,
+    name: string,
+    isAdminOnly: boolean
+  ) => {
+    if (!selectedBrandId) return;
+    await updateSubfolder({
+      brandId: selectedBrandId,
+      campaignId: campaign.id,
+      subFolderId,
+      payload: { is_admin_only: !isAdminOnly },
+      title: name,
+      undoSeconds: 3,
+    });
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDropdownOpen(true);
+  };
+
   return (
     <>
       <div className="space-y-0">
@@ -174,6 +271,7 @@ export function CampaignSidebarRow({
           )}
           {...attributes}
           {...listeners}
+          onContextMenu={handleContextMenu}
         >
           {/* Row content */}
           <div className="flex items-center gap-1 py-1.5 pl-1">
@@ -194,81 +292,118 @@ export function CampaignSidebarRow({
               <div className="w-5" />
             )}
 
-            <button
-              onClick={() => onCampaignSelect(campaign.id)}
-              className={cn(
-                "flex-1 text-left px-2 py-1 rounded-md hover:bg-transparent transition-colors max-w-56",
-                campaign.is_admin_only && "opacity-50"
+            {/* Folder Icon */}
+            <div className="flex items-center justify-center shrink-0 ml-2">
+              {isExpanded && hasSubFolders ? (
+                <FolderOpen
+                  className={cn(
+                    "w-[18px] h-[18px]",
+                    isActive ? "text-purple-600" : "text-gray-500"
+                  )}
+                />
+              ) : (
+                <Folder
+                  className={cn(
+                    "w-[18px] h-[18px]",
+                    isActive ? "text-purple-600" : "text-gray-500"
+                  )}
+                />
               )}
-            >
-              <div className="flex items-center gap-2.5">
-                {/* Folder Icon */}
-                <div className="flex items-center justify-center shrink-0">
-                  {isExpanded && hasSubFolders ? (
-                    <FolderOpen
-                      className={cn(
-                        "w-[18px] h-[18px]",
-                        isActive ? "text-purple-600" : "text-gray-500"
-                      )}
-                    />
-                  ) : (
-                    <Folder
-                      className={cn(
-                        "w-[18px] h-[18px]",
-                        isActive ? "text-purple-600" : "text-gray-500"
-                      )}
-                    />
-                  )}
-                </div>
+            </div>
 
-                {/* Campaign Title */}
-                <div className="flex-1 min-w-0">
-                  <CampaignSidebarTruncatedText
-                    text={campaign.title}
-                    className={cn(
-                      "text-xs leading-tight truncate",
-                      isActive
-                        ? "text-purple-900 font-semibold"
-                        : "text-gray-800 font-medium"
-                    )}
-                  />
-                </div>
-
-                {/* Status Icons */}
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {campaign.is_kk_selected && (
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                  )}
-                  {campaign.is_kk_folder && (
-                    <Folder className="w-3 h-3 text-blue-500" />
-                  )}
-                  {campaign.is_curated_for_brand && (
-                    <Brain className="w-3 h-3 text-purple-500" />
-                  )}
-                </div>
-
-                {/* Count Badge */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {isCountLoading ? (
-                    <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
-                  ) : (
-                    <span
-                      className={cn(
-                        "text-[9px] font-medium min-w-[20px] text-center rounded-full px-1.5 py-0.5",
-                        isActive
-                          ? "text-purple-700 bg-purple-100/80"
-                          : "text-gray-500 bg-gray-100/80"
-                      )}
-                    >
-                      {count ?? 0}
-                    </span>
-                  )}
-                </div>
+            {isRenaming ? (
+              <div className="flex-1 flex items-center gap-1 px-2">
+                <input
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={handleRenameKeyDown}
+                  className="flex-1 text-xs px-1.5 py-0.5 rounded border border-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white"
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRenameConfirm();
+                  }}
+                  className="flex items-center justify-center w-5 h-5 hover:bg-green-100 rounded transition-colors"
+                  title="Confirm"
+                >
+                  <Check className="w-3.5 h-3.5 text-green-600" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRenameCancel();
+                  }}
+                  className="flex items-center justify-center w-5 h-5 hover:bg-red-100 rounded transition-colors"
+                  title="Cancel"
+                >
+                  <X className="w-3.5 h-3.5 text-red-600" />
+                </button>
               </div>
-            </button>
+            ) : (
+              <button
+                onClick={() => onCampaignSelect(campaign.id)}
+                className={cn(
+                  "flex-1 text-left px-2 py-1 rounded-md hover:bg-transparent transition-colors max-w-56",
+                  campaign.is_admin_only && "opacity-50"
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  {/* Campaign Title */}
+                  <div className="flex-1 min-w-0">
+                    <CampaignSidebarTruncatedText
+                      text={campaign.title}
+                      className={cn(
+                        "text-xs leading-tight truncate",
+                        isActive
+                          ? "text-purple-900 font-semibold"
+                          : "text-gray-800 font-medium"
+                      )}
+                    />
+                  </div>
+
+                  {/* Status Icons */}
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    {campaign.is_kk_selected && (
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                    )}
+                    {campaign.is_kk_folder && (
+                      <Folder className="w-3 h-3 text-blue-500" />
+                    )}
+                    {campaign.is_curated_for_brand && (
+                      <Brain className="w-3 h-3 text-purple-500" />
+                    )}
+                  </div>
+
+                  {/* Count Badge */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isCountLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
+                    ) : (
+                      <span
+                        className={cn(
+                          "text-[9px] font-medium min-w-[20px] text-center rounded-full px-1.5 py-0.5",
+                          isActive
+                            ? "text-purple-700 bg-purple-100/80"
+                            : "text-gray-500 bg-gray-100/80"
+                        )}
+                      >
+                        {count ?? 0}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            )}
 
             {/* Dropdown Menu */}
-            <DropdownMenu>
+            <DropdownMenu
+              open={isDropdownOpen}
+              onOpenChange={setIsDropdownOpen}
+            >
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
@@ -295,7 +430,10 @@ export function CampaignSidebarRow({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={() => onRename(campaign.id, campaign.title)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRenameStart();
+                  }}
                 >
                   <Pencil className="w-4 h-4 mr-2 text-gray-600" />
                   Rename
@@ -417,37 +555,16 @@ export function CampaignSidebarRow({
                 <SubfolderRow
                   key={subFolder.id}
                   subFolder={subFolder}
+                  onRename={handleSubfolderRename}
                   isLast={isLast}
                   isActive={isSubFolderActive}
                   count={subFolderCount}
                   isCountLoading={isCountLoading}
                   onSelect={handleSubFolderSelect}
-                  onRename={openRename}
                   onDelete={openDelete}
-                  onKKFolderToggle={(subFolderId, name, isKKFolder) => {
-                    onKKFolderToggle(
-                      campaign.id,
-                      name,
-                      isKKFolder,
-                      subFolderId
-                    );
-                  }}
-                  onKKSelectedToggle={(subFolderId, name, isKKSelected) => {
-                    onKKSelectedToggle(
-                      campaign.id,
-                      name,
-                      isKKSelected,
-                      subFolderId
-                    );
-                  }}
-                  onAdminOnlyToggle={(subFolderId, name, isAdminOnly) => {
-                    onAdminOnlyToggle(
-                      campaign.id,
-                      name,
-                      isAdminOnly,
-                      subFolderId
-                    );
-                  }}
+                  onKKFolderToggle={handleSubfolderKKFolderToggle}
+                  onKKSelectedToggle={handleSubfolderKKSelectedToggle}
+                  onAdminOnlyToggle={handleSubfolderAdminOnlyToggle}
                 />
               );
             })}
@@ -455,7 +572,7 @@ export function CampaignSidebarRow({
         )}
       </div>
 
-      <Dialogs />
+      {dialogs}
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import React, { useState } from "react";
 import {
   Folder,
   MoreVertical,
@@ -10,6 +11,8 @@ import {
   Star,
   EyeOff,
   Eye,
+  Check,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -64,6 +67,40 @@ export function SubfolderRow({
   onKKSelectedToggle,
   onAdminOnlyToggle,
 }: SubfolderRowProps) {
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(subFolder.name);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleRenameStart = () => {
+    setIsRenaming(true);
+    setRenameValue(subFolder.name);
+  };
+
+  const handleRenameConfirm = () => {
+    if (renameValue.trim() && renameValue !== subFolder.name) {
+      onRename(subFolder.id, renameValue.trim());
+    }
+    setIsRenaming(false);
+  };
+
+  const handleRenameCancel = () => {
+    setRenameValue(subFolder.name);
+    setIsRenaming(false);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleRenameConfirm();
+    } else if (e.key === "Escape") {
+      handleRenameCancel();
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDropdownOpen(true);
+  };
+
   return (
     <div className="relative">
       <div
@@ -73,6 +110,7 @@ export function SubfolderRow({
             ? "bg-gradient-to-r from-purple-50 to-purple-50/50 shadow-sm"
             : "bg-transparent hover:bg-gray-50/80"
         )}
+        onContextMenu={handleContextMenu}
       >
         <div className="flex items-center gap-1 py-1.5 pl-1">
           {/* Tree connector visualization */}
@@ -86,56 +124,103 @@ export function SubfolderRow({
             </div>
           </div>
 
-          <button
-            onClick={() => onSelect(subFolder.id)}
-            className="flex-1 text-left px-2 py-1.5 rounded-md hover:bg-transparent transition-colors max-w-56"
-          >
-            <div className="flex items-center gap-2.5">
-              {/* Subfolder Icon */}
-              <div className="flex items-center justify-center shrink-0">
-                <Folder
-                  className={cn(
-                    "w-[16px] h-[16px]",
-                    isActive ? "text-purple-600" : "text-gray-400"
-                  )}
-                />
-              </div>
+          {/* Subfolder Icon */}
+          <div className="flex items-center justify-center shrink-0 ml-2">
+            <Folder
+              className={cn(
+                "w-[16px] h-[16px]",
+                isActive ? "text-purple-600" : "text-gray-400"
+              )}
+            />
+          </div>
 
-              {/* Subfolder Name */}
-              <div className="flex-1 min-w-0">
-                <CampaignSidebarTruncatedText
-                  text={subFolder.name}
-                  className={cn(
-                    "text-xs leading-tight truncate",
-                    isActive
-                      ? "text-purple-900 font-semibold"
-                      : "text-gray-700 font-medium"
-                  )}
-                />
-              </div>
-
-              {/* Count Badge */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {isCountLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
-                ) : (
-                  <span
-                    className={cn(
-                      "text-[9px] font-medium min-w-[20px] text-center rounded-full px-1.5 py-0.5",
-                      isActive
-                        ? "text-purple-700 bg-purple-100/80"
-                        : "text-gray-500 bg-gray-100/80"
-                    )}
-                  >
-                    {count ?? 0}
-                  </span>
-                )}
-              </div>
+          {isRenaming ? (
+            <div className="flex-1 flex items-center gap-1 px-2">
+              <input
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={handleRenameKeyDown}
+                className="flex-1 text-xs px-1.5 py-0.5 rounded border border-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white"
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRenameConfirm();
+                }}
+                className="flex items-center justify-center w-5 h-5 hover:bg-green-100 rounded transition-colors"
+                title="Confirm"
+              >
+                <Check className="w-3.5 h-3.5 text-green-600" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRenameCancel();
+                }}
+                className="flex items-center justify-center w-5 h-5 hover:bg-red-100 rounded transition-colors"
+                title="Cancel"
+              >
+                <X className="w-3.5 h-3.5 text-red-600" />
+              </button>
             </div>
-          </button>
+          ) : (
+            <button
+              onClick={() => onSelect(subFolder.id)}
+              className={cn(
+                "flex-1 text-left px-2 py-1.5 rounded-md hover:bg-transparent transition-colors max-w-56",
+                subFolder.is_admin_only && "opacity-50"
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                {/* Subfolder Name */}
+                <div className="flex-1 min-w-0">
+                  <CampaignSidebarTruncatedText
+                    text={subFolder.name}
+                    className={cn(
+                      "text-xs leading-tight truncate",
+                      isActive
+                        ? "text-purple-900 font-semibold"
+                        : "text-gray-700 font-medium"
+                    )}
+                  />
+                </div>
+
+                {/* Status Icons */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {subFolder.is_kk_selected && (
+                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  )}
+                  {subFolder.is_kk_folder && (
+                    <Folder className="w-3 h-3 text-blue-500" />
+                  )}
+                </div>
+
+                {/* Count Badge */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isCountLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "text-[9px] font-medium min-w-[20px] text-center rounded-full px-1.5 py-0.5",
+                        isActive
+                          ? "text-purple-700 bg-purple-100/80"
+                          : "text-gray-500 bg-gray-100/80"
+                      )}
+                    >
+                      {count ?? 0}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+          )}
 
           {/* SubFolder Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
@@ -154,7 +239,7 @@ export function SubfolderRow({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  onRename(subFolder.id, subFolder.name);
+                  handleRenameStart();
                 }}
               >
                 <Pencil className="w-4 h-4 mr-2 text-gray-600" />
