@@ -13,7 +13,10 @@ import {
   Eye,
   Check,
   X,
+  Copy,
 } from "lucide-react";
+import { useUserStore } from "@/store/user.store";
+import { UserRoleId } from "@/types/user.types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +40,7 @@ interface SubfolderRowProps {
   onSelect: (subFolderId: string) => void;
   onRename: (subFolderId: string, name: string) => void;
   onDelete: (subFolderId: string, name: string) => void;
+  onDuplicate?: (subFolderId: string, name: string) => void;
   onKKFolderToggle: (
     subFolderId: string,
     name: string,
@@ -63,6 +67,7 @@ export function SubfolderRow({
   onSelect,
   onRename,
   onDelete,
+  onDuplicate,
   onKKFolderToggle,
   onKKSelectedToggle,
   onAdminOnlyToggle,
@@ -70,6 +75,8 @@ export function SubfolderRow({
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(subFolder.name);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { user } = useUserStore();
+  const isAdmin = user?.role?.id === UserRoleId.ADMIN;
 
   const handleRenameStart = () => {
     setIsRenaming(true);
@@ -278,25 +285,39 @@ export function SubfolderRow({
                   : "Mark as KK Selects"}
               </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAdminOnlyToggle(
-                    subFolder.id,
-                    subFolder.name,
-                    subFolder.is_admin_only || false
-                  );
-                }}
-              >
-                {subFolder.is_admin_only ? (
-                  <Eye className="w-4 h-4 mr-2 text-gray-600" />
-                ) : (
-                  <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
-                )}
-                {subFolder.is_admin_only
-                  ? "Show to Clients"
-                  : "Hide from Clients"}
-              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAdminOnlyToggle(
+                      subFolder.id,
+                      subFolder.name,
+                      subFolder.is_admin_only || false
+                    );
+                  }}
+                >
+                  {subFolder.is_admin_only ? (
+                    <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
+                  )}
+                  {subFolder.is_admin_only
+                    ? "Show to Clients"
+                    : "Hide from Clients"}
+                </DropdownMenuItem>
+              )}
+
+              {onDuplicate && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate(subFolder.id, subFolder.name);
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2 text-gray-600" />
+                  Duplicate
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuItem
                 onClick={(e) => {

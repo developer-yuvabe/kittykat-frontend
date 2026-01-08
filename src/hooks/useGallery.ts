@@ -1070,6 +1070,11 @@ export const useGalleryQuery = (
         queryClient.invalidateQueries({ queryKey, refetchType: "all" })
       )
     );
+
+    queryClient.invalidateQueries({
+      queryKey: ["campaign-counts"],
+      exact: false,
+    });
   };
 
   const totalItems = galleryQuery.data?.pages[0]?.pagination.total ?? 0;

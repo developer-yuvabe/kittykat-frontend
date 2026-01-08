@@ -3,6 +3,8 @@ import {
   createSubfolder as apiCreateSubfolder,
   updateSubfolder as apiUpdateSubfolder,
   deleteSubfolder as apiDeleteSubfolder,
+  duplicateSubfolder as apiDuplicateSubfolder,
+  type DuplicateSubFolderResponse,
 } from "@/services/api/campaign.service";
 import {
   SubFolderCreate,
@@ -36,6 +38,18 @@ interface DeleteVariables {
   brandId: string;
   campaignId: string;
   subFolderId: string;
+}
+
+interface DuplicateSubfolderData {
+  brandId: string;
+  campaignId: string;
+  subFolderId: string;
+}
+
+interface DuplicateSubfolderOptions extends DuplicateSubfolderData {
+  title: string;
+  undoSeconds?: number;
+  onSuccess?: (data: DuplicateSubFolderResponse) => void;
 }
 
 export function useSubfolderMutations() {
@@ -87,7 +101,6 @@ export function useSubfolderMutations() {
     },
   });
 
-  // UPDATE MUTATION (internal use only)
   const updateSubfolderMutation = useMutation({
     mutationFn: ({
       brandId,
@@ -235,6 +248,55 @@ export function useSubfolderMutations() {
     },
   });
 
+  // DUPLICATE MUTATION (internal use only)
+  const duplicateSubfolderMutation = useMutation({
+    mutationFn: ({
+      brandId,
+      campaignId,
+      subFolderId,
+    }: DuplicateSubfolderData) =>
+      apiDuplicateSubfolder(brandId, campaignId, subFolderId),
+
+    onSuccess: () => {
+      // Invalidate queries to refetch fresh data from server
+      queryClient.invalidateQueries({ queryKey: ["brands"], exact: false });
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+        exact: false,
+      });
+    },
+  });
+
+  // DUPLICATE WRAPPER with undo support
+  const duplicateSubfolder = async ({
+    brandId,
+    campaignId,
+    subFolderId,
+    title,
+    undoSeconds = 3,
+    onSuccess,
+  }: DuplicateSubfolderOptions) => {
+    await execute({
+      title,
+      loadingMessage: `Duplicating "${title}"...`,
+      successMessage: `"${title}" duplicated successfully.`,
+      errorMessage: `Failed to duplicate "${title}".`,
+      undoSeconds,
+      action: async () => {
+        const result = await duplicateSubfolderMutation.mutateAsync({
+          brandId,
+          campaignId,
+          subFolderId,
+        });
+        onSuccess?.(result);
+      },
+    });
+  };
+
   return {
     createSubfolder: createSubfolderMutation.mutateAsync,
     isCreatingSubfolder: createSubfolderMutation.isPending,
@@ -244,6 +306,9 @@ export function useSubfolderMutations() {
 
     deleteSubfolder: deleteSubfolderMutation.mutateAsync,
     isDeletingSubfolder: deleteSubfolderMutation.isPending,
+
+    duplicateSubfolder,
+    isDuplicatingSubfolder: duplicateSubfolderMutation.isPending,
   };
 }
 

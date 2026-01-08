@@ -74,9 +74,15 @@ export function CampaignsSidebar({
     useGalleryFilterStore();
 
   // Mutations
-  const { updateCampaign, deleteCampaign, setCampaignCuration } =
-    useCampaignMutations();
-  const { updateSubfolder: updateSubfolderMutation } = useSubfolderMutations();
+  const {
+    updateCampaign,
+    deleteCampaign,
+    setCampaignCuration,
+    duplicateCampaign,
+  } = useCampaignMutations();
+
+  const { updateSubfolder: updateSubfolderMutation, duplicateSubfolder } =
+    useSubfolderMutations();
 
   // Subscribe to real-time campaign analyzing status updates via SSE
   useCampaignAnalyzingStatus();
@@ -380,6 +386,94 @@ export function CampaignsSidebar({
     });
   };
 
+  const handleCampaignDuplicate = async (id: string, title: string) => {
+    if (!selectedBrandId) return;
+
+    try {
+      await duplicateCampaign({
+        brandId: selectedBrandId,
+        campaignId: id,
+        title,
+      });
+    } catch (error) {
+      console.error("Error duplicating campaign:", error);
+    }
+  };
+
+  const handleSubfolderDuplicate = async (
+    campaignId: string,
+    subFolderId: string,
+    title: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    try {
+      await duplicateSubfolder({
+        brandId: selectedBrandId,
+        campaignId,
+        subFolderId,
+        title,
+      });
+    } catch (error) {
+      console.error("Error duplicating subfolder:", error);
+    }
+  };
+
+  const handleRename = (id: string, title: string) => {
+    setRenameDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+    });
+  };
+
+  const handleArchiveDialog = (
+    id: string,
+    title: string,
+    isArchived: boolean
+  ) => {
+    setArchiveDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isArchived,
+      isProcessing: false,
+    });
+  };
+
+  const handleCuratedDialog = (
+    id: string,
+    title: string,
+    isCurated: boolean
+  ) => {
+    setCuratedDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isCurated,
+      isProcessing: false,
+    });
+  };
+
+  const handleDeleteDialog = (id: string, title: string) => {
+    setDeleteDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isDeleting: false,
+    });
+  };
+
+  const handleAnalyzeDialog = (id: string, title: string) => {
+    const campaign = campaigns.find((c) => c.id === id);
+    setAnalyzeDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isReanalysis: campaign?.is_curated_for_brand || false,
+    });
+  };
+
   if (!selectedBrandId) {
     return null;
   }
@@ -510,77 +604,16 @@ export function CampaignsSidebar({
                       count={countData?.count_by_campaign?.[campaign.id]}
                       subfolderCounts={countData?.count_by_sub_folder}
                       isCountLoading={isCountLoading}
-                      onRename={(id, title) =>
-                        setRenameDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                        })
-                      }
-                      onArchiveToggle={(id, title, isArchived) =>
-                        setArchiveDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isArchived,
-                          isProcessing: false,
-                        })
-                      }
-                      onCuratedToggle={(id, title, isCurated) =>
-                        setCuratedDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isCurated,
-                          isProcessing: false,
-                        })
-                      }
-                      onKKFolderToggle={(id, title, isKKFolder, subfolderId) =>
-                        handleKKFolderToggle(id, title, isKKFolder, subfolderId)
-                      }
-                      onKKSelectedToggle={(
-                        id,
-                        title,
-                        isKKSelected,
-                        subfolderId
-                      ) =>
-                        handleKKSelectedToggle(
-                          id,
-                          title,
-                          isKKSelected,
-                          subfolderId
-                        )
-                      }
-                      onAdminOnlyToggle={(
-                        id,
-                        title,
-                        isAdminOnly,
-                        subfolderId
-                      ) =>
-                        handleAdminOnlyToggle(
-                          id,
-                          title,
-                          isAdminOnly,
-                          subfolderId
-                        )
-                      }
-                      onDelete={(id, title) =>
-                        setDeleteDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isDeleting: false,
-                        })
-                      }
-                      onAnalyze={(id, title) => {
-                        const campaign = campaigns.find((c) => c.id === id);
-                        setAnalyzeDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isReanalysis: campaign?.is_curated_for_brand || false,
-                        });
-                      }}
+                      onRename={handleRename}
+                      onArchiveToggle={handleArchiveDialog}
+                      onCuratedToggle={handleCuratedDialog}
+                      onKKFolderToggle={handleKKFolderToggle}
+                      onKKSelectedToggle={handleKKSelectedToggle}
+                      onAdminOnlyToggle={handleAdminOnlyToggle}
+                      onDelete={handleDeleteDialog}
+                      onAnalyze={handleAnalyzeDialog}
+                      onDuplicate={handleCampaignDuplicate}
+                      onSubfolderDuplicate={handleSubfolderDuplicate}
                     />
                   ))}
                 </SortableContext>
@@ -622,77 +655,16 @@ export function CampaignsSidebar({
                       count={countData?.count_by_campaign?.[campaign.id]}
                       subfolderCounts={countData?.count_by_sub_folder}
                       isCountLoading={isCountLoading}
-                      onRename={(id, title) =>
-                        setRenameDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                        })
-                      }
-                      onArchiveToggle={(id, title, isArchived) =>
-                        setArchiveDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isArchived,
-                          isProcessing: false,
-                        })
-                      }
-                      onCuratedToggle={(id, title, isCurated) =>
-                        setCuratedDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isCurated,
-                          isProcessing: false,
-                        })
-                      }
-                      onKKFolderToggle={(id, title, isKKFolder, subfolderId) =>
-                        handleKKFolderToggle(id, title, isKKFolder, subfolderId)
-                      }
-                      onKKSelectedToggle={(
-                        id,
-                        title,
-                        isKKSelected,
-                        subfolderId
-                      ) =>
-                        handleKKSelectedToggle(
-                          id,
-                          title,
-                          isKKSelected,
-                          subfolderId
-                        )
-                      }
-                      onAdminOnlyToggle={(
-                        id,
-                        title,
-                        isAdminOnly,
-                        subfolderId
-                      ) =>
-                        handleAdminOnlyToggle(
-                          id,
-                          title,
-                          isAdminOnly,
-                          subfolderId
-                        )
-                      }
-                      onDelete={(id, title) =>
-                        setDeleteDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isDeleting: false,
-                        })
-                      }
-                      onAnalyze={(id, title) => {
-                        const campaign = campaigns.find((c) => c.id === id);
-                        setAnalyzeDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isReanalysis: campaign?.is_curated_for_brand || false,
-                        });
-                      }}
+                      onRename={handleRename}
+                      onArchiveToggle={handleArchiveDialog}
+                      onCuratedToggle={handleCuratedDialog}
+                      onKKFolderToggle={handleKKFolderToggle}
+                      onKKSelectedToggle={handleKKSelectedToggle}
+                      onAdminOnlyToggle={handleAdminOnlyToggle}
+                      onDelete={handleDeleteDialog}
+                      onAnalyze={handleAnalyzeDialog}
+                      onDuplicate={handleCampaignDuplicate}
+                      onSubfolderDuplicate={handleSubfolderDuplicate}
                     />
                   ))}
                 </SortableContext>

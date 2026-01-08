@@ -91,9 +91,16 @@ export function GallerySidebar({
     useGalleryFilterStore();
 
   // Mutations
-  const { updateCampaign, deleteCampaign, setCampaignCuration } =
-    useCampaignMutations();
-  const { updateSubfolder: updateSubfolderMutation } = useSubfolderMutations();
+  const {
+    updateCampaign,
+    deleteCampaign,
+    setCampaignCuration,
+    duplicateCampaign,
+  } = useCampaignMutations();
+  const {
+    updateSubfolder: updateSubfolderMutation,
+    duplicateSubfolder,
+  } = useSubfolderMutations();
 
   // Subscribe to real-time campaign analyzing status updates via SSE
   useCampaignAnalyzingStatus();
@@ -394,6 +401,39 @@ export function GallerySidebar({
     }
   };
 
+  const handleCampaignDuplicate = async (id: string, title: string) => {
+    if (!selectedBrandId) return;
+
+    try {
+      await duplicateCampaign({
+        brandId: selectedBrandId,
+        campaignId: id,
+        title,
+      });
+    } catch (error) {
+      console.error("Error duplicating campaign:", error);
+    }
+  };
+
+  const handleSubfolderDuplicate = async (
+    campaignId: string,
+    subFolderId: string,
+    title: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    try {
+      await duplicateSubfolder({
+        brandId: selectedBrandId,
+        campaignId,
+        subFolderId,
+        title,
+      });
+    } catch (error) {
+      console.error("Error duplicating subfolder:", error);
+    }
+  };
+
   // Collapsed state
   if (isCollapsed) {
     return (
@@ -677,6 +717,8 @@ export function GallerySidebar({
                                   campaign?.is_curated_for_brand || false,
                               });
                             }}
+                            onDuplicate={handleCampaignDuplicate}
+                            onSubfolderDuplicate={handleSubfolderDuplicate}
                           />
                         ))}
                       </SortableContext>
@@ -808,6 +850,8 @@ export function GallerySidebar({
                                   campaign?.is_curated_for_brand || false,
                               });
                             }}
+                            onDuplicate={handleCampaignDuplicate}
+                            onSubfolderDuplicate={handleSubfolderDuplicate}
                           />
                         ))}
                       </SortableContext>

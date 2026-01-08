@@ -19,7 +19,10 @@ import {
   Eye,
   Check,
   X,
+  Copy,
 } from "lucide-react";
+import { useUserStore } from "@/store/user.store";
+import { UserRoleId } from "@/types/user.types";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -65,6 +68,7 @@ interface CampaignSidebarRowProps {
   ) => void;
   onDelete: (campaignId: string, title: string) => void;
   onAnalyze: (campaignId: string, title: string) => void;
+  onDuplicate: (campaignId: string, title: string) => void;
   onKKFolderToggle: (
     campaignId: string,
     title: string,
@@ -83,6 +87,11 @@ interface CampaignSidebarRowProps {
     isAdminOnly: boolean,
     subfolderId?: string
   ) => void;
+  onSubfolderDuplicate?: (
+    campaignId: string,
+    subFolderId: string,
+    title: string
+  ) => void;
   isDragDisabled?: boolean;
 }
 
@@ -100,9 +109,11 @@ export function CampaignSidebarRow({
   onCuratedToggle,
   onDelete,
   onAnalyze,
+  onDuplicate,
   onKKFolderToggle,
   onKKSelectedToggle,
   onAdminOnlyToggle,
+  onSubfolderDuplicate,
   isDragDisabled = false,
 }: CampaignSidebarRowProps) {
   const { overId, activeDragData } = useGalleryDnd();
@@ -118,6 +129,8 @@ export function CampaignSidebarRow({
   );
 
   const { updateSubfolder } = useSubfolderMutations();
+  const { user } = useUserStore();
+  const isAdmin = user?.role?.id === UserRoleId.ADMIN;
 
   const {
     attributes,
@@ -482,24 +495,26 @@ export function CampaignSidebarRow({
                     : "Mark as KK Selects"}
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() =>
-                    onAdminOnlyToggle(
-                      campaign.id,
-                      campaign.title,
-                      campaign.is_admin_only || false
-                    )
-                  }
-                >
-                  {campaign.is_admin_only ? (
-                    <Eye className="w-4 h-4 mr-2 text-gray-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
-                  )}
-                  {campaign.is_admin_only
-                    ? "Show to Clients"
-                    : "Hide from Clients"}
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onAdminOnlyToggle(
+                        campaign.id,
+                        campaign.title,
+                        campaign.is_admin_only || false
+                      )
+                    }
+                  >
+                    {campaign.is_admin_only ? (
+                      <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
+                    )}
+                    {campaign.is_admin_only
+                      ? "Show to Clients"
+                      : "Hide from Clients"}
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuItem
                   onClick={() =>
@@ -527,6 +542,13 @@ export function CampaignSidebarRow({
                     : campaign.is_curated_for_brand
                     ? "Reanalyze"
                     : "Analyze"}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => onDuplicate(campaign.id, campaign.title)}
+                >
+                  <Copy className="w-4 h-4 mr-2 text-gray-600" />
+                  Duplicate
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
@@ -562,6 +584,12 @@ export function CampaignSidebarRow({
                   isCountLoading={isCountLoading}
                   onSelect={handleSubFolderSelect}
                   onDelete={openDelete}
+                  onDuplicate={
+                    onSubfolderDuplicate
+                      ? (subFolderId, name) =>
+                          onSubfolderDuplicate(campaign.id, subFolderId, name)
+                      : undefined
+                  }
                   onKKFolderToggle={handleSubfolderKKFolderToggle}
                   onKKSelectedToggle={handleSubfolderKKSelectedToggle}
                   onAdminOnlyToggle={handleSubfolderAdminOnlyToggle}

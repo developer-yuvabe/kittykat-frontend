@@ -53,3 +53,22 @@ export async function deleteSubfolder(
     )
   );
 }
+
+/**
+ * Duplicate a subfolder with all its gallery items
+ */
+export interface DuplicateSubFolderResponse {
+  subfolder: SubFolderResponse;
+}
+
+export async function duplicateSubfolder(
+  brandId: string,
+  campaignId: string,
+  subfolderId: string
+): Promise<DuplicateSubFolderResponse> {
+  return handleApiRequest<DuplicateSubFolderResponse>(
+    axiosInstance.post(
+      `/brands/${brandId}/campaign/${campaignId}/subfolders/${subfolderId}/duplicate`
+    )
+  );
+}

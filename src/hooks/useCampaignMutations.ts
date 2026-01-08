@@ -3,6 +3,8 @@ import {
   patchCampaign as apiPatchCampaign,
   deleteCampaign as apiDeleteCampaign,
   setCampaignCuration as apiSetCampaignCuration,
+  duplicateCampaign as apiDuplicateCampaign,
+  type DuplicateCampaignResponse,
 } from "@/services/api/brand.service";
 import type { ThreadCampaign, ThreadCampaignUpdate } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,6 +50,17 @@ interface SetCurationOptions extends SetCurationData {
   title: string;
   undoSeconds?: number;
   onSuccess?: (data: ThreadCampaign) => void;
+}
+
+interface DuplicateCampaignData {
+  brandId: string;
+  campaignId: string;
+}
+
+interface DuplicateCampaignOptions extends DuplicateCampaignData {
+  title: string;
+  undoSeconds?: number;
+  onSuccess?: (data: DuplicateCampaignResponse) => void;
 }
 
 export function useCampaignMutations() {
@@ -202,8 +215,7 @@ export function useCampaignMutations() {
         ),
       }));
 
-      queryClient.invalidateQueries({ queryKey: ["brands"], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["campaigns"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
       queryClient.invalidateQueries({
         queryKey: ["campaign-counts"],
         exact: false,
@@ -344,6 +356,53 @@ export function useCampaignMutations() {
     });
   };
 
+  // DUPLICATE MUTATION (internal use only)
+  const duplicateCampaignMutation = useMutation({
+    mutationFn: ({ brandId, campaignId }: DuplicateCampaignData) =>
+      apiDuplicateCampaign(brandId, campaignId),
+
+    onSuccess: () => {
+      // Invalidate queries to refetch fresh data from server
+      queryClient.invalidateQueries({ queryKey: ["brands"], exact: false });
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+        exact: false,
+      });
+    },
+  });
+
+  // DUPLICATE WRAPPER with undo support
+  const duplicateCampaign = async ({
+    brandId,
+    campaignId,
+    title,
+    undoSeconds = 3,
+    onSuccess,
+  }: DuplicateCampaignOptions) => {
+    await execute({
+      title,
+      loadingMessage: `Duplicating "${title}"...`,
+      successMessage: `"${title}" duplicated successfully.`,
+      errorMessage: `Failed to duplicate "${title}".`,
+      undoSeconds,
+      onUndo: () => {
+        // Refetch on undo to sync with server state
+        queryClient.invalidateQueries({ queryKey: ["brands"], exact: false });
+      },
+      action: async () => {
+        const result = await duplicateCampaignMutation.mutateAsync({
+          brandId,
+          campaignId,
+        });
+        onSuccess?.(result);
+      },
+    });
+  };
+
   return {
     createCampaign: createCampaignMutation.mutateAsync,
     isCreatingCampaign: createCampaignMutation.isPending,
@@ -357,5 +416,8 @@ export function useCampaignMutations() {
 
     setCampaignCuration,
     isSettingCuration: setCurationMutation.isPending,
+
+    duplicateCampaign,
+    isDuplicatingCampaign: duplicateCampaignMutation.isPending,
   };
 }
