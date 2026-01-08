@@ -14,3 +14,4 @@ export interface BrandNotificationGroup {
   message: string;
   assets: AssetNotificationItem[];
 }
+
