@@ -11,6 +11,7 @@ import {
 } from "@/types/campaign.types";
 import { toast } from "sonner";
 import { useBrandStore } from "@/store/brand.store";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
 
 interface CreateVariables {
   brandId: string;
@@ -25,6 +26,12 @@ interface UpdateVariables {
   payload: SubFolderUpdate;
 }
 
+interface UpdateSubfolderOptions extends UpdateVariables {
+  title?: string;
+  undoSeconds?: number;
+  onSuccess?: (data: SubFolderResponse) => void;
+}
+
 interface DeleteVariables {
   brandId: string;
   campaignId: string;
@@ -33,6 +40,7 @@ interface DeleteVariables {
 
 export function useSubfolderMutations() {
   const queryClient = useQueryClient();
+  const { execute } = useUndoableAction();
 
   // CREATE
   const createSubfolderMutation = useMutation({
@@ -40,7 +48,6 @@ export function useSubfolderMutations() {
       apiCreateSubfolder(brandId, campaignId, payload),
 
     onMutate: async ({ payload }) => {
-      // Show a loading toast but do not optimistically modify UI
       const toastId = toast.loading(`Creating folder "${payload.name}"...`);
       return { toastId };
     },
@@ -52,7 +59,6 @@ export function useSubfolderMutations() {
     },
 
     onSuccess: (data: SubFolderResponse, variables, context: any) => {
-      // Add the created subfolder to the store (no optimistic behavior)
       useBrandStore.setState((state) => ({
         brands: state.brands.map((b) =>
           b.id === variables.brandId
@@ -73,7 +79,6 @@ export function useSubfolderMutations() {
 
       toast.success(`Folder "${data.name}" created`, { id: context?.toastId });
 
-      // Invalidate related queries so other data sources refresh
       queryClient.invalidateQueries({ queryKey: ["campaigns"], exact: false });
       queryClient.invalidateQueries({
         queryKey: ["campaign-counts"],
@@ -82,7 +87,7 @@ export function useSubfolderMutations() {
     },
   });
 
-  // UPDATE
+  // UPDATE MUTATION (internal use only)
   const updateSubfolderMutation = useMutation({
     mutationFn: ({
       brandId,
@@ -92,42 +97,7 @@ export function useSubfolderMutations() {
     }: UpdateVariables) =>
       apiUpdateSubfolder(brandId, campaignId, subFolderId, payload),
 
-    onMutate: async ({ brandId, campaignId, subFolderId, payload }) => {
-      const prevBrands = useBrandStore.getState().brands;
-
-      useBrandStore.setState((state) => ({
-        brands: state.brands.map((b) =>
-          b.id === brandId
-            ? {
-                ...b,
-                campaigns: b.campaigns.map((c) =>
-                  c.id === campaignId
-                    ? {
-                        ...c,
-                        sub_folders: (c.sub_folders || []).map((sf) =>
-                          sf.id === subFolderId ? { ...sf, ...payload } : sf
-                        ),
-                      }
-                    : c
-                ),
-              }
-            : b
-        ),
-      }));
-
-      const toastId = toast.loading(`Updating folder...`);
-      return { prevBrands, toastId };
-    },
-
-    onError: (error, variables, context: any) => {
-      if (context?.prevBrands) {
-        useBrandStore.setState({ brands: context.prevBrands });
-      }
-      toast.error(`Failed to update folder`, { id: context?.toastId });
-    },
-
-    onSuccess: (data: SubFolderResponse, variables, context: any) => {
-      // Ensure store matches server response
+    onSuccess: (data: SubFolderResponse, variables) => {
       useBrandStore.setState((state) => ({
         brands: state.brands.map((b) =>
           b.id === variables.brandId
@@ -148,10 +118,73 @@ export function useSubfolderMutations() {
         ),
       }));
 
-      toast.success(`Folder "${data.name}" updated`, { id: context?.toastId });
       queryClient.invalidateQueries({ queryKey: ["campaigns"], exact: false });
+      queryClient.invalidateQueries({
+        queryKey: ["campaign-counts"],
+        exact: false,
+      });
     },
   });
+
+  // UPDATE WRAPPER with optimistic updates and undo
+  const updateSubfolder = async ({
+    brandId,
+    campaignId,
+    subFolderId,
+    payload,
+    title,
+    undoSeconds = 3,
+    onSuccess,
+  }: UpdateSubfolderOptions) => {
+    const prevBrands = useBrandStore.getState().brands;
+    const displayTitle = title || payload.name || "Folder";
+
+    // Optimistic update in the store
+    useBrandStore.setState((state) => ({
+      brands: state.brands.map((b) =>
+        b.id === brandId
+          ? {
+              ...b,
+              campaigns: b.campaigns.map((c) =>
+                c.id === campaignId
+                  ? {
+                      ...c,
+                      sub_folders: (c.sub_folders || []).map((sf) =>
+                        sf.id === subFolderId ? { ...sf, ...payload } : sf
+                      ),
+                    }
+                  : c
+              ),
+            }
+          : b
+      ),
+    }));
+
+    await execute({
+      title: displayTitle,
+      loadingMessage: `Updating "${displayTitle}"...`,
+      successMessage: `"${displayTitle}" updated successfully.`,
+      errorMessage: `Failed to update "${displayTitle}".`,
+      undoSeconds,
+      onUndo: () => {
+        useBrandStore.setState({ brands: prevBrands });
+      },
+      action: async () => {
+        try {
+          const result = await updateSubfolderMutation.mutateAsync({
+            brandId,
+            campaignId,
+            subFolderId,
+            payload,
+          });
+          onSuccess?.(result);
+        } catch (error) {
+          useBrandStore.setState({ brands: prevBrands });
+          throw error;
+        }
+      },
+    });
+  };
 
   // DELETE
   const deleteSubfolderMutation = useMutation({
@@ -206,7 +239,7 @@ export function useSubfolderMutations() {
     createSubfolder: createSubfolderMutation.mutateAsync,
     isCreatingSubfolder: createSubfolderMutation.isPending,
 
-    updateSubfolder: updateSubfolderMutation.mutateAsync,
+    updateSubfolder,
     isUpdatingSubfolder: updateSubfolderMutation.isPending,
 
     deleteSubfolder: deleteSubfolderMutation.mutateAsync,

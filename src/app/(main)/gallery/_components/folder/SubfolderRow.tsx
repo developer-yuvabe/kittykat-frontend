@@ -1,7 +1,16 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Folder, MoreVertical, Pencil, Trash, Loader2 } from "lucide-react";
+import {
+  Folder,
+  MoreVertical,
+  Pencil,
+  Trash,
+  Loader2,
+  Star,
+  EyeOff,
+  Eye,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +23,9 @@ interface SubfolderRowProps {
   subFolder: {
     id: string;
     name: string;
+    is_admin_only?: boolean;
+    is_kk_folder?: boolean;
+    is_kk_selected?: boolean;
   };
   isLast: boolean;
   isActive: boolean;
@@ -22,6 +34,21 @@ interface SubfolderRowProps {
   onSelect: (subFolderId: string) => void;
   onRename: (subFolderId: string, name: string) => void;
   onDelete: (subFolderId: string, name: string) => void;
+  onKKFolderToggle: (
+    subFolderId: string,
+    name: string,
+    isKKFolder: boolean
+  ) => void;
+  onKKSelectedToggle: (
+    subFolderId: string,
+    name: string,
+    isKKSelected: boolean
+  ) => void;
+  onAdminOnlyToggle: (
+    subFolderId: string,
+    name: string,
+    isAdminOnly: boolean
+  ) => void;
 }
 
 export function SubfolderRow({
@@ -33,6 +60,9 @@ export function SubfolderRow({
   onSelect,
   onRename,
   onDelete,
+  onKKFolderToggle,
+  onKKSelectedToggle,
+  onAdminOnlyToggle,
 }: SubfolderRowProps) {
   return (
     <div className="relative">
@@ -129,6 +159,58 @@ export function SubfolderRow({
               >
                 <Pencil className="w-4 h-4 mr-2 text-gray-600" />
                 Rename
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onKKFolderToggle(
+                    subFolder.id,
+                    subFolder.name,
+                    subFolder.is_kk_folder || false
+                  );
+                }}
+              >
+                <Folder className="w-4 h-4 mr-2 text-gray-600" />
+                {subFolder.is_kk_folder
+                  ? "Remove as KK Folder"
+                  : "Mark as KK Folder"}
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onKKSelectedToggle(
+                    subFolder.id,
+                    subFolder.name,
+                    subFolder.is_kk_selected || false
+                  );
+                }}
+              >
+                <Star className="w-4 h-4 mr-2 text-gray-600" />
+                {subFolder.is_kk_selected
+                  ? "Remove as KK Selects"
+                  : "Mark as KK Selects"}
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdminOnlyToggle(
+                    subFolder.id,
+                    subFolder.name,
+                    subFolder.is_admin_only || false
+                  );
+                }}
+              >
+                {subFolder.is_admin_only ? (
+                  <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                ) : (
+                  <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
+                )}
+                {subFolder.is_admin_only
+                  ? "Show to Clients"
+                  : "Hide from Clients"}
               </DropdownMenuItem>
 
               <DropdownMenuItem

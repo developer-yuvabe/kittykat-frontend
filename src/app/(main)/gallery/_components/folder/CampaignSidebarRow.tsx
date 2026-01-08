@@ -14,6 +14,9 @@ import {
   ChevronDown,
   FolderOpen,
   Plus,
+  Star,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -59,6 +62,24 @@ interface CampaignSidebarRowProps {
   ) => void;
   onDelete: (campaignId: string, title: string) => void;
   onAnalyze: (campaignId: string, title: string) => void;
+  onKKFolderToggle: (
+    campaignId: string,
+    title: string,
+    isKKFolder: boolean,
+    subfolderId?: string
+  ) => void;
+  onKKSelectedToggle: (
+    campaignId: string,
+    title: string,
+    isKKSelected: boolean,
+    subfolderId?: string
+  ) => void;
+  onAdminOnlyToggle: (
+    campaignId: string,
+    title: string,
+    isAdminOnly: boolean,
+    subfolderId?: string
+  ) => void;
   isDragDisabled?: boolean;
 }
 
@@ -76,6 +97,9 @@ export function CampaignSidebarRow({
   onCuratedToggle,
   onDelete,
   onAnalyze,
+  onKKFolderToggle,
+  onKKSelectedToggle,
+  onAdminOnlyToggle,
   isDragDisabled = false,
 }: CampaignSidebarRowProps) {
   const { overId, activeDragData } = useGalleryDnd();
@@ -172,7 +196,10 @@ export function CampaignSidebarRow({
 
             <button
               onClick={() => onCampaignSelect(campaign.id)}
-              className="flex-1 text-left px-2 py-1 rounded-md hover:bg-transparent transition-colors  max-w-56"
+              className={cn(
+                "flex-1 text-left px-2 py-1 rounded-md hover:bg-transparent transition-colors max-w-56",
+                campaign.is_admin_only && "opacity-50"
+              )}
             >
               <div className="flex items-center gap-2.5">
                 {/* Folder Icon */}
@@ -205,6 +232,19 @@ export function CampaignSidebarRow({
                         : "text-gray-800 font-medium"
                     )}
                   />
+                </div>
+
+                {/* Status Icons */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {campaign.is_kk_selected && (
+                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  )}
+                  {campaign.is_kk_folder && (
+                    <Folder className="w-3 h-3 text-blue-500" />
+                  )}
+                  {campaign.is_curated_for_brand && (
+                    <Brain className="w-3 h-3 text-purple-500" />
+                  )}
                 </div>
 
                 {/* Count Badge */}
@@ -276,6 +316,55 @@ export function CampaignSidebarRow({
 
                 <DropdownMenuItem
                   onClick={() =>
+                    onKKFolderToggle(
+                      campaign.id,
+                      campaign.title,
+                      campaign.is_kk_folder || false
+                    )
+                  }
+                >
+                  <Folder className="w-4 h-4 mr-2 text-gray-600" />
+                  {campaign.is_kk_folder
+                    ? "Remove as KK Folder"
+                    : "Mark as KK Folder"}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    onKKSelectedToggle(
+                      campaign.id,
+                      campaign.title,
+                      campaign.is_kk_selected || false
+                    )
+                  }
+                >
+                  <Star className="w-4 h-4 mr-2 text-gray-600" />
+                  {campaign.is_kk_selected
+                    ? "Remove as KK Selects"
+                    : "Mark as KK Selects"}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    onAdminOnlyToggle(
+                      campaign.id,
+                      campaign.title,
+                      campaign.is_admin_only || false
+                    )
+                  }
+                >
+                  {campaign.is_admin_only ? (
+                    <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
+                  )}
+                  {campaign.is_admin_only
+                    ? "Show to Clients"
+                    : "Hide from Clients"}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
                     onCuratedToggle(
                       campaign.id,
                       campaign.title,
@@ -335,6 +424,30 @@ export function CampaignSidebarRow({
                   onSelect={handleSubFolderSelect}
                   onRename={openRename}
                   onDelete={openDelete}
+                  onKKFolderToggle={(subFolderId, name, isKKFolder) => {
+                    onKKFolderToggle(
+                      campaign.id,
+                      name,
+                      isKKFolder,
+                      subFolderId
+                    );
+                  }}
+                  onKKSelectedToggle={(subFolderId, name, isKKSelected) => {
+                    onKKSelectedToggle(
+                      campaign.id,
+                      name,
+                      isKKSelected,
+                      subFolderId
+                    );
+                  }}
+                  onAdminOnlyToggle={(subFolderId, name, isAdminOnly) => {
+                    onAdminOnlyToggle(
+                      campaign.id,
+                      name,
+                      isAdminOnly,
+                      subFolderId
+                    );
+                  }}
                 />
               );
             })}

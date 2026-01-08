@@ -30,7 +30,7 @@ import {
 } from "@dnd-kit/sortable";
 import { cn } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
-import { useCampaignCounts } from "@/hooks/useCampaignCounts";
+import { useCampaignCounts } from "@/hooks/useCampaigns";
 import { useCampaignAnalyzingStatus } from "@/hooks/sse/useCampaignAnalyzingStatus";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
@@ -39,13 +39,8 @@ import { CampaignSidebarRow } from "./CampaignSidebarRow";
 import { CampaignDialogs } from "./CampaignDialogs";
 import { DroppableSectionHeader } from "./CampaignDroppableSectionHeader";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
-import { useQueryClient } from "@tanstack/react-query";
-import { useUndoableAction } from "@/hooks/useUndoableAction";
-import {
-  deleteCampaign,
-  updateCampaign,
-  setCampaignCuration,
-} from "@/services/api/brand.service";
+import { useCampaignMutations } from "@/hooks/useCampaignMutations";
+import { useSubfolderMutations } from "@/hooks/useSubfolderMutations";
 import { useBrandBrainAnalysis } from "@/hooks/useBrandBrainAnalysis";
 import { CreateCampaignDialog } from "@/components/gallery/CreateCampaignDialog";
 
@@ -91,11 +86,14 @@ export function GallerySidebar({
   onToggleCollapsed,
 }: GallerySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { brands, archiveCampaign, setSelectedCampaignId } = useBrandStore();
+  const { brands, setSelectedCampaignId } = useBrandStore();
   const { selectedSubFolderId, setSelectedSubFolderId } =
     useGalleryFilterStore();
-  const queryClient = useQueryClient();
-  const { execute } = useUndoableAction();
+
+  // Mutations
+  const { updateCampaign, deleteCampaign, setCampaignCuration } =
+    useCampaignMutations();
+  const { updateSubfolder: updateSubfolderMutation } = useSubfolderMutations();
 
   // Subscribe to real-time campaign analyzing status updates via SSE
   useCampaignAnalyzingStatus();
@@ -210,42 +208,6 @@ export function GallerySidebar({
     [archivedCampaigns]
   );
 
-  // Update gallery when campaign is archived/unarchived
-  const updateGalleryForCampaignArchive = (
-    campaignId: string,
-    shouldBeArchived: boolean
-  ) => {
-    queryClient.setQueriesData({ queryKey: ["gallery-items"] }, (old: any) => {
-      if (!old?.pages) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page: any) => {
-          const itemsInThisCampaign = page.gallery_items.filter(
-            (item: any) => item.campaign_id === campaignId
-          );
-          const shouldKeep = !shouldBeArchived;
-          return {
-            ...page,
-            gallery_items: shouldKeep
-              ? page.gallery_items
-              : page.gallery_items.filter(
-                  (item: any) => item.campaign_id !== campaignId
-                ),
-            pagination: {
-              ...page.pagination,
-              total: shouldKeep
-                ? page.pagination.total
-                : Math.max(
-                    0,
-                    page.pagination.total - itemsInThisCampaign.length
-                  ),
-            },
-          };
-        }),
-      };
-    });
-  };
-
   // Handlers
   const handleDelete = async () => {
     if (!selectedBrandId) return;
@@ -262,16 +224,11 @@ export function GallerySidebar({
     });
 
     try {
-      await execute({
+      await deleteCampaign({
+        brandId: selectedBrandId,
+        campaignId,
         title,
         undoSeconds: 3,
-        loadingMessage: `Deleting "${title}"...`,
-        action: async () => {
-          await deleteCampaign(selectedBrandId, campaignId);
-          await queryClient.invalidateQueries({ queryKey: ["brands"] });
-        },
-        successMessage: `"${title}" deleted successfully.`,
-        errorMessage: `Failed to delete "${title}".`,
       });
     } catch {
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
@@ -293,31 +250,15 @@ export function GallerySidebar({
       isArchived: false,
       isProcessing: false,
     });
-
-    archiveCampaign(selectedBrandId, campaignId, shouldBeArchived);
-
     try {
-      await execute({
+      await updateCampaign({
+        brandId: selectedBrandId,
+        campaignId,
+        payload: { is_archived: shouldBeArchived },
         title,
         undoSeconds: 3,
-        loadingMessage: `${
-          shouldBeArchived ? "Archiving" : "Unarchiving"
-        } "${title}"...`,
-        action: async () => {
-          await updateCampaign(selectedBrandId, campaignId, {
-            is_archived: shouldBeArchived,
-          });
-          updateGalleryForCampaignArchive(campaignId, shouldBeArchived);
-          await queryClient.invalidateQueries({ queryKey: ["brands"] });
-        },
-        successMessage: `"${title}" ${
-          shouldBeArchived ? "archived" : "unarchived"
-        } successfully.`,
-        errorMessage: `Failed to ${
-          shouldBeArchived ? "archive" : "unarchive"
-        } "${title}".`,
       });
-    } catch {
+    } finally {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   };
@@ -348,29 +289,108 @@ export function GallerySidebar({
     });
 
     try {
-      await execute({
+      await setCampaignCuration({
+        brandId: selectedBrandId,
+        campaignId,
+        isCurated: shouldBeCurated,
         title,
         undoSeconds: 3,
-        loadingMessage: `${
-          shouldBeCurated ? "Marking" : "Unmarking"
-        } "${title}" as curated campaign...`,
-        action: async () => {
-          await setCampaignCuration(
-            selectedBrandId,
-            campaignId,
-            shouldBeCurated
-          );
-          await queryClient.invalidateQueries({ queryKey: ["brands"] });
-        },
-        successMessage: `"${title}" ${
-          shouldBeCurated ? "marked" : "unmarked"
-        } as curated campaign successfully.`,
-        errorMessage: `Failed to ${
-          shouldBeCurated ? "mark" : "unmark"
-        } "${title}" as curated campaign.`,
       });
     } catch {
       setCuratedDialog((prev) => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const handleKKFolderToggle = async (
+    id: string,
+    title: string,
+    isKKFolder: boolean,
+    subfolderId?: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    const shouldBeKKFolder = !isKKFolder;
+
+    try {
+      if (subfolderId) {
+        await updateSubfolderMutation({
+          brandId: selectedBrandId,
+          campaignId: id,
+          subFolderId: subfolderId,
+          payload: { is_kk_folder: shouldBeKKFolder },
+        });
+      } else {
+        await updateCampaign({
+          brandId: selectedBrandId,
+          campaignId: id,
+          payload: { is_kk_folder: shouldBeKKFolder },
+          title,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling KK folder:", error);
+    }
+  };
+
+  const handleKKSelectedToggle = async (
+    id: string,
+    title: string,
+    isKKSelected: boolean,
+    subfolderId?: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    const shouldBeKKSelected = !isKKSelected;
+
+    try {
+      if (subfolderId) {
+        await updateSubfolderMutation({
+          brandId: selectedBrandId,
+          campaignId: id,
+          subFolderId: subfolderId,
+          payload: { is_kk_selected: shouldBeKKSelected },
+        });
+      } else {
+        await updateCampaign({
+          brandId: selectedBrandId,
+          campaignId: id,
+          payload: { is_kk_selected: shouldBeKKSelected },
+          title,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling KK selected:", error);
+    }
+  };
+
+  const handleAdminOnlyToggle = async (
+    id: string,
+    title: string,
+    isAdminOnly: boolean,
+    subfolderId?: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    const shouldBeAdminOnly = !isAdminOnly;
+
+    try {
+      if (subfolderId) {
+        await updateSubfolderMutation({
+          brandId: selectedBrandId,
+          campaignId: id,
+          subFolderId: subfolderId,
+          payload: { is_admin_only: shouldBeAdminOnly },
+        });
+      } else {
+        await updateCampaign({
+          brandId: selectedBrandId,
+          campaignId: id,
+          payload: { is_admin_only: shouldBeAdminOnly },
+          title,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling admin only:", error);
     }
   };
 
@@ -598,6 +618,45 @@ export function GallerySidebar({
                                 isProcessing: false,
                               })
                             }
+                            onKKFolderToggle={(
+                              id,
+                              title,
+                              isKKFolder,
+                              subfolderId
+                            ) =>
+                              handleKKFolderToggle(
+                                id,
+                                title,
+                                isKKFolder,
+                                subfolderId
+                              )
+                            }
+                            onKKSelectedToggle={(
+                              id,
+                              title,
+                              isKKSelected,
+                              subfolderId
+                            ) =>
+                              handleKKSelectedToggle(
+                                id,
+                                title,
+                                isKKSelected,
+                                subfolderId
+                              )
+                            }
+                            onAdminOnlyToggle={(
+                              id,
+                              title,
+                              isAdminOnly,
+                              subfolderId
+                            ) =>
+                              handleAdminOnlyToggle(
+                                id,
+                                title,
+                                isAdminOnly,
+                                subfolderId
+                              )
+                            }
                             onDelete={(id, title) =>
                               setDeleteDialog({
                                 open: true,
@@ -689,6 +748,45 @@ export function GallerySidebar({
                                 isCurated,
                                 isProcessing: false,
                               })
+                            }
+                            onKKFolderToggle={(
+                              id,
+                              title,
+                              isKKFolder,
+                              subfolderId
+                            ) =>
+                              handleKKFolderToggle(
+                                id,
+                                title,
+                                isKKFolder,
+                                subfolderId
+                              )
+                            }
+                            onKKSelectedToggle={(
+                              id,
+                              title,
+                              isKKSelected,
+                              subfolderId
+                            ) =>
+                              handleKKSelectedToggle(
+                                id,
+                                title,
+                                isKKSelected,
+                                subfolderId
+                              )
+                            }
+                            onAdminOnlyToggle={(
+                              id,
+                              title,
+                              isAdminOnly,
+                              subfolderId
+                            ) =>
+                              handleAdminOnlyToggle(
+                                id,
+                                title,
+                                isAdminOnly,
+                                subfolderId
+                              )
                             }
                             onDelete={(id, title) =>
                               setDeleteDialog({
