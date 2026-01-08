@@ -205,7 +205,7 @@ export interface EnhancedSelectedFilters {
   // Existing filters
   brands: string[];
   campaigns: string[];
-  sub_folders: string[];
+  sub_folders?: string[];
   moodboards: string[];
   product_categories: string[];
 
