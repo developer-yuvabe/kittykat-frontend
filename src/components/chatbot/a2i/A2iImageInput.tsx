@@ -259,6 +259,7 @@ const A2iImageInput = ({
         aspect_ratio: [],
         workflow_status: [],
         sort_by: "last_accessed_at",
+        sub_folders: [],
       },
     },
     40,
@@ -1913,6 +1914,7 @@ const A2iImageInput = ({
           is_favourite: undefined,
           is_archived: undefined,
           moodboards: [],
+          sub_folders: [],
         }}
         brandId={selectedBrandId!}
         campaignId={selectedCampaignId || undefined}

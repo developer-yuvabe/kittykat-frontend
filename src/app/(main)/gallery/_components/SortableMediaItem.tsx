@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GalleryItemResponse } from "@/types/gallery.types";
 import { MediaOverlay } from "./MediaOverlay";
@@ -11,10 +12,14 @@ import { ImageModal } from "@/components/shared/ImageModal";
 import { handleDownloadImage } from "@/lib/utils";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, convertParameterValue } from "@/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DragItemEnum } from "@/types/gallery-dnd.types";
+import { useMetadataActionsStore } from "@/store/metadata-actions.store";
+import { useModelsStore } from "@/store/models.store";
+import { useA2iStore } from "@/store/a2i.store";
+import { getGalleryImageParameters } from "@/services/api/gallery.service";
 
 // Types
 interface SortableMediaItemProps {
@@ -67,6 +72,18 @@ export function SortableMediaItem({
   const [isLoaded, setIsLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
   const [showImageModal, setShowImageModal] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const { setParameters } = useMetadataActionsStore();
+  const {
+    models,
+    setSelectedImageGenerationModel,
+    setSelectedRemixModel,
+    setSelectedVideoGenearationModel,
+  } = useModelsStore();
+  const { setShouldClearPromptOnMetadataActions, setStartFrame, setEndFrame } =
+    useA2iStore();
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
 
@@ -169,6 +186,179 @@ export function SortableMediaItem({
     setShowImageModal(true);
   };
 
+  const handleReuse = async (
+    item: GalleryItemResponse,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+
+    try {
+      // Fetch generation parameters from API
+      const data = await getGalleryImageParameters(item.brand_id, item.id);
+
+      if (!data?.parameters) {
+        toast.error("No generation parameters found for this asset.");
+        return;
+      }
+
+      if (data?.type === "remix") {
+        const model = models.find(
+          (m) => m.model === data.parameters.model && m.type === "remix"
+        );
+
+        if (!model) {
+          toast.error("No model found for this image.");
+          return;
+        }
+
+        // Validate that base image exists
+        const baseInputImageUrl =
+          data.parameters.base_image || data.parameters.image;
+        if (!baseInputImageUrl) {
+          toast.error("Base input not available—cannot vary this image.");
+          return;
+        }
+
+        // Set the remix model
+        setSelectedRemixModel(model);
+
+        // Convert all remix parameters based on model schema
+        const convertedRemixParams = { ...data.parameters };
+
+        model.parameters.forEach((paramDef) => {
+          const id = paramDef.id;
+          if (convertedRemixParams[id] !== undefined) {
+            convertedRemixParams[id] = convertParameterValue(
+              convertedRemixParams[id],
+              paramDef
+            );
+          }
+        });
+
+        // Store schema-correct params
+        setParameters("remixParameters", convertedRemixParams);
+
+        // Navigate to home if not already there
+        if (pathname !== "/") {
+          router.push("/?scrollTo=a2i-input");
+        }
+
+        toast.info("Pre Selected Model and its parameters have been set.");
+        return;
+      } else if (data?.type === "image_generation" || data?.type === "a2i") {
+        const model = models.find(
+          (m) => m.model === data.parameters.model && m.type === "image"
+        );
+
+        if (!model) {
+          toast.error("No model found for this image.");
+          return;
+        }
+
+        setShouldClearPromptOnMetadataActions(true);
+
+        // Regular image generation workflow
+        setSelectedImageGenerationModel(model);
+
+        const parameters = data.parameters;
+        const productReferenceImages =
+          parameters.product_reference_images || [];
+
+        // Get reference images parameter ID
+        const referneceImagesParamId = model.parameters.find(
+          (p) => p.type === "file"
+        );
+
+        let modifiedParameters = { ...parameters };
+
+        // Instead of re-uploading, we reuse the existing URLs directly
+        // This maintains the connection with gallery items
+        if (referneceImagesParamId && parameters[referneceImagesParamId.id]) {
+          const refImageOrImages = parameters[referneceImagesParamId.id];
+
+          // Keep the reference images as-is (don't re-upload)
+          modifiedParameters = {
+            ...modifiedParameters,
+            [referneceImagesParamId.id]: refImageOrImages,
+          };
+        }
+
+        setParameters("imageGeneationParameters", modifiedParameters);
+
+        // Set product reference images separately to maintain categorization
+        if (productReferenceImages && productReferenceImages.length > 0) {
+          setParameters("productReferenceImages", productReferenceImages);
+        } else {
+          setParameters("productReferenceImages", null);
+        }
+
+        // Navigate to home if not already there
+        if (pathname !== "/") {
+          router.push("/?scrollTo=a2i-input");
+        }
+
+        toast.info("Pre Selected Model and its parameters have been set.");
+      } else if (data?.type === "video_generation" || data?.type === "video") {
+        const model = models.find((m) => m.model === data.parameters.model);
+
+        if (!model) {
+          toast.error("No model found for this video.");
+          return;
+        }
+
+        // Convert all parameters based on model parameter definitions
+        const videoParams = { ...data.parameters };
+        model.parameters?.forEach((paramDef) => {
+          const paramId = paramDef.id;
+          if (
+            videoParams[paramId] !== undefined &&
+            videoParams[paramId] !== null
+          ) {
+            videoParams[paramId] = convertParameterValue(
+              videoParams[paramId],
+              paramDef
+            );
+          }
+        });
+
+        //  Set model + parameters
+        setSelectedVideoGenearationModel(model);
+        setParameters("videoParameters", videoParams);
+
+        const firstFrameParam = model.parameters?.find(
+          (param) => param.type === "first_frame"
+        );
+
+        const lastFrameParam = model.parameters?.find(
+          (param) => param.type === "last_frame"
+        );
+
+        if (firstFrameParam?.id) {
+          setStartFrame(videoParams[firstFrameParam.id]);
+        }
+        if (lastFrameParam?.id) {
+          setEndFrame(videoParams[lastFrameParam.id]);
+        }
+
+        // Navigate to home if not already there
+        if (pathname !== "/") {
+          router.push("/?scrollTo=a2i-input");
+        }
+
+        toast.info(
+          "Preselected Model and its paramters set in Video Generation Mode."
+        );
+      } else {
+        toast.error("Unsupported generation type for re-use.");
+      }
+    } catch (error) {
+      console.error("Error loading re-use parameters:", error);
+      toast.error(
+        "An error occurred while loading the generation parameters. Please try again."
+      );
+    }
+  };
+
   const { thumbnailShape } = useGalleryFilterStore();
 
   const aspectRatio =
@@ -254,6 +444,7 @@ export function SortableMediaItem({
           onDelete={onDelete}
           onEditMoodboard={onEditMoodboard}
           onExpandClick={handleExpandClick}
+          onReuse={handleReuse}
         />
 
         {/* Dark overlay for better drag handle visibility - only show on hover when draggable */}
