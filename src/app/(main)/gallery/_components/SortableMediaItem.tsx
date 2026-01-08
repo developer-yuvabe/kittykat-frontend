@@ -82,8 +82,12 @@ export function SortableMediaItem({
     setSelectedRemixModel,
     setSelectedVideoGenearationModel,
   } = useModelsStore();
-  const { setShouldClearPromptOnMetadataActions, setStartFrame, setEndFrame } =
-    useA2iStore();
+  const {
+    setShouldClearPromptOnMetadataActions,
+    setStartFrame,
+    setEndFrame,
+    setSelectedFolderId,
+  } = useA2iStore();
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
 
@@ -237,7 +241,10 @@ export function SortableMediaItem({
 
         // Store schema-correct params
         setParameters("remixParameters", convertedRemixParams);
-
+        // Set selected folder to campaign if available
+        if (item.campaign_id) {
+          setSelectedFolderId(item.campaign_id);
+        }
         // Navigate to home if not already there
         if (pathname !== "/") {
           router.push("/?scrollTo=a2i-input");
@@ -291,7 +298,10 @@ export function SortableMediaItem({
         } else {
           setParameters("productReferenceImages", null);
         }
-
+        // Set selected folder to campaign if available
+        if (item.campaign_id) {
+          setSelectedFolderId(item.campaign_id);
+        }
         // Navigate to home if not already there
         if (pathname !== "/") {
           router.push("/?scrollTo=a2i-input");
@@ -338,6 +348,11 @@ export function SortableMediaItem({
         }
         if (lastFrameParam?.id) {
           setEndFrame(videoParams[lastFrameParam.id]);
+        }
+
+        // Set selected folder to campaign if available
+        if (item.campaign_id) {
+          setSelectedFolderId(item.campaign_id);
         }
 
         // Navigate to home if not already there
