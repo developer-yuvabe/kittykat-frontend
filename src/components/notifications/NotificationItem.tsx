@@ -59,13 +59,20 @@ const NotificationItem = ({
         <AnimatePresence>
           <ul>
             {notification.assets.map((asset) => {
+              const isStatusChange =
+                asset.notification_type === "status_change";
+
+              const isCommentAdded =
+                asset.notification_type === "comment_added";
+
               const status = WORKFLOW_STATUS_OPTIONS.find(
-                (option) => option.value === asset.status
+                (option) => option.value === asset.metadata?.status
               );
+
               return (
                 <li
-                  onClick={() => handleNotificationClick(asset.gallery_item_id)}
                   key={asset.gallery_item_id}
+                  onClick={() => handleNotificationClick(asset.gallery_item_id)}
                   className={cn(
                     `flex items-center justify-between p-2 cursor-pointer hover:bg-muted px-4`,
                     {
@@ -74,6 +81,7 @@ const NotificationItem = ({
                   )}
                 >
                   <div className="flex items-center gap-x-2">
+                    {/* ---------- COMMON THUMBNAIL ---------- */}
                     {asset.image_url && (
                       <img
                         src={asset.image_url}
@@ -81,6 +89,7 @@ const NotificationItem = ({
                         className="w-12 h-12 object-cover rounded"
                       />
                     )}
+
                     {asset.video_url && (
                       <video
                         src={asset.video_url}
@@ -90,20 +99,45 @@ const NotificationItem = ({
                         className="w-12 h-12 object-cover rounded"
                       />
                     )}
-                    <div>
-                      {status && (
-                        <Badge
-                          className={`text-sm font-medium text-white ${status.dotColor}`}
-                        >
-                          {status.label}
-                        </Badge>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        {new Date(
-                          formatToLocalTime(asset.updated_at)
-                        ).toLocaleString()}
-                      </p>
-                    </div>
+
+                    {/* ---------- STATUS CHANGED UI ---------- */}
+                    {isStatusChange && (
+                      <div>
+                        {status && (
+                          <Badge
+                            className={`text-sm font-medium text-white ${status.dotColor}`}
+                          >
+                            {status.label}
+                          </Badge>
+                        )}
+
+                        <p className="text-xs text-gray-500">
+                          {new Date(
+                            formatToLocalTime(asset.updated_at)
+                          ).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* ---------- COMMENT ADDED UI ---------- */}
+                    {isCommentAdded && (
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium">
+                          <span className="text-gray-500">Commented by </span>
+                          <span>{asset.metadata?.commented_by}</span>
+                        </p>
+
+                        <p className="text-sm text-gray-600">
+                          {asset.metadata?.comment}
+                        </p>
+
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(
+                            formatToLocalTime(asset.updated_at)
+                          ).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </li>
               );
