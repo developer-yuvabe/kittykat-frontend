@@ -544,9 +544,13 @@ export const notifyProductExtraction = (
   const extractedCount =
     metadata?.total_products_extracted ?? metadata?.extracted_products?.length ?? 0;
 
-  toast.success(
-    `${extractedCount} product${extractedCount === 1 ? "" : "s"} extracted and added to gallery`
-  );
+  if (extractedCount === 0) {
+    toast.info("No products found in the selected images");
+  } else {
+    toast.success(
+      `${extractedCount} product${extractedCount === 1 ? "" : "s"} extracted and added to gallery`
+    );
+  }
 };
 
 export const trackProductExtractionCompletion = (
