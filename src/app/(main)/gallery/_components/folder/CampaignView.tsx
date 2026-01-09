@@ -379,6 +379,15 @@ export function CampaignView({
           onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brandName}
+          totalItems={galleryActions.totalItems}
+          fetchedItemsCount={galleryActions.getGalleryItems().length}
+          galleryFilters={{
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          }}
         />
       )}
     </div>

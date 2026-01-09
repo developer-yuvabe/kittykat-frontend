@@ -5,7 +5,6 @@ import React from "react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -52,27 +51,25 @@ export const TooltipButton = forwardRef<HTMLDivElement, TooltipButtonProps>(
     };
 
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              ref={ref}
-              onClick={disabled ? undefined : onClick}
-              className={cn(
-                "cursor-pointer transition-colors duration-200",
-                isActive ? activeColor : normalColor,
-                disabled && "opacity-50 ",
-                className
-              )}
-              {...rest}
-            >
-              <div className={cn(iconSizeClasses[size])}>{icon}</div>
-              <span className="sr-only">{tooltip}</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side={side}>{tooltip}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            ref={ref}
+            onClick={disabled ? undefined : onClick}
+            className={cn(
+              "cursor-pointer transition-colors duration-200",
+              isActive ? activeColor : normalColor,
+              disabled && "opacity-50 ",
+              className
+            )}
+            {...rest}
+          >
+            <div className={cn(iconSizeClasses[size])}>{icon}</div>
+            <span className="sr-only">{tooltip}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side={side}>{tooltip}</TooltipContent>
+      </Tooltip>
     );
   }
 );

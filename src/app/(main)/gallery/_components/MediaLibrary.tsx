@@ -80,6 +80,12 @@ export function MediaLibrary({
   const [showFilters, setShowFilters] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
 
+  // Select-all mode state
+  const [selectAllMode, setSelectAllMode] = useState<
+    "none" | "visible" | "all"
+  >("none");
+  const [excludedItems, setExcludedItems] = useState<string[]>([]);
+
   // Reset search query when dialog opens in select mode
   useEffect(() => {
     if (isMediaSelectDialog) {
@@ -313,8 +319,16 @@ export function MediaLibrary({
       // Single select mode: existing behavior
       if (selected) {
         setSelectedItems((prev) => [...prev, id]);
+        // Remove from exclusions if in select-all mode
+        if (selectAllMode !== "none") {
+          setExcludedItems((prev) => prev.filter((itemId) => itemId !== id));
+        }
       } else {
         setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+        // Add to exclusions if in select-all mode
+        if (selectAllMode !== "none") {
+          setExcludedItems((prev) => [...prev, id]);
+        }
       }
     }
   };
@@ -331,6 +345,8 @@ export function MediaLibrary({
   const handleUnselectAll = () => {
     setSelectedItems([]);
     setMultiSelectItems([]);
+    setSelectAllMode("none");
+    setExcludedItems([]);
   };
 
   const handleSearchChange = useMemo(
@@ -376,6 +392,24 @@ export function MediaLibrary({
     setSource(activeTab);
   }, [activeTab]);
 
+  // Auto-select newly fetched items when in select-all mode
+  useEffect(() => {
+    if (selectAllMode !== "none") {
+      // When in select-all mode, mark all loaded items as selected except those in excludedItems
+      const newSelectedItems = galleryItems
+        .filter((item) => !excludedItems.includes(item.id))
+        .map((item) => item.id);
+
+      // Only update if there's a meaningful change
+      if (
+        JSON.stringify(newSelectedItems.sort()) !==
+        JSON.stringify([...selectedItems].sort())
+      ) {
+        setSelectedItems(newSelectedItems);
+      }
+    }
+  }, [galleryItems.length, selectAllMode, excludedItems.length]);
+
   // Handle single select mode
   useEffect(() => {
     if (isMediaSelectDialog && !isMultiSelect && selectedItems.length > 0) {
@@ -402,9 +436,18 @@ export function MediaLibrary({
   const currentlySelectedItems = isMultiSelect
     ? multiSelectItems
     : selectedItems;
-  const currentSelectionCount = currentlySelectedItems.length;
 
-  // Get the actual selected items data
+  // Calculate effective selection count based on mode
+  const effectiveSelectionCount =
+    selectAllMode === "all"
+      ? galleryActions.totalItems - excludedItems.length
+      : selectAllMode === "visible"
+      ? galleryItems.length - excludedItems.length
+      : currentlySelectedItems.length;
+
+  const currentSelectionCount = effectiveSelectionCount;
+
+  // Get the actual selected items data (only loaded items)
   const selectedItemsData = galleryItems.filter((item) =>
     currentlySelectedItems.includes(item.id)
   );
@@ -735,6 +778,23 @@ export function MediaLibrary({
               onSelectAll={handleSelectAll}
               galleryActions={galleryActions}
               brandName={selectedBrandName}
+              galleryFilters={{
+                assetType: activeTab,
+                favorites,
+                source,
+                creator,
+                searchQuery,
+                selectedFilters,
+              }}
+              totalItems={galleryActions.totalItems}
+              fetchedItemsCount={galleryItems.length}
+              currentBrandId={selectedBrandId || ""}
+              currentCampaignId={selectedCampaignId}
+              currentSubFolderId={undefined}
+              selectAllMode={selectAllMode}
+              excludedItems={excludedItems}
+              onSelectAllModeChange={setSelectAllMode}
+              onExcludedItemsChange={setExcludedItems}
             />
           )}
       </div>

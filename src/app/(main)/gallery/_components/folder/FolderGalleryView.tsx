@@ -200,6 +200,15 @@ export function FolderGalleryView({
           onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brand?.name ?? "Brand"}
+          totalItems={galleryActions.totalItems}
+          fetchedItemsCount={galleryActions.getGalleryItems().length}
+          galleryFilters={{
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          }}
         />
       )}
     </div>

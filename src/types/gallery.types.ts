@@ -412,4 +412,77 @@ export interface GalleryDragPayload {
   activeTab?: string;
 }
 
+/**
+ * Bulk operation request using server-side selection
+ * Supports both explicit item lists and query-based selection
+ */
+export interface BulkOperationRequest {
+  // Brand and campaign context
+  brand_id: string;
+  campaign_id?: string;
+  sub_folder_id?: string;
+  moodboard_id?: string;
+
+  // Server-side selection mode
+  select_all?: boolean; // If true, applies to all items matching filters
+  excluded_items?: string[]; // Items to exclude when select_all is true
+  selected_items?: string[]; // Explicit item IDs when select_all is false
+
+  // Filters (when select_all is true)
+  asset_types?: string[];
+  asset_sources?: string[];
+  is_favourite?: boolean;
+  workflow_status?: string[];
+  media_format?: string[];
+  aspect_ratio?: string[];
+  has_product?: boolean;
+  has_people?: boolean;
+  has_lifestyle_context?: boolean;
+  has_comments?: boolean;
+  is_archived?: boolean;
+  created_at_range?: [string, string];
+}
+
+/**
+ * Bulk delete request
+ */
+export interface BulkDeleteRequest extends BulkOperationRequest {}
+
+/**
+ * Bulk update request (workflow status, comments, etc.)
+ */
+export interface BulkUpdateRequest extends BulkOperationRequest {
+  update_data: {
+    workflow_status?: WorkflowStatus;
+    is_favourite?: boolean;
+    is_archived?: boolean;
+    custom_tags?: string[];
+    // Add comment to all selected items
+    comment?: {
+      text: string;
+      attachments?: string[];
+      is_tasklist?: boolean;
+    };
+  };
+}
+
+/**
+ * Bulk move request (change brand/campaign/source)
+ */
+export interface BulkMoveRequest extends BulkOperationRequest {
+  target_brand_id?: string;
+  target_campaign_id?: string;
+  target_source?: string;
+}
+
+/**
+ * Bulk operation response
+ */
+export interface BulkOperationResponse {
+  success: boolean;
+  affected_count: number;
+  message?: string;
+  errors?: string[];
+}
+
 //
