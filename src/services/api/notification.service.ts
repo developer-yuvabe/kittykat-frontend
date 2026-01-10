@@ -15,10 +15,16 @@ export const getUserNotifications = async (): Promise<
   }
 };
 
-export const markNotificationsAsRead = async (brandId: string) => {
+export const markNotificationsAsRead = async (
+  brandId: string,
+  galleryItemId: string
+) => {
   try {
     return await handleApiRequest(
-      axiosInstance.put(`/notifications`, { brand_id: brandId })
+      axiosInstance.put(`/notifications`, {
+        brand_id: brandId,
+        gallery_id: galleryItemId,
+      })
     );
   } catch (error) {
     console.error("Error marking notifications as read:", error);
