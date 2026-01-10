@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/user.store";
 import { canEditTeamDetails } from "@/lib/team.utils";
 import { AdminTabNavigation } from "@/components/shared/AdminTabNavigation";
-import { AdminProtectedComponent } from "@/components/shared/AdminProtectedComponent";
+import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 
 export const TeamsTable = () => {
   const router = useRouter();
@@ -110,9 +110,9 @@ export const TeamsTable = () => {
             />
           </div>
           {canCreate && <TeamCreateDialog />}
-          <AdminProtectedComponent>
+          <RoleProtectedComponent>
             <AdminTabNavigation />
-          </AdminProtectedComponent>
+          </RoleProtectedComponent>
         </div>
       </div>
       {/* --- Table Wrapper --- */}
