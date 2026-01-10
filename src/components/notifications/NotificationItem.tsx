@@ -32,7 +32,7 @@ const NotificationItem = ({
     }, 100);
 
     setOpen();
-    await markNotificationsAsRead(notification.brand_id);
+    await markNotificationsAsRead(notification.brand_id, galleryItemId);
     queryClient.invalidateQueries({
       queryKey: ["user-notifications"],
     });
