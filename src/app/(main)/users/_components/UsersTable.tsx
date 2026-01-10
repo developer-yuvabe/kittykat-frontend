@@ -27,7 +27,7 @@ import { debounce } from "lodash";
 import { InviteUser } from "./InviteUser";
 import { cn } from "@/lib/utils";
 import { AdminTabNavigation } from "@/components/shared/AdminTabNavigation";
-import { AdminProtectedComponent } from "@/components/shared/AdminProtectedComponent";
+import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 
 export const UsersTable = () => {
   const [page, setPage] = useState(1);
@@ -98,9 +98,9 @@ export const UsersTable = () => {
             />
           </div>
           <InviteUser queryKey={["users", page, limit, searchTerm]} />
-          <AdminProtectedComponent>
+          <RoleProtectedComponent>
             <AdminTabNavigation />
-          </AdminProtectedComponent>
+          </RoleProtectedComponent>
         </div>
       </div>
       {/* --- Table Wrapper --- */}
