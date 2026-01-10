@@ -9,6 +9,7 @@ import { TeamRolesEnum } from "@/types/team.types";
 export const teamInvitationFormSchema = z.object({
   email: z.string().email({ message: FORM_MESSAGES.INVALID_EMAIL }),
   teamRole: z.nativeEnum(TeamRolesEnum),
+  modelAccess: z.array(z.string().optional()),
 });
 
 // ============================================================================

@@ -56,6 +56,9 @@ export type A2iImageCardProps = {
   style?: CSSProperties;
   disableDrag?: boolean;
   isNSFW: boolean;
+  isSelected?: boolean;
+  onSelect?: (selected: boolean) => void;
+  selectionMode?: boolean;
 };
 
 // 🔑 Control size for all overlay buttons
@@ -77,6 +80,9 @@ const A2iImageCard = ({
   disableDrag,
   video,
   isNSFW,
+  isSelected = false,
+  onSelect,
+  selectionMode = false,
 }: A2iImageCardProps) => {
   const { data, setData } = useBrandUpdatesStore();
   const { addOptimisticallyDeletedGenerationId } = useGenerationsStore();
@@ -386,6 +392,22 @@ const A2iImageCard = ({
     }
   };
 
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelect?.(!isSelected);
+  };
+
+  const handleCardClick = () => {
+    if (selectionMode) {
+      onSelect?.(!isSelected);
+    } else {
+      handleItemClick();
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -393,13 +415,44 @@ const A2iImageCard = ({
         isDragging && "scale-[1.03] shadow-xl"
       )}
       style={style}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Selection Checkbox - Top Left */}
+
+      {((status === "completed" && (image || video)) ||
+        status === "failed") && (
+        <div
+          className={cn(
+            "absolute top-2 left-2 z-40 transition-opacity",
+            isHovered || isSelected ? "opacity-100" : "opacity-0"
+          )}
+          onClick={handleCheckboxClick}
+        >
+          <div
+            className={cn(
+              "w-6 h-6 flex items-center justify-center rounded border-2 cursor-pointer transition-colors",
+              isSelected
+                ? "bg-white border-white"
+                : "bg-black/30 border-white/70 hover:bg-black/40"
+            )}
+          >
+            {isSelected && <CheckIcon className="w-4 h-4 text-black" />}
+          </div>
+        </div>
+      )}
+
+      {/* Update image click handler for selection mode */}
       {status === "completed" && image && (
         <div
           className="relative w-full h-full cursor-pointer group/image hover:brightness-110 transition-all duration-200 z-10"
-          onClick={handleItemClick}
-          draggable
+          onClick={selectionMode ? handleCardClick : handleItemClick}
+          draggable={!selectionMode}
           onDragStart={(e) => {
+            if (selectionMode) {
+              e.preventDefault();
+              return;
+            }
             try {
               e.dataTransfer.setData("assetUrl", image.url);
               e.dataTransfer.setData("source", "a2i");
@@ -418,17 +471,28 @@ const A2iImageCard = ({
             className="object-contain"
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />
-          {/* Zoom hint */}
         </div>
       )}
 
       {status === "completed" && video && (
         <div
           className="relative w-full h-full cursor-pointer"
-          onClick={() => setShowVideoModal(true)} // Open modal
-          title="Click to view metadata"
-          draggable
+          onClick={
+            selectionMode ? handleCardClick : () => setShowVideoModal(true)
+          }
+          title={
+            selectionMode
+              ? isSelected
+                ? "Deselect"
+                : "Select"
+              : "Click to view metadata"
+          }
+          draggable={!selectionMode}
           onDragStart={(e) => {
+            if (selectionMode) {
+              e.preventDefault();
+              return;
+            }
             try {
               e.dataTransfer.setData("assetUrl", video.url);
               e.dataTransfer.setData("source", "a2i");
@@ -554,11 +618,22 @@ const A2iImageCard = ({
                 NSFW detected
               </Badge>
             )}
+            {status === "failed" && selectionMode && (
+              <div
+                className="absolute inset-0 cursor-pointer z-10"
+                onClick={handleCardClick}
+              />
+            )}
           </div>
         </>
       )}
 
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+      <div
+        className={cn(
+          "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none",
+          selectionMode && "hidden"
+        )}
+      >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
 
         {status === "completed" && (

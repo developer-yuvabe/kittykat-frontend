@@ -169,6 +169,7 @@ export function FolderGalleryView({
               <SortableMediaGrid
                 selectedItems={selectedItems}
                 onSelect={handleSelect}
+                onClearSelection={handleUnselectAll}
                 galleryActions={galleryActions}
                 enableDragToMove={true}
                 activeTab={activeTab}

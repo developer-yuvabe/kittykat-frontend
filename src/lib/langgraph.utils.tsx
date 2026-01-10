@@ -479,6 +479,7 @@ export function getThreadSearchMetadata(
 
 export const getPinnedItemContextMessage = (pinnedItem: PinnedItem) => {
   const { title, context } = pinnedItem;
+
   const agentHint = context.agentId
     ? `You must use this agent: ${context.agentId}`
     : "";
@@ -486,13 +487,23 @@ export const getPinnedItemContextMessage = (pinnedItem: PinnedItem) => {
   const readableContext =
     typeof context.data === "string"
       ? context.data
-      : JSON.stringify(context.data, null, 2); // Pretty-printed JSON
+      : JSON.stringify(context.data, null, 2);
 
-  return `<kittykat-do-not-render>${
-    agentHint ? agentHint + "\n\n" : ""
-  }Focus only on "${title}".\n\nHere is the relevant context:\n${readableContext}\n
-  Please ignore <kittykat-do-not-render> tag.
-  </kittykat-do-not-render>`;
+  const specialInstruction = context.specialInstruction;
+
+  return `
+  <kittykat-do-not-render>${agentHint ? agentHint + "\n\n" : ""}
+${
+  specialInstruction
+    ? specialInstruction + "\n\n"
+    : `Focus only on "${title}".\n\n`
+}
+Here is the relevant context:
+${readableContext}
+
+Please ignore <kittykat-do-not-render> tag.
+</kittykat-do-not-render>
+`.trim();
 };
 
 // Returns a Promise of a typed multimodal block for images or PDFs
