@@ -4,16 +4,18 @@ import { ReactNode } from "react";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
 
-interface AdminProtectedComponentProps {
+interface RoleProtectedComponentProps {
   children: ReactNode;
+  allowedRoles?: UserRoleId[];
 }
 
-export function AdminProtectedComponent({
+export function RoleProtectedComponent({
   children,
-}: AdminProtectedComponentProps) {
+  allowedRoles = [UserRoleId.ADMIN],
+}: RoleProtectedComponentProps) {
   const { user } = useUserStore();
 
-  if (!user || user.role.id !== UserRoleId.ADMIN) {
+  if (!user || !allowedRoles.includes(user.role.id)) {
     return null;
   }
 

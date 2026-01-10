@@ -9,10 +9,13 @@ import { ReactNode, useEffect } from "react";
 
 interface RoleProtectedProps {
   children: ReactNode;
-  allowedRoles: UserRoleId[];
+  allowedRoles?: UserRoleId[];
 }
 
-export function RoleProtected({ children, allowedRoles }: RoleProtectedProps) {
+export function RoleProtected({
+  children,
+  allowedRoles = [UserRoleId.ADMIN],
+}: RoleProtectedProps) {
   const { user } = useUserStore();
   const router = useRouter();
 
