@@ -355,6 +355,7 @@ export function CampaignView({
                   <SortableMediaGrid
                     selectedItems={selectedItems}
                     onSelect={handleSelect}
+                    onClearSelection={handleUnselectAll}
                     galleryActions={galleryActions}
                     isMediaSelectDialog={false} // This is not a dialog
                     enableDragToMove={true}

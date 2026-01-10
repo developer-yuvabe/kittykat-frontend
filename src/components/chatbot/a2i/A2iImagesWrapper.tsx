@@ -45,6 +45,7 @@ import { parseMongoDBDate } from "@/lib/a2i.utils";
 import A2iImageInputLoader from "./A2iImageInputLoader";
 import { useQueryState } from "nuqs";
 import { useGenerationsStore } from "@/store/generations.store";
+import A2iBulkActions from "./A2iBulkActions";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -69,12 +70,16 @@ export const A2iImagesWrapper = ({
   referenceMoodboardId,
   currentCampaign,
 }: A2iImagesWrapperProps) => {
-  const { selectedBrandId, selectedCampaignId } = useBrandStore();
+  const { selectedBrandId, selectedCampaignId, brands } = useBrandStore();
   const { isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const { optimisitcallyDeletedGenerationIds } = useGenerationsStore();
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const selectionMode = selectedItems.size > 0;
+  const currentBrand = brands.find((b) => b.id === selectedBrandId);
+  const brandName = currentBrand?.name ?? "download";
 
   // Track component resize to adjust items per page
   useResizeObserver({
@@ -275,6 +280,67 @@ export const A2iImagesWrapper = ({
       return () => observer.disconnect();
     }
   }, [scrollTo]);
+  const handleSelect = useCallback(
+    (item: A2iImageCardProps, selected: boolean) => {
+      // For failed generation use generationId
+      const itemId =
+        item.status === "failed"
+          ? item.generationId
+          : item.video?.id ?? item.image?.id;
+
+      if (!itemId) return;
+
+      setSelectedItems((prev) => {
+        const newSet = new Set(prev);
+        if (selected) {
+          newSet.add(itemId);
+        } else {
+          newSet.delete(itemId);
+        }
+        return newSet;
+      });
+    },
+    []
+  );
+
+  const handleSelectAll = useCallback(() => {
+    const allIds = displayedItems
+      .filter((item) => item.status === "completed" || item.status === "failed")
+      .map((item) => {
+        // Use generationId for failed
+        return item.status === "failed"
+          ? item.generationId
+          : item.video?.id ?? item.image?.id;
+      })
+      .filter((id): id is string => id !== undefined && id !== null);
+    setSelectedItems(new Set(allIds));
+  }, [displayedItems]);
+
+  const handleUnselectAll = useCallback(() => {
+    setSelectedItems(new Set());
+  }, []);
+
+  // Clear selection on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedItems.size > 0) {
+        setSelectedItems(new Set());
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedItems.size]);
+
+  // Get selected items data
+  const selectedItemsData = useMemo(() => {
+    return displayedItems.filter((item) => {
+      const itemId =
+        item.status === "failed"
+          ? item.generationId
+          : item.video?.id ?? item.image?.id;
+      return itemId && selectedItems.has(itemId);
+    });
+  }, [displayedItems, selectedItems]);
 
   return (
     <ContentSection
@@ -284,15 +350,34 @@ export const A2iImagesWrapper = ({
       context={contextValue}
       ref={formRef}
       content={
-        <div className="flex flex-col gap-4 h-full">
-          {/* Form Section - Above */}
-          <div className="flex-shrink-0" ref={inputContainerRef}>
-            {!isModelsFetched ? (
-              <A2iImageInputLoader />
-            ) : (
-              <A2iImageInput
-                referenceMoodboardId={referenceMoodboardId}
-                currentCampaign={currentCampaign}
+        <div className="flex flex-col h-full">
+          <div className="flex-shrink-0">
+            {/* Form Section */}
+            <div
+              ref={inputContainerRef}
+              className={selectionMode ? "" : "mb-4"}
+            >
+              {!isModelsFetched ? (
+                <A2iImageInputLoader />
+              ) : (
+                <A2iImageInput
+                  referenceMoodboardId={referenceMoodboardId}
+                  currentCampaign={currentCampaign}
+                  selectionMode={selectionMode}
+                />
+              )}
+            </div>
+            {/* Bulk Action Bar - Appears when items selected */}
+            {selectionMode && (
+              <A2iBulkActions
+                selectedItems={selectedItemsData}
+                onUnselectAll={handleUnselectAll}
+                onSelectAll={handleSelectAll}
+                onDeleteSuccess={() => {
+                  // Refresh the generations list or remove deleted items
+                  setSelectedItems(new Set());
+                }}
+                brandName={brandName}
               />
             )}
           </div>
@@ -323,12 +408,24 @@ export const A2iImagesWrapper = ({
                     .map((image) => {
                       const existingId = getExistingId(image);
                       const trackingId = getItemTrackingId(image);
+                      const itemId =
+                        image.status === "failed"
+                          ? image.generationId
+                          : image.video?.id ?? image.image?.id;
+                      const isSelected = itemId
+                        ? selectedItems.has(itemId)
+                        : false;
 
                       if (image.status === "completed" && existingId) {
                         return (
                           <A2iImageCardDraggable
                             key={trackingId}
                             imageData={image}
+                            isSelected={isSelected}
+                            onSelect={(selected) =>
+                              handleSelect(image, selected)
+                            }
+                            selectionMode={selectionMode}
                           />
                         );
                       }
@@ -339,6 +436,9 @@ export const A2iImagesWrapper = ({
                           key={trackingId}
                           {...image}
                           disableDrag={!existingId}
+                          isSelected={isSelected}
+                          onSelect={(selected) => handleSelect(image, selected)}
+                          selectionMode={selectionMode}
                         />
                       );
                     })}

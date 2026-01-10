@@ -1,7 +1,7 @@
 import { useQueueUpdates } from "@/hooks/sse/useQueueUpdates";
 import { useUserStore } from "@/store/user.store";
 import { CircleDashed, ListEnd } from "lucide-react";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -13,11 +13,14 @@ import { useEnhancedFilters } from "@/hooks/useEnhancedFilters";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
 import { isBefore, subHours } from "date-fns";
 import { deleteQueueItems } from "@/services/api/queue.service";
+import { QueueItem } from "@/types/types";
+import { trackProductExtractionCompletion } from "@/lib/a2i.utils";
 
 const QueueProgress = () => {
   const { user } = useUserStore();
   const { data } = useQueueUpdates(user?.id);
   const [open, setOpen] = React.useState(false);
+
   const { runningQueueItems, otherQueueItems, queueItemsOlderThan24Hours } =
     useMemo(() => {
       const running = [];
@@ -62,11 +65,33 @@ const QueueProgress = () => {
     favorites,
   } = useEnhancedFilters({});
 
+  const previousProcessingProductExtractIds = useRef<Set<string>>(new Set());
+  const previousProcessingProductExtractItems = useRef<Map<string, QueueItem>>(
+    new Map()
+  );
+
   useEffect(() => {
     if (queueItemsOlderThan24Hours.length > 0) {
       deleteQueueItems(queueItemsOlderThan24Hours.map((item) => item.id));
     }
   }, [queueItemsOlderThan24Hours]);
+
+  useEffect(() => {
+    if (!data || !Array.isArray(data)) {
+      previousProcessingProductExtractIds.current = new Set();
+      previousProcessingProductExtractItems.current = new Map();
+      return;
+    }
+
+    const { updatedIds, updatedItems } = trackProductExtractionCompletion(
+      data,
+      previousProcessingProductExtractIds.current,
+      previousProcessingProductExtractItems.current
+    );
+
+    previousProcessingProductExtractIds.current = updatedIds;
+    previousProcessingProductExtractItems.current = updatedItems;
+  }, [data]);
 
   const { refetchAllGalleryQueries } = useGalleryQuery(
     {

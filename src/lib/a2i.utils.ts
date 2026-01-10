@@ -10,6 +10,7 @@ import { Ruler } from "lucide-react";
 import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 import { GalleryItemResponse } from "@/types/gallery.types";
 import { ConceptVisualSource } from "@/store/concept-visual.store";
+import { toast } from "sonner";
 
 export const finetunedModels = [
   {
@@ -536,6 +537,62 @@ export const IMAGE_GENERATION_MODELS = [
   fluxProUltraModel,
   ...customFluxProFinetunedModels,
 ] as const;
+
+export const notifyProductExtraction = (
+  metadata?: Record<string, any>
+): void => {
+  const extractedCount =
+    metadata?.total_products_extracted ?? metadata?.extracted_products?.length ?? 0;
+
+  if (extractedCount === 0) {
+    toast.info("No products found in the selected images");
+  } else {
+    toast.success(
+      `${extractedCount} product${extractedCount === 1 ? "" : "s"} extracted and added to gallery`
+    );
+  }
+};
+
+export const trackProductExtractionCompletion = (
+  currentData: any[],
+  previousIds: Set<string>,
+  previousItems: Map<string, any>
+): {
+  updatedIds: Set<string>;
+  updatedItems: Map<string, any>;
+} => {
+  const currentProcessingProductExtractIds = new Set(
+    currentData
+      .filter(
+        (item) => item.type === "product_extract" && item.status === "processing"
+      )
+      .map((item) => item.id)
+  );
+
+  const removedProductExtractIds = [...previousIds].filter(
+    (id) => !currentData.some((item) => item.id === id)
+  );
+
+  if (removedProductExtractIds.length > 0) {
+    for (const id of removedProductExtractIds) {
+      const item = previousItems.get(id);
+      notifyProductExtraction(item?.metadata);
+    }
+  }
+
+  const updatedItems = new Map(
+    currentData
+      .filter(
+        (item) => item.type === "product_extract" && item.status === "processing"
+      )
+      .map((item) => [item.id, item])
+  );
+
+  return {
+    updatedIds: currentProcessingProductExtractIds,
+    updatedItems,
+  };
+};
 
 export function getRemixInputPlaceholderMessage(options?: {
   supportsBrush?: boolean;

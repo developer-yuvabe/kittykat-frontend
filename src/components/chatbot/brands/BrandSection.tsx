@@ -292,6 +292,7 @@ export const renderBrandData = (
               }}
               title="Brand Overview"
               agentId={Agents.BRANDING_AGENT}
+              showKeyAsLabel
               onValueChange={(key, oldValue, newValue) => {
                 handleFieldUpdate(
                   `static.brand.${key}`,
@@ -300,6 +301,12 @@ export const renderBrandData = (
                   `Brand ${capitalizeKey(key)}`
                 );
               }}
+              specialInstruction={`
+    Please update only the fields "tagline" and/or "values".
+    The user may refer to the update vaguely (for example, "Brand Overview") or may not explicitly mention the field name.
+    In such cases, infer whether the update applies to "tagline", "values", or both, and update them accordingly.
+    Never update any other fields.
+  `}
             />
 
             <DisplayField
