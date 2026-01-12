@@ -7,21 +7,27 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 
-interface AdminProtectedProps {
+interface RoleProtectedProps {
   children: ReactNode;
+  allowedRoles?: UserRoleId[];
 }
 
-export function AdminProtected({ children }: AdminProtectedProps) {
+export function RoleProtected({
+  children,
+  allowedRoles = [UserRoleId.ADMIN],
+}: RoleProtectedProps) {
   const { user } = useUserStore();
   const router = useRouter();
 
+  const hasAccess = user && allowedRoles.includes(user.role.id);
+
   useEffect(() => {
-    if (!user || user.role.id !== UserRoleId.ADMIN) {
+    if (!user || !allowedRoles.includes(user.role.id)) {
       router.push(AppConfig.HOME_ROUTE);
     }
-  }, [user, router]);
+  }, [user, router, allowedRoles]);
 
-  if (!user || user.role.id !== UserRoleId.ADMIN) {
+  if (!hasAccess) {
     return (
       <div className="flex items-center justify-center w-full h-[85vh]">
         <Loader2 className="text-primary animate-spin" size={40} />

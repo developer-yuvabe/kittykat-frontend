@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ import {
   type TeamInvitationFormInput,
 } from "@/schema/inviation.schema";
 import { TeamRolesEnum, type TeamResponse } from "@/types/team.types";
+import { useModelsStore } from "@/store/models.store";
 
 // ============================================================================
 // Types
@@ -64,15 +65,24 @@ export function InviteMemberDialog({
   onOpenChange,
 }: InviteMemberDialogProps) {
   const { inviteToTeam, isInvitingToTeam } = useInvitation();
+  const { models } = useModelsStore();
   const [inviteResult, setInviteResult] = useState<InviteResultState | null>(
     null
   );
+
+  // Calculate default model IDs from models marked as default
+  const defaultModelIds = useMemo(() => {
+    return models
+      .filter((model) => model.default_model)
+      .map((model) => model.id);
+  }, [models]);
 
   const form = useForm<TeamInvitationFormInput>({
     resolver: zodResolver(teamInvitationFormSchema),
     defaultValues: {
       email: "",
       teamRole: TeamRolesEnum.MEMBER,
+      modelAccess: defaultModelIds,
     },
   });
 

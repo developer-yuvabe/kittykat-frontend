@@ -24,7 +24,7 @@ import { useUserStore } from "@/store/user.store";
 import { Check, ChevronDown, ChevronUp, Megaphone, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
-import { AdminProtectedComponent } from "@/components/shared/AdminProtectedComponent";
+import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 import { toast } from "sonner";
 import { deleteBrand } from "@/services/api/brand.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -329,7 +329,7 @@ export default function BrandSelector({
                         <Check className="h-4 w-4" />
                       )}
 
-                      <AdminProtectedComponent>
+                      <RoleProtectedComponent>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -344,7 +344,7 @@ export default function BrandSelector({
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </button>
-                      </AdminProtectedComponent>
+                      </RoleProtectedComponent>
                     </div>
                   </CommandItem>
 

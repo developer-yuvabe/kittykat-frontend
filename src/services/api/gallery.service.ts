@@ -387,3 +387,70 @@ export const getGalleryImageParameters = async (
     throw error;
   }
 };
+
+// Product Extraction Types
+export interface ProductExtractionRequest {
+  image_ids: string[];
+}
+
+export interface ProductAttributes {
+  product_type: string;
+  product_name_candidate: string;
+  color: string;
+  material: string;
+  pattern: string | null;
+  view_angle: string;
+  variant_notes: string;
+}
+
+export interface DetectionInfo {
+  description: string;
+  position: string;
+}
+
+export interface ExtractedProduct {
+  attributes: ProductAttributes;
+  generated_name: string;
+  detection_info: DetectionInfo | null;
+  extracted_image_url: string;
+}
+
+export interface ImageResult {
+  source_image_url: string;
+  success: boolean;
+  detection_result: {
+    has_product: boolean;
+    product_count: number;
+    is_multi_product: boolean;
+    products: Array<{
+      description: string;
+      position: string;
+    }>;
+    confidence: string;
+    reason: string;
+  };
+  extracted_products: ExtractedProduct[];
+}
+
+export interface ProductExtractionResponse {
+  message?: string;
+  queue_item_id: string;
+  message_ids: string[];
+  total_images: number;
+  brand_id: string;
+}
+
+export const extractProducts = async (
+  brandId: string,
+  data: ProductExtractionRequest
+): Promise<ProductExtractionResponse> => {
+  try {
+    const response = await handleApiRequest<ProductExtractionResponse>(
+      axiosInstance.post(`/gallery/brands/${brandId}/product-extraction`, data)
+    );
+    return response;
+  } catch (error: any) {
+    console.error("Error extracting products:", error);
+    throw error;
+  }
+};

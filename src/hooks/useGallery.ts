@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { galleryService } from "@/services/api/gallery.service";
+import { extractProducts, type ProductExtractionRequest } from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
   BulkScrapeRequest,
@@ -348,6 +349,40 @@ export const useGalleryQuery = (
       toast.error("Failed to initiate scraping", {
         id: context?.toastId,
       });
+    },
+  });
+
+  // Product extraction mutation
+  const extractProductsMutation = useMutation({
+    mutationFn: ({
+      brandId,
+      data,
+    }: {
+      brandId: string;
+      data: ProductExtractionRequest;
+    }) => extractProducts(brandId, data),
+    onMutate: ({ data }) => {
+      const toastId = toast.loading(
+        `Extracting products from ${data.image_ids.length} image(s)...`
+      );
+      return { toastId };
+    },
+    onSuccess: (response: { total_images: number }, _variables, context) => {
+      queryClient.invalidateQueries({
+        queryKey: ["gallery-items"],
+      });
+
+      toast.success(
+        `Product extraction started! Processing ${response.total_images} image(s)...`,
+        { id: context?.toastId }
+      );
+    },
+    onError: (error: any, _variables, context) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to extract products";
+      toast.error(errorMessage, { id: context?.toastId });
     },
   });
 
@@ -1150,6 +1185,9 @@ export const useGalleryQuery = (
     bulkUpload: bulkUploadMutation.mutateAsync,
 
     scrapeHandles: scrapeHandlesMutation.mutateAsync,
+
+    extractProducts: extractProductsMutation.mutateAsync,
+    isExtractingProducts: extractProductsMutation.isPending,
 
     createVersion: createVersionMutation.mutateAsync,
     isCreatingVersion: createVersionMutation.isPending,

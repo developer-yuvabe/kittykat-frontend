@@ -9,6 +9,7 @@ import {
   FileText,
   Image,
   File,
+  PackageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,7 +93,7 @@ export function MediaBulkActions({
   onSelectAllModeChange,
   onExcludedItemsChange,
 }: MediaBulkActionsProps) {
-  const { brands } = useBrandStore();
+  const { brands, selectedBrandId } = useBrandStore();
 
   // Use bulk operations hook
   const bulkOps = useBulkGalleryOperations();
@@ -186,6 +187,24 @@ export function MediaBulkActions({
       setIsDeleting(false);
       setIsDialogOpen(false);
     }
+
+  };
+
+  const handleProductExtraction = async () => {
+    const imageItems = selectedItems.filter(
+      (item) => item.asset_type === "image"
+    );
+
+    const imageIds = imageItems.map((item) => item.id);
+
+      await galleryActions.extractProducts({
+        brandId: selectedBrandId!,
+        data: {
+          image_ids: imageIds,
+        },
+      });
+      onUnselectAll();
+
   };
 
   const getFileExtensionFromUrl = (url: string): string => {
@@ -752,6 +771,26 @@ export function MediaBulkActions({
           >
             <Download className="h-4 w-4" />
           </Button>
+
+          {/* Product Extraction - Only for images */}
+          {selectedItems.every((item) => item.asset_type === "image") &&
+            selectedItems.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleProductExtraction}
+                    disabled={galleryActions.isExtractingProducts}
+                  >
+                    <PackageIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Extract Products</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
           {/* Move Asset Dropdown */}
           <Popover>
