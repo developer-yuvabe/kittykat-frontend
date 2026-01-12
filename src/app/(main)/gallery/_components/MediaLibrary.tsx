@@ -72,19 +72,11 @@ export function MediaLibrary({
   const router = useRouter();
   const { openConceptVisual } = useConceptVisualStore();
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
   const [source, setSource] = useState<string>(activeTab);
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
-
-  // Select-all mode state
-  const [selectAllMode, setSelectAllMode] = useState<
-    "none" | "visible" | "all"
-  >("none");
-  const [excludedItems, setExcludedItems] = useState<string[]>([]);
 
   // Reset search query when dialog opens in select mode
   useEffect(() => {
@@ -93,7 +85,7 @@ export function MediaLibrary({
     }
   }, [isMediaSelectDialog]);
 
-  // Get filter state from store
+  // Get filter state and selection state from store
   const {
     favorites,
     hasComments,
@@ -104,6 +96,17 @@ export function MediaLibrary({
     setOrderBy,
     setIsDraggable,
     workflowStatus,
+    selectedItems,
+    setSelectedItems,
+    multiSelectItems,
+    setMultiSelectItems,
+    selectAllMode,
+    setSelectAllMode,
+    excludedItems,
+    setExcludedItems,
+    clearSelection,
+    totalItemsCount,
+    setTotalItemsCount,
   } = useGalleryFilterStore();
 
   const {
@@ -267,6 +270,11 @@ export function MediaLibrary({
     fetchGalleryItem();
   }, [galleryItemId]);
 
+  // Update totalItemsCount in store when it changes
+  useEffect(() => {
+    setTotalItemsCount(galleryActions.totalItems);
+  }, [galleryActions.totalItems, setTotalItemsCount]);
+
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
 
@@ -343,10 +351,7 @@ export function MediaLibrary({
   };
 
   const handleUnselectAll = () => {
-    setSelectedItems([]);
-    setMultiSelectItems([]);
-    setSelectAllMode("none");
-    setExcludedItems([]);
+    clearSelection();
   };
 
   const handleSearchChange = useMemo(
@@ -498,12 +503,19 @@ export function MediaLibrary({
     [brands, selectedBrandId]
   );
 
+  useEffect(() => {
+    console.log("selectAllMode changed:", selectAllMode);
+  }, [selectAllMode]);
+
   return (
     <GalleryDndProvider
       galleryActions={galleryActions}
       selectedItems={currentlySelectedItems}
       setSelectedItems={isMultiSelect ? setMultiSelectItems : setSelectedItems}
       orderBy={orderBy}
+      totalItems={totalItemsCount}
+      selectAllMode={selectAllMode}
+      excludedItems={excludedItems}
     >
       <div className="flex flex-col w-full h-full mx-auto">
         {/* Conditionally render header based on hideHeader prop */}

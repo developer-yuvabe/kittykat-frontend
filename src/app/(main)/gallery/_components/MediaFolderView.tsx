@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { patchCampaign, updateCampaign } from "@/services/api/brand.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
+import { useBulkGalleryOperations } from "@/hooks/useBulkGalleryOperations";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -83,10 +84,20 @@ export function MediaFolderView({
   } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
-  const { favorites, orderBy, selectedSubFolderId } = useGalleryFilterStore();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const {
+    favorites,
+    orderBy,
+    selectedSubFolderId,
+    selectedItems,
+    setSelectedItems,
+    clearSelection,
+    selectAllMode,
+    excludedItems,
+    totalItemsCount,
+  } = useGalleryFilterStore();
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
+  const bulkOps = useBulkGalleryOperations();
 
   // Create shared gallery actions for sidebar drag-drop operations
   const galleryActions = useGalleryQuery(
@@ -137,53 +148,51 @@ export function MediaFolderView({
   // DnD Callbacks
   const handleMoveMediaToCampaign = useCallback(
     async (itemIds: string[], campaignId: string) => {
-      if (!selectedBrandId || !galleryActions) return;
-
-      const campaign = campaigns.find((c) => c.id === campaignId);
-      const items = galleryActions
-        .getGalleryItems()
-        .filter((item) => itemIds.includes(item.id));
-
-      if (items.length === 0) {
-        toast.error("No items found to move");
-        return;
-      }
+      if (!selectedBrandId) return;
 
       try {
-        toast.loading("Moving items...", { id: "move-items" });
+        const isSelectAll = selectAllMode !== "none";
 
-        await Promise.all(
-          items.map((item) =>
-            galleryActions.patchItem?.({
-              itemId: item.id,
-              data: {
-                campaign_id: campaignId,
-                brand_id: selectedBrandId,
-              },
-              revalidateAutofillSuggestions: false,
-            })
-          )
+        const request = bulkOps.buildBulkRequest(
+          {
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          },
+          isSelectAll,
+          itemIds,
+          excludedItems
         );
 
-        toast.success(
-          `Successfully moved ${items.length} item(s) to campaign "${campaign?.title}"`,
-          { id: "move-items" }
-        );
-        setSelectedItems([]);
+        await bulkOps.bulkMove.mutateAsync({
+          ...request,
+          target_campaign_id: campaignId,
+          target_brand_id: selectedBrandId,
+        });
+
+        clearSelection();
       } catch (error) {
         console.error("Move error:", error);
-        toast.error("Failed to move assets. Please try again.", {
-          id: "move-items",
-        });
       }
     },
-    [selectedBrandId, galleryActions, campaigns]
+    [
+      selectedBrandId,
+      campaigns,
+      selectAllMode,
+      excludedItems,
+      bulkOps,
+      activeTab,
+      favorites,
+      searchQuery,
+      selectedFilters,
+      clearSelection,
+    ]
   );
 
   const handleMoveMediaToTab = useCallback(
     async (itemIds: string[], tabValue: string, sourceTab?: string) => {
-      if (!galleryActions) return;
-
       // Validation
       if (sourceTab === "all-media") {
         toast.error("Items from 'All Media' cannot be moved.");
@@ -205,29 +214,45 @@ export function MediaFolderView({
         return;
       }
 
-      try {
-        toast.loading("Moving items...", { id: "move-items" });
+      if (!selectedBrandId) return;
 
-        await Promise.all(
-          itemIds.map((itemId) =>
-            galleryActions.patchItem?.({
-              itemId,
-              data: { asset_source: tabValue },
-              revalidateAutofillSuggestions: false,
-            })
-          )
+      try {
+        const isSelectAll = selectAllMode !== "none";
+
+        const request = bulkOps.buildBulkRequest(
+          {
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          },
+          isSelectAll,
+          itemIds,
+          excludedItems
         );
 
-        toast.success(`Moved ${itemIds.length} item(s) to ${tabValue}.`, {
-          id: "move-items",
+        await bulkOps.bulkMove.mutateAsync({
+          ...request,
+          target_source: tabValue,
         });
-        setSelectedItems([]);
+
+        clearSelection();
       } catch (error) {
         console.error("Move failed:", error);
-        toast.error("Failed to move items.", { id: "move-items" });
       }
     },
-    [galleryActions]
+    [
+      selectedBrandId,
+      selectAllMode,
+      excludedItems,
+      bulkOps,
+      activeTab,
+      favorites,
+      searchQuery,
+      selectedFilters,
+      clearSelection,
+    ]
   );
 
   const handleReorderMedia = useCallback(
@@ -458,8 +483,6 @@ export function MediaFolderView({
                     favorites={favorites}
                     selectedFilters={selectedFilters}
                     activeTab={activeTab}
-                    setSelectedItems={setSelectedItems}
-                    selectedItems={selectedItems}
                   />
                 </div>
               </div>
@@ -490,8 +513,6 @@ export function MediaFolderView({
             favorites={favorites}
             selectedFilters={selectedFilters}
             activeTab={activeTab}
-            setSelectedItems={setSelectedItems}
-            selectedItems={selectedItems}
           />
         </div>
       );
@@ -506,6 +527,9 @@ export function MediaFolderView({
       selectedItems={selectedItems}
       setSelectedItems={setSelectedItems}
       orderBy={orderBy}
+      totalItems={totalItemsCount}
+      selectAllMode={selectAllMode}
+      excludedItems={excludedItems}
       onMoveMediaToCampaign={handleMoveMediaToCampaign}
       onMoveMediaToTab={handleMoveMediaToTab}
       onReorderMedia={handleReorderMedia}

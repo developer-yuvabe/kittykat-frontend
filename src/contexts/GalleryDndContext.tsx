@@ -93,6 +93,11 @@ interface GalleryDndProviderProps {
   // Current order by - reorder only allowed when "brand_sort_order"
   orderBy?: string;
 
+  // Select-all mode state
+  totalItems?: number;
+  selectAllMode?: "none" | "visible" | "all";
+  excludedItems?: string[];
+
   // Callbacks for different drop operations
   onMoveMediaToCampaign?: (
     itemIds: string[],
@@ -131,6 +136,9 @@ export function GalleryDndProvider({
   selectedItems,
   setSelectedItems,
   orderBy,
+  totalItems = 0,
+  selectAllMode = "none",
+  excludedItems = [],
   onMoveMediaToCampaign,
   onMoveMediaToTab,
   onReorderMedia,
@@ -340,9 +348,17 @@ export function GalleryDndProvider({
         mediaData.itemIds.includes(item.id)
       );
 
+      // Calculate effective count based on select-all mode
+      const effectiveCount =
+        selectAllMode === "all"
+          ? totalItems - excludedItems.length
+          : selectAllMode === "visible"
+          ? items.length - excludedItems.length
+          : mediaData.itemIds.length;
+
       return (
         <MediaDragOverlay
-          itemCount={mediaData.itemIds.length}
+          itemCount={effectiveCount}
           previewItems={previewItems}
         />
       );

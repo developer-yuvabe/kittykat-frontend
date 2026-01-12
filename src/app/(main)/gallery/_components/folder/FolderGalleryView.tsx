@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { Loader2 } from "lucide-react";
 import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
@@ -9,6 +9,7 @@ import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { useBrandStore } from "@/store/brand.store";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface FolderGalleryViewProps {
   selectedBrandId?: string | null;
@@ -17,8 +18,6 @@ interface FolderGalleryViewProps {
   favorites?: boolean;
   selectedFilters?: EnhancedSelectedFilters;
   activeTab?: string;
-  setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
-  selectedItems: string[];
 }
 
 export function FolderGalleryView({
@@ -28,12 +27,24 @@ export function FolderGalleryView({
   favorites = false,
   selectedFilters,
   activeTab = "all-media",
-  selectedItems,
-  setSelectedItems,
 }: FolderGalleryViewProps) {
   const { getSelectedBrand } = useBrandStore();
   const brand = useMemo(() => getSelectedBrand(), [selectedBrandId]);
-  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+
+  // Get selection state from store
+  const {
+    selectedItems,
+    setSelectedItems,
+    lastSelectedId,
+    setLastSelectedId,
+    clearSelection,
+    selectAllMode,
+    excludedItems,
+    setExcludedItems,
+    setSelectAllMode,
+    setTotalItemsCount,
+    totalItemsCount,
+  } = useGalleryFilterStore();
 
   // Use gallery hook with proper filters
   const galleryActions = useGalleryQuery(
@@ -79,8 +90,13 @@ export function FolderGalleryView({
 
   // Clear selected items when brand or campaign changes
   useEffect(() => {
-    setSelectedItems([]);
-  }, [selectedBrandId, selectedCampaignId, activeTab]);
+    clearSelection();
+  }, [selectedBrandId, selectedCampaignId, activeTab, clearSelection]);
+
+  // Update totalItemsCount in store when it changes
+  useEffect(() => {
+    setTotalItemsCount(galleryActions.totalItems);
+  }, [galleryActions.totalItems, setTotalItemsCount]);
 
   // Fetch next page when in view
   useEffect(() => {
@@ -107,6 +123,24 @@ export function FolderGalleryView({
     const items = galleryActions.getGalleryItems();
     return items;
   }, [galleryActions]);
+
+  // Auto-select newly fetched items when in select-all mode
+  useEffect(() => {
+    if (selectAllMode !== "none") {
+      // When in select-all mode, mark all loaded items as selected except those in excludedItems
+      const newSelectedItems = items
+        .filter((item) => !excludedItems.includes(item.id))
+        .map((item) => item.id);
+
+      // Only update if there's a meaningful change
+      if (
+        JSON.stringify(newSelectedItems.sort()) !==
+        JSON.stringify([...selectedItems].sort())
+      ) {
+        setSelectedItems(newSelectedItems);
+      }
+    }
+  }, [items.length, selectAllMode, excludedItems.length]);
 
   const handleSelect = (id: string, selected: boolean, shiftKey?: boolean) => {
     // last selected item id (track with useState)
@@ -143,6 +177,17 @@ export function FolderGalleryView({
       selected ? [...prev, id] : prev.filter((itemId) => itemId !== id)
     );
 
+    // Handle exclusions if in select-all mode
+    if (selectAllMode !== "none") {
+      if (selected) {
+        // Remove from exclusions if selecting
+        setExcludedItems((prev) => prev.filter((itemId) => itemId !== id));
+      } else {
+        // Add to exclusions if deselecting
+        setExcludedItems((prev) => [...prev, id]);
+      }
+    }
+
     setLastSelectedId(id); // always update last clicked
   };
 
@@ -152,7 +197,7 @@ export function FolderGalleryView({
   };
 
   const handleUnselectAll = () => {
-    setSelectedItems([]);
+    clearSelection();
   };
 
   return (
@@ -200,8 +245,12 @@ export function FolderGalleryView({
           onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brand?.name ?? "Brand"}
-          totalItems={galleryActions.totalItems}
+          totalItems={totalItemsCount}
           fetchedItemsCount={galleryActions.getGalleryItems().length}
+          selectAllMode={selectAllMode}
+          excludedItems={excludedItems}
+          onSelectAllModeChange={setSelectAllMode}
+          onExcludedItemsChange={setExcludedItems}
           galleryFilters={{
             assetType: activeTab,
             favorites,

@@ -176,7 +176,7 @@ export function MediaBulkActions({
 
       const request = bulkOps.buildBulkRequest(
         galleryFilters,
-        selectAllMode === "all",
+        selectAllMode !== "none",
         itemIds,
         excludedItems
       );
@@ -187,7 +187,6 @@ export function MediaBulkActions({
       setIsDeleting(false);
       setIsDialogOpen(false);
     }
-
   };
 
   const handleProductExtraction = async () => {
@@ -197,14 +196,13 @@ export function MediaBulkActions({
 
     const imageIds = imageItems.map((item) => item.id);
 
-      await galleryActions.extractProducts({
-        brandId: selectedBrandId!,
-        data: {
-          image_ids: imageIds,
-        },
-      });
-      onUnselectAll();
-
+    await galleryActions.extractProducts({
+      brandId: selectedBrandId!,
+      data: {
+        image_ids: imageIds,
+      },
+    });
+    onUnselectAll();
   };
 
   const getFileExtensionFromUrl = (url: string): string => {
@@ -321,7 +319,7 @@ export function MediaBulkActions({
       const request = {
         ...bulkOps.buildBulkRequest(
           galleryFilters,
-          selectAllMode === "all",
+          selectAllMode !== "none",
           selectedItems.map((item) => item.id),
           excludedItems
         ),
@@ -482,7 +480,7 @@ export function MediaBulkActions({
       const request = {
         ...bulkOps.buildBulkRequest(
           galleryFilters,
-          selectAllMode === "all",
+          selectAllMode !== "none",
           selectedItems.map((item) => item.id),
           excludedItems
         ),

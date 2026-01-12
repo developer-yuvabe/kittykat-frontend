@@ -27,15 +27,16 @@ export const useBulkGalleryOperations = () => {
   ): BulkDeleteRequest => {
     const base: BulkDeleteRequest = {
       brand_id: filters.selectedFilters?.brands?.[0] || "",
-      campaign_id: filters.selectedFilters?.campaigns?.[0],
-      sub_folder_id: filters.selectedFilters?.sub_folders?.[0],
-      moodboard_id: filters.selectedFilters?.moodboards?.[0],
       select_all: selectAll,
       excluded_items: selectAll ? excludedItems : undefined,
       selected_items: !selectAll ? selectedItems : undefined,
     };
 
+    // Only include filter fields when using select_all mode
     if (selectAll) {
+      base.campaign_id = filters.selectedFilters?.campaigns?.[0];
+      base.sub_folder_id = filters.selectedFilters?.sub_folders?.[0];
+      base.moodboard_id = filters.selectedFilters?.moodboards?.[0];
       base.asset_types = filters.selectedFilters?.asset_types;
       base.asset_sources = filters.selectedFilters?.asset_sources;
       base.is_favourite = filters.selectedFilters?.is_favourite ?? undefined;
@@ -290,12 +291,19 @@ export const useBulkGalleryOperations = () => {
 
       return { previousData };
     },
-    onSuccess: (response: BulkOperationResponse) => {
+    onSuccess: (response: BulkOperationResponse, request: BulkMoveRequest) => {
       if (response.success) {
         toast.success(`Successfully moved ${response.affected_count} item(s)`, {
           id: "bulk-move",
         });
         invalidateGalleryQueries();
+
+        // Invalidate campaign counts for source brand
+        if (request.brand_id) {
+          queryClient.invalidateQueries({
+            queryKey: ["campaign-counts", request.brand_id],
+          });
+        }
       } else {
         toast.error(response.message || "Failed to move items", {
           id: "bulk-move",

@@ -11,6 +11,7 @@ import { MediaBulkActions } from "../MediaBulkActions";
 import { FolderUploadDropzone } from "./FolderUploadDropzone";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { useBrandStore } from "@/store/brand.store";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { Input } from "@/components/ui/input";
 import { MediaFilterDropdown } from "../MediaFilterDropdown";
 import MediaViewsDropdown from "../MediaViewDropDown";
@@ -63,7 +64,15 @@ export function CampaignView({
   setActiveTab,
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const {
+    selectedItems,
+    setSelectedItems,
+    selectAllMode,
+    setSelectAllMode,
+    excludedItems,
+    setExcludedItems,
+    setTotalItemsCount,
+  } = useGalleryFilterStore();
 
   // Find current campaign from the brand's campaigns
   const currentCampaign = useMemo(() => {
@@ -120,6 +129,11 @@ export function CampaignView({
 
   // Intersection observer for infinite scroll
   const { ref, inView } = useInView();
+
+  // Update totalItemsCount in store when it changes
+  useEffect(() => {
+    setTotalItemsCount(galleryActions.totalItems);
+  }, [galleryActions.totalItems, setTotalItemsCount]);
 
   // Clear selected items when campaign changes
   useEffect(() => {
@@ -185,20 +199,34 @@ export function CampaignView({
     }
 
     // --- NORMAL CLICK ---
-    setSelectedItems((prev) =>
-      selected ? [...prev, id] : prev.filter((itemId) => itemId !== id)
-    );
+    if (selected) {
+      setSelectedItems((prev) => [...prev, id]);
+      // Remove from exclusions if in select-all mode
+      if (selectAllMode !== "none") {
+        setExcludedItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
+    } else {
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      // Add to exclusions if in select-all mode
+      if (selectAllMode !== "none") {
+        setExcludedItems((prev) => [...prev, id]);
+      }
+    }
 
     setLastSelectedId(id); // ✅ always update last clicked
   };
 
   const handleUnselectAll = () => {
     setSelectedItems([]);
+    setSelectAllMode("none");
+    setExcludedItems([]);
   };
 
   const handleSelectAll = () => {
     const allItemIds = galleryActions.getGalleryItems().map((item) => item.id);
     setSelectedItems(allItemIds);
+    setSelectAllMode("visible");
+    setExcludedItems([]);
   };
 
   const { selectedCampaignId } = useBrandStore();
@@ -381,6 +409,10 @@ export function CampaignView({
           brandName={brandName}
           totalItems={galleryActions.totalItems}
           fetchedItemsCount={galleryActions.getGalleryItems().length}
+          selectAllMode={selectAllMode}
+          excludedItems={excludedItems}
+          onSelectAllModeChange={setSelectAllMode}
+          onExcludedItemsChange={setExcludedItems}
           galleryFilters={{
             assetType: activeTab,
             favorites,
