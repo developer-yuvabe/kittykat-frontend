@@ -1477,206 +1477,213 @@ const A2iImageInput = ({
             </div>
             <div
               ref={controlsContainerRef}
-              className="flex gap-2 justify-between items-center px-2 min-w-0"
+              className="flex flex-wrap gap-3 justify-between px-2"
             >
-              <div className="flex items-center gap-2 flex-shrink min-w-0">
-                {referenceImagesModelInfo ? (
-                  <ReferenceImageSelector
-                    masterReference={masterReference}
-                    productReference={productReference}
-                    onMasterReferenceChange={setMasterReference}
-                    onProductReferenceChange={setProductReference}
-                    maxLimit={referenceImagesModelInfo.maxLimit}
-                    fileTypes={referenceImagesModelInfo.fileTypes}
-                    maxFileSizeLimit={referenceImagesModelInfo.maxFileSizeLimit}
-                    disabled={formInstance.formState.isSubmitting}
-                    currentCampaignId={currentCampaign?.id}
-                    isOpen={isReferencePopoverOpen}
-                    onOpenChange={setIsReferencePopoverOpen}
-                    activeTab={referencePopoverTab}
-                    onTabChange={setReferencePopoverTab}
-                    isMagicEnabled={isMagicEnabled}
-                    onToggleMagic={handleToggleMagic}
-                  />
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          disabled={true}
-                        >
-                          <ImagesIcon />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      This model does not support attaching reference images
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* Aspect Ratio - Always show */}
-                {(() => {
-                  const aspectRatioParam = currentModel?.parameters?.find(
-                    (param) => param.type === "aspect_ratio"
-                  );
-
-                  if (aspectRatioParam) {
-                    return (
-                      <DynamicFormField
-                        key={aspectRatioParam.id}
-                        param={aspectRatioParam}
-                        form={formInstance}
-                        type="initial"
-                        rules={currentModel?.rules}
-                        allModelParameters={currentModel?.parameters}
-                      />
-                    );
-                  }
-
-                  // No aspect ratio support - show disabled select
-                  return (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Select disabled>
-                            <SelectTrigger disableDropdown>
-                              <span>Auto</span>
-                            </SelectTrigger>
-                          </Select>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        This model does not support aspect ratio selection
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })()}
-
-                {initialParams
-                  .filter(
-                    (param) =>
-                      param.id == "resolution" || param.id == "duration"
-                  )
-                  .map((param) => {
-                    return (
-                      <DynamicFormField
-                        key={param.id}
-                        param={param}
-                        form={formInstance}
-                        type="initial"
-                        rules={currentModel?.rules}
-                        allModelParameters={[
-                          ...initialParams,
-                          ...advancedParams,
-                        ]}
-                        sliderSuffix={param.id === "duration" ? "s" : undefined}
-                      />
-                    );
-                  })}
-
-                {/* Image Count - Always show */}
-                {(() => {
-                  const imageCountParam = currentModel?.parameters?.find(
-                    (param) =>
-                      param.type === "image_count" &&
-                      param.category === "initial"
-                  );
-
-                  if (imageCountParam) {
-                    return (
-                      <DynamicFormField
-                        key={imageCountParam.id}
-                        param={imageCountParam}
-                        form={formInstance}
-                        type="initial"
-                        rules={currentModel?.rules}
-                        allModelParameters={currentModel?.parameters}
-                      />
-                    );
-                  }
-
-                  // No image count support - show disabled button
-                  return (
+              <div className="flex items-center gap-2 min-w-0 overflow-hidden flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {referenceImagesModelInfo ? (
+                    <ReferenceImageSelector
+                      masterReference={masterReference}
+                      productReference={productReference}
+                      onMasterReferenceChange={setMasterReference}
+                      onProductReferenceChange={setProductReference}
+                      maxLimit={referenceImagesModelInfo.maxLimit}
+                      fileTypes={referenceImagesModelInfo.fileTypes}
+                      maxFileSizeLimit={
+                        referenceImagesModelInfo.maxFileSizeLimit
+                      }
+                      disabled={formInstance.formState.isSubmitting}
+                      currentCampaignId={currentCampaign?.id}
+                      isOpen={isReferencePopoverOpen}
+                      onOpenChange={setIsReferencePopoverOpen}
+                      activeTab={referencePopoverTab}
+                      onTabChange={setReferencePopoverTab}
+                      isMagicEnabled={isMagicEnabled}
+                      onToggleMagic={handleToggleMagic}
+                    />
+                  ) : (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span>
                           <Button
-                            variant="outline"
-                            disabled
-                            className="cursor-not-allowed"
+                            size={"icon"}
+                            variant={"outline"}
+                            disabled={true}
                           >
-                            1x
+                            <ImagesIcon />
                           </Button>
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        This model does not support no of generations selection
+                        This model does not support attaching reference images
                       </TooltipContent>
                     </Tooltip>
-                  );
-                })()}
+                  )}
 
-                {advancedParams.length > 0 ? (
-                  <Popover>
+                  {/* Aspect Ratio - Always show */}
+                  {(() => {
+                    const aspectRatioParam = currentModel?.parameters?.find(
+                      (param) => param.type === "aspect_ratio"
+                    );
+
+                    if (aspectRatioParam) {
+                      return (
+                        <DynamicFormField
+                          key={aspectRatioParam.id}
+                          param={aspectRatioParam}
+                          form={formInstance}
+                          type="initial"
+                          rules={currentModel?.rules}
+                          allModelParameters={currentModel?.parameters}
+                        />
+                      );
+                    }
+
+                    // No aspect ratio support - show disabled select
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Select disabled>
+                              <SelectTrigger disableDropdown>
+                                <span>Auto</span>
+                              </SelectTrigger>
+                            </Select>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          This model does not support aspect ratio selection
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })()}
+
+                  {initialParams
+                    .filter(
+                      (param) =>
+                        param.id == "resolution" || param.id == "duration"
+                    )
+                    .map((param) => {
+                      return (
+                        <DynamicFormField
+                          key={param.id}
+                          param={param}
+                          form={formInstance}
+                          type="initial"
+                          rules={currentModel?.rules}
+                          allModelParameters={[
+                            ...initialParams,
+                            ...advancedParams,
+                          ]}
+                          sliderSuffix={
+                            param.id === "duration" ? "s" : undefined
+                          }
+                        />
+                      );
+                    })}
+
+                  {/* Image Count - Always show */}
+                  {(() => {
+                    const imageCountParam = currentModel?.parameters?.find(
+                      (param) =>
+                        param.type === "image_count" &&
+                        param.category === "initial"
+                    );
+
+                    if (imageCountParam) {
+                      return (
+                        <DynamicFormField
+                          key={imageCountParam.id}
+                          param={imageCountParam}
+                          form={formInstance}
+                          type="initial"
+                          rules={currentModel?.rules}
+                          allModelParameters={currentModel?.parameters}
+                        />
+                      );
+                    }
+
+                    // No image count support - show disabled button
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button
+                              variant="outline"
+                              disabled
+                              className="cursor-not-allowed"
+                            >
+                              1x
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          This model does not support no of generations
+                          selection
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })()}
+
+                  {advancedParams.length > 0 ? (
+                    <Popover>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                            <Button size="icon" variant="outline">
+                              <Settings2 />
+                            </Button>
+                          </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>Additional Settings</TooltipContent>
+                      </Tooltip>
+                      <PopoverContent
+                        forceMount
+                        align="center"
+                        side="top"
+                        className="space-y-2 w-64"
+                      >
+                        <div className="space-y-4">
+                          <FormLabel className="py-0 text-xs">
+                            Advance Parameters
+                          </FormLabel>
+                          {advancedParams.map((param) => {
+                            return (
+                              <DynamicFormField
+                                key={param.id}
+                                param={param}
+                                form={formInstance}
+                                type="advanced"
+                                rules={currentModel?.rules}
+                                allModelParameters={[
+                                  ...initialParams,
+                                  ...advancedParams,
+                                ]}
+                              />
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                          <Button size="icon" variant="outline">
+                        <span>
+                          <Button
+                            size={"icon"}
+                            variant={"outline"}
+                            disabled={true}
+                          >
                             <Settings2 />
                           </Button>
-                        </PopoverTrigger>
+                        </span>
                       </TooltipTrigger>
-                      <TooltipContent>Additional Settings</TooltipContent>
+                      <TooltipContent>No Additional Settings</TooltipContent>
                     </Tooltip>
-                    <PopoverContent
-                      forceMount
-                      align="center"
-                      side="top"
-                      className="space-y-2 w-64"
-                    >
-                      <div className="space-y-4">
-                        <FormLabel className="py-0 text-xs">
-                          Advance Parameters
-                        </FormLabel>
-                        {advancedParams.map((param) => {
-                          return (
-                            <DynamicFormField
-                              key={param.id}
-                              param={param}
-                              form={formInstance}
-                              type="advanced"
-                              rules={currentModel?.rules}
-                              allModelParameters={[
-                                ...initialParams,
-                                ...advancedParams,
-                              ]}
-                            />
-                          );
-                        })}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          disabled={true}
-                        >
-                          <Settings2 />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>No Additional Settings</TooltipContent>
-                  </Tooltip>
-                )}
+                  )}
+                </div>
               </div>
-              <div className="flex gap-x-2 items-center flex-shrink-0">
+              <div className="flex gap-2 items-end flex-shrink-0">
                 <ModelSelector
                   onModelChange={currentSetter}
                   selectedModel={currentModel}
