@@ -86,7 +86,6 @@ export const enhanceVideoPrompt = async (
   brandId: string,
   data: Record<string, any>
 ) => {
-  console.log("Enhancing video prompt with data:", data);
   try {
     return await handleApiRequest<string>(
       axiosInstance.post(`/brands/${brandId}/a2i/video-prompt-enhancement`, {

@@ -255,6 +255,52 @@ export function MediaFolderView({
     ]
   );
 
+  const handleMoveMediaToSubfolder = useCallback(
+    async (itemIds: string[], subfolderId: string, campaignId: string) => {
+      if (!selectedBrandId) return;
+
+      try {
+        const isSelectAll = selectAllMode !== "none";
+
+        const request = bulkOps.buildBulkRequest(
+          {
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          },
+          isSelectAll,
+          itemIds,
+          excludedItems
+        );
+
+        await bulkOps.bulkMove.mutateAsync({
+          ...request,
+          target_brand_id: selectedBrandId,
+          target_campaign_id: campaignId,
+          sub_folder_id: subfolderId,
+        });
+
+        clearSelection();
+      } catch (error) {
+        console.error("Move to subfolder failed:", error);
+        toast.error("Failed to move items to subfolder");
+      }
+    },
+    [
+      selectedBrandId,
+      selectAllMode,
+      excludedItems,
+      bulkOps,
+      activeTab,
+      favorites,
+      searchQuery,
+      selectedFilters,
+      clearSelection,
+    ]
+  );
+
   const handleReorderMedia = useCallback(
     (reorderData: { id: string; brand_sort_order: number }[]) => {
       galleryActions.reorderItems?.(reorderData);
@@ -532,6 +578,7 @@ export function MediaFolderView({
       excludedItems={excludedItems}
       onMoveMediaToCampaign={handleMoveMediaToCampaign}
       onMoveMediaToTab={handleMoveMediaToTab}
+      onMoveMediaToSubfolder={handleMoveMediaToSubfolder}
       onReorderMedia={handleReorderMedia}
       onReorderCampaigns={handleReorderCampaigns}
       onArchiveCampaign={handleArchiveCampaign}

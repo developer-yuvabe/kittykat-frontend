@@ -73,6 +73,36 @@ export function resolveTabValue(overId: string): string | null {
   return overId.replace("tab-", "");
 }
 
+/**
+ * Extract subfolderId and campaignId from droppable target
+ */
+export function resolveSubfolderId(
+  overId: string,
+  overData?: DropTargetData | DragData
+): { subfolderId: string; campaignId: string } | null {
+  if (
+    overData &&
+    "type" in overData &&
+    overData.type === DropTargetEnum.Subfolder
+  ) {
+    const data = overData as DropTargetData & { campaignId?: string };
+    return {
+      subfolderId: data.id,
+      campaignId: data.campaignId || "",
+    };
+  }
+
+  if (overId.startsWith("subfolder-")) {
+    // Fallback - extract from ID only (won't have campaign_id)
+    return {
+      subfolderId: overId.replace("subfolder-", ""),
+      campaignId: "",
+    };
+  }
+
+  return null;
+}
+
 export const galleryCollisionDetection: CollisionDetection = (args) => {
   const { active } = args;
 
@@ -80,16 +110,26 @@ export const galleryCollisionDetection: CollisionDetection = (args) => {
     active.data.current?.type === DragItemEnum.MediaItem ||
     active.data.current?.type === DragItemEnum.MediaItemsMulti;
 
+  const isCampaignDrag = active.data.current?.type === DragItemEnum.Campaign;
+
   // 1️⃣ Prioritize sidebar / non-grid targets
   const pointerCollisions = pointerWithin(args);
 
   if (pointerCollisions.length > 0) {
     const priorityTargets = pointerCollisions.filter((c) => {
       const data = c.data?.droppableContainer?.data?.current;
+
+      // If dragging a campaign, only allow dropping on Sections (e.g. Archive)
+      // We skip Campaign Drop Targets here to allow closestCenter (Step 2) to handle reordering behavior
+      if (isCampaignDrag) {
+        return data?.type === DropTargetEnum.Section;
+      }
+
       return (
         data?.type === DropTargetEnum.Campaign ||
         data?.type === DropTargetEnum.Tab ||
-        data?.type === DropTargetEnum.Section
+        data?.type === DropTargetEnum.Section ||
+        data?.type === DropTargetEnum.Subfolder
       );
     });
 
@@ -98,8 +138,8 @@ export const galleryCollisionDetection: CollisionDetection = (args) => {
     }
   }
 
-  // 2️⃣ Grid reordering
-  if (isMediaDrag) {
+  // 2️⃣ Grid reordering (Media) or List reordering (Campaigns)
+  if (isMediaDrag || isCampaignDrag) {
     return closestCenter(args);
   }
 
@@ -276,6 +316,20 @@ export function useSectionDroppable(section: "active" | "archived") {
       type: DropTargetEnum.Section,
       id: section,
       accepts: [DragItemEnum.Campaign],
+    },
+  };
+}
+
+/**
+ * Subfolder droppable configuration for receiving media items
+ */
+export function useSubfolderDroppable(subfolderId: string) {
+  return {
+    id: `subfolder-${subfolderId}`,
+    data: {
+      type: DropTargetEnum.Subfolder,
+      id: subfolderId,
+      accepts: [DragItemEnum.MediaItem, DragItemEnum.MediaItemsMulti],
     },
   };
 }

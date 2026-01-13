@@ -503,10 +503,6 @@ export function MediaLibrary({
     [brands, selectedBrandId]
   );
 
-  useEffect(() => {
-    console.log("selectAllMode changed:", selectAllMode);
-  }, [selectAllMode]);
-
   return (
     <GalleryDndProvider
       galleryActions={galleryActions}
