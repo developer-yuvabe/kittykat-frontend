@@ -68,7 +68,8 @@ const VideoWithMetadataModal = ({
   const [copied, setCopied] = useState(false);
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-  const { setStartFrame, setEndFrame, setSelectedFolderId } = useA2iStore();
+  const { setStartFrame, setEndFrame, setSelectedFolderId, setConceptVisualGeneratorMode } = useA2iStore();
+
   const campaignId = selectedCampaignId || defaultCampaignId;
   const { user } = useUserStore();
 
@@ -194,6 +195,7 @@ const VideoWithMetadataModal = ({
       });
 
       //  Set model + parameters
+      setConceptVisualGeneratorMode("video_generator");
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
 
