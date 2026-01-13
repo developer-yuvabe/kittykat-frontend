@@ -20,8 +20,6 @@ import { MediaDialogMultiSelectHeader } from "./MediaDialogMultiSelectHeader";
 import { MediaGalleryStatusDisplay } from "./MediaGalleryStatusDisplay";
 import { MediaFolderView } from "./MediaFolderView";
 import { useQueryState } from "nuqs";
-
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user.store";
 import { UserRoleId } from "@/types/user.types";
@@ -322,7 +320,7 @@ export function MediaLibrary({
         // Check if adding this item would exceed maxSelectionCount
         const totalSelectedCount =
           multiSelectItems.length + (inSelectionGalleryIds?.length || 0);
-        
+
         if (
           maxSelectionCount !== undefined &&
           totalSelectedCount >= maxSelectionCount
@@ -330,12 +328,13 @@ export function MediaLibrary({
           toast.warning(
             `Maximum selection limit reached (${maxSelectionCount} items)`,
             {
-              description: "Please deselect an item before selecting a new one.",
+              description:
+                "Please deselect an item before selecting a new one.",
             }
           );
           return;
         }
-        
+
         setMultiSelectItems((prev) => [...prev, id]);
       } else {
         setMultiSelectItems((prev) => prev.filter((itemId) => itemId !== id));
@@ -474,20 +473,9 @@ export function MediaLibrary({
     currentlySelectedItems.includes(item.id)
   );
 
-  const [localGalleryView, setLocalGalleryView] = useLocalStorage<
-    "grid" | "folder"
-  >("gallery-view-mode", "folder");
-
-  // URL query state
-  const [galleryView, setGalleryViewRaw] = useQueryState<"grid" | "folder">(
-    "view",
-    {
-      parse: (value) =>
-        value === "grid" || value === "folder" ? value : "grid",
-      serialize: (value) => value,
-      history: "push",
-      defaultValue: localGalleryView, // load from localStorage
-    }
+  // Gallery view state (default to "folder"). No localStorage or URL sync.
+  const [galleryView, setGalleryViewState] = useState<"grid" | "folder">(
+    "folder"
   );
 
   const [, setSelectedCampaignInUrl] = useQueryState<string | null>(
@@ -501,8 +489,7 @@ export function MediaLibrary({
   );
 
   const setGalleryView = (value: "grid" | "folder") => {
-    setLocalGalleryView(value);
-    setGalleryViewRaw(value);
+    setGalleryViewState(value);
   };
 
   // Handle navigation to brand onboarding
@@ -567,6 +554,7 @@ export function MediaLibrary({
                 galleryView={galleryView}
                 setGalleryView={setGalleryView}
                 selectedCampaignId={selectedCampaignId}
+                isMediaSelectDialog={isMediaSelectDialog}
               />
             </div>
           </div>
@@ -687,7 +675,6 @@ export function MediaLibrary({
                   onMediaItemSelected={onMediaItemSelected}
                   onFullMediaItemSelected={onFullMediaItemSelected}
                   galleryActions={galleryActions}
-                  
                 />
               </div>
             )}

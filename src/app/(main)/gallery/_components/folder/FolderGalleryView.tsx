@@ -177,7 +177,7 @@ export function FolderGalleryView({
         // Check if adding this item would exceed maxSelectionCount
         const totalSelectedCount =
           multiSelectItems.length + (inSelectionGalleryIds?.length || 0);
-        
+
         if (
           maxSelectionCount !== undefined &&
           totalSelectedCount >= maxSelectionCount
@@ -185,7 +185,8 @@ export function FolderGalleryView({
           toast.warning(
             `Maximum selection limit reached (${maxSelectionCount} items)`,
             {
-              description: "Please deselect an item before selecting a new one.",
+              description:
+                "Please deselect an item before selecting a new one.",
             }
           );
           return;

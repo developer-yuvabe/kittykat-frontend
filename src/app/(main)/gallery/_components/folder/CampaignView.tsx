@@ -213,7 +213,7 @@ export function CampaignView({
         // Check if adding this item would exceed maxSelectionCount
         const totalSelectedCount =
           multiSelectItems.length + (inSelectionGalleryIds?.length || 0);
-        
+
         if (
           maxSelectionCount !== undefined &&
           totalSelectedCount >= maxSelectionCount
@@ -221,7 +221,8 @@ export function CampaignView({
           toast.warning(
             `Maximum selection limit reached (${maxSelectionCount} items)`,
             {
-              description: "Please deselect an item before selecting a new one.",
+              description:
+                "Please deselect an item before selecting a new one.",
             }
           );
           return;
@@ -352,6 +353,7 @@ export function CampaignView({
               galleryView={galleryView}
               setGalleryView={setGalleryView}
               selectedCampaignId={selectedCampaignId}
+              isMediaSelectDialog={isMediaSelectDialog}
             />
           </div>
         </div>
@@ -446,28 +448,30 @@ export function CampaignView({
         </div>
       )}
 
-      {(isMultiSelect ? multiSelectItems.length : selectedItems.length) > 0 && (
-        <MediaBulkActions
-          selectedItems={selectedItemsData}
-          onUnselectAll={handleUnselectAll}
-          onSelectAll={handleSelectAll}
-          galleryActions={galleryActions}
-          brandName={brandName}
-          totalItems={galleryActions.totalItems}
-          fetchedItemsCount={galleryActions.getGalleryItems().length}
-          selectAllMode={selectAllMode}
-          excludedItems={excludedItems}
-          onSelectAllModeChange={setSelectAllMode}
-          onExcludedItemsChange={setExcludedItems}
-          galleryFilters={{
-            assetType: activeTab,
-            favorites,
-            source: activeTab,
-            searchQuery,
-            selectedFilters,
-          }}
-        />
-      )}
+      {!isMediaSelectDialog &&
+        (isMultiSelect ? multiSelectItems.length : selectedItems.length) >
+          0 && (
+          <MediaBulkActions
+            selectedItems={selectedItemsData}
+            onUnselectAll={handleUnselectAll}
+            onSelectAll={handleSelectAll}
+            galleryActions={galleryActions}
+            brandName={brandName}
+            totalItems={galleryActions.totalItems}
+            fetchedItemsCount={galleryActions.getGalleryItems().length}
+            selectAllMode={selectAllMode}
+            excludedItems={excludedItems}
+            onSelectAllModeChange={setSelectAllMode}
+            onExcludedItemsChange={setExcludedItems}
+            galleryFilters={{
+              assetType: activeTab,
+              favorites,
+              source: activeTab,
+              searchQuery,
+              selectedFilters,
+            }}
+          />
+        )}
     </div>
   );
 }

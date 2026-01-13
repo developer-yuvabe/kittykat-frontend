@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Images, Paperclip, PanelTop } from "lucide-react";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { FileRejection } from "react-dropzone";
 import { toast } from "sonner";
 import { useBrandStore } from "@/store/brand.store";
@@ -97,6 +97,8 @@ const ReferenceImageSelector = ({
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  // Map URLs to gallery IDs for tracking pre-selected items
+  const [urlToIdMap, setUrlToIdMap] = useState<Map<string, string>>(new Map());
 
   // Determine mode based on whether product reference props are provided
   const isSingleMode = !onProductReferenceChangeProp;
@@ -165,6 +167,18 @@ const ReferenceImageSelector = ({
 
   const currentImageCount = masterReference.length + productReference.length;
   const remainingSlots = maxLimit - currentImageCount;
+
+  // Use URL-to-ID map for pre-selected tracking in MediaLibraryDialog
+  const selectedGalleryIds = useMemo(() => {
+    const ids: string[] = [];
+    [...masterReference, ...productReference].forEach((url) => {
+      const id = urlToIdMap.get(url);
+      if (id) {
+        ids.push(id);
+      }
+    });
+    return ids;
+  }, [urlToIdMap, masterReference, productReference]);
 
   const openForMaster = useCallback(() => {
     onTabChange("master");
@@ -296,6 +310,17 @@ const ReferenceImageSelector = ({
       // Add uploaded items to gallery store
       if (response && response.length > 0) {
         addItems(response);
+        
+        // Update URL-to-ID mapping for uploaded items
+        setUrlToIdMap((prev) => {
+          const newMap = new Map(prev);
+          response.forEach((item) => {
+            if (item.id && item.asset_url) {
+              newMap.set(item.asset_url, item.id);
+            }
+          });
+          return newMap;
+        });
       }
 
       // Add to references
@@ -422,6 +447,13 @@ const ReferenceImageSelector = ({
       onMasterReferenceChange(result.newMasterReference);
       onProductReferenceChange(result.newProductReference);
       toast.success(result.toastMessage);
+
+      // Update URL-to-ID mapping
+      setUrlToIdMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(assetUrl, assetId);
+        return newMap;
+      });
 
       // Optimistically update in store
       updateLastAccessed(assetId);
@@ -754,6 +786,18 @@ const ReferenceImageSelector = ({
           addItems(itemsWithIds);
         }
 
+        // Update URL-to-ID mapping for selected items from media library
+        setUrlToIdMap((prev) => {
+          const newMap = new Map(prev);
+          validItems.forEach((item) => {
+            const itemResponse = item as GalleryItemResponse;
+            if (itemResponse.id && itemResponse.asset_url) {
+              newMap.set(itemResponse.asset_url, itemResponse.id);
+            }
+          });
+          return newMap;
+        });
+
         // Update last_accessed_at for each item
         validItems.forEach((item) => {
           const itemResponse = item as GalleryItemResponse;
@@ -879,7 +923,7 @@ const ReferenceImageSelector = ({
           brandId={selectedBrandId!}
           campaignId={currentCampaignId || undefined}
           isMultiSelect={true}
-          inSelectionGalleryIds={[...masterReference, ...productReference]}
+          inSelectionGalleryIds={selectedGalleryIds}
           maxSelectionCount={remainingSlots}
         />
       </>
@@ -1086,7 +1130,7 @@ const ReferenceImageSelector = ({
         brandId={selectedBrandId!}
         campaignId={currentCampaignId || undefined}
         isMultiSelect={true}
-        inSelectionGalleryIds={[...masterReference, ...productReference]}
+        inSelectionGalleryIds={selectedGalleryIds}
         maxSelectionCount={maxLimit}
       />
     </>
