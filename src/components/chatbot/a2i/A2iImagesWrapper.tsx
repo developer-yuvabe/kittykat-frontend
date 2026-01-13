@@ -46,6 +46,7 @@ import A2iImageInputLoader from "./A2iImageInputLoader";
 import { useQueryState } from "nuqs";
 import { useGenerationsStore } from "@/store/generations.store";
 import A2iBulkActions from "./A2iBulkActions";
+import { useA2iStore } from "@/store/a2i.store";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -70,7 +71,8 @@ export const A2iImagesWrapper = ({
   referenceMoodboardId,
   currentCampaign,
 }: A2iImagesWrapperProps) => {
-  const { selectedBrandId, selectedCampaignId, brands } = useBrandStore();
+  const { selectedBrandId, brands, getSelectedBrandCampaigns } =
+    useBrandStore();
   const { isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -80,6 +82,39 @@ export const A2iImagesWrapper = ({
   const selectionMode = selectedItems.size > 0;
   const currentBrand = brands.find((b) => b.id === selectedBrandId);
   const brandName = currentBrand?.name ?? "download";
+  const { selectedFolderId } = useA2iStore();
+
+  const brandCampaigns = getSelectedBrandCampaigns();
+
+  // Get all folder IDs to include (selected folder + all subfolders)
+  const folderIdsToInclude = useMemo(() => {
+    if (!selectedFolderId) return [];
+
+    const folderIds = new Set<string>([selectedFolderId]);
+
+    // Find the selected folder
+    const selectedFolder = brandCampaigns.find(
+      (c) => c.id === selectedFolderId
+    );
+
+    if (selectedFolder?.sub_folders) {
+      // Add all subfolder IDs
+      selectedFolder.sub_folders.forEach((subFolder) => {
+        folderIds.add(subFolder.id);
+      });
+    } else {
+      // Check if selectedFolderId is a subfolder
+      // If it is, we only include that subfolder
+      const parentFolder = brandCampaigns.find((c) =>
+        c.sub_folders?.some((sf) => sf.id === selectedFolderId)
+      );
+      if (!parentFolder) {
+        // It's a parent folder, no subfolders to add
+      }
+    }
+
+    return Array.from(folderIds);
+  }, [selectedFolderId, brandCampaigns]);
 
   // Track component resize to adjust items per page
   useResizeObserver({
@@ -113,11 +148,13 @@ export const A2iImagesWrapper = ({
   const dragEndTime = useRef(0);
 
   useEffect(() => {
-    const filteredGenerations = selectedCampaignId
-      ? generations.filter(
-          (gen) => gen.parameters?.campaign_id === selectedCampaignId
-        )
-      : generations;
+    // Filter generations by selected folder and its subfolders
+    const filteredGenerations =
+      folderIdsToInclude.length > 0
+        ? generations.filter((gen) =>
+            folderIdsToInclude.includes(gen.parameters?.campaign_id)
+          )
+        : generations;
 
     const flatImages = filteredGenerations.flatMap(
       (generation): A2iImageCardProps[] => {
@@ -171,7 +208,7 @@ export const A2iImagesWrapper = ({
     });
 
     setItems(flatImages);
-  }, [generations, selectedCampaignId]);
+  }, [generations, folderIdsToInclude]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

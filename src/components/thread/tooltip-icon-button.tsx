@@ -5,7 +5,6 @@ import React from "react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button, ButtonProps } from "@/components/ui/button";
@@ -34,25 +33,23 @@ export const TooltipIconButton = forwardRef<
     ref
   ) => {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size={size || "icon"}
-              {...rest}
-              className={cn("size-6 p-1", className)}
-              ref={ref}
-            >
-              {children}
-              <span className="sr-only">{tooltip}</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side={side} className={tooltipClassName}>
-            {tooltip}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size={size || "icon"}
+            {...rest}
+            className={cn("size-6 p-1", className)}
+            ref={ref}
+          >
+            {children}
+            <span className="sr-only">{tooltip}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side={side} className={tooltipClassName}>
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
     );
   }
 );

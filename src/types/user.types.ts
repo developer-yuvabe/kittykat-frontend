@@ -70,6 +70,16 @@ export type Campaign = {
   is_custom?: boolean;
   is_analyzing?: boolean;
   is_curated_for_brand?: boolean;
+  is_admin_only?: boolean; //for hidden folders
+  is_kk_folder?: boolean; //for kk folders
+  is_kk_selected?: boolean; //for kk folders
+  sub_folders?: {
+    id: string;
+    name: string;
+    is_admin_only?: boolean; //for hidden folders
+    is_kk_folder?: boolean; //for kk folders
+    is_kk_selected?: boolean; //for kk folders
+  }[];
 };
 
 export type UserBrand = {

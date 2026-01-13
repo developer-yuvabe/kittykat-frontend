@@ -95,6 +95,7 @@ const ImageWithMetadataModal = ({
     setEndFrame,
     setBaseImageUrl,
     setShouldClearPromptOnMetadataActions,
+    setSelectedFolderId,
   } = useA2iStore();
   const { user } = useUserStore();
 
@@ -342,6 +343,11 @@ const ImageWithMetadataModal = ({
         // Store schema-correct params
         setParameters("remixParameters", convertedRemixParams);
 
+        // Set selected folder to campaign if available
+        if (galleryItem.campaign_id) {
+          setSelectedFolderId(galleryItem.campaign_id);
+        }
+
         onClose();
         if (source === "media-gallery") {
           router.push("/?scrollTo=a2i-input");
@@ -393,6 +399,11 @@ const ImageWithMetadataModal = ({
           setParameters("productReferenceImages", productReferenceImages);
         } else {
           setParameters("productReferenceImages", null);
+        }
+
+        // Set selected folder to campaign if available
+        if (galleryItem.campaign_id) {
+          setSelectedFolderId(galleryItem.campaign_id);
         }
 
         onClose();

@@ -10,8 +10,8 @@ import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
 import { FolderUploadDropzone } from "./FolderUploadDropzone";
 import type { EnhancedSelectedFilters } from "@/types/gallery.types";
-import { FolderTabs } from "./FolderTabs";
 import { useBrandStore } from "@/store/brand.store";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import { Input } from "@/components/ui/input";
 import { MediaFilterDropdown } from "../MediaFilterDropdown";
 import MediaViewsDropdown from "../MediaViewDropDown";
@@ -26,6 +26,7 @@ interface CampaignViewProps {
   onUploadComplete?: (urls: string[]) => void;
   addToGallery?: boolean;
   selectedMoodboardId?: string;
+  selectedSubFolderId?: string | null;
   searchQuery?: string;
   favorites?: boolean;
   selectedFilters: EnhancedSelectedFilters;
@@ -50,10 +51,10 @@ export function CampaignView({
   onUploadComplete,
   addToGallery = true,
   selectedMoodboardId,
+  selectedSubFolderId,
   searchQuery = "",
   favorites = false,
   selectedFilters,
-  onTabChange,
   showHeader = false,
   handleSearchChange,
   showFilters,
@@ -63,7 +64,15 @@ export function CampaignView({
   setActiveTab,
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const {
+    selectedItems,
+    setSelectedItems,
+    selectAllMode,
+    setSelectAllMode,
+    excludedItems,
+    setExcludedItems,
+    setTotalItemsCount,
+  } = useGalleryFilterStore();
 
   // Find current campaign from the brand's campaigns
   const currentCampaign = useMemo(() => {
@@ -110,6 +119,7 @@ export function CampaignView({
         // Force the brand and campaign filters to match the current selection
         brands: [selectedBrandId],
         campaigns: [campaignId],
+        sub_folders: selectedFilters?.sub_folders || [],
       },
     },
     ITEMS_PER_PAGE,
@@ -119,6 +129,11 @@ export function CampaignView({
 
   // Intersection observer for infinite scroll
   const { ref, inView } = useInView();
+
+  // Update totalItemsCount in store when it changes
+  useEffect(() => {
+    setTotalItemsCount(galleryActions.totalItems);
+  }, [galleryActions.totalItems, setTotalItemsCount]);
 
   // Clear selected items when campaign changes
   useEffect(() => {
@@ -184,20 +199,34 @@ export function CampaignView({
     }
 
     // --- NORMAL CLICK ---
-    setSelectedItems((prev) =>
-      selected ? [...prev, id] : prev.filter((itemId) => itemId !== id)
-    );
+    if (selected) {
+      setSelectedItems((prev) => [...prev, id]);
+      // Remove from exclusions if in select-all mode
+      if (selectAllMode !== "none") {
+        setExcludedItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
+    } else {
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      // Add to exclusions if in select-all mode
+      if (selectAllMode !== "none") {
+        setExcludedItems((prev) => [...prev, id]);
+      }
+    }
 
     setLastSelectedId(id); // ✅ always update last clicked
   };
 
   const handleUnselectAll = () => {
     setSelectedItems([]);
+    setSelectAllMode("none");
+    setExcludedItems([]);
   };
 
   const handleSelectAll = () => {
     const allItemIds = galleryActions.getGalleryItems().map((item) => item.id);
     setSelectedItems(allItemIds);
+    setSelectAllMode("visible");
+    setExcludedItems([]);
   };
 
   const { selectedCampaignId } = useBrandStore();
@@ -287,19 +316,7 @@ export function CampaignView({
         </div>
       )}
 
-      {/* Folder Tabs for campaign view - Only show if showHeader is false (sidebar mode) */}
-
-      {!showHeader && (
-        <div className="pl-4 pb-4">
-          <FolderTabs
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            title="Subfolders"
-            galleryActions={galleryActions}
-            setSelectedItems={setSelectedItems}
-          />
-        </div>
-      )}
+      {/* Tabs removed - navigation now handled by unified GallerySidebar */}
 
       {activeTab === "pexels" ? (
         <div className="overflow-y-auto">
@@ -328,10 +345,12 @@ export function CampaignView({
                     media_format: [],
                     aspect_ratio: [],
                     workflow_status: [],
+                    sub_folders: [],
                   },
                 }}
                 selectedBrandId={selectedBrandId}
                 selectedCampaignId={campaignId}
+                selectedSubFolderId={selectedSubFolderId}
                 selectedMoodboardId={selectedMoodboardId}
               />
             </div>
@@ -345,6 +364,7 @@ export function CampaignView({
           <MediaGalleryStatusDisplay
             galleryStatus={galleryActions.galleryStatus}
             galleryItemsLength={galleryActions.getGalleryItems().length}
+            isFetchingNextPage={galleryActions.isFetchingNextPage}
           />
 
           {/* Gallery Items with minimum height to prevent layout shift */}
@@ -376,13 +396,6 @@ export function CampaignView({
                   )}
                 </div>
               )}
-
-            {/* Loading state - maintains space */}
-            {galleryActions.galleryStatus === "pending" && (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -394,6 +407,19 @@ export function CampaignView({
           onSelectAll={handleSelectAll}
           galleryActions={galleryActions}
           brandName={brandName}
+          totalItems={galleryActions.totalItems}
+          fetchedItemsCount={galleryActions.getGalleryItems().length}
+          selectAllMode={selectAllMode}
+          excludedItems={excludedItems}
+          onSelectAllModeChange={setSelectAllMode}
+          onExcludedItemsChange={setExcludedItems}
+          galleryFilters={{
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          }}
         />
       )}
     </div>

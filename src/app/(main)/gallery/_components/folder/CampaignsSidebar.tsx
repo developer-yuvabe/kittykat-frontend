@@ -3,11 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore } from "@/store/brand.store";
-import {
-  deleteCampaign,
-  updateCampaign,
-  setCampaignCuration,
-} from "@/services/api/brand.service";
+import { useCampaignMutations } from "@/hooks/useCampaignMutations";
+import { useSubfolderMutations } from "@/hooks/useSubfolderMutations";
 import {
   Accordion,
   AccordionContent,
@@ -15,16 +12,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
-import { useCampaignCounts } from "@/hooks/useCampaignCounts";
+import { useCampaignCounts } from "@/hooks/useCampaigns";
 import { GalleryActions } from "@/hooks/useGallery";
 import { useBrandBrainAnalysis } from "@/hooks/useBrandBrainAnalysis";
 import { useCampaignAnalyzingStatus } from "@/hooks/sse/useCampaignAnalyzingStatus";
 import { CampaignSidebarHeader } from "./CampaignSidebarHeader";
 import { CampaignSidebarRow } from "./CampaignSidebarRow";
-import { CampaignSidebarRenameDialog } from "./CampaignSidebarRenameDialog";
-import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
-import { useQueryClient } from "@tanstack/react-query";
-import { useUndoableAction } from "@/hooks/useUndoableAction";
+import { CampaignDialogs } from "./CampaignDialogs";
 import BrandSelector from "@/components/chatbot/brands/BrandSelector";
 import { EnhancedSelectedFilters } from "@/types/gallery.types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -74,11 +68,21 @@ export function CampaignsSidebar({
   onToggleCollapsed,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { brands, archiveCampaign } = useBrandStore();
+  const { brands } = useBrandStore();
   const { setSelectedCampaignId } = useBrandStore();
-  const { orderBy, setOrderBy } = useGalleryFilterStore();
-  const queryClient = useQueryClient();
-  const { execute } = useUndoableAction();
+  const { orderBy, setOrderBy, selectedSubFolderId, setSelectedSubFolderId } =
+    useGalleryFilterStore();
+
+  // Mutations
+  const {
+    updateCampaign,
+    deleteCampaign,
+    setCampaignCuration,
+    duplicateCampaign,
+  } = useCampaignMutations();
+
+  const { updateSubfolder: updateSubfolderMutation, duplicateSubfolder } =
+    useSubfolderMutations();
 
   // Subscribe to real-time campaign analyzing status updates via SSE
   useCampaignAnalyzingStatus();
@@ -149,7 +153,7 @@ export function CampaignsSidebar({
   const { data: countData, isLoading: isCountLoading } =
     useCampaignCounts(selectedBrandId);
 
-  const { campaigns, brandName } = useMemo(() => {
+  const { campaigns } = useMemo(() => {
     const brand = brands.find((b) => b.id === selectedBrandId);
     return {
       campaigns: brand ? brand.campaigns : [],
@@ -198,47 +202,6 @@ export function CampaignsSidebar({
     [archivedCampaigns]
   );
 
-  // Instantly update gallery when a campaign is archived/unarchived
-  const updateGalleryForCampaignArchive = (
-    campaignId: string,
-    shouldBeArchived: boolean
-  ) => {
-    queryClient.setQueriesData({ queryKey: ["gallery-items"] }, (old: any) => {
-      if (!old?.pages) return old;
-
-      return {
-        ...old,
-        pages: old.pages.map((page: any) => {
-          const itemsInThisCampaign = page.gallery_items.filter(
-            (item: any) => item.campaign_id === campaignId
-          );
-
-          // If we're archiving → remove them
-          // If we're unarchiving → keep them (they should now appear)
-          const shouldKeep = !shouldBeArchived;
-
-          return {
-            ...page,
-            gallery_items: shouldKeep
-              ? page.gallery_items
-              : page.gallery_items.filter(
-                  (item: any) => item.campaign_id !== campaignId
-                ),
-            pagination: {
-              ...page.pagination,
-              total: shouldKeep
-                ? page.pagination.total
-                : Math.max(
-                    0,
-                    page.pagination.total - itemsInThisCampaign.length
-                  ),
-            },
-          };
-        }),
-      };
-    });
-  };
-
   // Handlers
   const handleDelete = async () => {
     if (!selectedBrandId) return;
@@ -255,17 +218,11 @@ export function CampaignsSidebar({
     });
 
     try {
-      await execute({
+      await deleteCampaign({
+        brandId: selectedBrandId,
+        campaignId,
         title,
         undoSeconds: 3,
-        loadingMessage: `Deleting "${title}"...`,
-        action: async () => {
-          await deleteCampaign(selectedBrandId, campaignId);
-          // Invalidate brands query to refresh the UI
-          await queryClient.invalidateQueries({ queryKey: ["brands"] });
-        },
-        successMessage: `"${title}" deleted successfully.`,
-        errorMessage: `Failed to delete "${title}".`,
       });
     } catch {
       setDeleteDialog((prev) => ({ ...prev, isDeleting: false }));
@@ -287,33 +244,15 @@ export function CampaignsSidebar({
       isArchived: false,
       isProcessing: false,
     });
-
-    // Optimistically update the store immediately
-    archiveCampaign(selectedBrandId, campaignId, shouldBeArchived);
-
     try {
-      await execute({
+      await updateCampaign({
+        brandId: selectedBrandId,
+        campaignId,
+        payload: { is_archived: shouldBeArchived },
         title,
         undoSeconds: 3,
-        loadingMessage: `${
-          shouldBeArchived ? "Archiving" : "Unarchiving"
-        } "${title}"...`,
-        action: async () => {
-          await updateCampaign(selectedBrandId, campaignId, {
-            is_archived: shouldBeArchived,
-          });
-          updateGalleryForCampaignArchive(campaignId, shouldBeArchived);
-          // Invalidate brands query to refresh the UI
-          await queryClient.invalidateQueries({ queryKey: ["brands"] });
-        },
-        successMessage: `"${title}" ${
-          shouldBeArchived ? "archived" : "unarchived"
-        } successfully.`,
-        errorMessage: `Failed to ${
-          shouldBeArchived ? "archive" : "unarchive"
-        } "${title}".`,
       });
-    } catch {
+    } finally {
       setArchiveDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   };
@@ -345,31 +284,194 @@ export function CampaignsSidebar({
     });
 
     try {
-      await execute({
+      await setCampaignCuration({
+        brandId: selectedBrandId,
+        campaignId,
+        isCurated: shouldBeCurated,
         title,
         undoSeconds: 3,
-        loadingMessage: `${
-          shouldBeCurated ? "Marking" : "Unmarking"
-        } "${title}" as curated campaign...`,
-        action: async () => {
-          await setCampaignCuration(
-            selectedBrandId,
-            campaignId,
-            shouldBeCurated
-          );
-          // Invalidate brands query to refresh the UI
-          await queryClient.invalidateQueries({ queryKey: ["brands"] });
-        },
-        successMessage: `"${title}" ${
-          shouldBeCurated ? "marked" : "unmarked"
-        } as curated campaign successfully.`,
-        errorMessage: `Failed to ${
-          shouldBeCurated ? "mark" : "unmark"
-        } "${title}" as curated campaign.`,
       });
     } catch {
       setCuratedDialog((prev) => ({ ...prev, isProcessing: false }));
     }
+  };
+
+  const handleKKFolderToggle = async (
+    campaignId: string,
+    title: string,
+    isKKFolder: boolean,
+    subfolderId?: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    const shouldBeKKFolder = !isKKFolder;
+
+    if (subfolderId) {
+      await updateSubfolderMutation({
+        brandId: selectedBrandId,
+        campaignId,
+        subFolderId: subfolderId,
+        payload: { is_kk_folder: shouldBeKKFolder },
+        title,
+        undoSeconds: 3,
+      });
+      return;
+    }
+
+    await updateCampaign({
+      brandId: selectedBrandId,
+      campaignId,
+      payload: { is_kk_folder: shouldBeKKFolder },
+      title,
+    });
+  };
+
+  const handleKKSelectedToggle = async (
+    campaignId: string,
+    title: string,
+    isKKSelected: boolean,
+    subfolderId?: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    const shouldBeKKSelected = !isKKSelected;
+
+    if (subfolderId) {
+      await updateSubfolderMutation({
+        brandId: selectedBrandId,
+        campaignId,
+        subFolderId: subfolderId,
+        payload: { is_kk_selected: shouldBeKKSelected },
+        title,
+        undoSeconds: 3,
+      });
+      return;
+    }
+
+    await updateCampaign({
+      brandId: selectedBrandId,
+      campaignId,
+      payload: { is_kk_selected: shouldBeKKSelected },
+      title,
+    });
+  };
+
+  const handleAdminOnlyToggle = async (
+    campaignId: string,
+    title: string,
+    isAdminOnly: boolean,
+    subfolderId?: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    const shouldBeAdminOnly = !isAdminOnly;
+
+    if (subfolderId) {
+      await updateSubfolderMutation({
+        brandId: selectedBrandId,
+        campaignId,
+        subFolderId: subfolderId,
+        payload: { is_admin_only: shouldBeAdminOnly },
+        title,
+        undoSeconds: 3,
+      });
+      return;
+    }
+
+    await updateCampaign({
+      brandId: selectedBrandId,
+      campaignId,
+      payload: { is_admin_only: shouldBeAdminOnly },
+      title,
+    });
+  };
+
+  const handleCampaignDuplicate = async (id: string, title: string) => {
+    if (!selectedBrandId) return;
+
+    try {
+      await duplicateCampaign({
+        brandId: selectedBrandId,
+        campaignId: id,
+        title,
+      });
+    } catch (error) {
+      console.error("Error duplicating campaign:", error);
+    }
+  };
+
+  const handleSubfolderDuplicate = async (
+    campaignId: string,
+    subFolderId: string,
+    title: string
+  ) => {
+    if (!selectedBrandId) return;
+
+    try {
+      await duplicateSubfolder({
+        brandId: selectedBrandId,
+        campaignId,
+        subFolderId,
+        title,
+      });
+    } catch (error) {
+      console.error("Error duplicating subfolder:", error);
+    }
+  };
+
+  const handleRename = (id: string, title: string) => {
+    setRenameDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+    });
+  };
+
+  const handleArchiveDialog = (
+    id: string,
+    title: string,
+    isArchived: boolean
+  ) => {
+    setArchiveDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isArchived,
+      isProcessing: false,
+    });
+  };
+
+  const handleCuratedDialog = (
+    id: string,
+    title: string,
+    isCurated: boolean
+  ) => {
+    setCuratedDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isCurated,
+      isProcessing: false,
+    });
+  };
+
+  const handleDeleteDialog = (id: string, title: string) => {
+    setDeleteDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isDeleting: false,
+    });
+  };
+
+  const handleAnalyzeDialog = (id: string, title: string) => {
+    const campaign = campaigns.find((c) => c.id === id);
+    setAnalyzeDialog({
+      open: true,
+      campaignId: id,
+      campaignTitle: title,
+      isReanalysis: campaign?.is_curated_for_brand || false,
+    });
   };
 
   if (!selectedBrandId) {
@@ -400,7 +502,7 @@ export function CampaignsSidebar({
     );
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-[100%] w-[30%] rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-[100%] min-w-[320px] max-w-[450px] w-[28vw] lg:w-[26vw] xl:w-[24vw] rounded-sm">
       {/* Brand Selector and Title */}
       <div className="flex flex-col px-4 gap-y-3 mt-2">
         <div className="flex justify-between">
@@ -450,6 +552,7 @@ export function CampaignsSidebar({
             onClick={() => {
               onCampaignSelect("");
               setSelectedCampaignId(null);
+              setSelectedSubFolderId(null);
               if (orderBy === "brand_sort_order") {
                 setOrderBy("created_at_descending");
               }
@@ -467,13 +570,10 @@ export function CampaignsSidebar({
       <CampaignSidebarHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        brandId={selectedBrandId || ""}
-        brandName={brandName}
-        onCampaignCreated={onCampaignSelect}
       />
 
       {/* Campaigns List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         <Accordion type="multiple" defaultValue={["active"]}>
           {/* Active Campaigns */}
           <AccordionItem value="active">
@@ -496,51 +596,24 @@ export function CampaignsSidebar({
                       campaign={campaign}
                       selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId}
-                      onCampaignSelect={onCampaignSelect}
-                      count={countData?.count_by_campaign?.[campaign.id]}
-                      isCountLoading={isCountLoading}
-                      onRename={(id, title) =>
-                        setRenameDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                        })
-                      }
-                      onArchiveToggle={(id, title, isArchived) =>
-                        setArchiveDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isArchived,
-                          isProcessing: false,
-                        })
-                      }
-                      onCuratedToggle={(id, title, isCurated) =>
-                        setCuratedDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isCurated,
-                          isProcessing: false,
-                        })
-                      }
-                      onDelete={(id, title) =>
-                        setDeleteDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isDeleting: false,
-                        })
-                      }
-                      onAnalyze={(id, title) => {
-                        const campaign = campaigns.find((c) => c.id === id);
-                        setAnalyzeDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isReanalysis: campaign?.is_curated_for_brand || false,
-                        });
+                      selectedSubFolderId={selectedSubFolderId}
+                      onCampaignSelect={(campaignId, subFolderId) => {
+                        onCampaignSelect(campaignId);
+                        setSelectedSubFolderId(subFolderId || null);
                       }}
+                      count={countData?.count_by_campaign?.[campaign.id]}
+                      subfolderCounts={countData?.count_by_sub_folder}
+                      isCountLoading={isCountLoading}
+                      onRename={handleRename}
+                      onArchiveToggle={handleArchiveDialog}
+                      onCuratedToggle={handleCuratedDialog}
+                      onKKFolderToggle={handleKKFolderToggle}
+                      onKKSelectedToggle={handleKKSelectedToggle}
+                      onAdminOnlyToggle={handleAdminOnlyToggle}
+                      onDelete={handleDeleteDialog}
+                      onAnalyze={handleAnalyzeDialog}
+                      onDuplicate={handleCampaignDuplicate}
+                      onSubfolderDuplicate={handleSubfolderDuplicate}
                     />
                   ))}
                 </SortableContext>
@@ -574,51 +647,24 @@ export function CampaignsSidebar({
                       campaign={campaign}
                       selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId}
-                      onCampaignSelect={onCampaignSelect}
-                      count={countData?.count_by_campaign?.[campaign.id]}
-                      isCountLoading={isCountLoading}
-                      onRename={(id, title) =>
-                        setRenameDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                        })
-                      }
-                      onArchiveToggle={(id, title, isArchived) =>
-                        setArchiveDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isArchived,
-                          isProcessing: false,
-                        })
-                      }
-                      onCuratedToggle={(id, title, isCurated) =>
-                        setCuratedDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isCurated,
-                          isProcessing: false,
-                        })
-                      }
-                      onDelete={(id, title) =>
-                        setDeleteDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isDeleting: false,
-                        })
-                      }
-                      onAnalyze={(id, title) => {
-                        const campaign = campaigns.find((c) => c.id === id);
-                        setAnalyzeDialog({
-                          open: true,
-                          campaignId: id,
-                          campaignTitle: title,
-                          isReanalysis: campaign?.is_curated_for_brand || false,
-                        });
+                      selectedSubFolderId={selectedSubFolderId}
+                      onCampaignSelect={(campaignId, subFolderId) => {
+                        onCampaignSelect(campaignId);
+                        setSelectedSubFolderId(subFolderId || null);
                       }}
+                      count={countData?.count_by_campaign?.[campaign.id]}
+                      subfolderCounts={countData?.count_by_sub_folder}
+                      isCountLoading={isCountLoading}
+                      onRename={handleRename}
+                      onArchiveToggle={handleArchiveDialog}
+                      onCuratedToggle={handleCuratedDialog}
+                      onKKFolderToggle={handleKKFolderToggle}
+                      onKKSelectedToggle={handleKKSelectedToggle}
+                      onAdminOnlyToggle={handleAdminOnlyToggle}
+                      onDelete={handleDeleteDialog}
+                      onAnalyze={handleAnalyzeDialog}
+                      onDuplicate={handleCampaignDuplicate}
+                      onSubfolderDuplicate={handleSubfolderDuplicate}
                     />
                   ))}
                 </SortableContext>
@@ -634,158 +680,23 @@ export function CampaignsSidebar({
       </div>
 
       {/* Dialogs */}
-      <CampaignSidebarRenameDialog
-        open={renameDialog.open}
-        onOpenChange={(open) =>
-          setRenameDialog({ open, campaignId: "", campaignTitle: "" })
-        }
-        brandId={selectedBrandId}
-        campaignId={renameDialog.campaignId}
-        campaignTitle={renameDialog.campaignTitle}
-      />
-
-      <ReusableAlertDialog
-        open={archiveDialog.open}
-        onOpenChange={(open) =>
-          setArchiveDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isArchived: false,
-            isProcessing: false,
-          })
-        }
-        title={
-          archiveDialog.isArchived ? "Unarchive Campaign" : "Archive Campaign"
-        }
-        description={
-          <>
-            Are you sure you want to{" "}
-            {archiveDialog.isArchived ? "unarchive" : "move"}{" "}
-            <span className="font-semibold text-gray-900">
-              &quot;{archiveDialog.campaignTitle}&quot;
-            </span>{" "}
-            {archiveDialog.isArchived
-              ? "back to active campaigns?"
-              : "to the archive?"}
-          </>
-        }
-        confirmLabel={archiveDialog.isArchived ? "Unarchive" : "Archive"}
-        onConfirm={handleArchive}
-        isLoading={archiveDialog.isProcessing}
-      />
-
-      <ReusableAlertDialog
-        open={deleteDialog.open}
-        onOpenChange={(open) =>
-          setDeleteDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isDeleting: false,
-          })
-        }
-        title="Delete Campaign"
-        description={
-          <>
-            Are you sure you want to permanently delete{" "}
-            <span className="font-semibold text-gray-900">
-              &quot;{deleteDialog.campaignTitle}&quot;
-            </span>
-            ? This action cannot be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        onConfirm={handleDelete}
-        isLoading={deleteDialog.isDeleting}
-        danger
-      />
-
-      <ReusableAlertDialog
-        open={analyzeDialog.open}
-        onOpenChange={(open) =>
-          setAnalyzeDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isReanalysis: false,
-          })
-        }
-        title={
-          analyzeDialog.isReanalysis ? "Reanalyze Campaign" : "Analyze Campaign"
-        }
-        description={
-          <div className="space-y-3">
-            <p className="text-sm text-gray-700">
-              {analyzeDialog.isReanalysis ? (
-                <>
-                  Reanalyze visual style patterns for{" "}
-                  <span className="font-semibold text-gray-900">
-                    &quot;{analyzeDialog.campaignTitle}&quot;
-                  </span>
-                  ?
-                </>
-              ) : (
-                <>
-                  Trigger Brand Brain analysis for{" "}
-                  <span className="font-semibold text-gray-900">
-                    &quot;{analyzeDialog.campaignTitle}&quot;
-                  </span>
-                  ?
-                </>
-              )}
-            </p>
-            <p className="text-sm text-gray-600">
-              {analyzeDialog.isReanalysis
-                ? "This will refresh the visual style analysis from all curated gallery images in this campaign."
-                : "This will analyze visual style patterns from the curated gallery images and mark this campaign for Brand Brain analysis."}
-            </p>
-            {!analyzeDialog.isReanalysis && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                <p className="text-xs text-purple-800">
-                  <span className="font-semibold">Note:</span> Scheduled
-                  analysis will run daily for any newly added images.
-                </p>
-              </div>
-            )}
-          </div>
-        }
-        confirmLabel={analyzeDialog.isReanalysis ? "Reanalyze" : "Analyze"}
-        onConfirm={handleAnalyze}
-        isLoading={isAnalyzing}
-      />
-
-      <ReusableAlertDialog
-        open={curatedDialog.open}
-        onOpenChange={(open) =>
-          setCuratedDialog({
-            open,
-            campaignId: "",
-            campaignTitle: "",
-            isCurated: false,
-            isProcessing: false,
-          })
-        }
-        title={
-          curatedDialog.isCurated
-            ? "Unmark Curated Campaign"
-            : "Mark as Curated Campaign"
-        }
-        description={
-          <>
-            Are you sure you want to{" "}
-            {curatedDialog.isCurated ? "unmark" : "mark"}{" "}
-            <span className="font-semibold text-gray-900">
-              &quot;{curatedDialog.campaignTitle}&quot;
-            </span>{" "}
-            {curatedDialog.isCurated
-              ? "as a regular campaign?"
-              : "as a curated campaign for brand analysis?"}
-          </>
-        }
-        confirmLabel={curatedDialog.isCurated ? "Unmark" : "Mark as Curated"}
-        onConfirm={handleCuratedToggle}
-        isLoading={curatedDialog.isProcessing}
+      <CampaignDialogs
+        selectedBrandId={selectedBrandId}
+        renameDialog={renameDialog}
+        setRenameDialog={setRenameDialog}
+        archiveDialog={archiveDialog}
+        setArchiveDialog={setArchiveDialog}
+        deleteDialog={deleteDialog}
+        setDeleteDialog={setDeleteDialog}
+        analyzeDialog={analyzeDialog}
+        setAnalyzeDialog={setAnalyzeDialog}
+        curatedDialog={curatedDialog}
+        setCuratedDialog={setCuratedDialog}
+        isAnalyzing={isAnalyzing}
+        onArchive={handleArchive}
+        onDelete={handleDelete}
+        onAnalyze={handleAnalyze}
+        onCuratedToggle={handleCuratedToggle}
       />
     </div>
   );

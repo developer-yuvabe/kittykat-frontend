@@ -9,6 +9,7 @@ import {
   LayoutGridIcon,
   Expand,
   MessageCircle,
+  RefreshCw,
 } from "lucide-react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ interface MediaOverlayProps {
   onDelete?: (id: string, e: React.MouseEvent) => void;
   onEditMoodboard?: (item: GalleryItemResponse) => void;
   onExpandClick?: (e: React.MouseEvent) => void;
+  onReuse?: (item: GalleryItemResponse, e: React.MouseEvent) => void;
 }
 
 // 🔑 Control size for all overlay buttons & checkbox
@@ -51,6 +53,7 @@ export function MediaOverlay({
   onDelete,
   onEditMoodboard,
   onExpandClick,
+  onReuse,
 }: MediaOverlayProps) {
   const { updateAutoFillSuggestionCache } = useMoodboardQuery({});
 
@@ -267,6 +270,21 @@ export function MediaOverlay({
                 isHovered ? "opacity-100" : "opacity-0"
               }`}
             >
+              {/* Re-use Button - Only for showboard-media (AI-generated) assets */}
+              {item.asset_source === "showboard-media" && onReuse && (
+                <TooltipButton
+                  tooltip="Re-use"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    onReuse(item, e);
+                  }}
+                  icon={
+                    <RefreshCw
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                    />
+                  }
+                />
+              )}
               <TooltipButton
                 tooltip="Concept Visual Editor"
                 onClick={(e: React.MouseEvent) => {
