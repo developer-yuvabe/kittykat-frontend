@@ -51,7 +51,7 @@ type MediaLibraryProps = {
   inSelectionGalleryIds?: string[];
   isMultiSelect?: boolean;
   maxSelectionCount?: number;
-  hideHeader?: boolean; // 👈 Added this prop
+  hideHeader?: boolean;
   closeDialog?: () => void; // callback to close the dialog
 };
 
@@ -319,6 +319,23 @@ export function MediaLibrary({
     if (isMultiSelect) {
       // Multi-select mode: manage separate multi-select state
       if (selected) {
+        // Check if adding this item would exceed maxSelectionCount
+        const totalSelectedCount =
+          multiSelectItems.length + (inSelectionGalleryIds?.length || 0);
+        
+        if (
+          maxSelectionCount !== undefined &&
+          totalSelectedCount >= maxSelectionCount
+        ) {
+          toast.warning(
+            `Maximum selection limit reached (${maxSelectionCount} items)`,
+            {
+              description: "Please deselect an item before selecting a new one.",
+            }
+          );
+          return;
+        }
+        
         setMultiSelectItems((prev) => [...prev, id]);
       } else {
         setMultiSelectItems((prev) => prev.filter((itemId) => itemId !== id));
@@ -459,7 +476,7 @@ export function MediaLibrary({
 
   const [localGalleryView, setLocalGalleryView] = useLocalStorage<
     "grid" | "folder"
-  >("gallery-view-mode", "grid");
+  >("gallery-view-mode", "folder");
 
   // URL query state
   const [galleryView, setGalleryViewRaw] = useQueryState<"grid" | "folder">(
@@ -571,11 +588,20 @@ export function MediaLibrary({
 
             {/* Compact actions aligned top-right */}
             <div className="ml-4 flex items-center gap-2">
-              <MediaFilterDropdown
-                selectedFilters={selectedFilters}
-                setSelectedFilters={setSelectedFilters}
-                showCampaignFilter={true}
-              />
+              {galleryView !== "folder" && (
+                <>
+                  <MediaFilterDropdown
+                    selectedFilters={selectedFilters}
+                    setSelectedFilters={setSelectedFilters}
+                    showCampaignFilter={true}
+                  />
+                  <MediaViewsDropdown
+                    galleryView={galleryView}
+                    setGalleryView={setGalleryView}
+                    selectedCampaignId={selectedCampaignId}
+                  />
+                </>
+              )}
               <MediaDialogMultiSelectHeader
                 isActive={isMultiSelect && isMediaSelectDialog}
                 currentSelectionCount={currentSelectionCount}
@@ -631,9 +657,9 @@ export function MediaLibrary({
           </div>
         ) : (
           <>
-            {/* Only show folder view if header is not hidden */}
-            {!hideHeader && galleryView === "folder" && (
-              <div>
+            {/* Show folder view if explicitly in folder mode, or if dialog requests it */}
+            {galleryView === "folder" && (
+              <div className="h-full">
                 <MediaFolderView
                   activeTab={activeTab}
                   selectedCampaignId={selectedCampaignId ?? undefined}
@@ -654,16 +680,25 @@ export function MediaLibrary({
                   handleSearchChange={handleSearchChange}
                   showFilters={showFilters}
                   setActiveTab={setActiveTab}
+                  isMediaSelectDialog={isMediaSelectDialog}
+                  isMultiSelect={isMultiSelect}
+                  maxSelectionCount={maxSelectionCount}
+                  inSelectionGalleryIds={inSelectionGalleryIds}
+                  onMediaItemSelected={onMediaItemSelected}
+                  onFullMediaItemSelected={onFullMediaItemSelected}
+                  galleryActions={galleryActions}
+                  
                 />
               </div>
             )}
 
-            {/* Force grid view when hideHeader is true, otherwise respect galleryView */}
-            {(hideHeader || galleryView === "grid") && (
+            {/* Grid view */}
+            {galleryView === "grid" && (
               <Tabs
                 defaultValue="all-media"
                 value={activeTab}
                 onValueChange={handleTabChange}
+                className="flex flex-col h-full"
               >
                 <div
                   className={`sticky ${
@@ -674,7 +709,7 @@ export function MediaLibrary({
                 </div>
                 <TabsContent
                   value={activeTab}
-                  className="p-3 rounded-3xl bg-white mt-0 flex flex-col flex-grow min-h-0"
+                  className="p-3 rounded-3xl bg-white mt-0 flex flex-col flex-grow min-h-0 overflow-y-auto"
                 >
                   {activeTab !== "pexels" &&
                     (activeTab !== "a2i-media" ||

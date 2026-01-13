@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { ArrowLeft, Folder, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { GalleryActions } from "@/hooks/useGallery";
 import { SortableMediaGrid } from "../SortableMediaGrid";
 import { MediaGalleryStatusDisplay } from "../MediaGalleryStatusDisplay";
 import { MediaBulkActions } from "../MediaBulkActions";
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { MediaFilterDropdown } from "../MediaFilterDropdown";
 import MediaViewsDropdown from "../MediaViewDropDown";
 import TopicsGrid from "../PexelsTopicGrid";
+import { toast } from "sonner";
 
 interface CampaignViewProps {
   selectedBrandId: string;
@@ -40,6 +41,13 @@ interface CampaignViewProps {
   galleryView: "grid" | "folder";
   setGalleryView: (view: "grid" | "folder") => void;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  isMediaSelectDialog?: boolean;
+  isMultiSelect?: boolean;
+  maxSelectionCount?: number;
+  inSelectionGalleryIds?: string[];
+  onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: any) => void;
+  galleryActions: GalleryActions;
 }
 
 export function CampaignView({
@@ -62,11 +70,20 @@ export function CampaignView({
   galleryView,
   setGalleryView, // Default to not showing header (when used with sidebar)
   setActiveTab,
+  isMediaSelectDialog = false,
+  isMultiSelect = false,
+  maxSelectionCount,
+  inSelectionGalleryIds = [],
+  onMediaItemSelected,
+  onFullMediaItemSelected,
+  galleryActions,
 }: CampaignViewProps) {
   const { campaigns } = useBrandStore();
   const {
     selectedItems,
     setSelectedItems,
+    multiSelectItems,
+    setMultiSelectItems,
     selectAllMode,
     setSelectAllMode,
     excludedItems,
@@ -93,40 +110,6 @@ export function CampaignView({
     }
   }, [currentCampaign, retryCount]);
 
-  // Use gallery hook with proper filters - ensure campaign filter is applied
-  const galleryActions = useGalleryQuery(
-    {
-      assetType: activeTab, // Use the activeTab instead of hardcoded value
-      favorites,
-      source: activeTab,
-      searchQuery,
-      selectedFilters: {
-        // Merge provided filters but override brand and campaign to ensure correct filtering
-        ...(selectedFilters || {
-          moodboards: [],
-          product_categories: [],
-          asset_types: [],
-          asset_sources: [],
-          media_format: [],
-          aspect_ratio: [],
-          workflow_status: [],
-          has_product: undefined,
-          has_people: undefined,
-          has_lifestyle_context: undefined,
-          is_favourite: undefined,
-          is_archived: undefined,
-        }),
-        // Force the brand and campaign filters to match the current selection
-        brands: [selectedBrandId],
-        campaigns: [campaignId],
-        sub_folders: selectedFilters?.sub_folders || [],
-      },
-    },
-    ITEMS_PER_PAGE,
-    true,
-    "CampaignView"
-  );
-
   // Intersection observer for infinite scroll
   const { ref, inView } = useInView();
 
@@ -137,8 +120,12 @@ export function CampaignView({
 
   // Clear selected items when campaign changes
   useEffect(() => {
-    setSelectedItems([]);
-  }, [campaignId, activeTab]);
+    if (isMultiSelect) {
+      setMultiSelectItems([]);
+    } else {
+      setSelectedItems([]);
+    }
+  }, [campaignId, activeTab, isMultiSelect]);
 
   // Fetch next page when in view
   useEffect(() => {
@@ -159,7 +146,11 @@ export function CampaignView({
   // Get the actual selected items data
   const selectedItemsData = galleryActions
     .getGalleryItems()
-    .filter((item) => selectedItems.includes(item.id));
+    .filter((item) =>
+      isMultiSelect
+        ? multiSelectItems.includes(item.id)
+        : selectedItems.includes(item.id)
+    );
 
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
 
@@ -169,8 +160,26 @@ export function CampaignView({
   }, [galleryActions]);
 
   const handleSelect = (id: string, selected: boolean, shiftKey?: boolean) => {
+    // Check for single select mode dialog close
+    if (isMediaSelectDialog && !isMultiSelect && selected) {
+      const item = galleryActions.getGalleryItems().find((i) => i.id === id);
+      if (item) {
+        onMediaItemSelected?.(item.asset_url);
+        onFullMediaItemSelected?.(item);
+        return;
+      }
+    }
+
     // last selected item id (track with useState)
     const lastId = lastSelectedId;
+
+    const addToSelection = (ids: string[]) => {
+      if (isMultiSelect) {
+        setMultiSelectItems((prev) => Array.from(new Set([...prev, ...ids])));
+      } else {
+        setSelectedItems((prev) => Array.from(new Set([...prev, ...ids])));
+      }
+    };
 
     // --- SHIFT-CLICK RANGE SELECTION ---
     if (shiftKey && lastId && lastId !== id) {
@@ -193,20 +202,44 @@ export function CampaignView({
         }
       }
 
-      setSelectedItems((prev) => Array.from(new Set([...prev, ...idsInRange])));
+      addToSelection(idsInRange);
       setLastSelectedId(id); // store for next shift-click
       return;
     }
 
     // --- NORMAL CLICK ---
     if (selected) {
-      setSelectedItems((prev) => [...prev, id]);
+      if (isMultiSelect) {
+        // Check if adding this item would exceed maxSelectionCount
+        const totalSelectedCount =
+          multiSelectItems.length + (inSelectionGalleryIds?.length || 0);
+        
+        if (
+          maxSelectionCount !== undefined &&
+          totalSelectedCount >= maxSelectionCount
+        ) {
+          toast.warning(
+            `Maximum selection limit reached (${maxSelectionCount} items)`,
+            {
+              description: "Please deselect an item before selecting a new one.",
+            }
+          );
+          return;
+        }
+        setMultiSelectItems((prev) => [...prev, id]);
+      } else {
+        setSelectedItems((prev) => [...prev, id]);
+      }
       // Remove from exclusions if in select-all mode
       if (selectAllMode !== "none") {
         setExcludedItems((prev) => prev.filter((itemId) => itemId !== id));
       }
     } else {
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      if (isMultiSelect) {
+        setMultiSelectItems((prev) => prev.filter((itemId) => itemId !== id));
+      } else {
+        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
       // Add to exclusions if in select-all mode
       if (selectAllMode !== "none") {
         setExcludedItems((prev) => [...prev, id]);
@@ -217,14 +250,22 @@ export function CampaignView({
   };
 
   const handleUnselectAll = () => {
-    setSelectedItems([]);
+    if (isMultiSelect) {
+      setMultiSelectItems([]);
+    } else {
+      setSelectedItems([]);
+    }
     setSelectAllMode("none");
     setExcludedItems([]);
   };
 
   const handleSelectAll = () => {
     const allItemIds = galleryActions.getGalleryItems().map((item) => item.id);
-    setSelectedItems(allItemIds);
+    if (isMultiSelect) {
+      setMultiSelectItems(allItemIds);
+    } else {
+      setSelectedItems(allItemIds);
+    }
     setSelectAllMode("visible");
     setExcludedItems([]);
   };
@@ -373,13 +414,18 @@ export function CampaignView({
               galleryActions.getGalleryItems().length > 0 && (
                 <div>
                   <SortableMediaGrid
-                    selectedItems={selectedItems}
+                    selectedItems={
+                      isMultiSelect ? multiSelectItems : selectedItems
+                    }
                     onSelect={handleSelect}
                     onClearSelection={handleUnselectAll}
                     galleryActions={galleryActions}
-                    isMediaSelectDialog={false} // This is not a dialog
-                    enableDragToMove={true}
+                    isMediaSelectDialog={isMediaSelectDialog} // This is not a dialog
+                    enableDragToMove={!isMediaSelectDialog}
                     activeTab={activeTab}
+                    isMultiSelect={isMultiSelect}
+                    inSelectionGalleryIds={inSelectionGalleryIds}
+                    maxSelectionCount={maxSelectionCount}
                   />
                   {/* Infinite scroll loading indicator */}
                   {galleryActions.hasNextPage && (
@@ -400,7 +446,7 @@ export function CampaignView({
         </div>
       )}
 
-      {selectedItems.length > 0 && (
+      {(isMultiSelect ? multiSelectItems.length : selectedItems.length) > 0 && (
         <MediaBulkActions
           selectedItems={selectedItemsData}
           onUnselectAll={handleUnselectAll}

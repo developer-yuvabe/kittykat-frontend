@@ -1087,7 +1087,7 @@ const ReferenceImageSelector = ({
         campaignId={currentCampaignId || undefined}
         isMultiSelect={true}
         inSelectionGalleryIds={[...masterReference, ...productReference]}
-        maxSelectionCount={remainingSlots}
+        maxSelectionCount={maxLimit}
       />
     </>
   );
