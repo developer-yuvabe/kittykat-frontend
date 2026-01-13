@@ -24,6 +24,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CampaignSidebarTruncatedText } from "./CampaignSidebarTruncatedText";
+import { useDroppable } from "@dnd-kit/core";
+import { useSubfolderDroppable } from "@/lib/gallery-dnd.utils";
+import { useGalleryDnd } from "@/contexts/GalleryDndContext";
+import { DragItemEnum } from "@/types/gallery-dnd.types";
 
 interface SubfolderRowProps {
   subFolder: {
@@ -33,6 +37,7 @@ interface SubfolderRowProps {
     is_kk_folder?: boolean;
     is_kk_selected?: boolean;
   };
+  campaignId: string;
   isLast: boolean;
   isActive: boolean;
   count?: number;
@@ -60,6 +65,7 @@ interface SubfolderRowProps {
 
 export function SubfolderRow({
   subFolder,
+  campaignId,
   isLast,
   isActive,
   count,
@@ -77,6 +83,23 @@ export function SubfolderRow({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user } = useUserStore();
   const isAdmin = user?.role?.id === UserRoleId.ADMIN;
+
+  // DnD setup
+  const { activeDragData } = useGalleryDnd();
+  const droppableConfig = {
+    ...useSubfolderDroppable(subFolder.id),
+    data: {
+      ...useSubfolderDroppable(subFolder.id).data,
+      campaignId, // Add campaign_id to droppable data
+    },
+  };
+  const { setNodeRef, isOver } = useDroppable(droppableConfig);
+
+  const isMediaDrag =
+    activeDragData?.type === DragItemEnum.MediaItem ||
+    activeDragData?.type === DragItemEnum.MediaItemsMulti;
+
+  const isDropTarget = isOver && isMediaDrag;
 
   const handleRenameStart = () => {
     setIsRenaming(true);
@@ -109,13 +132,14 @@ export function SubfolderRow({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={setNodeRef}>
       <div
         className={cn(
           "relative group rounded-lg transition-all duration-200",
           isActive
             ? "bg-gradient-to-r from-purple-50 to-purple-50/50 shadow-sm"
-            : "bg-transparent hover:bg-gray-50/80"
+            : "bg-transparent hover:bg-gray-50/80",
+          isDropTarget && "ring-2 ring-purple-400 bg-purple-50/30"
         )}
         onContextMenu={handleContextMenu}
       >

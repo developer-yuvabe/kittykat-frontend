@@ -577,6 +577,7 @@ export function CampaignSidebarRow({
                 <SubfolderRow
                   key={subFolder.id}
                   subFolder={subFolder}
+                  campaignId={campaign.id}
                   onRename={handleSubfolderRename}
                   isLast={isLast}
                   isActive={isSubFolderActive}

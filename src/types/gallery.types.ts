@@ -446,7 +446,7 @@ export interface BulkOperationRequest {
 /**
  * Bulk delete request
  */
-export interface BulkDeleteRequest extends BulkOperationRequest {}
+export type BulkDeleteRequest = BulkOperationRequest;
 
 /**
  * Bulk update request (workflow status, comments, etc.)
@@ -468,11 +468,14 @@ export interface BulkUpdateRequest extends BulkOperationRequest {
 
 /**
  * Bulk move request (change brand/campaign/source)
+ * Note: target_campaign_id is required when moving to a sub_folder_id
+ * because subfolders exist under campaigns
  */
 export interface BulkMoveRequest extends BulkOperationRequest {
   target_brand_id?: string;
   target_campaign_id?: string;
   target_source?: string;
+  sub_folder_id?: string;
 }
 
 /**
