@@ -324,6 +324,7 @@ const ImageWithMetadataModal = ({
         }
 
         // Set the remix model
+        setConceptVisualGeneratorMode("image_editor");
         setSelectedRemixModel(model);
 
         // Convert all remix parameters based on model schema
@@ -359,6 +360,7 @@ const ImageWithMetadataModal = ({
         }
 
         // Regular image generation workflow
+        setConceptVisualGeneratorMode("image_generator");
         setSelectedImageGenerationModel(model);
 
         const parameters = data.parameters;
@@ -515,7 +517,7 @@ const ImageWithMetadataModal = ({
       }
 
       setShouldClearPromptOnMetadataActions(true);
-
+      setConceptVisualGeneratorMode("image_generator");
       setSelectedImageGenerationModelByModelId(imageReferenceModelId);
 
       // It is necessary to upload the image to our GCS bucket because the image URL might be deleted.

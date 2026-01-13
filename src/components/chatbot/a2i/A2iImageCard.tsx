@@ -107,7 +107,12 @@ const A2iImageCard = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { setStartFrame, setEndFrame, setBaseImageUrl } = useA2iStore();
+  const {
+    setStartFrame,
+    setEndFrame,
+    setBaseImageUrl,
+    setConceptVisualGeneratorMode,
+  } = useA2iStore();
 
   const galleryActions = useGalleryQuery(
     {
@@ -258,6 +263,7 @@ const A2iImageCard = ({
         });
 
         // Set model and parameters
+        setConceptVisualGeneratorMode("video_generator");
         setSelectedVideoGenearationModel(model);
         setParameters("videoParameters", videoParams);
 
@@ -314,6 +320,7 @@ const A2iImageCard = ({
           });
 
           // Store full parameters for remix
+          setConceptVisualGeneratorMode("image_editor");
           setSelectedRemixModel(model);
           setParameters("remixParameters", convertedRemixParams);
           if (showImageModal) setShowImageModal(false);
@@ -341,6 +348,7 @@ const A2iImageCard = ({
         return;
       }
 
+      setConceptVisualGeneratorMode("image_generator");
       setSelectedImageGenerationModel(model);
 
       const referenceParam = model.parameters.find((p) => p.type === "file");
