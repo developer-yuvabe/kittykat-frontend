@@ -1124,7 +1124,7 @@ const A2iImageInput = ({
           (img: string) => !productImages.includes(img)
         );
 
-        const master = masterImages.length > 0 ? [masterImages[0]] : [];
+        const master = masterImages.length > 0 ? masterImages : [];
         const products = productImages;
 
         setMasterReference(master);
@@ -1201,8 +1201,14 @@ const A2iImageInput = ({
     }
   }, [currentImageCount, value, formInstance]);
 
-  const handleBaseImageDrop = async (file: File) => {
+  const handleBaseImageDrop = async (file: File, e?: React.DragEvent) => {
     // Show loading toast
+
+    if (e?.dataTransfer?.getData("source") == "a2i") {
+      setBaseImageUrl(e.dataTransfer.getData("assetUrl"));
+      return;
+    }
+
     const toastId = toast.loading("Uploading base image...");
 
     setIsUploading(true);
@@ -1382,7 +1388,7 @@ const A2iImageInput = ({
                       fileTypes={["image/jpeg", "image/png", "image/webp"]}
                       maxFileSizeLimit={10}
                       isUploading={isUploading}
-                      onDrop={handleBaseImageDrop}
+                      onDrop={(file, e) => handleBaseImageDrop(file, e)}
                       onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
                       baseImageUrl={baseImageUrl}
                       setBaseImageUrl={setBaseImageUrl}

@@ -358,8 +358,6 @@ const ImageWithMetadataModal = ({
           return;
         }
 
-        setShouldClearPromptOnMetadataActions(true);
-
         // Regular image generation workflow
         setSelectedImageGenerationModel(model);
 
@@ -735,104 +733,162 @@ const ImageWithMetadataModal = ({
               ) : (
                 <>
                   {/* Source Image for Product Extraction */}
-                  {currentDisplayItem.asset_source === "products" && currentDisplayItem.metadata_raw?.source_image_url && (
-                    <div className="space-y-4">
-                      <div>
-                        <p>Source Image</p>
-                        <div className="mt-2 w-full overflow-x-auto">
-                          <div className="flex flex-row gap-x-2 w-max">
-                            <ZoomableImage
-                              src={currentDisplayItem.metadata_raw.source_image_url}
-                              className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
-                              variant="default"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Product Attributes */}
-                      {currentDisplayItem.metadata_raw?.product_attributes && (
+                  {currentDisplayItem.asset_source === "products" &&
+                    currentDisplayItem.metadata_raw?.source_image_url && (
+                      <div className="space-y-4">
                         <div>
-                          <h3 className="text-sm font-semibold mb-3 border-b pb-2">Product Attributes</h3>
-                          <div className="space-y-3 text-sm">
-                            {currentDisplayItem.metadata_raw.product_attributes.product_type && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Type</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.product_type}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.color && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Color</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.color}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.material && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Material</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.material}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.view_angle && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">View Angle</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.view_angle}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.product_name_candidate && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Product Name</span>
-                                <span className="font-medium text-right flex-1">
-                                  {currentDisplayItem.metadata_raw.product_attributes.product_name_candidate}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.pattern && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Pattern</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.pattern}
-                                </span>
-                              </div>
-                            )}
+                          <p>Source Image</p>
+                          <div className="mt-2 w-full overflow-x-auto">
+                            <div className="flex flex-row gap-x-2 w-max">
+                              <ZoomableImage
+                                src={
+                                  currentDisplayItem.metadata_raw
+                                    .source_image_url
+                                }
+                                className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                variant="default"
+                              />
+                            </div>
                           </div>
                         </div>
-                      )}
 
-                      {/* Detection Info */}
-                      {currentDisplayItem.metadata_raw?.detection_info && (
-                        <div>
-                          <h3 className="text-sm font-semibold mb-3 border-b pb-2">Details</h3>
-                          <div className="space-y-3 text-sm">
-                            {currentDisplayItem.metadata_raw.detection_info.description && (
-                              <div>
-                                <span className="text-muted-foreground text-xs block mb-1.5">Description</span>
-                                <p className="font-medium leading-relaxed">
-                                  {currentDisplayItem.metadata_raw.detection_info.description}
-                                </p>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.detection_info.position && (
-                              <div>
-                                <span className="text-muted-foreground text-xs block mb-1.5">Position</span>
-                                <p className="font-medium leading-relaxed">
-                                  {currentDisplayItem.metadata_raw.detection_info.position}
-                                </p>
-                              </div>
-                            )}
+                        {/* Product Attributes */}
+                        {currentDisplayItem.metadata_raw
+                          ?.product_attributes && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-3 border-b pb-2">
+                              Product Attributes
+                            </h3>
+                            <div className="space-y-3 text-sm">
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.product_type && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Type
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.product_type
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.color && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Color
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.color
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.material && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Material
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.material
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.view_angle && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    View Angle
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.view_angle
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.product_name_candidate && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Product Name
+                                  </span>
+                                  <span className="font-medium text-right flex-1">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes
+                                        .product_name_candidate
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.pattern && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Pattern
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.pattern
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+
+                        {/* Detection Info */}
+                        {currentDisplayItem.metadata_raw?.detection_info && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-3 border-b pb-2">
+                              Details
+                            </h3>
+                            <div className="space-y-3 text-sm">
+                              {currentDisplayItem.metadata_raw.detection_info
+                                .description && (
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1.5">
+                                    Description
+                                  </span>
+                                  <p className="font-medium leading-relaxed">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .detection_info.description
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw.detection_info
+                                .position && (
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1.5">
+                                    Position
+                                  </span>
+                                  <p className="font-medium leading-relaxed">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .detection_info.position
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {data?.parameters && (
                     <>

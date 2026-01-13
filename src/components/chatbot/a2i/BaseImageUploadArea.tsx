@@ -6,7 +6,7 @@ interface BaseImageUploadAreaProps {
   fileTypes: string[];
   maxFileSizeLimit: number;
   isUploading: boolean;
-  onDrop: (acceptedFile: File) => void;
+  onDrop: (acceptedFile: File, e?: React.DragEvent) => void;
   onOpenMediaLibrary: () => void;
   baseImageUrl: string | null;
   setBaseImageUrl: (url: string | null) => void;
@@ -27,9 +27,9 @@ export const BaseImageUploadArea = ({
     disabled: isUploading,
     maxFiles: 1,
     maxSize: maxFileSizeLimit * 1024 * 1024,
-    onDrop: (acceptedFiles) => {
+    onDrop: (acceptedFiles, _fileRejections, event) => {
       if (acceptedFiles.length > 0) {
-        onDrop(acceptedFiles[0]); // ⬅️ Pass single file
+        onDrop(acceptedFiles[0], event as React.DragEvent); // ⬅️ Pass single file
       }
     },
   });
