@@ -36,6 +36,7 @@ import { galleryService } from "@/services/api/gallery.service";
 import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 import MediaViewsDropdown from "./MediaViewDropDown";
+import { GalleryDndProvider } from "@/contexts/GalleryDndContext";
 
 type MediaLibraryProps = {
   activeTab?: string;
@@ -71,8 +72,6 @@ export function MediaLibrary({
   const router = useRouter();
   const { openConceptVisual } = useConceptVisualStore();
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [multiSelectItems, setMultiSelectItems] = useState<string[]>([]);
   const [source, setSource] = useState<string>(activeTab);
   const [creator, setCreator] = useState<string>("Anyone");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -86,7 +85,7 @@ export function MediaLibrary({
     }
   }, [isMediaSelectDialog]);
 
-  // Get filter state from store
+  // Get filter state and selection state from store
   const {
     favorites,
     hasComments,
@@ -97,6 +96,17 @@ export function MediaLibrary({
     setOrderBy,
     setIsDraggable,
     workflowStatus,
+    selectedItems,
+    setSelectedItems,
+    multiSelectItems,
+    setMultiSelectItems,
+    selectAllMode,
+    setSelectAllMode,
+    excludedItems,
+    setExcludedItems,
+    clearSelection,
+    totalItemsCount,
+    setTotalItemsCount,
   } = useGalleryFilterStore();
 
   const {
@@ -144,6 +154,7 @@ export function MediaLibrary({
       filters ?? {
         brands: [],
         campaigns: [],
+        sub_folders: [],
         product_categories: [],
         asset_types: [],
         asset_sources: [],
@@ -259,6 +270,11 @@ export function MediaLibrary({
     fetchGalleryItem();
   }, [galleryItemId]);
 
+  // Update totalItemsCount in store when it changes
+  useEffect(() => {
+    setTotalItemsCount(galleryActions.totalItems);
+  }, [galleryActions.totalItems, setTotalItemsCount]);
+
   // Setup intersection observer for infinite loading
   const { ref, inView } = useInView();
 
@@ -288,6 +304,7 @@ export function MediaLibrary({
       // Preserve brand-related filters
       brands: currentFilters.brands,
       campaigns: currentFilters.campaigns,
+      sub_folders: currentFilters.sub_folders,
       // Also preserve workflow_status if it came from URL params
       //(If needed)
 
@@ -310,8 +327,16 @@ export function MediaLibrary({
       // Single select mode: existing behavior
       if (selected) {
         setSelectedItems((prev) => [...prev, id]);
+        // Remove from exclusions if in select-all mode
+        if (selectAllMode !== "none") {
+          setExcludedItems((prev) => prev.filter((itemId) => itemId !== id));
+        }
       } else {
         setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+        // Add to exclusions if in select-all mode
+        if (selectAllMode !== "none") {
+          setExcludedItems((prev) => [...prev, id]);
+        }
       }
     }
   };
@@ -326,8 +351,7 @@ export function MediaLibrary({
   };
 
   const handleUnselectAll = () => {
-    setSelectedItems([]);
-    setMultiSelectItems([]);
+    clearSelection();
   };
 
   const handleSearchChange = useMemo(
@@ -373,6 +397,24 @@ export function MediaLibrary({
     setSource(activeTab);
   }, [activeTab]);
 
+  // Auto-select newly fetched items when in select-all mode
+  useEffect(() => {
+    if (selectAllMode !== "none") {
+      // When in select-all mode, mark all loaded items as selected except those in excludedItems
+      const newSelectedItems = galleryItems
+        .filter((item) => !excludedItems.includes(item.id))
+        .map((item) => item.id);
+
+      // Only update if there's a meaningful change
+      if (
+        JSON.stringify(newSelectedItems.sort()) !==
+        JSON.stringify([...selectedItems].sort())
+      ) {
+        setSelectedItems(newSelectedItems);
+      }
+    }
+  }, [galleryItems.length, selectAllMode, excludedItems.length]);
+
   // Handle single select mode
   useEffect(() => {
     if (isMediaSelectDialog && !isMultiSelect && selectedItems.length > 0) {
@@ -399,9 +441,18 @@ export function MediaLibrary({
   const currentlySelectedItems = isMultiSelect
     ? multiSelectItems
     : selectedItems;
-  const currentSelectionCount = currentlySelectedItems.length;
 
-  // Get the actual selected items data
+  // Calculate effective selection count based on mode
+  const effectiveSelectionCount =
+    selectAllMode === "all"
+      ? galleryActions.totalItems - excludedItems.length
+      : selectAllMode === "visible"
+      ? galleryItems.length - excludedItems.length
+      : currentlySelectedItems.length;
+
+  const currentSelectionCount = effectiveSelectionCount;
+
+  // Get the actual selected items data (only loaded items)
   const selectedItemsData = galleryItems.filter((item) =>
     currentlySelectedItems.includes(item.id)
   );
@@ -453,17 +504,109 @@ export function MediaLibrary({
   );
 
   return (
-    <div className="flex flex-col w-full h-full mx-auto">
-      {/* Conditionally render header based on hideHeader prop */}
-      {!hideHeader && galleryView === "grid" && (
-        <div
-          className={`flex justify-between mb-2 sticky top-24 bg-[#F3F4F6FF] pt-2 pb-2 z-50`}
-        >
-          <div className="flex flex-row gap-x-4">
-            <h1 className="text-2xl font-bold">Media library</h1>
-            {!hasNoBrands && (
+    <GalleryDndProvider
+      galleryActions={galleryActions}
+      selectedItems={currentlySelectedItems}
+      setSelectedItems={isMultiSelect ? setMultiSelectItems : setSelectedItems}
+      orderBy={orderBy}
+      totalItems={totalItemsCount}
+      selectAllMode={selectAllMode}
+      excludedItems={excludedItems}
+    >
+      <div className="flex flex-col w-full h-full mx-auto">
+        {/* Conditionally render header based on hideHeader prop */}
+        {!hideHeader && galleryView === "grid" && (
+          <div
+            className={`flex justify-between mb-2 sticky top-24 bg-[#F3F4F6FF] pt-2 pb-2 z-50`}
+          >
+            <div className="flex flex-row gap-x-4">
+              <h1 className="text-2xl font-bold">Media library</h1>
+              {!hasNoBrands && (
+                <BrandSelector
+                  showCampaigns={galleryView === "grid"}
+                  showSelectedValue
+                  className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
+                  onBrandSelect={(brandId, campaignId) => {
+                    setSelectedFilters((prev) => ({
+                      ...prev,
+                      brandId: [brandId],
+                      campaigns: campaignId ? [campaignId] : [],
+                    }));
+
+                    setInitialBrandId(null);
+                    setSelectedCampaignInUrl(null);
+                  }}
+                />
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <MediaFilterDropdown
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+              />
+
+              <MediaViewsDropdown
+                galleryView={galleryView}
+                setGalleryView={setGalleryView}
+                selectedCampaignId={selectedCampaignId}
+              />
+            </div>
+          </div>
+        )}
+        {/* Optional: Simple header for dialog mode (compact) */}
+        {hideHeader && isMediaSelectDialog && (
+          <div className="sticky -top-7 pt-4 z-50 bg-white flex justify-between items-start mb-2 pb-1 ">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <span>Select Media</span>
+                {/* selection count shown inline next to title */}
+                {currentSelectionCount > 0 && (
+                  <span className="text-sm text-gray-500">
+                    ({currentSelectionCount} selected)
+                  </span>
+                )}
+              </h2>
+            </div>
+
+            {/* Compact actions aligned top-right */}
+            <div className="ml-4 flex items-center gap-2">
+              <MediaFilterDropdown
+                selectedFilters={selectedFilters}
+                setSelectedFilters={setSelectedFilters}
+                showCampaignFilter={true}
+              />
+              <MediaDialogMultiSelectHeader
+                isActive={isMultiSelect && isMediaSelectDialog}
+                currentSelectionCount={currentSelectionCount}
+                onClearSelection={handleUnselectAll}
+                onAddSelectedItems={handleAddSelectedItems}
+                totalAssets={
+                  inSelectionGalleryIds.length + currentSelectionCount
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Show no brands message */}
+        {hasNoBrands && isBrandsFetched ? (
+          <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              No brand access or onboarded brands
+            </h2>
+            <p className="text-gray-600 max-w-md">
+              You haven&apos;t been given access to any brands or haven&apos;t
+              onboarded a brand yet. Please onboard a brand to get started and
+              begin uploading your media.
+            </p>
+            <Button onClick={handleOnboardBrand}>Onboard Brand</Button>
+          </div>
+        ) : !selectedBrandId && isBrandsFetched ? (
+          <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
+            {!hasNoBrands && galleryView === "folder" && (
               <BrandSelector
-                showCampaigns={galleryView === "grid"}
+                showCampaigns={false}
                 showSelectedValue
                 className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
                 onBrandSelect={(brandId, campaignId) => {
@@ -478,250 +621,191 @@ export function MediaLibrary({
                 }}
               />
             )}
-          </div>
-
-          <div className="flex justify-end">
-            <MediaFilterDropdown
-              selectedFilters={selectedFilters}
-              setSelectedFilters={setSelectedFilters}
-            />
-
-            <MediaViewsDropdown
-              galleryView={galleryView}
-              setGalleryView={setGalleryView}
-              selectedCampaignId={selectedCampaignId}
-            />
-          </div>
-        </div>
-      )}
-      {/* Optional: Simple header for dialog mode (compact) */}
-      {hideHeader && isMediaSelectDialog && (
-        <div className="sticky -top-7 pt-4 z-50 bg-white flex justify-between items-start mb-2 pb-1 ">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <span>Select Media</span>
-              {/* selection count shown inline next to title */}
-              {currentSelectionCount > 0 && (
-                <span className="text-sm text-gray-500">
-                  ({currentSelectionCount} selected)
-                </span>
-              )}
+            <h2 className="text-xl font-semibold text-gray-800">
+              No brand selected
             </h2>
+            <p className="text-gray-600 max-w-md">
+              You haven&apos;t selected a brand yet. Please choose a brand to
+              view the media gallery assets.
+            </p>
           </div>
-
-          {/* Compact actions aligned top-right */}
-          <div className="ml-4 flex items-center gap-2">
-            <MediaFilterDropdown
-              selectedFilters={selectedFilters}
-              setSelectedFilters={setSelectedFilters}
-              showCampaignFilter={true}
-            />
-            <MediaDialogMultiSelectHeader
-              isActive={isMultiSelect && isMediaSelectDialog}
-              currentSelectionCount={currentSelectionCount}
-              onClearSelection={handleUnselectAll}
-              onAddSelectedItems={handleAddSelectedItems}
-              totalAssets={inSelectionGalleryIds.length + currentSelectionCount}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Show no brands message */}
-      {hasNoBrands && isBrandsFetched ? (
-        <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
-          <h2 className="text-xl font-semibold text-gray-800">
-            No brand access or onboarded brands
-          </h2>
-          <p className="text-gray-600 max-w-md">
-            You haven&apos;t been given access to any brands or haven&apos;t
-            onboarded a brand yet. Please onboard a brand to get started and
-            begin uploading your media.
-          </p>
-          <Button onClick={handleOnboardBrand}>Onboard Brand</Button>
-        </div>
-      ) : !selectedBrandId && isBrandsFetched ? (
-        <div className="flex h-[75vh] flex-col items-center justify-center text-center space-y-4 px-4">
-          {!hasNoBrands && galleryView === "folder" && (
-            <BrandSelector
-              showCampaigns={false}
-              showSelectedValue
-              className="bg-[#F3F4F6FF] hover:bg-[#F3F4F6FF] w-80"
-              onBrandSelect={(brandId, campaignId) => {
-                setSelectedFilters((prev) => ({
-                  ...prev,
-                  brandId: [brandId],
-                  campaigns: campaignId ? [campaignId] : [],
-                }));
-
-                setInitialBrandId(null);
-                setSelectedCampaignInUrl(null);
-              }}
-            />
-          )}
-          <h2 className="text-xl font-semibold text-gray-800">
-            No brand selected
-          </h2>
-          <p className="text-gray-600 max-w-md">
-            You haven&apos;t selected a brand yet. Please choose a brand to view
-            the media gallery assets.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Only show folder view if header is not hidden */}
-          {!hideHeader && galleryView === "folder" && (
-            <div>
-              <MediaFolderView
-                activeTab={activeTab}
-                selectedCampaignId={selectedCampaignId ?? undefined}
-                selecteMoodboardId={moodboardId}
-                brandName={selectedBrandName}
-                isUrlDialogOpen={isUrlDialogOpen} // Use state variable
-                setIsUrlDialogOpen={setIsUrlDialogOpen}
-                searchQuery={searchQuery}
-                onSearchChange={handleSearchChange}
-                selectedFilters={selectedFilters}
-                setSelectedFilters={setSelectedFilters}
-                onTabChange={handleTabChange}
-                setInitialBrandId={setInitialBrandId}
-                setSelectedCampaignInUrl={setSelectedCampaignInUrl}
-                galleryView={galleryView}
-                setGalleryView={setGalleryView}
-                hasNoBrands={hasNoBrands}
-                handleSearchChange={handleSearchChange}
-                showFilters={showFilters}
-                setActiveTab={setActiveTab}
-              />
-            </div>
-          )}
-
-          {/* Force grid view when hideHeader is true, otherwise respect galleryView */}
-          {(hideHeader || galleryView === "grid") && (
-            <Tabs
-              defaultValue="all-media"
-              value={activeTab}
-              onValueChange={handleTabChange}
-            >
-              <div
-                className={`sticky ${
-                  isMediaSelectDialog ? "top-5" : "top-36"
-                } bg-[#F3F4F6FF]   z-40`}
-              >
-                <MediaLibraryTabs isSticky={isMediaSelectDialog} />
+        ) : (
+          <>
+            {/* Only show folder view if header is not hidden */}
+            {!hideHeader && galleryView === "folder" && (
+              <div>
+                <MediaFolderView
+                  activeTab={activeTab}
+                  selectedCampaignId={selectedCampaignId ?? undefined}
+                  selecteMoodboardId={moodboardId}
+                  brandName={selectedBrandName}
+                  isUrlDialogOpen={isUrlDialogOpen} // Use state variable
+                  setIsUrlDialogOpen={setIsUrlDialogOpen}
+                  searchQuery={searchQuery}
+                  onSearchChange={handleSearchChange}
+                  selectedFilters={selectedFilters}
+                  setSelectedFilters={setSelectedFilters}
+                  onTabChange={handleTabChange}
+                  setInitialBrandId={setInitialBrandId}
+                  setSelectedCampaignInUrl={setSelectedCampaignInUrl}
+                  galleryView={galleryView}
+                  setGalleryView={setGalleryView}
+                  hasNoBrands={hasNoBrands}
+                  handleSearchChange={handleSearchChange}
+                  showFilters={showFilters}
+                  setActiveTab={setActiveTab}
+                />
               </div>
-              <TabsContent
+            )}
+
+            {/* Force grid view when hideHeader is true, otherwise respect galleryView */}
+            {(hideHeader || galleryView === "grid") && (
+              <Tabs
+                defaultValue="all-media"
                 value={activeTab}
-                className="p-3 rounded-3xl bg-white mt-0 flex flex-col flex-grow min-h-0"
+                onValueChange={handleTabChange}
               >
-                {activeTab !== "pexels" &&
-                  (activeTab !== "a2i-media" ||
-                    user?.role.id === UserRoleId.ADMIN) && (
-                    <MediaUploadDropzone
-                      activeTab={activeTab}
-                      galleryFilters={{
-                        assetType: activeTab,
-                        favorites,
-                        source,
-                        creator,
-                        searchQuery,
-                        selectedFilters,
-                      }}
+                <div
+                  className={`sticky ${
+                    isMediaSelectDialog ? "top-5" : "top-36"
+                  } bg-[#F3F4F6FF]   z-40`}
+                >
+                  <MediaLibraryTabs isSticky={isMediaSelectDialog} />
+                </div>
+                <TabsContent
+                  value={activeTab}
+                  className="p-3 rounded-3xl bg-white mt-0 flex flex-col flex-grow min-h-0"
+                >
+                  {activeTab !== "pexels" &&
+                    (activeTab !== "a2i-media" ||
+                      user?.role.id === UserRoleId.ADMIN) && (
+                      <MediaUploadDropzone
+                        activeTab={activeTab}
+                        galleryFilters={{
+                          assetType: activeTab,
+                          favorites,
+                          source,
+                          creator,
+                          searchQuery,
+                          selectedFilters,
+                        }}
+                        selectedBrandId={selectedBrandId}
+                        selectedCampaignId={selectedCampaignId ?? undefined}
+                        selecteMoodboardId={moodboardId}
+                      />
+                    )}
+
+                  {activeTab === "pexels" ? (
+                    <TopicsGrid
                       selectedBrandId={selectedBrandId}
                       selectedCampaignId={selectedCampaignId ?? undefined}
                       selecteMoodboardId={moodboardId}
+                      setActiveTab={setActiveTab}
+                      isMultiSelect={isMultiSelect}
+                      isMediaSelectDialog={isMediaSelectDialog}
+                      currentSelectionCount={currentSelectionCount}
+                      inSelectionGalleryIds={inSelectionGalleryIds}
+                      onMultipleMediaItemsSelected={
+                        onMultipleMediaItemsSelected
+                      }
+                      closeDialog={closeDialog}
                     />
-                  )}
+                  ) : (
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div
+                        className={`${
+                          showFilters ? "w-full md:w-3/4" : "w-full"
+                        } transition-all duration-300 ease-in-out`}
+                      >
+                        <MediaSearchFilters
+                          onSearchChange={handleSearchChange}
+                          onSourceChange={handleSourceChange}
+                          onCreatorChange={handleCreatorChange}
+                          onToggleFilters={toggleFilters}
+                          source={source}
+                          creator={creator}
+                          showFilters={showFilters}
+                          selectedFilters={selectedFilters}
+                          setSelectedFilters={setSelectedFilters}
+                          isMediaSelectDialog={isMediaSelectDialog}
+                        />
 
-                {activeTab === "pexels" ? (
-                  <TopicsGrid
-                    selectedBrandId={selectedBrandId}
-                    selectedCampaignId={selectedCampaignId ?? undefined}
-                    selecteMoodboardId={moodboardId}
-                    setActiveTab={setActiveTab}
-                    isMultiSelect={isMultiSelect}
-                    isMediaSelectDialog={isMediaSelectDialog}
-                    currentSelectionCount={currentSelectionCount}
-                    inSelectionGalleryIds={inSelectionGalleryIds}
-                    onMultipleMediaItemsSelected={onMultipleMediaItemsSelected}
-                    closeDialog={closeDialog}
-                  />
-                ) : (
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div
-                      className={`${
-                        showFilters ? "w-full md:w-3/4" : "w-full"
-                      } transition-all duration-300 ease-in-out`}
-                    >
-                      <MediaSearchFilters
-                        onSearchChange={handleSearchChange}
-                        onSourceChange={handleSourceChange}
-                        onCreatorChange={handleCreatorChange}
-                        onToggleFilters={toggleFilters}
-                        source={source}
-                        creator={creator}
-                        showFilters={showFilters}
-                        selectedFilters={selectedFilters}
-                        setSelectedFilters={setSelectedFilters}
-                        isMediaSelectDialog={isMediaSelectDialog}
-                      />
+                        <MediaGalleryStatusDisplay
+                          galleryStatus={galleryActions.galleryStatus}
+                          galleryItemsLength={galleryItems.length}
+                          isFetchingNextPage={galleryActions.isFetchingNextPage}
+                        />
 
-                      <MediaGalleryStatusDisplay
-                        galleryStatus={galleryActions.galleryStatus}
-                        galleryItemsLength={galleryItems.length}
-                      />
-
-                      {galleryActions.galleryStatus === "success" &&
-                        galleryItems.length > 0 && (
-                          <div>
-                            {selectedBrandId && (
-                              <SortableMediaGrid
-                                galleryActions={galleryActions}
-                                selectedItems={currentlySelectedItems}
-                                onSelect={handleSelect}
-                                isMediaSelectDialog={isMediaSelectDialog}
-                                isMultiSelect={isMultiSelect}
-                                inSelectionGalleryIds={inSelectionGalleryIds}
-                                maxSelectionCount={maxSelectionCount}
-                              />
-                            )}
-                            {/* Infinite scroll loading indicator */}
-                            {galleryActions.hasNextPage && (
-                              <div
-                                ref={ref}
-                                className="flex justify-center items-center py-8"
-                              >
-                                {galleryActions.isFetchingNextPage ? (
-                                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                                ) : (
-                                  <p className="text-sm text-gray-500">
-                                    Load more
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        {galleryActions.galleryStatus === "success" &&
+                          galleryItems.length > 0 && (
+                            <div>
+                              {selectedBrandId && (
+                                <SortableMediaGrid
+                                  galleryActions={galleryActions}
+                                  selectedItems={currentlySelectedItems}
+                                  onSelect={handleSelect}
+                                  isMediaSelectDialog={isMediaSelectDialog}
+                                  isMultiSelect={isMultiSelect}
+                                  inSelectionGalleryIds={inSelectionGalleryIds}
+                                  maxSelectionCount={maxSelectionCount}
+                                />
+                              )}
+                              {/* Infinite scroll loading indicator */}
+                              {galleryActions.hasNextPage && (
+                                <div
+                                  ref={ref}
+                                  className="flex justify-center items-center py-8"
+                                >
+                                  {galleryActions.isFetchingNextPage &&
+                                  galleryActions.galleryStatus === "success" ? (
+                                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                                  ) : (
+                                    <p className="text-sm text-gray-500">
+                                      Load more
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          )}
-        </>
-      )}
-
-      {/* Bulk actions - show for non-dialog mode or single-select dialog mode */}
-      {currentSelectionCount > 0 &&
-        (!isMediaSelectDialog || !isMultiSelect) && (
-          <MediaBulkActions
-            selectedItems={selectedItemsData}
-            onUnselectAll={handleUnselectAll}
-            onSelectAll={handleSelectAll}
-            galleryActions={galleryActions}
-            brandName={selectedBrandName}
-          />
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
+          </>
         )}
-    </div>
+
+        {/* Bulk actions - show for non-dialog mode or single-select dialog mode */}
+        {currentSelectionCount > 0 &&
+          (!isMediaSelectDialog || !isMultiSelect) && (
+            <MediaBulkActions
+              selectedItems={selectedItemsData}
+              onUnselectAll={handleUnselectAll}
+              onSelectAll={handleSelectAll}
+              galleryActions={galleryActions}
+              brandName={selectedBrandName}
+              galleryFilters={{
+                assetType: activeTab,
+                favorites,
+                source,
+                creator,
+                searchQuery,
+                selectedFilters,
+              }}
+              totalItems={galleryActions.totalItems}
+              fetchedItemsCount={galleryItems.length}
+              currentBrandId={selectedBrandId || ""}
+              currentCampaignId={selectedCampaignId}
+              currentSubFolderId={undefined}
+              selectAllMode={selectAllMode}
+              excludedItems={excludedItems}
+              onSelectAllModeChange={setSelectAllMode}
+              onExcludedItemsChange={setExcludedItems}
+            />
+          )}
+      </div>
+    </GalleryDndProvider>
   );
 }

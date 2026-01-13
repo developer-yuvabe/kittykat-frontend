@@ -103,6 +103,9 @@ export const useGalleryQuery = (
                   .campaigns.filter((c) => !c.is_archived)
                   .map((c) => c.id),
               ],
+          sub_folder_ids: filters.selectedFilters?.sub_folders?.length
+            ? filters.selectedFilters.sub_folders
+            : undefined,
 
           moodboard_ids: filters?.selectedFilters?.moodboards?.length
             ? filters?.selectedFilters?.moodboards
@@ -1018,42 +1021,51 @@ export const useGalleryQuery = (
       const queryKey = getGalleryQueryKey();
       queryClient.cancelQueries({ queryKey });
 
-      queryClient.setQueryData<InfiniteData<GalleryItemsListResponse>>(queryKey, (old) => {
-        if (!old) return old;
+      queryClient.setQueryData<InfiniteData<GalleryItemsListResponse>>(
+        queryKey,
+        (old) => {
+          if (!old) return old;
 
-        // Flatten all pages into a single array
-        const allItems: GalleryItemResponse[] = old.pages.flatMap(
-          (page) => page.gallery_items
-        );
+          // Flatten all pages into a single array
+          const allItems: GalleryItemResponse[] = old.pages.flatMap(
+            (page) => page.gallery_items
+          );
 
-        // Apply new sort orders to all items
-        const updatedItems = allItems.map((item) => {
-          const reorderItem = reorderData.find((r) => r.id === item.id);
-          if (reorderItem) {
-            return { ...item, brand_sort_order: reorderItem.brand_sort_order };
+          // Apply new sort orders to all items
+          const updatedItems = allItems.map((item) => {
+            const reorderItem = reorderData.find((r) => r.id === item.id);
+            if (reorderItem) {
+              return {
+                ...item,
+                brand_sort_order: reorderItem.brand_sort_order,
+              };
+            }
+            return item;
+          });
+
+          // Sort all items by brand_sort_order
+          updatedItems.sort(
+            (a, b) => (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
+          );
+
+          // Re-paginate: distribute sorted items back into pages
+          const pageSizes = old.pages.map((page) => page.gallery_items.length);
+          const newPages: GalleryItemsListResponse[] = [];
+          let itemIndex = 0;
+
+          for (let i = 0; i < old.pages.length; i++) {
+            const pageSize = pageSizes[i];
+            const pageItems = updatedItems.slice(
+              itemIndex,
+              itemIndex + pageSize
+            );
+            itemIndex += pageSize;
+            newPages.push({ ...old.pages[i], gallery_items: pageItems });
           }
-          return item;
-        });
 
-        // Sort all items by brand_sort_order
-        updatedItems.sort(
-          (a, b) => (a.brand_sort_order || 0) - (b.brand_sort_order || 0)
-        );
-
-        // Re-paginate: distribute sorted items back into pages
-        const pageSizes = old.pages.map((page) => page.gallery_items.length);
-        const newPages: GalleryItemsListResponse[] = [];
-        let itemIndex = 0;
-
-        for (let i = 0; i < old.pages.length; i++) {
-          const pageSize = pageSizes[i];
-          const pageItems = updatedItems.slice(itemIndex, itemIndex + pageSize);
-          itemIndex += pageSize;
-          newPages.push({ ...old.pages[i], gallery_items: pageItems });
+          return { ...old, pages: newPages };
         }
-
-        return { ...old, pages: newPages };
-      });
+      );
     },
     [filters]
   );
@@ -1093,6 +1105,11 @@ export const useGalleryQuery = (
         queryClient.invalidateQueries({ queryKey, refetchType: "all" })
       )
     );
+
+    queryClient.invalidateQueries({
+      queryKey: ["campaign-counts"],
+      exact: false,
+    });
   };
 
   const totalItems = galleryQuery.data?.pages[0]?.pagination.total ?? 0;

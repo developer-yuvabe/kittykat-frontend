@@ -14,6 +14,12 @@ export function useFolderState() {
 
   const handleCampaignSelect = useCallback(
     (campaignId: string) => {
+      // 🔁 Toggle off if same campaign is clicked again
+      if (campaignId === selectedCampaignId) {
+        setSelectedCampaignId(null);
+        return;
+      }
+
       // Empty string means deselect
       if (!campaignId) {
         setSelectedCampaignId(null);
@@ -32,6 +38,7 @@ export function useFolderState() {
       }
     },
     [
+      selectedCampaignId,
       setSelectedCampaignId,
       user?.thread_id,
       selectedBrandId,

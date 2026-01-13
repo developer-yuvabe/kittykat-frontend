@@ -3,42 +3,35 @@
 import React from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { CreateCampaignDialog } from "@/components/gallery/CreateCampaignDialog";
 
 interface CampaignSidebarHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  brandId: string;
-  brandName: string;
-  onCampaignCreated: (campaignId: string) => void;
 }
 
 export function CampaignSidebarHeader({
   searchQuery,
   onSearchChange,
-  brandId,
-  brandName,
-  onCampaignCreated,
 }: CampaignSidebarHeaderProps) {
   return (
-    <div className="p-3 border-b border-gray-200 flex justify-center items-center gap-2">
-      <div className="relative w-2/3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search campaigns..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 h-9 text-sm"
-        />
-      </div>
-      <div className="w-1/3 flex justify-center">
-        <CreateCampaignDialog
-          brandId={brandId}
-          brandName={brandName}
-          onCampaignCreated={onCampaignCreated}
-        />
-      </div>
+    <div className="relative max-w-64">
+      <Search className="absolute left-3 inset-y-0 my-auto h-3 w-3 text-gray-400" />
+      <Input
+        type="text"
+        placeholder="Search campaigns..."
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="
+    pl-9 h-8 text-xs py-0 placeholder:text-xs
+    focus:outline-none
+    focus:ring-0
+    focus:border-transparent
+    focus-visible:outline-none
+    focus-visible:ring-0
+    focus-visible:ring-offset-0
+    shadow-none
+  "
+      />
     </div>
   );
 }

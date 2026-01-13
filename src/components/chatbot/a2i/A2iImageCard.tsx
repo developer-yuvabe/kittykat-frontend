@@ -126,6 +126,7 @@ const A2iImageCard = ({
         media_format: [],
         aspect_ratio: [],
         workflow_status: [],
+        sub_folders: [],
       },
     },
     ITEMS_PER_PAGE,
