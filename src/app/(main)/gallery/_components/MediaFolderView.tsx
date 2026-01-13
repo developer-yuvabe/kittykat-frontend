@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import type { EnhancedSelectedFilters } from "@/types/gallery.types";
+import type {
+  EnhancedSelectedFilters,
+  GalleryItemResponse,
+} from "@/types/gallery.types";
 import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
 import { CampaignView } from "./folder/CampaignView";
@@ -9,7 +12,7 @@ import { FolderGalleryView } from "./folder/FolderGalleryView";
 import { GallerySidebar } from "./folder/GallerySidebar";
 import { useBrandStore } from "@/store/brand.store";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { GalleryActions } from "@/hooks/useGallery";
 import MediaViewsDropdown from "./MediaViewDropDown";
 import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { Search } from "lucide-react";
@@ -54,6 +57,13 @@ interface MediaFolderViewProps {
   handleSearchChange: (query: string) => void;
   showFilters?: boolean;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  isMediaSelectDialog?: boolean;
+  isMultiSelect?: boolean;
+  maxSelectionCount?: number;
+  inSelectionGalleryIds?: string[];
+  onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: GalleryItemResponse) => void;
+  galleryActions: GalleryActions;
 }
 
 export function MediaFolderView({
@@ -74,6 +84,13 @@ export function MediaFolderView({
   handleSearchChange,
   showFilters,
   setActiveTab,
+  isMediaSelectDialog = false,
+  isMultiSelect = false,
+  maxSelectionCount,
+  inSelectionGalleryIds = [],
+  onMediaItemSelected,
+  onFullMediaItemSelected,
+  galleryActions,
 }: MediaFolderViewProps) {
   const {
     selectedBrandId,
@@ -90,6 +107,8 @@ export function MediaFolderView({
     selectedSubFolderId,
     selectedItems,
     setSelectedItems,
+    multiSelectItems,
+    setMultiSelectItems,
     clearSelection,
     selectAllMode,
     excludedItems,
@@ -98,44 +117,6 @@ export function MediaFolderView({
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
   const bulkOps = useBulkGalleryOperations();
-
-  // Create shared gallery actions for sidebar drag-drop operations
-  const galleryActions = useGalleryQuery(
-    {
-      assetType: activeTab,
-      favorites,
-      source: activeTab,
-      searchQuery,
-      selectedFilters: {
-        ...(selectedFilters || {
-          moodboards: [],
-          product_categories: [],
-          asset_types: [],
-          asset_sources: [],
-          media_format: [],
-          aspect_ratio: [],
-          workflow_status: [],
-          has_product: undefined,
-          has_people: undefined,
-          has_lifestyle_context: undefined,
-          is_favourite: undefined,
-          is_archived: undefined,
-        }),
-        brands: selectedBrandId
-          ? [selectedBrandId]
-          : selectedFilters?.brands || [],
-        campaigns: selectedCampaignId
-          ? [selectedCampaignId]
-          : selectedFilters?.campaigns || [],
-        sub_folders: selectedSubFolderId
-          ? [selectedSubFolderId]
-          : selectedFilters?.sub_folders || [],
-      },
-    },
-    ITEMS_PER_PAGE,
-    true,
-    "MediaFolderView-Shared"
-  );
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -408,7 +389,11 @@ export function MediaFolderView({
     // Show campaign view with sidebar
     if (selectedBrandId && selectedCampaignId) {
       return (
-        <div className="flex gap-0 h-[calc(100vh-165px)] py-auto px-auto">
+        <div
+          className={`flex gap-0 ${
+            isMediaSelectDialog ? "h-[80vh]" : "h-[calc(100vh-165px)]"
+          } py-auto px-auto`}
+        >
           <GallerySidebar
             selectedBrandId={selectedBrandId}
             selectedCampaignId={selectedCampaignId}
@@ -446,6 +431,13 @@ export function MediaFolderView({
                 galleryView={galleryView}
                 setGalleryView={setGalleryView}
                 setActiveTab={setActiveTab}
+                isMediaSelectDialog={isMediaSelectDialog}
+                isMultiSelect={isMultiSelect}
+                maxSelectionCount={maxSelectionCount}
+                inSelectionGalleryIds={inSelectionGalleryIds}
+                onMediaItemSelected={onMediaItemSelected}
+                onFullMediaItemSelected={onFullMediaItemSelected}
+                galleryActions={galleryActions}
               />
             </div>
           </div>
@@ -456,7 +448,11 @@ export function MediaFolderView({
     // Show folder gallery with sidebar (brand selected, no campaign)
     if (selectedBrandId && isBrandsFetched) {
       return (
-        <div className="w-full h-[calc(100vh-165px)] flex overflow-hidden">
+        <div
+          className={`w-full ${
+            isMediaSelectDialog ? "h-[80vh]" : "h-[calc(100vh-165px)]"
+          } flex overflow-hidden`}
+        >
           <GallerySidebar
             selectedBrandId={selectedBrandId}
             selectedCampaignId={null}
@@ -529,6 +525,13 @@ export function MediaFolderView({
                     favorites={favorites}
                     selectedFilters={selectedFilters}
                     activeTab={activeTab}
+                    isMediaSelectDialog={isMediaSelectDialog}
+                    isMultiSelect={isMultiSelect}
+                    maxSelectionCount={maxSelectionCount}
+                    inSelectionGalleryIds={inSelectionGalleryIds}
+                    onMediaItemSelected={onMediaItemSelected}
+                    onFullMediaItemSelected={onFullMediaItemSelected}
+                    galleryActions={galleryActions}
                   />
                 </div>
               </div>
@@ -556,9 +559,15 @@ export function MediaFolderView({
             selectedBrandId={selectedBrandId}
             selectedCampaignId={undefined}
             searchQuery={searchQuery}
-            favorites={favorites}
             selectedFilters={selectedFilters}
             activeTab={activeTab}
+            isMediaSelectDialog={isMediaSelectDialog}
+            isMultiSelect={isMultiSelect}
+            maxSelectionCount={maxSelectionCount}
+            inSelectionGalleryIds={inSelectionGalleryIds}
+            onMediaItemSelected={onMediaItemSelected}
+            onFullMediaItemSelected={onFullMediaItemSelected}
+            galleryActions={galleryActions}
           />
         </div>
       );
@@ -570,8 +579,8 @@ export function MediaFolderView({
   return (
     <GalleryDndProvider
       galleryActions={galleryActions}
-      selectedItems={selectedItems}
-      setSelectedItems={setSelectedItems}
+      selectedItems={isMultiSelect ? multiSelectItems : selectedItems}
+      setSelectedItems={isMultiSelect ? setMultiSelectItems : setSelectedItems}
       orderBy={orderBy}
       totalItems={totalItemsCount}
       selectAllMode={selectAllMode}

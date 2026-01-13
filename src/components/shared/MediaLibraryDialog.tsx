@@ -6,6 +6,7 @@ import {
   EnhancedSelectedFilters,
   GalleryItemResponse,
 } from "@/types/gallery.types";
+import { useGalleryFilterStore } from "@/store/gallery-filter.store";
 
 interface MediaLibraryDialogProps {
   open: boolean;
@@ -36,10 +37,13 @@ export function MediaLibraryDialog({
   isMultiSelect = false,
   maxSelectionCount,
 }: MediaLibraryDialogProps) {
+    const {setSelectedItems} = useGalleryFilterStore()
   return (
+    
+
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90%] min-w-6xl overflow-y-scroll p-6">
-        <div className="px-4">
+      <DialogContent className="max-h-[95vh] h-[90vh] min-w-9/12 overflow-hidden p-4 ">
+        <div className="h-full w-full">
           <MediaLibrary
             activeTab="all-media"
             isMediaSelectDialog={true}
@@ -54,7 +58,9 @@ export function MediaLibraryDialog({
             isMultiSelect={isMultiSelect}
             maxSelectionCount={maxSelectionCount}
             hideHeader={true}
-            closeDialog={() => onOpenChange(false)}
+            closeDialog={() => {onOpenChange(false)
+                setSelectedItems([])
+            }}
           />
         </div>
       </DialogContent>
