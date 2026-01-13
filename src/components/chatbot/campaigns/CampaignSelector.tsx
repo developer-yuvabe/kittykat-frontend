@@ -208,9 +208,7 @@ export default function CampaignSelector({
                             {campaign.initial}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="truncate">
-                          {campaign.displayName} {campaign.displayName}
-                        </span>
+                        <span className="truncate">{campaign.displayName}</span>
                       </div>
                       {selectedCampaignId === campaign.id && (
                         <Check className="h-4 w-4" />

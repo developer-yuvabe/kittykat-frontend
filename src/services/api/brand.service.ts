@@ -226,3 +226,19 @@ export async function triggerBrandBrainAnalysis(
     axiosInstance.post(`/brands/brain-analysis/trigger`, params)
   );
 }
+
+/**
+ * Duplicate a campaign with all its gallery items
+ */
+export interface DuplicateCampaignResponse {
+  campaign: ThreadCampaign;
+}
+
+export async function duplicateCampaign(
+  brandId: string,
+  campaignId: string
+): Promise<DuplicateCampaignResponse> {
+  return handleApiRequest<DuplicateCampaignResponse>(
+    axiosInstance.post(`/brands/${brandId}/campaign/${campaignId}/duplicate`)
+  );
+}

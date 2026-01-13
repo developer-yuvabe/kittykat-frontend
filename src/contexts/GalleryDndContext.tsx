@@ -37,6 +37,7 @@ import {
   resolveActiveDragData,
   resolveCampaignId,
   resolveTabValue,
+  resolveSubfolderId,
   resolveSectionTarget,
   resolveCampaignSection,
   galleryCollisionDetection,
@@ -93,6 +94,11 @@ interface GalleryDndProviderProps {
   // Current order by - reorder only allowed when "brand_sort_order"
   orderBy?: string;
 
+  // Select-all mode state
+  totalItems?: number;
+  selectAllMode?: "none" | "visible" | "all";
+  excludedItems?: string[];
+
   // Callbacks for different drop operations
   onMoveMediaToCampaign?: (
     itemIds: string[],
@@ -102,6 +108,11 @@ interface GalleryDndProviderProps {
     itemIds: string[],
     tabValue: string,
     sourceTab?: string
+  ) => Promise<void>;
+  onMoveMediaToSubfolder?: (
+    itemIds: string[],
+    subfolderId: string,
+    campaignId: string
   ) => Promise<void>;
   onReorderMedia?: (
     reorderData: { id: string; brand_sort_order: number }[]
@@ -131,8 +142,12 @@ export function GalleryDndProvider({
   selectedItems,
   setSelectedItems,
   orderBy,
+  totalItems = 0,
+  selectAllMode = "none",
+  excludedItems = [],
   onMoveMediaToCampaign,
   onMoveMediaToTab,
+  onMoveMediaToSubfolder,
   onReorderMedia,
   onReorderCampaigns,
   onArchiveCampaign,
@@ -250,6 +265,26 @@ export function GalleryDndProvider({
           return;
         }
 
+        // Drop on Subfolder
+        const subfolderData = resolveSubfolderId(overId, overData);
+
+        if (subfolderData) {
+          if (onMoveMediaToSubfolder) {
+            try {
+              await onMoveMediaToSubfolder(
+                itemIds,
+                subfolderData.subfolderId,
+                subfolderData.campaignId
+              );
+              setSelectedItems([]);
+            } catch (error) {
+              console.error("Failed to move media to subfolder:", error);
+              toast.error("Failed to move items to subfolder");
+            }
+          }
+          return;
+        }
+
         // Reorder within grid - ONLY when manual order is enabled
         if (
           active.id !== over.id &&
@@ -298,12 +333,27 @@ export function GalleryDndProvider({
           const section = resolveCampaignSection(over.data.current as DragData);
           if (section) {
             try {
-              await onReorderCampaigns(
-                campaignData.campaignId,
-                String(over.id).replace("campaign-", ""),
-                "after", // Default to after, actual position calculated in handler
-                section
+              const draggedId = campaignData.campaignId;
+              const targetId = String(over.id).replace("campaign-", "");
+
+              // Calculate position based on indices to handle top-to-bottom vs bottom-to-top
+              const isArchived = section === "archived";
+              // Filter campaigns to those in the same section to get correct relative indices
+              const sectionCampaigns = campaigns.filter(
+                (c) => !!c.is_archived === isArchived
               );
+
+              const draggedIndex = sectionCampaigns.findIndex(
+                (c) => c.id === draggedId
+              );
+              const targetIndex = sectionCampaigns.findIndex(
+                (c) => c.id === targetId
+              );
+
+              // If moving up (higher index to lower index), insert "before". Otherwise "after".
+              const position = draggedIndex > targetIndex ? "before" : "after";
+
+              await onReorderCampaigns(draggedId, targetId, position, section);
             } catch (error) {
               console.error("Failed to reorder campaigns:", error);
             }
@@ -317,10 +367,12 @@ export function GalleryDndProvider({
       orderBy,
       onMoveMediaToCampaign,
       onMoveMediaToTab,
+      onMoveMediaToSubfolder,
       onReorderMedia,
       onReorderCampaigns,
       onArchiveCampaign,
       setSelectedItems,
+      campaigns,
     ]
   );
 
@@ -340,9 +392,17 @@ export function GalleryDndProvider({
         mediaData.itemIds.includes(item.id)
       );
 
+      // Calculate effective count based on select-all mode
+      const effectiveCount =
+        selectAllMode === "all"
+          ? totalItems - excludedItems.length
+          : selectAllMode === "visible"
+          ? items.length - excludedItems.length
+          : mediaData.itemIds.length;
+
       return (
         <MediaDragOverlay
-          itemCount={mediaData.itemIds.length}
+          itemCount={effectiveCount}
           previewItems={previewItems}
         />
       );

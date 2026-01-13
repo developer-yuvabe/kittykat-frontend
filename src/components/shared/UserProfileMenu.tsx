@@ -63,7 +63,6 @@ export function UserProfileMenu({}) {
       // only update the langgraph thread state when we have an active team and a valid thread id
       if (user?.active_team_id && user?.thread_id) {
         if (!values.activeTeamId) {
-          console.log("Updating thread active team ID");
           try {
             await updateActiveTeamIdinThread(
               user.thread_id,

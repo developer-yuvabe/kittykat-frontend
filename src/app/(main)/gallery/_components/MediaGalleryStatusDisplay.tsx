@@ -3,13 +3,16 @@ import { Loader2 } from "lucide-react";
 interface MediaGalleryStatusDisplayProps {
   galleryStatus: "pending" | "error" | "success";
   galleryItemsLength: number;
+  isFetchingNextPage?: boolean;
 }
 
 export function MediaGalleryStatusDisplay({
   galleryStatus,
   galleryItemsLength,
+  isFetchingNextPage = false,
 }: MediaGalleryStatusDisplayProps) {
-  if (galleryStatus === "pending") {
+  // Only show center loader on initial load, not when fetching next page
+  if (galleryStatus === "pending" && !isFetchingNextPage) {
     return (
       <div className="flex justify-center min-h-96 items-center py-36 2xl:py-60">
         <Loader2 className="h-8 w-8 animate-spin text-purple-600" />

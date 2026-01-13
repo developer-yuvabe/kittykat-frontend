@@ -8,6 +8,7 @@ interface UndoableOptions<T> {
   errorMessage?: string;
   loadingMessage?: string;
   undoSeconds?: number;
+  onUndo?: () => void;
 }
 
 export function useUndoableAction() {
@@ -21,6 +22,7 @@ export function useUndoableAction() {
       errorMessage,
       loadingMessage,
       undoSeconds = 3,
+      onUndo,
     }: UndoableOptions<T>) => {
       undoneRef.current = false;
 
@@ -68,7 +70,10 @@ export function useUndoableAction() {
       await new Promise((resolve) => setTimeout(resolve, undoSeconds * 1000));
       clearInterval(interval);
 
-      if (undoneRef.current) return;
+      if (undoneRef.current) {
+        onUndo?.();
+        return;
+      }
 
       try {
         await action();

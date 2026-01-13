@@ -9,6 +9,15 @@ interface GalleryFilterState {
   orderBy: OrderBy;
   isDraggable: boolean;
 
+  // Selection state
+  selectedSubFolderId: string | null;
+  selectedItems: string[];
+  multiSelectItems: string[];
+  selectAllMode: "none" | "visible" | "all";
+  excludedItems: string[];
+  lastSelectedId: string | null;
+  totalItemsCount: number; // Total items from the current gallery query
+
   // Filter settings
   favorites: boolean;
   hasComments: boolean;
@@ -23,6 +32,18 @@ interface GalleryFilterState {
   setIsAutoPlay: (autoplay: boolean) => void;
   setOrderBy: (orderBy: OrderBy) => void;
   setIsDraggable: (isDraggable: boolean) => void;
+
+  // Selection setters
+  setSelectedSubFolderId: (subFolderId: string | null) => void;
+  setSelectedItems: (items: string[] | ((prev: string[]) => string[])) => void;
+  setMultiSelectItems: (
+    items: string[] | ((prev: string[]) => string[])
+  ) => void;
+  setSelectAllMode: (mode: "none" | "visible" | "all") => void;
+  setExcludedItems: (items: string[] | ((prev: string[]) => string[])) => void;
+  setLastSelectedId: (id: string | null) => void;
+  setTotalItemsCount: (count: number) => void;
+  clearSelection: () => void;
 
   // Filter setters
   setFavorites: (favorites: boolean) => void;
@@ -57,6 +78,15 @@ export const useGalleryFilterStore = create<GalleryFilterState>()((set) => ({
   // View settings
   ...initialViewState,
 
+  // Selection state
+  selectedSubFolderId: null,
+  selectedItems: [],
+  multiSelectItems: [],
+  selectAllMode: "none",
+  excludedItems: [],
+  lastSelectedId: null,
+  totalItemsCount: 0,
+
   // Filter settings
   ...initialFilterState,
 
@@ -66,6 +96,35 @@ export const useGalleryFilterStore = create<GalleryFilterState>()((set) => ({
   setIsAutoPlay: (isAutoPlay) => set({ isAutoPlay }),
   setOrderBy: (orderBy) => set({ orderBy }),
   setIsDraggable: (isDraggable) => set({ isDraggable }),
+
+  // Selection setters
+  setSelectedSubFolderId: (selectedSubFolderId) => set({ selectedSubFolderId }),
+  setSelectedItems: (items) =>
+    set((state) => ({
+      selectedItems:
+        typeof items === "function" ? items(state.selectedItems) : items,
+    })),
+  setMultiSelectItems: (items) =>
+    set((state) => ({
+      multiSelectItems:
+        typeof items === "function" ? items(state.multiSelectItems) : items,
+    })),
+  setSelectAllMode: (selectAllMode) => set({ selectAllMode }),
+  setExcludedItems: (items) =>
+    set((state) => ({
+      excludedItems:
+        typeof items === "function" ? items(state.excludedItems) : items,
+    })),
+  setLastSelectedId: (lastSelectedId) => set({ lastSelectedId }),
+  setTotalItemsCount: (totalItemsCount) => set({ totalItemsCount }),
+  clearSelection: () =>
+    set({
+      selectedItems: [],
+      multiSelectItems: [],
+      selectAllMode: "none",
+      excludedItems: [],
+      lastSelectedId: null,
+    }),
 
   // Filter setters
   setFavorites: (favorites) => set({ favorites }),

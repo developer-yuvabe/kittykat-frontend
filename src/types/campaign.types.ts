@@ -99,6 +99,33 @@ export interface CampaignResponse {
   };
   moodboard_ready: boolean;
   completed: boolean;
+  sub_folders?: SubFolderResponse[];
+}
+
+export interface SubFolderBase {
+  name: string;
+}
+
+export interface SubFolderCreate extends SubFolderBase {
+  is_admin_only?: boolean;
+  is_kk_folder?: boolean;
+  is_kk_selected?: boolean;
+}
+
+export interface SubFolderUpdate {
+  name?: string;
+  is_admin_only?: boolean;
+  is_kk_folder?: boolean;
+  is_kk_selected?: boolean;
+}
+
+export interface SubFolderResponse extends SubFolderBase {
+  id: string;
+  is_admin_only?: boolean;
+  is_kk_folder?: boolean;
+  is_kk_selected?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export enum SocialOptionId {

@@ -14,6 +14,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useCampaignMutations } from "@/hooks/useCampaignMutations";
 import { useBrandStore } from "@/store/brand.store";
 
@@ -85,18 +91,18 @@ export function CreateCampaignDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2 text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
-          >
-            <Plus className="w-4 h-4" />
-            New Campaign
-          </Button>
-        )}
-      </DialogTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              {trigger || <Plus className="w-4 h-4" />}
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            <p>New Campaign</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>

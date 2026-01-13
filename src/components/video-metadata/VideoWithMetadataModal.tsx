@@ -68,7 +68,7 @@ const VideoWithMetadataModal = ({
   const [copied, setCopied] = useState(false);
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-  const { setStartFrame, setEndFrame } = useA2iStore();
+  const { setStartFrame, setEndFrame, setSelectedFolderId } = useA2iStore();
   const campaignId = selectedCampaignId || defaultCampaignId;
   const { user } = useUserStore();
 
@@ -210,6 +210,11 @@ const VideoWithMetadataModal = ({
       }
       if (lastFrameParam?.id) {
         setEndFrame(videoParams[lastFrameParam.id]);
+      }
+
+      // Set selected folder to campaign if available
+      if (galleryItem.campaign_id) {
+        setSelectedFolderId(galleryItem.campaign_id);
       }
 
       onClose();
