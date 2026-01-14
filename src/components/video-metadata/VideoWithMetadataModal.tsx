@@ -68,7 +68,12 @@ const VideoWithMetadataModal = ({
   const [copied, setCopied] = useState(false);
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-  const { setStartFrame, setEndFrame, setSelectedFolderId, setConceptVisualGeneratorMode } = useA2iStore();
+  const {
+    setStartFrame,
+    setEndFrame,
+    setSelectedFolderId,
+    setConceptVisualGeneratorMode,
+  } = useA2iStore();
 
   const campaignId = selectedCampaignId || defaultCampaignId;
   const { user } = useUserStore();
@@ -138,7 +143,10 @@ const VideoWithMetadataModal = ({
 
     try {
       const model = models.find((m) => m.model === data.parameters.model);
-      if (!model) throw new Error("Model not found for variation");
+      if (!model) {
+        toast.info("Model not found for Auto Variation");
+        return;
+      }
 
       // Filter parameters that control number of outputs
       const paramsResponsibleForVaryingNumberOfOutputs =
@@ -176,7 +184,8 @@ const VideoWithMetadataModal = ({
       const model = models.find((m) => m.model === data.parameters.model);
 
       if (!model) {
-        throw new Error("No model found for this video.");
+        toast.info("Model not found for Manual Variation.");
+        return;
       }
 
       // Convert all parameters based on model parameter definitions
