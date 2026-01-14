@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { createMoodboard } from "@/services/api/moodboard.service";
 import type { SetStateAction } from "react";
+import { AppConfig } from "@/config/app.config";
 
 type MoodboardStore = {
   // UI State
@@ -71,7 +72,7 @@ export const useMoodboardStore = create<MoodboardStore>((set) => ({
   moodboardTitle: "New Moodboard",
   setMoodboardTitle: (title: string) => set({ moodboardTitle: title }),
 
-  expanded: true,
+  expanded: AppConfig.DEFUALT_SECTIONS_EXPANDED_VIEW,
   setExpanded: (expanded: boolean) => set({ expanded }),
   toggleExpanded: () => set((state) => ({ expanded: !state.expanded })),
 

@@ -1,51 +1,41 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  CirclePlus,
-  Presentation,
-} from "lucide-react";
-import {
-  MoodboardInformation,
-  ThreadCampaign,
-  ThreadDetails,
-} from "@/types/types";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { useBrandStore } from "@/store/brand.store";
-import { useMoodboardStore } from "@/store/moodboard.store";
-import { useUserStore } from "@/store/user.store";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { SearchIcon } from "@/components/ui/custom-icon";
 import { ContentSection } from "@/components/shared/ContentSection";
-import { MoodboardOverview } from "./MoodboardOverview";
-import MoodboardLayout from "./MoodboardLayout";
-import MoodboardTagResults from "./MoodboardTagResults";
-import MoodboardSelector from "./MoodboardSelector";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CardContent } from "@/components/ui/card";
+import { Command, CommandEmpty } from "@/components/ui/command";
+import { SearchIcon } from "@/components/ui/custom-icon";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Command, CommandEmpty } from "@/components/ui/command";
 import { useGalleryQuery } from "@/hooks/useGallery";
-import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
+import { useBrandStore } from "@/store/brand.store";
+import { useMoodboardStore } from "@/store/moodboard.store";
+import { useUserStore } from "@/store/user.store";
 import {
-  moodboardFields,
-  PlaceholderSection,
-} from "../brands/InitialPlaceHolder";
+  MoodboardInformation,
+  ThreadCampaign,
+  ThreadDetails,
+} from "@/types/types";
+import { motion } from "framer-motion";
+import { ChevronRight, CirclePlus, Presentation } from "lucide-react";
 import { useQueryState } from "nuqs";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { toast } from "sonner";
+import MoodboardLayout from "./MoodboardLayout";
+import { MoodboardOverview } from "./MoodboardOverview";
+import MoodboardSelector from "./MoodboardSelector";
+import MoodboardTagResults from "./MoodboardTagResults";
+import { MoodboardVisualSectionHeader } from "./MoodboardVisualSectionHeader";
 
 export const MoodboardSection: React.FC<{
   campaignInformation: ThreadDetails["campaign_information"];
@@ -63,7 +53,6 @@ export const MoodboardSection: React.FC<{
     selectedBrandId,
     selectedMoodboardId,
     setSelectedMoodboardId,
-    isCreatingBrand,
     isCampaignCreating,
   } = useBrandStore();
   const { user } = useUserStore();
@@ -112,7 +101,6 @@ export const MoodboardSection: React.FC<{
     useQueryState("moodboardId");
 
   const [openPopover, setOpenPopover] = useState(false);
-  const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
 
   // Track the last known moodboard count to detect new creations
   const [lastMoodboardCount, setLastMoodboardCount] = useState(0);
@@ -360,156 +348,86 @@ export const MoodboardSection: React.FC<{
     }
   };
 
-  const handleMoodboardPlaceholderClick = () => {
-    toast.info("Please create a campaign before creating a moodboard.");
-  };
-
   // Don't render MoodboardSection at all when campaign is being created
   // The CampaignSection handles both placeholders in that case
   if (isCampaignCreating) {
     return null;
   }
 
-  // Show placeholder only when creating brand or when no campaigns exist
-  if (
-    isCreatingBrand ||
-    !campaignInformation ||
-    campaignInformation.length === 0
-  ) {
-    return (
-      <PlaceholderSection
-        title={"Moodboard"}
-        avatarFallback="M"
-        avatarBgColor="bg-orange-400"
-        fields={moodboardFields}
-        searchPlaceholder="Select Moodboard"
-        newButtonTooltip="New Moodboard"
-        isExpanded={isPlaceholderExpanded}
-        onToggleExpanded={() =>
-          setIsPlaceholderExpanded((prev: boolean) => !prev)
-        }
-        onNewClick={handleMoodboardPlaceholderClick}
-        isCreatingNewCampaign={false}
-      />
-    );
-  }
-
   return (
-    <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
-      <CardHeader className="py-1">
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          onClick={toggleExpanded}
-        >
-          <div className="flex items-center">
-            {expanded ? (
-              <ChevronDown className="text-[#6e7787] mr-2" size={20} />
-            ) : (
-              <ChevronRight className="text-[#6e7787] mr-2" size={20} />
-            )}
-            {!expanded ? (
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
-                  <span className="text-white font-bold">
-                    <Presentation size={24} />
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex justify-between">
-                    <div className="flex flex-col">
-                      <div className="text-sm font-medium break-words max-w-xs">
-                        {moodboardTitle}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-[#6e7787]">
-                    Design the visual direction of your campaign
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="flex">
-                  <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mr-3 overflow-hidden">
-                    <span className="text-white font-bold">
-                      <Presentation size={24} />
-                    </span>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-0 block">
-                      Moodboard
-                    </label>
-
-                    {currentCampaign &&
-                    (!moodboardInformation ||
-                      moodboardInformation.length == 0) ? (
-                      <Input
-                        value={moodboardTitle}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                        onChange={(e) => setMoodboardTitle(e.target.value)}
-                        placeholder="Enter moodboard title"
-                        className="font-bold w-96"
-                      />
-                    ) : (
-                      <p className="font-bold break-words max-w-xs">
-                        {moodboardTitle}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-x-4 items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            className={
+              expanded
+                ? "rotate-90 transition-transform"
+                : "transition-transform"
+            }
+            onClick={toggleExpanded}
+          >
+            {<ChevronRight />}
+          </Button>
+          <div className="w-14 h-14 rounded-lg bg-brand-gradient text-white flex items-center justify-center">
+            <Presentation />
           </div>
-
-          <div className="absolute right-3 top-7 flex items-center gap-x-2">
-            {campaignInformation && currentCampaign ? (
-              <MoodboardSelector
-                campaignId={currentCampaign.id}
-                moodboards={moodboardInformation || []}
-                selectedMoodboard={currentMoodboard}
-                setSelectedMoodboard={handleMoodboardSelect}
-                onNewMoodboard={handleCreateNewMoodboard}
-                isCreatingNew={false}
-                onMoodboardTitleChange={handleMoodboardTitleChange}
-              />
-            ) : (
-              <Popover open={openPopover} onOpenChange={setOpenPopover}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <SearchIcon size={10} className="text-black" />
-                    {`Select Moodboard`}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
-                  <Command>
-                    <CommandEmpty>No Existing Moodboard</CommandEmpty>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            <TooltipIconButton
-              tooltip="New Moodboard"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCreateNewMoodboard();
-              }}
-              className="p-4"
-              size={"lg"}
-              disabled={isCreatingNewMoodboard}
-            >
-              <CirclePlus className="size-5" />
-            </TooltipIconButton>
+          <div>
+            <h4 className="font-light text-sm">Moodboard</h4>
+            <p className="font-bold text-2xl">
+              {moodboardTitle || "Untitled Moodboard"}
+            </p>
           </div>
         </div>
-      </CardHeader>
+
+        <div className="flex items-center gap-x-2">
+          {campaignInformation && currentCampaign ? (
+            <MoodboardSelector
+              campaignId={currentCampaign.id}
+              moodboards={moodboardInformation || []}
+              selectedMoodboard={currentMoodboard}
+              setSelectedMoodboard={handleMoodboardSelect}
+              onNewMoodboard={handleCreateNewMoodboard}
+              isCreatingNew={false}
+              onMoodboardTitleChange={handleMoodboardTitleChange}
+            />
+          ) : (
+            <Popover open={openPopover} onOpenChange={setOpenPopover}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-60 justify-start font-light text-gray-800 border-[#BCC1CA]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <SearchIcon size={10} className="text-black" />
+                  {`Select Moodboard`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandEmpty>No Existing Moodboard</CommandEmpty>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          )}
+
+          <TooltipIconButton
+            tooltip="New Moodboard"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCreateNewMoodboard();
+            }}
+            className="p-4"
+            size={"lg"}
+            disabled={isCreatingNewMoodboard}
+          >
+            <CirclePlus className="size-5" />
+          </TooltipIconButton>
+        </div>
+      </div>
 
       {expanded && (
         <>
@@ -596,6 +514,6 @@ export const MoodboardSection: React.FC<{
           </div>
         </>
       )}
-    </Card>
+    </div>
   );
 };

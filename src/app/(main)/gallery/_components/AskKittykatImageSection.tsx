@@ -26,7 +26,7 @@ import {
 import type React from "react";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import RemixImage from "../../_components/remix/RemixImage";
+import RemixImage from "./RemixImage";
 import { useConceptVisualStore } from "@/store/concept-visual.store";
 import { ConceptVisualTabs } from "@/types/concept-visual-editor.types";
 

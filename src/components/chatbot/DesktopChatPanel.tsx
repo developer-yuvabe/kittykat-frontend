@@ -5,7 +5,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
-import ThreadDetailsPanel from "./ThreadDetailsPanel";
+import ThreadDetailsPanel from "./BrandDetailsPanel";
 import { StickToBottom } from "use-stick-to-bottom";
 import { ChatSkeleton } from "../thread/messages/message-skeleton";
 import { StickyToBottomContent } from "./StickyToBottomContent";

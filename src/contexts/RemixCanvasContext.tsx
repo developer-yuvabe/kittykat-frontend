@@ -1,4 +1,4 @@
-import { RemixImageHandle } from "@/app/(main)/_components/remix/RemixImage";
+import { RemixImageHandle } from "@/app/(main)/gallery/_components/RemixImage";
 import { useUndoRedoRemix } from "@/hooks/useUndoRedoRemix";
 import React, { createContext, useContext, useRef, useState } from "react";
 
