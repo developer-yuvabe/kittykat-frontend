@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -19,6 +19,7 @@ import { Check, Folder, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
 import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
+import { toast } from "sonner";
 
 interface FolderItem {
   id: string;
@@ -40,7 +41,7 @@ export default function FolderSelector({
   onFolderSelect,
 }: FolderSelectorProps) {
   const [open, setOpen] = useState(false);
-  const { getSelectedBrandCampaigns } = useBrandStore();
+  const { getSelectedBrandCampaigns, selectedCampaignId } = useBrandStore();
   const [searchQuery, setSearchQuery] = useState("");
 
   const campaigns = getSelectedBrandCampaigns();
@@ -126,6 +127,27 @@ export default function FolderSelector({
     const folder = folders.find((f) => f.id === selectedFolderId);
     return folder?.name || "Select Folder";
   }, [selectedFolderId, folders]);
+
+  // Auto-fallback to campaign folder if selected folder no longer exists
+  useEffect(() => {
+    // Only validate if a folder is selected
+    if (!selectedFolderId) return;
+
+    // Check if the selected folder still exists in the available folders
+    const folderExists = folders.some((f) => f.id === selectedFolderId);
+
+    if (!folderExists) {
+      // Folder was deleted, fallback to campaign folder
+      if (selectedCampaignId) {
+        onFolderSelect(selectedCampaignId);
+        toast.info("Folder reset — no access to previously selected folder.");
+      } else {
+        // If no campaign is selected, reset to null
+        onFolderSelect(null);
+        toast.warning("Selected folder no longer exists.");
+      }
+    }
+  }, [selectedFolderId, folders, selectedCampaignId, onFolderSelect]);
 
   const handleSelect = (folderId: string) => {
     onFolderSelect(folderId);

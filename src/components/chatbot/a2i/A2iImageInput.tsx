@@ -1305,7 +1305,7 @@ const A2iImageInput = ({
       )}
       id="concept-visual-playground"
     >
-      <div className="flex flex-row w-full p- relative">
+      <div className="flex flex-row w-full p- relative mt-1">
         <Form {...formInstance}>
           <div
             className="space-y-4 flex-1 w-full"
@@ -1410,7 +1410,7 @@ const A2iImageInput = ({
                   </div>
                 )}
 
-              <div className="flex-1 w-full p-2" onDrop={handlePromptDrop}>
+              <div className="flex-1 w-full p-2 mt-3" onDrop={handlePromptDrop}>
                 <FormField
                   control={formInstance.control}
                   name="prompt"
