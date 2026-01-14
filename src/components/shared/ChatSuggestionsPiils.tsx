@@ -126,21 +126,21 @@ const ChatSuggestions = () => {
     if (suggestion.prompt) {
       setShowChatAssistant(true);
 
-      // submitOptimisticMessage({
-      //   stream,
-      //   text: suggestion.prompt,
-      //   userId: user!.id,
-      //   chatOnlyMode,
-      //   currentBrandContextId: null,
-      //   currentCampaignId: null,
-      //   currentMoodboardId: null,
-      //   currentSelectedImageGenerationModelId:
-      //     selectedImageGenerationModel?.id ?? null,
-      //   currentSelectedVideoGenerationModelId:
-      //     selectedVideoGenearationModel?.id ?? null,
-      //   userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
-      //   activeTeamId: user!.active_team_id!,
-      // });
+      submitOptimisticMessage({
+        stream,
+        text: suggestion.prompt,
+        userId: user!.id,
+        chatOnlyMode,
+        currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+        activeTeamId: user!.active_team_id!,
+      });
     }
   };
 
