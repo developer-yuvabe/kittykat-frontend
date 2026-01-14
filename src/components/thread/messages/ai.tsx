@@ -93,7 +93,7 @@ export function AssistantMessage({
             )}
 
           {contentString && (
-            <div className="w-full max-w-full bg-white p-4 rounded-2xl overflow-x-auto">
+            <div className="w-full max-w-full bg-muted p-4 rounded-2xl overflow-x-auto">
               <MarkdownText>{contentString}</MarkdownText>
             </div>
           )}

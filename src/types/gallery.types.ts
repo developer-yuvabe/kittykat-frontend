@@ -105,6 +105,7 @@ export type GalleryItem = {
 
   // 📣 Campaign & Brand Info
   campaign_id?: string;
+  sub_folder_id?: string;
   campaign_phase?: string;
   usage_context?: string;
   last_used_in_campaign?: string;
@@ -204,6 +205,7 @@ export interface EnhancedSelectedFilters {
   // Existing filters
   brands: string[];
   campaigns: string[];
+  sub_folders?: string[];
   moodboards: string[];
   product_categories: string[];
 
@@ -270,6 +272,7 @@ export interface BulkGalleryUploadRequest {
   brand_id: string;
   campaign_id?: string;
   moodboard_id?: string;
+  sub_folder_id?: string;
 }
 
 export interface BulkScrapeRequest {
@@ -355,8 +358,9 @@ export interface AssetCountRequest {
   // Required
   brand_id: string;
 
-  // Optional Campaign filter
+  // Optional Campaign and Subfolder filters
   campaign_id?: string;
+  sub_folder_id?: string;
 
   // Breakdown flags - control what breakdowns to include in response
   count_by_workflow_status?: boolean;
@@ -364,6 +368,7 @@ export interface AssetCountRequest {
   count_by_media_format?: boolean;
   count_by_aspect_ratio?: boolean;
   count_by_campaign?: boolean;
+  count_by_sub_folder?: boolean;
   count_with_comments?: boolean;
   count_favourites?: boolean;
 }
@@ -375,6 +380,7 @@ export interface AssetCountResponse {
   // Context
   brand_id: string;
   campaign_id?: string;
+  sub_folder_id?: string;
 
   // Total count
   total_count: number;
@@ -385,6 +391,7 @@ export interface AssetCountResponse {
   count_by_media_format?: Record<string, number>;
   count_by_aspect_ratio?: Record<string, number>;
   count_by_campaign?: Record<string, number>;
+  count_by_sub_folder?: Record<string, number>;
   count_with_comments?: number;
   count_favourites?: number;
 }
@@ -403,6 +410,82 @@ export interface GalleryDragPayload {
   // Whether items are from archived section
   isArchived?: boolean;
   activeTab?: string;
+}
+
+/**
+ * Bulk operation request using server-side selection
+ * Supports both explicit item lists and query-based selection
+ */
+export interface BulkOperationRequest {
+  // Brand and campaign context
+  brand_id: string;
+  campaign_id?: string;
+  sub_folder_id?: string;
+  moodboard_id?: string;
+
+  // Server-side selection mode
+  select_all?: boolean; // If true, applies to all items matching filters
+  excluded_items?: string[]; // Items to exclude when select_all is true
+  selected_items?: string[]; // Explicit item IDs when select_all is false
+
+  // Filters (when select_all is true)
+  asset_types?: string[];
+  asset_sources?: string[];
+  is_favourite?: boolean;
+  workflow_status?: string[];
+  media_format?: string[];
+  aspect_ratio?: string[];
+  has_product?: boolean;
+  has_people?: boolean;
+  has_lifestyle_context?: boolean;
+  has_comments?: boolean;
+  is_archived?: boolean;
+  created_at_range?: [string, string];
+}
+
+/**
+ * Bulk delete request
+ */
+export type BulkDeleteRequest = BulkOperationRequest;
+
+/**
+ * Bulk update request (workflow status, comments, etc.)
+ */
+export interface BulkUpdateRequest extends BulkOperationRequest {
+  update_data: {
+    workflow_status?: WorkflowStatus;
+    is_favourite?: boolean;
+    is_archived?: boolean;
+    custom_tags?: string[];
+    // Add comment to all selected items
+    comment?: {
+      text: string;
+      attachments?: string[];
+      is_tasklist?: boolean;
+    };
+  };
+}
+
+/**
+ * Bulk move request (change brand/campaign/source)
+ * Note: target_campaign_id is required when moving to a sub_folder_id
+ * because subfolders exist under campaigns
+ */
+export interface BulkMoveRequest extends BulkOperationRequest {
+  target_brand_id?: string;
+  target_campaign_id?: string;
+  target_source?: string;
+  sub_folder_id?: string;
+}
+
+/**
+ * Bulk operation response
+ */
+export interface BulkOperationResponse {
+  success: boolean;
+  affected_count: number;
+  message?: string;
+  errors?: string[];
 }
 
 //

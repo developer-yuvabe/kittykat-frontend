@@ -388,7 +388,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           (previousSuggestions.length === 0 &&
             values.suggestions &&
             values.suggestions?.length > 0)) && (
-          <div className="flex gap-3 flex-wrap pt-2 mb-2 rounded-lg w-max">
+          <div className="flex gap-3 flex-wrap pt-2 mb-2 rounded-lg w-full">
             {(suggestions.length > 0
               ? suggestions
               : values.suggestions ?? []

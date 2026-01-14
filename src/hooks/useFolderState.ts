@@ -7,13 +7,22 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
 
 export function useFolderState() {
-  const { selectedCampaignId, setSelectedCampaignId, selectedBrandId } =
-    useBrandStore();
+  const {
+    selectedCampaignIdInGallery: selectedCampaignId,
+    setSelectedCampaignIdInGallery: setSelectedCampaignId,
+    selectedBrandId,
+  } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
   const handleCampaignSelect = useCallback(
     (campaignId: string) => {
+      // 🔁 Toggle off if same campaign is clicked again
+      if (campaignId === selectedCampaignId) {
+        setSelectedCampaignId(null);
+        return;
+      }
+
       // Empty string means deselect
       if (!campaignId) {
         setSelectedCampaignId(null);
@@ -32,6 +41,7 @@ export function useFolderState() {
       }
     },
     [
+      selectedCampaignId,
       setSelectedCampaignId,
       user?.thread_id,
       selectedBrandId,

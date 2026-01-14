@@ -14,6 +14,10 @@ import {
   OrderBy,
   AssetCountRequest,
   AssetCountResponse,
+  BulkDeleteRequest,
+  BulkUpdateRequest,
+  BulkMoveRequest,
+  BulkOperationResponse,
 } from "@/types/gallery.types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -85,6 +89,7 @@ class GalleryService {
     asset_sources?: string[];
     is_favourite?: boolean;
     campaign_ids?: (string | null)[];
+    sub_folder_ids?: string[];
     brand_ids?: string[];
     skip?: number;
     limit?: number;
@@ -323,6 +328,33 @@ class GalleryService {
   async getAssetCount(request: AssetCountRequest): Promise<AssetCountResponse> {
     return handleApiRequest<AssetCountResponse>(
       axiosInstance.post("/gallery/count", request)
+    );
+  }
+
+  /**
+   * Bulk delete with server-side selection support
+   */
+  async bulkDelete(request: BulkDeleteRequest): Promise<BulkOperationResponse> {
+    return handleApiRequest<BulkOperationResponse>(
+      axiosInstance.post("/gallery/bulk/delete", request)
+    );
+  }
+
+  /**
+   * Bulk update with server-side selection support
+   */
+  async bulkUpdate(request: BulkUpdateRequest): Promise<BulkOperationResponse> {
+    return handleApiRequest<BulkOperationResponse>(
+      axiosInstance.post("/gallery/bulk/update", request)
+    );
+  }
+
+  /**
+   * Bulk move with server-side selection support
+   */
+  async bulkMove(request: BulkMoveRequest): Promise<BulkOperationResponse> {
+    return handleApiRequest<BulkOperationResponse>(
+      axiosInstance.post("/gallery/bulk/move", request)
     );
   }
 }

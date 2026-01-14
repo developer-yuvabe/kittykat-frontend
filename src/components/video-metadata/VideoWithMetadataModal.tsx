@@ -68,7 +68,13 @@ const VideoWithMetadataModal = ({
   const [copied, setCopied] = useState(false);
   const { selectedBrandId, selectedCampaignId, defaultCampaignId } =
     useBrandStore();
-  const { setStartFrame, setEndFrame } = useA2iStore();
+  const {
+    setStartFrame,
+    setEndFrame,
+    setSelectedFolderId,
+    setConceptVisualGeneratorMode,
+  } = useA2iStore();
+
   const campaignId = selectedCampaignId || defaultCampaignId;
   const { user } = useUserStore();
 
@@ -137,7 +143,10 @@ const VideoWithMetadataModal = ({
 
     try {
       const model = models.find((m) => m.model === data.parameters.model);
-      if (!model) throw new Error("Model not found for variation");
+      if (!model) {
+        toast.info("Model not found for Auto Variation");
+        return;
+      }
 
       // Filter parameters that control number of outputs
       const paramsResponsibleForVaryingNumberOfOutputs =
@@ -152,6 +161,7 @@ const VideoWithMetadataModal = ({
         source_asset_id: galleryItem.id,
         campaign_id: campaignId,
         team_id: user?.active_team_id,
+        sub_folder_id: galleryItem.sub_folder_id || null,
       });
 
       onClose();
@@ -175,7 +185,8 @@ const VideoWithMetadataModal = ({
       const model = models.find((m) => m.model === data.parameters.model);
 
       if (!model) {
-        throw new Error("No model found for this video.");
+        toast.info("Model not found for Manual Variation.");
+        return;
       }
 
       // Convert all parameters based on model parameter definitions
@@ -194,6 +205,7 @@ const VideoWithMetadataModal = ({
       });
 
       //  Set model + parameters
+      setConceptVisualGeneratorMode("video_generator");
       setSelectedVideoGenearationModel(model);
       setParameters("videoParameters", videoParams);
 
@@ -210,6 +222,11 @@ const VideoWithMetadataModal = ({
       }
       if (lastFrameParam?.id) {
         setEndFrame(videoParams[lastFrameParam.id]);
+      }
+
+      // Set selected folder to campaign if available
+      if (galleryItem.campaign_id) {
+        setSelectedFolderId(galleryItem.campaign_id);
       }
 
       onClose();

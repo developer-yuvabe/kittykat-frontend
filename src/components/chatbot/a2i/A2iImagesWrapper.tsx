@@ -46,6 +46,7 @@ import A2iImageInputLoader from "./A2iImageInputLoader";
 import { useQueryState } from "nuqs";
 import { useGenerationsStore } from "@/store/generations.store";
 import A2iBulkActions from "./A2iBulkActions";
+import { useA2iStore } from "@/store/a2i.store";
 
 type A2iImagesWrapperProps = {
   generations: A2iImageGeneration[];
@@ -70,7 +71,8 @@ export const A2iImagesWrapper = ({
   referenceMoodboardId,
   currentCampaign,
 }: A2iImagesWrapperProps) => {
-  const { selectedBrandId, selectedCampaignId, brands } = useBrandStore();
+  const { selectedBrandId, brands, getSelectedBrandCampaigns } =
+    useBrandStore();
   const { isModelsFetched } = useModelsStore();
   const [items, setItems] = useState<A2iImageCardProps[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -80,6 +82,35 @@ export const A2iImagesWrapper = ({
   const selectionMode = selectedItems.size > 0;
   const currentBrand = brands.find((b) => b.id === selectedBrandId);
   const brandName = currentBrand?.name ?? "download";
+  const { selectedFolderId, selectedSubfolderId } = useA2iStore();
+
+  const brandCampaigns = getSelectedBrandCampaigns();
+
+  // Get all folder IDs to include (selected folder + all subfolders)
+  const folderIdsToInclude = useMemo(() => {
+    if (!selectedFolderId) return [];
+
+    // If a specific subfolder is selected, only show that subfolder's content
+    if (selectedSubfolderId) {
+      return [selectedSubfolderId];
+    }
+
+    // If only campaign is selected (no subfolder), include campaign and all its subfolders
+    const folderIds = new Set<string>([selectedFolderId]);
+
+    const selectedFolder = brandCampaigns.find(
+      (c) => c.id === selectedFolderId
+    );
+
+    if (selectedFolder?.sub_folders) {
+      // Add all subfolder IDs
+      selectedFolder.sub_folders.forEach((subFolder) => {
+        folderIds.add(subFolder.id);
+      });
+    }
+
+    return Array.from(folderIds);
+  }, [selectedFolderId, selectedSubfolderId, brandCampaigns.length]);
 
   // Track component resize to adjust items per page
   useResizeObserver({
@@ -113,11 +144,26 @@ export const A2iImagesWrapper = ({
   const dragEndTime = useRef(0);
 
   useEffect(() => {
-    const filteredGenerations = selectedCampaignId
-      ? generations.filter(
-          (gen) => gen.parameters?.campaign_id === selectedCampaignId
-        )
-      : generations;
+    // Filter generations by selected folder and its subfolders
+    const filteredGenerations =
+      folderIdsToInclude.length > 0
+        ? generations.filter((gen) => {
+            // Check if generation belongs to selected campaign or subfolder
+            const genCampaignId = gen.parameters?.campaign_id;
+            const genSubfolderId = gen.parameters?.sub_folder_id;
+
+            // If subfolder is selected, match only that subfolder
+            if (selectedSubfolderId) {
+              return genSubfolderId === selectedSubfolderId;
+            }
+
+            // If campaign is selected, match campaign or any of its subfolders
+            return (
+              folderIdsToInclude.includes(genCampaignId) ||
+              (genSubfolderId && folderIdsToInclude.includes(genSubfolderId))
+            );
+          })
+        : generations;
 
     const flatImages = filteredGenerations.flatMap(
       (generation): A2iImageCardProps[] => {
@@ -171,7 +217,7 @@ export const A2iImagesWrapper = ({
     });
 
     setItems(flatImages);
-  }, [generations, selectedCampaignId]);
+  }, [generations, folderIdsToInclude, selectedSubfolderId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

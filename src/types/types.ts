@@ -121,6 +121,17 @@ export interface ThreadCampaign {
   position?: number;
   created_by?: string;
   is_curated_for_brand?: boolean;
+  is_admin_only?: boolean; //for hidden folders
+  is_kk_folder?: boolean; //for kk folders
+  is_kk_selected?: boolean; //for kk folders
+  is_analyzing?: boolean; // Campaign analysis status
+  sub_folders?: {
+    id: string;
+    name: string;
+    is_admin_only?: boolean; //for hidden folders
+    is_kk_folder?: boolean; //for kk folders
+    is_kk_selected?: boolean; //for kk folders
+  }[];
 }
 
 export type ThreadCampaignUpdate = Partial<Omit<ThreadCampaign, "id">>;

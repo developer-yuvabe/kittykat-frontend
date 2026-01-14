@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import type { EnhancedSelectedFilters } from "@/types/gallery.types";
+import type {
+  EnhancedSelectedFilters,
+  GalleryItemResponse,
+} from "@/types/gallery.types";
 import { useFolderState } from "@/hooks/useFolderState";
 import { FolderUploadDropzone } from "./folder/FolderUploadDropzone";
 import { CampaignView } from "./folder/CampaignView";
 import { FolderGalleryView } from "./folder/FolderGalleryView";
-import { FolderTabs } from "./folder/FolderTabs";
-import { CampaignsSidebar } from "./folder/CampaignsSidebar";
+import { GallerySidebar } from "./folder/GallerySidebar";
 import { useBrandStore } from "@/store/brand.store";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
-import { ITEMS_PER_PAGE, useGalleryQuery } from "@/hooks/useGallery";
+import { GalleryActions } from "@/hooks/useGallery";
 import MediaViewsDropdown from "./MediaViewDropDown";
 import { MediaFilterDropdown } from "./MediaFilterDropdown";
 import { Search } from "lucide-react";
@@ -21,6 +23,7 @@ import { toast } from "sonner";
 import { patchCampaign, updateCampaign } from "@/services/api/brand.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
+import { useBulkGalleryOperations } from "@/hooks/useBulkGalleryOperations";
 
 interface MediaFolderViewProps {
   activeTab: string;
@@ -54,6 +57,13 @@ interface MediaFolderViewProps {
   handleSearchChange: (query: string) => void;
   showFilters?: boolean;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  isMediaSelectDialog?: boolean;
+  isMultiSelect?: boolean;
+  maxSelectionCount?: number;
+  inSelectionGalleryIds?: string[];
+  onMediaItemSelected?: (url: string) => void;
+  onFullMediaItemSelected?: (item: GalleryItemResponse) => void;
+  galleryActions: GalleryActions;
 }
 
 export function MediaFolderView({
@@ -74,6 +84,13 @@ export function MediaFolderView({
   handleSearchChange,
   showFilters,
   setActiveTab,
+  isMediaSelectDialog = false,
+  isMultiSelect = false,
+  maxSelectionCount,
+  inSelectionGalleryIds = [],
+  onMediaItemSelected,
+  onFullMediaItemSelected,
+  galleryActions,
 }: MediaFolderViewProps) {
   const {
     selectedBrandId,
@@ -84,45 +101,22 @@ export function MediaFolderView({
   } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
     useFolderState();
-  const { favorites, orderBy } = useGalleryFilterStore();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const {
+    favorites,
+    orderBy,
+    selectedSubFolderId,
+    selectedItems,
+    setSelectedItems,
+    multiSelectItems,
+    setMultiSelectItems,
+    clearSelection,
+    selectAllMode,
+    excludedItems,
+    totalItemsCount,
+  } = useGalleryFilterStore();
   const queryClient = useQueryClient();
   const { execute } = useUndoableAction();
-
-  // Create shared gallery actions for sidebar drag-drop operations
-  const galleryActions = useGalleryQuery(
-    {
-      assetType: activeTab,
-      favorites,
-      source: activeTab,
-      searchQuery,
-      selectedFilters: {
-        ...(selectedFilters || {
-          moodboards: [],
-          product_categories: [],
-          asset_types: [],
-          asset_sources: [],
-          media_format: [],
-          aspect_ratio: [],
-          workflow_status: [],
-          has_product: undefined,
-          has_people: undefined,
-          has_lifestyle_context: undefined,
-          is_favourite: undefined,
-          is_archived: undefined,
-        }),
-        brands: selectedBrandId
-          ? [selectedBrandId]
-          : selectedFilters?.brands || [],
-        campaigns: selectedCampaignId
-          ? [selectedCampaignId]
-          : selectedFilters?.campaigns || [],
-      },
-    },
-    ITEMS_PER_PAGE,
-    true,
-    "MediaFolderView-Shared"
-  );
+  const bulkOps = useBulkGalleryOperations();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -135,53 +129,51 @@ export function MediaFolderView({
   // DnD Callbacks
   const handleMoveMediaToCampaign = useCallback(
     async (itemIds: string[], campaignId: string) => {
-      if (!selectedBrandId || !galleryActions) return;
-
-      const campaign = campaigns.find((c) => c.id === campaignId);
-      const items = galleryActions
-        .getGalleryItems()
-        .filter((item) => itemIds.includes(item.id));
-
-      if (items.length === 0) {
-        toast.error("No items found to move");
-        return;
-      }
+      if (!selectedBrandId) return;
 
       try {
-        toast.loading("Moving items...", { id: "move-items" });
+        const isSelectAll = selectAllMode !== "none";
 
-        await Promise.all(
-          items.map((item) =>
-            galleryActions.patchItem?.({
-              itemId: item.id,
-              data: {
-                campaign_id: campaignId,
-                brand_id: selectedBrandId,
-              },
-              revalidateAutofillSuggestions: false,
-            })
-          )
+        const request = bulkOps.buildBulkRequest(
+          {
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          },
+          isSelectAll,
+          itemIds,
+          excludedItems
         );
 
-        toast.success(
-          `Successfully moved ${items.length} item(s) to campaign "${campaign?.title}"`,
-          { id: "move-items" }
-        );
-        setSelectedItems([]);
+        await bulkOps.bulkMove.mutateAsync({
+          ...request,
+          target_campaign_id: campaignId,
+          target_brand_id: selectedBrandId,
+        });
+
+        clearSelection();
       } catch (error) {
         console.error("Move error:", error);
-        toast.error("Failed to move assets. Please try again.", {
-          id: "move-items",
-        });
       }
     },
-    [selectedBrandId, galleryActions, campaigns]
+    [
+      selectedBrandId,
+      campaigns,
+      selectAllMode,
+      excludedItems,
+      bulkOps,
+      activeTab,
+      favorites,
+      searchQuery,
+      selectedFilters,
+      clearSelection,
+    ]
   );
 
   const handleMoveMediaToTab = useCallback(
     async (itemIds: string[], tabValue: string, sourceTab?: string) => {
-      if (!galleryActions) return;
-
       // Validation
       if (sourceTab === "all-media") {
         toast.error("Items from 'All Media' cannot be moved.");
@@ -203,29 +195,91 @@ export function MediaFolderView({
         return;
       }
 
-      try {
-        toast.loading("Moving items...", { id: "move-items" });
+      if (!selectedBrandId) return;
 
-        await Promise.all(
-          itemIds.map((itemId) =>
-            galleryActions.patchItem?.({
-              itemId,
-              data: { asset_source: tabValue },
-              revalidateAutofillSuggestions: false,
-            })
-          )
+      try {
+        const isSelectAll = selectAllMode !== "none";
+
+        const request = bulkOps.buildBulkRequest(
+          {
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          },
+          isSelectAll,
+          itemIds,
+          excludedItems
         );
 
-        toast.success(`Moved ${itemIds.length} item(s) to ${tabValue}.`, {
-          id: "move-items",
+        await bulkOps.bulkMove.mutateAsync({
+          ...request,
+          target_source: tabValue,
         });
-        setSelectedItems([]);
+
+        clearSelection();
       } catch (error) {
         console.error("Move failed:", error);
-        toast.error("Failed to move items.", { id: "move-items" });
       }
     },
-    [galleryActions]
+    [
+      selectedBrandId,
+      selectAllMode,
+      excludedItems,
+      bulkOps,
+      activeTab,
+      favorites,
+      searchQuery,
+      selectedFilters,
+      clearSelection,
+    ]
+  );
+
+  const handleMoveMediaToSubfolder = useCallback(
+    async (itemIds: string[], subfolderId: string, campaignId: string) => {
+      if (!selectedBrandId) return;
+
+      try {
+        const isSelectAll = selectAllMode !== "none";
+
+        const request = bulkOps.buildBulkRequest(
+          {
+            assetType: activeTab,
+            favorites,
+            source: activeTab,
+            searchQuery,
+            selectedFilters,
+          },
+          isSelectAll,
+          itemIds,
+          excludedItems
+        );
+
+        await bulkOps.bulkMove.mutateAsync({
+          ...request,
+          target_brand_id: selectedBrandId,
+          target_campaign_id: campaignId,
+          sub_folder_id: subfolderId,
+        });
+
+        clearSelection();
+      } catch (error) {
+        console.error("Move to subfolder failed:", error);
+        toast.error("Failed to move items to subfolder");
+      }
+    },
+    [
+      selectedBrandId,
+      selectAllMode,
+      excludedItems,
+      bulkOps,
+      activeTab,
+      favorites,
+      searchQuery,
+      selectedFilters,
+      clearSelection,
+    ]
   );
 
   const handleReorderMedia = useCallback(
@@ -335,20 +389,24 @@ export function MediaFolderView({
     // Show campaign view with sidebar
     if (selectedBrandId && selectedCampaignId) {
       return (
-        <div className="flex gap-0 h-[calc(100vh-165px)] py-auto px-auto">
-          <CampaignsSidebar
+        <div
+          className={`flex gap-0 ${
+            isMediaSelectDialog ? "h-[80vh]" : "h-[calc(100vh-165px)]"
+          } py-auto px-auto`}
+        >
+          <GallerySidebar
             selectedBrandId={selectedBrandId}
             selectedCampaignId={selectedCampaignId}
+            activeTab={activeTab}
             onCampaignSelect={handleCampaignSelect}
-            galleryActions={galleryActions}
+            onTabChange={onTabChange}
             setInitialBrandId={setInitialBrandId}
             setSelectedCampaignInUrl={setSelectedCampaignInUrl}
             setSelectedFilters={setSelectedFilters}
             hasNoBrands={hasNoBrands}
-            galleryView={galleryView}
-            setSelectedItems={setSelectedItems}
             isCollapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
+            isMediaSelectDialog={isMediaSelectDialog}
           />
 
           <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -362,6 +420,7 @@ export function MediaFolderView({
                 onUploadComplete={onUploadComplete}
                 addToGallery={addToGallery}
                 selectedMoodboardId={selecteMoodboardId}
+                selectedSubFolderId={selectedSubFolderId}
                 searchQuery={searchQuery}
                 favorites={favorites}
                 selectedFilters={selectedFilters}
@@ -373,6 +432,13 @@ export function MediaFolderView({
                 galleryView={galleryView}
                 setGalleryView={setGalleryView}
                 setActiveTab={setActiveTab}
+                isMediaSelectDialog={isMediaSelectDialog}
+                isMultiSelect={isMultiSelect}
+                maxSelectionCount={maxSelectionCount}
+                inSelectionGalleryIds={inSelectionGalleryIds}
+                onMediaItemSelected={onMediaItemSelected}
+                onFullMediaItemSelected={onFullMediaItemSelected}
+                galleryActions={galleryActions}
               />
             </div>
           </div>
@@ -383,20 +449,24 @@ export function MediaFolderView({
     // Show folder gallery with sidebar (brand selected, no campaign)
     if (selectedBrandId && isBrandsFetched) {
       return (
-        <div className="w-full h-[calc(100vh-165px)] flex overflow-hidden">
-          <CampaignsSidebar
+        <div
+          className={`w-full ${
+            isMediaSelectDialog ? "h-[80vh]" : "h-[calc(100vh-165px)]"
+          } flex overflow-hidden`}
+        >
+          <GallerySidebar
             selectedBrandId={selectedBrandId}
             selectedCampaignId={null}
+            activeTab={activeTab}
             onCampaignSelect={handleCampaignSelect}
-            galleryActions={galleryActions}
+            onTabChange={onTabChange}
             setInitialBrandId={setInitialBrandId}
             setSelectedCampaignInUrl={setSelectedCampaignInUrl}
             setSelectedFilters={setSelectedFilters}
             hasNoBrands={hasNoBrands}
-            galleryView={galleryView}
-            setSelectedItems={setSelectedItems}
             isCollapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
+            isMediaSelectDialog={isMediaSelectDialog}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -426,16 +496,7 @@ export function MediaFolderView({
               </div>
             </div>
 
-            {/* Top Section (Static) */}
-            <div className="pl-4 pb-4 flex-shrink-0">
-              <FolderTabs
-                activeTab={activeTab}
-                onTabChange={onTabChange}
-                title="Subfolders"
-                galleryActions={galleryActions}
-                setSelectedItems={setSelectedItems}
-              />
-            </div>
+            {/* Tabs removed - navigation now in sidebar */}
 
             {activeTab === "pexels" ? (
               <div className="overflow-y-auto">
@@ -466,8 +527,13 @@ export function MediaFolderView({
                     favorites={favorites}
                     selectedFilters={selectedFilters}
                     activeTab={activeTab}
-                    setSelectedItems={setSelectedItems}
-                    selectedItems={selectedItems}
+                    isMediaSelectDialog={isMediaSelectDialog}
+                    isMultiSelect={isMultiSelect}
+                    maxSelectionCount={maxSelectionCount}
+                    inSelectionGalleryIds={inSelectionGalleryIds}
+                    onMediaItemSelected={onMediaItemSelected}
+                    onFullMediaItemSelected={onFullMediaItemSelected}
+                    galleryActions={galleryActions}
                   />
                 </div>
               </div>
@@ -489,23 +555,21 @@ export function MediaFolderView({
             selectedMoodboardId={selecteMoodboardId}
           />
 
-          <FolderTabs
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            title="Subfolders"
-            galleryActions={galleryActions}
-            setSelectedItems={setSelectedItems}
-          />
+          {/* Tabs removed - navigation now in sidebar */}
 
           <FolderGalleryView
             selectedBrandId={selectedBrandId}
             selectedCampaignId={undefined}
             searchQuery={searchQuery}
-            favorites={favorites}
             selectedFilters={selectedFilters}
             activeTab={activeTab}
-            setSelectedItems={setSelectedItems}
-            selectedItems={selectedItems}
+            isMediaSelectDialog={isMediaSelectDialog}
+            isMultiSelect={isMultiSelect}
+            maxSelectionCount={maxSelectionCount}
+            inSelectionGalleryIds={inSelectionGalleryIds}
+            onMediaItemSelected={onMediaItemSelected}
+            onFullMediaItemSelected={onFullMediaItemSelected}
+            galleryActions={galleryActions}
           />
         </div>
       );
@@ -517,11 +581,15 @@ export function MediaFolderView({
   return (
     <GalleryDndProvider
       galleryActions={galleryActions}
-      selectedItems={selectedItems}
-      setSelectedItems={setSelectedItems}
+      selectedItems={isMultiSelect ? multiSelectItems : selectedItems}
+      setSelectedItems={isMultiSelect ? setMultiSelectItems : setSelectedItems}
       orderBy={orderBy}
+      totalItems={totalItemsCount}
+      selectAllMode={selectAllMode}
+      excludedItems={excludedItems}
       onMoveMediaToCampaign={handleMoveMediaToCampaign}
       onMoveMediaToTab={handleMoveMediaToTab}
+      onMoveMediaToSubfolder={handleMoveMediaToSubfolder}
       onReorderMedia={handleReorderMedia}
       onReorderCampaigns={handleReorderCampaigns}
       onArchiveCampaign={handleArchiveCampaign}

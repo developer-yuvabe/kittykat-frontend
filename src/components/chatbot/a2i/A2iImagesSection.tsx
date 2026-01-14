@@ -1,18 +1,22 @@
 "use client";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import type {
   ThreadA2iImage,
   ThreadCampaign,
   ThreadDetails,
 } from "@/types/types";
-import { ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
+import { ChevronRight, Image } from "lucide-react";
 import { useRef, useState } from "react";
 import { A2iImagesWrapper } from "./A2iImagesWrapper";
 import ReferenceMoodboard from "./ReferenceMoodboard";
 
+import { Button } from "@/components/ui/button";
+import { popVariants } from "@/lib/motion.utils";
+import { AnimatePresence, motion } from "framer-motion";
 import A2iAdvancedPromptGenerator from "./A2iAdvancedPromptGenerator";
+import { AppConfig } from "@/config/app.config";
 interface A2iImagesSectionProps {
   a2iImageInformation: ThreadA2iImage | undefined;
   moodboardInformation: ThreadDetails["moodboard_information"];
@@ -25,89 +29,105 @@ const A2iImagesSection = function A2iImagesSection({
   moodboardInformation,
   currentCampaign,
 }: A2iImagesSectionProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(
+    AppConfig.DEFUALT_SECTIONS_EXPANDED_VIEW
+  );
   const formRef = useRef<HTMLDivElement | null>(null);
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
 
   return (
-    <Card className="bg-white rounded-2xl relative shadow-sm mb-4">
-      <CardHeader className="py-1 pb-0 mb-0">
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => setExpanded(!expanded)}
-        >
-          <div className="flex items-center">
-            {expanded ? (
-              <ChevronDown className="text-[#6e7787] mr-2" size={20} />
-            ) : (
-              <ChevronRight className="text-[#6e7787] mr-2" size={20} />
-            )}
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center mr-3 overflow-hidden">
-                <ImageIcon className="text-white" size={24} />
-              </div>
-              <div className="flex flex-col">
-                <div className="text-sm font-medium">Concept Visual Media</div>
-
-                {!expanded && (
-                  <div className="text-xs text-[#6e7787]">
-                    Generate fashion images and videos with AI models
-                  </div>
-                )}
-              </div>
-            </div>
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-x-4 items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            className={
+              expanded
+                ? "rotate-90 transition-transform"
+                : "transition-transform"
+            }
+            onClick={() => setExpanded((prevExpanded) => !prevExpanded)}
+          >
+            {<ChevronRight />}
+          </Button>
+          <div className="w-14 h-14 rounded-lg bg-brand-gradient text-white flex items-center justify-center">
+            <Image />
           </div>
-          {expanded && (
-            <div
-              className="flex items-center gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="text-sm font-medium text-[#6e7787]">
-                Advanced Mode
-              </span>
-              <Switch
-                checked={isAdvancedMode}
-                onCheckedChange={setIsAdvancedMode}
-              />
-            </div>
-          )}
+          <div>
+            <h4 className="font-light text-sm">Concept Visual Media</h4>
+            <p className="font-bold text-2xl">Creative Studio</p>
+          </div>
         </div>
-      </CardHeader>
+
+        {expanded && (
+          <div
+            className="flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-sm font-medium text-[#6e7787]">
+              Advanced Mode
+            </span>
+            <Switch
+              checked={isAdvancedMode}
+              onCheckedChange={setIsAdvancedMode}
+            />
+          </div>
+        )}
+      </div>
+
       {expanded && (
-        <CardContent className="px-6  space-y-6">
-          {isAdvancedMode ? (
-            <A2iAdvancedPromptGenerator
-              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-              prompts={a2iImageInformation?.prompts}
-              moodboardInformation={moodboardInformation}
-              formRef={formRef}
-              currentCampaign={currentCampaign}
-              referenceMoodboardAssets={
-                a2iImageInformation?.reference_moodboard_assets
-              }
-            />
-          ) : (
-            <ReferenceMoodboard
-              referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-              prompts={a2iImageInformation?.prompts}
-              moodboardInformation={moodboardInformation}
-              formRef={formRef}
-              currentCampaign={currentCampaign}
-              referenceMoodboardAssets={
-                a2iImageInformation?.reference_moodboard_assets
-              }
-              showBorder={true}
-            />
-          )}
-          <A2iImagesWrapper
-            formRef={formRef}
-            generations={[...(a2iImageInformation?.generations || [])]}
-            referenceMoodboardId={a2iImageInformation?.reference_moodboard_id}
-            currentCampaign={currentCampaign}
-          />
-        </CardContent>
+        <AnimatePresence>
+          <motion.div
+            initial="collapsed"
+            animate="open"
+            className="overflow-hidden"
+            exit="collapsed"
+            variants={popVariants}
+          >
+            <CardContent className="px-6  space-y-6">
+              {isAdvancedMode ? (
+                <A2iAdvancedPromptGenerator
+                  referenceMoodboardId={
+                    a2iImageInformation?.reference_moodboard_id
+                  }
+                  prompts={a2iImageInformation?.prompts}
+                  moodboardInformation={moodboardInformation}
+                  formRef={formRef}
+                  currentCampaign={currentCampaign}
+                  referenceMoodboardAssets={
+                    a2iImageInformation?.reference_moodboard_assets
+                  }
+                />
+              ) : (
+                <ReferenceMoodboard
+                  referenceMoodboardId={
+                    a2iImageInformation?.reference_moodboard_id
+                  }
+                  prompts={a2iImageInformation?.prompts}
+                  moodboardInformation={moodboardInformation}
+                  formRef={formRef}
+                  currentCampaign={currentCampaign}
+                  referenceMoodboardAssets={
+                    a2iImageInformation?.reference_moodboard_assets
+                  }
+                  showBorder={true}
+                />
+              )}
+              <A2iImagesWrapper
+                formRef={formRef}
+                generations={[...(a2iImageInformation?.generations || [])]}
+                referenceMoodboardId={
+                  a2iImageInformation?.reference_moodboard_id
+                }
+                currentCampaign={currentCampaign}
+              />
+            </CardContent>
+          </motion.div>
+        </AnimatePresence>
       )}
-    </Card>
+    </div>
   );
 };
 

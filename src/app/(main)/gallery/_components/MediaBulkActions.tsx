@@ -52,10 +52,12 @@ import JSZip from "jszip";
 // Bulk dialog component for Ask KittyKat
 import { MediaBulkAskKittyKatDialog } from "./MediaBulkAskKittyKatDialog";
 import { useBrandStore } from "@/store/brand.store";
-import {
-  useMoveGalleryItems,
-  type BrandWithCampaigns,
-} from "@/hooks/useMoveGalleryItems";
+import { useBulkGalleryOperations } from "@/hooks/useBulkGalleryOperations";
+import type {
+  GalleryFilters,
+  BulkUpdateRequest,
+  BulkMoveRequest,
+} from "@/types/gallery.types";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
@@ -63,6 +65,16 @@ interface MediaBulkActionsProps {
   galleryActions: GalleryActions;
   brandName: string;
   onSelectAll?: () => void;
+  totalItems?: number; // Total items from pagination
+  fetchedItemsCount?: number; // Currently loaded items count
+  galleryFilters: GalleryFilters; // Current filters for server-side selection (required for server-side bulk)
+  currentBrandId?: string;
+  currentCampaignId?: string | null;
+  currentSubFolderId?: string;
+  selectAllMode?: "none" | "visible" | "all";
+  excludedItems?: string[];
+  onSelectAllModeChange?: (mode: "none" | "visible" | "all") => void;
+  onExcludedItemsChange?: (items: string[]) => void;
 }
 
 type MoveAction = "brand" | "campaign" | "source";
@@ -73,14 +85,18 @@ export function MediaBulkActions({
   galleryActions,
   brandName,
   onSelectAll,
+  totalItems = 0,
+  fetchedItemsCount = 0,
+  galleryFilters,
+  selectAllMode = "none",
+  excludedItems = [],
+  onSelectAllModeChange,
+  onExcludedItemsChange,
 }: MediaBulkActionsProps) {
   const { brands, selectedBrandId } = useBrandStore();
 
-  // Use shared move hook
-  const { moveItems, isMoving } = useMoveGalleryItems(
-    galleryActions,
-    brands as BrandWithCampaigns[]
-  );
+  // Use bulk operations hook
+  const bulkOps = useBulkGalleryOperations();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -108,8 +124,17 @@ export function MediaBulkActions({
   const [targetCampaignId, setTargetCampaignId] = useState<string>("");
   const [targetSource, setTargetSource] = useState<string>("");
 
-  const selectedCount = selectedItems.length;
   const { user } = useUserStore();
+
+  // Calculate effective selection count based on mode
+  const effectiveSelectionCount =
+    selectAllMode === "all"
+      ? totalItems - excludedItems.length
+      : selectAllMode === "visible"
+      ? fetchedItemsCount - excludedItems.length
+      : selectedItems.length;
+
+  const selectedCount = effectiveSelectionCount;
 
   // Get unique statuses of selected items
   const uniqueStatuses = [
@@ -148,13 +173,20 @@ export function MediaBulkActions({
     setIsDeleting(true);
     try {
       const itemIds = selectedItems.map((item) => item.id);
-      galleryActions.bulkDelete(itemIds);
+
+      const request = bulkOps.buildBulkRequest(
+        galleryFilters,
+        selectAllMode !== "none",
+        itemIds,
+        excludedItems
+      );
+      await bulkOps.bulkDelete.mutateAsync(request);
+
       onUnselectAll();
     } finally {
       setIsDeleting(false);
       setIsDialogOpen(false);
     }
-
   };
 
   const handleProductExtraction = async () => {
@@ -164,14 +196,13 @@ export function MediaBulkActions({
 
     const imageIds = imageItems.map((item) => item.id);
 
-      await galleryActions.extractProducts({
-        brandId: selectedBrandId!,
-        data: {
-          image_ids: imageIds,
-        },
-      });
-      onUnselectAll();
-
+    await galleryActions.extractProducts({
+      brandId: selectedBrandId!,
+      data: {
+        image_ids: imageIds,
+      },
+    });
+    onUnselectAll();
   };
 
   const getFileExtensionFromUrl = (url: string): string => {
@@ -285,14 +316,18 @@ export function MediaBulkActions({
 
     setIsUpdatingStatus(true);
     try {
-      await Promise.all(
-        selectedItems.map((item) =>
-          galleryActions.patchItem?.({
-            itemId: item.id,
-            data: { workflow_status: selectedStatus },
-          })
-        )
-      );
+      const request = {
+        ...bulkOps.buildBulkRequest(
+          galleryFilters,
+          selectAllMode !== "none",
+          selectedItems.map((item) => item.id),
+          excludedItems
+        ),
+        update_data: { workflow_status: selectedStatus },
+      } satisfies BulkUpdateRequest;
+
+      await bulkOps.bulkUpdate.mutateAsync(request);
+
       onUnselectAll();
       galleryActions.refetchGalleryItems();
     } catch (error) {
@@ -442,13 +477,25 @@ export function MediaBulkActions({
         options.targetSource = targetSource;
       }
 
-      // Use the shared move function
-      await moveItems(selectedItems, moveAction, options, () => {
-        onUnselectAll();
-        setIsMoveDialogOpen(false);
-      });
+      const request = {
+        ...bulkOps.buildBulkRequest(
+          galleryFilters,
+          selectAllMode !== "none",
+          selectedItems.map((item) => item.id),
+          excludedItems
+        ),
+        target_brand_id: options.targetBrandId,
+        target_campaign_id: options.targetCampaignId,
+        target_source: options.targetSource,
+      } satisfies BulkMoveRequest;
+
+      await bulkOps.bulkMove.mutateAsync(request);
+      onUnselectAll();
+      setIsMoveDialogOpen(false);
+      galleryActions.refetchGalleryItems();
     } catch (error) {
       // Error already handled by moveItems
+      console.log("Bulk move error:", error);
     }
   };
 
@@ -787,13 +834,63 @@ export function MediaBulkActions({
             </PopoverContent>
           </Popover>
 
-          <Button
-            variant="default"
-            onClick={onSelectAll}
-            className="bg-[#9095A0] hover:bg-[#9095A0]"
-          >
-            Select All
-          </Button>
+          {/* Select All Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="default"
+                className="bg-[#9095A0] hover:bg-[#9095A0] flex items-center gap-2"
+              >
+                <span>Select All</span>
+                {selectAllMode !== "none" && (
+                  <Badge variant="secondary" className="ml-1">
+                    {effectiveSelectionCount}
+                  </Badge>
+                )}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3">
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">Select Items</h4>
+                <div className="space-y-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between text-sm"
+                    onClick={() => {
+                      onSelectAllModeChange?.("visible");
+                      onExcludedItemsChange?.([]);
+                      // Select all currently loaded items
+                      onSelectAll?.();
+                    }}
+                  >
+                    <span>All Visible Items</span>
+                    <Badge variant="secondary">{fetchedItemsCount}</Badge>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between text-sm"
+                    onClick={() => {
+                      onSelectAllModeChange?.("all");
+                      onExcludedItemsChange?.([]);
+                      // Select all items matching current filter
+                      onSelectAll?.();
+                    }}
+                  >
+                    <span>All Items </span>
+                    <Badge variant="secondary">{totalItems}</Badge>
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {selectAllMode === "all"
+                    ? "All items matching current filters are selected. Newly loaded items will be auto-selected."
+                    : selectAllMode === "visible"
+                    ? "Only currently visible items are selected."
+                    : "Choose a selection mode above."}
+                </p>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button
             variant="default"
@@ -946,7 +1043,7 @@ export function MediaBulkActions({
         confirmLabel="Move"
         cancelLabel="Cancel"
         onConfirm={handleConfirmMove}
-        isLoading={isMoving}
+        isLoading={bulkOps.isMoving}
         confirmDisabled={!isValidMove()}
       />
 

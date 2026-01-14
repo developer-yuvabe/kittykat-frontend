@@ -95,6 +95,7 @@ const ImageWithMetadataModal = ({
     setEndFrame,
     setBaseImageUrl,
     setShouldClearPromptOnMetadataActions,
+    setSelectedFolderId,
   } = useA2iStore();
   const { user } = useUserStore();
 
@@ -230,7 +231,8 @@ const ImageWithMetadataModal = ({
     try {
       const model = models.find((m) => m.model === data.parameters.model);
       if (!model) {
-        throw new Error("Model not found for variation");
+        toast.info("Model not found for Auto Variation.");
+        return;
       }
 
       const paramsResponsibleForVaryingNumberOfOutputs =
@@ -281,6 +283,7 @@ const ImageWithMetadataModal = ({
 
           campaign_id: campaignId,
           team_id: user?.active_team_id,
+          sub_folder_id: currentDisplayItem.sub_folder_id || null,
         });
       }
 
@@ -312,7 +315,7 @@ const ImageWithMetadataModal = ({
         );
 
         if (!model) {
-          toast.error("No model found for this image.");
+          toast.info("Model not found for Manual Variation.");
           return;
         }
         // Validate that base image exists
@@ -324,6 +327,7 @@ const ImageWithMetadataModal = ({
         }
 
         // Set the remix model
+        setConceptVisualGeneratorMode("image_editor");
         setSelectedRemixModel(model);
 
         // Convert all remix parameters based on model schema
@@ -342,6 +346,11 @@ const ImageWithMetadataModal = ({
         // Store schema-correct params
         setParameters("remixParameters", convertedRemixParams);
 
+        // Set selected folder to campaign if available
+        if (galleryItem.campaign_id) {
+          setSelectedFolderId(galleryItem.campaign_id);
+        }
+
         onClose();
         if (source === "media-gallery") {
           router.push("/?scrollTo=a2i-input");
@@ -354,13 +363,12 @@ const ImageWithMetadataModal = ({
         );
 
         if (!model) {
-          toast.error("No model found for this image.");
+          toast.info("Model not found for Manual Variation.");
           return;
         }
 
-        setShouldClearPromptOnMetadataActions(true);
-
         // Regular image generation workflow
+        setConceptVisualGeneratorMode("image_generator");
         setSelectedImageGenerationModel(model);
 
         const parameters = data.parameters;
@@ -393,6 +401,11 @@ const ImageWithMetadataModal = ({
           setParameters("productReferenceImages", productReferenceImages);
         } else {
           setParameters("productReferenceImages", null);
+        }
+
+        // Set selected folder to campaign if available
+        if (galleryItem.campaign_id) {
+          setSelectedFolderId(galleryItem.campaign_id);
         }
 
         onClose();
@@ -469,7 +482,8 @@ const ImageWithMetadataModal = ({
       const defualtEditModel = models.find((model) => model.default_edit_model);
 
       if (!defualtEditModel) {
-        throw new Error("No default edit model found");
+        toast.info("Default Edit model not found");
+        return;
       }
 
       setSelectedRemixModel(defualtEditModel);
@@ -495,7 +509,10 @@ const ImageWithMetadataModal = ({
       setConceptVisualGeneratorMode("image_generator");
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
-
+      if (!model) {
+        toast.info("Model not found for Modify Reference.");
+        return;
+      }
       // Check whether the model supports reference images
       const fileParam = model
         ? model.parameters.find((p) => p.type === "file")
@@ -517,7 +534,7 @@ const ImageWithMetadataModal = ({
       }
 
       setShouldClearPromptOnMetadataActions(true);
-
+      setConceptVisualGeneratorMode("image_generator");
       setSelectedImageGenerationModelByModelId(imageReferenceModelId);
 
       // It is necessary to upload the image to our GCS bucket because the image URL might be deleted.
@@ -557,7 +574,8 @@ const ImageWithMetadataModal = ({
       );
 
       if (!defaultAnimationModel) {
-        throw new Error("No default animation model found");
+        toast.info("Default Animation model not found");
+        return;
       }
 
       setShouldClearPromptOnMetadataActions(true);
@@ -590,7 +608,8 @@ const ImageWithMetadataModal = ({
       );
 
       if (!defaultAnimationModel) {
-        throw new Error("No default animation model found");
+        toast.info("Default Animation model not found");
+        return;
       }
       const { defaultValues } = useDynamicModelSchema(defaultAnimationModel);
       await videoGenerationService(selectedBrandId!, {
@@ -602,6 +621,7 @@ const ImageWithMetadataModal = ({
         campaign_id: campaignId,
         preset: preset,
         team_id: user?.active_team_id,
+        sub_folder_id: currentDisplayItem.sub_folder_id || null,
       });
 
       onClose();
@@ -735,104 +755,162 @@ const ImageWithMetadataModal = ({
               ) : (
                 <>
                   {/* Source Image for Product Extraction */}
-                  {currentDisplayItem.asset_source === "products" && currentDisplayItem.metadata_raw?.source_image_url && (
-                    <div className="space-y-4">
-                      <div>
-                        <p>Source Image</p>
-                        <div className="mt-2 w-full overflow-x-auto">
-                          <div className="flex flex-row gap-x-2 w-max">
-                            <ZoomableImage
-                              src={currentDisplayItem.metadata_raw.source_image_url}
-                              className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
-                              variant="default"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Product Attributes */}
-                      {currentDisplayItem.metadata_raw?.product_attributes && (
+                  {currentDisplayItem.asset_source === "products" &&
+                    currentDisplayItem.metadata_raw?.source_image_url && (
+                      <div className="space-y-4">
                         <div>
-                          <h3 className="text-sm font-semibold mb-3 border-b pb-2">Product Attributes</h3>
-                          <div className="space-y-3 text-sm">
-                            {currentDisplayItem.metadata_raw.product_attributes.product_type && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Type</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.product_type}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.color && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Color</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.color}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.material && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Material</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.material}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.view_angle && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">View Angle</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.view_angle}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.product_name_candidate && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Product Name</span>
-                                <span className="font-medium text-right flex-1">
-                                  {currentDisplayItem.metadata_raw.product_attributes.product_name_candidate}
-                                </span>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.product_attributes.pattern && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-muted-foreground min-w-[80px] text-xs">Pattern</span>
-                                <span className="font-medium text-right flex-1 capitalize">
-                                  {currentDisplayItem.metadata_raw.product_attributes.pattern}
-                                </span>
-                              </div>
-                            )}
+                          <p>Source Image</p>
+                          <div className="mt-2 w-full overflow-x-auto">
+                            <div className="flex flex-row gap-x-2 w-max">
+                              <ZoomableImage
+                                src={
+                                  currentDisplayItem.metadata_raw
+                                    .source_image_url
+                                }
+                                className="w-16 h-16 object-cover rounded border cursor-pointer flex-shrink-0"
+                                variant="default"
+                              />
+                            </div>
                           </div>
                         </div>
-                      )}
 
-                      {/* Detection Info */}
-                      {currentDisplayItem.metadata_raw?.detection_info && (
-                        <div>
-                          <h3 className="text-sm font-semibold mb-3 border-b pb-2">Details</h3>
-                          <div className="space-y-3 text-sm">
-                            {currentDisplayItem.metadata_raw.detection_info.description && (
-                              <div>
-                                <span className="text-muted-foreground text-xs block mb-1.5">Description</span>
-                                <p className="font-medium leading-relaxed">
-                                  {currentDisplayItem.metadata_raw.detection_info.description}
-                                </p>
-                              </div>
-                            )}
-                            {currentDisplayItem.metadata_raw.detection_info.position && (
-                              <div>
-                                <span className="text-muted-foreground text-xs block mb-1.5">Position</span>
-                                <p className="font-medium leading-relaxed">
-                                  {currentDisplayItem.metadata_raw.detection_info.position}
-                                </p>
-                              </div>
-                            )}
+                        {/* Product Attributes */}
+                        {currentDisplayItem.metadata_raw
+                          ?.product_attributes && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-3 border-b pb-2">
+                              Product Attributes
+                            </h3>
+                            <div className="space-y-3 text-sm">
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.product_type && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Type
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.product_type
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.color && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Color
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.color
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.material && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Material
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.material
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.view_angle && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    View Angle
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.view_angle
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.product_name_candidate && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Product Name
+                                  </span>
+                                  <span className="font-medium text-right flex-1">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes
+                                        .product_name_candidate
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw
+                                .product_attributes.pattern && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[80px] text-xs">
+                                    Pattern
+                                  </span>
+                                  <span className="font-medium text-right flex-1 capitalize">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .product_attributes.pattern
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+
+                        {/* Detection Info */}
+                        {currentDisplayItem.metadata_raw?.detection_info && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-3 border-b pb-2">
+                              Details
+                            </h3>
+                            <div className="space-y-3 text-sm">
+                              {currentDisplayItem.metadata_raw.detection_info
+                                .description && (
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1.5">
+                                    Description
+                                  </span>
+                                  <p className="font-medium leading-relaxed">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .detection_info.description
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                              {currentDisplayItem.metadata_raw.detection_info
+                                .position && (
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1.5">
+                                    Position
+                                  </span>
+                                  <p className="font-medium leading-relaxed">
+                                    {
+                                      currentDisplayItem.metadata_raw
+                                        .detection_info.position
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {data?.parameters && (
                     <>
