@@ -23,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 import { CampaignSidebarTruncatedText } from "./CampaignSidebarTruncatedText";
 import { useDroppable } from "@dnd-kit/core";
 import { useSubfolderDroppable } from "@/lib/gallery-dnd.utils";
@@ -221,12 +222,14 @@ export function SubfolderRow({
 
                 {/* Status Icons */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {subFolder.is_kk_selected && (
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                  )}
-                  {subFolder.is_kk_folder && (
-                    <Folder className="w-3 h-3 text-blue-500" />
-                  )}
+                  <RoleProtectedComponent>
+                    {subFolder.is_kk_selected && (
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                    )}
+                    {subFolder.is_kk_folder && (
+                      <Folder className="w-3 h-3 text-blue-500" />
+                    )}
+                  </RoleProtectedComponent>
                 </div>
 
                 {/* Count Badge */}
@@ -277,37 +280,39 @@ export function SubfolderRow({
                 Rename
               </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onKKFolderToggle(
-                    subFolder.id,
-                    subFolder.name,
-                    subFolder.is_kk_folder || false
-                  );
-                }}
-              >
-                <Folder className="w-4 h-4 mr-2 text-gray-600" />
-                {subFolder.is_kk_folder
-                  ? "Remove as KK Folder"
-                  : "Mark as KK Folder"}
-              </DropdownMenuItem>
+              <RoleProtectedComponent>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onKKFolderToggle(
+                      subFolder.id,
+                      subFolder.name,
+                      subFolder.is_kk_folder || false
+                    );
+                  }}
+                >
+                  <Folder className="w-4 h-4 mr-2 text-gray-600" />
+                  {subFolder.is_kk_folder
+                    ? "Remove as KK Folder"
+                    : "Mark as KK Folder"}
+                </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onKKSelectedToggle(
-                    subFolder.id,
-                    subFolder.name,
-                    subFolder.is_kk_selected || false
-                  );
-                }}
-              >
-                <Star className="w-4 h-4 mr-2 text-gray-600" />
-                {subFolder.is_kk_selected
-                  ? "Remove as KK Selects"
-                  : "Mark as KK Selects"}
-              </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onKKSelectedToggle(
+                      subFolder.id,
+                      subFolder.name,
+                      subFolder.is_kk_selected || false
+                    );
+                  }}
+                >
+                  <Star className="w-4 h-4 mr-2 text-gray-600" />
+                  {subFolder.is_kk_selected
+                    ? "Remove as KK Selects"
+                    : "Mark as KK Selects"}
+                </DropdownMenuItem>
+              </RoleProtectedComponent>
 
               {isAdmin && (
                 <DropdownMenuItem

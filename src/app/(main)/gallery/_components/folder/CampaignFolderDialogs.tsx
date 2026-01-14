@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
 import { useSubfolderMutations } from "@/hooks/useSubfolderMutations";
 import {
   Dialog,
@@ -21,12 +25,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+
+const createSubfolderSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Folder name is required")
+    .max(50, "Folder name is too long"),
+});
+
+type CreateSubfolderForm = z.infer<typeof createSubfolderSchema>;
 
 interface DialogTriggers {
   openCreate: () => void;
   openDelete: (subFolderId: string, name: string) => void;
   dialogs: ReactNode;
 }
+
+/* ------------------ hook ------------------ */
 
 export function useCampaignFolderDialogs(
   brandId: string,
@@ -38,10 +60,8 @@ export function useCampaignFolderDialogs(
     subFolderId: "",
     name: "",
   });
-  const [createDialog, setCreateDialog] = useState({
-    open: false,
-    name: "",
-  });
+
+  const [createOpen, setCreateOpen] = useState(false);
 
   const {
     deleteSubfolder,
@@ -50,81 +70,109 @@ export function useCampaignFolderDialogs(
     isCreatingSubfolder,
   } = useSubfolderMutations();
 
+  /* ------------------ form ------------------ */
+
+  const form = useForm<CreateSubfolderForm>({
+    resolver: zodResolver(createSubfolderSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  /* ------------------ handlers ------------------ */
+
+  const handleCreateSubmit = async (values: CreateSubfolderForm) => {
+    if (!brandId) return;
+
+    try {
+      await createSubfolder({
+        brandId,
+        campaignId,
+        payload: { name: values.name.trim() },
+      });
+
+      form.reset();
+      setCreateOpen(false);
+      onSubfolderCreated?.();
+    } catch {
+      // keep dialog open on error
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!brandId) return;
+
     try {
       await deleteSubfolder({
         brandId,
         campaignId,
         subFolderId: deleteDialog.subFolderId,
       });
+
       setDeleteDialog({ open: false, subFolderId: "", name: "" });
     } catch {
-      // Keep dialog open on error
+      // keep dialog open on error
     }
   };
 
-  const handleCreateSubmit = async () => {
-    if (!brandId || !createDialog.name.trim()) return;
-    try {
-      await createSubfolder({
-        brandId,
-        campaignId,
-        payload: { name: createDialog.name.trim() },
-      });
-      setCreateDialog({ open: false, name: "" });
-      onSubfolderCreated?.();
-    } catch {
-      // Keep dialog open on error
-    }
-  };
+  /* ------------------ dialogs ------------------ */
 
   const dialogs = (
     <>
-      {/* Create Dialog */}
+      {/* ---------- Create Dialog ---------- */}
       <Dialog
-        open={createDialog.open}
-        onOpenChange={(open) =>
-          setCreateDialog((prev) => (open ? prev : { open: false, name: "" }))
-        }
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) form.reset();
+        }}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New subfolder</DialogTitle>
           </DialogHeader>
-          <div className="py-2">
-            <Input
-              value={createDialog.name}
-              onChange={(e) =>
-                setCreateDialog((prev) => ({
-                  ...prev,
-                  name: e.target.value,
-                }))
-              }
-              placeholder="Folder name"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCreateDialog({ open: false, name: "" })}
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleCreateSubmit)}
+              className="space-y-4"
             >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleCreateSubmit}
-              disabled={!createDialog.name.trim() || isCreatingSubfolder}
-              loading={isCreatingSubfolder}
-            >
-              Create
-            </Button>
-          </DialogFooter>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input {...field} placeholder="Folder name" autoFocus />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  loading={isCreatingSubfolder}
+                  disabled={isCreatingSubfolder}
+                >
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
+      {/* ---------- Delete Dialog ---------- */}
       <AlertDialog
         open={deleteDialog.open}
         onOpenChange={(open) =>
@@ -137,22 +185,13 @@ export function useCampaignFolderDialogs(
           <AlertDialogHeader>
             <AlertDialogTitle>Delete folder</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove {deleteDialog.name} and its items from this
-              campaign. This action cannot be undone.
+              This will remove <strong>{deleteDialog.name}</strong> and its
+              items from this campaign. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() =>
-                setDeleteDialog({
-                  open: false,
-                  subFolderId: "",
-                  name: "",
-                })
-              }
-            >
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isDeletingSubfolder}
@@ -165,9 +204,8 @@ export function useCampaignFolderDialogs(
     </>
   );
 
-  // Return trigger functions and render dialogs
   return {
-    openCreate: () => setCreateDialog({ open: true, name: "" }),
+    openCreate: () => setCreateOpen(true),
     openDelete: (subFolderId: string, name: string) =>
       setDeleteDialog({ open: true, subFolderId, name }),
     dialogs,
