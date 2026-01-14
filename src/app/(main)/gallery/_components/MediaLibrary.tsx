@@ -110,7 +110,7 @@ export function MediaLibrary({
   const {
     selectedBrandId,
     setSelectedBrandId,
-    selectedCampaignId,
+    selectedCampaignIdInGallery: selectedCampaignId,
     brands,
     isBrandsFetched,
     getSelectedBrand,
@@ -127,6 +127,16 @@ export function MediaLibrary({
       setIsDraggable(false);
     }
   }, [selectedCampaignId, orderBy]);
+
+  // Update campaign filter immediately when selectedCampaignId changes
+  useEffect(() => {
+    if (selectedBrandId) {
+      setSelectedFilters((prev) => ({
+        ...prev,
+        campaigns: selectedCampaignId ? [selectedCampaignId] : [],
+      }));
+    }
+  }, [selectedCampaignId, selectedBrandId]);
   // Get brandId from URL query params
   const [initialBrandId, setInitialBrandId] = useQueryState<string | undefined>(
     "brandId",
@@ -198,11 +208,7 @@ export function MediaLibrary({
           ...prev,
           workflow_status: workflowStatus,
           brands: [selectedBrandId],
-          campaigns: isMediaSelectDialog
-            ? []
-            : selectedCampaignId
-            ? [selectedCampaignId]
-            : [],
+          campaigns: selectedCampaignId ? [selectedCampaignId] : [],
           asset_types:
             mediaTypes.length > 0
               ? mediaTypes

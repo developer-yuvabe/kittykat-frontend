@@ -6,7 +6,7 @@ import { UserRoleId } from "@/types/user.types";
 
 /**
  * Hook to manage CVG folder selection defaults based on edit context
- * 
+ *
  * Logic:
  * - New generation: Default to current campaign folder
  * - Edit flow: Default to source asset's folder
@@ -17,7 +17,8 @@ export const useFolderSelectionDefaults = (
   isEditMode: boolean = false
 ) => {
   const { selectedFolderId, setSelectedFolderId } = useA2iStore();
-  const { selectedCampaignId, campaigns } = useBrandStore();
+  const { selectedCampaignIdInGallery: selectedCampaignId, campaigns } =
+    useBrandStore();
   const { user } = useUserStore();
 
   const isCreativeAdmin = user?.role?.id === UserRoleId.KK_CREATIVE_USER;

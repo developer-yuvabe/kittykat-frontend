@@ -82,7 +82,7 @@ export const A2iImagesWrapper = ({
   const selectionMode = selectedItems.size > 0;
   const currentBrand = brands.find((b) => b.id === selectedBrandId);
   const brandName = currentBrand?.name ?? "download";
-  const { selectedFolderId } = useA2iStore();
+  const { selectedFolderId, selectedSubfolderId } = useA2iStore();
 
   const brandCampaigns = getSelectedBrandCampaigns();
 
@@ -90,9 +90,14 @@ export const A2iImagesWrapper = ({
   const folderIdsToInclude = useMemo(() => {
     if (!selectedFolderId) return [];
 
+    // If a specific subfolder is selected, only show that subfolder's content
+    if (selectedSubfolderId) {
+      return [selectedSubfolderId];
+    }
+
+    // If only campaign is selected (no subfolder), include campaign and all its subfolders
     const folderIds = new Set<string>([selectedFolderId]);
 
-    // Find the selected folder
     const selectedFolder = brandCampaigns.find(
       (c) => c.id === selectedFolderId
     );
@@ -102,19 +107,10 @@ export const A2iImagesWrapper = ({
       selectedFolder.sub_folders.forEach((subFolder) => {
         folderIds.add(subFolder.id);
       });
-    } else {
-      // Check if selectedFolderId is a subfolder
-      // If it is, we only include that subfolder
-      const parentFolder = brandCampaigns.find((c) =>
-        c.sub_folders?.some((sf) => sf.id === selectedFolderId)
-      );
-      if (!parentFolder) {
-        // It's a parent folder, no subfolders to add
-      }
     }
 
     return Array.from(folderIds);
-  }, [selectedFolderId, brandCampaigns.length]);
+  }, [selectedFolderId, selectedSubfolderId, brandCampaigns.length]);
 
   // Track component resize to adjust items per page
   useResizeObserver({
@@ -151,9 +147,22 @@ export const A2iImagesWrapper = ({
     // Filter generations by selected folder and its subfolders
     const filteredGenerations =
       folderIdsToInclude.length > 0
-        ? generations.filter((gen) =>
-            folderIdsToInclude.includes(gen.parameters?.campaign_id)
-          )
+        ? generations.filter((gen) => {
+            // Check if generation belongs to selected campaign or subfolder
+            const genCampaignId = gen.parameters?.campaign_id;
+            const genSubfolderId = gen.parameters?.sub_folder_id;
+
+            // If subfolder is selected, match only that subfolder
+            if (selectedSubfolderId) {
+              return genSubfolderId === selectedSubfolderId;
+            }
+
+            // If campaign is selected, match campaign or any of its subfolders
+            return (
+              folderIdsToInclude.includes(genCampaignId) ||
+              (genSubfolderId && folderIdsToInclude.includes(genSubfolderId))
+            );
+          })
         : generations;
 
     const flatImages = filteredGenerations.flatMap(
@@ -208,7 +217,7 @@ export const A2iImagesWrapper = ({
     });
 
     setItems(flatImages);
-  }, [generations, folderIdsToInclude]);
+  }, [generations, folderIdsToInclude, selectedSubfolderId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

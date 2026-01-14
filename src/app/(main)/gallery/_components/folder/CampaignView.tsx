@@ -271,7 +271,7 @@ export function CampaignView({
     setExcludedItems([]);
   };
 
-  const { selectedCampaignId } = useBrandStore();
+  const { selectedCampaignIdInGallery: selectedCampaignId } = useBrandStore();
 
   if (!currentCampaign) {
     return (

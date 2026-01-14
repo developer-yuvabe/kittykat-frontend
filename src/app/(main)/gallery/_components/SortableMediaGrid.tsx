@@ -40,7 +40,10 @@ export function SortableMediaGrid({
   activeTab,
 }: SortableMediaGridProps) {
   const router = useRouter();
-  const { setSelectedMoodboardId, setSelectedCampaignId } = useBrandStore();
+  const {
+    setSelectedMoodboardId,
+    setSelectedCampaignIdInGallery: setSelectedCampaignId,
+  } = useBrandStore();
   const { openConceptVisual } = useConceptVisualStore();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

@@ -283,6 +283,7 @@ const ImageWithMetadataModal = ({
 
           campaign_id: campaignId,
           team_id: user?.active_team_id,
+          sub_folder_id: currentDisplayItem.sub_folder_id || null,
         });
       }
 
@@ -620,6 +621,7 @@ const ImageWithMetadataModal = ({
         campaign_id: campaignId,
         preset: preset,
         team_id: user?.active_team_id,
+        sub_folder_id: currentDisplayItem.sub_folder_id || null,
       });
 
       onClose();

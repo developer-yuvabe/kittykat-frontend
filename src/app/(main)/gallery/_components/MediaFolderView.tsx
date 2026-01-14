@@ -406,6 +406,7 @@ export function MediaFolderView({
             hasNoBrands={hasNoBrands}
             isCollapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
+            isMediaSelectDialog={isMediaSelectDialog}
           />
 
           <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -465,6 +466,7 @@ export function MediaFolderView({
             hasNoBrands={hasNoBrands}
             isCollapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
+            isMediaSelectDialog={isMediaSelectDialog}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
