@@ -190,7 +190,7 @@ const BrandDetailsPanel: React.FC<BrandDetailsPanelProps> = ({}) => {
             onToggleExpanded={() =>
               setIsPlaceholderExpanded((prev) => ({
                 ...prev,
-                brand: !prev.campaign,
+                campaign: !prev.campaign,
               }))
             }
             onNewClick={(e: any) => handleViaAgent("campaign", e)}
@@ -217,7 +217,7 @@ const BrandDetailsPanel: React.FC<BrandDetailsPanelProps> = ({}) => {
             onToggleExpanded={() =>
               setIsPlaceholderExpanded((prev) => ({
                 ...prev,
-                brand: !prev.moodboard,
+                moodboard: !prev.moodboard,
               }))
             }
             onNewClick={(e: any) => handleViaAgent("mooodboard", e)}
