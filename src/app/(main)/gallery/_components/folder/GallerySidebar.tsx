@@ -460,7 +460,7 @@ export function GallerySidebar({
   }
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-full min-h-0 min-w-[240px] max-w-[380px] w-[18vw] lg:w-[16vw] xl:w-[18vw] rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-full min-h-0 min-w-[300px]  w-[18vw] lg:w-[16vw] xl:w-[18vw] rounded-sm">
       {/* Header */}
       <div className="flex flex-col px-4 gap-y-3 mt-2">
         <div className="flex justify-between items-center">

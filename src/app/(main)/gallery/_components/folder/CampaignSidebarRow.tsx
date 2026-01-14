@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CampaignSidebarTruncatedText } from "./CampaignSidebarTruncatedText";
 import { Campaign } from "@/types/user.types";
+import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 import { useSortable } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -380,12 +381,14 @@ export function CampaignSidebarRow({
 
                   {/* Status Icons */}
                   <div className="flex items-center gap-0.5 flex-shrink-0">
-                    {campaign.is_kk_selected && (
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                    )}
-                    {campaign.is_kk_folder && (
-                      <Folder className="w-3 h-3 text-blue-500" />
-                    )}
+                    <RoleProtectedComponent>
+                      {campaign.is_kk_selected && (
+                        <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      )}
+                      {campaign.is_kk_folder && (
+                        <Folder className="w-3 h-3 text-blue-500" />
+                      )}
+                    </RoleProtectedComponent>
                     {campaign.is_curated_for_brand && (
                       <Brain className="w-3 h-3 text-purple-500" />
                     )}
@@ -465,35 +468,37 @@ export function CampaignSidebarRow({
                   {campaign.is_archived ? "Unarchive" : "Move to Archive"}
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() =>
-                    onKKFolderToggle(
-                      campaign.id,
-                      campaign.title,
-                      campaign.is_kk_folder || false
-                    )
-                  }
-                >
-                  <Folder className="w-4 h-4 mr-2 text-gray-600" />
-                  {campaign.is_kk_folder
-                    ? "Remove as KK Folder"
-                    : "Mark as KK Folder"}
-                </DropdownMenuItem>
+                <RoleProtectedComponent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onKKFolderToggle(
+                        campaign.id,
+                        campaign.title,
+                        campaign.is_kk_folder || false
+                      )
+                    }
+                  >
+                    <Folder className="w-4 h-4 mr-2 text-gray-600" />
+                    {campaign.is_kk_folder
+                      ? "Remove as KK Folder"
+                      : "Mark as KK Folder"}
+                  </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() =>
-                    onKKSelectedToggle(
-                      campaign.id,
-                      campaign.title,
-                      campaign.is_kk_selected || false
-                    )
-                  }
-                >
-                  <Star className="w-4 h-4 mr-2 text-gray-600" />
-                  {campaign.is_kk_selected
-                    ? "Remove as KK Selects"
-                    : "Mark as KK Selects"}
-                </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onKKSelectedToggle(
+                        campaign.id,
+                        campaign.title,
+                        campaign.is_kk_selected || false
+                      )
+                    }
+                  >
+                    <Star className="w-4 h-4 mr-2 text-gray-600" />
+                    {campaign.is_kk_selected
+                      ? "Remove as KK Selects"
+                      : "Mark as KK Selects"}
+                  </DropdownMenuItem>
+                </RoleProtectedComponent>
 
                 {isAdmin && (
                   <DropdownMenuItem
