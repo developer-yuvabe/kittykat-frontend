@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -28,16 +29,18 @@ export function CampaignSidebarTruncatedText({
 
   if (isTruncated) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <p ref={textRef} className={className}>
-            {text}
-          </p>
-        </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={5}>
-          <p className="max-w-xs">{text}</p>
-        </TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p ref={textRef} className={className}>
+              {text}
+            </p>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5}>
+            <p className="max-w-xs">{text}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 

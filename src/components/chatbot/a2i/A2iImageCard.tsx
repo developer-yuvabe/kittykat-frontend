@@ -107,7 +107,12 @@ const A2iImageCard = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { setStartFrame, setEndFrame, setBaseImageUrl } = useA2iStore();
+  const {
+    setStartFrame,
+    setEndFrame,
+    setBaseImageUrl,
+    setConceptVisualGeneratorMode,
+  } = useA2iStore();
 
   const galleryActions = useGalleryQuery(
     {
@@ -121,6 +126,7 @@ const A2iImageCard = ({
         media_format: [],
         aspect_ratio: [],
         workflow_status: [],
+        sub_folders: [],
       },
     },
     ITEMS_PER_PAGE,
@@ -239,7 +245,7 @@ const A2iImageCard = ({
       if (isVideoOutput) {
         const model = models.find((m) => m.model === parameters.model);
         if (!model) {
-          toast.error("No model found for this video.");
+          toast.info("Model not found for this video.");
           return;
         }
         // Convert all parameters based on model parameter definitions
@@ -258,6 +264,7 @@ const A2iImageCard = ({
         });
 
         // Set model and parameters
+        setConceptVisualGeneratorMode("video_generator");
         setSelectedVideoGenearationModel(model);
         setParameters("videoParameters", videoParams);
 
@@ -289,7 +296,7 @@ const A2iImageCard = ({
             (m) => m.model === parameters.model && m.type === "remix"
           );
           if (!model) {
-            toast.error("No model found for this remix image.");
+            toast.info("Model not found for this remix image.");
             return;
           }
 
@@ -314,6 +321,7 @@ const A2iImageCard = ({
           });
 
           // Store full parameters for remix
+          setConceptVisualGeneratorMode("image_editor");
           setSelectedRemixModel(model);
           setParameters("remixParameters", convertedRemixParams);
           if (showImageModal) setShowImageModal(false);
@@ -337,10 +345,11 @@ const A2iImageCard = ({
 
       const model = models.find((m) => m.model === parameters.model);
       if (!model) {
-        toast.error("No model found for this image.");
+        toast.info("Model not found for this image.");
         return;
       }
 
+      setConceptVisualGeneratorMode("image_generator");
       setSelectedImageGenerationModel(model);
 
       const referenceParam = model.parameters.find((p) => p.type === "file");

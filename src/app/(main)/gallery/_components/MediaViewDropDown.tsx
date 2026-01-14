@@ -30,12 +30,14 @@ interface MediaViewsDropdownProps {
   galleryView: "grid" | "folder";
   setGalleryView: (view: "grid" | "folder") => void;
   selectedCampaignId?: string | null;
+  isMediaSelectDialog?: boolean;
 }
 
 const MediaViewsDropdown: React.FC<MediaViewsDropdownProps> = ({
   galleryView,
   setGalleryView,
   selectedCampaignId,
+  isMediaSelectDialog,
 }) => {
   const {
     thumbnailShape,
@@ -71,28 +73,29 @@ const MediaViewsDropdown: React.FC<MediaViewsDropdownProps> = ({
           defaultValue={["gallery", "thumbnails", "autoplay", "order"]}
         >
           {/* Gallery View */}
-          <AccordionItem value="gallery" className="border-b">
-            <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
-              Gallery View
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <Select
-                value={galleryView}
-                onValueChange={(val) =>
-                  setGalleryView(val as "grid" | "folder")
-                }
-              >
-                <SelectTrigger className="w-[140px] text-indigo-600 border-indigo-600">
-                  <SelectValue placeholder="View" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="grid">Grid View</SelectItem>
-                  <SelectItem value="folder">Folder View</SelectItem>
-                </SelectContent>
-              </Select>
-            </AccordionContent>
-          </AccordionItem>
-
+          {!isMediaSelectDialog && (
+            <AccordionItem value="gallery" className="border-b">
+              <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">
+                Gallery View
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <Select
+                  value={galleryView}
+                  onValueChange={(val) =>
+                    setGalleryView(val as "grid" | "folder")
+                  }
+                >
+                  <SelectTrigger className="w-[140px] text-indigo-600 border-indigo-600">
+                    <SelectValue placeholder="View" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="grid">Grid View</SelectItem>
+                    <SelectItem value="folder">Folder View</SelectItem>
+                  </SelectContent>
+                </Select>
+              </AccordionContent>
+            </AccordionItem>
+          )}
           {/* Thumbnails */}
           <AccordionItem value="thumbnails" className="border-b">
             <AccordionTrigger className="text-sm font-medium text-gray-800 px-4 hover:no-underline">

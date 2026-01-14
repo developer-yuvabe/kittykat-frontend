@@ -9,6 +9,7 @@ export enum DropTargetEnum {
   Tab = "TAB",
   Section = "SECTION",
   MediaGrid = "MEDIA_GRID",
+  Subfolder = "SUBFOLDER",
 }
 
 export interface MediaDragData {

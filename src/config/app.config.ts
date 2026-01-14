@@ -38,4 +38,5 @@ export const AppConfig = {
   },
   DEFAULT_CREDITS: 1000,
   DEFAULT_TOKENS: 10000,
+  DEFUALT_SECTIONS_EXPANDED_VIEW: true,
 };

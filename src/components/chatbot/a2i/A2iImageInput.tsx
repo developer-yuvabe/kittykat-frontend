@@ -80,6 +80,7 @@ import { MediaLibraryDialog } from "@/components/shared/MediaLibraryDialog";
 import VideoFrameSelector from "./VideoFrameSelector";
 import { getRemixInputPlaceholderMessage } from "@/lib/a2i.utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
+import FolderSelector from "./FolderSelector";
 import { VideoPresetSelector } from "./VideoPresetSelector";
 
 const A2iImageInput = ({
@@ -92,7 +93,8 @@ const A2iImageInput = ({
   selectionMode?: boolean;
 }) => {
   const { parameters, setParameters } = useMetadataActionsStore();
-  const { selectedCampaignId, defaultCampaignId } = useBrandStore();
+  const { selectedCampaignId, defaultCampaignId, selectedBrandId } =
+    useBrandStore();
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
   const [isVideoFramesPopoverOpen, setIsVideoFramesPopoverOpen] =
@@ -109,6 +111,9 @@ const A2iImageInput = ({
     setBaseImageUrl,
     shoudlClearPromptOnMetdaDataActions,
     setShouldClearPromptOnMetadataActions,
+    selectedFolderId,
+    selectedSubfolderId,
+    setSelectedFolderId,
     preset,
     setPreset,
     promptMode,
@@ -116,6 +121,13 @@ const A2iImageInput = ({
     needsRebuild,
     setNeedsRebuild,
   } = useA2iStore();
+
+  // Initialize folder selection to campaign folder if not set
+  useEffect(() => {
+    if (!selectedFolderId && selectedCampaignId) {
+      setSelectedFolderId(selectedCampaignId, null);
+    }
+  }, [selectedFolderId, selectedCampaignId, setSelectedFolderId]);
 
   const {
     selectedImageGenerationModel,
@@ -227,7 +239,6 @@ const A2iImageInput = ({
         ? !!formInstance.getValues(firstFrameParam?.id ?? "")
         : true,
     });
-  const { selectedBrandId } = useBrandStore();
   const { referencePrompt, referencePromptSignal, clearReferencePrompt } =
     useA2iStore();
   const { user, setUser } = useUserStore();
@@ -249,6 +260,7 @@ const A2iImageInput = ({
         aspect_ratio: [],
         workflow_status: [],
         sort_by: "last_accessed_at",
+        sub_folders: [],
       },
     },
     40,
@@ -833,16 +845,17 @@ const A2iImageInput = ({
       if (conceptVisualGeneratorMode === "image_generator") {
         await generateImage(selectedBrandId!, {
           ...data,
-          campaign_id: currentCampaign?.id || null,
+          campaign_id: selectedFolderId || currentCampaign?.id || null,
           enhance_prompt_for_product:
             isMagicEnabled && productReference.length > 0,
           product_reference_images: productReference,
           team_id: user?.active_team_id,
+          sub_folder_id: selectedSubfolderId || null,
         });
       } else if (conceptVisualGeneratorMode === "image_editor") {
         await remixImageService(
           selectedBrandId!,
-          selectedCampaignId || defaultCampaignId,
+          selectedFolderId || selectedCampaignId || defaultCampaignId,
           data,
           null,
           productReference,
@@ -852,9 +865,10 @@ const A2iImageInput = ({
       } else if (conceptVisualGeneratorMode === "video_generator") {
         await videoGenerationService(selectedBrandId!, {
           ...data,
-          campaign_id: currentCampaign?.id || null,
+          campaign_id: selectedFolderId || currentCampaign?.id || null,
           team_id: user?.active_team_id,
           prompt_mode: promptMode,
+          sub_folder_id: selectedSubfolderId || null,
           preset_config: preset
             ? {
                 id: preset.id,
@@ -1124,7 +1138,7 @@ const A2iImageInput = ({
           (img: string) => !productImages.includes(img)
         );
 
-        const master = masterImages.length > 0 ? [masterImages[0]] : [];
+        const master = masterImages.length > 0 ? masterImages : [];
         const products = productImages;
 
         setMasterReference(master);
@@ -1201,8 +1215,14 @@ const A2iImageInput = ({
     }
   }, [currentImageCount, value, formInstance]);
 
-  const handleBaseImageDrop = async (file: File) => {
+  const handleBaseImageDrop = async (file: File, e?: React.DragEvent) => {
     // Show loading toast
+
+    if (e?.dataTransfer?.getData("source") == "a2i") {
+      setBaseImageUrl(e.dataTransfer.getData("assetUrl"));
+      return;
+    }
+
     const toastId = toast.loading("Uploading base image...");
 
     setIsUploading(true);
@@ -1294,7 +1314,7 @@ const A2iImageInput = ({
       )}
       id="concept-visual-playground"
     >
-      <div className="flex flex-row w-full p- relative">
+      <div className="flex flex-row w-full p- relative mt-1">
         <Form {...formInstance}>
           <div
             className="space-y-4 flex-1 w-full"
@@ -1303,7 +1323,17 @@ const A2iImageInput = ({
               formInstance.handleSubmit(onSubmit)();
             }}
           >
-            <div className="absolute top- right-3 flex gap-1">
+            <div className="absolute top- right-3 flex gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-[#6e7787] whitespace-nowrap">
+                  Save to:
+                </span>
+                <FolderSelector
+                  selectedFolderId={selectedFolderId}
+                  selectedSubfolderId={selectedSubfolderId}
+                  onFolderSelect={setSelectedFolderId}
+                />
+              </div>
               <TooltipButton
                 tooltip="Keep prompt and reference images"
                 icon={
@@ -1382,7 +1412,7 @@ const A2iImageInput = ({
                       fileTypes={["image/jpeg", "image/png", "image/webp"]}
                       maxFileSizeLimit={10}
                       isUploading={isUploading}
-                      onDrop={handleBaseImageDrop}
+                      onDrop={(file, e) => handleBaseImageDrop(file, e)}
                       onOpenMediaLibrary={() => setMediaLibraryOpen(true)}
                       baseImageUrl={baseImageUrl}
                       setBaseImageUrl={setBaseImageUrl}
@@ -1390,7 +1420,7 @@ const A2iImageInput = ({
                   </div>
                 )}
 
-              <div className="flex-1 w-full p-2" onDrop={handlePromptDrop}>
+              <div className="flex-1 w-full p-2 mt-3" onDrop={handlePromptDrop}>
                 <FormField
                   control={formInstance.control}
                   name="prompt"
@@ -1451,206 +1481,213 @@ const A2iImageInput = ({
             </div>
             <div
               ref={controlsContainerRef}
-              className="flex gap-2 justify-between items-center px-2 min-w-0"
+              className="flex flex-wrap gap-3 justify-between px-2"
             >
-              <div className="flex items-center gap-2 flex-shrink min-w-0">
-                {referenceImagesModelInfo ? (
-                  <ReferenceImageSelector
-                    masterReference={masterReference}
-                    productReference={productReference}
-                    onMasterReferenceChange={setMasterReference}
-                    onProductReferenceChange={setProductReference}
-                    maxLimit={referenceImagesModelInfo.maxLimit}
-                    fileTypes={referenceImagesModelInfo.fileTypes}
-                    maxFileSizeLimit={referenceImagesModelInfo.maxFileSizeLimit}
-                    disabled={formInstance.formState.isSubmitting}
-                    currentCampaignId={currentCampaign?.id}
-                    isOpen={isReferencePopoverOpen}
-                    onOpenChange={setIsReferencePopoverOpen}
-                    activeTab={referencePopoverTab}
-                    onTabChange={setReferencePopoverTab}
-                    isMagicEnabled={isMagicEnabled}
-                    onToggleMagic={handleToggleMagic}
-                  />
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          disabled={true}
-                        >
-                          <ImagesIcon />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      This model does not support attaching reference images
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* Aspect Ratio - Always show */}
-                {(() => {
-                  const aspectRatioParam = currentModel?.parameters?.find(
-                    (param) => param.type === "aspect_ratio"
-                  );
-
-                  if (aspectRatioParam) {
-                    return (
-                      <DynamicFormField
-                        key={aspectRatioParam.id}
-                        param={aspectRatioParam}
-                        form={formInstance}
-                        type="initial"
-                        rules={currentModel?.rules}
-                        allModelParameters={currentModel?.parameters}
-                      />
-                    );
-                  }
-
-                  // No aspect ratio support - show disabled select
-                  return (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Select disabled>
-                            <SelectTrigger disableDropdown>
-                              <span>Auto</span>
-                            </SelectTrigger>
-                          </Select>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        This model does not support aspect ratio selection
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })()}
-
-                {initialParams
-                  .filter(
-                    (param) =>
-                      param.id == "resolution" || param.id == "duration"
-                  )
-                  .map((param) => {
-                    return (
-                      <DynamicFormField
-                        key={param.id}
-                        param={param}
-                        form={formInstance}
-                        type="initial"
-                        rules={currentModel?.rules}
-                        allModelParameters={[
-                          ...initialParams,
-                          ...advancedParams,
-                        ]}
-                        sliderSuffix={param.id === "duration" ? "s" : undefined}
-                      />
-                    );
-                  })}
-
-                {/* Image Count - Always show */}
-                {(() => {
-                  const imageCountParam = currentModel?.parameters?.find(
-                    (param) =>
-                      param.type === "image_count" &&
-                      param.category === "initial"
-                  );
-
-                  if (imageCountParam) {
-                    return (
-                      <DynamicFormField
-                        key={imageCountParam.id}
-                        param={imageCountParam}
-                        form={formInstance}
-                        type="initial"
-                        rules={currentModel?.rules}
-                        allModelParameters={currentModel?.parameters}
-                      />
-                    );
-                  }
-
-                  // No image count support - show disabled button
-                  return (
+              <div className="flex items-center gap-2 min-w-0 overflow-hidden flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {referenceImagesModelInfo ? (
+                    <ReferenceImageSelector
+                      masterReference={masterReference}
+                      productReference={productReference}
+                      onMasterReferenceChange={setMasterReference}
+                      onProductReferenceChange={setProductReference}
+                      maxLimit={referenceImagesModelInfo.maxLimit}
+                      fileTypes={referenceImagesModelInfo.fileTypes}
+                      maxFileSizeLimit={
+                        referenceImagesModelInfo.maxFileSizeLimit
+                      }
+                      disabled={formInstance.formState.isSubmitting}
+                      currentCampaignId={currentCampaign?.id}
+                      isOpen={isReferencePopoverOpen}
+                      onOpenChange={setIsReferencePopoverOpen}
+                      activeTab={referencePopoverTab}
+                      onTabChange={setReferencePopoverTab}
+                      isMagicEnabled={isMagicEnabled}
+                      onToggleMagic={handleToggleMagic}
+                    />
+                  ) : (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span>
                           <Button
-                            variant="outline"
-                            disabled
-                            className="cursor-not-allowed"
+                            size={"icon"}
+                            variant={"outline"}
+                            disabled={true}
                           >
-                            1x
+                            <ImagesIcon />
                           </Button>
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        This model does not support no of generations selection
+                        This model does not support attaching reference images
                       </TooltipContent>
                     </Tooltip>
-                  );
-                })()}
+                  )}
 
-                {advancedParams.length > 0 ? (
-                  <Popover>
+                  {/* Aspect Ratio - Always show */}
+                  {(() => {
+                    const aspectRatioParam = currentModel?.parameters?.find(
+                      (param) => param.type === "aspect_ratio"
+                    );
+
+                    if (aspectRatioParam) {
+                      return (
+                        <DynamicFormField
+                          key={aspectRatioParam.id}
+                          param={aspectRatioParam}
+                          form={formInstance}
+                          type="initial"
+                          rules={currentModel?.rules}
+                          allModelParameters={currentModel?.parameters}
+                        />
+                      );
+                    }
+
+                    // No aspect ratio support - show disabled select
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Select disabled>
+                              <SelectTrigger disableDropdown>
+                                <span>Auto</span>
+                              </SelectTrigger>
+                            </Select>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          This model does not support aspect ratio selection
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })()}
+
+                  {initialParams
+                    .filter(
+                      (param) =>
+                        param.id == "resolution" || param.id == "duration"
+                    )
+                    .map((param) => {
+                      return (
+                        <DynamicFormField
+                          key={param.id}
+                          param={param}
+                          form={formInstance}
+                          type="initial"
+                          rules={currentModel?.rules}
+                          allModelParameters={[
+                            ...initialParams,
+                            ...advancedParams,
+                          ]}
+                          sliderSuffix={
+                            param.id === "duration" ? "s" : undefined
+                          }
+                        />
+                      );
+                    })}
+
+                  {/* Image Count - Always show */}
+                  {(() => {
+                    const imageCountParam = currentModel?.parameters?.find(
+                      (param) =>
+                        param.type === "image_count" &&
+                        param.category === "initial"
+                    );
+
+                    if (imageCountParam) {
+                      return (
+                        <DynamicFormField
+                          key={imageCountParam.id}
+                          param={imageCountParam}
+                          form={formInstance}
+                          type="initial"
+                          rules={currentModel?.rules}
+                          allModelParameters={currentModel?.parameters}
+                        />
+                      );
+                    }
+
+                    // No image count support - show disabled button
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button
+                              variant="outline"
+                              disabled
+                              className="cursor-not-allowed"
+                            >
+                              1x
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          This model does not support no of generations
+                          selection
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })()}
+
+                  {advancedParams.length > 0 ? (
+                    <Popover>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                            <Button size="icon" variant="outline">
+                              <Settings2 />
+                            </Button>
+                          </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>Additional Settings</TooltipContent>
+                      </Tooltip>
+                      <PopoverContent
+                        forceMount
+                        align="center"
+                        side="top"
+                        className="space-y-2 w-64"
+                      >
+                        <div className="space-y-4">
+                          <FormLabel className="py-0 text-xs">
+                            Advance Parameters
+                          </FormLabel>
+                          {advancedParams.map((param) => {
+                            return (
+                              <DynamicFormField
+                                key={param.id}
+                                param={param}
+                                form={formInstance}
+                                type="advanced"
+                                rules={currentModel?.rules}
+                                allModelParameters={[
+                                  ...initialParams,
+                                  ...advancedParams,
+                                ]}
+                              />
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                          <Button size="icon" variant="outline">
+                        <span>
+                          <Button
+                            size={"icon"}
+                            variant={"outline"}
+                            disabled={true}
+                          >
                             <Settings2 />
                           </Button>
-                        </PopoverTrigger>
+                        </span>
                       </TooltipTrigger>
-                      <TooltipContent>Additional Settings</TooltipContent>
+                      <TooltipContent>No Additional Settings</TooltipContent>
                     </Tooltip>
-                    <PopoverContent
-                      forceMount
-                      align="center"
-                      side="top"
-                      className="space-y-2 w-64"
-                    >
-                      <div className="space-y-4">
-                        <FormLabel className="py-0 text-xs">
-                          Advance Parameters
-                        </FormLabel>
-                        {advancedParams.map((param) => {
-                          return (
-                            <DynamicFormField
-                              key={param.id}
-                              param={param}
-                              form={formInstance}
-                              type="advanced"
-                              rules={currentModel?.rules}
-                              allModelParameters={[
-                                ...initialParams,
-                                ...advancedParams,
-                              ]}
-                            />
-                          );
-                        })}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          disabled={true}
-                        >
-                          <Settings2 />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>No Additional Settings</TooltipContent>
-                  </Tooltip>
-                )}
+                  )}
+                </div>
               </div>
-              <div className="flex gap-x-2 items-center flex-shrink-0">
+              <div className="flex gap-2 items-end flex-shrink-0">
                 <ModelSelector
                   onModelChange={currentSetter}
                   selectedModel={currentModel}
@@ -1894,6 +1931,7 @@ const A2iImageInput = ({
           is_favourite: undefined,
           is_archived: undefined,
           moodboards: [],
+          sub_folders: [],
         }}
         brandId={selectedBrandId!}
         campaignId={selectedCampaignId || undefined}

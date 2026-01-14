@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { UserBrand } from "@/types/user.types";
 import { MoodboardInformation } from "@/types/types";
+import { useA2iStore } from "./a2i.store";
 
 type Store = {
   isBrandsFetched: boolean;
@@ -26,6 +27,9 @@ type Store = {
 
   selectedCampaignId: string | null;
   setSelectedCampaignId: (campaignId: string | null) => void;
+
+  selectedCampaignIdInGallery: string | null;
+  setSelectedCampaignIdInGallery: (campaignId: string | null) => void;
 
   isCreatingBrand: boolean;
   setIsCreatingBrand: (isCreating: boolean) => void;
@@ -54,6 +58,9 @@ type Store = {
   getSelectedBrandName: () => string | null;
   getSelectedCampaignName: () => string | null;
   getSelectedMoodboardName: () => string | null;
+
+  // Get campaigns for the selected brand only
+  getSelectedBrandCampaigns: () => UserBrand["campaigns"];
 
   // This is to remember the last selected brand when user tries to create a new brand and then cancels it
   previousSelectedBrandId: string | null;
@@ -89,11 +96,14 @@ export const useBrandStore = create<Store>((set, get) => ({
     set((state) => {
       let defaultCampaignId = state.defaultCampaignId;
       if (state.selectedBrandId) {
-        const selectedBrand = brands.find((b) => b.id === state.selectedBrandId);
+        const selectedBrand = brands.find(
+          (b) => b.id === state.selectedBrandId
+        );
         if (selectedBrand) {
-          defaultCampaignId = [...(selectedBrand.campaigns || [])]
-            .reverse()
-            .find((c) => !c.is_custom)?.id ?? null;
+          defaultCampaignId =
+            [...(selectedBrand.campaigns || [])]
+              .reverse()
+              .find((c) => !c.is_custom)?.id ?? null;
         } else {
           defaultCampaignId = null;
         }
@@ -119,14 +129,14 @@ export const useBrandStore = create<Store>((set, get) => ({
       }
 
       return {
-      brands: state.brands.map((brand) =>
-        brand.id === brandId
-          ? { ...brand, campaigns: [...(brand.campaigns || []), campaign] }
-          : brand
-      ),
-      campaigns: [...state.campaigns, campaign],
-      defaultCampaignId,
-    };
+        brands: state.brands.map((brand) =>
+          brand.id === brandId
+            ? { ...brand, campaigns: [...(brand.campaigns || []), campaign] }
+            : brand
+        ),
+        campaigns: [...state.campaigns, campaign],
+        defaultCampaignId,
+      };
     }),
   removeBrand: (brandId: string) =>
     set((state) => {
@@ -170,10 +180,11 @@ export const useBrandStore = create<Store>((set, get) => ({
       const remainingCampaigns = selectedBrand?.campaigns || [];
 
       // Compute new default based on remaining campaigns for selected brand
-      const newDefaultCampaignId = remainingCampaigns
-        .slice()
-        .reverse()
-        .find((c) => !c.is_custom)?.id ?? null;
+      const newDefaultCampaignId =
+        remainingCampaigns
+          .slice()
+          .reverse()
+          .find((c) => !c.is_custom)?.id ?? null;
 
       // Return new state with cleared selection if no campaigns**
       if (remainingCampaigns.length === 0) {
@@ -191,7 +202,9 @@ export const useBrandStore = create<Store>((set, get) => ({
         brands: updatedBrands,
         campaigns: remainingCampaigns,
         defaultCampaignId:
-          state.selectedBrandId === brandId ? newDefaultCampaignId : state.defaultCampaignId,
+          state.selectedBrandId === brandId
+            ? newDefaultCampaignId
+            : state.defaultCampaignId,
       };
     });
   },
@@ -202,7 +215,9 @@ export const useBrandStore = create<Store>((set, get) => ({
       // Only compute default for the selected brand (setCampaigns frequently sets campaigns for the active brand)
       let defaultCampaignId = state.defaultCampaignId;
       if (state.selectedBrandId) {
-        const lastNonCustom = [...campaigns].reverse().find((c) => !c.is_custom);
+        const lastNonCustom = [...campaigns]
+          .reverse()
+          .find((c) => !c.is_custom);
         defaultCampaignId = lastNonCustom ? lastNonCustom.id : null;
       }
 
@@ -242,6 +257,12 @@ export const useBrandStore = create<Store>((set, get) => ({
         defaultCampaignId = null;
       }
 
+      // Auto-select default campaign folder when brand changes
+      if (isBrandChanging) {
+        useA2iStore.getState().setSelectedFolderId(defaultCampaignId);
+        useBrandStore.getState().setSelectedCampaignIdInGallery(null);
+      }
+
       return {
         selectedBrandId: brandId,
         // Clear campaign selection when switching brands
@@ -253,6 +274,10 @@ export const useBrandStore = create<Store>((set, get) => ({
   selectedCampaignId: null,
   setSelectedCampaignId: (campaignId: string | null) =>
     set({ selectedCampaignId: campaignId }),
+
+  selectedCampaignIdInGallery: null,
+  setSelectedCampaignIdInGallery: (campaignId: string | null) =>
+    set({ selectedCampaignIdInGallery: campaignId }),
 
   isCreatingBrand: false,
   setIsCreatingBrand: (isCreating: boolean) =>
@@ -335,12 +360,22 @@ export const useBrandStore = create<Store>((set, get) => ({
     return selectedMoodboard?.title || null;
   },
 
+  getSelectedBrandCampaigns: () => {
+    const state = get();
+    if (!state.selectedBrandId) return [];
+    const selectedBrand = state.brands.find(
+      (brand) => brand.id === state.selectedBrandId
+    );
+    return selectedBrand?.campaigns || [];
+  },
+
   previousSelectedBrandId: null,
   setPreviousSelectedBrandId: (brandId: string | null) =>
     set({ previousSelectedBrandId: brandId }),
   // Default campaign id computed for the selected brand
   defaultCampaignId: null,
-  setDefaultCampaignId: (campaignId: string | null) => set({ defaultCampaignId: campaignId }),
+  setDefaultCampaignId: (campaignId: string | null) =>
+    set({ defaultCampaignId: campaignId }),
   getDefaultCampaignId: () => {
     const state = get();
     return state.defaultCampaignId ?? null;

@@ -28,6 +28,7 @@ interface FolderUploadDropzoneProps {
   galleryFilters?: GalleryFilters;
   selectedBrandId: string | null;
   selectedCampaignId?: string;
+  selectedSubFolderId?: string | null;
   selectedMoodboardId?: string;
 }
 
@@ -38,6 +39,7 @@ export function FolderUploadDropzone({
   galleryFilters = {},
   selectedBrandId,
   selectedCampaignId,
+  selectedSubFolderId,
   selectedMoodboardId,
 }: FolderUploadDropzoneProps) {
   const [mediaWithStatus, setMediaWithStatus] = useState<MediaWithStatus[]>([]);
@@ -149,7 +151,7 @@ export function FolderUploadDropzone({
               asset_url: url,
               asset_title: file.name,
               asset_type: file.type.startsWith("video/") ? "video" : "image",
-              asset_source: activeTab,
+              asset_source: selectedSubFolderId ? "showboard-media" : activeTab,
               size: `${file.size}`,
               search_keywords: [],
               custom_tags: [],
@@ -162,6 +164,7 @@ export function FolderUploadDropzone({
               detected_colors: [],
               media_format: getExtensionFromUrl(url),
               campaign_id: selectedCampaignId,
+              sub_folder_id: selectedSubFolderId || undefined,
               moodboard_id: selectedMoodboardId,
               is_master: true,
             })
@@ -255,7 +258,7 @@ export function FolderUploadDropzone({
           return {
             brand_id: selectedBrandId,
             asset_url: url,
-            asset_source: activeTab,
+            asset_source: selectedCampaignId ? "showboard-media" : activeTab,
             asset_type: assetType === "video" ? "video" : "image",
             media_format: extension,
             asset_title: url.split("/").pop() || url,
@@ -270,6 +273,7 @@ export function FolderUploadDropzone({
             search_keywords: [],
             custom_tags: [],
             campaign_id: selectedCampaignId,
+            sub_folder_id: selectedSubFolderId || undefined,
             moodboard_id: selectedMoodboardId,
             is_master: true,
           };
@@ -280,6 +284,8 @@ export function FolderUploadDropzone({
         const bulkUploadPayload: BulkGalleryUploadRequest = {
           gallery_items: itemsToUpload,
           brand_id: selectedBrandId,
+          campaign_id: selectedCampaignId,
+          sub_folder_id: selectedSubFolderId || undefined,
         };
 
         await galleryActions.bulkUpload(bulkUploadPayload);
