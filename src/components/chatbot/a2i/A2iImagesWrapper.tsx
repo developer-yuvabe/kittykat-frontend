@@ -151,15 +151,17 @@ export const A2iImagesWrapper = ({
             // Check if generation belongs to selected campaign or subfolder
             const genCampaignId = gen.parameters?.campaign_id;
             const genSubfolderId = gen.parameters?.sub_folder_id;
-            
+
             // If subfolder is selected, match only that subfolder
             if (selectedSubfolderId) {
               return genSubfolderId === selectedSubfolderId;
             }
-            
+
             // If campaign is selected, match campaign or any of its subfolders
-            return folderIdsToInclude.includes(genCampaignId) || 
-                   (genSubfolderId && folderIdsToInclude.includes(genSubfolderId));
+            return (
+              folderIdsToInclude.includes(genCampaignId) ||
+              (genSubfolderId && folderIdsToInclude.includes(genSubfolderId))
+            );
           })
         : generations;
 

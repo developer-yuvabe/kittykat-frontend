@@ -34,7 +34,10 @@ interface FolderItem {
 interface FolderSelectorProps {
   selectedFolderId: string | null;
   selectedSubfolderId?: string | null;
-  onFolderSelect: (folderId: string | null, subfolderId?: string | null) => void;
+  onFolderSelect: (
+    folderId: string | null,
+    subfolderId?: string | null
+  ) => void;
 }
 
 export default function FolderSelector({
@@ -140,7 +143,7 @@ export default function FolderSelector({
   useEffect(() => {
     // Determine which folder to validate
     const folderIdToValidate = selectedSubfolderId || selectedFolderId;
-    
+
     // Only validate if a folder is selected
     if (!folderIdToValidate) return;
 
@@ -158,12 +161,18 @@ export default function FolderSelector({
         toast.warning("Selected folder no longer exists.");
       }
     }
-  }, [selectedFolderId, selectedSubfolderId, folders, selectedCampaignId, onFolderSelect]);
+  }, [
+    selectedFolderId,
+    selectedSubfolderId,
+    folders,
+    selectedCampaignId,
+    onFolderSelect,
+  ]);
 
   const handleSelect = (folderId: string) => {
     // Find the selected folder to determine if it's a campaign or subfolder
     const selectedFolder = folders.find((f) => f.id === folderId);
-    
+
     if (selectedFolder) {
       if (selectedFolder.parentId === null) {
         // This is a campaign folder
@@ -173,7 +182,7 @@ export default function FolderSelector({
         onFolderSelect(selectedFolder.parentId, folderId);
       }
     }
-    
+
     setOpen(false);
   };
 
@@ -231,7 +240,8 @@ export default function FolderSelector({
                       onSelect={() => handleSelect(campaign.id)}
                       className={cn(
                         "flex items-center justify-between px-3 py-2 cursor-pointer",
-                        selectedFolderId === campaign.id && !selectedSubfolderId &&
+                        selectedFolderId === campaign.id &&
+                          !selectedSubfolderId &&
                           "bg-purple-50 text-purple-700"
                       )}
                     >
@@ -239,7 +249,8 @@ export default function FolderSelector({
                         <Folder
                           className={cn(
                             "h-4 w-4 flex-shrink-0",
-                            selectedFolderId === campaign.id && !selectedSubfolderId
+                            selectedFolderId === campaign.id &&
+                              !selectedSubfolderId
                               ? "text-purple-600"
                               : "text-gray-500"
                           )}
@@ -256,9 +267,10 @@ export default function FolderSelector({
                           )}
                         </RoleProtectedComponent>
                       </div>
-                      {selectedFolderId === campaign.id && !selectedSubfolderId && (
-                        <Check className="h-4 w-4 flex-shrink-0 text-purple-600" />
-                      )}
+                      {selectedFolderId === campaign.id &&
+                        !selectedSubfolderId && (
+                          <Check className="h-4 w-4 flex-shrink-0 text-purple-600" />
+                        )}
                     </CommandItem>
 
                     {/* Subfolders */}
