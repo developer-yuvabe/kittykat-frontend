@@ -31,10 +31,6 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner";
-import {
-  moodboardFields,
-  PlaceholderSection,
-} from "../brands/InitialPlaceHolder";
 import MoodboardLayout from "./MoodboardLayout";
 import { MoodboardOverview } from "./MoodboardOverview";
 import MoodboardSelector from "./MoodboardSelector";
@@ -57,7 +53,6 @@ export const MoodboardSection: React.FC<{
     selectedBrandId,
     selectedMoodboardId,
     setSelectedMoodboardId,
-    isCreatingBrand,
     isCampaignCreating,
   } = useBrandStore();
   const { user } = useUserStore();
@@ -106,7 +101,6 @@ export const MoodboardSection: React.FC<{
     useQueryState("moodboardId");
 
   const [openPopover, setOpenPopover] = useState(false);
-  const [isPlaceholderExpanded, setIsPlaceholderExpanded] = useState(true);
 
   // Track the last known moodboard count to detect new creations
   const [lastMoodboardCount, setLastMoodboardCount] = useState(0);
@@ -354,38 +348,10 @@ export const MoodboardSection: React.FC<{
     }
   };
 
-  const handleMoodboardPlaceholderClick = () => {
-    toast.info("Please create a campaign before creating a moodboard.");
-  };
-
   // Don't render MoodboardSection at all when campaign is being created
   // The CampaignSection handles both placeholders in that case
   if (isCampaignCreating) {
     return null;
-  }
-
-  // Show placeholder only when creating brand or when no campaigns exist
-  if (
-    isCreatingBrand ||
-    !campaignInformation ||
-    campaignInformation.length === 0
-  ) {
-    return (
-      <PlaceholderSection
-        title={"Moodboard"}
-        avatarFallback="M"
-        avatarBgColor="bg-orange-400"
-        fields={moodboardFields}
-        searchPlaceholder="Select Moodboard"
-        newButtonTooltip="New Moodboard"
-        isExpanded={isPlaceholderExpanded}
-        onToggleExpanded={() =>
-          setIsPlaceholderExpanded((prev: boolean) => !prev)
-        }
-        onNewClick={handleMoodboardPlaceholderClick}
-        isCreatingNewCampaign={false}
-      />
-    );
   }
 
   return (
