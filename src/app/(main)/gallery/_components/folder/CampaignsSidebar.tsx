@@ -69,7 +69,8 @@ export function CampaignsSidebar({
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { brands } = useBrandStore();
-  const { setSelectedCampaignId } = useBrandStore();
+  const { setSelectedCampaignIdInGallery: setSelectedCampaignId } =
+    useBrandStore();
   const { orderBy, setOrderBy, selectedSubFolderId, setSelectedSubFolderId } =
     useGalleryFilterStore();
 

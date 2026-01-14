@@ -7,8 +7,11 @@ import { useStreamContext } from "@/providers/langgraph/Stream";
 import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
 
 export function useFolderState() {
-  const { selectedCampaignId, setSelectedCampaignId, selectedBrandId } =
-    useBrandStore();
+  const {
+    selectedCampaignIdInGallery: selectedCampaignId,
+    setSelectedCampaignIdInGallery: setSelectedCampaignId,
+    selectedBrandId,
+  } = useBrandStore();
   const { user } = useUserStore();
   const stream = useStreamContext();
 
