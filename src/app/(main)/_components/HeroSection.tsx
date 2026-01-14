@@ -102,6 +102,8 @@ const HeroSection = () => {
                   setShowBrandSelector(false);
                 }}
                 showBrandsAsList
+                setShowBrandSelector={setShowBrandSelector}
+                hasCreateBrandButton={true}
               />
             </HoverCardContent>
           </HoverCard>
