@@ -767,6 +767,7 @@ export function GallerySidebar({
                               onTabChange("all-media");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
+                            subfolderCounts={countData?.count_by_sub_folder}
                             isCountLoading={isCountLoading}
                             onRename={(id, title) =>
                               setRenameDialog({
