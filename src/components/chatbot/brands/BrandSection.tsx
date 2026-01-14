@@ -24,7 +24,7 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TooltipIconButton } from "../../thread/tooltip-icon-button";
 import { DisplayField } from "../DisplayField";
 import { BrandAestheticUploader } from "./BrandAestheticUploader";
@@ -41,6 +41,7 @@ import { BrandBrainAggregatedAnalysis } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { popVariants } from "@/lib/motion.utils";
 import { AppConfig } from "@/config/app.config";
+import { useQueryState } from "nuqs";
 
 const BRAND_TABS = [
   {
@@ -80,6 +81,7 @@ export const BrandSection: React.FC<{
   const [expanded, setExpanded] = useState(
     AppConfig.DEFUALT_SECTIONS_EXPANDED_VIEW
   );
+  const [tab, setTab] = useQueryState("tab");
   const stream = useStreamContext();
   const { user } = useUserStore();
   const {
@@ -169,6 +171,12 @@ export const BrandSection: React.FC<{
     }
   };
 
+  useEffect(() => {
+    if (!BRAND_TABS.find((t) => t.value === tab)) {
+      setTab(null);
+    }
+  }, [tab, setTab]);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
@@ -223,7 +231,13 @@ export const BrandSection: React.FC<{
             exit="collapsed"
             variants={popVariants}
           >
-            <Tabs defaultValue={BRAND_TABS[0].value}>
+            <Tabs
+              key={tab}
+              value={
+                BRAND_TABS.find((t) => t.value === tab)?.value || "overview"
+              }
+              onValueChange={(t) => setTab(t)}
+            >
               <TabsList>
                 {BRAND_TABS.map((tab) => (
                   <TabsTrigger key={tab.value} value={tab.value}>
