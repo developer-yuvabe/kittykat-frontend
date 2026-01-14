@@ -112,6 +112,7 @@ const A2iImageInput = ({
     shoudlClearPromptOnMetdaDataActions,
     setShouldClearPromptOnMetadataActions,
     selectedFolderId,
+    selectedSubfolderId,
     setSelectedFolderId,
     preset,
     setPreset,
@@ -124,7 +125,7 @@ const A2iImageInput = ({
   // Initialize folder selection to campaign folder if not set
   useEffect(() => {
     if (!selectedFolderId && selectedCampaignId) {
-      setSelectedFolderId(selectedCampaignId);
+      setSelectedFolderId(selectedCampaignId, null);
     }
   }, [selectedFolderId, selectedCampaignId, setSelectedFolderId]);
 
@@ -849,6 +850,7 @@ const A2iImageInput = ({
             isMagicEnabled && productReference.length > 0,
           product_reference_images: productReference,
           team_id: user?.active_team_id,
+          sub_folder_id: selectedSubfolderId || null,
         });
       } else if (conceptVisualGeneratorMode === "image_editor") {
         await remixImageService(
@@ -866,6 +868,7 @@ const A2iImageInput = ({
           campaign_id: selectedFolderId || currentCampaign?.id || null,
           team_id: user?.active_team_id,
           prompt_mode: promptMode,
+          sub_folder_id: selectedSubfolderId || null,
           preset_config: preset
             ? {
                 id: preset.id,
@@ -1321,6 +1324,7 @@ const A2iImageInput = ({
                 </span>
                 <FolderSelector
                   selectedFolderId={selectedFolderId}
+                  selectedSubfolderId={selectedSubfolderId}
                   onFolderSelect={setSelectedFolderId}
                 />
               </div>

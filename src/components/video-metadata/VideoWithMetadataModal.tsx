@@ -152,6 +152,7 @@ const VideoWithMetadataModal = ({
         source_asset_id: galleryItem.id,
         campaign_id: campaignId,
         team_id: user?.active_team_id,
+        sub_folder_id: galleryItem.sub_folder_id || null,
       });
 
       onClose();

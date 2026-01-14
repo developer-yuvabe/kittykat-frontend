@@ -35,7 +35,8 @@ type Store = {
 
   // Folder selection for CVG save destination and asset filtering
   selectedFolderId: string | null;
-  setSelectedFolderId: (folderId: string | null) => void;
+  selectedSubfolderId: string | null;
+  setSelectedFolderId: (folderId: string | null, subfolderId?: string | null) => void;
 
   preset: VideoPreset | null;
   setPreset: (preset: VideoPreset | null) => void;
@@ -92,7 +93,9 @@ export const useA2iStore = create<Store>()((set) => {
 
     // Folder selection defaults to null (will be set to campaign folder on first render)
     selectedFolderId: null,
-    setSelectedFolderId: (folderId) => set({ selectedFolderId: folderId }),
+    selectedSubfolderId: null,
+    setSelectedFolderId: (folderId, subfolderId = null) => 
+      set({ selectedFolderId: folderId, selectedSubfolderId: subfolderId }),
 
     preset: null,
     setPreset: (preset) =>
