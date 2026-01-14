@@ -18,16 +18,31 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
-import { updateCurrentContextBrandId } from "@/services/api/langgraph.service";
+import {
+  submitOptimisticMessage,
+  updateCurrentContextBrandId,
+} from "@/services/api/langgraph.service";
 import { useBrandStore } from "@/store/brand.store";
 import { useUserStore } from "@/store/user.store";
-import { Check, ChevronDown, ChevronUp, Megaphone, Trash2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CirclePlus,
+  Megaphone,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import ReusableAlertDialog from "@/components/shared/ReusableAlertDialog";
 import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 import { toast } from "sonner";
 import { deleteBrand } from "@/services/api/brand.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useThreadStore } from "@/store/thread.store";
+import { usePinnedContextStore } from "@/store/usePinnedContextStore";
+import { useModelsStore } from "@/store/models.store";
+import { auth } from "@/config/firebase.config";
+import { useQueryState } from "nuqs";
 
 type BrandSelectorProps = {
   /* Whether or not to show campaigns */
@@ -45,6 +60,10 @@ type BrandSelectorProps = {
   showBrandsAsList?: boolean;
 
   className?: string;
+
+  setShowBrandSelector?: (show: boolean) => void;
+
+  hasCreateBrandButton?: boolean;
 };
 
 export default function BrandSelector({
@@ -54,6 +73,8 @@ export default function BrandSelector({
   showSelectedValue = false,
   showBrandsAsList = false,
   className,
+  setShowBrandSelector,
+  hasCreateBrandButton,
 }: BrandSelectorProps) {
   const stream = useStreamContext();
   const { user } = useUserStore();
@@ -76,8 +97,14 @@ export default function BrandSelector({
     setSelectedCampaignId,
     getSelectedBrandName,
     getSelectedCampaignName,
+    setIsCreatingBrand,
     removeBrand,
   } = useBrandStore();
+
+  const { chatOnlyMode } = useThreadStore();
+  const { removePinnedItem } = usePinnedContextStore();
+  const { selectedImageGenerationModel, selectedVideoGenearationModel } =
+    useModelsStore();
 
   const handleBrandSelect = (brandId: string, campaignId: string | null) => {
     setOpen(false);
@@ -102,6 +129,46 @@ export default function BrandSelector({
         brandId,
         stream.values.currentBrandContextId
       );
+    }
+  };
+
+  const [, setScrollTo] = useQueryState("scrollTo");
+
+  const handleNewBrandCreation = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    try {
+      setShowBrandSelector?.(false);
+
+      // Set creating brand state
+      setIsCreatingBrand(true);
+
+      setSelectedBrandId(null);
+      // Submit the message
+      submitOptimisticMessage({
+        stream,
+        text: "Let's create a new brand.",
+        userId: user!.id,
+        chatOnlyMode,
+        currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+        activeTeamId: user!.active_team_id!,
+      });
+
+      // Clear pinned items
+      removePinnedItem();
+
+      setScrollTo("brand");
+    } catch (error) {
+      console.error("Error creating new brand:", error);
     }
   };
 
@@ -308,6 +375,16 @@ export default function BrandSelector({
           </>
         ))}
       </CommandList>
+      {hasCreateBrandButton && (
+        <Button
+          className="flex items-center justify-center gap-2 border-t w-full p-2 cursor-pointer"
+          onClick={handleNewBrandCreation}
+          variant={"ghost"}
+        >
+          <span>Create New Brand</span>
+          <CirclePlus className="size-5" />
+        </Button>
+      )}
     </Command>
   );
 

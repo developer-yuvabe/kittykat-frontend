@@ -8,8 +8,6 @@ import {
   Megaphone,
   Palette,
   Play,
-  RefreshCcw,
-  Sparkles,
   Users,
   Wand,
 } from "lucide-react";
@@ -21,106 +19,129 @@ import { useModelsStore } from "@/store/models.store";
 import { auth } from "@/config/firebase.config";
 import { submitOptimisticMessage } from "@/services/api/langgraph.service";
 import { useQueryState } from "nuqs";
+import { useRouter } from "next/navigation";
 
 export const SUGGESTIONS: Suggestion[] = [
   {
     title: "View brand",
     icon: Palette,
-    prompt:
-      "Show me an overview of this brand including tone, visuals, and positioning.",
-    redirectTo: "brand",
+    prompt: "Show me an overview of my brand including tone and visuals.",
+    redirectTo: {
+      type: "brand",
+    },
   },
   {
     title: "Create campaign",
     icon: Megaphone,
     prompt:
       "Create a new marketing campaign aligned with this brand’s goals and audience.",
-    redirectTo: "campaign",
+    redirectTo: {
+      type: "campaign",
+    },
   },
   {
     title: "Create moodboard",
     icon: Layers,
     prompt:
       "Generate a visual moodboard that represents the brand’s style and identity.",
-    redirectTo: "moodboard",
+    redirectTo: {
+      type: "moodboard",
+    },
   },
   {
     title: "Generate image",
     icon: Image,
     prompt:
       "Generate high-quality brand visuals for marketing or social media.",
-    redirectTo: "concept_visual_generator",
+    redirectTo: {
+      type: "a2i-input",
+    },
   },
   {
     title: "Generate video",
     icon: Play,
-    prompt: "Create a short promotional video concept for this brand.",
-    redirectTo: "concept_visual_generator",
-  },
-  {
-    title: "Edit video",
-    icon: RefreshCcw,
-    prompt: "Modify or enhance an existing video using brand guidelines.",
-    redirectTo: "concept_visual_generator",
+    redirectTo: {
+      type: "a2i-input",
+    },
   },
   {
     title: "Edit image",
     icon: Wand,
-    prompt: "Edit an existing image to better match the brand’s look and feel.",
-    redirectTo: "concept_visual_generator",
+    redirectTo: {
+      type: "a2i-input",
+    },
   },
   {
     title: "View gallery",
     icon: GalleryHorizontal,
-    prompt: "Show me a gallery of brand assets.",
-    redirectTo: "concept_visual_generator",
-  },
-  {
-    title: "Get ideas",
-    icon: Sparkles,
-    prompt: "Give me creative ideas for campaigns, visuals, or content.",
-    redirectTo: "campaign",
+    redirectTo: {
+      type: "link",
+      link: "/gallery",
+    },
   },
   {
     title: "Discover your audience",
     icon: Users,
     prompt: "Analyze and discover potential audience segments for this brand.",
-    redirectTo: "brand",
+    redirectTo: {
+      type: "brand",
+      tab: "audience",
+    },
   },
   {
     title: "Define your audience",
     icon: CircleUserRound,
     prompt: "Help me define a clear target audience persona for this brand.",
-    redirectTo: "brand",
+    redirectTo: {
+      type: "brand",
+      tab: "audience",
+    },
   },
 ];
 
 const ChatSuggestions = () => {
   const [, setScrollTo] = useQueryState("scrollTo");
+  const [, setTab] = useQueryState("tab");
   const { user } = useUserStore();
+  const router = useRouter();
   const { chatOnlyMode, setShowChatAssistant } = useThreadStore();
   const { selectedImageGenerationModel, selectedVideoGenearationModel } =
     useModelsStore();
   const stream = useStreamContext();
 
   const handleSuggestionClick = async (suggestion: Suggestion) => {
-    setShowChatAssistant(true);
-    setScrollTo(suggestion.redirectTo);
-    submitOptimisticMessage({
-      stream,
-      text: suggestion.prompt,
-      userId: user!.id,
-      chatOnlyMode,
-      currentBrandContextId: null,
-      currentCampaignId: null,
-      currentMoodboardId: null,
-      currentSelectedImageGenerationModelId:
-        selectedImageGenerationModel?.id ?? null,
-      currentSelectedVideoGenerationModelId:
-        selectedVideoGenearationModel?.id ?? null,
-      userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
-      activeTeamId: user!.active_team_id!,
-    });
+    if (suggestion.redirectTo.type === "link") {
+      router.push(suggestion.redirectTo.link!);
+    } else if (suggestion.redirectTo.type === "a2i-input") {
+      // Scroll to bottom of the page
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    } else {
+      setScrollTo(suggestion.redirectTo.type);
+    }
+
+    if (suggestion.redirectTo.tab) {
+      setTab(suggestion.redirectTo.tab);
+    }
+
+    if (suggestion.prompt) {
+      setShowChatAssistant(true);
+
+      submitOptimisticMessage({
+        stream,
+        text: suggestion.prompt,
+        userId: user!.id,
+        chatOnlyMode,
+        currentBrandContextId: null,
+        currentCampaignId: null,
+        currentMoodboardId: null,
+        currentSelectedImageGenerationModelId:
+          selectedImageGenerationModel?.id ?? null,
+        currentSelectedVideoGenerationModelId:
+          selectedVideoGenearationModel?.id ?? null,
+        userAccessToken: (await auth.currentUser?.getIdToken()) ?? null,
+        activeTeamId: user!.active_team_id!,
+      });
+    }
   };
 
   return (
