@@ -3,6 +3,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type Store = {
+  showChatAssistant: boolean;
+  setShowChatAssistant: (show: boolean) => void;
+
   chatOnlyMode: boolean;
   setChatOnlyMode: (mode: boolean) => void;
 
@@ -14,6 +17,8 @@ type Store = {
 export const useThreadStore = create<Store>()(
   persist(
     (set) => ({
+      showChatAssistant: false,
+      setShowChatAssistant: (show) => set({ showChatAssistant: show }),
       chatOnlyMode: false,
       setChatOnlyMode: (mode) => set({ chatOnlyMode: mode }),
 

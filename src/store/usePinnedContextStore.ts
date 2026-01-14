@@ -1,5 +1,6 @@
 import { Context } from "@/types/types";
 import { create } from "zustand";
+import { useThreadStore } from "./thread.store";
 
 export interface PinnedItem {
   title: string;
@@ -17,6 +18,8 @@ export const usePinnedContextStore = create<PinnedContextState>((set) => ({
   pinnedItem: null,
 
   addPinnedItem: (item) => {
+    // Open KittyKat Assistant
+    useThreadStore.getState().setShowChatAssistant(true);
     set({ pinnedItem: item });
   },
 

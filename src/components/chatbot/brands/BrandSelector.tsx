@@ -42,6 +42,8 @@ type BrandSelectorProps = {
   /* Whether or not to show what brand and campaign is selected instead of a placeholder (default false) */
   showSelectedValue?: boolean;
 
+  showBrandsAsList?: boolean;
+
   className?: string;
 };
 
@@ -50,6 +52,7 @@ export default function BrandSelector({
   showCampaigns,
   modal = false,
   showSelectedValue = false,
+  showBrandsAsList = false,
   className,
 }: BrandSelectorProps) {
   const stream = useStreamContext();
@@ -185,6 +188,131 @@ export default function BrandSelector({
     }
   };
 
+  const BrandsList = (
+    <Command value={selectedBrandId || undefined}>
+      <div className="flex items-center border-b w-full">
+        <Input
+          placeholder={
+            showCampaigns ? "Search brands or campaigns..." : "Search brands..."
+          }
+          className="h-9 border-0 outline-none focus-visible:ring-0"
+          disabled={!isBrandsFetched}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      <CommandList>
+        <CommandEmpty>
+          {!isBrandsFetched ? (
+            <div className="mx-auto w-max">
+              <Spinner className="text-foreground" />
+            </div>
+          ) : showCampaigns ? (
+            "No brands or campaigns found."
+          ) : (
+            "No brands found."
+          )}
+        </CommandEmpty>
+
+        {filteredAndSortedBrands.map((brand, index) => (
+          <>
+            <CommandItem
+              key={`${brand.id}-${index}`}
+              value={`${brand.name}-${index}`}
+              onSelect={() => handleBrandSelect(brand.id, null)}
+              className="flex items-center justify-between group gap-0 rounded-none"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <div className="flex items-start min-w-0 w-full">
+                <Avatar className="h-6 w-6 mr-2">
+                  <AvatarFallback className="bg-blue-500 text-white">
+                    {brand.name?.charAt(0).toUpperCase() || "B"}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex flex-col space-y-1">
+                  <span className="break-words">
+                    {brand.name}
+                    {showCampaigns && (
+                      <span className="italic text-xs">{` (${brand?.campaigns?.length} campaigns)`}</span>
+                    )}
+                  </span>
+                  <span className="italic text-xs">
+                    Created by{" "}
+                    {brand.created_by.id === user?.id
+                      ? "You"
+                      : brand.created_by.name}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-1 flex-shrink-0">
+                {selectedBrandId === brand.id && <Check className="h-4 w-4" />}
+
+                <RoleProtectedComponent>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBrandToDelete({
+                        id: brand.id,
+                        name: brand.name,
+                      });
+                      setBrandDeleteStep(1); // step-1
+                      setShowDeleteDialog(true);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900/20 rounded p-1"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </button>
+                </RoleProtectedComponent>
+              </div>
+            </CommandItem>
+
+            {showCampaigns && brand.campaigns.length > 0 && (
+              <CommandGroup className="pl-8 border-b">
+                {brand.campaigns.map((campaign) => (
+                  <CommandItem
+                    key={`${campaign.id}-${campaign.title}`}
+                    value={campaign.title}
+                    className={cn(
+                      "flex items-center justify-between group gap-0 my-0.5",
+                      {
+                        "bg-primary/10 text-primary":
+                          selectedCampaignId === campaign.id,
+                      }
+                    )}
+                    onSelect={() => handleBrandSelect(brand.id, campaign.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <div className="flex items-start min-w-0 w-full">
+                      <Megaphone
+                        className={cn("mr-2 mt-0.5", {
+                          "text-primary": selectedCampaignId === campaign.id,
+                        })}
+                        size={20}
+                      />
+
+                      <div className="flex flex-col space-y-1">
+                        <span className="break-words">{campaign.title}</span>
+                      </div>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </>
+        ))}
+      </CommandList>
+    </Command>
+  );
+
+  if (showBrandsAsList) return BrandsList;
+
   return (
     <>
       <Popover open={open} onOpenChange={setOpen} modal={modal}>
@@ -262,135 +390,7 @@ export default function BrandSelector({
           className={cn("w-[300px] relative  p-0", className)}
           align="start"
         >
-          <Command value={selectedBrandId || undefined}>
-            <div className="flex items-center border-b w-full">
-              <Input
-                placeholder={
-                  showCampaigns
-                    ? "Search brands or campaigns..."
-                    : "Search brands..."
-                }
-                className="h-9 border-0 outline-none focus-visible:ring-0"
-                disabled={!isBrandsFetched}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <CommandList>
-              <CommandEmpty>
-                {!isBrandsFetched ? (
-                  <div className="mx-auto w-max">
-                    <Spinner className="text-foreground" />
-                  </div>
-                ) : showCampaigns ? (
-                  "No brands or campaigns found."
-                ) : (
-                  "No brands found."
-                )}
-              </CommandEmpty>
-
-              {filteredAndSortedBrands.map((brand, index) => (
-                <>
-                  <CommandItem
-                    key={`${brand.id}-${index}`}
-                    value={`${brand.name}-${index}`}
-                    onSelect={() => handleBrandSelect(brand.id, null)}
-                    className="flex items-center justify-between group gap-0 rounded-none"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <div className="flex items-start min-w-0 w-full">
-                      <Avatar className="h-6 w-6 mr-2">
-                        <AvatarFallback className="bg-blue-500 text-white">
-                          {brand.name?.charAt(0).toUpperCase() || "B"}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="flex flex-col space-y-1">
-                        <span className="break-words">
-                          {brand.name}
-                          {showCampaigns && (
-                            <span className="italic text-xs">{` (${brand?.campaigns?.length} campaigns)`}</span>
-                          )}
-                        </span>
-                        <span className="italic text-xs">
-                          Created by{" "}
-                          {brand.created_by.id === user?.id
-                            ? "You"
-                            : brand.created_by.name}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-1 flex-shrink-0">
-                      {selectedBrandId === brand.id && (
-                        <Check className="h-4 w-4" />
-                      )}
-
-                      <RoleProtectedComponent>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBrandToDelete({
-                              id: brand.id,
-                              name: brand.name,
-                            });
-                            setBrandDeleteStep(1); // step-1
-                            setShowDeleteDialog(true);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900/20 rounded p-1"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </button>
-                      </RoleProtectedComponent>
-                    </div>
-                  </CommandItem>
-
-                  {showCampaigns && brand.campaigns.length > 0 && (
-                    <CommandGroup className="pl-8 border-b">
-                      {brand.campaigns.map((campaign) => (
-                        <CommandItem
-                          key={`${campaign.id}-${campaign.title}`}
-                          value={campaign.title}
-                          className={cn(
-                            "flex items-center justify-between group gap-0 my-0.5",
-                            {
-                              "bg-primary/10 text-primary":
-                                selectedCampaignId === campaign.id,
-                            }
-                          )}
-                          onSelect={() =>
-                            handleBrandSelect(brand.id, campaign.id)
-                          }
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <div className="flex items-start min-w-0 w-full">
-                            <Megaphone
-                              className={cn("mr-2 mt-0.5", {
-                                "text-primary":
-                                  selectedCampaignId === campaign.id,
-                              })}
-                              size={20}
-                            />
-
-                            <div className="flex flex-col space-y-1">
-                              <span className="break-words">
-                                {campaign.title}
-                              </span>
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  )}
-                </>
-              ))}
-            </CommandList>
-          </Command>
+          {BrandsList}
         </PopoverContent>
       </Popover>
 
