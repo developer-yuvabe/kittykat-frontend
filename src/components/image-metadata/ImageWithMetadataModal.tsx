@@ -231,7 +231,8 @@ const ImageWithMetadataModal = ({
     try {
       const model = models.find((m) => m.model === data.parameters.model);
       if (!model) {
-        throw new Error("Model not found for variation");
+        toast.info("Model not found for Auto Variation.");
+        return;
       }
 
       const paramsResponsibleForVaryingNumberOfOutputs =
@@ -313,7 +314,7 @@ const ImageWithMetadataModal = ({
         );
 
         if (!model) {
-          toast.error("No model found for this image.");
+          toast.info("Model not found for Manual Variation.");
           return;
         }
         // Validate that base image exists
@@ -361,7 +362,7 @@ const ImageWithMetadataModal = ({
         );
 
         if (!model) {
-          toast.error("No model found for this image.");
+          toast.info("Model not found for Manual Variation.");
           return;
         }
 
@@ -480,7 +481,8 @@ const ImageWithMetadataModal = ({
       const defualtEditModel = models.find((model) => model.default_edit_model);
 
       if (!defualtEditModel) {
-        throw new Error("No default edit model found");
+        toast.info("Default Edit model not found");
+        return;
       }
 
       setSelectedRemixModel(defualtEditModel);
@@ -506,7 +508,10 @@ const ImageWithMetadataModal = ({
       setConceptVisualGeneratorMode("image_generator");
       setLoading((p) => ({ ...p, modifyReference: true }));
       const model = models.find((m) => m.model === data?.parameters?.model);
-
+      if (!model) {
+        toast.info("Model not found for Modify Reference.");
+        return;
+      }
       // Check whether the model supports reference images
       const fileParam = model
         ? model.parameters.find((p) => p.type === "file")
@@ -568,7 +573,8 @@ const ImageWithMetadataModal = ({
       );
 
       if (!defaultAnimationModel) {
-        throw new Error("No default animation model found");
+        toast.info("Default Animation model not found");
+        return;
       }
 
       setShouldClearPromptOnMetadataActions(true);
@@ -601,7 +607,8 @@ const ImageWithMetadataModal = ({
       );
 
       if (!defaultAnimationModel) {
-        throw new Error("No default animation model found");
+        toast.info("Default Animation model not found");
+        return;
       }
       const { defaultValues } = useDynamicModelSchema(defaultAnimationModel);
       await videoGenerationService(selectedBrandId!, {

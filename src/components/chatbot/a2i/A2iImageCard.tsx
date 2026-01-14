@@ -245,7 +245,7 @@ const A2iImageCard = ({
       if (isVideoOutput) {
         const model = models.find((m) => m.model === parameters.model);
         if (!model) {
-          toast.error("No model found for this video.");
+          toast.info("Model not found for this video.");
           return;
         }
         // Convert all parameters based on model parameter definitions
@@ -296,7 +296,7 @@ const A2iImageCard = ({
             (m) => m.model === parameters.model && m.type === "remix"
           );
           if (!model) {
-            toast.error("No model found for this remix image.");
+            toast.info("Model not found for this remix image.");
             return;
           }
 
@@ -345,7 +345,7 @@ const A2iImageCard = ({
 
       const model = models.find((m) => m.model === parameters.model);
       if (!model) {
-        toast.error("No model found for this image.");
+        toast.info("Model not found for this image.");
         return;
       }
 
