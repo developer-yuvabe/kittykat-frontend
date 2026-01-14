@@ -15,15 +15,17 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Check, Folder, ChevronRight } from "lucide-react";
+import { Check, Folder, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBrandStore } from "@/store/brand.store";
+import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
 
 interface FolderItem {
   id: string;
   name: string;
   parentId: string | null;
   isKKFolder: boolean;
+  isKKSelected: boolean;
   isHidden: boolean;
   subFolders: { id: string; name: string }[];
 }
@@ -55,6 +57,7 @@ export default function FolderSelector({
         name: campaign.title || "Untitled Campaign",
         parentId: null,
         isKKFolder: campaign.is_kk_folder || false,
+        isKKSelected: campaign.is_kk_selected || false,
         isHidden: campaign.is_admin_only || false,
         subFolders: campaign.sub_folders || [],
       });
@@ -66,7 +69,8 @@ export default function FolderSelector({
             id: subFolder.id,
             name: subFolder.name,
             parentId: campaign.id,
-            isKKFolder: false, // Subfolders inherit parent's KK status but we'll check parent
+            isKKFolder: subFolder.is_kk_folder || false,
+            isKKSelected: subFolder.is_kk_selected || false,
             isHidden: false,
             subFolders: [],
           });
@@ -198,11 +202,14 @@ export default function FolderSelector({
                         <span className="truncate font-medium text-sm">
                           {campaign.name}
                         </span>
-                        {campaign.isKKFolder && (
-                          <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
-                            KK
-                          </span>
-                        )}
+                        <RoleProtectedComponent>
+                          {campaign.isKKSelected && (
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          )}
+                          {campaign.isKKFolder && (
+                            <Folder className="w-3 h-3 text-blue-500" />
+                          )}
+                        </RoleProtectedComponent>
                       </div>
                       {selectedFolderId === campaign.id && (
                         <Check className="h-4 w-4 flex-shrink-0 text-purple-600" />
@@ -235,6 +242,14 @@ export default function FolderSelector({
                               <span className="truncate text-sm">
                                 {subFolder.name}
                               </span>
+                              <RoleProtectedComponent>
+                                {subFolder.isKKSelected && (
+                                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                )}
+                                {subFolder.isKKFolder && (
+                                  <Folder className="w-3 h-3 text-blue-500" />
+                                )}
+                              </RoleProtectedComponent>
                             </div>
                             {selectedFolderId === subFolder.id && (
                               <Check className="h-4 w-4 flex-shrink-0 text-purple-600" />
