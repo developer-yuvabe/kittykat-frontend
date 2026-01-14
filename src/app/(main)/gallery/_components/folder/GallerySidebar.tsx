@@ -578,15 +578,17 @@ export function GallerySidebar({
           {/* Campaign Folders Section */}
           {selectedBrandId && (
             <div>
-              <div className="flex flex-row justify-between">
+              <div className="flex flex-row justify-between ">
                 <h3 className="text-xs font-bold text-gray-500 mb-2">
                   Campaign Folders
                 </h3>
-                <CreateCampaignDialog
-                  brandId={selectedBrandId!}
-                  brandName={brandName}
-                  onCampaignCreated={onCampaignSelect}
-                />
+                <div className="mr-4">
+                  <CreateCampaignDialog
+                    brandId={selectedBrandId!}
+                    brandName={brandName}
+                    onCampaignCreated={onCampaignSelect}
+                  />
+                </div>
               </div>
               {/* Search Bar */}
               <CampaignSidebarHeader
