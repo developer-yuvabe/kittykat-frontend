@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { MessageCircle, ChevronUp } from "lucide-react";
 
-import ThreadDetailsPanel from "./ThreadDetailsPanel";
+import ThreadDetailsPanel from "./BrandDetailsPanel";
 import { ChatComponent } from "./ChatComponent";
 import {
   Tooltip,

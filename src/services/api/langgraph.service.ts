@@ -3,6 +3,7 @@ import { scrollToBottom } from "@/lib/scroll.utils";
 import { handleApiRequest } from "@/lib/utils";
 import { client } from "@/providers/langgraph/langgraph.client";
 import { StateType, StreamContextType } from "@/providers/langgraph/Stream";
+import { useThreadStore } from "@/store/thread.store";
 import { NextSuggestions } from "@/types/langgraph.types";
 import { Message } from "@langchain/langgraph-sdk";
 import { v4 as uuidv4 } from "uuid";
@@ -34,6 +35,8 @@ export function submitOptimisticMessage({
   userAccessToken,
   activeTeamId,
 }: SubmitOptions) {
+  useThreadStore.getState().setShowChatAssistant(true);
+
   const newMessage: Message = {
     id: uuidv4(),
     type: "human",

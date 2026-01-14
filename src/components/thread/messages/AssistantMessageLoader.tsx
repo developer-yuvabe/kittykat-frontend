@@ -126,7 +126,7 @@ export function AssistantMessageLoader({
 
   return (
     <div className="flex items-start gap-2 mr-auto">
-      <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl">
+      <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-2xl">
         <span className="text-sm text-foreground/80">
           <TextShimmer
             className="font-mono text-sm [--base-gradient-color:var(--color-purple-800)]"
