@@ -97,10 +97,8 @@ export function GallerySidebar({
     setCampaignCuration,
     duplicateCampaign,
   } = useCampaignMutations();
-  const {
-    updateSubfolder: updateSubfolderMutation,
-    duplicateSubfolder,
-  } = useSubfolderMutations();
+  const { updateSubfolder: updateSubfolderMutation, duplicateSubfolder } =
+    useSubfolderMutations();
 
   // Subscribe to real-time campaign analyzing status updates via SSE
   useCampaignAnalyzingStatus();
@@ -441,14 +439,16 @@ export function GallerySidebar({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="default"
-                className="mb-3 rounded-2xl"
-                onClick={onToggleCollapsed}
-                size="xs"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+              <span>
+                <Button
+                  variant="default"
+                  className="mb-3 rounded-2xl"
+                  onClick={onToggleCollapsed}
+                  size="xs"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </span>
             </TooltipTrigger>
             <TooltipContent side="top">
               <p>Open Media Library</p>
@@ -468,14 +468,16 @@ export function GallerySidebar({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="default"
-                  size="xs"
-                  className="rounded-2xl"
-                  onClick={onToggleCollapsed}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
+                <span>
+                  <Button
+                    variant="default"
+                    size="xs"
+                    className="rounded-2xl"
+                    onClick={onToggleCollapsed}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                </span>
               </TooltipTrigger>
               <TooltipContent side="top">
                 <p>Close Media Library</p>
@@ -632,6 +634,7 @@ export function GallerySidebar({
                               onTabChange("all-media");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
+                            subfolderCounts={countData?.count_by_sub_folder}
                             isCountLoading={isCountLoading}
                             onRename={(id, title) =>
                               setRenameDialog({
@@ -765,6 +768,7 @@ export function GallerySidebar({
                               onTabChange("all-media");
                             }}
                             count={countData?.count_by_campaign?.[campaign.id]}
+                            subfolderCounts={countData?.count_by_sub_folder}
                             isCountLoading={isCountLoading}
                             onRename={(id, title) =>
                               setRenameDialog({
