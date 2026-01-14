@@ -310,7 +310,7 @@ const ReferenceImageSelector = ({
       // Add uploaded items to gallery store
       if (response && response.length > 0) {
         addItems(response);
-        
+
         // Update URL-to-ID mapping for uploaded items
         setUrlToIdMap((prev) => {
           const newMap = new Map(prev);
