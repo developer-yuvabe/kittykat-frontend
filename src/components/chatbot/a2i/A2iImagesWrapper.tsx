@@ -114,7 +114,7 @@ export const A2iImagesWrapper = ({
     }
 
     return Array.from(folderIds);
-  }, [selectedFolderId, brandCampaigns]);
+  }, [selectedFolderId, brandCampaigns.length]);
 
   // Track component resize to adjust items per page
   useResizeObserver({
