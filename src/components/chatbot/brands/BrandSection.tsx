@@ -199,9 +199,18 @@ export const BrandSection: React.FC<{
           </div>
           <div>
             <h4 className="font-light text-sm">Brand</h4>
-            <p className="font-bold text-2xl">
-              {brandingInformation?.static?.brand?.name || "-"}
-            </p>
+            <DisplayField
+              json={{ brand: staticData?.brand?.name }}
+              agentId={Agents.BRANDING_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  `static.brand.Name`,
+                  oldValue,
+                  newValue,
+                  `Brand Name`
+                );
+              }}
+            />
           </div>
         </div>
 

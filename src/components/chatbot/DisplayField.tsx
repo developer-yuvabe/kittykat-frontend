@@ -104,7 +104,7 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
             value={String(value)}
             onSave={async (newVal) => handleSave(key, newVal as any)}
             textClassName={cn("text-sm text-gray-700", textClassName)}
-            showLabel={!title}
+            showLabel={!title && showKey}
             isTextarea={
               typeof value === "string" && (value as string).length > 50
             }
@@ -194,7 +194,7 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
     <ContentSection
       title={title}
       content={
-        <div className="space-y-3">
+        <div className="flex flex-col h-full space-y-3">
           {Object.entries(data || {}).map(([key, value]) => (
             <React.Fragment key={key}>
               {renderField(key, value, showKeyAsLabel)}
