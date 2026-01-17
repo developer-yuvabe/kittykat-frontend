@@ -13,6 +13,7 @@ interface DisplayFieldProps<T extends Record<string, any>> {
   onValueChange: (key: keyof T, oldValue: any, value: any) => void;
   showKeyAsLabel?: boolean;
   specialInstruction?: string;
+  textClassName?: string;
 }
 
 export const DisplayFieldComponent = <T extends Record<string, any>>({
@@ -22,6 +23,7 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
   onValueChange,
   showKeyAsLabel = false,
   specialInstruction,
+  textClassName,
 }: DisplayFieldProps<T>) => {
   const [title, setTitle] = React.useState<string | undefined>(initialTitle);
   const [data, setData] = React.useState<T>(json);
@@ -183,7 +185,7 @@ export const DisplayFieldComponent = <T extends Record<string, any>>({
       <>
         {Object.entries(data || {}).map(([key, value]) => (
           <React.Fragment key={key}>
-            {renderField(key, value, showKeyAsLabel, "font-bold text-base")}
+            {renderField(key, value, showKeyAsLabel, textClassName)}
           </React.Fragment>
         ))}
       </>

@@ -210,6 +210,7 @@ export const BrandSection: React.FC<{
                   `Brand Name`
                 );
               }}
+              textClassName="font-bold text-2xl"
             />
           </div>
         </div>
