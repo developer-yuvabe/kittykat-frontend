@@ -23,6 +23,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { useEffect } from "react";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { updateActiveTeamIdinThread } from "@/services/api/langgraph.service";
+import { useSessionStorage } from "@/hooks/useSessionStorage";
 
 export function UserProfileMenu({}) {
   const {
@@ -39,8 +40,10 @@ export function UserProfileMenu({}) {
   const setUser = useUserStore((s) => s.setUser);
   const { setIsBrandsFetched } = useBrandStore();
   const { values } = useStreamContext();
+  const { clearSessionStorage } = useSessionStorage();
 
   async function handleLogout() {
+    clearSessionStorage();
     await signOut(auth);
     await fetch("/api/logout");
     // reload the page to ensure the user is logged out
