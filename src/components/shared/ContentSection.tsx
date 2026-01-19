@@ -198,10 +198,12 @@ export function ContentSection({
     <div
       ref={ref}
       className={` ${
-        showBorder ? "border border-gray-400 rounded-2xl overflow-hidden" : ""
+        showBorder
+          ? "border border-gray-400 rounded-2xl overflow-hidden h-full"
+          : ""
       }`}
     >
-      <div className="p-3">
+      <div className="p-3 flex flex-col h-full">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-[#171a1f]">{title}</h3>
 
@@ -241,7 +243,7 @@ export function ContentSection({
             </div>
           )}
         </div>
-        <div className={`${contentClassName}`}>{content}</div>
+        <div className={`flex-1 ${contentClassName}`}>{content}</div>
       </div>
     </div>
   );
