@@ -47,11 +47,20 @@ export function useSessionStorage() {
     }
   };
 
+  const clearSessionStorage = (): void => {
+    try {
+      sessionStorage.clear();
+    } catch (err) {
+      console.error("Failed to clear sessionStorage", err);
+    }
+  };
+
   return {
     setSessionItem,
     getSessionItem,
     updateSessionItem,
     deleteSessionItem,
     removeSessionItem,
+    clearSessionStorage,
   };
 }
