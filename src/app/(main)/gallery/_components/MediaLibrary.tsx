@@ -110,11 +110,15 @@ export function MediaLibrary({
   const {
     selectedBrandId,
     setSelectedBrandId,
-    selectedCampaignIdInGallery: selectedCampaignId,
+    selectedCampaignId: storeCampaignId,
+    dialogCampaignId,
     brands,
     isBrandsFetched,
     getSelectedBrand,
   } = useBrandStore();
+
+  // Use dialogCampaignId when in dialog mode, otherwise use selectedCampaignId
+  const selectedCampaignId = isMediaSelectDialog ? dialogCampaignId : storeCampaignId;
 
   useEffect(() => {
     if (!selectedCampaignId) setOrderBy("created_at_descending");

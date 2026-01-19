@@ -17,8 +17,7 @@ export const useFolderSelectionDefaults = (
   isEditMode: boolean = false
 ) => {
   const { selectedFolderId, setSelectedFolderId } = useA2iStore();
-  const { selectedCampaignIdInGallery: selectedCampaignId, campaigns } =
-    useBrandStore();
+  const { selectedCampaignId, campaigns } = useBrandStore();
   const { user } = useUserStore();
 
   const isCreativeAdmin = user?.role?.id === UserRoleId.KK_CREATIVE_USER;

@@ -48,19 +48,18 @@ export function InlineEditableField({
   };
 
   return (
-    <div className="flex items-start gap-2 w-full pr-5">
+    <div className="flex items-start gap-2 w-full h-full pr-5">
       {showLabel && (
         <span className="font-bold whitespace-nowrap">{label}:</span>
       )}
 
       {isEditing ? (
-        <div className="flex flex-col sm:flex-row gap-2 w-full">
+        <div className="flex flex-1 h-full gap-2">
           {isTextarea ? (
             <Textarea
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              className="w-full"
-              rows={4}
+              className="flex-1 h-full resize-none"
             />
           ) : (
             <Input

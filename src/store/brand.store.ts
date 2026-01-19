@@ -28,8 +28,8 @@ type Store = {
   selectedCampaignId: string | null;
   setSelectedCampaignId: (campaignId: string | null) => void;
 
-  selectedCampaignIdInGallery: string | null;
-  setSelectedCampaignIdInGallery: (campaignId: string | null) => void;
+  dialogCampaignId: string | null;
+  setDialogCampaignId: (campaignId: string | null) => void;
 
   isCreatingBrand: boolean;
   setIsCreatingBrand: (isCreating: boolean) => void;
@@ -260,7 +260,7 @@ export const useBrandStore = create<Store>((set, get) => ({
       // Auto-select default campaign folder when brand changes
       if (isBrandChanging) {
         useA2iStore.getState().setSelectedFolderId(defaultCampaignId);
-        useBrandStore.getState().setSelectedCampaignIdInGallery(null);
+        useBrandStore.getState().setDialogCampaignId(null);
       }
 
       return {
@@ -275,9 +275,9 @@ export const useBrandStore = create<Store>((set, get) => ({
   setSelectedCampaignId: (campaignId: string | null) =>
     set({ selectedCampaignId: campaignId }),
 
-  selectedCampaignIdInGallery: null,
-  setSelectedCampaignIdInGallery: (campaignId: string | null) =>
-    set({ selectedCampaignIdInGallery: campaignId }),
+  dialogCampaignId: null,
+  setDialogCampaignId: (campaignId: string | null) =>
+    set({ dialogCampaignId: campaignId }),
 
   isCreatingBrand: false,
   setIsCreatingBrand: (isCreating: boolean) =>

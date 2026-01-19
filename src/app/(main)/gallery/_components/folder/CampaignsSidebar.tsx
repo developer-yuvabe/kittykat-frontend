@@ -53,6 +53,7 @@ interface CampaignsSidebarProps {
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
+  isMediaSelectDialog?: boolean;
 }
 
 export function CampaignsSidebar({
@@ -66,13 +67,16 @@ export function CampaignsSidebar({
   galleryView,
   isCollapsed,
   onToggleCollapsed,
+  isMediaSelectDialog = false,
 }: CampaignsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { brands } = useBrandStore();
-  const { setSelectedCampaignIdInGallery: setSelectedCampaignId } =
-    useBrandStore();
+  const { setSelectedCampaignId, setDialogCampaignId } = useBrandStore();
   const { orderBy, setOrderBy, selectedSubFolderId, setSelectedSubFolderId } =
     useGalleryFilterStore();
+
+  // Use the appropriate setter based on dialog mode (if needed in future)
+  const handleSetCampaignId = isMediaSelectDialog ? setDialogCampaignId : setSelectedCampaignId;
 
   // Mutations
   const {
@@ -552,7 +556,7 @@ export function CampaignsSidebar({
             size="sm"
             onClick={() => {
               onCampaignSelect("");
-              setSelectedCampaignId(null);
+              handleSetCampaignId(null);
               setSelectedSubFolderId(null);
               if (orderBy === "brand_sort_order") {
                 setOrderBy("created_at_descending");

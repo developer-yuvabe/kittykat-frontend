@@ -148,9 +148,25 @@ export const CampaignSection: React.FC<{
           </div>
           <div>
             <h4 className="font-light text-sm">Campaign</h4>
-            <p className="font-bold text-2xl">
-              {currentCampaign?.campaign?.title || "Unnamed Campaign"}
-            </p>
+
+            <DisplayField
+              key={currentCampaign?.campaign?.title}
+              json={{
+                Campaign: `${
+                  currentCampaign?.campaign?.title || "Unnamed Campaign"
+                }`,
+              }}
+              agentId={Agents.CAMPAIGN_AGENT}
+              onValueChange={(key, oldValue, newValue) => {
+                handleFieldUpdate(
+                  "campaign.title",
+                  oldValue,
+                  newValue,
+                  "Campaign Title"
+                );
+              }}
+              textClassName="font-bold text-2xl"
+            />
           </div>
         </div>
 
