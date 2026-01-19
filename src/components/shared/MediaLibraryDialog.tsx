@@ -1,4 +1,13 @@
 // MediaLibraryDialog.tsx
+/**
+ * MediaLibraryDialog - Modal for selecting media from the gallery
+ * 
+ * Important: This component uses isMediaSelectDialog={true} which enables dialog-specific behavior:
+ * - Uses dialogCampaignId from the store instead of selectedCampaignId
+ * - Campaign selection in the dialog is isolated from the main gallery page
+ * - This ensures the home page and gallery page campaign selections stay in sync
+ *   while allowing independent campaign selection within the dialog
+ */
 import React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MediaLibrary } from "@/app/(main)/gallery/_components/MediaLibrary";

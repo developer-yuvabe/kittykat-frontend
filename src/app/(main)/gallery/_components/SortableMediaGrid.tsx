@@ -42,7 +42,8 @@ export function SortableMediaGrid({
   const router = useRouter();
   const {
     setSelectedMoodboardId,
-    setSelectedCampaignIdInGallery: setSelectedCampaignId,
+    setSelectedCampaignId,
+    setDialogCampaignId,
   } = useBrandStore();
   const { openConceptVisual } = useConceptVisualStore();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);

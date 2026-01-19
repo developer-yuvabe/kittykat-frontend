@@ -23,7 +23,8 @@ export function MediaItemActionsButton({
 
   const {
     setSelectedMoodboardId,
-    setSelectedCampaignIdInGallery: setSelectedCampaignId,
+    setSelectedCampaignId,
+    setDialogCampaignId,
   } = useBrandStore();
 
   const handleEditMoodboard = () => {

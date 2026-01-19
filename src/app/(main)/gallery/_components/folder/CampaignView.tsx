@@ -271,7 +271,9 @@ export function CampaignView({
     setExcludedItems([]);
   };
 
-  const { selectedCampaignIdInGallery: selectedCampaignId } = useBrandStore();
+  const { selectedCampaignId: storeCampaignId, dialogCampaignId } = useBrandStore();
+  // Use dialogCampaignId when in dialog mode, otherwise use selectedCampaignId from store
+  const selectedCampaignId = isMediaSelectDialog ? dialogCampaignId : storeCampaignId;
 
   if (!currentCampaign) {
     return (
