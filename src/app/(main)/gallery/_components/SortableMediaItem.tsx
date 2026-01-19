@@ -83,10 +83,10 @@ export function SortableMediaItem({
     setSelectedVideoGenearationModel,
   } = useModelsStore();
   const {
-    setShouldClearPromptOnMetadataActions,
     setStartFrame,
     setEndFrame,
     setSelectedFolderId,
+    setConceptVisualGeneratorMode,
   } = useA2iStore();
 
   const isAlreadySelected = (inSelectionGalleryIds ?? []).includes(item.id);
@@ -224,6 +224,8 @@ export function SortableMediaItem({
         }
 
         // Set the remix model
+        setConceptVisualGeneratorMode("image_editor");
+
         setSelectedRemixModel(model);
 
         // Convert all remix parameters based on model schema
@@ -262,7 +264,7 @@ export function SortableMediaItem({
           return;
         }
 
-        setShouldClearPromptOnMetadataActions(true);
+        setConceptVisualGeneratorMode("image_generator");
 
         // Regular image generation workflow
         setSelectedImageGenerationModel(model);
@@ -332,6 +334,7 @@ export function SortableMediaItem({
         });
 
         //  Set model + parameters
+        setConceptVisualGeneratorMode("video_generator");
         setSelectedVideoGenearationModel(model);
         setParameters("videoParameters", videoParams);
 
