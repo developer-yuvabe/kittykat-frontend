@@ -88,10 +88,12 @@ export function GallerySidebar({
   isMediaSelectDialog = false,
 }: GallerySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { brands, setSelectedCampaignIdInGallery: setSelectedCampaignId } =
-    useBrandStore();
+  const { brands, setSelectedCampaignId, setDialogCampaignId } = useBrandStore();
   const { selectedSubFolderId, setSelectedSubFolderId } =
     useGalleryFilterStore();
+
+  // Use the appropriate setter based on dialog mode
+  const handleSetCampaignId = isMediaSelectDialog ? setDialogCampaignId : setSelectedCampaignId;
 
   // Mutations
   const {
@@ -504,7 +506,7 @@ export function GallerySidebar({
               setInitialBrandId(null);
               setSelectedCampaignInUrl(null);
               onCampaignSelect("");
-              setSelectedCampaignId(null);
+              handleSetCampaignId(null);
             }}
           />
         )}
@@ -522,7 +524,7 @@ export function GallerySidebar({
                 onClick={() => {
                   onTabChange("all-media");
                   onCampaignSelect("");
-                  setSelectedCampaignId(null);
+                  handleSetCampaignId(null);
                   setSelectedSubFolderId(null);
                   setSelectedFilters((prev) => ({
                     ...prev,
@@ -555,7 +557,7 @@ export function GallerySidebar({
                     onClick={() => {
                       onTabChange(folder.id);
                       onCampaignSelect("");
-                      setSelectedCampaignId(null);
+                      handleSetCampaignId(null);
                       setSelectedSubFolderId(null);
                       setSelectedFilters((prev) => ({
                         ...prev,
@@ -629,7 +631,7 @@ export function GallerySidebar({
                             selectedSubFolderId={selectedSubFolderId}
                             onCampaignSelect={(campaignId, subFolderId) => {
                               onCampaignSelect(campaignId);
-                              setSelectedCampaignId(campaignId);
+                              handleSetCampaignId(campaignId);
                               setSelectedSubFolderId(subFolderId || null);
                               setSelectedFilters((prev) => ({
                                 ...prev,
@@ -763,7 +765,7 @@ export function GallerySidebar({
                             selectedCampaignId={selectedCampaignId}
                             onCampaignSelect={(campaignId, subFolderId) => {
                               onCampaignSelect(campaignId);
-                              setSelectedCampaignId(campaignId);
+                              handleSetCampaignId(campaignId);
                               setSelectedSubFolderId(subFolderId || null);
                               setSelectedFilters((prev) => ({
                                 ...prev,

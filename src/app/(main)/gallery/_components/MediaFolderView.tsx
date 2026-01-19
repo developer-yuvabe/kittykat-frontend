@@ -100,7 +100,7 @@ export function MediaFolderView({
     archiveCampaign,
   } = useBrandStore();
   const { selectedCampaignId, handleCampaignSelect, handleBackToCampaigns } =
-    useFolderState();
+    useFolderState(isMediaSelectDialog);
   const {
     favorites,
     orderBy,
