@@ -161,7 +161,7 @@ const RemixControls = ({
     if (image.url && baseImageParam) {
       form.setValue(baseImageParam.id, image.url, { shouldValidate: true });
     } else if (baseImageParam) {
-      form.setValue(baseImageParam.id, null, { shouldValidate: true });
+      form.setValue(baseImageParam.id, "", { shouldValidate: true });
     }
   }, [image]);
 
@@ -868,7 +868,9 @@ const RemixControls = ({
                   tokens={credits}
                   loading={form.formState.isSubmitting}
                   disabled={
-                    !form.formState.isValid || form.formState.isSubmitting
+                    !form.formState.isValid ||
+                    form.formState.isSubmitting ||
+                    image.url === ""
                   }
                   isCalculatingTokens={isCalculatingCredits}
                 />
