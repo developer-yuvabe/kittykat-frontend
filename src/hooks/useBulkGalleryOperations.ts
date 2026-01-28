@@ -138,13 +138,22 @@ export const useBulkGalleryOperations = () => {
 
       return { previousData };
     },
-    onSuccess: (response: BulkOperationResponse) => {
+    onSuccess: (
+      response: BulkOperationResponse,
+      request: BulkDeleteRequest
+    ) => {
       if (response.success) {
         toast.success(
           `Successfully deleted ${response.affected_count} item(s)`,
           { id: "bulk-delete" }
         );
         invalidateGalleryQueries();
+        // Invalidate campaign counts for source brand
+        if (request.brand_id) {
+          queryClient.invalidateQueries({
+            queryKey: ["campaign-counts", request.brand_id],
+          });
+        }
       } else {
         toast.error(response.message || "Failed to delete items", {
           id: "bulk-delete",
