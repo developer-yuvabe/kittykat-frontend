@@ -157,13 +157,28 @@ export function SubfolderRow({
           </div>
 
           {/* Subfolder Icon */}
-          <div className="flex items-center justify-center shrink-0 ml-2">
+          <div className="flex items-center justify-center shrink-0 ml-2 relative">
             <Folder
               className={cn(
-                "w-[16px] h-[16px]",
+                "w-[22px] h-[22px]",
                 isActive ? "text-purple-600" : "text-gray-400"
               )}
             />
+            {/* KK Badge inside folder */}
+            <RoleProtectedComponent>
+              {subFolder.is_kk_folder && (
+                <span className="absolute top-1 text-[10px] font-bold text-purple-600 px-[2px] py-[2px] rounded">
+                  KK
+                </span>
+              )}
+            </RoleProtectedComponent>
+          </div>
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <RoleProtectedComponent>
+              {subFolder.is_kk_selected && (
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+              )}
+            </RoleProtectedComponent>
           </div>
 
           {isRenaming ? (
@@ -218,18 +233,6 @@ export function SubfolderRow({
                         : "text-gray-700 font-medium"
                     )}
                   />
-                </div>
-
-                {/* Status Icons */}
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                  <RoleProtectedComponent>
-                    {subFolder.is_kk_selected && (
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                    )}
-                    {subFolder.is_kk_folder && (
-                      <Folder className="w-3 h-3 text-blue-500" />
-                    )}
-                  </RoleProtectedComponent>
                 </div>
 
                 {/* Count Badge */}

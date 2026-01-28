@@ -245,27 +245,35 @@ export default function FolderSelector({
                           "bg-purple-50 text-purple-700"
                       )}
                     >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <Folder
-                          className={cn(
-                            "h-4 w-4 flex-shrink-0",
-                            selectedFolderId === campaign.id &&
-                              !selectedSubfolderId
-                              ? "text-purple-600"
-                              : "text-gray-500"
+                      <div className="flex items-center gap-1 min-w-0 flex-1">
+                        <div className="flex items-center justify-center shrink-0 relative">
+                          <Folder
+                            className={cn(
+                              "!h-6 !w-6 flex-shrink-0",
+                              selectedFolderId === campaign.id &&
+                                !selectedSubfolderId
+                                ? "text-purple-600"
+                                : "text-gray-500"
+                            )}
+                          />
+
+                          <RoleProtectedComponent>
+                            {campaign.isKKFolder && (
+                              <span className="absolute top-1 text-[10px] font-bold text-purple-600 px-[2px] py-[2px] rounded">
+                                KK
+                              </span>
+                            )}
+                          </RoleProtectedComponent>
+                        </div>
+
+                        <RoleProtectedComponent>
+                          {campaign.isKKSelected && (
+                            <Star className="!w-4 !h-4 text-amber-500 fill-amber-500" />
                           )}
-                        />
+                        </RoleProtectedComponent>
                         <span className="truncate font-medium text-sm">
                           {campaign.name}
                         </span>
-                        <RoleProtectedComponent>
-                          {campaign.isKKSelected && (
-                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                          )}
-                          {campaign.isKKFolder && (
-                            <Folder className="w-3 h-3 text-blue-500" />
-                          )}
-                        </RoleProtectedComponent>
                       </div>
                       {selectedFolderId === campaign.id &&
                         !selectedSubfolderId && (
@@ -287,26 +295,33 @@ export default function FolderSelector({
                                 "bg-purple-50 text-purple-700"
                             )}
                           >
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <Folder
-                                className={cn(
-                                  "h-3.5 w-3.5 flex-shrink-0",
-                                  selectedSubfolderId === subFolder.id
-                                    ? "text-purple-600"
-                                    : "text-gray-400"
+                            <div className="flex items-center gap-1 min-w-0 flex-1">
+                              <div className="flex items-center justify-center shrink-0 relative">
+                                <Folder
+                                  className={cn(
+                                    "!h-6 !w-6 flex-shrink-0",
+                                    selectedSubfolderId === subFolder.id
+                                      ? "text-purple-600"
+                                      : "text-gray-400"
+                                  )}
+                                />
+
+                                <RoleProtectedComponent>
+                                  {subFolder.isKKFolder && (
+                                    <span className="absolute top-1 text-[10px] font-bold text-purple-600 px-[2px] py-[2px] rounded">
+                                      KK
+                                    </span>
+                                  )}
+                                </RoleProtectedComponent>
+                              </div>
+                              <RoleProtectedComponent>
+                                {subFolder.isKKSelected && (
+                                  <Star className="!w-3 !h-3 text-amber-500 fill-amber-500" />
                                 )}
-                              />
+                              </RoleProtectedComponent>
                               <span className="truncate text-sm">
                                 {subFolder.name}
                               </span>
-                              <RoleProtectedComponent>
-                                {subFolder.isKKSelected && (
-                                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                )}
-                                {subFolder.isKKFolder && (
-                                  <Folder className="w-3 h-3 text-blue-500" />
-                                )}
-                              </RoleProtectedComponent>
                             </div>
                             {selectedSubfolderId === subFolder.id && (
                               <Check className="h-4 w-4 flex-shrink-0 text-purple-600" />
