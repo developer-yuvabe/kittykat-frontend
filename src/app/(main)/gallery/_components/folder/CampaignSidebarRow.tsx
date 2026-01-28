@@ -269,7 +269,7 @@ export function CampaignSidebarRow({
 
   return (
     <>
-      <div className="space-y-0">
+      <div className="space-y-0 w-full">
         {/* Main Campaign Row */}
         <div
           ref={combineRefs(setSortableRef, setDroppableRef)}
@@ -288,12 +288,12 @@ export function CampaignSidebarRow({
           onContextMenu={handleContextMenu}
         >
           {/* Row content */}
-          <div className="flex items-center gap-1 py-1.5 pl-1">
+          <div className="flex items-center gap-1 py-1.5 pl-1 w-full min-w-0 overflow-hidden">
             {/* Expand/Collapse Chevron */}
             {hasSubFolders ? (
               <button
                 onClick={handleToggleExpand}
-                className="flex items-center justify-center w-5 h-5 hover:bg-gray-200/60 rounded transition-colors flex-shrink-0 max-w-40"
+                className="flex items-center justify-center hover:bg-gray-200/60 rounded transition-colors flex-shrink-0 max-w-40"
                 aria-label={isExpanded ? "Collapse" : "Expand"}
               >
                 {isExpanded ? (
@@ -303,26 +303,33 @@ export function CampaignSidebarRow({
                 )}
               </button>
             ) : (
-              <div className="w-5" />
+              <div className="w-3.5" />
             )}
 
             {/* Folder Icon */}
-            <div className="flex items-center justify-center shrink-0 ml-2">
-              {isExpanded && hasSubFolders ? (
-                <FolderOpen
-                  className={cn(
-                    "w-[18px] h-[18px]",
-                    isActive ? "text-purple-600" : "text-gray-500"
-                  )}
-                />
-              ) : (
-                <Folder
-                  className={cn(
-                    "w-[18px] h-[18px]",
-                    isActive ? "text-purple-600" : "text-gray-500"
-                  )}
-                />
-              )}
+            <div className="flex items-center justify-center shrink-0 relative">
+              <Folder
+                className={cn(
+                  "w-[24px] h-[24px]",
+                  isActive ? "text-purple-600" : "text-gray-500"
+                )}
+              />
+
+              {/* KK Badge inside folder */}
+              <RoleProtectedComponent>
+                {campaign.is_kk_folder && (
+                  <span className="absolute top-1 text-[10px] font-bold text-purple-600 px-[2px] py-[2px] rounded">
+                    KK
+                  </span>
+                )}
+              </RoleProtectedComponent>
+            </div>
+            <div className="flex items-center shrink-0 gap-0.5 justify-center">
+              <RoleProtectedComponent>
+                {campaign.is_kk_selected && (
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                )}
+              </RoleProtectedComponent>
             </div>
 
             {isRenaming ? (
@@ -358,13 +365,16 @@ export function CampaignSidebarRow({
                 </button>
               </div>
             ) : (
-              <div className="flex-1 flex items-center gap-2 px-2 py-1 max-w-56">
+              <div
+                className="flex-1 flex px-2 justify-between gap-1 items-center py-1 w-72"
+                onClick={() => onCampaignSelect(campaign.id)}
+              >
                 {/* Campaign Title - 50% */}
+
                 <button
-                  onClick={() => onCampaignSelect(campaign.id)}
                   className={cn(
                     "text-left rounded-md hover:bg-transparent transition-colors",
-                    "w-[50%] min-w-0",
+                    "min-w-0",
                     campaign.is_admin_only && "opacity-50"
                   )}
                 >
@@ -380,189 +390,187 @@ export function CampaignSidebarRow({
                 </button>
 
                 {/* Status Icons - 20% */}
-                <div className="flex items-center gap-0.5 w-[20%] justify-center">
-                  <RoleProtectedComponent>
-                    {campaign.is_kk_selected && (
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                <div className="flex justify-between items-center gap-1">
+                  <div className="flex items-center gap-0.5 w-[20%] justify-center">
+                    {campaign.is_curated_for_brand && (
+                      <Brain className="w-3 h-3 text-purple-500" />
                     )}
-                    {campaign.is_kk_folder && (
-                      <Folder className="w-3 h-3 text-blue-500" />
-                    )}
-                  </RoleProtectedComponent>
-                  {campaign.is_curated_for_brand && (
-                    <Brain className="w-3 h-3 text-purple-500" />
-                  )}
-                </div>
+                  </div>
 
-                {/* Count Badge - 15% */}
-                <div className="flex items-center justify-center w-[15%]">
-                  {isCountLoading ? (
-                    <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
-                  ) : (
-                    <span
-                      className={cn(
-                        "text-[9px] font-medium min-w-[20px] text-center rounded-full px-1.5 py-0.5",
-                        isActive
-                          ? "text-purple-700 bg-purple-100/80"
-                          : "text-gray-500 bg-gray-100/80"
-                      )}
-                    >
-                      {count ?? 0}
-                    </span>
-                  )}
-                </div>
-
-                {/* Dropdown Trigger - 15% */}
-                <div className="flex items-center justify-center w-[15%]">
-                  <DropdownMenu
-                    open={isDropdownOpen}
-                    onOpenChange={setIsDropdownOpen}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <button
+                  {/* Count Badge - 15% */}
+                  <div className="flex items-center justify-center">
+                    {isCountLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
+                    ) : (
+                      <span
                         className={cn(
-                          "flex items-center justify-center w-7 h-7 rounded-md",
-                          "opacity-0 group-hover:opacity-100",
-                          "transition-all duration-150"
+                          "text-[9px] font-medium min-w-[20px] text-center rounded-full px-1.5 py-0.5",
+                          isActive
+                            ? "text-purple-700 bg-purple-100/80"
+                            : "text-gray-500 bg-gray-100/80"
                         )}
-                        title="More options"
-                        onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreVertical className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </DropdownMenuTrigger>
+                        {count ?? 0}
+                      </span>
+                    )}
+                  </div>
 
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCreate();
-                        }}
-                      >
-                        <Plus className="w-4 h-4 mr-2 text-gray-600" />
-                        New subfolder
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameStart();
-                        }}
-                      >
-                        <Pencil className="w-4 h-4 mr-2 text-gray-600" />
-                        Rename
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
-                        onClick={() =>
-                          onArchiveToggle(
-                            campaign.id,
-                            campaign.title,
-                            campaign.is_archived || false
-                          )
-                        }
-                      >
-                        <Archive className="w-4 h-4 mr-2 text-gray-600" />
-                        {campaign.is_archived ? "Unarchive" : "Move to Archive"}
-                      </DropdownMenuItem>
-
-                      <RoleProtectedComponent>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            onKKFolderToggle(
-                              campaign.id,
-                              campaign.title,
-                              campaign.is_kk_folder || false
-                            )
-                          }
-                        >
-                          <Folder className="w-4 h-4 mr-2 text-gray-600" />
-                          {campaign.is_kk_folder
-                            ? "Remove as KK Folder"
-                            : "Mark as KK Folder"}
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() =>
-                            onKKSelectedToggle(
-                              campaign.id,
-                              campaign.title,
-                              campaign.is_kk_selected || false
-                            )
-                          }
-                        >
-                          <Star className="w-4 h-4 mr-2 text-gray-600" />
-                          {campaign.is_kk_selected
-                            ? "Remove as KK Selects"
-                            : "Mark as KK Selects"}
-                        </DropdownMenuItem>
-                      </RoleProtectedComponent>
-
-                      {isAdmin && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            onAdminOnlyToggle(
-                              campaign.id,
-                              campaign.title,
-                              campaign.is_admin_only || false
-                            )
-                          }
-                        >
-                          {campaign.is_admin_only ? (
-                            <Eye className="w-4 h-4 mr-2 text-gray-600" />
-                          ) : (
-                            <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
+                  {/* Dropdown Trigger - 15% */}
+                  <div className="flex items-center justify-center w-[15%]">
+                    <DropdownMenu
+                      open={isDropdownOpen}
+                      onOpenChange={setIsDropdownOpen}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className={cn(
+                            "flex items-center justify-center w-7 h-7 rounded-md",
+                            "opacity-0 group-hover:opacity-100",
+                            "transition-all duration-150"
                           )}
-                          {campaign.is_admin_only
-                            ? "Show to Clients"
-                            : "Hide from Clients"}
+                          title="More options"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-600" />
+                        </button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCreate();
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-2 text-gray-600" />
+                          New subfolder
                         </DropdownMenuItem>
-                      )}
 
-                      <DropdownMenuItem
-                        onClick={() =>
-                          onCuratedToggle(
-                            campaign.id,
-                            campaign.title,
-                            campaign.is_curated_for_brand || false
-                          )
-                        }
-                        disabled={campaign.is_analyzing}
-                      >
-                        <Brain className="w-4 h-4 mr-2 text-gray-600" />
-                        {campaign.is_curated_for_brand
-                          ? "Unmark as Curated Campaign"
-                          : "Mark as Curated Campaign"}
-                      </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameStart();
+                          }}
+                        >
+                          <Pencil className="w-4 h-4 mr-2 text-gray-600" />
+                          Rename
+                        </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        onClick={() => onAnalyze(campaign.id, campaign.title)}
-                        disabled={campaign.is_analyzing}
-                      >
-                        <ChartNetwork className="w-4 h-4 mr-2 text-gray-600" />
-                        {campaign.is_analyzing
-                          ? "Analyzing..."
-                          : campaign.is_curated_for_brand
-                          ? "Reanalyze"
-                          : "Analyze"}
-                      </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onArchiveToggle(
+                              campaign.id,
+                              campaign.title,
+                              campaign.is_archived || false
+                            )
+                          }
+                        >
+                          <Archive className="w-4 h-4 mr-2 text-gray-600" />
+                          {campaign.is_archived
+                            ? "Unarchive"
+                            : "Move to Archive"}
+                        </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        onClick={() => onDuplicate(campaign.id, campaign.title)}
-                      >
-                        <Copy className="w-4 h-4 mr-2 text-gray-600" />
-                        Duplicate
-                      </DropdownMenuItem>
+                        <RoleProtectedComponent>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onKKFolderToggle(
+                                campaign.id,
+                                campaign.title,
+                                campaign.is_kk_folder || false
+                              )
+                            }
+                          >
+                            <Folder className="w-4 h-4 mr-2 text-gray-600" />
+                            {campaign.is_kk_folder
+                              ? "Remove as KK Folder"
+                              : "Mark as KK Folder"}
+                          </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        onClick={() => onDelete(campaign.id, campaign.title)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onKKSelectedToggle(
+                                campaign.id,
+                                campaign.title,
+                                campaign.is_kk_selected || false
+                              )
+                            }
+                          >
+                            <Star className="w-4 h-4 mr-2 text-gray-600" />
+                            {campaign.is_kk_selected
+                              ? "Remove as KK Selects"
+                              : "Mark as KK Selects"}
+                          </DropdownMenuItem>
+                        </RoleProtectedComponent>
+
+                        {isAdmin && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onAdminOnlyToggle(
+                                campaign.id,
+                                campaign.title,
+                                campaign.is_admin_only || false
+                              )
+                            }
+                          >
+                            {campaign.is_admin_only ? (
+                              <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                            ) : (
+                              <EyeOff className="w-4 h-4 mr-2 text-gray-600" />
+                            )}
+                            {campaign.is_admin_only
+                              ? "Show to Clients"
+                              : "Hide from Clients"}
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onCuratedToggle(
+                              campaign.id,
+                              campaign.title,
+                              campaign.is_curated_for_brand || false
+                            )
+                          }
+                          disabled={campaign.is_analyzing}
+                        >
+                          <Brain className="w-4 h-4 mr-2 text-gray-600" />
+                          {campaign.is_curated_for_brand
+                            ? "Unmark as Curated Campaign"
+                            : "Mark as Curated Campaign"}
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => onAnalyze(campaign.id, campaign.title)}
+                          disabled={campaign.is_analyzing}
+                        >
+                          <ChartNetwork className="w-4 h-4 mr-2 text-gray-600" />
+                          {campaign.is_analyzing
+                            ? "Analyzing..."
+                            : campaign.is_curated_for_brand
+                            ? "Reanalyze"
+                            : "Analyze"}
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onDuplicate(campaign.id, campaign.title)
+                          }
+                        >
+                          <Copy className="w-4 h-4 mr-2 text-gray-600" />
+                          Duplicate
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => onDelete(campaign.id, campaign.title)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </div>
             )}

@@ -88,12 +88,15 @@ export function GallerySidebar({
   isMediaSelectDialog = false,
 }: GallerySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { brands, setSelectedCampaignId, setDialogCampaignId } = useBrandStore();
+  const { brands, setSelectedCampaignId, setDialogCampaignId } =
+    useBrandStore();
   const { selectedSubFolderId, setSelectedSubFolderId } =
     useGalleryFilterStore();
 
   // Use the appropriate setter based on dialog mode
-  const handleSetCampaignId = isMediaSelectDialog ? setDialogCampaignId : setSelectedCampaignId;
+  const handleSetCampaignId = isMediaSelectDialog
+    ? setDialogCampaignId
+    : setSelectedCampaignId;
 
   // Mutations
   const {
@@ -465,7 +468,7 @@ export function GallerySidebar({
   }
 
   return (
-    <div className="border-r border-gray-200 bg-white flex flex-col h-full min-h-0 min-w-[300px]  w-[18vw] lg:w-[16vw] xl:w-[18vw] rounded-sm">
+    <div className="border-r border-gray-200 bg-white flex flex-col h-full min-h-0 min-w-[300px] w-[22vw] rounded-sm">
       {/* Header */}
       <div className="flex flex-col px-4 gap-y-3 mt-2">
         <div className="flex justify-between items-center">
@@ -514,7 +517,7 @@ export function GallerySidebar({
 
       {/* Main Content */}
       <ScrollArea className="flex-1 min-h-0 mt-4">
-        <div className="px-4 space-y-6">
+        <div className="px-4 space-y-6 w-full min-w-0 overflow-hidden">
           {/* System Folders Section */}
           <div>
             <div className="space-y-0.5">
