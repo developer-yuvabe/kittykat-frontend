@@ -382,7 +382,7 @@ export function CustomGalleryPlaceholderCard<TPhoto extends Photo>({
               <Button
                 size="lg"
                 className="rounded-b-none w-28 hover:opacity-90"
-                disabled={isAutoFillLoading || isDragging || isFileUploading}
+                disabled={isAutoFillLoading || isFileUploading}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
