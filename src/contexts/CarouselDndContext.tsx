@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useRef, useState } from "react";
 import {
   DndContext,
   useDraggable,
@@ -13,6 +13,7 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
+  DragMoveEvent,
 } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { GalleryItemResponse } from "@/types/gallery.types";
@@ -162,6 +163,11 @@ export const CarouselDndProvider: React.FC<CarouselDndProviderProps> = ({
   >();
   const [activePhoto, setActivePhoto] = useState<any>(undefined);
 
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const SCROLL_THRESHOLD = 120;
+  const SCROLL_SPEED = 20;
+
   // Add sensors for better drag handling
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -251,6 +257,27 @@ export const CarouselDndProvider: React.FC<CarouselDndProviderProps> = ({
     }
   };
 
+  const handleDragMove = (event: DragMoveEvent) => {
+    if (!scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const rect = container.getBoundingClientRect();
+
+    const pointerY = (event.activatorEvent as PointerEvent | null)?.clientY;
+
+    if (!pointerY) return;
+
+    // Scroll UP
+    if (pointerY < rect.top + SCROLL_THRESHOLD) {
+      container.scrollTop -= SCROLL_SPEED;
+    }
+
+    // Scroll DOWN
+    if (pointerY > rect.bottom - SCROLL_THRESHOLD) {
+      container.scrollTop += SCROLL_SPEED;
+    }
+  };
+
   const contextValue: CarouselDndContextValue = {
     isDragging,
     draggedItem,
@@ -266,8 +293,10 @@ export const CarouselDndProvider: React.FC<CarouselDndProviderProps> = ({
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
+        onDragCancel={handleDragMove}
         onDragEnd={handleDragEnd}
         collisionDetection={customCollisionDetection}
+        autoScroll={false}
       >
         <SortableContext items={sortableItems.map((item) => item.id)}>
           {children}
