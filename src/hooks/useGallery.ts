@@ -7,7 +7,10 @@ import {
 } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { galleryService } from "@/services/api/gallery.service";
-import { extractProducts, type ProductExtractionRequest } from "@/services/api/gallery.service";
+import {
+  extractProducts,
+  type ProductExtractionRequest,
+} from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
   BulkScrapeRequest,
@@ -926,8 +929,8 @@ export const useGalleryQuery = (
   const downloadItem = async (item: GalleryItemResponse) => {
     try {
       if (item.asset_type === "video")
-        await handleDownloadVideo(item.asset_url);
-      else await handleDownloadImage(item.asset_url);
+        await handleDownloadVideo(item.preview_url || item.asset_url);
+      else await handleDownloadImage(item.preview_url || item.asset_url);
       return true;
     } catch (error) {
       toast.error("Failed to download file");

@@ -123,9 +123,9 @@ export function MediaImage({
 
   const handleDownload = () => {
     if (isVideo) {
-      handleDownloadVideo(item.asset_url || item.preview_url || "");
+      handleDownloadVideo(item.preview_url || item.asset_url || "");
     } else {
-      handleDownloadImage(item.asset_url || item.preview_url || "");
+      handleDownloadImage(item.preview_url || item.asset_url || "");
     }
   };
 
