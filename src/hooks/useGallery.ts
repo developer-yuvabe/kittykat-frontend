@@ -7,7 +7,10 @@ import {
 } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { galleryService } from "@/services/api/gallery.service";
-import { extractProducts, type ProductExtractionRequest } from "@/services/api/gallery.service";
+import {
+  extractProducts,
+  type ProductExtractionRequest,
+} from "@/services/api/gallery.service";
 import type {
   BulkGalleryUploadRequest,
   BulkScrapeRequest,
@@ -922,12 +925,29 @@ export const useGalleryQuery = (
     },
   });
 
-  // Download helpers
   const downloadItem = async (item: GalleryItemResponse) => {
     try {
-      if (item.asset_type === "video")
-        await handleDownloadVideo(item.asset_url);
-      else await handleDownloadImage(item.asset_url);
+      const latestVersions = await galleryService.getLatestGalleryItemVersions([
+        item.id,
+      ]);
+
+      const latestVersion = latestVersions?.[0];
+
+      console.log("Latest version for download:", latestVersion);
+
+      const assetUrl =
+        latestVersion?.asset_url || item.asset_url || item.preview_url;
+
+      if (!assetUrl) {
+        throw new Error("No asset URL available");
+      }
+
+      if (latestVersion?.asset_type === "video") {
+        await handleDownloadVideo(assetUrl);
+      } else {
+        await handleDownloadImage(assetUrl);
+      }
+
       return true;
     } catch (error) {
       toast.error("Failed to download file");

@@ -275,6 +275,16 @@ class GalleryService {
     );
   }
 
+  async getLatestGalleryItemVersions(
+    itemIds: string[]
+  ): Promise<GalleryItemResponse[]> {
+    return handleApiRequest<GalleryItemResponse[]>(
+      axiosInstance.post("/gallery/get-latest-version-item-ids", {
+        item_ids: itemIds,
+      })
+    );
+  }
+
   async getGalleryItemsBulk(
     body: BulkGalleryItemRequest
   ): Promise<GalleryItemResponse[]> {

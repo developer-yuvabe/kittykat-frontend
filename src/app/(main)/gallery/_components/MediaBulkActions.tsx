@@ -58,6 +58,7 @@ import type {
   BulkUpdateRequest,
   BulkMoveRequest,
 } from "@/types/gallery.types";
+import { galleryService } from "@/services/api/gallery.service";
 
 interface MediaBulkActionsProps {
   selectedItems: GalleryItemResponse[];
@@ -223,38 +224,55 @@ export function MediaBulkActions({
 
     const toastId = "bulk-download";
     let downloadedCount = 0;
-    const totalItems = selectedItems.length;
 
     setIsDownloading(true);
     toast.loading("Preparing download...", { id: toastId });
 
     try {
-      // Initialize ZIP
+      // 1️⃣ Extract item IDs
+      const itemIds = selectedItems.map((item) => item.id);
+
+      // 2️⃣ Fetch latest versions in ONE API call
+      const latestVersions = await galleryService.getLatestGalleryItemVersions(
+        itemIds
+      );
+
+      if (!latestVersions || latestVersions.length === 0) {
+        throw new Error("No downloadable items found");
+      }
+
+      // 3️⃣ Use latest versions instead of selectedItems
+      const validItems = latestVersions.filter(
+        (item) => item.asset_url || item.preview_url
+      );
+
+      const totalItems = validItems.length;
       const zip = new JSZip();
 
-      // Create batches to manage memory
+      // Batch processing
       const batchSize = 10;
-      const urlBatches = [];
-      const validItems = selectedItems.filter((item) => !!item.asset_url);
+      const urlBatches: GalleryItemResponse[][] = [];
 
       for (let i = 0; i < validItems.length; i += batchSize) {
         urlBatches.push(validItems.slice(i, i + batchSize));
       }
 
-      // Download images batch-wise
-      for (let i = 0; i < urlBatches.length; i++) {
-        const batch = urlBatches[i];
-
+      // 4️⃣ Download batch-wise
+      for (const batch of urlBatches) {
         await Promise.all(
           batch.map(async (item) => {
             try {
-              const response = await fetch(item.asset_url);
+              const assetUrl = item.asset_url || item.preview_url;
+              if (!assetUrl) return;
+
+              const response = await fetch(assetUrl);
               const blob = await response.blob();
 
               const fileName =
-                item.asset_url.split("/").pop()?.split("?")[0] ||
+                assetUrl.split("/").pop()?.split("?")[0] ||
                 `file-${Date.now()}.jpg`;
-              const extension = getFileExtensionFromUrl(item.asset_url);
+
+              const extension = getFileExtensionFromUrl(assetUrl);
               const cleanFileName = fileName.endsWith(`.${extension}`)
                 ? fileName
                 : `${fileName}.${extension}`;
@@ -265,11 +283,10 @@ export function MediaBulkActions({
               const percentage = Math.round(
                 (downloadedCount / totalItems) * 100
               );
+
               toast.loading(
                 `Downloading: ${downloadedCount}/${totalItems} (${percentage}%)`,
-                {
-                  id: toastId,
-                }
+                { id: toastId }
               );
             } catch (err) {
               console.error("Download failed:", item.asset_url, err);
@@ -278,7 +295,7 @@ export function MediaBulkActions({
         );
       }
 
-      // Create the ZIP file
+      // 5️⃣ Create ZIP
       toast.loading("Creating ZIP file...", { id: toastId });
 
       const zipBlob = await zip.generateAsync({
@@ -287,7 +304,7 @@ export function MediaBulkActions({
         compressionOptions: { level: 6 },
       });
 
-      // Trigger download
+      // 6️⃣ Trigger download
       const zipUrl = URL.createObjectURL(zipBlob);
       const a = document.createElement("a");
       a.href = zipUrl;
@@ -298,7 +315,7 @@ export function MediaBulkActions({
       URL.revokeObjectURL(zipUrl);
 
       toast.success("Download complete!", { id: toastId });
-    } catch (error: any) {
+    } catch (error) {
       console.error("ZIP download failed:", error);
       toast.error("Download failed.", { id: toastId });
     } finally {
