@@ -7,6 +7,7 @@ import { useMoodboardQuery } from "@/hooks/useMoodboardQuery";
 import ImageWithMetadataModal from "@/components/image-metadata/ImageWithMetadataModal";
 import VideoWithMetadataModal from "@/components/video-metadata/VideoWithMetadataModal";
 import { useGalleryFilterStore } from "@/store/gallery-filter.store";
+import { galleryService } from "@/services/api/gallery.service";
 
 interface MediaImageProps {
   item: GalleryItemResponse;
@@ -121,11 +122,22 @@ export function MediaImage({
     }
   };
 
-  const handleDownload = () => {
-    if (isVideo) {
-      handleDownloadVideo(item.asset_url || item.preview_url || "");
+  const handleDownload = async () => {
+    const latestVersions = await galleryService.getLatestGalleryItemVersions([
+      item.id,
+    ]);
+
+    const latestVersion = latestVersions?.[0];
+
+    const assetUrl =
+      latestVersion?.asset_url || item.asset_url || item.preview_url;
+
+    if (!assetUrl) return;
+
+    if (latestVersion?.asset_type === "video") {
+      handleDownloadVideo(assetUrl);
     } else {
-      handleDownloadImage(item.asset_url || item.preview_url || "");
+      handleDownloadImage(assetUrl);
     }
   };
 
