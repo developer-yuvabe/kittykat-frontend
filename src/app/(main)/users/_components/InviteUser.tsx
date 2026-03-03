@@ -645,7 +645,7 @@ export function InviteUser({ queryKey }: { queryKey: (string | number)[] }) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent
-  className="max-h-60 overflow-y-auto"
+  className="max-h-80 overflow-y-auto"
 >
                               <SelectItem value="none">No team</SelectItem>
                               {teams.map((team) => (
