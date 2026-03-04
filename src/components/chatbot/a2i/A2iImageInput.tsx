@@ -243,7 +243,7 @@ const A2iImageInput = ({
     useA2iStore();
   const { user, setUser } = useUserStore();
   const [isMagicEnabled, setIsMagicEnabled] = useState(
-    user?.user_preferences?.enhance_prompts
+    user?.user_preferences?.enhance_prompts,
   );
 
   // Add gallery query and store for reference images
@@ -266,7 +266,7 @@ const A2iImageInput = ({
     40,
     true,
     undefined,
-    false
+    false,
   );
 
   const { addItems, addOptimisticItem } = useReferenceImagesStore();
@@ -277,7 +277,7 @@ const A2iImageInput = ({
         enhancePrompt(
           selectedBrandId!,
           formInstance.getValues("prompt"),
-          referenceMoodboardId
+          referenceMoodboardId,
         ),
       onSuccess: () => {
         clearReferencePrompt();
@@ -370,7 +370,7 @@ const A2iImageInput = ({
     async (
       files: File[],
       targetZone: "master" | "product",
-      showToast = true
+      showToast = true,
     ): Promise<string[]> => {
       if (!referenceImagesModelInfo) {
         toast.error("This model doesn't support reference images");
@@ -392,12 +392,12 @@ const A2iImageInput = ({
         files,
         fileTypes,
         maxFileSizeLimit,
-        remainingSlots
+        remainingSlots,
       );
 
       if (invalidFiles.length > 0) {
         toast.warning(
-          `${invalidFiles.length} file(s) rejected: ${invalidFiles.join(", ")}`
+          `${invalidFiles.length} file(s) rejected: ${invalidFiles.join(", ")}`,
         );
       }
 
@@ -418,7 +418,7 @@ const A2iImageInput = ({
               file.type,
               "brands",
               file,
-              selectedBrandId
+              selectedBrandId,
             );
 
             uploadedGalleryItems.push({
@@ -493,7 +493,7 @@ const A2iImageInput = ({
       selectedBrandId,
       bulkUpload,
       addItems,
-    ]
+    ],
   );
 
   // Handle drag-and-drop between zones (collapsed state)
@@ -531,7 +531,7 @@ const A2iImageInput = ({
           targetZone,
           masterReference,
           productReference,
-          referenceImagesModelInfo.maxLimit
+          referenceImagesModelInfo.maxLimit,
         );
 
         if (result.shouldPrevent) {
@@ -589,7 +589,7 @@ const A2iImageInput = ({
               targetZone,
               uploadedUrls,
               masterReference,
-              productReference
+              productReference,
             );
           setMasterReference(newMasterReference);
           setProductReference(newProductReference);
@@ -607,7 +607,7 @@ const A2iImageInput = ({
         targetZone,
         masterReference,
         productReference,
-        referenceImagesModelInfo.maxLimit
+        referenceImagesModelInfo.maxLimit,
       );
 
       // If drop should be prevented, show toast and return
@@ -639,7 +639,7 @@ const A2iImageInput = ({
       addOptimisticItem,
       refetchGalleryItems,
       selectedBrandId,
-    ]
+    ],
   );
 
   // Use paste hook for handling paste events
@@ -647,7 +647,7 @@ const A2iImageInput = ({
     containerSelector: "#concept-visual-playground",
     handleFileUpload: async (
       files: File[],
-      targetZone: "master" | "product"
+      targetZone: "master" | "product",
     ) => {
       const uploadedUrls = await handleFileUpload(files, targetZone, false);
       return uploadedUrls;
@@ -703,7 +703,7 @@ const A2iImageInput = ({
           targetZone,
           masterReference,
           productReference,
-          referenceImagesModelInfo.maxLimit
+          referenceImagesModelInfo.maxLimit,
         );
 
         if (result.shouldPrevent) {
@@ -772,7 +772,7 @@ const A2iImageInput = ({
             targetZone,
             uploadedUrls,
             masterReference,
-            productReference
+            productReference,
           );
         setMasterReference(newMasterReference);
         setProductReference(newProductReference);
@@ -787,7 +787,7 @@ const A2iImageInput = ({
       addOptimisticItem,
       refetchGalleryItems,
       selectedBrandId,
-    ]
+    ],
   );
 
   // Compute current setter for model changes
@@ -810,7 +810,7 @@ const A2iImageInput = ({
       setSelectedImageGenerationModel,
       setSelectedRemixModel,
       setSelectedVideoGenearationModel,
-    ]
+    ],
   );
 
   const onSubmit = async (data: z.infer<ZodTypeAny>) => {
@@ -852,6 +852,7 @@ const A2iImageInput = ({
           team_id: user?.active_team_id,
           sub_folder_id: selectedSubfolderId || null,
         });
+        toast.success("Image generation started!");
       } else if (conceptVisualGeneratorMode === "image_editor") {
         await remixImageService(
           selectedBrandId!,
@@ -860,8 +861,9 @@ const A2iImageInput = ({
           null,
           productReference,
           isMagicEnabled && productReference.length > 0,
-          user?.active_team_id
+          user?.active_team_id,
         );
+        toast.success("Image editing started!");
       } else if (conceptVisualGeneratorMode === "video_generator") {
         await videoGenerationService(selectedBrandId!, {
           ...data,
@@ -877,6 +879,7 @@ const A2iImageInput = ({
               }
             : null,
         });
+        toast.success("Video generation started!");
       }
 
       if (!isLocked) {
@@ -930,7 +933,7 @@ const A2iImageInput = ({
     if (!referenceImagesModelInfo) {
       if (currentImageCount > 0) {
         toast.info(
-          "This model doesn't support reference images. Uploaded images have been removed."
+          "This model doesn't support reference images. Uploaded images have been removed.",
         );
       }
       setMasterReference([]);
@@ -946,21 +949,21 @@ const A2iImageInput = ({
       const allImages = [...masterReference, ...productReference];
       const { validUrls, invalidUrls } = await validateImageUrlsBySize(
         allImages,
-        maxSizeMB
+        maxSizeMB,
       );
 
       if (invalidUrls.length > 0) {
         toast.info(
-          `${invalidUrls.length} image(s) removed (exceeds ${maxSizeMB}MB limit)`
+          `${invalidUrls.length} image(s) removed (exceeds ${maxSizeMB}MB limit)`,
         );
       }
 
       // Filter master and product references to keep only valid ones
       let validMaster = masterReference.filter((url) =>
-        validUrls.includes(url)
+        validUrls.includes(url),
       );
       let validProduct = productReference.filter((url) =>
-        validUrls.includes(url)
+        validUrls.includes(url),
       );
 
       // Then check count limit
@@ -969,13 +972,13 @@ const A2iImageInput = ({
         const masterKeep = validMaster.slice(0, maxLimit);
         const productKeep = validProduct.slice(
           0,
-          Math.max(0, maxLimit - masterKeep.length)
+          Math.max(0, maxLimit - masterKeep.length),
         );
 
         toast.info(
           `This model only supports ${maxLimit} image${
             maxLimit > 1 ? "s" : ""
-          }. Extra images have been removed.`
+          }. Extra images have been removed.`,
         );
 
         validMaster = masterKeep;
@@ -1049,11 +1052,11 @@ const A2iImageInput = ({
         if (productRefImages.length > 0) {
           // Images in productRefImages go to productReference
           const productImages = imagesArray.filter((img) =>
-            productRefImages.includes(img)
+            productRefImages.includes(img),
           );
           // Remaining images go to masterReference (context references)
           const masterImages = imagesArray.filter(
-            (img) => !productRefImages.includes(img)
+            (img) => !productRefImages.includes(img),
           );
 
           setProductReference(productImages);
@@ -1077,11 +1080,11 @@ const A2iImageInput = ({
         if (productRefImages.length > 0) {
           // Images in productRefImages go to productReference
           const productImages = imagesArray.filter((img) =>
-            productRefImages.includes(img)
+            productRefImages.includes(img),
           );
           // Remaining images go to masterReference
           const masterImages = imagesArray.filter(
-            (img) => !productRefImages.includes(img)
+            (img) => !productRefImages.includes(img),
           );
 
           setProductReference(productImages);
@@ -1123,7 +1126,7 @@ const A2iImageInput = ({
 
       // Dynamically find the reference images parameter ID from the model
       const refParam = selectedRemixModel?.parameters?.find(
-        (param) => param.type === "file"
+        (param) => param.type === "file",
       );
 
       setBaseImageUrl(p.base_image || p.image || null);
@@ -1135,7 +1138,7 @@ const A2iImageInput = ({
 
         // Separate master vs product references
         const masterImages = allReferenceImages.filter(
-          (img: string) => !productImages.includes(img)
+          (img: string) => !productImages.includes(img),
         );
 
         const master = masterImages.length > 0 ? masterImages : [];
@@ -1210,7 +1213,7 @@ const A2iImageInput = ({
       const newValue = Math.max(1, 15 - currentImageCount);
       formInstance.setValue("max_images", newValue);
       toast.info(
-        `The maximum number of images to generate has been adjusted to ${newValue} due to the number of reference images uploaded.`
+        `The maximum number of images to generate has been adjusted to ${newValue} due to the number of reference images uploaded.`,
       );
     }
   }, [currentImageCount, value, formInstance]);
@@ -1232,7 +1235,7 @@ const A2iImageInput = ({
         file.type,
         "brands",
         file,
-        selectedBrandId
+        selectedBrandId,
       );
 
       setBaseImageUrl(uploadedUrl);
@@ -1310,7 +1313,7 @@ const A2iImageInput = ({
     <div
       className={cn(
         "flex flex-col w-full border resize-none bottom-8 h-max scrollbar overflow-hidden pb-4",
-        selectionMode ? "rounded-t-2xl" : "rounded-2xl"
+        selectionMode ? "rounded-t-2xl" : "rounded-2xl",
       )}
       id="concept-visual-playground"
     >
@@ -1456,20 +1459,20 @@ const A2iImageInput = ({
                               e.stopPropagation();
                             }}
                             className={cn(
-                              "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt- h-auto min-h-20 max-h-[300px] overflow-y-auto align-top"
+                              "relative w-full resize-none border-0 focus-visible:ring-0 shadow-none focus scrollbar px-4 pt- h-auto min-h-20 max-h-[300px] overflow-y-auto align-top",
                             )}
                             placeholder={
                               conceptVisualGeneratorMode === "image_generator"
                                 ? "Describe what you want to see ..."
                                 : conceptVisualGeneratorMode === "image_editor"
-                                ? getRemixInputPlaceholderMessage({
-                                    supportsReferenceImage:
-                                      !!referenceImagesModelInfo,
-                                  })
-                                : conceptVisualGeneratorMode ===
-                                  "video_generator"
-                                ? "Describe what you want to see in the video ..."
-                                : "Describe what you want to see ..."
+                                  ? getRemixInputPlaceholderMessage({
+                                      supportsReferenceImage:
+                                        !!referenceImagesModelInfo,
+                                    })
+                                  : conceptVisualGeneratorMode ===
+                                      "video_generator"
+                                    ? "Describe what you want to see in the video ..."
+                                    : "Describe what you want to see ..."
                             }
                           />
                         </div>
@@ -1527,7 +1530,7 @@ const A2iImageInput = ({
                   {/* Aspect Ratio - Always show */}
                   {(() => {
                     const aspectRatioParam = currentModel?.parameters?.find(
-                      (param) => param.type === "aspect_ratio"
+                      (param) => param.type === "aspect_ratio",
                     );
 
                     if (aspectRatioParam) {
@@ -1565,7 +1568,7 @@ const A2iImageInput = ({
                   {initialParams
                     .filter(
                       (param) =>
-                        param.id == "resolution" || param.id == "duration"
+                        param.id == "resolution" || param.id == "duration",
                     )
                     .map((param) => {
                       return (
@@ -1591,7 +1594,7 @@ const A2iImageInput = ({
                     const imageCountParam = currentModel?.parameters?.find(
                       (param) =>
                         param.type === "image_count" &&
-                        param.category === "initial"
+                        param.category === "initial",
                     );
 
                     if (imageCountParam) {
@@ -1695,8 +1698,8 @@ const A2iImageInput = ({
                     conceptVisualGeneratorMode === "video_generator"
                       ? "video"
                       : conceptVisualGeneratorMode === "image_editor"
-                      ? "remix"
-                      : "image"
+                        ? "remix"
+                        : "image"
                   }
                   isCompactMode={isCompactMode}
                 />
@@ -1736,7 +1739,7 @@ const A2iImageInput = ({
                               },
                               onError: () => {
                                 toast.error(
-                                  "Failed to enhance prompt. Please try again."
+                                  "Failed to enhance prompt. Please try again.",
                                 );
                               },
                             });
@@ -1778,7 +1781,7 @@ const A2iImageInput = ({
                           },
                           onError: () => {
                             toast.error(
-                              "Failed to enhance prompt. Please try again."
+                              "Failed to enhance prompt. Please try again.",
                             );
                           },
                         });
@@ -1833,7 +1836,7 @@ const A2iImageInput = ({
                         }}
                         onRemoveImage={(url: string) => {
                           setMasterReference(
-                            masterReference.filter((u) => u !== url)
+                            masterReference.filter((u) => u !== url),
                           );
                         }}
                         showAddButton={
@@ -1865,7 +1868,7 @@ const A2iImageInput = ({
                         }}
                         onRemoveImage={(url: string) => {
                           setProductReference(
-                            productReference.filter((u) => u !== url)
+                            productReference.filter((u) => u !== url),
                           );
                         }}
                         showAddButton={
