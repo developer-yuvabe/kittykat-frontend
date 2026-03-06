@@ -22,6 +22,7 @@ import {
   CheckIcon,
   CopyIcon,
   HeartIcon,
+  Loader2,
   PauseCircle,
   PencilIcon,
   PlayCircle,
@@ -37,6 +38,7 @@ import { useModelsStore } from "@/store/models.store";
 import { useBrandUpdatesStore } from "@/store/brand-updates.store";
 import { useGenerationsStore } from "@/store/generations.store";
 import { useA2iStore } from "@/store/a2i.store";
+import { useA2iParameters } from "@/hooks/useA2iQuery";
 
 export type A2iImageCardProps = {
   image: A2iImageDetail | null;
@@ -114,6 +116,11 @@ const A2iImageCard = ({
     setConceptVisualGeneratorMode,
   } = useA2iStore();
 
+  const parametersQuery = useA2iParameters({
+    galleryItemId: video?.id ?? image?.id,
+    brandId: selectedBrandId!,
+  });
+
   const galleryActions = useGalleryQuery(
     {
       selectedFilters: {
@@ -131,7 +138,7 @@ const A2iImageCard = ({
     },
     ITEMS_PER_PAGE,
     true,
-    "A2iImageCard"
+    "A2iImageCard",
   );
 
   const id = video?.id ?? image?.id;
@@ -142,13 +149,12 @@ const A2iImageCard = ({
     if (!galleryItem?.data) return null;
     return {
       ...galleryItem.data,
-      // Ensure input_prompt is populated from parameters.prompt if missing
       input_prompt: galleryItem.data.input_prompt || parameters.prompt,
     };
   }, [galleryItem?.data, parameters.prompt]);
 
   const [isLiked, setIsLiked] = useState(
-    galleryItem?.data?.is_favourite || false
+    galleryItem?.data?.is_favourite || false,
   );
 
   useEffect(() => {
@@ -203,7 +209,7 @@ const A2iImageCard = ({
         } catch (galleryError) {
           console.warn(
             "Failed to delete gallery item, but A2I generation was deleted:",
-            galleryError
+            galleryError,
           );
         }
       }
@@ -228,7 +234,7 @@ const A2iImageCard = ({
           ? {
               ...data.a2i_image_information,
               generations: data.a2i_image_information.generations.filter(
-                (gen) => gen.id !== generationId
+                (gen) => gen.id !== generationId,
               ),
             }
           : undefined,
@@ -240,16 +246,19 @@ const A2iImageCard = ({
 
   const handleReUse = async () => {
     try {
+      const result = await parametersQuery.refetch();
+      const params = result.data?.parameters ?? parameters;
+
       // Video
       const isVideoOutput = type === "video" || type == "video_generation";
       if (isVideoOutput) {
-        const model = models.find((m) => m.model === parameters.model);
+        const model = models.find((m) => m.model === params.model);
         if (!model) {
           toast.info("Model not found for this video.");
           return;
         }
         // Convert all parameters based on model parameter definitions
-        const videoParams = { ...parameters };
+        const videoParams = { ...params };
         model.parameters?.forEach((paramDef) => {
           const paramId = paramDef.id;
           if (
@@ -258,7 +267,7 @@ const A2iImageCard = ({
           ) {
             videoParams[paramId] = convertParameterValue(
               videoParams[paramId],
-              paramDef
+              paramDef,
             );
           }
         });
@@ -269,11 +278,11 @@ const A2iImageCard = ({
         setParameters("videoParameters", videoParams);
 
         const firstFrameParam = model.parameters?.find(
-          (param) => param.type === "first_frame"
+          (param) => param.type === "first_frame",
         );
 
         const lastFrameParam = model.parameters?.find(
-          (param) => param.type === "last_frame"
+          (param) => param.type === "last_frame",
         );
 
         if (firstFrameParam?.id) {
@@ -293,7 +302,7 @@ const A2iImageCard = ({
       if (isEditorOutput) {
         try {
           const model = models.find(
-            (m) => m.model === parameters.model && m.type === "remix"
+            (m) => m.model === params.model && m.type === "remix",
           );
           if (!model) {
             toast.info("Model not found for this remix image.");
@@ -301,21 +310,21 @@ const A2iImageCard = ({
           }
 
           // Validate that base image exists
-          const baseInputImageUrl = parameters.base_image || parameters.image;
+          const baseInputImageUrl = params.base_image || params.image;
           if (!baseInputImageUrl) {
             toast.error("Base input not available — cannot reuse this image.");
             return;
           }
 
           //  Convert all remix parameters based on model definitions
-          const convertedRemixParams = { ...parameters };
+          const convertedRemixParams = { ...params };
 
           model.parameters?.forEach((paramDef) => {
             const id = paramDef.id;
             if (convertedRemixParams[id] !== undefined) {
               convertedRemixParams[id] = convertParameterValue(
                 convertedRemixParams[id],
-                paramDef
+                paramDef,
               );
             }
           });
@@ -329,7 +338,7 @@ const A2iImageCard = ({
           setBaseImageUrl(
             convertedRemixParams.base_image ||
               convertedRemixParams.image ||
-              null
+              null,
           );
 
           toast.info("Remix model and parameters have been restored.");
@@ -337,13 +346,13 @@ const A2iImageCard = ({
         } catch (error) {
           console.log(error);
           toast.error(
-            "An error occurred while trying to reuse the remix image. Please try again."
+            "An error occurred while trying to reuse the remix image. Please try again.",
           );
           return;
         }
       }
 
-      const model = models.find((m) => m.model === parameters.model);
+      const model = models.find((m) => m.model === params.model);
       if (!model) {
         toast.info("Model not found for this image.");
         return;
@@ -353,18 +362,18 @@ const A2iImageCard = ({
       setSelectedImageGenerationModel(model);
 
       const referenceParam = model.parameters.find((p) => p.type === "file");
-      const modifiedParameters = { ...parameters };
+      const modifiedParameters = { ...params };
 
-      if (referenceParam && parameters[referenceParam.id]) {
-        modifiedParameters[referenceParam.id] = parameters[referenceParam.id];
+      if (referenceParam && params[referenceParam.id]) {
+        modifiedParameters[referenceParam.id] = params[referenceParam.id];
       }
 
       setParameters("imageGeneationParameters", modifiedParameters);
 
-      const productReferenceImages = parameters.product_reference_images || [];
+      const productReferenceImages = params.product_reference_images || [];
       setParameters(
         "productReferenceImages",
-        productReferenceImages.length > 0 ? productReferenceImages : null
+        productReferenceImages.length > 0 ? productReferenceImages : null,
       );
 
       if (pathname !== "/") router.push("/?scrollTo=a2i-input");
@@ -394,11 +403,8 @@ const A2iImageCard = ({
   }, [galleryItem?.data?.is_favourite]);
 
   const handleItemClick = () => {
-    if (image) {
-      setShowImageModal(true);
-    } else if (video) {
-      setShowVideoModal(true);
-    }
+    if (image) setShowImageModal(true);
+    else if (video) setShowVideoModal(true);
   };
 
   const [isHovered, setIsHovered] = useState(false);
@@ -421,7 +427,7 @@ const A2iImageCard = ({
     <div
       className={cn(
         "relative border bg-muted min-w-60 aspect-square group transition-all duration-200 ease-in-out",
-        isDragging && "scale-[1.03] shadow-xl"
+        isDragging && "scale-[1.03] shadow-xl",
       )}
       style={style}
       onMouseEnter={() => setIsHovered(true)}
@@ -434,7 +440,7 @@ const A2iImageCard = ({
         <div
           className={cn(
             "absolute top-2 left-2 z-40 transition-opacity",
-            isHovered || isSelected ? "opacity-100" : "opacity-0"
+            isHovered || isSelected ? "opacity-100" : "opacity-0",
           )}
           onClick={handleCheckboxClick}
         >
@@ -443,7 +449,7 @@ const A2iImageCard = ({
               "w-6 h-6 flex items-center justify-center rounded border-2 cursor-pointer transition-colors",
               isSelected
                 ? "bg-white border-white"
-                : "bg-black/30 border-white/70 hover:bg-black/40"
+                : "bg-black/30 border-white/70 hover:bg-black/40",
             )}
           >
             {isSelected && <CheckIcon className="w-4 h-4 text-black" />}
@@ -640,7 +646,7 @@ const A2iImageCard = ({
       <div
         className={cn(
           "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none",
-          selectionMode && "hidden"
+          selectionMode && "hidden",
         )}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
@@ -649,7 +655,7 @@ const A2iImageCard = ({
           <div
             className={cn(
               "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-30 pointer-events-auto",
-              !disableDrag && "opacity-60 hover:opacity-100"
+              !disableDrag && "opacity-60 hover:opacity-100",
             )}
             {...(dragAttributes || {})}
             {...(dragListeners || {})}
@@ -745,14 +751,21 @@ const A2iImageCard = ({
             status !== "processing" && ( // hide when still generating
               <TooltipButton
                 tooltip="Re-use"
+                disabled={parametersQuery.isFetching}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleReUse();
                 }}
                 icon={
-                  <RotateCcw
-                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                  />
+                  parametersQuery.isFetching ? (
+                    <Loader2
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} animate-spin`}
+                    />
+                  ) : (
+                    <RotateCcw
+                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                    />
+                  )
                 }
               />
             )}
@@ -816,10 +829,6 @@ const A2iImageCard = ({
       {showImageModal && stableItem && (
         <ImageWithMetadataModal
           isOpen={showImageModal}
-          generation={{
-            parameters,
-            type,
-          }}
           galleryItem={stableItem}
           onClose={() => setShowImageModal(false)}
           onDownload={handleDownload}
@@ -839,7 +848,6 @@ const A2iImageCard = ({
       {showVideoModal && stableItem && (
         <VideoWithMetadataModal
           galleryItem={stableItem}
-          generation={{ type, parameters }}
           isOpen={showVideoModal}
           onClose={() => setShowVideoModal(false)}
           onDownload={handleDownload}
