@@ -26,10 +26,10 @@ class GalleryService {
    * Create a new gallery item
    */
   async createGalleryItem(
-    galleryItem: GalleryItem
+    galleryItem: GalleryItem,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.post("/gallery", galleryItem)
+      axiosInstance.post("/gallery", galleryItem),
     );
   }
 
@@ -46,7 +46,7 @@ class GalleryService {
       | "vector_image_search" = "vector_text_search",
     image_url?: string,
     brand_id?: string,
-    campaign_id?: string
+    campaign_id?: string,
   ): Promise<GalleryItemsListResponse> {
     const response = await handleApiRequest<GalleryItemsListResponse>(
       axiosInstance.post("/gallery/search", {
@@ -57,7 +57,7 @@ class GalleryService {
         limit,
         brand_id,
         campaign_id,
-      })
+      }),
     );
 
     const has_more =
@@ -77,7 +77,7 @@ class GalleryService {
    */
   async getGalleryItemById(itemId: string): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.get(`/gallery/${itemId}`)
+      axiosInstance.get(`/gallery/${itemId}`),
     );
   }
 
@@ -118,7 +118,7 @@ class GalleryService {
         ...restFilters,
         skip,
         limit,
-      })
+      }),
     );
 
     const has_more =
@@ -141,10 +141,10 @@ class GalleryService {
    */
   async updateGalleryItem(
     itemId: string,
-    galleryItem: GalleryItem
+    galleryItem: GalleryItem,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.put(`/gallery/${itemId}`, galleryItem)
+      axiosInstance.put(`/gallery/${itemId}`, galleryItem),
     );
   }
 
@@ -153,7 +153,7 @@ class GalleryService {
    */
   async deleteGalleryItem(itemId: string): Promise<{ id: string }> {
     return handleApiRequest<{ id: string }>(
-      axiosInstance.delete(`/gallery/${itemId}`)
+      axiosInstance.delete(`/gallery/${itemId}`),
     );
   }
 
@@ -162,7 +162,7 @@ class GalleryService {
    */
   async toggleFavorite(itemId: string): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.patch(`/gallery/${itemId}/favorite`)
+      axiosInstance.patch(`/gallery/${itemId}/favorite`),
     );
   }
 
@@ -171,10 +171,14 @@ class GalleryService {
    */
   async addCommentToGalleryItem(
     itemId: string,
-    commentData: { text: string; attachments?: string[]; is_tasklist?: boolean }
+    commentData: {
+      text: string;
+      attachments?: string[];
+      is_tasklist?: boolean;
+    },
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.post(`/gallery/${itemId}/comments`, commentData)
+      axiosInstance.post(`/gallery/${itemId}/comments`, commentData),
     );
   }
 
@@ -184,10 +188,13 @@ class GalleryService {
   async updateCommentOnGalleryItem(
     itemId: string,
     commentId: string,
-    commentData: { text: string }
+    commentData: { text: string },
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.put(`/gallery/${itemId}/comments/${commentId}`, commentData)
+      axiosInstance.put(
+        `/gallery/${itemId}/comments/${commentId}`,
+        commentData,
+      ),
     );
   }
 
@@ -196,10 +203,10 @@ class GalleryService {
    */
   async deleteCommentFromGalleryItem(
     itemId: string,
-    commentId: string
+    commentId: string,
   ): Promise<{ id: string }> {
     return handleApiRequest<{ id: string }>(
-      axiosInstance.delete(`/gallery/${itemId}/comments/${commentId}`)
+      axiosInstance.delete(`/gallery/${itemId}/comments/${commentId}`),
     );
   }
 
@@ -208,10 +215,10 @@ class GalleryService {
    */
   async patchGalleryItem(
     itemId: string,
-    patchData: Partial<GalleryItem>
+    patchData: Partial<GalleryItem>,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.patch(`/gallery/${itemId}`, patchData)
+      axiosInstance.patch(`/gallery/${itemId}`, patchData),
     );
   }
 
@@ -221,37 +228,37 @@ class GalleryService {
   async addReplyToComment(
     itemId: string,
     commentId: string,
-    replyData: CommentReplyCreate
+    replyData: CommentReplyCreate,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.post(
         `/gallery/${itemId}/comments/${commentId}/replies`,
-        replyData
-      )
+        replyData,
+      ),
     );
   }
 
   async patchComment(
     itemId: string,
     commentId: string,
-    updateData: CommentUpdate
+    updateData: CommentUpdate,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.patch<GalleryItemResponse>(
         `gallery/${itemId}/comments/${commentId}`,
-        updateData
-      )
+        updateData,
+      ),
     );
   }
   async deleteReplyFromComment(
     itemId: string,
     commentId: string,
-    replyId: string
+    replyId: string,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.delete<GalleryItemResponse>(
-        `gallery/${itemId}/comments/${commentId}/replies/${replyId}`
-      )
+        `gallery/${itemId}/comments/${commentId}/replies/${replyId}`,
+      ),
     );
   }
 
@@ -259,42 +266,42 @@ class GalleryService {
     itemId: string,
     commentId: string,
     replyId: string,
-    updateData: CommentReplyUpdate
+    updateData: CommentReplyUpdate,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
       axiosInstance.patch<GalleryItemResponse>(
         `gallery/${itemId}/comments/${commentId}/replies/${replyId}`,
-        updateData
-      )
+        updateData,
+      ),
     );
   }
 
   async getGalleryItemVersions(itemId: string): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.get(`/gallery/${itemId}/versions`)
+      axiosInstance.get(`/gallery/${itemId}/versions`),
     );
   }
 
   async getLatestGalleryItemVersions(
-    itemIds: string[]
+    itemIds: string[],
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
       axiosInstance.post("/gallery/get-latest-version-item-ids", {
         item_ids: itemIds,
-      })
+      }),
     );
   }
 
   async getGalleryItemsBulk(
-    body: BulkGalleryItemRequest
+    body: BulkGalleryItemRequest,
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.post(`/gallery/bulk`, body)
+      axiosInstance.post(`/gallery/bulk`, body),
     );
   }
 
   async uploadBulkGalleryItems(
-    body: BulkGalleryUploadRequest
+    body: BulkGalleryUploadRequest,
   ): Promise<GalleryItemResponse[]> {
     const response = await handleApiRequest<{
       created_items: GalleryItemResponse[];
@@ -303,10 +310,10 @@ class GalleryService {
   }
 
   async uploadBulkGalleryItemsWithAnalysis(
-    body: BulkGalleryUploadRequest
+    body: BulkGalleryUploadRequest,
   ): Promise<GalleryItemResponse[]> {
     return handleApiRequest<GalleryItemResponse[]>(
-      axiosInstance.post(`/gallery/bulk/scrape`, body)
+      axiosInstance.post(`/gallery/bulk/scrape`, body),
     );
   }
 
@@ -314,10 +321,10 @@ class GalleryService {
    * Reorder gallery items by updating brand_sort_order
    */
   async reorderGalleryItems(
-    reorderData: { id: string; brand_sort_order: number }[]
+    reorderData: { id: string; brand_sort_order: number }[],
   ): Promise<void> {
     return handleApiRequest<void>(
-      axiosInstance.post(`/gallery/reorder`, { items: reorderData })
+      axiosInstance.post(`/gallery/reorder`, { items: reorderData }),
     );
   }
 
@@ -325,10 +332,10 @@ class GalleryService {
    * Create a new version of an existing gallery item
    */
   async createGalleryItemVersion(
-    galleryItem: GalleryItem
+    galleryItem: GalleryItem,
   ): Promise<GalleryItemResponse> {
     return handleApiRequest<GalleryItemResponse>(
-      axiosInstance.post("/gallery/version", galleryItem)
+      axiosInstance.post("/gallery/version", galleryItem),
     );
   }
 
@@ -337,7 +344,7 @@ class GalleryService {
    */
   async getAssetCount(request: AssetCountRequest): Promise<AssetCountResponse> {
     return handleApiRequest<AssetCountResponse>(
-      axiosInstance.post("/gallery/count", request)
+      axiosInstance.post("/gallery/count", request),
     );
   }
 
@@ -346,7 +353,7 @@ class GalleryService {
    */
   async bulkDelete(request: BulkDeleteRequest): Promise<BulkOperationResponse> {
     return handleApiRequest<BulkOperationResponse>(
-      axiosInstance.post("/gallery/bulk/delete", request)
+      axiosInstance.post("/gallery/bulk/delete", request),
     );
   }
 
@@ -355,7 +362,7 @@ class GalleryService {
    */
   async bulkUpdate(request: BulkUpdateRequest): Promise<BulkOperationResponse> {
     return handleApiRequest<BulkOperationResponse>(
-      axiosInstance.post("/gallery/bulk/update", request)
+      axiosInstance.post("/gallery/bulk/update", request),
     );
   }
 
@@ -364,7 +371,7 @@ class GalleryService {
    */
   async bulkMove(request: BulkMoveRequest): Promise<BulkOperationResponse> {
     return handleApiRequest<BulkOperationResponse>(
-      axiosInstance.post("/gallery/bulk/move", request)
+      axiosInstance.post("/gallery/bulk/move", request),
     );
   }
 }
@@ -382,14 +389,16 @@ export const useBulkGalleryItems = (ids: string[], enabled = true) => {
 
 export const getGalleryImageParameters = async (
   brandId: string,
-  galleryId: string
+  galleryId?: string,
+  generationId?: string,
 ): Promise<GalleryImageParametersResponse | null> => {
   try {
     const response = await handleApiRequest(
       axiosInstance.post(`/gallery/get-image-parameter`, {
         brand_id: brandId,
         gallery_id: galleryId,
-      })
+        generation_id: generationId,
+      }),
     );
     return response ? (response as GalleryImageParametersResponse) : null;
   } catch (error) {
@@ -452,11 +461,11 @@ export interface ProductExtractionResponse {
 
 export const extractProducts = async (
   brandId: string,
-  data: ProductExtractionRequest
+  data: ProductExtractionRequest,
 ): Promise<ProductExtractionResponse> => {
   try {
     const response = await handleApiRequest<ProductExtractionResponse>(
-      axiosInstance.post(`/gallery/brands/${brandId}/product-extraction`, data)
+      axiosInstance.post(`/gallery/brands/${brandId}/product-extraction`, data),
     );
     return response;
   } catch (error: any) {

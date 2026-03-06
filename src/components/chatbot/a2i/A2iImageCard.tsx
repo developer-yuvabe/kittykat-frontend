@@ -22,7 +22,6 @@ import {
   CheckIcon,
   CopyIcon,
   HeartIcon,
-  Loader2,
   PauseCircle,
   PencilIcon,
   PlayCircle,
@@ -118,8 +117,13 @@ const A2iImageCard = ({
 
   const parametersQuery = useA2iParameters({
     galleryItemId: video?.id ?? image?.id,
+    generationId, // fallback when image/video id is absent (e.g. failed generations)
     brandId: selectedBrandId!,
+    enabled: status === "failed" && !parameters.model, // skip if full params already in prop
   });
+
+  // For failed cards, use fetched parameters so the preview shows full data
+  const activeParameters = parametersQuery.data?.parameters ?? parameters;
 
   const galleryActions = useGalleryQuery(
     {
@@ -181,12 +185,31 @@ const A2iImageCard = ({
   };
 
   const handleCopyPrompt = () => {
-    if (parameters.prompt) {
-      navigator.clipboard.writeText(parameters.prompt).then(() => {
+    if (activeParameters.prompt) {
+      // Already in cache — copy immediately, no toast needed
+      navigator.clipboard.writeText(activeParameters.prompt).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });
+      return;
     }
+
+    // Needs fetch — show toast.promise while loading
+    toast.promise(
+      (async () => {
+        const result = await parametersQuery.refetch();
+        const prompt = result.data?.parameters?.prompt;
+        if (!prompt) throw new Error("Prompt not available");
+        await navigator.clipboard.writeText(prompt);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })(),
+      {
+        loading: "Copying prompt...",
+        success: "Prompt copied!",
+        error: "Could not copy prompt.",
+      },
+    );
   };
 
   const handleRemoveItem = async () => {
@@ -244,81 +267,63 @@ const A2iImageCard = ({
     }
   };
 
-  const handleReUse = async () => {
-    try {
-      const result = await parametersQuery.refetch();
-      const params = result.data?.parameters ?? parameters;
+  const handleReUse = () => {
+    toast.promise(
+      (async () => {
+        const result = await parametersQuery.refetch();
+        const params = result.data?.parameters ?? parameters;
 
-      // Video
-      const isVideoOutput = type === "video" || type == "video_generation";
-      if (isVideoOutput) {
-        const model = models.find((m) => m.model === params.model);
-        if (!model) {
-          toast.info("Model not found for this video.");
-          return;
-        }
-        // Convert all parameters based on model parameter definitions
-        const videoParams = { ...params };
-        model.parameters?.forEach((paramDef) => {
-          const paramId = paramDef.id;
-          if (
-            videoParams[paramId] !== undefined &&
-            videoParams[paramId] !== null
-          ) {
-            videoParams[paramId] = convertParameterValue(
-              videoParams[paramId],
-              paramDef,
-            );
-          }
-        });
+        // Video
+        const isVideoOutput = type === "video" || type == "video_generation";
+        if (isVideoOutput) {
+          const model = models.find((m) => m.model === params.model);
+          if (!model) throw new Error("Model not found for this video.");
 
-        // Set model and parameters
-        setConceptVisualGeneratorMode("video_generator");
-        setSelectedVideoGenearationModel(model);
-        setParameters("videoParameters", videoParams);
+          const videoParams = { ...params };
+          model.parameters?.forEach((paramDef) => {
+            const paramId = paramDef.id;
+            if (
+              videoParams[paramId] !== undefined &&
+              videoParams[paramId] !== null
+            ) {
+              videoParams[paramId] = convertParameterValue(
+                videoParams[paramId],
+                paramDef,
+              );
+            }
+          });
 
-        const firstFrameParam = model.parameters?.find(
-          (param) => param.type === "first_frame",
-        );
+          setConceptVisualGeneratorMode("video_generator");
+          setSelectedVideoGenearationModel(model);
+          setParameters("videoParameters", videoParams);
 
-        const lastFrameParam = model.parameters?.find(
-          (param) => param.type === "last_frame",
-        );
+          const firstFrameParam = model.parameters?.find(
+            (p) => p.type === "first_frame",
+          );
+          const lastFrameParam = model.parameters?.find(
+            (p) => p.type === "last_frame",
+          );
+          if (firstFrameParam?.id)
+            setStartFrame(videoParams[firstFrameParam.id]);
+          if (lastFrameParam?.id) setEndFrame(videoParams[lastFrameParam.id]);
 
-        if (firstFrameParam?.id) {
-          setStartFrame(videoParams[firstFrameParam.id]);
-        }
-        if (lastFrameParam?.id) {
-          setEndFrame(videoParams[lastFrameParam.id]);
+          return "Video setup restored in Video Generation tab.";
         }
 
-        toast.info("Video setup restored in Video Generation tab.");
-        return;
-      }
-
-      // Remix Images
-      const isEditorOutput = type === "remix";
-
-      if (isEditorOutput) {
-        try {
+        // Remix
+        if (type === "remix") {
           const model = models.find(
             (m) => m.model === params.model && m.type === "remix",
           );
-          if (!model) {
-            toast.info("Model not found for this remix image.");
-            return;
-          }
+          if (!model) throw new Error("Model not found for this remix image.");
 
-          // Validate that base image exists
           const baseInputImageUrl = params.base_image || params.image;
-          if (!baseInputImageUrl) {
-            toast.error("Base input not available — cannot reuse this image.");
-            return;
-          }
+          if (!baseInputImageUrl)
+            throw new Error(
+              "Base input not available — cannot reuse this image.",
+            );
 
-          //  Convert all remix parameters based on model definitions
           const convertedRemixParams = { ...params };
-
           model.parameters?.forEach((paramDef) => {
             const id = paramDef.id;
             if (convertedRemixParams[id] !== undefined) {
@@ -329,60 +334,51 @@ const A2iImageCard = ({
             }
           });
 
-          // Store full parameters for remix
           setConceptVisualGeneratorMode("image_editor");
           setSelectedRemixModel(model);
           setParameters("remixParameters", convertedRemixParams);
           if (showImageModal) setShowImageModal(false);
-
           setBaseImageUrl(
             convertedRemixParams.base_image ||
               convertedRemixParams.image ||
               null,
           );
 
-          toast.info("Remix model and parameters have been restored.");
-          return;
-        } catch (error) {
-          console.log(error);
-          toast.error(
-            "An error occurred while trying to reuse the remix image. Please try again.",
-          );
-          return;
+          return "Remix model and parameters have been restored.";
         }
-      }
 
-      const model = models.find((m) => m.model === params.model);
-      if (!model) {
-        toast.info("Model not found for this image.");
-        return;
-      }
+        // Image
+        const model = models.find((m) => m.model === params.model);
+        if (!model) throw new Error("Model not found for this image.");
 
-      setConceptVisualGeneratorMode("image_generator");
-      setSelectedImageGenerationModel(model);
+        setConceptVisualGeneratorMode("image_generator");
+        setSelectedImageGenerationModel(model);
 
-      const referenceParam = model.parameters.find((p) => p.type === "file");
-      const modifiedParameters = { ...params };
+        const referenceParam = model.parameters.find((p) => p.type === "file");
+        const modifiedParameters = { ...params };
+        if (referenceParam && params[referenceParam.id]) {
+          modifiedParameters[referenceParam.id] = params[referenceParam.id];
+        }
 
-      if (referenceParam && params[referenceParam.id]) {
-        modifiedParameters[referenceParam.id] = params[referenceParam.id];
-      }
+        setParameters("imageGeneationParameters", modifiedParameters);
 
-      setParameters("imageGeneationParameters", modifiedParameters);
+        const productReferenceImages = params.product_reference_images || [];
+        setParameters(
+          "productReferenceImages",
+          productReferenceImages.length > 0 ? productReferenceImages : null,
+        );
 
-      const productReferenceImages = params.product_reference_images || [];
-      setParameters(
-        "productReferenceImages",
-        productReferenceImages.length > 0 ? productReferenceImages : null,
-      );
-
-      if (pathname !== "/") router.push("/?scrollTo=a2i-input");
-
-      toast.info("Image setup restored in Concept Visual Generator.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to restore setup. Please try again.");
-    }
+        if (pathname !== "/") router.push("/?scrollTo=a2i-input");
+        return "Image setup restored in Concept Visual Generator.";
+      })(),
+      {
+        loading: "Loading parameters...",
+        success: (msg) => msg as string,
+        error: (err) =>
+          (err as Error)?.message ??
+          "Failed to restore setup. Please try again.",
+      },
+    );
   };
 
   const handleRetry = async () => {
@@ -564,7 +560,7 @@ const A2iImageCard = ({
             <p className="text-sm text-center overflow-hidden text-ellipsis line-clamp-5 max-h-40">
               {status === "enhancing_prompt"
                 ? "Enhancing prompt..."
-                : parameters.prompt}
+                : activeParameters.prompt}
             </p>
             {vtonParameters && (
               <div className="flex gap-6">
@@ -723,8 +719,8 @@ const A2iImageCard = ({
             />
           )}
 
-          {/*Always show copy prompt button when prompt exists */}
-          {parameters.prompt && status !== "processing" && (
+          {/*Always show copy prompt button for non-processing — fetches on demand if needed */}
+          {status !== "processing" && (
             <TooltipButton
               tooltip={copied ? "Copied!" : "Copy Prompt"}
               onClick={(e) => {
@@ -751,21 +747,14 @@ const A2iImageCard = ({
             status !== "processing" && ( // hide when still generating
               <TooltipButton
                 tooltip="Re-use"
-                disabled={parametersQuery.isFetching}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleReUse();
                 }}
                 icon={
-                  parametersQuery.isFetching ? (
-                    <Loader2
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE} animate-spin`}
-                    />
-                  ) : (
-                    <RotateCcw
-                      className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
-                    />
-                  )
+                  <RotateCcw
+                    className={`h-${OVERLAY_CONTROL_SIZE} w-${OVERLAY_CONTROL_SIZE}`}
+                  />
                 }
               />
             )}
