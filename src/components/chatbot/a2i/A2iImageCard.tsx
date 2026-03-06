@@ -205,7 +205,7 @@ const A2iImageCard = ({
         setTimeout(() => setCopied(false), 2000);
       })(),
       {
-        loading: "Fetching prompt...",
+        loading: "Copying prompt...",
         success: "Prompt copied!",
         error: "Could not copy prompt.",
       },
@@ -282,8 +282,14 @@ const A2iImageCard = ({
           const videoParams = { ...params };
           model.parameters?.forEach((paramDef) => {
             const paramId = paramDef.id;
-            if (videoParams[paramId] !== undefined && videoParams[paramId] !== null) {
-              videoParams[paramId] = convertParameterValue(videoParams[paramId], paramDef);
+            if (
+              videoParams[paramId] !== undefined &&
+              videoParams[paramId] !== null
+            ) {
+              videoParams[paramId] = convertParameterValue(
+                videoParams[paramId],
+                paramDef,
+              );
             }
           });
 
@@ -291,9 +297,14 @@ const A2iImageCard = ({
           setSelectedVideoGenearationModel(model);
           setParameters("videoParameters", videoParams);
 
-          const firstFrameParam = model.parameters?.find((p) => p.type === "first_frame");
-          const lastFrameParam = model.parameters?.find((p) => p.type === "last_frame");
-          if (firstFrameParam?.id) setStartFrame(videoParams[firstFrameParam.id]);
+          const firstFrameParam = model.parameters?.find(
+            (p) => p.type === "first_frame",
+          );
+          const lastFrameParam = model.parameters?.find(
+            (p) => p.type === "last_frame",
+          );
+          if (firstFrameParam?.id)
+            setStartFrame(videoParams[firstFrameParam.id]);
           if (lastFrameParam?.id) setEndFrame(videoParams[lastFrameParam.id]);
 
           return "Video setup restored in Video Generation tab.";
@@ -301,17 +312,25 @@ const A2iImageCard = ({
 
         // Remix
         if (type === "remix") {
-          const model = models.find((m) => m.model === params.model && m.type === "remix");
+          const model = models.find(
+            (m) => m.model === params.model && m.type === "remix",
+          );
           if (!model) throw new Error("Model not found for this remix image.");
 
           const baseInputImageUrl = params.base_image || params.image;
-          if (!baseInputImageUrl) throw new Error("Base input not available — cannot reuse this image.");
+          if (!baseInputImageUrl)
+            throw new Error(
+              "Base input not available — cannot reuse this image.",
+            );
 
           const convertedRemixParams = { ...params };
           model.parameters?.forEach((paramDef) => {
             const id = paramDef.id;
             if (convertedRemixParams[id] !== undefined) {
-              convertedRemixParams[id] = convertParameterValue(convertedRemixParams[id], paramDef);
+              convertedRemixParams[id] = convertParameterValue(
+                convertedRemixParams[id],
+                paramDef,
+              );
             }
           });
 
@@ -319,7 +338,11 @@ const A2iImageCard = ({
           setSelectedRemixModel(model);
           setParameters("remixParameters", convertedRemixParams);
           if (showImageModal) setShowImageModal(false);
-          setBaseImageUrl(convertedRemixParams.base_image || convertedRemixParams.image || null);
+          setBaseImageUrl(
+            convertedRemixParams.base_image ||
+              convertedRemixParams.image ||
+              null,
+          );
 
           return "Remix model and parameters have been restored.";
         }
@@ -351,7 +374,9 @@ const A2iImageCard = ({
       {
         loading: "Loading parameters...",
         success: (msg) => msg as string,
-        error: (err) => (err as Error)?.message ?? "Failed to restore setup. Please try again.",
+        error: (err) =>
+          (err as Error)?.message ??
+          "Failed to restore setup. Please try again.",
       },
     );
   };
