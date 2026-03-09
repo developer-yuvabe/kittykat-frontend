@@ -17,7 +17,7 @@ export const createUser = async (userData: {
 }) => {
   try {
     const updatedUser = await handleApiRequest<UserListItem>(
-      axiosInstance.post(`/users`, userData)
+      axiosInstance.post(`/users`, userData),
     );
 
     return updatedUser;
@@ -40,7 +40,7 @@ export const updateUser = async (
     user_preferences?: {
       enhance_prompts?: boolean;
     };
-  }
+  },
 ): Promise<UserListItem> => {
   try {
     const fieldsToUpdate = {
@@ -56,7 +56,7 @@ export const updateUser = async (
     };
 
     const updatedUser = await handleApiRequest<UserListItem>(
-      axiosInstance.put(`/users/${userId}`, fieldsToUpdate)
+      axiosInstance.put(`/users/${userId}`, fieldsToUpdate),
     );
 
     return updatedUser;
@@ -69,7 +69,7 @@ export const updateUser = async (
 export const fetchAllUsers = async (
   page: number,
   limit: number,
-  searchQuery?: string
+  searchQuery?: string,
 ): Promise<UserListResponse | null> => {
   try {
     const skip = (page - 1) * limit;
@@ -82,8 +82,8 @@ export const fetchAllUsers = async (
         `${searchQuery ? `/users?search=${searchQuery}` : `/users`}`,
         {
           params: { skip, limit },
-        }
-      )
+        },
+      ),
     );
 
     return data;
@@ -103,11 +103,11 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
 };
 
 export const fetchUserBrands = async (
-  userId: string
+  userId: string,
 ): Promise<UserBrand[] | null> => {
   try {
     const data = await handleApiRequest<UserBrand[] | null>(
-      axiosInstance.get(`/users/${userId}/brands`)
+      axiosInstance.get(`/users/${userId}/brands`),
     );
     return data;
   } catch {
@@ -115,15 +115,29 @@ export const fetchUserBrands = async (
   }
 };
 
+export const resetUserThread = async (
+  userId: string,
+): Promise<UserListItem> => {
+  try {
+    const data = await handleApiRequest<UserListItem>(
+      axiosInstance.patch(`/users/${userId}/reset-thread`),
+    );
+    return data;
+  } catch (error) {
+    console.error("Error resetting user thread:", error);
+    throw error;
+  }
+};
+
 export const updateUserActiveTeam = async (
   userId: string,
-  active_team_id: string | null
+  active_team_id: string | null,
 ): Promise<UserListItem> => {
   try {
     const data = await handleApiRequest<UserListItem>(
       axiosInstance.patch(`/users/${userId}/active-team`, {
         active_team_id,
-      })
+      }),
     );
 
     return data;
@@ -146,7 +160,7 @@ export const inviteUser = async (data: z.infer<typeof invitationSchema>) => {
         tokens: data.tokens,
         team_id: data.teamId,
         team_role: data.teamRole,
-      })
+      }),
     );
 
     if (!response) {
@@ -162,7 +176,7 @@ export const inviteUser = async (data: z.infer<typeof invitationSchema>) => {
 export const resendInvitation = async (invitationId: string) => {
   try {
     await handleApiRequest(
-      axiosInstance.post(`/invitations/${invitationId}/resend`)
+      axiosInstance.post(`/invitations/${invitationId}/resend`),
     );
   } catch (error) {
     console.error("Error resending invitation:", error);
@@ -173,14 +187,14 @@ export const resendInvitation = async (invitationId: string) => {
 export const acceptInvitation = async (
   invitationId: string,
   firebase_uid: string,
-  name: string
+  name: string,
 ) => {
   try {
     await handleApiRequest(
       axiosInstance.post(`/invitations/${invitationId}/accept`, {
         name,
         firebase_uid,
-      })
+      }),
     );
   } catch (error) {
     console.error("Error accepting invitation:", error);
@@ -195,7 +209,7 @@ export const checkIfEmailExists = async (email: string): Promise<boolean> => {
     }>(
       axiosInstance.get("/users/check", {
         params: { email },
-      })
+      }),
     );
 
     return response.exists === true;
@@ -211,7 +225,7 @@ export const sendEmailVerificationLink = async (email: string) => {
       axiosInstance.post("/users/email-verification", {
         email,
         base_url: `${window.location.origin}`,
-      })
+      }),
     );
   } catch (error) {
     console.error("Error sending verification email:", error);

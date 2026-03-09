@@ -15,7 +15,7 @@ import {
 } from "@langchain/langgraph-sdk/react-ui";
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { useUserStore } from "@/store/user.store";
-import { updateUser } from "@/services/api/user.service";
+import { updateUser, resetUserThread } from "@/services/api/user.service";
 import Splash from "@/components/shared/Splash";
 import {
   fetchSuggestions,
@@ -25,6 +25,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { client } from "./langgraph.client";
 import { toast } from "sonner";
 import { logError } from "@/services/actions/log-error";
+import { StreamErrorDialog } from "./StreamErrorDialog";
 import { env } from "@/config/env";
 import { useThreadStore } from "@/store/thread.store";
 import { NextSuggestions } from "@/types/langgraph.types";
@@ -75,7 +76,10 @@ const useTypedStream = useStream<
   }
 >;
 
-export type StreamContextType = ReturnType<typeof useTypedStream> & {};
+export type StreamContextType = ReturnType<typeof useTypedStream> & {
+  showErrorToast: () => void;
+  openErrorDialog: () => void;
+};
 
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
 
@@ -92,7 +96,27 @@ const StreamSession = ({
 }) => {
   const { user, setUser } = useUserStore();
   const { setSuggestions } = useThreadStore();
+  const [showErrorDialog, setShowErrorDialog] = useState<
+    "error" | "manual" | false
+  >(false);
 
+  const handleResetChat = async () => {
+    await resetUserThread(user!.id);
+    setUser({ ...user!, thread_id: null });
+    setShowErrorDialog(false);
+  };
+
+  const showErrorToast = () => {
+    toast.error("Something went sideways — we're on it!", {
+      description:
+        "The connection hit a snag. If it keeps happening, resetting the chat usually does the trick.",
+      action: {
+        label: "Reset Chat",
+          onClick: () => setShowErrorDialog("error"),
+      },
+      duration: 8000,
+    });
+  };
   const streamValue = useTypedStream({
     apiUrl,
     assistantId,
@@ -110,7 +134,7 @@ const StreamSession = ({
         const suggestions = await fetchSuggestions(
           user.thread_id,
           lastMessages,
-          restState
+          restState,
         );
         setSuggestions(suggestions || []);
       }
@@ -121,12 +145,10 @@ const StreamSession = ({
           user?.id || "-",
           user?.email || "-",
           env.NEXT_PUBLIC_ENVIRONMENT,
-          `Thread Id: ${user?.thread_id}\n${String(error)}`
+          `Thread Id: ${user?.thread_id}\n${String(error)}`,
         );
       }
-      toast.error(
-        "An error occurred while connecting to the agent. Please try again."
-      );
+      showErrorToast();
     },
     onThreadId: (id) => {
       updateUser(user!.id, {
@@ -141,13 +163,24 @@ const StreamSession = ({
   });
 
   return (
-    <StreamContext.Provider
-      value={{
-        ...streamValue,
-      }}
-    >
-      {children}
-    </StreamContext.Provider>
+    <>
+      <StreamContext.Provider
+        value={{
+          ...streamValue,
+          showErrorToast,
+          openErrorDialog: () => setShowErrorDialog("manual"),
+        }}
+      >
+        {children}
+      </StreamContext.Provider>
+
+      <StreamErrorDialog
+        open={showErrorDialog !== false}
+        variant={showErrorDialog || "manual"}
+        onOpenChange={(open) => !open && setShowErrorDialog(false)}
+        onReset={handleResetChat}
+      />
+    </>
   );
 };
 
@@ -196,9 +229,10 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <StreamSession
+      key={user?.thread_id ?? "new-thread"}
       apiUrl={new URL("/api/langgraph", window.location.href).href}
       assistantId={KITTYKAT_AGENT_ID}
-      cahedData={cahedData}
+      cahedData={user?.thread_id ? cahedData : null}
     >
       {children}
     </StreamSession>
