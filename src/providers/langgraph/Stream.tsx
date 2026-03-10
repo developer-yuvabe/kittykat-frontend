@@ -83,6 +83,42 @@ export type StreamContextType = ReturnType<typeof useTypedStream> & {
 
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
 
+class StreamErrorBoundary extends React.Component<
+  {
+    children: ReactNode;
+    onReset: () => Promise<void>;
+    onCatch: (error: Error, info: React.ErrorInfo) => void;
+  },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    this.props.onCatch(error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <StreamErrorDialog
+          open={true}
+          variant="error"
+          onOpenChange={() => {}}
+          onReset={() => {
+            this.setState({ hasError: false });
+            void this.props.onReset();
+          }}
+        />
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const StreamSession = ({
   children,
   apiUrl,
@@ -105,6 +141,17 @@ const StreamSession = ({
   const handleResetChat = async () => {
     await onReset();
     setShowErrorDialog(false);
+  };
+
+  const handleBoundaryError = (error: Error, info: React.ErrorInfo) => {
+    if (process.env.NODE_ENV === "production") {
+      logError(
+        user?.id || "-",
+        user?.email || "-",
+        env.NEXT_PUBLIC_ENVIRONMENT,
+        `Render Error - Thread: ${user?.thread_id}\n${error.message}\n${info.componentStack ?? ""}`,
+      );
+    }
   };
 
   const showErrorToast = () => {
@@ -166,15 +213,17 @@ const StreamSession = ({
 
   return (
     <>
-      <StreamContext.Provider
-        value={{
-          ...streamValue,
-          showErrorToast,
-          openErrorDialog: () => setShowErrorDialog("manual"),
-        }}
-      >
-        {children}
-      </StreamContext.Provider>
+      <StreamErrorBoundary onReset={onReset} onCatch={handleBoundaryError}>
+        <StreamContext.Provider
+          value={{
+            ...streamValue,
+            showErrorToast,
+            openErrorDialog: () => setShowErrorDialog("manual"),
+          }}
+        >
+          {children}
+        </StreamContext.Provider>
+      </StreamErrorBoundary>
 
       <StreamErrorDialog
         open={showErrorDialog !== false}
