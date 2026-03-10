@@ -86,11 +86,11 @@ const StreamContext = createContext<StreamContextType | undefined>(undefined);
 class StreamErrorBoundary extends React.Component<
   {
     children: ReactNode;
-    onReset: () => Promise<void>;
     onCatch: (error: Error, info: React.ErrorInfo) => void;
   },
   { hasError: boolean }
 > {
+  private recoveryTimer: ReturnType<typeof setTimeout> | null = null;
   state = { hasError: false };
 
   static getDerivedStateFromError() {
@@ -99,22 +99,17 @@ class StreamErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     this.props.onCatch(error, info);
+    this.recoveryTimer = setTimeout(() => {
+      this.setState({ hasError: false });
+    }, 200);
+  }
+
+  componentWillUnmount() {
+    if (this.recoveryTimer) clearTimeout(this.recoveryTimer);
   }
 
   render() {
-    if (this.state.hasError) {
-      return (
-        <StreamErrorDialog
-          open={true}
-          variant="error"
-          onOpenChange={() => {}}
-          onReset={() => {
-            this.setState({ hasError: false });
-            void this.props.onReset();
-          }}
-        />
-      );
-    }
+    if (this.state.hasError) return null;
     return this.props.children;
   }
 }
@@ -213,7 +208,7 @@ const StreamSession = ({
 
   return (
     <>
-      <StreamErrorBoundary onReset={onReset} onCatch={handleBoundaryError}>
+      <StreamErrorBoundary onCatch={handleBoundaryError}>
         <StreamContext.Provider
           value={{
             ...streamValue,
