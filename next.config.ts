@@ -4,6 +4,7 @@ const nextConfig = {
   },
   output: "standalone",
   reactStrictMode: false,
+  productionBrowserSourceMaps: true,
   images: {
     remotePatterns: [
       {

@@ -6,6 +6,7 @@ import React, {
   ReactNode,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { type Message } from "@langchain/langgraph-sdk";
@@ -90,7 +91,6 @@ class StreamErrorBoundary extends React.Component<
   },
   { hasError: boolean }
 > {
-  private recoveryTimer: ReturnType<typeof setTimeout> | null = null;
   state = { hasError: false };
 
   static getDerivedStateFromError() {
@@ -99,13 +99,9 @@ class StreamErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     this.props.onCatch(error, info);
-    this.recoveryTimer = setTimeout(() => {
-      this.setState({ hasError: false });
-    }, 200);
-  }
-
-  componentWillUnmount() {
-    if (this.recoveryTimer) clearTimeout(this.recoveryTimer);
+    // No setState here — recovery is via key prop change on the boundary,
+    // which triggers a clean remount instead of a competing setState that
+    // causes React error #185 (Maximum update depth exceeded).
   }
 
   render() {
@@ -132,6 +128,8 @@ const StreamSession = ({
   const [showErrorDialog, setShowErrorDialog] = useState<
     "error" | "manual" | false
   >(false);
+  const [boundaryKey, setBoundaryKey] = useState(0);
+  const boundaryHasError = useRef(false);
 
   const handleResetChat = async () => {
     await onReset();
@@ -139,12 +137,13 @@ const StreamSession = ({
   };
 
   const handleBoundaryError = (error: Error, info: React.ErrorInfo) => {
+    boundaryHasError.current = true;
     if (process.env.NODE_ENV === "production") {
       logError(
         user?.id || "-",
         user?.email || "-",
         env.NEXT_PUBLIC_ENVIRONMENT,
-        `Render Error - Thread: ${user?.thread_id}\n${error.message}\n${info.componentStack ?? ""}`,
+        `Render Error - Thread: ${user?.thread_id}\n[${error.name}] ${error.message}\n\nStack:\n${error.stack ?? ""}\n\nComponent Tree:\n${info.componentStack ?? ""}`,
       );
     }
   };
@@ -206,9 +205,19 @@ const StreamSession = ({
     },
   });
 
+  useEffect(() => {
+    if (boundaryHasError.current) {
+      boundaryHasError.current = false;
+      setBoundaryKey((k) => k + 1);
+    }
+  }, [streamValue.messages.length]);
+
   return (
     <>
-      <StreamErrorBoundary onCatch={handleBoundaryError}>
+      <StreamErrorBoundary
+        key={boundaryKey}
+        onCatch={handleBoundaryError}
+      >
         <StreamContext.Provider
           value={{
             ...streamValue,
