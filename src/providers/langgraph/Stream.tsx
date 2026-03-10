@@ -88,11 +88,13 @@ const StreamSession = ({
   apiUrl,
   assistantId,
   cahedData,
+  onReset,
 }: {
   children: ReactNode;
   apiUrl: string;
   assistantId: string;
   cahedData?: StateType | null;
+  onReset: () => Promise<void>;
 }) => {
   const { user, setUser } = useUserStore();
   const { setSuggestions } = useThreadStore();
@@ -101,8 +103,7 @@ const StreamSession = ({
   >(false);
 
   const handleResetChat = async () => {
-    await resetUserThread(user!.id);
-    setUser({ ...user!, thread_id: null });
+    await onReset();
     setShowErrorDialog(false);
   };
 
@@ -112,11 +113,12 @@ const StreamSession = ({
         "The connection hit a snag. If it keeps happening, resetting the chat usually does the trick.",
       action: {
         label: "Reset Chat",
-          onClick: () => setShowErrorDialog("error"),
+        onClick: () => setShowErrorDialog("error"),
       },
       duration: 8000,
     });
   };
+
   const streamValue = useTypedStream({
     apiUrl,
     assistantId,
@@ -189,8 +191,18 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { setSelectedBrandId } = useBrandStore();
   const { user, setUser } = useUserStore();
+  const { setSuggestions } = useThreadStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const [cahedData, setCachedData] = useState<StateType | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleResetChat = async () => {
+    await resetUserThread(user!.id);
+    setCachedData(null);
+    setSuggestions([]);
+    setUser({ ...user!, thread_id: null });
+    setResetKey((k) => k + 1);
+  };
 
   useEffect(() => {
     const initializeParams = async () => {
@@ -229,10 +241,11 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <StreamSession
-      key={user?.thread_id ?? "new-thread"}
+      key={resetKey}
       apiUrl={new URL("/api/langgraph", window.location.href).href}
       assistantId={KITTYKAT_AGENT_ID}
       cahedData={user?.thread_id ? cahedData : null}
+      onReset={handleResetChat}
     >
       {children}
     </StreamSession>
