@@ -11,6 +11,7 @@ import {
   checkIfEmailExists,
   sendEmailVerificationLink,
   updateUserActiveTeam,
+  resetUserThread,
 } from "@/services/api/user.service";
 import type { UserListResponse, UserBrand } from "@/types/user.types";
 
@@ -29,7 +30,7 @@ export function getUserQueryKey(userId?: string) {
 export function getUsersListQueryKey(
   page?: number,
   limit?: number,
-  search?: string
+  search?: string,
 ) {
   return ["users", page, limit, search];
 }
@@ -91,6 +92,14 @@ export function useUsers({
     onSuccess: (data, variables) => {
       // Update the single user cache and invalidate lists
       queryClient.setQueryData(getUserQueryKey(variables.userId), data);
+      queryClient.invalidateQueries({ queryKey: ["users"], exact: false });
+    },
+  });
+
+  const resetThreadMutation = useMutation({
+    mutationFn: (userId: string) => resetUserThread(userId),
+    onSuccess: (data, userId) => {
+      queryClient.setQueryData(getUserQueryKey(userId), data);
       queryClient.invalidateQueries({ queryKey: ["users"], exact: false });
     },
   });
@@ -164,6 +173,9 @@ export function useUsers({
     isSendingEmailVerificationLink: sendEmailVerificationMutation.isPending,
     updateActiveTeamAsync: updateActiveTeamMutation.mutateAsync,
     isUpdatingActiveTeam: updateActiveTeamMutation.isPending,
+
+    resetThread: resetThreadMutation.mutateAsync,
+    isResettingThread: resetThreadMutation.isPending,
   };
 }
 

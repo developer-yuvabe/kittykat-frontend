@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/langgraph/Stream";
 import { useThreadStore } from "@/store/thread.store";
-import { PanelRightClose, Sparkles } from "lucide-react";
+import { PanelRightClose, Sparkles, RotateCcw } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StickToBottom } from "use-stick-to-bottom";
 
@@ -17,6 +17,7 @@ const KittyKatAssistant = () => {
   // Responsive breakpoints
 
   const stream = useStreamContext();
+  const { openErrorDialog } = stream;
   const messages = stream.messages;
   const lastError = useRef<string | undefined>(undefined);
 
@@ -61,15 +62,27 @@ const KittyKatAssistant = () => {
             </div>
             <h2 className="font-bold">KittyKat Assistant</h2>
           </div>
-          <Button
-            onClick={() => setShowChatAssistant(false)}
-            className="text-xs text-muted-foreground"
-            variant="ghost"
-            size="sm"
-          >
-            <PanelRightClose />
-            <h3 className="font-bold  ">Close</h3>
-          </Button>
+          <div className="flex items-center">
+            <Button
+              onClick={openErrorDialog}
+              className="text-muted-foreground"
+              variant="ghost"
+              size="icon"
+              title="Reset Chat"
+            >
+              <RotateCcw className="size-4" />
+            </Button>
+
+            <Button
+              onClick={() => setShowChatAssistant(false)}
+              className="text-xs text-muted-foreground"
+              variant="ghost"
+              size="sm"
+            >
+              <PanelRightClose />
+              <h3 className="font-bold">Close</h3>
+            </Button>
+          </div>
         </div>
         <p className="text-muted-foreground font-light mt-2 text-xs">
           I can help you create stunning visuals, manage your brand, and run
@@ -83,7 +96,7 @@ const KittyKatAssistant = () => {
         <StickyToBottomContent
           id="chat-panel-scroll-container"
           contentClassName={cn(
-            "pb-2 ml-auto mr-0 flex flex-col gap-1 w-full overflow-y-auto"
+            "pb-2 ml-auto mr-0 flex flex-col gap-1 w-full overflow-y-auto",
           )}
           content={
             !chatStarted ? (

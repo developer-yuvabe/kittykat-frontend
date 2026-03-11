@@ -56,8 +56,12 @@ const BrandDetailsPanel: React.FC<BrandDetailsPanelProps> = ({}) => {
   const stream = useStreamContext();
 
   const brandingInformation = data?.brand_information;
-  const campaignInformation = data?.campaign_information?.filter(
-    (campaign) => campaign.is_custom !== true
+  const campaignInformation = useMemo(
+    () =>
+      data?.campaign_information?.filter(
+        (campaign) => campaign.is_custom !== true,
+      ),
+    [data?.campaign_information],
   );
   const a2iImageInformation = data?.a2i_image_information;
   const moodboardInformation = data?.moodboard_information;
@@ -72,7 +76,8 @@ const BrandDetailsPanel: React.FC<BrandDetailsPanelProps> = ({}) => {
     // If there's a campaignId in the URL, try to find it in the list
     const campaign = campaignInformation.find(
       (c) =>
-        c.id === selectedCampaignIdFromUrl || c.id === globalSelectedCamapaignId
+        c.id === selectedCampaignIdFromUrl ||
+        c.id === globalSelectedCamapaignId,
     );
 
     if (campaign) return campaign;
@@ -124,7 +129,7 @@ const BrandDetailsPanel: React.FC<BrandDetailsPanelProps> = ({}) => {
         console.error("Error creating new campaign:", error);
       }
     },
-    [user, stream, selectedBrandId, setIsCampaignCreating]
+    [user, stream, selectedBrandId, setIsCampaignCreating],
   );
 
   useEffect(() => {

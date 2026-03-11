@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Check, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Command,
@@ -42,12 +42,6 @@ export default function CampaignSelector({
 }: CampaignSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [transformedCampaigns, setTransformedCampaigns] = useState<
-    TransformedCampaign[]
-  >([]);
-  const [filteredCampaigns, setFilteredCampaigns] = useState<
-    TransformedCampaign[]
-  >([]);
   const [loading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -78,40 +72,26 @@ export default function CampaignSelector({
       },
     });
 
-  // Add delete modal state
-
-  // Transform campaigns on initial load
-  useEffect(() => {
-    if (campaigns.length > 0) {
-      const transformed = campaigns.map((campaign) => {
-        const displayName = campaign?.campaign?.title || "Unnamed Campaign";
-        return {
-          id: campaign.id,
-          displayName,
-          initial: displayName.charAt(0).toUpperCase(),
-          searchKey: `${displayName}::${campaign.id}`,
-          raw: campaign,
-        };
-      });
-
-      setTransformedCampaigns(transformed);
-      setFilteredCampaigns(transformed);
-    }
+  const transformedCampaigns = useMemo<TransformedCampaign[]>(() => {
+    if (campaigns.length === 0) return [];
+    return campaigns.map((campaign) => {
+      const displayName = campaign?.campaign?.title || "Unnamed Campaign";
+      return {
+        id: campaign.id,
+        displayName,
+        initial: displayName.charAt(0).toUpperCase(),
+        searchKey: `${displayName}::${campaign.id}`,
+        raw: campaign,
+      };
+    });
   }, [campaigns]);
 
-  // Update filtered campaigns when search query changes
-  useEffect(() => {
-    if (transformedCampaigns.length === 0) return;
-
-    if (searchQuery.trim() === "") {
-      setFilteredCampaigns(transformedCampaigns);
-    } else {
-      const filtered = transformedCampaigns.filter((campaign) =>
-        campaign.displayName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredCampaigns(filtered);
-    }
-  }, [searchQuery, transformedCampaigns]);
+  const filteredCampaigns = useMemo<TransformedCampaign[]>(() => {
+    if (searchQuery.trim() === "") return transformedCampaigns;
+    return transformedCampaigns.filter((campaign) =>
+      campaign.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [transformedCampaigns, searchQuery]);
 
   const handleCampaignSelect = (campaignId: string) => {
     const campaign = campaigns.find((c) => c.id === campaignId);

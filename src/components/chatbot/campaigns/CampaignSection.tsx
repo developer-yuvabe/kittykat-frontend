@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronRight, CirclePlus, Megaphone } from "lucide-react";
 import { Agents, ThreadCampaign, ThreadDetails } from "@/types/types";
 import { CampaignColors } from "./CampaignColors";
@@ -42,6 +42,11 @@ export const CampaignSection: React.FC<{
     useModelsStore();
   const { chatOnlyMode } = useThreadStore();
   const stream = useStreamContext();
+
+  const stableCampaigns = useMemo(
+    () => campaignInformation || [],
+    [campaignInformation]
+  );
 
   const [fadeKey, setFadeKey] = useState(0);
 
@@ -172,7 +177,7 @@ export const CampaignSection: React.FC<{
 
         <div className="flex items-center gap-x-2">
           <div>
-            <CampaignSelector campaigns={campaignInformation || []} />
+            <CampaignSelector campaigns={stableCampaigns} />
           </div>
           <TooltipIconButton
             size="lg"

@@ -33,7 +33,8 @@ export function AssistantMessage({
 
   const thread = useStreamContext();
   const isLastMessage =
-    thread.messages[thread.messages.length - 1].id === message?.id;
+    thread.messages.length > 0 &&
+    thread.messages[thread.messages.length - 1]?.id === message?.id;
   const hasNoAIOrToolMessages = !thread.messages.find(
     (m) => m.type === "ai" || m.type === "tool"
   );
@@ -58,6 +59,9 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
+  const messageToolCalls = (message as { tool_calls?: unknown } | undefined)
+    ?.tool_calls;
+
   // Get the current active tool call for contextual loading - memoized with stable deps
   const activeToolCall = useMemo(() => {
     if (hasToolCalls && message?.tool_calls?.[0]) {
@@ -69,7 +73,7 @@ export function AssistantMessage({
     return null;
   }, [
     hasToolCalls,
-    message?.type === "ai" ? message.tool_calls : undefined,
+    messageToolCalls,
     hasAnthropicToolCalls,
     anthropicStreamedToolCalls,
   ]);

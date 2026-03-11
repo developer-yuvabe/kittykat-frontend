@@ -65,7 +65,7 @@ export function UserProfileMenu({}) {
     const updateThreadActiveTeam = async () => {
       // only update the langgraph thread state when we have an active team and a valid thread id
       if (user?.active_team_id && user?.thread_id) {
-        if (!values.activeTeamId) {
+        if (!values?.activeTeamId && values != null) {
           try {
             await updateActiveTeamIdinThread(
               user.thread_id,
@@ -79,7 +79,7 @@ export function UserProfileMenu({}) {
     };
 
     updateThreadActiveTeam();
-  }, [user?.active_team_id, user?.thread_id, values.activeTeamId]);
+  }, [user?.active_team_id, user?.thread_id, values?.activeTeamId]);
 
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 lg:space-x-6">

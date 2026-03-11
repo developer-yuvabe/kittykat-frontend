@@ -6,6 +6,7 @@ import React, {
   ReactNode,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { type Message } from "@langchain/langgraph-sdk";
@@ -15,7 +16,7 @@ import {
 } from "@langchain/langgraph-sdk/react-ui";
 import { KITTYKAT_AGENT_ID } from "@/lib/constants";
 import { useUserStore } from "@/store/user.store";
-import { updateUser } from "@/services/api/user.service";
+import { updateUser, resetUserThread } from "@/services/api/user.service";
 import Splash from "@/components/shared/Splash";
 import {
   fetchSuggestions,
@@ -25,6 +26,7 @@ import { useBrandStore } from "@/store/brand.store";
 import { client } from "./langgraph.client";
 import { toast } from "sonner";
 import { logError } from "@/services/actions/log-error";
+import { StreamErrorDialog } from "./StreamErrorDialog";
 import { env } from "@/config/env";
 import { useThreadStore } from "@/store/thread.store";
 import { NextSuggestions } from "@/types/langgraph.types";
@@ -75,23 +77,88 @@ const useTypedStream = useStream<
   }
 >;
 
-export type StreamContextType = ReturnType<typeof useTypedStream> & {};
+export type StreamContextType = ReturnType<typeof useTypedStream> & {
+  showErrorToast: () => void;
+  openErrorDialog: () => void;
+};
 
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
+
+class StreamErrorBoundary extends React.Component<
+  {
+    children: ReactNode;
+    onCatch: (error: Error, info: React.ErrorInfo) => void;
+  },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    this.props.onCatch(error, info);
+    // No setState here — recovery is via key prop change on the boundary,
+    // which triggers a clean remount instead of a competing setState that
+    // causes React error #185 (Maximum update depth exceeded).
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 const StreamSession = ({
   children,
   apiUrl,
   assistantId,
   cahedData,
+  onReset,
 }: {
   children: ReactNode;
   apiUrl: string;
   assistantId: string;
   cahedData?: StateType | null;
+  onReset: () => Promise<void>;
 }) => {
   const { user, setUser } = useUserStore();
   const { setSuggestions } = useThreadStore();
+  const [showErrorDialog, setShowErrorDialog] = useState<
+    "error" | "manual" | false
+  >(false);
+  const [boundaryKey, setBoundaryKey] = useState(0);
+  const boundaryHasError = useRef(false);
+
+  const handleResetChat = async () => {
+    await onReset();
+    setShowErrorDialog(false);
+  };
+
+  const handleBoundaryError = (error: Error, info: React.ErrorInfo) => {
+    boundaryHasError.current = true;
+    if (process.env.NODE_ENV === "production") {
+      logError(
+        user?.id || "-",
+        user?.email || "-",
+        env.NEXT_PUBLIC_ENVIRONMENT,
+        `Render Error - Thread: ${user?.thread_id}\n[${error.name}] ${error.message}\n\nStack:\n${error.stack ?? ""}\n\nComponent Tree:\n${info.componentStack ?? ""}`,
+      );
+    }
+  };
+
+  const showErrorToast = () => {
+    toast.error("Something went sideways — we're on it!", {
+      description:
+        "The connection hit a snag. If it keeps happening, resetting the chat usually does the trick.",
+      action: {
+        label: "Reset Chat",
+        onClick: () => setShowErrorDialog("error"),
+      },
+      duration: 8000,
+    });
+  };
 
   const streamValue = useTypedStream({
     apiUrl,
@@ -110,7 +177,7 @@ const StreamSession = ({
         const suggestions = await fetchSuggestions(
           user.thread_id,
           lastMessages,
-          restState
+          restState,
         );
         setSuggestions(suggestions || []);
       }
@@ -121,12 +188,10 @@ const StreamSession = ({
           user?.id || "-",
           user?.email || "-",
           env.NEXT_PUBLIC_ENVIRONMENT,
-          `Thread Id: ${user?.thread_id}\n${String(error)}`
+          `Thread Id: ${user?.thread_id}\n${String(error)}`,
         );
       }
-      toast.error(
-        "An error occurred while connecting to the agent. Please try again."
-      );
+      showErrorToast();
     },
     onThreadId: (id) => {
       updateUser(user!.id, {
@@ -140,14 +205,37 @@ const StreamSession = ({
     },
   });
 
+  useEffect(() => {
+    if (boundaryHasError.current) {
+      boundaryHasError.current = false;
+      setBoundaryKey((k) => k + 1);
+    }
+  }, [streamValue.messages.length]);
+
   return (
-    <StreamContext.Provider
-      value={{
-        ...streamValue,
-      }}
-    >
-      {children}
-    </StreamContext.Provider>
+    <>
+      <StreamErrorBoundary
+        key={boundaryKey}
+        onCatch={handleBoundaryError}
+      >
+        <StreamContext.Provider
+          value={{
+            ...streamValue,
+            showErrorToast,
+            openErrorDialog: () => setShowErrorDialog("manual"),
+          }}
+        >
+          {children}
+        </StreamContext.Provider>
+      </StreamErrorBoundary>
+
+      <StreamErrorDialog
+        open={showErrorDialog !== false}
+        variant={showErrorDialog || "manual"}
+        onOpenChange={(open) => !open && setShowErrorDialog(false)}
+        onReset={handleResetChat}
+      />
+    </>
   );
 };
 
@@ -156,8 +244,18 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { setSelectedBrandId } = useBrandStore();
   const { user, setUser } = useUserStore();
+  const { setSuggestions } = useThreadStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const [cahedData, setCachedData] = useState<StateType | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleResetChat = async () => {
+    await resetUserThread(user!.id);
+    setCachedData(null);
+    setSuggestions([]);
+    setUser({ ...user!, thread_id: null });
+    setResetKey((k) => k + 1);
+  };
 
   useEffect(() => {
     const initializeParams = async () => {
@@ -196,9 +294,11 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <StreamSession
+      key={resetKey}
       apiUrl={new URL("/api/langgraph", window.location.href).href}
       assistantId={KITTYKAT_AGENT_ID}
-      cahedData={cahedData}
+      cahedData={user?.thread_id ? cahedData : null}
+      onReset={handleResetChat}
     >
       {children}
     </StreamSession>
