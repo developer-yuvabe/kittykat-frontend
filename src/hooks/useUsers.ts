@@ -11,10 +11,15 @@ import {
   checkIfEmailExists,
   sendEmailVerificationLink,
   updateUserActiveTeam,
-  resetUserThread,
+  exportTokenUsageCsv
 } from "@/services/api/user.service";
 import type { UserListResponse, UserBrand } from "@/types/user.types";
-
+import { useTeamsInfinite } from "@/hooks/useTeamsInfinite";
+import { useUsersInfinite } from "@/hooks/useUsersInfinite";
+import { useBrandStore } from "@/store/brand.store";
+import { getModels } from "@/services/api/models.service";
+import { toast } from "sonner";
+import { TokenUsageCsvParams } from "@/types/user.types";
 interface UseUsersOptions {
   page?: number;
   limit?: number;
@@ -180,3 +185,88 @@ export function useUsers({
 }
 
 export default useUsers;
+
+export function useWorkspaceOptions(search?: string) {
+  const { teams, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useTeamsInfinite({ search });
+  return {
+    data: teams.map((t) => ({ value: t.id, label: t.name })),
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  };
+}
+
+export function useUserOptions(search?: string) {
+  const { users, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useUsersInfinite({ search });
+  return {
+    data: users.map((u) => ({ value: u.id, label: u.email! })),
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  };
+}
+
+export function useAllBrandOptions() {
+  const { brands, isBrandsFetched } = useBrandStore();
+  return {
+    data: brands.map((b) => ({ value: b.id, label: b.name })),
+    isLoading: !isBrandsFetched,
+  };
+}
+
+export function useModelOptions() {
+  return useQuery({
+    queryKey: ["models"],
+    queryFn: getModels,
+    select: (data) => data.map((m) => ({ value: m.model, label: m.name })),
+  });
+}
+
+export function useAdminTokenUsage() {
+  const exportCsvMutation = useMutation({
+    mutationFn: (params: TokenUsageCsvParams) =>
+      exportTokenUsageCsv(params),
+    onMutate: () => {
+      const toastId = toast.loading("Preparing export...");
+      return { toastId };
+    },
+    onSuccess: (blob, variables, context) => {
+      if (blob.type === "application/json") {
+        blob.text().then((text) => {
+          try {
+            const error = JSON.parse(text);
+            toast.error(error.message || "Export failed", {
+              id: context?.toastId,
+            });
+          } catch {
+            toast.error("Export failed", { id: context?.toastId });
+          }
+        });
+        return;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `token-usage-${variables.start_date}_${variables.end_date}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Export completed", { id: context?.toastId });
+    },
+    onError: (_error, _variables, context) => {
+      toast.error("Export failed", { id: context?.toastId });
+    },
+  });
+
+  return {
+    exportCsv: exportCsvMutation.mutate,
+    isExporting: exportCsvMutation.isPending,
+  };
+}

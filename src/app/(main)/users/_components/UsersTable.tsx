@@ -25,6 +25,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { getUserTableColumns } from "./UserTableColumns";
 import { debounce } from "lodash";
 import { InviteUser } from "./InviteUser";
+import { ExportTokenUsageDialog } from "./ExportTokenUsageDialog";
 import { cn } from "@/lib/utils";
 import { AdminTabNavigation } from "@/components/shared/AdminTabNavigation";
 import { RoleProtectedComponent } from "@/components/shared/RoleProtectedComponent";
@@ -97,6 +98,7 @@ export const UsersTable = () => {
               className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm placeholder:text-muted-foreground border-0 outline-none focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-transparent"
             />
           </div>
+          <ExportTokenUsageDialog />
           <InviteUser queryKey={["users", page, limit, searchTerm]} />
           <RoleProtectedComponent>
             <AdminTabNavigation />
