@@ -8,24 +8,27 @@ interface UseUsersInfiniteOptions {
   search?: string;
   enabled?: boolean;
   excludeIds?: string[];
+  workspaceIds?: string[];
 }
 
-export function getUsersInfiniteQueryKey(search?: string) {
-  return ["users-infinite", search];
+export function getUsersInfiniteQueryKey(search?: string, workspaceIds?: string[]) {
+  return ["users-infinite", search, workspaceIds];
 }
 
 export function useUsersInfinite({
   search,
   enabled = true,
   excludeIds = [],
+  workspaceIds,
 }: UseUsersInfiniteOptions = {}) {
   const query = useInfiniteQuery<UserListResponse | null>({
-    queryKey: getUsersInfiniteQueryKey(search),
+    queryKey: getUsersInfiniteQueryKey(search, workspaceIds),
     queryFn: async ({ pageParam = 1 }) => {
       const response = await fetchAllUsers(
         pageParam as number,
         USERS_PER_PAGE,
-        search
+        search,
+        workspaceIds
       );
       return response;
     },

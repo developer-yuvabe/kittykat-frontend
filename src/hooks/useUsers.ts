@@ -198,9 +198,9 @@ export function useWorkspaceOptions(search?: string) {
   };
 }
 
-export function useUserOptions(search?: string) {
+export function useUserOptions(search?: string, workspaceIds?: string[]) {
   const { users, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useUsersInfinite({ search });
+    useUsersInfinite({ search, workspaceIds });
   return {
     data: users.map((u) => ({ value: u.id, label: u.email! })),
     isLoading,

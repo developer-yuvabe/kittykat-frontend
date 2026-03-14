@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,8 @@ export function ExportTokenUsageDialog() {
     },
   });
 
+  const selectedWorkspaces = useWatch({ control: form.control, name: "workspace_id" });
+
   const {
     data: workspaceOptions = [],
     isLoading: loadingWorkspaces,
@@ -70,7 +72,7 @@ export function ExportTokenUsageDialog() {
     isFetchingNextPage: fetchingMoreUsers,
     hasNextPage: hasMoreUsers,
     fetchNextPage: fetchMoreUsers,
-  } = useUserOptions();
+  } = useUserOptions(undefined, selectedWorkspaces);
 
   const { data: brandOptions = [], isLoading: loadingBrands } =
     useAllBrandOptions();
@@ -161,7 +163,10 @@ export function ExportTokenUsageDialog() {
                     <FormLabel>Workspace (optional)</FormLabel>
                     <MultiSelect
                       values={field.value ?? []}
-                      onValuesChange={field.onChange}
+                      onValuesChange={(vals) => {
+                        field.onChange(vals);
+                        form.setValue("user_id", []);
+                      }}
                     >
                       <FormControl>
                         <MultiSelectTrigger

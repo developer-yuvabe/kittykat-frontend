@@ -88,6 +88,17 @@ export const fetchAllUsers = async (
           ...(searchQuery && { search: searchQuery }),
           ...(workspaceIds?.length && { workspace_ids: workspaceIds }),
         },
+        paramsSerializer: (params) => {
+          const searchParams = new URLSearchParams();
+          for (const [key, value] of Object.entries(params)) {
+            if (Array.isArray(value)) {
+              value.forEach((v) => searchParams.append(key, v));
+            } else if (value !== undefined && value !== null) {
+              searchParams.append(key, String(value));
+            }
+          }
+          return searchParams.toString();
+        },
       })
     );
 
@@ -244,8 +255,8 @@ export const exportTokenUsageCsv = async (
 ): Promise<Blob> => {
   const response = await axiosInstance.post(
     "/users/token-usage/export/excel",
-    null,
-    { params, responseType: "blob", paramsSerializer: { indexes: null } }
+    params,
+    { responseType: "blob" }
   );
   return response.data;
 };
