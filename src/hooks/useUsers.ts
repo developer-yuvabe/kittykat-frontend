@@ -11,7 +11,8 @@ import {
   checkIfEmailExists,
   sendEmailVerificationLink,
   updateUserActiveTeam,
-  exportTokenUsageCsv
+  exportTokenUsageCsv,
+  resetUserThread
 } from "@/services/api/user.service";
 import type { UserListResponse, UserBrand } from "@/types/user.types";
 import { useTeamsInfinite } from "@/hooks/useTeamsInfinite";
