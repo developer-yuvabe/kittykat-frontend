@@ -92,3 +92,11 @@ export type UserBrand = {
     email: string;
   };
 };
+export interface TokenUsageCsvParams {
+  start_date: string;
+  end_date: string;
+  workspace_id?: string[];
+  user_id?: string[];
+  brand_id?: string[];
+  model_id?: string[];
+}

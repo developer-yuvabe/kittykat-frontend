@@ -3,6 +3,7 @@ import { handleApiRequest } from "@/lib/utils";
 import { invitationSchema } from "@/schema/inviation.schema";
 import { PaginationMeta } from "@/types/types";
 import {
+  TokenUsageCsvParams,
   User,
   UserBrand,
   UserListItem,
@@ -66,10 +67,12 @@ export const updateUser = async (
   }
 };
 
+
 export const fetchAllUsers = async (
   page: number,
   limit: number,
   searchQuery?: string,
+  workspaceIds?: string[]
 ): Promise<UserListResponse | null> => {
   try {
     const skip = (page - 1) * limit;
@@ -78,12 +81,25 @@ export const fetchAllUsers = async (
       users: UserListItem[];
       pagination: PaginationMeta;
     } | null>(
-      axiosInstance.get(
-        `${searchQuery ? `/users?search=${searchQuery}` : `/users`}`,
-        {
-          params: { skip, limit },
+      axiosInstance.get(`/users`, {
+        params: {
+          skip,
+          limit,
+          ...(searchQuery && { search: searchQuery }),
+          ...(workspaceIds?.length && { workspace_ids: workspaceIds }),
         },
-      ),
+        paramsSerializer: (params) => {
+          const searchParams = new URLSearchParams();
+          for (const [key, value] of Object.entries(params)) {
+            if (Array.isArray(value)) {
+              value.forEach((v) => searchParams.append(key, v));
+            } else if (value !== undefined && value !== null) {
+              searchParams.append(key, String(value));
+            }
+          }
+          return searchParams.toString();
+        },
+      })
     );
 
     return data;
@@ -231,4 +247,16 @@ export const sendEmailVerificationLink = async (email: string) => {
     console.error("Error sending verification email:", error);
     throw error;
   }
+};
+
+
+export const exportTokenUsageCsv = async (
+  params: TokenUsageCsvParams
+): Promise<Blob> => {
+  const response = await axiosInstance.post(
+    "/users/token-usage/export/excel",
+    params,
+    { responseType: "blob" }
+  );
+  return response.data;
 };

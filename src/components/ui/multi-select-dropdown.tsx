@@ -58,7 +58,6 @@ export function MultiSelect({
   const [items, setItems] = useState<Map<string, ReactNode>>(new Map());
 
   function toggleValue(value: string) {
-    // Use the controlled values prop if provided, otherwise use internal state
     const currentValues = values ? new Set(values) : selectedValues;
     const newSet = new Set(currentValues);
     if (newSet.has(value)) {
@@ -312,6 +311,10 @@ export function MultiSelectItem({
   return (
     <CommandItem
       {...props}
+      value={value}
+      keywords={
+        typeof children === "string" ? [children] : undefined
+      }
       onSelect={() => {
         toggleValue(value);
         onSelect?.(value);
