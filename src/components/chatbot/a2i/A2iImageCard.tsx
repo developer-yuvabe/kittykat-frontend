@@ -60,6 +60,7 @@ export type A2iImageCardProps = {
   isSelected?: boolean;
   onSelect?: (selected: boolean) => void;
   selectionMode?: boolean;
+  invalidParameterError?: string | null;
 };
 
 // 🔑 Control size for all overlay buttons
@@ -84,6 +85,7 @@ const A2iImageCard = ({
   isSelected = false,
   onSelect,
   selectionMode = false,
+  invalidParameterError,
 }: A2iImageCardProps) => {
   const { data, setData } = useBrandUpdatesStore();
   const { addOptimisticallyDeletedGenerationId } = useGenerationsStore();
@@ -142,7 +144,7 @@ const A2iImageCard = ({
     },
     ITEMS_PER_PAGE,
     true,
-    "A2iImageCard",
+    "A2iImageCard"
   );
 
   const id = video?.id ?? image?.id;
@@ -158,7 +160,7 @@ const A2iImageCard = ({
   }, [galleryItem?.data, parameters.prompt]);
 
   const [isLiked, setIsLiked] = useState(
-    galleryItem?.data?.is_favourite || false,
+    galleryItem?.data?.is_favourite || false
   );
 
   useEffect(() => {
@@ -208,7 +210,7 @@ const A2iImageCard = ({
         loading: "Copying prompt...",
         success: "Prompt copied!",
         error: "Could not copy prompt.",
-      },
+      }
     );
   };
 
@@ -232,7 +234,7 @@ const A2iImageCard = ({
         } catch (galleryError) {
           console.warn(
             "Failed to delete gallery item, but A2I generation was deleted:",
-            galleryError,
+            galleryError
           );
         }
       }
@@ -257,7 +259,7 @@ const A2iImageCard = ({
           ? {
               ...data.a2i_image_information,
               generations: data.a2i_image_information.generations.filter(
-                (gen) => gen.id !== generationId,
+                (gen) => gen.id !== generationId
               ),
             }
           : undefined,
@@ -288,7 +290,7 @@ const A2iImageCard = ({
             ) {
               videoParams[paramId] = convertParameterValue(
                 videoParams[paramId],
-                paramDef,
+                paramDef
               );
             }
           });
@@ -298,10 +300,10 @@ const A2iImageCard = ({
           setParameters("videoParameters", videoParams);
 
           const firstFrameParam = model.parameters?.find(
-            (p) => p.type === "first_frame",
+            (p) => p.type === "first_frame"
           );
           const lastFrameParam = model.parameters?.find(
-            (p) => p.type === "last_frame",
+            (p) => p.type === "last_frame"
           );
           if (firstFrameParam?.id)
             setStartFrame(videoParams[firstFrameParam.id]);
@@ -313,14 +315,14 @@ const A2iImageCard = ({
         // Remix
         if (type === "remix") {
           const model = models.find(
-            (m) => m.model === params.model && m.type === "remix",
+            (m) => m.model === params.model && m.type === "remix"
           );
           if (!model) throw new Error("Model not found for this remix image.");
 
           const baseInputImageUrl = params.base_image || params.image;
           if (!baseInputImageUrl)
             throw new Error(
-              "Base input not available — cannot reuse this image.",
+              "Base input not available — cannot reuse this image."
             );
 
           const convertedRemixParams = { ...params };
@@ -329,7 +331,7 @@ const A2iImageCard = ({
             if (convertedRemixParams[id] !== undefined) {
               convertedRemixParams[id] = convertParameterValue(
                 convertedRemixParams[id],
-                paramDef,
+                paramDef
               );
             }
           });
@@ -341,7 +343,7 @@ const A2iImageCard = ({
           setBaseImageUrl(
             convertedRemixParams.base_image ||
               convertedRemixParams.image ||
-              null,
+              null
           );
 
           return "Remix model and parameters have been restored.";
@@ -365,7 +367,7 @@ const A2iImageCard = ({
         const productReferenceImages = params.product_reference_images || [];
         setParameters(
           "productReferenceImages",
-          productReferenceImages.length > 0 ? productReferenceImages : null,
+          productReferenceImages.length > 0 ? productReferenceImages : null
         );
 
         if (pathname !== "/") router.push("/?scrollTo=a2i-input");
@@ -377,7 +379,7 @@ const A2iImageCard = ({
         error: (err) =>
           (err as Error)?.message ??
           "Failed to restore setup. Please try again.",
-      },
+      }
     );
   };
 
@@ -423,7 +425,7 @@ const A2iImageCard = ({
     <div
       className={cn(
         "relative border bg-muted min-w-60 aspect-square group transition-all duration-200 ease-in-out",
-        isDragging && "scale-[1.03] shadow-xl",
+        isDragging && "scale-[1.03] shadow-xl"
       )}
       style={style}
       onMouseEnter={() => setIsHovered(true)}
@@ -436,7 +438,7 @@ const A2iImageCard = ({
         <div
           className={cn(
             "absolute top-2 left-2 z-40 transition-opacity",
-            isHovered || isSelected ? "opacity-100" : "opacity-0",
+            isHovered || isSelected ? "opacity-100" : "opacity-0"
           )}
           onClick={handleCheckboxClick}
         >
@@ -445,7 +447,7 @@ const A2iImageCard = ({
               "w-6 h-6 flex items-center justify-center rounded border-2 cursor-pointer transition-colors",
               isSelected
                 ? "bg-white border-white"
-                : "bg-black/30 border-white/70 hover:bg-black/40",
+                : "bg-black/30 border-white/70 hover:bg-black/40"
             )}
           >
             {isSelected && <CheckIcon className="w-4 h-4 text-black" />}
@@ -629,6 +631,14 @@ const A2iImageCard = ({
                 NSFW detected
               </Badge>
             )}
+            {status === "failed" && invalidParameterError && (
+              <div className="">
+                <Badge className="bg-destructive/40 text-destructive border-destructive text-destructive-foreground absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] justify-center text-center">
+                  {invalidParameterError}
+                </Badge>
+              </div>
+            )}
+
             {status === "failed" && selectionMode && (
               <div
                 className="absolute inset-0 cursor-pointer z-10"
@@ -642,7 +652,7 @@ const A2iImageCard = ({
       <div
         className={cn(
           "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none",
-          selectionMode && "hidden",
+          selectionMode && "hidden"
         )}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30 pointer-events-none" />
@@ -651,7 +661,7 @@ const A2iImageCard = ({
           <div
             className={cn(
               "w-16 h-1 bg-white rounded-full cursor-grab hover:w-20 transition-all top-2 -translate-x-1/2 left-1/2 absolute z-30 pointer-events-auto",
-              !disableDrag && "opacity-60 hover:opacity-100",
+              !disableDrag && "opacity-60 hover:opacity-100"
             )}
             {...(dragAttributes || {})}
             {...(dragListeners || {})}

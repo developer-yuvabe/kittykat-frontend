@@ -184,6 +184,7 @@ export const A2iImagesWrapper = ({
               isNSFW: generation.is_nsfw_detected || false,
               createdAt: generation.created_at,
               updatedAt: generation.updated_at,
+              invalidParameterError: generation.invalid_parameter_error || null,
             },
           ];
         }
@@ -201,6 +202,7 @@ export const A2iImagesWrapper = ({
           isNSFW: generation.is_nsfw_detected || false,
           createdAt: generation.created_at,
           updatedAt: generation.updated_at,
+          invalidParameterError: generation.invalid_parameter_error || null,
         }));
       }
     );
