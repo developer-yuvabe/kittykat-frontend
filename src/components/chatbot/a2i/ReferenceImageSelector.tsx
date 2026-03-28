@@ -61,6 +61,7 @@ interface ReferenceImageSelectorProps {
   popoverSide?: "top" | "bottom" | "left" | "right";
   customTrigger?: React.ReactNode;
   showPopoverTrigger?: boolean;
+  modelProvider?: string;
 }
 
 const ReferenceImageSelector = ({
@@ -94,6 +95,7 @@ const ReferenceImageSelector = ({
   popoverSide = "top",
   customTrigger,
   showPopoverTrigger = true,
+  modelProvider,
 }: ReferenceImageSelectorProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
@@ -203,6 +205,27 @@ const ReferenceImageSelector = ({
     return file.size / (1024 * 1024);
   };
 
+  const isBytePlusProvider = modelProvider === "byteplus";
+  const MAX_RESOLUTION = 36_000_000;
+
+  const getImageFileDimensions = (
+    file: File
+  ): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Failed to load image"));
+      };
+      img.src = url;
+    });
+  };
+
   // Helper function to truncate files based on total size limit
   const truncateFilesByTotalSize = useCallback(
     async (
@@ -257,11 +280,37 @@ const ReferenceImageSelector = ({
         return [];
       }
 
+      // Filter out files that exceed the resolution limit (byteplus only)
+      const resolutionValidFiles: File[] = [];
+      for (const file of validFiles) {
+        if (isBytePlusProvider) {
+          try {
+            const { width, height } = await getImageFileDimensions(file);
+            if (width * height > MAX_RESOLUTION) {
+              toast.error(
+                `"${file.name}" resolution exceeds the limit. Image removed.`
+              );
+              continue;
+            }
+          } catch {
+            // If dimensions can't be determined, allow the file through
+          }
+        }
+        resolutionValidFiles.push(file);
+      }
+
+      if (resolutionValidFiles.length === 0) {
+        if (showToast) {
+          toast.error("No files could be added — resolution exceeds the limit");
+        }
+        return [];
+      }
+
       const uploadedGalleryItems: GalleryItem[] = [];
       const uploadedUrls: string[] = [];
 
       // Upload files to storage
-      const uploadPromises = validFiles.map(async (file) => {
+      const uploadPromises = resolutionValidFiles.map(async (file) => {
         try {
           const uploadedUrl = await uploadFileAndReturnUrl(
             file.name,
@@ -342,6 +391,7 @@ const ReferenceImageSelector = ({
       onProductReferenceChange,
       truncateFilesByTotalSize,
       maxTotalSizeMB,
+      isBytePlusProvider,
     ]
   );
 
@@ -437,6 +487,20 @@ const ReferenceImageSelector = ({
         return;
       }
 
+      // Check resolution limit for gallery items (byteplus only)
+      if (isBytePlusProvider) {
+        const galleryItemForClick = galleryItems.find(
+          (item) => item.asset_url === assetUrl
+        );
+        if (galleryItemForClick?.dimensions) {
+          const { width, height } = galleryItemForClick.dimensions;
+          if (width * height > MAX_RESOLUTION) {
+            toast.error("Image resolution exceeds the limit. Image removed.");
+            return;
+          }
+        }
+      }
+
       // Add to the active tab using shared utility
       const result = addReferenceToZone(
         activeTab,
@@ -476,6 +540,8 @@ const ReferenceImageSelector = ({
       updateLastAccessed,
       patchItem,
       maxFileSizeLimit,
+      isBytePlusProvider,
+      galleryItems,
     ]
   );
 
@@ -583,6 +649,15 @@ const ReferenceImageSelector = ({
           return;
         }
 
+        // Check resolution limit for dropped gallery items (byteplus only)
+        if (isBytePlusProvider && galleryItem?.dimensions) {
+          const { width, height } = galleryItem.dimensions;
+          if (width * height > MAX_RESOLUTION) {
+            toast.error("Image resolution exceeds the limit. Image removed.");
+            return;
+          }
+        }
+
         // Optimistically update in store for gallery items
         if (assetId) {
           updateLastAccessed(assetId);
@@ -617,6 +692,7 @@ const ReferenceImageSelector = ({
       galleryItems,
       maxFileSizeLimit,
       uploadFilesAndAddToZone,
+      isBytePlusProvider,
     ]
   );
 
@@ -732,9 +808,10 @@ const ReferenceImageSelector = ({
   const handleMediaLibrarySelection = useCallback(
     async (items: GalleryItem[]) => {
       const selectionPromise = async () => {
-        // Check file sizes for all selected items
+        // Check file sizes and resolution for all selected items
         const validItems: GalleryItem[] = [];
         const invalidItems: string[] = [];
+        let resolutionRejectedCount = 0;
 
         for (const item of items) {
           const { isValid, sizeInMB } = await checkFileSizeLimit(
@@ -742,26 +819,42 @@ const ReferenceImageSelector = ({
             item.size,
             maxFileSizeLimit
           );
-          if (isValid) {
-            validItems.push(item);
-          } else {
+          if (!isValid) {
             invalidItems.push(
               `${item.asset_title || "Unnamed file"} (${sizeInMB?.toFixed(
                 1
               )}MB)`
             );
+            continue;
           }
+
+          // Check resolution limit (byteplus only)
+          if (isBytePlusProvider && item.dimensions) {
+            const { width, height } = item.dimensions;
+            if (width * height > MAX_RESOLUTION) {
+              resolutionRejectedCount++;
+              continue;
+            }
+          }
+
+          validItems.push(item);
         }
 
         // If no valid items, don't proceed
         if (validItems.length === 0) {
-          throw new Error("No valid images to add (all exceeded size limit)");
+          throw new Error("No valid images to add (all exceeded size or resolution limit)");
         }
 
         // Show warning if some items were rejected
         if (invalidItems.length > 0) {
           toast.warning(
             `${invalidItems.length} image(s) rejected due to size limit.`
+          );
+        }
+
+        if (resolutionRejectedCount > 0) {
+          toast.error(
+            `${resolutionRejectedCount} image(s) resolution exceeds the limit. Image${resolutionRejectedCount > 1 ? "s" : ""} removed.`
           );
         }
 
@@ -847,6 +940,7 @@ const ReferenceImageSelector = ({
       updateLastAccessed,
       patchItem,
       maxFileSizeLimit,
+      isBytePlusProvider,
     ]
   );
 

@@ -1507,6 +1507,7 @@ const A2iImageInput = ({
                       onTabChange={setReferencePopoverTab}
                       isMagicEnabled={isMagicEnabled}
                       onToggleMagic={handleToggleMagic}
+                      modelProvider={currentModel?.provider}
                     />
                   ) : (
                     <Tooltip>
