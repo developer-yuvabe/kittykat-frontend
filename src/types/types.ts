@@ -156,13 +156,13 @@ export type A2iImageGeneration = {
   id: string;
   status: "processing" | "completed" | "failed" | "enhancing_prompt";
   type:
-  | "image_generation"
-  | "vton"
-  | "remix"
-  | "video"
-  | "upscale"
-  | "video_generation"
-  | "a2i"; // Backward compatibility
+    | "image_generation"
+    | "vton"
+    | "remix"
+    | "video"
+    | "upscale"
+    | "video_generation"
+    | "a2i"; // Backward compatibility
   created_at: string | { $date: string };
   updated_at: string | { $date: string };
   parameters: Record<string, any>;
@@ -184,6 +184,7 @@ export type A2iImageGeneration = {
   video?: A2iVideoDetail;
   is_nsfw_detected?: boolean;
   product_reference_images?: string[];
+  invalid_parameter_error?: string | null;
 };
 
 export type ThreadA2iImage = {
@@ -329,11 +330,11 @@ export interface MoodboardInformation {
   aggregated_tags: Record<string, AggregatedTagItem[]>;
 
   style_analysis_status:
-  | "not_started"
-  | "in_progress"
-  | "completed"
-  | "failed"
-  | "partially_completed";
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed"
+    | "partially_completed";
 
   style_analysis_progress_messages?: string[] | null;
   style_analysis_progress?: number | null;
@@ -342,10 +343,10 @@ export interface MoodboardInformation {
 
   visual_sources?: SourceHandle[];
   moodboard_analysis_status?:
-  | "not_started"
-  | "in_progress"
-  | "completed"
-  | "failed";
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "failed";
   moodboard_tags?: Record<string, string[]>;
   selected_moodboard_tags?: Record<string, string[]>;
 
