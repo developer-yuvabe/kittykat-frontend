@@ -313,7 +313,11 @@ export function MultiSelectItem({
       {...props}
       value={value}
       keywords={
-        typeof children === "string" ? [children] : undefined
+        typeof children === "string"
+          ? [children]
+          : typeof badgeLabel === "string"
+          ? [badgeLabel]
+          : undefined
       }
       onSelect={() => {
         toggleValue(value);
