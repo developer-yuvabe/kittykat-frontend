@@ -2,7 +2,6 @@
 
 import Splash from "@/components/shared/Splash";
 import { TopNavigation } from "@/components/shared/TopNavigation";
-import { AppConfig } from "@/config/app.config";
 import { auth } from "@/config/firebase.config";
 import { useUserBrands } from "@/hooks/sse/useUserBrands";
 import { useUserCredits } from "@/hooks/sse/useUserCredits";
@@ -37,7 +36,7 @@ const MainLayout = ({
         window.location.reload();
       };
 
-      if (!u || u.tenantId !== AppConfig.AUTH_TENANT_ID) {
+      if (!u) {
         logout();
       } else {
         setFirebaseUser(u);

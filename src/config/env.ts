@@ -27,10 +27,6 @@ export const env = createEnv({
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_STG: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV: z.string().url(),
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA: z.string().url(),
-    NEXT_PUBLIC_TENANT_ID_DEV: z.string().min(1),
-    NEXT_PUBLIC_TENANT_ID_STG: z.string().min(1),
-    NEXT_PUBLIC_TENANT_ID_PROD: z.string().min(1),
-    NEXT_PUBLIC_TENANT_ID_BETA: z.string().min(1),
   },
 
   /*
@@ -69,10 +65,6 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV,
     NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA:
       process.env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA,
-    NEXT_PUBLIC_TENANT_ID_DEV: process.env.NEXT_PUBLIC_TENANT_ID_DEV,
-    NEXT_PUBLIC_TENANT_ID_STG: process.env.NEXT_PUBLIC_TENANT_ID_STG,
-    NEXT_PUBLIC_TENANT_ID_PROD: process.env.NEXT_PUBLIC_TENANT_ID_PROD,
-    NEXT_PUBLIC_TENANT_ID_BETA: process.env.NEXT_PUBLIC_TENANT_ID_BETA,
     PEXELS_API_KEY: process.env.PEXELS_API_KEY,
     LANGSMITH_API_KEY: process.env.LANGSMITH_API_KEY,
   },

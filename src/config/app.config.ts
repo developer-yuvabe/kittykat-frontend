@@ -23,12 +23,6 @@ export const AppConfig = {
     dev: env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_DEV,
     beta: env.NEXT_PUBLIC_KITTYKAT_AGENT_SERVER_BETA,
   }[env.NEXT_PUBLIC_ENVIRONMENT],
-  AUTH_TENANT_ID: {
-    prod: env.NEXT_PUBLIC_TENANT_ID_PROD,
-    stg: env.NEXT_PUBLIC_TENANT_ID_STG,
-    dev: env.NEXT_PUBLIC_TENANT_ID_DEV,
-    beta: env.NEXT_PUBLIC_TENANT_ID_BETA,
-  }[env.NEXT_PUBLIC_ENVIRONMENT],
   MAX_FILE_SIZE: 32 * 1024 * 1024, // 32 MB
   TABLE_VIEW_LIMIT: 50,
   // Credits validation constants

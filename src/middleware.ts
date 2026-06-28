@@ -13,7 +13,6 @@ export async function middleware(request: NextRequest) {
     loginPath: "/api/login",
     logoutPath: "/api/logout",
     apiKey: clientConfig.apiKey,
-    tenantId: clientConfig.tenantId,
     cookieName: serverConfig.cookieName,
     cookieSignatureKeys: serverConfig.cookieSignatureKeys,
     cookieSerializeOptions: serverConfig.cookieSerializeOptions,
