@@ -19,3 +19,5 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
 };
 
 export default layout;
+
+export const dynamic = "force-dynamic";
