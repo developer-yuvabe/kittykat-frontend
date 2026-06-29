@@ -14,8 +14,10 @@ export const getServerSideToken = async () => {
     });
 
     return tokens;
-  } catch (error) {
-    console.error("Error getting tokens:", error);
+  } catch (error: any) {
+    if (error?.digest !== "DYNAMIC_SERVER_USAGE") {
+      console.error("Error getting tokens:", error);
+    }
     return null;
   }
 };
