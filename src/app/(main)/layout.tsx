@@ -4,8 +4,6 @@ import MainLayout from "./_components/MainLayout";
 import { redirect } from "next/navigation";
 import Splash from "@/components/shared/Splash";
 
-export const dynamic = "force-dynamic";
-
 const layout = async ({ children }: { children: React.ReactNode }) => {
   const { error, user } = await fetchUser();
 
